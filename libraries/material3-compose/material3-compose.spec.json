@@ -3,7 +3,7 @@
   "formatVersion": 18,
   "id": "material3-compose",
   "name": "Material 3 (Compose)",
-  "version": 17,
+  "version": 18,
   "description": "Material Design 3 (baseline, light and dark theme) for Jetpack Compose, with each type's composable in `code`. The symbols and parameters come from the androidx code at compose.material3 version 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Conventions: the slots (lambdas) of each composable are described in `notes`; size comes from width, height and weight; icons are Icons.Filled suggestions (the ones androidx puts in Icons.AutoMirrored flip in rtl); the reading direction and the anchor draw the tooltip (with its arrow), the badge and the menu anchored; the remote image uses the app's image loader; the Scaffold places each child in the right slot by its type.",
   "platforms": [
     {
@@ -572,7 +572,14 @@
                 "surfaceContainerHigh",
                 "surfaceContainerHighest"
               ],
-              "description": "Preferred color for the content inside the scaffold. Empty = the Material 3 default."
+              "description": "Preferred color for the content inside the scaffold. Empty = the Material 3 default.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing ignores `contentColor` and uses the inherited one (`contentColorFor(containerColor)`); pass it in code and color the child text and icons yourself.",
+                  "ref": "docs/scaffold.md"
+                }
+              ]
             }
           ],
           "code": {
@@ -709,6 +716,11 @@
               "kind": "pending",
               "message": "compose: the parameter `contentWindowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/scaffold.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the drawing paints only the background and content area; mark `topBar`, `bottomBar`, `snackbarHost` and the FAB as child markings where they sit (the FAB position is not drawn).",
+              "ref": "docs/scaffold.md"
             }
           ],
           "slots": [
@@ -810,7 +822,14 @@
               "key": "tonalElevation",
               "label": "Tonal elevation (dp)",
               "type": "number",
-              "description": "Tonal elevation in dp (tonalElevation). Empty = 0."
+              "description": "Tonal elevation in dp (tonalElevation). Empty = 0.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the tonal elevation overlay is tabled for whole dp values 1 to 12; any other value is drawn as 0.14, so use a whole dp to match Compose",
+                  "ref": "docs/surface.md"
+                }
+              ]
             },
             {
               "key": "width",
@@ -832,7 +851,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/surface.md"
+                }
+              ]
             },
             {
               "key": "contentColor",
@@ -1137,7 +1163,14 @@
                 "BottomCenter",
                 "BottomEnd"
               ],
-              "description": "Where the children sit inside the Box (Alignment)."
+              "description": "Where the children sit inside the Box (Alignment).",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: `contentAlignment` is applied only when you run Arrange (a new or moved child keeps its position); Compose aligns at every measurement",
+                  "ref": "docs/box.md"
+                }
+              ]
             },
             {
               "key": "background",
@@ -1211,7 +1244,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/box.md"
+                }
+              ]
             },
             {
               "key": "propagateMinConstraints",
@@ -1219,7 +1259,14 @@
               "type": "enum",
               "options": ["true", "false"],
               "default": "false",
-              "description": "Defines whether the incoming minimum constraints are passed on to the content."
+              "description": "Defines whether the incoming minimum constraints are passed on to the content.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: `propagateMinConstraints` goes to the code but the drawing does not use it; do not expect the children to change on screen",
+                  "ref": "docs/box.md"
+                }
+              ]
             }
           ],
           "code": {
@@ -1310,6 +1357,11 @@
               "kind": "pending",
               "message": "compose: the parameter `contentAlignment` (Alignment) is not a field yet",
               "ref": "signatures/box.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: `Modifier.align(...)` per child is not drawn: `contentAlignment` applies to all children; for a child outside the rule leave `TopStart` and position it by hand",
+              "ref": "docs/box.md"
             }
           ]
         },
@@ -1429,7 +1481,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/row.md"
+                }
+              ]
             }
           ],
           "code": {
@@ -1535,6 +1594,11 @@
               "kind": "pending",
               "message": "compose: the parameter `verticalAlignment` (Alignment.Vertical) is not a field yet",
               "ref": "signatures/row.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: a child wider than the Row is clipped at the box (Compose shrinks it to the Row width); mark the children inside the Row's width.",
+              "ref": "docs/row.md"
             }
           ]
         },
@@ -1654,7 +1718,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/column.md"
+                }
+              ]
             }
           ],
           "code": {
@@ -1763,6 +1834,11 @@
               "kind": "pending",
               "message": "compose: the parameter `horizontalAlignment` (Alignment.Horizontal) is not a field yet",
               "ref": "signatures/column.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: children taller than the Column are shrunk by its constraints, while the drawing cuts what goes past the box; mark children that fit inside the Column",
+              "ref": "docs/column.md"
             }
           ]
         },
@@ -1835,7 +1911,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/lazy-column.md"
+                }
+              ]
             },
             {
               "key": "horizontal",
@@ -1936,6 +2019,11 @@
               "kind": "pending",
               "message": "compose: the parameter `overscrollEffect` (OverscrollEffect?) is not a field yet",
               "ref": "signatures/lazy-column.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: scrolling is not drawn, so anything past the box is clipped and cannot be reached; mark only the visible part of the list.",
+              "ref": "docs/lazy-column.md"
             }
           ]
         },
@@ -2008,7 +2096,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/lazy-row.md"
+                }
+              ]
             },
             {
               "key": "horizontal",
@@ -2171,7 +2266,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/lazy-vertical-grid.md"
+                }
+              ]
             },
             {
               "key": "horizontal",
@@ -2191,7 +2293,14 @@
               "type": "enum",
               "options": ["true", "false"],
               "default": "false",
-              "description": "Reverses the scroll and layout direction: the items are laid out in reverse order. It does not change the behavior of `verticalArrangement`."
+              "description": "Reverses the scroll and layout direction: the items are laid out in reverse order. It does not change the behavior of `verticalArrangement`.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing ignores `reverseLayout` (it only goes into the code); mark the children in the order Compose will show them.",
+                  "ref": "docs/lazy-vertical-grid.md"
+                }
+              ]
             },
             {
               "key": "userScrollEnabled",
@@ -2272,6 +2381,16 @@
               "kind": "pending",
               "message": "compose: the parameter `overscrollEffect` (OverscrollEffect?) is not a field yet",
               "ref": "signatures/lazy-vertical-grid.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the columns are always equal and a child never spans more than one column; mark equal columns, and for fixed-size cells or spans change the code by hand (`GridCells.FixedSize`, `GridItemSpan`).",
+              "ref": "docs/lazy-vertical-grid.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: a child keeps its own size at the start of its cell, while Compose limits it to the cell width; resize each child marking to fill the column.",
+              "ref": "docs/lazy-vertical-grid.md"
             }
           ]
         },
@@ -2370,7 +2489,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/flow-row.md"
+                }
+              ]
             }
           ],
           "code": {
@@ -2455,6 +2581,11 @@
               "kind": "pending",
               "message": "compose: the parameter `itemVerticalAlignment` (Alignment.Vertical) is not a field yet",
               "ref": "signatures/flow-row.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: rows always stack from the top (`verticalArrangement` has no effect beyond `verticalSpacing`) and children beyond `maxLines` rows are not drawn; mark only what fits.",
+              "ref": "docs/flow-row.md"
             }
           ]
         },
@@ -2485,7 +2616,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/spacer.md"
+                }
+              ]
             }
           ],
           "code": {
@@ -2576,7 +2714,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/horizontal-pager.md"
+                }
+              ]
             },
             {
               "key": "horizontal",
@@ -2694,6 +2839,11 @@
               "kind": "pending",
               "message": "compose: the parameter `overscrollEffect` (OverscrollEffect?) is not a field yet",
               "ref": "signatures/horizontal-pager.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the drawing lays the pages side by side in marking order (no scroll, `pageSize` or page state), not one at a time as on screen; mark each page as a child.",
+              "ref": "docs/horizontal-pager.md"
             }
           ]
         }
@@ -2820,7 +2970,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/text.md"
+                }
+              ]
             },
             {
               "key": "fontSize",
@@ -3203,7 +3360,14 @@
                 "Bolt",
                 "EditCalendar"
               ],
-              "description": "Name of the icon in Icons.Default (for example Home). The list suggests the 164 icons of the library's set; a name outside it draws the placeholder and warns."
+              "description": "Name of the icon in Icons.Default (for example Home). The list suggests the 164 icons of the library's set; a name outside it draws the placeholder and warns.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: only the set's `Filled` icons draw (see the suggestions); another name or variant (Outlined, Rounded...) shows an outlined-square placeholder, so choose a listed icon.",
+                  "ref": "docs/icon.md"
+                }
+              ]
             },
             {
               "key": "contentDescription",
@@ -3418,13 +3582,27 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/image.md"
+                }
+              ]
             },
             {
               "key": "alpha",
               "label": "Opacity",
               "type": "number",
-              "description": "Optional opacity applied to the `ImageVector` when drawing it on screen."
+              "description": "Optional opacity applied to the `ImageVector` when drawing it on screen.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply `alpha` (it only goes to the code), and there is no `alignment` or `colorFilter`; do not judge the opacity from the drawing.",
+                  "ref": "docs/image.md"
+                }
+              ]
             }
           ],
           "code": {
@@ -3492,6 +3670,11 @@
               "kind": "pending",
               "message": "compose: the parameter `colorFilter` (ColorFilter?) is not a field yet",
               "ref": "signatures/image.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the drawing shows a surface-variant placeholder (the MCP server never loads the real image) and Compose's `Image` has no background; judge `contentScale` only in the app or viewer.",
+              "ref": "docs/image.md"
             }
           ],
           "accessibility": {
@@ -3522,7 +3705,14 @@
               "label": "Title",
               "type": "string",
               "required": true,
-              "description": "Title of the screen."
+              "description": "Title of the screen.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing shows the title on one line truncated with an ellipsis, but Text wraps without them; pass maxLines = 1 and overflow = TextOverflow.Ellipsis, and keep titles short",
+                  "ref": "docs/top-app-bar.md"
+                }
+              ]
             },
             {
               "key": "style",
@@ -4727,6 +4917,16 @@
               "kind": "pending",
               "message": "compose: case `large`: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/top-app-bar.large.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the starting size is the large bar (152); after changing `style` use Arrange (fit) to resize the marking to 64, 112 or 152, otherwise the leftover shows only the background",
+              "ref": "docs/top-app-bar.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the drawing ignores expandedHeight and collapsedHeight and draws the subtitle only in style small; size the marking with Arrange instead",
+              "ref": "docs/top-app-bar.md"
             }
           ],
           "slots": [
@@ -5007,7 +5207,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/button.md"
+                }
+              ]
             },
             {
               "key": "shape",
@@ -5632,6 +5839,11 @@
               "kind": "pending",
               "message": "compose: case `text`: the parameter `elevation` (ButtonElevation?) is not a field yet",
               "ref": "signatures/button.text.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: a label wider than the marking wraps in the drawing instead of widening the button as in Compose; mark the button as wide as its label (or use Arrange) to avoid overflowing the box",
+              "ref": "docs/button.md"
             }
           ],
           "accessibility": {
@@ -6154,7 +6366,14 @@
             "label": {
               "fields": ["contentDescription"]
             }
-          }
+          },
+          "notices": [
+            {
+              "kind": "diverges",
+              "message": "compose: the FAB content is only the icon named in `icon` (from the icon set); Compose accepts any composable, so for other content write it in code and mark only the container.",
+              "ref": "docs/fab.md"
+            }
+          ]
         },
         {
           "id": "extended-fab",
@@ -6169,7 +6388,14 @@
               "label": "Text",
               "type": "string",
               "required": true,
-              "description": "Label of the button."
+              "description": "Label of the button.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: a `text` wider than the marking box wraps instead of widening the button (Compose does not wrap); mark the box wide enough for the label on one line.",
+                  "ref": "docs/extended-fab.md"
+                }
+              ]
             },
             {
               "key": "icon",
@@ -6692,13 +6918,27 @@
               "key": "placeholder",
               "label": "Hint",
               "type": "string",
-              "description": "Hint text when the field is empty."
+              "description": "Hint text when the field is empty.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing shows the placeholder with the minimized label; in Compose the placeholder only appears with focus, and unfocused and empty the label stays expanded",
+                  "ref": "docs/text-field.md"
+                }
+              ]
             },
             {
               "key": "supportingText",
               "label": "Supporting text",
               "type": "string",
-              "description": "Supporting or error text below the field."
+              "description": "Supporting or error text below the field.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing counts one line of supporting text; text that wraps to two lines overflows the box while Compose grows the field, so mark a taller box",
+                  "ref": "docs/text-field.md"
+                }
+              ]
             },
             {
               "key": "style",
@@ -7122,7 +7362,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/text-field.md"
+                }
+              ]
             },
             {
               "key": "readOnly",
@@ -7370,7 +7617,14 @@
               "key": "label",
               "label": "Label",
               "type": "string",
-              "description": "Text beside the switch (the Switch itself has no label)."
+              "description": "Text beside the switch (the Switch itself has no label).",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: Switch has no label; the drawing's label (16 gap, 0.38 when disabled) is a convention, so write it as a separate Text in a Row next to the Switch",
+                  "ref": "docs/switch.md"
+                }
+              ]
             },
             {
               "key": "checked",
@@ -7409,7 +7663,14 @@
               "type": "enum",
               "default": "false",
               "options": ["true", "false"],
-              "description": "true shows a check icon on the thumb when on."
+              "description": "true shows a check icon on the thumb when on.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing shows check when on and close when off, but the code passes only the check; pass a thumbContent with the Close icon for the off state",
+                  "ref": "docs/switch.md"
+                }
+              ]
             },
             {
               "key": "thumbIconDescription",
@@ -9471,7 +9732,19 @@
             "label": {
               "fields": ["label"]
             }
-          }
+          },
+          "notices": [
+            {
+              "kind": "diverges",
+              "message": "compose: the error state (`SelectedError*` colors) and the custom color fields (`checkedColor`, `uncheckedColor`, `checkmarkColor`, disabled ones) are not drawn; check them on screen",
+              "ref": "docs/checkbox.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the checkbox area is 48 x 40 in the drawing; Compose measures 48 x 48 (or only 24 with `onClick = null`), so crop the marking accordingly",
+              "ref": "docs/checkbox.md"
+            }
+          ]
         },
         {
           "id": "chip",
@@ -9727,7 +10000,14 @@
               "key": "avatar",
               "label": "Avatar",
               "type": "string",
-              "description": "https:// address of the avatar image, input style: a circular 24 image at the start of the chip, in place of the leading icon (InputChip avatar). Empty = no avatar."
+              "description": "https:// address of the avatar image, input style: a circular 24 image at the start of the chip, in place of the leading icon (InputChip avatar). Empty = no avatar.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the avatar only applies to the `input` style and replaces the leading icon; the drawing shows a placeholder until the app loads the image, and has no avatar description",
+                  "ref": "docs/chip.md"
+                }
+              ]
             },
             {
               "key": "trailingIcon",
@@ -11972,7 +12252,14 @@
                 }
               }
             ]
-          }
+          },
+          "notices": [
+            {
+              "kind": "diverges",
+              "message": "compose: a label wider than the chip wraps in the drawing instead of widening it as in Compose; mark the chip as wide as its label (or Arrange) to avoid overflowing the box",
+              "ref": "docs/chip.md"
+            }
+          ]
         },
         {
           "id": "card",
@@ -12043,7 +12330,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/card.md"
+                }
+              ]
             },
             {
               "key": "shape",
@@ -12643,6 +12937,13 @@
                 "width": "fill",
                 "interaction": "dragged"
               }
+            }
+          ],
+          "notices": [
+            {
+              "kind": "diverges",
+              "message": "compose: `Card` content is a free `ColumnScope` lambda; the drawing shows only title, subtitle, supporting text and a 140 media with fixed 16 padding and 4 gap, so write other content and spacing in code",
+              "ref": "docs/card.md"
             }
           ]
         },
@@ -13899,6 +14200,28 @@
                 "interaction": "dragged"
               }
             }
+          ],
+          "notices": [
+            {
+              "kind": "diverges",
+              "message": "compose: the drawing clips headline and overline to one line and supporting text to two (one with an overline), with `…`, and the item never exceeds 88; set `maxLines` and `overflow` on the `Text` to match.",
+              "ref": "docs/list-item.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: `containerColor`, the content colors, `tonalElevation` and `shadowElevation` only go into the code; the drawing keeps the default look, so check the colors and elevation on screen.",
+              "ref": "docs/list-item.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the type draws no divider between items; mark a divider separately (`HorizontalDivider`) where the screen has one.",
+              "ref": "docs/list-item.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: leadingContent and trailingContent accept any composable; the type draws only icon, avatar and text through the fields",
+              "ref": "docs/list-item.md"
+            }
           ]
         },
         {
@@ -14441,6 +14764,16 @@
               "kind": "pending",
               "message": "compose: the parameter `windowInsets` (WindowInsets) is not a field yet",
               "ref": "signatures/navigation-bar.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: `containerColor`, `contentColor` and `tonalElevation` only go into the code; the drawing keeps the default look, so check the colors and elevation on screen.",
+              "ref": "docs/navigation-bar.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the label never wraps (it is `hug`, Compose wraps it onto more lines); keep it short or widen the destination, and the drawing check warns when it does not fit.",
+              "ref": "docs/navigation-bar.md"
             }
           ],
           "accessibility": {
@@ -14493,7 +14826,14 @@
               "label": "Collapsed height (dp)",
               "type": "number",
               "default": 56,
-              "description": "Visible height of the collapsed sheet in dp. Only applies to the standard style."
+              "description": "Visible height of the collapsed sheet in dp. Only applies to the standard style.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the collapsed standard sheet shows only `sheetPeekHeight` of the content; the drawing shows all of it, using that height as the minimum",
+                  "ref": "docs/bottom-sheet.md"
+                }
+              ]
             },
             {
               "key": "items",
@@ -14680,7 +15020,14 @@
                   "description": "Icon of the action. Empty = no icon."
                 }
               ],
-              "description": "Actions of the sheet, one per row."
+              "description": "Actions of the sheet, one per row.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: a `ListItem` without `colors` paints a `surface` strip, slightly lighter than the sheet; to hide it pass `ListItemDefaults.colors(containerColor = Color.Transparent)` (no field for it)",
+                  "ref": "docs/bottom-sheet.md"
+                }
+              ]
             },
             {
               "key": "sheetMaxWidth",
@@ -15495,7 +15842,14 @@
               "label": "Shape",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "Shape of the icon button."
+              "description": "Shape of the icon button.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing ignores `shape` and `width` (they only go to the code); the button always draws the standard 40 dp round container, so mark that size.",
+                  "ref": "docs/icon-button.md"
+                }
+              ]
             },
             {
               "key": "width",
@@ -15971,7 +16325,14 @@
               "label": "Shape",
               "type": "enum",
               "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
-              "description": "Shape of the icon button."
+              "description": "Shape of the icon button.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing ignores `shape` and `width` (they only go to the code) and the checked shape of Material expressive; it always draws the standard 40 dp round container.",
+                  "ref": "docs/icon-toggle-button.md"
+                }
+              ]
             },
             {
               "key": "width",
@@ -16421,7 +16782,14 @@
               "type": "enum",
               "default": "single",
               "options": ["single", "multi"],
-              "description": "single (SingleChoiceSegmentedButtonRow) checks one segment; multi (MultiChoiceSegmentedButtonRow) accepts several."
+              "description": "single (SingleChoiceSegmentedButtonRow) checks one segment; multi (MultiChoiceSegmentedButtonRow) accepts several.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: `single` and `multi` draw the same check, so the drawing does not tell them apart; set `selection` to pick `SingleChoiceSegmentedButtonRow` or `MultiChoiceSegmentedButtonRow`.",
+                  "ref": "docs/segmented-button.md"
+                }
+              ]
             },
             {
               "key": "enabled",
@@ -16635,7 +17003,14 @@
                 }
               }
             ]
-          }
+          },
+          "notices": [
+            {
+              "kind": "diverges",
+              "message": "compose: a segment too narrow for \"check + label\" shows the label on one line cut with an ellipsis; Compose does not truncate, so mark the row wide enough or shorten the labels.",
+              "ref": "docs/segmented-button.md"
+            }
+          ]
         },
         {
           "id": "radio-button",
@@ -17129,13 +17504,27 @@
               "label": "Range end",
               "type": "number",
               "default": 0.8,
-              "description": "End of the range in the range type, from 0 to 1, greater than or equal to the start; with steps, it goes to the nearest step. Ignored in single."
+              "description": "End of the range in the range type, from 0 to 1, greater than or equal to the start; with steps, it goes to the nearest step. Ignored in single.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: in a range with steps the end handle at 1 (and the start at 0) is inset from the track end, and an end below the start is drawn as is; keep valueEnd >= valueStart",
+                  "ref": "docs/slider.md"
+                }
+              ]
             },
             {
               "key": "steps",
               "label": "Steps",
               "type": "number",
-              "description": "Number of intermediate points between the ends (Slider.steps). Empty, 0 or less than 1 = continuous. With steps, the value goes to the nearest step and the drawing shows exactly steps marks, plus the two ends."
+              "description": "Number of intermediate points between the ends (Slider.steps). Empty, 0 or less than 1 = continuous. With steps, the value goes to the nearest step and the drawing shows exactly steps marks, plus the two ends.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: with very many steps (under 1 px between ticks or over 1000) the drawing replaces the ticks by a 4 px strip per segment; use fewer steps to see the ticks",
+                  "ref": "docs/slider.md"
+                }
+              ]
             },
             {
               "key": "enabled",
@@ -17165,7 +17554,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/slider.md"
+                }
+              ]
             },
             {
               "key": "thumbColor",
@@ -18112,6 +18508,11 @@
               "kind": "pending",
               "message": "compose: case `range`: the parameter `steps` (@IntRange(from = 0) Int) is not a field yet",
               "ref": "signatures/slider.range.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the Slider measures 48 high with the 44 handle centered; mark the 48 high area (2 above and below the handle), not only the handle band",
+              "ref": "docs/slider.md"
             }
           ],
           "accessibility": {
@@ -18542,7 +18943,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/search-bar.md"
+                }
+              ]
             },
             {
               "key": "interaction",
@@ -18855,6 +19263,16 @@
               "kind": "pending",
               "message": "compose: case `docked`: the parameter `colors.inputFieldColors` (TextFieldColors) is not a field yet",
               "ref": "signatures/search-bar.docked.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the expanded `bar` fills the screen with window insets on top; the drawing uses the marking size with a fixed 8 top space, and the divider moves to y=56 (docked) or 72 (bar) when marked taller for results.",
+              "ref": "docs/search-bar.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the drawing keeps the marking width and does not apply the 720 (`bar`) or 360 (`docked`) width limits; mark the width Compose will give, or pass the width in code.",
+              "ref": "docs/search-bar.md"
             }
           ],
           "accessibility": {
@@ -18946,7 +19364,14 @@
               "key": "today",
               "label": "Today's day",
               "type": "number",
-              "description": "Day of the month (1 to 31) that marks \"today\": a 1 outline in primary and the number in primary (DateTodayContainerOutlineColor and DateTodayLabelTextColor). Empty = no today. The chosen day outranks today (no outline, with the filled circle). With month and year, a day the month does not have draws nothing. It is not a code parameter: Compose uses the device clock."
+              "description": "Day of the month (1 to 31) that marks \"today\": a 1 outline in primary and the number in primary (DateTodayContainerOutlineColor and DateTodayLabelTextColor). Empty = no today. The chosen day outranks today (no outline, with the filled circle). With month and year, a day the month does not have draws nothing. It is not a code parameter: Compose uses the device clock.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: `today` only drives the drawing; it is not a code parameter, because Compose uses the device clock",
+                  "ref": "docs/date-picker.md"
+                }
+              ]
             },
             {
               "key": "rangeStartDay",
@@ -21147,6 +21572,16 @@
               "kind": "pending",
               "message": "compose: case `range`: the parameter `colors` (DatePickerColors) is not a field yet",
               "ref": "signatures/date-picker.range.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the calendar always reserves 6 rows (512 high); the drawing hugs the month's 4, 5 or 6 rows, so a box of 512 shows empty space below; crop to the real month",
+              "ref": "docs/date-picker.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: only one month panel is drawn: no year picker, text input, disabled days, dialog buttons (OK/Cancel) or scrolling months in the range picker; mark those parts separately",
+              "ref": "docs/date-picker.md"
             }
           ]
         },
@@ -22526,6 +22961,21 @@
               "kind": "pending",
               "message": "compose: the parameter `layoutType` (TimePickerLayoutType) is not a field yet",
               "ref": "signatures/time-picker.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the dialog is drawn 328 wide with content centered; in 24 hours Compose measures 304 on the clock and 264 in the fields",
+              "ref": "docs/time-picker.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the drawing reserves 72 at the bottom for the TimePickerDialog actions row (mode toggle, cancel, confirm), which is not drawn; the TimePicker alone has no such row",
+              "ref": "docs/time-picker.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: a number half covered by the selector handle is half on-primary and half on-surface, and a value with no number under it (10:37) shows pieces of 35 and 40, unlike Compose",
+              "ref": "docs/time-picker.md"
             }
           ]
         },
@@ -22541,7 +22991,14 @@
               "key": "count",
               "label": "Count",
               "type": "string",
-              "description": "Text of the counter (for example 3 or 99+). Only applies to the large style."
+              "description": "Text of the counter (for example 3 or 99+). Only applies to the large style.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing applies no limit to the counter text; write the already truncated text (for example `99+`) in `count`",
+                  "ref": "docs/badge.md"
+                }
+              ]
             },
             {
               "key": "style",
@@ -22762,6 +23219,13 @@
                 "count": "99+",
                 "style": "large"
               }
+            }
+          ],
+          "notices": [
+            {
+              "kind": "diverges",
+              "message": "compose: `BadgedBox` is not drawn; the position is the marking's anchor, so for the `large` counter declare offset main -12 and cross -2 (the default -6 is the dot's)",
+              "ref": "docs/badge.md"
             }
           ]
         },
@@ -23187,6 +23651,18 @@
                 "dismissAction": "true"
               }
             }
+          ],
+          "notices": [
+            {
+              "kind": "diverges",
+              "message": "compose: Snackbar `action` and `dismissAction` accept any composable; the drawing only has the text action and the Close icon of the fields, so pass any other content in code",
+              "ref": "docs/snackbar.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: only the Snackbar is drawn; the SnackbarHost (screen position, the 12 margin of Snackbar(snackbarData), queue, display time) is code, so do not mark it",
+              "ref": "docs/snackbar.md"
+            }
           ]
         },
         {
@@ -23222,7 +23698,14 @@
               "key": "action",
               "label": "Action",
               "type": "string",
-              "description": "Text of the rich tooltip's action button. Empty = no action. Only applies to rich."
+              "description": "Text of the rich tooltip's action button. Empty = no action. Only applies to rich.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing assumes the default TextButton (40 high, 12 padding) for the action; an action of another size or content is not drawn, so pass it in code",
+                  "ref": "docs/tooltip.md"
+                }
+              ]
             },
             {
               "key": "maxWidth",
@@ -23825,6 +24308,16 @@
               "kind": "pending",
               "message": "compose: case `rich`: the parameter `caretShape` ((Shape)?) is not a field yet",
               "ref": "signatures/tooltip.rich.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the caret is drawn only with an anchor, under its center and not clamped to the card, and the tip enters the anchor by 4; use a main offset of 8 to just touch it",
+              "ref": "docs/tooltip.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the rich tooltip measures from 28 to over 100 high but the initial size is the plain 240 x 24; set style rich and use Arrange (hug) so the height follows the content",
+              "ref": "docs/tooltip.md"
             }
           ]
         },
@@ -23899,7 +24392,14 @@
               "type": "enum",
               "default": "Round",
               "options": ["Round", "Butt", "Square"],
-              "description": "Cap of the stroke (strokeCap parameter, StrokeCap). The Compose default is Round in both formats."
+              "description": "Cap of the stroke (strokeCap parameter, StrokeCap). The Compose default is Round in both formats.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: on the circular the drawing ignores the cap in the arc ends and the gap, so `Butt` shows a smaller gap than Compose; check the circular gap on screen.",
+                  "ref": "docs/progress-indicator.md"
+                }
+              ]
             },
             {
               "key": "color",
@@ -24114,6 +24614,11 @@
               "kind": "pending",
               "message": "compose: case `linear`: the parameter `strokeCap` (StrokeCap) is not a field yet",
               "ref": "signatures/progress-indicator.linear.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: `color`, `gapSize` and `strokeWidth` only go into the code; the drawing keeps the default color, gap and thickness, so check them on screen.",
+              "ref": "docs/progress-indicator.md"
             }
           ],
           "accessibility": {
@@ -24563,7 +25068,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/secure-text-field.md"
+                }
+              ]
             },
             {
               "key": "shape",
@@ -24789,6 +25301,16 @@
               "kind": "pending",
               "message": "compose: case `outlined`: the parameter `colors` (TextFieldColors) is not a field yet",
               "ref": "signatures/secure-text-field.outlined.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the fitted height counts one line of `supportingText`, so a two-line one overflows the box; mark the field taller (and the hint shows with the minimized label).",
+              "ref": "docs/secure-text-field.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the drawing always shows eight bullets and has no show/hide icon; Compose draws one per typed character, and the toggle is the `trailingIcon` you choose plus `textObfuscationMode`.",
+              "ref": "docs/secure-text-field.md"
             }
           ],
           "accessibility": {
@@ -25004,6 +25526,13 @@
                 "insetStart": 16,
                 "insetEnd": 48
               }
+            }
+          ],
+          "notices": [
+            {
+              "kind": "diverges",
+              "message": "compose: the divider has no inset parameter; apply `inset`, `insetStart` and `insetEnd` as `Modifier.padding` around it in the code",
+              "ref": "docs/divider.md"
             }
           ]
         },
@@ -25669,6 +26198,16 @@
               "kind": "pending",
               "message": "compose: case `basic`: the parameter `properties` (DialogProperties) is not a field yet",
               "ref": "signatures/alert-dialog.basic.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: with an icon and a title of several lines Compose left-aligns the lines inside a centered title box, while the drawing centers each line; check the title on screen",
+              "ref": "docs/alert-dialog.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: `title`, `text` and `icon` accept any composable and the text scrolls when taller than the window; the drawing shows only text and an icon from the set, with no scroll",
+              "ref": "docs/alert-dialog.md"
             }
           ],
           "accessibility": {
@@ -26079,7 +26618,14 @@
                   "description": "true checks the item (secondary-container background). It is the item that receives the menu's interaction state."
                 }
               ],
-              "description": "One item per row, in the order they appear in the menu."
+              "description": "One item per row, in the order they appear in the menu.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the rows come only from the `items` table (text and icon names); free row content, custom item `colors` or `contentPadding` are not drawn, so write them in the `DropdownMenuItem` in code.",
+                  "ref": "docs/dropdown-menu.md"
+                }
+              ]
             },
             {
               "key": "expanded",
@@ -26533,6 +27079,16 @@
               "kind": "pending",
               "message": "compose: the parameter `properties` (PopupProperties) is not a field yet",
               "ref": "signatures/dropdown-menu.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: item text over 280 wraps and the menu hugs the widest line (Compose keeps 280), the exposed field value is clipped to one line, and a long menu does not scroll.",
+              "ref": "docs/dropdown-menu.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the menu is drawn right below the field, aligned to its start, at its own width; Compose may flip it upward without window space, so mark it on the requested side.",
+              "ref": "docs/dropdown-menu.md"
             }
           ],
           "accessibility": {
@@ -27854,6 +28410,16 @@
               "kind": "pending",
               "message": "compose: case `modal-wide`: the parameter `expandedProperties` (ModalWideNavigationRailProperties) is not a field yet",
               "ref": "signatures/navigation-rail.modal-wide.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the drawing has no scrim, header, rail button or modal elevation (`modal-wide` draws only the sheet); mark them as separate markings and pass `header` in the code.",
+              "ref": "docs/navigation-rail.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: every item needs a label; an icon-only item (round 56 x 56 indicator) cannot be drawn, so mark it separately and write it in the code by hand.",
+              "ref": "docs/navigation-rail.md"
             }
           ],
           "accessibility": {
@@ -28094,7 +28660,14 @@
               "type": "enum",
               "default": "Top",
               "options": ["Top", "Start"],
-              "description": "Top puts the icon above the label; Start puts the icon beside it (an item parameter, the same in all)."
+              "description": "Top puts the icon above the label; Start puts the icon beside it (an item parameter, the same in all).",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: with `Start` and 5 or 6 items the pill is wider than its item and overflows it (the drawing neither clips nor abbreviates); use the icon on top or fewer items.",
+                  "ref": "docs/short-navigation-bar.md"
+                }
+              ]
             },
             {
               "key": "interaction",
@@ -28997,7 +29570,19 @@
                 }
               }
             ]
-          }
+          },
+          "notices": [
+            {
+              "kind": "diverges",
+              "message": "compose: Compose accepts any composable for the header, an item's icon and badge; the type draws only text and an icon name, so mark richer content as separate markings.",
+              "ref": "docs/navigation-drawer.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the sheet takes the marking's width, while Compose keeps it between 240 and 360; mark a width in that range, and the scrim is not drawn (mark it separately if needed).",
+              "ref": "docs/navigation-drawer.md"
+            }
+          ]
         },
         {
           "id": "tabs",
@@ -29655,7 +30240,24 @@
                 }
               }
             ]
-          }
+          },
+          "notices": [
+            {
+              "kind": "diverges",
+              "message": "compose: each tab is a row of `items` (label, icon); a Tab with free content or a badge on the icon is not drawn, so write it in code",
+              "ref": "docs/tabs.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the drawing paints unselected tabs on-surface-variant; Compose only does so if you pass selectedContentColor and unselectedContentColor, otherwise all tabs share one color",
+              "ref": "docs/tabs.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the row height is the marking's, not the content's (72 for one line, 84 for a two-line label under the icon), and a label past two lines is cut where Compose grows the tab",
+              "ref": "docs/tabs.md"
+            }
+          ]
         },
         {
           "id": "bottom-app-bar",
@@ -30546,7 +31148,14 @@
                 "Bolt",
                 "EditCalendar"
               ],
-              "description": "Icon of the FAB built in on the right (floatingActionButton parameter). Empty = no FAB."
+              "description": "Icon of the FAB built in on the right (floatingActionButton parameter). Empty = no FAB.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the `floatingActionButton` field is always the regular 56 FAB; for an `ExtendedFloatingActionButton` mark an `extended-fab` (or `fab`) marking in the slot",
+                  "ref": "docs/bottom-app-bar.md"
+                }
+              ]
             },
             {
               "key": "floatingActionButtonDescription",
@@ -30966,7 +31575,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/carousel.md"
+                }
+              ]
             },
             {
               "key": "userScrollEnabled",
@@ -31163,6 +31779,16 @@
               "kind": "pending",
               "message": "compose: case `centered-hero`: the parameter `flingBehavior.snapAnimationSpec` (AnimationSpec<Float>) is not a field yet",
               "ref": "signatures/carousel.centered-hero.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: with a width slightly above `preferredItemWidth` Compose may shrink to several large items plus medium and small ones, while the drawing keeps a single large item; check the layout on screen",
+              "ref": "docs/carousel.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the drawing is the unscrolled state: centered-hero shows the large item centered (Compose snaps it to the start at scroll 0) and uncontained shows the cut item at full width (Compose masks it)",
+              "ref": "docs/carousel.md"
             }
           ]
         },
@@ -31226,7 +31852,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/pull-to-refresh.md"
+                }
+              ]
             }
           ],
           "code": {
@@ -31278,6 +31911,11 @@
               "kind": "pending",
               "message": "compose: the parameter `contentAlignment` (Alignment) is not a field yet",
               "ref": "signatures/pull-to-refresh.compose.json"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the drawing is the single frame at the refresh threshold (indicator at 40, full arrow), not the drag or a spinning state; mark the indicator at that position.",
+              "ref": "docs/pull-to-refresh.md"
             }
           ]
         },
@@ -31531,7 +32169,14 @@
               "key": "weight",
               "label": "Weight",
               "type": "number",
-              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight."
+              "description": "Share of the leftover space in a Row or Column (Modifier.weight). Empty = no weight.",
+              "notices": [
+                {
+                  "kind": "diverges",
+                  "message": "compose: the drawing does not apply the `weight`; mark the real width (or height) of the marking",
+                  "ref": "docs/swipe-to-dismiss.md"
+                }
+              ]
             },
             {
               "key": "gesturesEnabled",
@@ -31621,7 +32266,19 @@
                 }
               }
             ]
-          }
+          },
+          "notices": [
+            {
+              "kind": "diverges",
+              "message": "compose: the drawing is a frame of a 56 drag, not a settled state; the removal on dismiss (onDismiss) and the background color following the progress belong to the app",
+              "ref": "docs/swipe-to-dismiss.md"
+            },
+            {
+              "kind": "diverges",
+              "message": "compose: the content takes any composable (a Card, a ListItem with icons), but the type only draws a ListItem with title and supporting text; pass the real content in code",
+              "ref": "docs/swipe-to-dismiss.md"
+            }
+          ]
         }
       ]
     }
@@ -31629,7 +32286,7 @@
   "migrations": [
     {
       "from": 1,
-      "to": 17,
+      "to": 18,
       "steps": [
         {
           "op": "fill-field",
@@ -31653,7 +32310,7 @@
     },
     {
       "from": 2,
-      "to": 17,
+      "to": 18,
       "steps": [
         {
           "op": "fill-field",
@@ -31677,7 +32334,7 @@
     },
     {
       "from": 3,
-      "to": 17,
+      "to": 18,
       "steps": [
         {
           "op": "fill-field",
@@ -31701,7 +32358,7 @@
     },
     {
       "from": 4,
-      "to": 17,
+      "to": 18,
       "steps": [
         {
           "op": "fill-field",
@@ -31725,7 +32382,7 @@
     },
     {
       "from": 5,
-      "to": 17,
+      "to": 18,
       "steps": [
         {
           "op": "fill-field",

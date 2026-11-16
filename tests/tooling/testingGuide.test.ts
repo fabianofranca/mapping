@@ -523,9 +523,9 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(guide).toContain('`material3-compose.zip` (R17)');
     });
 
-    it('has steps R17.1 to R17.58, in order, and none depends on the owner', () => {
+    it('has steps R17.1 to R17.59, in order, and none depends on the owner', () => {
       const codes = [...stepActions(r17).keys()];
-      expect(codes).toEqual(Array.from({ length: 58 }, (_, i) => `R17.${i + 1}`));
+      expect(codes).toEqual(Array.from({ length: 59 }, (_, i) => `R17.${i + 1}`));
       expect(/without a substitute/i.test(r17)).toBe(false);
       expect(r17).not.toContain('[person]');
     });

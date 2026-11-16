@@ -161,9 +161,9 @@ const NEW_COLUMNS: Record<string, string> = {
 const accessibilityOf = (id: string) => typeAccessibility(spec, typeOf(id));
 
 describe('Material 3 (Compose): accessibility of the library (A4, decision 11)', () => {
-  it('is formatVersion 18, version 17, with the root touch target 48 x 48 expanded', () => {
+  it('is formatVersion 18, at least version 18, with the root touch target 48 x 48 expanded', () => {
     expect(spec.formatVersion).toBe(18);
-    expect(spec.version).toBe(17);
+    expect(spec.version).toBeGreaterThanOrEqual(18);
     expect(spec.accessibility).toEqual({
       touchTarget: { width: 48, height: 48, mode: 'expanded' },
     });
@@ -171,11 +171,11 @@ describe('Material 3 (Compose): accessibility of the library (A4, decision 11)',
 
   it('adds no migration step: only the `to` of the existing ones follows the version', () => {
     expect(spec.migrations?.map((m) => [m.from, m.to])).toEqual([
-      [1, 17],
-      [2, 17],
-      [3, 17],
-      [4, 17],
-      [5, 17],
+      [1, spec.version],
+      [2, spec.version],
+      [3, spec.version],
+      [4, spec.version],
+      [5, spec.version],
     ]);
     for (const migration of spec.migrations ?? [])
       expect(migration.steps.every((s) => s.op === 'fill-field')).toBe(true);
