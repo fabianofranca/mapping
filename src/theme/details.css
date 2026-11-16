@@ -183,7 +183,7 @@
  * A row whose control is a reference field keeps the narrow column at any width too: its target name is the one
  * that gets cut by an ellipsis when the control loses those pixels.
  */
-.props:has(.props-label-cell > .action-menu):not(:has(.ref-field)) {
+.props:has(.props-label-cell > .action-menu) {
   grid-template-columns:
     calc(var(--size-label-col) + var(--control-height-sm) + var(--control-height))
     minmax(0, 1fr);
@@ -196,6 +196,13 @@
         1fr
       );
   }
+}
+
+.props:has(.props-label-cell > .action-menu):has(.ref-field) {
+  grid-template-columns: calc(var(--size-label-col) + var(--control-height-sm)) minmax(
+      0,
+      1fr
+    );
 }
 
 .props-label {
