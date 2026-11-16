@@ -1,4 +1,5 @@
 import { memoByProject, projectIndex, type ProjectIndex } from './projectIndex';
+import { sameSpace } from './spaces';
 import type { Marking, Project } from './types';
 
 // End of the settle: the anchor requires the same space (`anchor-other-space`). When the geometry
@@ -19,7 +20,7 @@ function stranded(
     const to = m?.anchor?.to;
     if (m === undefined || to === undefined) return;
     const target = index.markings.get(to);
-    if (target !== undefined && target.containerId !== m.containerId) out.add(id);
+    if (target !== undefined && !sameSpace(target, m)) out.add(id);
   };
   for (const id of ids) {
     check(id);

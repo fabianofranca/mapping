@@ -113,6 +113,7 @@ function newProject(name: string): Project {
   const blank = createProject({
     name,
     now: new Date().toISOString(),
+    firstPage: { name: t('page.defaultName') },
     firstLayer: {
       id: crypto.randomUUID(),
       name: t('layer.defaultName'),
@@ -418,7 +419,12 @@ export function importZip(file: Blob): Promise<AppResult> {
     if (!target) return err('storage-failed');
     const read = await readProjectZip(file);
     if (!read.ok) return err(read.error);
-    const parsed = deserialize(read.files.mapping, migrations, read.files.specs);
+    const parsed = deserialize(
+      read.files.mapping,
+      migrations,
+      read.files.specs,
+      t('page.defaultName'),
+    );
     const create = async () => {
       const id = crypto.randomUUID();
       await target.create(id, read.files, { unexported: false });

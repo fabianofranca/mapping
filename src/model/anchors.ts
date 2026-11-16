@@ -2,6 +2,7 @@ import { fail } from './errors';
 import { descendantsOf } from './hierarchy';
 import { findById, updateById } from './project';
 import { projectIndex } from './projectIndex';
+import { firstPageId, sameSpace } from './spaces';
 import type { Marking, MarkingAnchor, Project } from './types';
 
 // Marking anchor (schema v20, stage "direction and anchor", R3). The anchor links a marking to
@@ -22,18 +23,24 @@ function wouldCycle(p: Project, id: string, to: string): boolean {
 /**
  * Checks the new anchor of `id` (which is in `containerId`, or does not exist yet) and fails
  * with the code of the broken invariant; returns the target marking. It also serves creation,
- * before the marking exists (without it no cycle is possible).
+ * before the marking exists (without it no cycle is possible). `pageId` is the page of a canvas
+ * marking (default: the first page).
  */
 export function checkAnchorTarget(
   p: Project,
   id: string,
   containerId: string | null,
   anchor: MarkingAnchor,
+  pageId?: string | null,
 ): Marking {
   if (anchor.to === id) fail('anchor-self', id);
   const target = projectIndex(p).markings.get(anchor.to);
   if (target === undefined) return fail('anchor-missing', anchor.to);
-  if (target.containerId !== containerId) fail('anchor-other-space', anchor.to);
+  // The canvas is one space per page: a canvas marking is only anchored within its own page.
+  const page = containerId === null ? (pageId ?? firstPageId(p)) : null;
+  if (!sameSpace(target, { containerId, pageId: page })) {
+    fail('anchor-other-space', anchor.to);
+  }
   if (wouldCycle(p, id, anchor.to)) fail('anchor-cycle', id);
   return target;
 }
@@ -50,9 +57,7 @@ export function canAnchorTo(p: Project, markingId: string, targetId: string): bo
   const marking = markings.get(markingId);
   const target = markings.get(targetId);
   if (marking === undefined || target === undefined) return false;
-  return (
-    target.containerId === marking.containerId && !wouldCycle(p, markingId, targetId)
-  );
+  return sameSpace(target, marking) && !wouldCycle(p, markingId, targetId);
 }
 
 /**
@@ -68,7 +73,7 @@ export function anchorCandidates(
   const marking = projectIndex(p).markings.get(markingId);
   if (marking === undefined) return [];
   const blocked = withAnchoredFollowers(p, [markingId]);
-  return pool.filter((m) => m.containerId === marking.containerId && !blocked.has(m.id));
+  return pool.filter((m) => sameSpace(m, marking) && !blocked.has(m.id));
 }
 
 function sameOffset(a: MarkingAnchor['offset'], b: MarkingAnchor['offset']): boolean {
@@ -102,7 +107,9 @@ export function setMarkingAnchor(
 ): Project {
   const marking = findById(p.markings, markingId);
   if (sameAnchor(marking.anchor, anchor)) return p;
-  if (anchor !== null) checkAnchorTarget(p, markingId, marking.containerId, anchor);
+  if (anchor !== null) {
+    checkAnchorTarget(p, markingId, marking.containerId, anchor, marking.pageId);
+  }
   return {
     ...p,
     markings: updateById(p.markings, markingId, (m) => ({ ...m, anchor })),
@@ -125,7 +132,7 @@ export function setNewMarkingAnchor(
 ): Project {
   const marking = findById(p.markings, markingId);
   const target = projectIndex(p).markings.get(anchor.to);
-  if (target !== undefined && target.containerId !== marking.containerId) return p;
+  if (target !== undefined && !sameSpace(target, marking)) return p;
   return setMarkingAnchor(p, markingId, anchor);
 }
 

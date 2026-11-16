@@ -61,6 +61,7 @@ import { childrenOf } from './hierarchy';
 import { createMarking, placeFloatingNear, type FloatingNearTarget } from './markings';
 import { findById } from './project';
 import { projectIndex } from './projectIndex';
+import { firstPageId } from './spaces';
 import type { SpecAnnotationType } from './spec';
 import { findSpecType, projectLayerFor } from './specLookup';
 import { addTypedAnnotation, setFieldValue } from './typed';
@@ -124,6 +125,11 @@ export interface NewComponentArgs {
   readonly annotationId: string;
   /** Container of the instance (position in its pixels); `null` = the canvas (canvas units). */
   readonly containerId: string | null;
+  /**
+   * Page of a canvas instance (v21): default, the page of the target (`parentId`) or of `near`,
+   * else the first page. A container instance has none.
+   */
+  readonly pageId?: string;
   /**
    * **Target** component with a slot, where the instance is positioned (inside the slot); `null` = outside
    * any slot. It is only the destination of the positioning: the stored parent is always what the settle
@@ -474,7 +480,14 @@ export function hasComponentSlot(
 
 type PlacementArgs = Pick<
   NewComponentArgs,
-  'containerId' | 'parentId' | 'slot' | 'specId' | 'typeId' | 'center' | 'values'
+  | 'containerId'
+  | 'parentId'
+  | 'slot'
+  | 'specId'
+  | 'typeId'
+  | 'center'
+  | 'values'
+  | 'pageId'
 > & {
   /** The app's drawings: the slot of each child and the boxes come from them (the same result without them). */
   readonly drawings?: ComponentDrawings;
@@ -551,6 +564,7 @@ function initialValues(
     id: SCRATCH_MARKING,
     containerId: args.containerId,
     parentId: null,
+    pageId: args.containerId === null ? (args.pageId ?? firstPageId(p)) : null,
     name: null,
     rect: { x: 0, y: 0, width: MIN_STORED_MARKING_SIZE, height: MIN_STORED_MARKING_SIZE },
     needsReview: false,
@@ -934,6 +948,22 @@ function clampToParent(parent: Marking, slotBox: Rect, placed: Rect): Rect {
 }
 
 /**
+ * The page of a new canvas instance: the one asked for, else the page of the target (`parentId`) or of
+ * `near`; `undefined` when it has no page of its own (a container instance) or none of these applies
+ * (the first page, by `createMarking`).
+ */
+function componentPageId(
+  p: Project,
+  args: Pick<NewComponentArgs, 'containerId' | 'parentId' | 'pageId' | 'anchor'>,
+  near: { readonly id: string } | null,
+): string | undefined {
+  if (args.containerId !== null) return undefined;
+  if (args.pageId !== undefined) return args.pageId;
+  const ref = args.parentId ?? args.anchor?.to ?? near?.id ?? null;
+  return ref === null ? undefined : projectIndex(p).pageOf.get(ref);
+}
+
+/**
  * Rectangle of a new instance, in a free place (stage #1087). R0 is the previous position:
  * without a component with a slot, the component's size centered on `center` (default, the
  * image center) and clamped to the image; on the canvas (`containerId` null), centered on `center` (default
@@ -959,10 +989,19 @@ export function componentPlacement(
   if (parent === null || slot === null) {
     const r0 = centeredRect(space, size, args.center);
     if (space.floating) return r0;
-    return freeRectIn(placementLevel(p, args.containerId, r0), r0) ?? r0;
+    return (
+      freeRectIn(placementLevel(p, args.containerId, r0, undefined, args.pageId), r0) ??
+      r0
+    );
   }
   const placed = slotRect(p, parent, slot, size);
-  const level = placementLevel(p, args.containerId, placed, { parent, area: slot.area });
+  const level = placementLevel(
+    p,
+    args.containerId,
+    placed,
+    { parent, area: slot.area },
+    args.pageId,
+  );
   const free = freeRectIn(level, placed);
   // Full slot: the previous position, but never contained in or equal to a sibling (3.1): otherwise the settle
   // would make it a child of that one, and not of the slot's component.
@@ -980,7 +1019,7 @@ export function placementIsFree(
   catalog: ComponentCatalog,
   args: Pick<
     PlacementArgs,
-    'containerId' | 'parentId' | 'slot' | 'specId' | 'typeId' | 'drawings'
+    'containerId' | 'parentId' | 'slot' | 'specId' | 'typeId' | 'drawings' | 'pageId'
   > & {
     readonly rect: Rect;
   },
@@ -989,7 +1028,10 @@ export function placementIsFree(
   const { slot, parent } = placementSpace(p, catalog, args, measure);
   const target =
     parent === null || slot === null ? undefined : { parent, area: slot.area };
-  return isFreeInLevel(placementLevel(p, args.containerId, args.rect, target), args.rect);
+  return isFreeInLevel(
+    placementLevel(p, args.containerId, args.rect, target, args.pageId),
+    args.rect,
+  );
 }
 
 /** The `preview` of the field if it is a simple value; `undefined` for `table`, `ref`, absent or composite. */
@@ -1049,10 +1091,17 @@ export function componentAnchoredPlacement(
     | 'values'
     | 'name'
     | 'anchorDefaults'
+    | 'pageId'
   > & { readonly anchor: MarkingAnchor },
   measure: TextMeasurer,
 ): { readonly rect: Rect; readonly warnings: readonly ModelMessage[] } {
-  const target = checkAnchorTarget(p, args.markingId, args.containerId, args.anchor);
+  const target = checkAnchorTarget(
+    p,
+    args.markingId,
+    args.containerId,
+    args.anchor,
+    componentPageId(p, { ...args, anchor: args.anchor }, null) ?? null,
+  );
   const density = effectiveDensity(p, args.containerId);
   const direction = effectiveDirection(p, args.containerId);
   const resolved = resolveMarkingAnchor(args.anchor, args.anchorDefaults, density);
@@ -1117,7 +1166,15 @@ export function addComponentMarking(
     projectLayerFor(p, args.specId, layerId) ?? fail('type-not-in-layer', args.typeId);
   // The anchor is checked before creating anything (the invariant's errors); after the settle, only the
   // space may have changed and then it is released (`setNewMarkingAnchor`).
-  if (args.anchor) checkAnchorTarget(p, args.markingId, args.containerId, args.anchor);
+  if (args.anchor) {
+    checkAnchorTarget(
+      p,
+      args.markingId,
+      args.containerId,
+      args.anchor,
+      componentPageId(p, args, null) ?? null,
+    );
+  }
   // Floating type (decision 10): a floating marking is born on the canvas, outside the belonging.
   const floating = type.floating === true;
   const defaultSize = (): Size =>
@@ -1137,6 +1194,7 @@ export function addComponentMarking(
     fail('invalid-space', args.typeId);
   }
   const near = floating && args.near && !args.rect ? args.near : null;
+  const pageId = componentPageId(p, args, near);
   const rect =
     args.rect ??
     (args.anchor
@@ -1150,6 +1208,7 @@ export function addComponentMarking(
       {
         containerId: args.containerId,
         parentId: args.parentId,
+        ...(pageId === undefined ? {} : { pageId }),
         ...(args.slot === undefined ? {} : { slot: args.slot }),
         specId: args.specId,
         typeId: args.typeId,
@@ -1170,6 +1229,7 @@ export function addComponentMarking(
     {
       id: args.markingId,
       containerId: args.containerId,
+      ...(pageId === undefined ? {} : { pageId }),
       rect,
       ...(args.name !== undefined ? { name: args.name } : {}),
       ...(floating ? { floating: true } : {}),

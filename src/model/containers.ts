@@ -25,6 +25,7 @@ import {
 } from './locks';
 import { findById, normalizeOptionalName, updateById } from './project';
 import { countBrokenRefs } from './refs';
+import { containersOfPage, firstPageId, requirePage } from './spaces';
 import type { Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
 /** Longest side of a newly added image, in canvas units. */
@@ -83,8 +84,13 @@ function checkPlacement({ x, y, scale }: Placement): void {
 }
 
 /** Free position to the right of all images (except `excludeId`). */
-function placementAtRight(p: Project, scale: number, excludeId?: string): Placement {
-  const others = p.containers.filter((i) => i.id !== excludeId);
+function placementAtRight(
+  p: Project,
+  scale: number,
+  excludeId?: string,
+  pageId?: string,
+): Placement {
+  const others = containersOfPage(p, pageId).filter((i) => i.id !== excludeId);
   const rects = others.map((i) => imageCanvasRect(i, i.placement));
   if (rects.length === 0) return snapPlacement({ x: 0, y: 0, scale });
   const rightmost = rects.reduce((a, b) => (right(b) > right(a) ? b : a));
@@ -263,19 +269,20 @@ export function placementNear(
   scale: number,
   center: { readonly x: number; readonly y: number },
   excludeId?: string,
+  pageId?: string,
 ): Placement {
   const w = size.width * scale;
   const h = size.height * scale;
   const wanted = { x: center.x - w / 2, y: center.y - h / 2 };
-  const others = p.containers
+  const others = containersOfPage(p, pageId)
     .filter((i) => i.id !== excludeId)
     .map((i) => imageCanvasRect(i, i.placement));
   return snapPlacement({ ...nearestFreeSpot(others, w, h, wanted), scale });
 }
 
 /**
- * The first container that the image, at `placement`, would start to overlap; `null` if
- * none. It is the "other" of `image-overlap`.
+ * The first container **of the same page** that the image, at `placement`, would start to
+ * overlap; `null` if none. It is the "other" of `image-overlap`.
  */
 export function overlappingContainer(
   p: Project,
@@ -288,6 +295,7 @@ export function overlappingContainer(
     p.containers.find(
       (other) =>
         other.id !== containerId &&
+        other.pageId === image.pageId &&
         rectsOverlap(rect, imageCanvasRect(other, other.placement)),
     ) ?? null
   );
@@ -361,14 +369,35 @@ function placementBeside(
   const { scale } = reference.placement;
   const referenceRect = imageCanvasRect(reference, reference.placement);
   const wanted = { x: right(referenceRect) + IMAGE_GAP, y: referenceRect.y };
-  const obstacles = p.containers.map((c) => imageCanvasRect(c, c.placement));
+  const obstacles = containersOfPage(p, reference.pageId).map((c) =>
+    imageCanvasRect(c, c.placement),
+  );
   return snapPlacement({
     ...nearestFreeSpot(obstacles, size.width * scale, size.height * scale, wanted),
     scale,
   });
 }
 
-/** Scale and place of a new container: beside `beside`, near `center` or to the right of all. */
+/**
+ * The page of a new container: the one asked for (`not-found` if it does not exist), the
+ * page of `beside`, or the first page. `beside` and `pageId` on different pages are
+ * contradictory (`invalid-placement`).
+ */
+function newContainerPage(
+  p: Project,
+  args: { readonly pageId?: string; readonly beside?: string },
+): string {
+  if (args.pageId !== undefined) requirePage(p, args.pageId);
+  if (args.beside === undefined) return args.pageId ?? firstPageId(p);
+  const reference = p.containers.find((c) => c.id === args.beside);
+  if (!reference) fail('not-found', args.beside);
+  if (args.pageId !== undefined && args.pageId !== reference.pageId) {
+    fail('invalid-placement');
+  }
+  return reference.pageId;
+}
+
+/** Scale and place of a new container: beside `beside`, near `center` or to the right of all (on its page). */
 function newContainerPlacement(
   p: Project,
   size: { readonly width: number; readonly height: number },
@@ -376,12 +405,13 @@ function newContainerPlacement(
     readonly center?: { readonly x: number; readonly y: number };
     readonly beside?: string;
   },
+  pageId: string,
 ): Placement {
   if (args.beside !== undefined) return placementBeside(p, size, args.beside);
   const scale = INITIAL_IMAGE_SIZE / Math.max(size.width, size.height);
   return args.center
-    ? placementNear(p, size, scale, args.center)
-    : placementAtRight(p, scale);
+    ? placementNear(p, size, scale, args.center, undefined, pageId)
+    : placementAtRight(p, scale, undefined, pageId);
 }
 
 /**
@@ -397,11 +427,14 @@ export function addContainer(
     readonly center?: { readonly x: number; readonly y: number };
     /** Id of a container: the new one is born to its right, with the same scale. */
     readonly beside?: string;
+    /** Page of the new container (default: the page of `beside`, else the first page). */
+    readonly pageId?: string;
   },
   options?: SettleOptions,
 ): Project {
   if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   checkDimensions(args);
+  const pageId = newContainerPage(p, args);
   if (p.containers.some((i) => i.file !== null && sameFile(i.file, args.file))) {
     fail('duplicate-file');
   }
@@ -409,6 +442,7 @@ export function addContainer(
     id: args.id,
     name: null,
     parentId: null,
+    pageId,
     markingColor: null,
     locked: false,
     source: null,
@@ -416,7 +450,7 @@ export function addContainer(
     background: null,
     width: args.width,
     height: args.height,
-    placement: newContainerPlacement(p, args, args),
+    placement: newContainerPlacement(p, args, args, pageId),
   };
   return settleFrom(p, { ...p, containers: [...p.containers, image] }, options);
 }
@@ -438,17 +472,21 @@ export function addBackgroundContainer(
     readonly center?: { readonly x: number; readonly y: number };
     /** Id of a container: the new one is born to its right, with the same scale. */
     readonly beside?: string;
+    /** Page of the new container (default: the page of `beside`, else the first page). */
+    readonly pageId?: string;
   },
   options?: SettleOptions,
 ): Project {
   if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   checkBackgroundDimensions(args);
+  const pageId = newContainerPage(p, args);
   const background = checkBackground(args.background);
   const name = normalizeOptionalName(args.name ?? null);
   const image: ProjectContainer = {
     id: args.id,
     name,
     parentId: null,
+    pageId,
     markingColor: null,
     locked: false,
     source: null,
@@ -456,7 +494,7 @@ export function addBackgroundContainer(
     background,
     width: args.width,
     height: args.height,
-    placement: newContainerPlacement(p, args, args),
+    placement: newContainerPlacement(p, args, args, pageId),
   };
   return settleFrom(p, { ...p, containers: [...p.containers, image] }, options);
 }
@@ -817,10 +855,12 @@ export function replaceContainer(
   const candidate = imageCanvasRect(next, placement);
   const overlaps = p.containers.some(
     (o) =>
-      o.id !== containerId && rectsOverlap(candidate, imageCanvasRect(o, o.placement)),
+      o.id !== containerId &&
+      o.pageId === image.pageId &&
+      rectsOverlap(candidate, imageCanvasRect(o, o.placement)),
   );
   if (overlaps) {
-    placement = placementAtRight(p, scale, containerId);
+    placement = placementAtRight(p, scale, containerId, image.pageId);
   }
 
   // The replacement may move the image on the canvas (scale and place): a lock above also prevents it.

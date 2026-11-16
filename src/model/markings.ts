@@ -30,6 +30,7 @@ import { canDeleteMarking, canEditMarkingGeometry, requireUnlocked } from './loc
 import { findById, normalizeOptionalName, updateById } from './project';
 import { projectIndex, idInUse } from './projectIndex';
 import { countBrokenRefs } from './refs';
+import { containersOfPage, firstPageId, requirePage } from './spaces';
 import type { Marking, Project, Rect } from './types';
 
 /**
@@ -85,6 +86,11 @@ export interface NewMarkingArgs {
   readonly name?: string | null;
   /** Floating (v13): only on the canvas (`containerId` null); default `false`. */
   readonly floating?: boolean;
+  /**
+   * Page of a canvas marking (v21; default: the first page). A container marking has no page
+   * of its own (`pageId: null`): passing one with a `containerId` fails with `invalid-space`.
+   */
+  readonly pageId?: string;
 }
 
 /**
@@ -102,6 +108,9 @@ export function createMarking(
   if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   const floating = args.floating ?? false;
   if (floating && args.containerId !== null) fail('invalid-space', args.id);
+  if (args.pageId !== undefined && args.containerId !== null)
+    fail('invalid-space', args.id);
+  if (args.pageId !== undefined) requirePage(p, args.pageId);
   const container =
     args.containerId === null ? null : findById(p.containers, args.containerId);
   checkRectShape(args.rect, options);
@@ -112,6 +121,7 @@ export function createMarking(
     id: args.id,
     containerId: args.containerId,
     parentId: null,
+    pageId: args.containerId === null ? (args.pageId ?? firstPageId(p)) : null,
     name: normalizeOptionalName(args.name ?? null),
     rect: {
       x: args.rect.x,
@@ -323,6 +333,8 @@ export function setMarkingFloating(
     next = {
       ...marking,
       containerId: null,
+      // Leaving the container, the marking lands on the canvas of the container's page.
+      pageId: projectIndex(p).pageOf.get(markingId) ?? marking.pageId,
       parentId: null,
       floating: true,
       rect: fromCanvasRect(
@@ -521,9 +533,18 @@ export function placeFloatingNear(
         : index.containers.get(marking.containerId);
     anchor = container ? imageCanvasRect(container, container.placement) : start;
   }
-  const obstacles: Rect[] = p.containers.map((c) => imageCanvasRect(c, c.placement));
+  // Each page is a canvas of its own: only what is on the target's page is an obstacle.
+  const pageId = index.pageOf.get(target.id);
+  const obstacles: Rect[] = containersOfPage(p, pageId).map((c) =>
+    imageCanvasRect(c, c.placement),
+  );
   for (const m of p.markings) {
-    if (m.floating && m.containerId === null && m.id !== target.id) {
+    if (
+      m.floating &&
+      m.containerId === null &&
+      m.id !== target.id &&
+      m.pageId === pageId
+    ) {
       obstacles.push(markingCanvasRectOf(p, m));
     }
   }

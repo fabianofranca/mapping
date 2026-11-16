@@ -336,6 +336,12 @@ function checkEndpoint(p: Project, id: string): void {
   fail('not-found', id);
 }
 
+/** An arrow never crosses pages: each page is a canvas of its own (`arrow-cross-page`). */
+function checkSamePage(p: Project, from: string, to: string): void {
+  const { pageOf } = projectIndex(p);
+  if (pageOf.get(from) !== pageOf.get(to)) fail('arrow-cross-page', to);
+}
+
 function checkSide(side: ArrowSide | null): void {
   if (side !== null && !ARROW_SIDES.includes(side)) fail('invalid-value', String(side));
 }
@@ -361,7 +367,7 @@ export interface NewArrowArgs {
 /**
  * Creates the arrow between two markings. The endpoints must exist and be markings (neither
  * another arrow, `arrow-endpoint`; nor a container, which is not among the markings) and be
- * different (`arrow-self`); the id must not repeat that of a marking or of another arrow. It
+ * different (`arrow-self`) and on the same page (`arrow-cross-page`); the id must not repeat that of a marking or of another arrow. It
  * starts with the default route (`points: []`, only the person draws waypoints), unlocked. Two
  * equal arrows are allowed.
  */
@@ -370,6 +376,7 @@ export function createArrow(p: Project, args: NewArrowArgs): Project {
   checkEndpoint(p, args.from);
   checkEndpoint(p, args.to);
   if (args.from === args.to) fail('arrow-self', args.from);
+  checkSamePage(p, args.from, args.to);
   const style = args.style ?? DEFAULT_ARROW_STYLE;
   const fromSide = args.fromSide ?? null;
   const toSide = args.toSide ?? null;
@@ -434,8 +441,9 @@ export function setArrowEndpoint(
   const currentSide = end === 'from' ? arrow.fromSide : arrow.toSide;
   if (current === markingId && currentSide === side) return p;
   requireUnlocked(canEditArrow(p, arrowId));
-  if (markingId === (end === 'from' ? arrow.to : arrow.from))
-    fail('arrow-self', markingId);
+  const other = end === 'from' ? arrow.to : arrow.from;
+  if (markingId === other) fail('arrow-self', markingId);
+  checkSamePage(p, markingId, other);
   const moved: Arrow =
     end === 'from'
       ? { ...arrow, from: markingId, fromSide: side }

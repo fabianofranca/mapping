@@ -7,6 +7,7 @@ import {
   sameRect,
 } from './geometry';
 import { enclosingAmong } from './hierarchySettle';
+import { containersOfPage, firstPageId } from './spaces';
 import { projectIndex } from './projectIndex';
 import type { Marking, Project, Rect } from './types';
 
@@ -37,10 +38,16 @@ export interface PlacementLevel {
 /**
  * Ids of the non-floating markings of `containerId` that contain `rect` and are not equal to it.
  */
-function containingIds(p: Project, containerId: string | null, rect: Rect): Set<string> {
+function containingIds(
+  p: Project,
+  containerId: string | null,
+  rect: Rect,
+  pageId: string | null,
+): Set<string> {
   const ids = new Set<string>();
   for (const m of p.markings) {
     if (m.floating || m.containerId !== containerId) continue;
+    if (containerId === null && m.pageId !== pageId) continue;
     if (containsRect(m.rect, rect) && !sameRect(m.rect, rect)) ids.add(m.id);
   }
   return ids;
@@ -51,15 +58,20 @@ function containingIds(p: Project, containerId: string | null, rect: Rect): Set<
  * `rect` and **is not equal to it** (an equal rectangle is a sibling, not a parent). In a chain
  * of equal rectangles, the innermost (the one the settle picks, `enclosingAmong`).
  */
-function levelParent(p: Project, containerId: string | null, rect: Rect): Marking | null {
-  const candidates = containingIds(p, containerId, rect);
+function levelParent(
+  p: Project,
+  containerId: string | null,
+  rect: Rect,
+  pageId: string | null,
+): Marking | null {
+  const candidates = containingIds(p, containerId, rect, pageId);
   // A single candidate is the parent without ordering the space (rank only breaks ties among
   // several).
   const [only] = candidates;
   const id =
     candidates.size === 1 && only !== undefined
       ? only
-      : enclosingAmong(p, containerId, candidates, null);
+      : enclosingAmong(p, containerId, candidates, null, pageId);
   return id === null ? null : (projectIndex(p).markings.get(id) ?? null);
 }
 
@@ -85,6 +97,7 @@ function levelArea(p: Project, containerId: string | null, parent: Marking | nul
 function levelObstacles(
   p: Project,
   containerId: string | null,
+  pageId: string | null,
   area: Rect | null,
   excluded: ReadonlySet<string>,
 ): Rect[] {
@@ -92,10 +105,11 @@ function levelObstacles(
   const obstacles: Rect[] = [];
   for (const m of p.markings) {
     if (m.floating || m.containerId !== containerId || excluded.has(m.id)) continue;
+    if (containerId === null && m.pageId !== pageId) continue;
     if (crosses(m.rect)) obstacles.push(m.rect);
   }
   if (containerId === null) {
-    for (const c of p.containers) {
+    for (const c of containersOfPage(p, pageId ?? undefined)) {
       const canvas = imageCanvasRect(c, c.placement);
       if (crosses(canvas)) obstacles.push(canvas);
     }
@@ -104,7 +118,8 @@ function levelObstacles(
 }
 
 /**
- * The placement level of `rect` (R0) in space `containerId` (`null` = canvas). With `target`
+ * The placement level of `rect` (R0) in space `containerId` (`null` = the canvas of `pageId`, by
+ * default the first page). With `target`
  * (component with a slot), the level is the target's and the area is the slot's box.
  */
 export function placementLevel(
@@ -112,11 +127,18 @@ export function placementLevel(
   containerId: string | null,
   rect: Rect,
   target?: { readonly parent: Marking; readonly area: Rect },
+  pageId?: string,
 ): PlacementLevel {
-  const parent = target?.parent ?? levelParent(p, containerId, rect);
+  // The canvas is one space per page: `pageId` (default: the first page) picks it.
+  const page = containerId === null ? (pageId ?? firstPageId(p)) : null;
+  const parent = target?.parent ?? levelParent(p, containerId, rect, page);
   const area = target?.area ?? levelArea(p, containerId, parent);
   const excluded = parent === null ? new Set<string>() : lineage(p, parent);
-  return { parent, area, obstacles: levelObstacles(p, containerId, area, excluded) };
+  return {
+    parent,
+    area,
+    obstacles: levelObstacles(p, containerId, page, area, excluded),
+  };
 }
 
 /** Is the rectangle free at the level (fits in the area and does not overlap an obstacle)? */

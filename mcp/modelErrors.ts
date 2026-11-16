@@ -84,6 +84,13 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
     'a perspective with that name already exists (case-insensitive)',
   'not-root':
     'the item is not a root: only a container without a parent, a canvas marking without a parent or a floating one can join a perspective',
+  'page-name-empty': 'the page name is empty',
+  'page-name-taken': 'a page with that name already exists (case-insensitive)',
+  'page-last': 'the project must keep at least one page',
+  'arrow-cross-page':
+    'an arrow joins two markings of the same page: the ends are on different pages',
+  'page-arrow-crossing':
+    'an arrow joins the roots that move to another page and others that stay: the arrows are in `data.arrows`',
 };
 
 /** Hint about the next step for the model errors that have one. */

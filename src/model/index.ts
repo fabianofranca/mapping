@@ -8,6 +8,8 @@ export * from './hierarchy';
 export * from './hierarchySettle';
 export * from './projectIndex';
 export * from './perspective';
+export * from './spaces';
+export * from './pages';
 export * from './perspectiveReconcile';
 export * from './perspectivePlace';
 export * from './perspectiveOps';

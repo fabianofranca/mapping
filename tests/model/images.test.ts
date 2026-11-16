@@ -138,6 +138,7 @@ describe('images: replace', () => {
       id: 'I1',
       name: null,
       parentId: null,
+      pageId: 'PG1',
       markingColor: null,
       locked: false,
       source: null,

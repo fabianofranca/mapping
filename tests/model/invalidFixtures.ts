@@ -46,6 +46,7 @@ const extraMarking = (p: Project, marking: Partial<Marking>): Project => ({
       id: 'MX',
       containerId: 'I1',
       parentId: null,
+      pageId: null,
       name: 'Extra',
       rect: { x: 100, y: 1500, width: 200, height: 100 },
       needsReview: false,
