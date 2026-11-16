@@ -129,7 +129,9 @@ The full round (R0 to R29) runs in **5 simultaneous sessions**, one per block, w
 | 2     | R0, section 6, R2 and R25                                                               | 143   |
 | 3     | R0, section 6, R12, R18, R19, R27 and R29                                               | 147   |
 | 4     | R0, section 6, R4, R6.8a to R6.11, R9, R10, R13, R16, R22, R24, R28 and the visual pass | 169   |
-| 5     | R0, section 6, R11, R17, R20, R21 and R23                                               | 141   |
+| 5     | R0, section 6, R11, R17, R20, R21 and R23                                               | 142   |
+
+**Sixth session (stage #883, PG6):** R30 (Pages, with its own visual pass) is not in the table because no block had room for it; the coordinator runs it in a sixth tester session of the round, with `node scripts/testing/round-guide.mjs R0 R30 --out …/apoio/guia.md` (the report is "Full round — block 6", with the findings `6.1`, `6.2`…). The rule for the next rounds is the owner's (`bug` #2024).
 
 There are 5 blocks by decision of the owner (2026-11-09). The visual pass stays in block 4 (decision 6 of stage #841). The limit of each block's generated guide (`MAX_BLOCK_GUIDE_CHARS`, in `tests/tooling/roundBlocks.test.ts`), the earlier sizes, the dependencies per block and the baselines: `cloud.mjs secao consulta.historico`.
 
