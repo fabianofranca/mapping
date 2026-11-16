@@ -90,7 +90,12 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'arrow-cross-page':
     'an arrow joins two markings of the same page: the ends are on different pages',
   'page-arrow-crossing':
-    'an arrow joins the roots that move to another page and others that stay: the arrows are in `data.arrows`',
+    'an arrow joins the roots that move to another page and others that stay: the arrows are in `arrows`',
+  'page-required':
+    'the project has more than one page: say in which one the new root goes',
+  'page-mixed': 'the items are on different pages: a wrap takes items of a single page',
+  'page-not-empty':
+    'the page has content: say where it goes (`move_to`) or discard it (`discard: true`)',
 };
 
 /** Hint about the next step for the model errors that have one. */
@@ -109,6 +114,14 @@ export const MODEL_ERROR_HINTS: Readonly<Partial<Record<ModelErrorCode, string>>
     'the anchor and the marking must be in the same space (the same container, or both on the canvas): move one of them first, with `update_marking` and `container`',
   'anchor-cycle':
     'the anchor already depends on this marking (directly or indirectly): anchor to another marking or remove the anchor on the other side with `anchor: null`',
+  'page-required':
+    'pass `page` (id or name; see `pages` in get_project), or a parameter that already says the page: `container`, `near`, `beside` or `inside`',
+  'page-mixed':
+    'wrap the items of one page at a time (see `page` in list_markings), or move them to the same page first with `move_to_page`',
+  'page-not-empty':
+    'pass `move_to` (the page that receives the content) or `discard: true` (delete the content with the page); `contents` says what is on the page',
+  'page-arrow-crossing':
+    'an arrow cannot join two pages: move the other end with the group (add its root to `roots`), or delete the arrow, then call `move_to_page` again',
   'container-density':
     'from 0.5 to 8; 3 for a 1080 px capture of a 360 dp phone (image pixels per component unit); `null` goes back to 1',
   'image-overlap':

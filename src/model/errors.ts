@@ -79,7 +79,12 @@ export type ModelErrorCode =
   | 'page-name-taken'
   | 'page-last'
   | 'arrow-cross-page'
-  | 'page-arrow-crossing';
+  | 'page-arrow-crossing'
+  // Pages through the MCP (PG5): a root without a page in a project with several, items of different
+  // pages in one wrap, a page with content deleted without saying where the content goes
+  | 'page-required'
+  | 'page-mixed'
+  | 'page-not-empty';
 
 /**
  * Structured facts that some errors carry (a plain, serializable object). The model keeps
