@@ -165,7 +165,7 @@ test('perspectives: create, send, move inside it, arrival in Main, delete and un
   await expect(host).toHaveAttribute('data-arrows', '1');
 
   // New perspective… from the picker, starting empty.
-  await trigger(page, 'Main').click();
+  await trigger(page, 'Full').click();
   await noHorizontalScroll(page);
   await page.getByRole('button', { name: 'New perspective…' }).click();
   const dialog = page.getByRole('dialog', { name: 'New perspective' });
@@ -182,7 +182,7 @@ test('perspectives: create, send, move inside it, arrival in Main, delete and un
   expect(mapping.perspectives[0]?.items).toHaveLength(0);
 
   // Back to Main and sends Screen A through the right-click menu.
-  await openPerspective(page, 'Main');
+  await openPerspective(page, 'Full');
   await fitAll(page, host);
   await page.mouse.click(sA.x + sA.width * 0.9, sA.y + sA.height * 0.9, {
     button: 'right',
@@ -237,7 +237,7 @@ test('perspectives: create, send, move inside it, arrival in Main, delete and un
   const idD = mapping.arrivals[0]!.root;
   expect(mapping.containers.some((c) => c.id === idD)).toBe(true);
 
-  await openPerspective(page, 'Main');
+  await openPerspective(page, 'Full');
   await fitAll(page, host);
   mapping = await readMapping(page);
   const principalScreens = await toScreen(
@@ -262,7 +262,7 @@ test('perspectives: create, send, move inside it, arrival in Main, delete and un
   expect((await readMapping(page)).arrivals).toHaveLength(0);
 
   // Manage → Delete → confirm; Ctrl+Z undoes.
-  await trigger(page, 'Main').click();
+  await trigger(page, 'Full').click();
   await page.getByRole('button', { name: 'Manage perspectives…' }).click();
   const manage = page.getByRole('dialog', { name: 'Manage perspectives' });
   await expect(manage).toBeVisible();

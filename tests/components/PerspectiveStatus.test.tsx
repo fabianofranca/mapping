@@ -51,7 +51,7 @@ const addArrivals = (h: Awaited<ReturnType<typeof setup>>['harness'], count: num
 describe('status bar: perspective', () => {
   it('shows Main and, when another is opened, its name', async () => {
     const { session, id } = await setup();
-    expect(screen.getByText('Perspective Main')).toBeTruthy();
+    expect(screen.getByText('Perspective Full')).toBeTruthy();
     act(() => void session.perspective.open(id));
     expect(await screen.findByText('Perspective Flow A')).toBeTruthy();
   });
@@ -98,7 +98,7 @@ describe('forced switch notices', () => {
     act(() => {
       session.perspective.notice.value = { kind: 'review' };
     });
-    await waitFor(() => expect(harness.ui.toast.value).toBe('The review shows Main.'));
+    await waitFor(() => expect(harness.ui.toast.value).toBe('The review shows Full.'));
     expect(session.perspective.notice.value).toBeNull();
   });
 });
