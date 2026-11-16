@@ -1,4 +1,10 @@
-import { pageNameKey, projectIndex, type Page, type Project } from '../src/model';
+import {
+  pageContent,
+  pageNameKey,
+  projectIndex,
+  type Page,
+  type Project,
+} from '../src/model';
 import { ToolError } from './errors';
 
 // Pages (v21, stage #883): how the MCP names and finds them. A page is told by `{ id, name }`; the agent
@@ -34,4 +40,24 @@ export function pageOfItemView(p: Project, itemId: string): Json | null {
 /** Does the project have more than one page (so that a root needs to say its page)? */
 export function hasSeveralPages(p: Project): boolean {
   return p.pages.length > 1;
+}
+
+/** `pages` of `get_project`: each page with what it holds (the counts of `pageContent`). */
+export function pageSummaries(p: Project): Json[] {
+  return p.pages.map((page) => {
+    const content = pageContent(p, page.id);
+    return {
+      ...pageView(page),
+      roots: content.roots,
+      containers: content.containers,
+      markings: content.markings,
+      arrows: content.arrows,
+    };
+  });
+}
+
+/** Optional `{ page }` entry of a result: the page of the item, or nothing when it has none. */
+export function pageEntry(p: Project, itemId: string): Json {
+  const page = pageOfItemView(p, itemId);
+  return page === null ? {} : { page };
 }

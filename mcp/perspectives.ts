@@ -6,6 +6,7 @@ import {
   type Project,
 } from '../src/model';
 import { ToolError } from './errors';
+import { findPage, pageEntry, pageView } from './pages';
 import type { Refs } from './items';
 
 // Perspectives (v16, stage #659): the MCP only reads. The Main one is the project itself and does not appear in
@@ -74,30 +75,41 @@ export function findPerspective(p: Project, query: string): Perspective {
   });
 }
 
-/** `get_perspective`: the roots with their position and the hidden layers. */
-export function perspectiveDetail(refs: Refs, perspective: Perspective): Json {
+/** A root of a perspective: reference, kind, name, position and page. */
+function rootView(refs: Refs, item: Perspective['items'][number]): Json {
+  const index = projectIndex(refs.project);
+  const container = index.containers.get(item.root);
+  const marking = index.markings.get(item.root);
+  return {
+    ref: rootRef(refs, item.root),
+    kind: container ? 'container' : 'marking',
+    name: container?.name ?? marking?.name ?? null,
+    x: item.x,
+    y: item.y,
+    ...pageEntry(refs.project, item.root),
+  };
+}
+
+/** `get_perspective`: the roots with their position and page (those of `pageQuery` only, when given) and the hidden layers. */
+export function perspectiveDetail(
+  refs: Refs,
+  perspective: Perspective,
+  pageQuery?: string,
+): Json {
   const p = refs.project;
   const index = projectIndex(p);
-  const missing: string[] = [];
-  const roots: Json[] = [];
-  for (const item of perspective.items) {
-    if (index.rootOf.get(item.root) !== item.root) {
-      missing.push(item.root);
-      continue;
-    }
-    const container = index.containers.get(item.root);
-    const marking = index.markings.get(item.root);
-    roots.push({
-      ref: rootRef(refs, item.root),
-      kind: container ? 'container' : 'marking',
-      name: container?.name ?? marking?.name ?? null,
-      x: item.x,
-      y: item.y,
-    });
-  }
+  const page = pageQuery === undefined ? null : findPage(p, pageQuery);
+  const missing = perspective.items
+    .filter((item) => index.rootOf.get(item.root) !== item.root)
+    .map((item) => item.root);
+  const roots = perspective.items
+    .filter((item) => !missing.includes(item.root))
+    .filter((item) => page === null || index.pageOf.get(item.root) === page.id)
+    .map((item) => rootView(refs, item));
   return {
     id: perspective.id,
     name: perspective.name,
+    ...(page === null ? {} : { page: pageView(page) }),
     hiddenLayers: hiddenLayersView(p, perspective),
     roots,
     ...(missing.length > 0 ? { missing } : {}),

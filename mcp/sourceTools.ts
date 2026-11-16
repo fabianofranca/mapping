@@ -7,6 +7,7 @@ import {
 } from '../src/model';
 import { ToolError } from './errors';
 import { Refs } from './items';
+import { pageEntry } from './pages';
 import type { Roots } from './paths';
 import {
   discoverProjects,
@@ -80,6 +81,7 @@ export async function findBySourceResult(
           name: match.image.name,
           file: match.image.file,
           source: match.image.source,
+          ...pageEntry(loaded.project, match.image.id),
         });
       } else {
         matches.push({
@@ -93,6 +95,7 @@ export async function findBySourceResult(
               : refs.ref('i', match.marking.containerId),
           rect: match.marking.rect,
           source: match.marking.source,
+          ...pageEntry(loaded.project, match.marking.id),
         });
       }
     }
