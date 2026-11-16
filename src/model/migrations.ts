@@ -351,10 +351,11 @@ export const migrateFrom20To21: Migration = (data, context = NO_CONTEXT) => {
   const existing = Array.isArray(data.pages) ? (data.pages as unknown[]) : [];
   const first = existing.find(isRecord);
   const page = { id: crypto.randomUUID(), name: context.pageName ?? DEFAULT_PAGE_NAME };
-  const pageId = first !== undefined && typeof first.id === 'string' ? first.id : page.id;
+  const keep = first !== undefined && typeof first.id === 'string';
+  const pageId = keep ? first.id : page.id;
   return {
     ...data,
-    pages: existing.length > 0 ? existing : [page],
+    pages: keep ? existing : [page],
     containers: mapItems(data.containers, (c) => ({ pageId, ...c })),
     markings: mapItems(data.markings, (m) => ({
       pageId: m.containerId === null ? pageId : null,

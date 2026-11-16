@@ -194,8 +194,13 @@ export function sendRoots(
     if (roots.get(id) !== id) fail('not-root', id);
     if (have.has(id)) continue;
     // A root that the source does not have is measured in the Main perspective.
-    const from = source && sourceRoots?.has(id) ? perspectiveView(p, source) : p;
-    const place = placeRootIn(perspectiveView(p, current), from, id);
+    // Each page is a canvas of its own: the spot is looked for among what is on the root's page.
+    const pageId = projectIndex(p).pageOf.get(id);
+    const from =
+      source && sourceRoots?.has(id)
+        ? perspectiveView(p, source, pageId)
+        : perspectiveView(p, null, pageId);
+    const place = placeRootIn(perspectiveView(p, current, pageId), from, id);
     current = {
       ...current,
       items: [...current.items, { root: id, x: place.x, y: place.y }],

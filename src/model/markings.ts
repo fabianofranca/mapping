@@ -459,8 +459,15 @@ function cascadeRemove(p: Project, markingId: string): Project {
  * same `containerId`, and `null` with `null` (the canvas ones, floating included).
  */
 function siblingsOf(p: Project, marking: Marking): readonly Marking[] {
-  const group = projectIndex(p).children.get(marking.parentId) ?? [];
-  return group.filter((m) => m.containerId === marking.containerId);
+  const { children, pageOf } = projectIndex(p);
+  const group = children.get(marking.parentId) ?? [];
+  // On the canvas each page is a space of its own: only the markings of the same page are siblings.
+  const page = pageOf.get(marking.id);
+  return group.filter(
+    (m) =>
+      m.containerId === marking.containerId &&
+      (marking.containerId !== null || pageOf.get(m.id) === page),
+  );
 }
 
 /**

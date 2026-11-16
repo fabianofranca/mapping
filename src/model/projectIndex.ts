@@ -349,6 +349,7 @@ export function idInUse(p: Project, id: string): boolean {
   return (
     p.markings.some((m) => m.id === id) ||
     p.arrows.some((a) => a.id === id) ||
-    p.containers.some((c) => c.id === id)
+    p.containers.some((c) => c.id === id) ||
+    p.pages.some((g) => g.id === id)
   );
 }

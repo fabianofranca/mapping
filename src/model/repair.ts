@@ -259,7 +259,14 @@ function repairRound(
       const rect = image
         ? fromCanvasRect(IDENTITY_PLACEMENT, toCanvasRect(image.placement, m.rect), null)
         : m.rect;
-      next = { ...next, containerId: null, parentId: null, rect };
+      // It lands on the canvas of its container's page.
+      next = {
+        ...next,
+        containerId: null,
+        parentId: null,
+        pageId: image?.pageId ?? null,
+        rect,
+      };
       record(out, 'made-root', 'floating-in-container', 'marking', m);
     } else if (image && has('marking', m.id, 'rect-out-of-image')) {
       const rect = clipToImage(m.rect, image);

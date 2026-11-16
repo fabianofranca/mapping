@@ -12,7 +12,9 @@ import {
   moveRootsToPage,
   pageView,
   perspectiveView,
+  repairProject,
   settleHierarchy,
+  siblingPosition,
   setMarkingSpace,
   validateProject,
   type InvariantCode,
@@ -251,5 +253,56 @@ describe('the helpers throw ModelError', () => {
         pageId: 'zzz',
       }),
     ).toThrow(ModelError);
+  });
+});
+
+describe('review fixes (PG1)', () => {
+  it('siblings on the canvas are the markings of the same page only', () => {
+    let p = overlappingPages();
+    p = createMarking(p, {
+      id: 'A',
+      containerId: null,
+      rect: rect(5000, 5000, 50, 50),
+      pageId: 'PG1',
+    });
+    p = createMarking(p, {
+      id: 'B',
+      containerId: null,
+      rect: rect(5200, 5000, 50, 50),
+      pageId: 'PG2',
+    });
+    p = createMarking(p, {
+      id: 'C',
+      containerId: null,
+      rect: rect(5400, 5000, 50, 50),
+      pageId: 'PG1',
+    });
+    expect(siblingPosition(p, 'A')).toEqual({ index: 0, count: 2 });
+    expect(siblingPosition(p, 'C')).toEqual({ index: 1, count: 2 });
+    expect(siblingPosition(p, 'B')).toEqual({ index: 0, count: 1 });
+  });
+
+  it('a marking cannot take the id of a page', () => {
+    const p = overlappingPages();
+    expect(() =>
+      createMarking(p, { id: 'PG2', containerId: null, rect: rect(0, 5000, 10, 10) }),
+    ).toThrow(/duplicate-id/);
+    expect(() =>
+      addContainer(p, { id: 'PG1', file: 'z.png', width: 10, height: 10 }),
+    ).toThrow(/duplicate-id/);
+  });
+
+  it('repairing a floating marking inside a container keeps the page of the container', () => {
+    let p = overlappingPages();
+    p = createMarking(p, { id: 'F', containerId: 'IB', rect: rect(10, 10, 50, 50) });
+    p = {
+      ...p,
+      markings: p.markings.map((m) => (m.id === 'F' ? { ...m, floating: true } : m)),
+    };
+    const issues = validateProject(p);
+    expect(issues.map((i) => i.code)).toContain('floating-in-container');
+    const result = repairProject(p, issues, () => 'N', 'Page');
+    expect(marking(result.project, 'F').pageId).toBe('PG2');
+    expect(validateProject(result.project)).toEqual([]);
   });
 });
