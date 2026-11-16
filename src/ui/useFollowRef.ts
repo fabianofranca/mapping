@@ -16,14 +16,23 @@ export function useFollowRef(
       onGoToAnnotation(annotation);
       return;
     }
-    const active = document.activeElement;
     followReference(
       editor.ui,
       project,
       editor.session.page.openId(),
       annotation,
       onGoToAnnotation,
-      active instanceof HTMLElement ? active : null,
+      focusedOpener(),
     );
   };
+}
+
+/**
+ * The element that returns focus when the preview closes: the focused one, never the document
+ * (in Safari a mouse click does not focus the button, so the body would be the "opener").
+ */
+function focusedOpener(): HTMLElement | null {
+  const active = document.activeElement;
+  if (!(active instanceof HTMLElement)) return null;
+  return active === document.body || active === document.documentElement ? null : active;
 }

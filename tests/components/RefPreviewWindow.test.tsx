@@ -1,11 +1,20 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createPage, moveRootsToPage } from '../../src/model';
+import {
+  addContainer,
+  addTypedAnnotation,
+  createMarking,
+  createPage,
+  moveRootsToPage,
+  setFieldValue,
+  type Project,
+} from '../../src/model';
 import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
 import { RefPreviewWindow } from '../../src/ui/RefPreviewWindow';
 import { world } from '../model/refAnnotationFixtures';
+import { layerOf } from '../model/specFixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
 // The floating, read-only preview of a reference to another page (stage #883, PG3, decision 13).
@@ -175,5 +184,79 @@ describe('RefPreviewWindow', () => {
     await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(h.ui.refPreview.value).toBeNull();
     expect(dialog).toThrow();
+  });
+});
+
+/**
+ * AM (marking M1) lives on PG2; AL9 (marking M9 in container I9) points to AM and lives on `PG3`
+ * (a third page) or stays on the open page PG1.
+ */
+function linkedSetup(alPage: 'PG3' | 'PG1') {
+  let p: Project = world();
+  p = createPage(p, { id: 'PG2', name: 'Second' });
+  p = moveRootsToPage(p, ['I1'], 'PG2');
+  p = addContainer(p, { id: 'I9', file: 'images/z.png', width: 500, height: 500 });
+  p = createMarking(p, {
+    id: 'M9',
+    containerId: 'I9',
+    rect: { x: 10, y: 10, width: 50, height: 50 },
+  });
+  if (alPage === 'PG3') {
+    p = createPage(p, { id: 'PG3', name: 'Third' });
+    p = moveRootsToPage(p, ['I9'], 'PG3');
+  }
+  p = addTypedAnnotation(p, {
+    id: 'AL9',
+    markingId: 'M9',
+    layerId: layerOf(p, 'rc', 'telas'),
+    type: { specId: 'rc', typeId: 'lista' },
+  });
+  p = setFieldValue(p, 'AL9', 'item', { annotationId: 'AM' });
+  const h = createHarness(p);
+  h.context.canvas.current = { centerSelection: vi.fn() } as never;
+  const opener = document.createElement('button');
+  document.body.append(opener);
+  renderLive(h, () => <RefPreviewWindow />);
+  h.ui.refPreview.value = { annotationId: 'AM', itemId: 'M1', opener };
+  return { h, opener, user: userEvent.setup() };
+}
+
+describe('RefPreviewWindow links inside the preview', () => {
+  it('a "Referenced by" link to a third page replaces the real preview target', async () => {
+    const { h, opener, user } = linkedSetup('PG3');
+    const win = await screen.findByRole('dialog');
+    await user.click(win.querySelector('.referenced-item')!);
+    expect(h.ui.refPreview.value?.annotationId).toBe('AL9');
+    expect(h.ui.refPreview.value?.itemId).toBe('M9');
+    expect(h.ui.refPreview.value?.opener).toBe(opener);
+    expect(h.context.session.page.openId()).toBe('PG1');
+    expect(h.ui.selection.value).toBeNull();
+  });
+
+  it('a link to the open page navigates (real selection) and closes the preview', async () => {
+    const { h, user } = linkedSetup('PG1');
+    const win = await screen.findByRole('dialog');
+    await user.click(win.querySelector('.referenced-item')!);
+    expect(h.ui.refPreview.value).toBeNull();
+    expect(h.ui.selection.value).toEqual({ kind: 'marking', id: 'M9' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('merely opening leaves the real selection and focus request untouched', async () => {
+    const { h } = linkedSetup('PG3');
+    await screen.findByRole('dialog');
+    expect(h.ui.selection.value).toBeNull();
+    expect(h.ui.focusAnnotation.value).toBeNull();
+  });
+
+  it('Close with no opener focuses the canvas area, never the body', async () => {
+    const { h, user } = setup();
+    const area = document.createElement('main');
+    area.setAttribute('data-canvas-area', '');
+    area.tabIndex = -1;
+    document.body.append(area);
+    open(h, null);
+    await user.click(await screen.findByRole('button', { name: 'Close' }));
+    expect(document.activeElement).toBe(area);
   });
 });

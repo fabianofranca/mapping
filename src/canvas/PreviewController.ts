@@ -132,6 +132,10 @@ export class PreviewController {
         this.requestRender();
       }),
       effect(() => {
+        void locale.value;
+        this.requestRender();
+      }),
+      effect(() => {
         void showComponentsOnPhotos.value;
         this.derived = null;
         this.requestRender();

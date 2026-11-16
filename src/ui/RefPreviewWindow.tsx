@@ -1,8 +1,10 @@
+import { effect } from '@preact/signals';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'preact/hooks';
 import { t } from '../i18n';
 import { PreviewHost } from '../canvas/PreviewHost';
 import { projectIndex, refPreviewProject, type Annotation, type Project } from '../model';
 import {
+  type AnnotationLocation,
   closeRefPreview,
   createEditorUi,
   expandSections,
@@ -93,13 +95,24 @@ function PreviewWindow({ target, project, annotation, preview, pageName }: Windo
   const editor = useEditor();
   const heading = useRef<HTMLHeadingElement>(null);
   const restore = useRef(true);
+  const section = useRef<HTMLElement>(null);
   // Details of the preview live on their own UI state: the sections it opens, the selection and the
-  // focus it asks for never reach the main window's.
+  // focus it asks for never reach the main window's. Only `refPreview` is the real signal, so a
+  // reference followed inside the preview replaces the preview's target.
   const sandbox = useMemo(() => {
-    const ui = createEditorUi();
-    ui.refPreview.value = null;
+    const ui = { ...createEditorUi(), refPreview: editor.ui.refPreview };
     return { ...editor, ui } as EditorContextValue;
   }, [editor]);
+  // A target set from inside the window keeps the original opener (the clicked button goes away).
+  useEffect(
+    () =>
+      effect(() => {
+        const next = editor.ui.refPreview.value;
+        if (next && next !== target && section.current?.contains(next.opener))
+          editor.ui.refPreview.value = { ...next, opener: target.opener };
+      }),
+    [editor, target],
+  );
   const path = itemPath(project, target.itemId);
 
   useLayoutEffect(() => {
@@ -118,6 +131,12 @@ function PreviewWindow({ target, project, annotation, preview, pageName }: Windo
     goToAnnotationOnAnyPage(editor, annotation);
     focusCanvasArea();
   };
+  // A reference to an annotation on the open page: leaves the preview and goes there for real.
+  const goToAnnotation = (location: AnnotationLocation) => {
+    restore.current = false;
+    close();
+    goToAnnotationOnAnyPage(editor, location);
+  };
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key !== 'Escape') return;
     if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey || e.defaultPrevented) return;
@@ -129,6 +148,7 @@ function PreviewWindow({ target, project, annotation, preview, pageName }: Windo
   const titleId = 'ref-preview-title';
   return (
     <section
+      ref={section}
       class="ref-preview"
       role="dialog"
       aria-modal="false"
@@ -158,7 +178,12 @@ function PreviewWindow({ target, project, annotation, preview, pageName }: Windo
           <PreviewHost project={preview} itemId={target.itemId} />
         </div>
         <EditorContext.Provider value={sandbox}>
-          <PreviewDetails target={target} annotation={annotation} project={project} />
+          <PreviewDetails
+            target={target}
+            annotation={annotation}
+            project={project}
+            onGoToAnnotation={goToAnnotation}
+          />
         </EditorContext.Provider>
       </div>
     </section>
@@ -170,10 +195,12 @@ function PreviewDetails({
   target,
   annotation,
   project,
+  onGoToAnnotation,
 }: {
   readonly target: RefPreviewTarget;
   readonly annotation: Annotation;
   readonly project: Project;
+  readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }) {
   const { ui } = useEditor();
   const index = projectIndex(project);
@@ -200,7 +227,11 @@ function PreviewDetails({
     >
       <HideDisabledContext.Provider value={true}>
         <div class="review-panel">
-          <ReadOnlyPanel project={project} resolved={resolved} />
+          <ReadOnlyPanel
+            project={project}
+            resolved={resolved}
+            onGoToAnnotation={onGoToAnnotation}
+          />
         </div>
       </HideDisabledContext.Provider>
     </div>
@@ -210,9 +241,11 @@ function PreviewDetails({
 function ReadOnlyPanel({
   project,
   resolved,
+  onGoToAnnotation,
 }: {
   readonly project: Project;
   readonly resolved: ReturnType<typeof resolveSelection>;
+  readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }) {
   const { display } = useEditor();
   if (resolved?.kind === 'arrow')
@@ -222,7 +255,7 @@ function ReadOnlyPanel({
         arrow={resolved.arrow}
         readOnly
         onDelete={noop}
-        onGoToAnnotation={noop}
+        onGoToAnnotation={onGoToAnnotation}
       />
     );
   if (resolved?.kind === 'marking')
@@ -233,7 +266,7 @@ function ReadOnlyPanel({
         image={resolved.image}
         readOnly
         onDelete={noop}
-        onGoToAnnotation={noop}
+        onGoToAnnotation={onGoToAnnotation}
       />
     );
   const image = resolved?.kind === 'image' ? resolved.image : null;

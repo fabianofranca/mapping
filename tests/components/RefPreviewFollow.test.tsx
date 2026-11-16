@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/preact';
+import { cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -228,5 +228,33 @@ describe('backlinks', () => {
     );
     await userEvent.setup().click(screen.getByRole('button'));
     expect(onGo).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('opener', () => {
+  it('is null when the document body holds focus (Safari does not focus a clicked button)', async () => {
+    const h = createHarness(linked(true));
+    renderLive(h, (p) => (
+      <RefCell
+        project={p}
+        annotation={annotationOf(p, 'AL')}
+        tableKey="alvos"
+        rowId="L1"
+        column={refColumn(p)}
+        value={{ annotationId: 'AM', key: 'campos', rowId: 'R1' }}
+        label="Alvo"
+        readOnly={false}
+        onSet={() => ({ ok: true }) as never}
+        onGoToAnnotation={vi.fn()}
+      />
+    ));
+    const button = screen.getAllByRole('button', { name: /Alvo/ })[0]!;
+    // fireEvent does not move focus: the active element stays the body.
+    (document.activeElement as HTMLElement | null)?.blur();
+    expect(document.activeElement).toBe(document.body);
+    await userEvent.setup().keyboard('{Control>}');
+    fireEvent.click(button, { ctrlKey: true });
+    expect(h.ui.refPreview.value?.annotationId).toBe('AM');
+    expect(h.ui.refPreview.value?.opener).toBeNull();
   });
 });

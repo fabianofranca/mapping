@@ -61,4 +61,13 @@ describe('refPreviewProject', () => {
   it('an unknown id gives null', () => {
     expect(refPreviewProject(arrowProject(), 'nope')).toBeNull();
   });
+
+  it('an arrow between two roots keeps itself and the root groups of both ends', () => {
+    const source = withArrow(arrowProject(), 'r2', 'c1', 'H');
+    const p = refPreviewProject(source, 'r2')!;
+    expect(ids(p.arrows)).toContain('r2');
+    expect(p.markings.some((m) => m.id === 'c1')).toBe(true);
+    expect(p.markings.some((m) => m.id === 'H')).toBe(true);
+    expect(p.markings.some((m) => m.id === 'N')).toBe(false);
+  });
 });

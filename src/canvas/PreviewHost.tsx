@@ -1,6 +1,8 @@
+import { effect } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
 import { createDrawingCache, type Project } from '../model';
 import { t } from '../i18n';
+import { locale } from '../store/settings';
 import { memoizedTextMeasurer, textMeasurer } from '../store/textMeasure';
 import { useEditor } from '../ui/EditorContext';
 import { PreviewController } from './PreviewController';
@@ -45,7 +47,21 @@ export function PreviewHost(props: {
       drawings: drawingsOf(latest.current.project),
     });
     controller.current = preview;
+    // The drawings depend on the catalog, the fonts and the UI locale (`annotation.untitled`): the
+    // host rebuilds them, with its own cache, when any of them changes after mounting.
+    let first = true;
+    const stop = effect(() => {
+      void components.catalog.value;
+      void components.fontsEpoch.value;
+      void locale.value;
+      if (first) {
+        first = false;
+        return;
+      }
+      preview.update({ drawings: drawingsOf(latest.current.project) });
+    });
     return () => {
+      stop();
       controller.current = null;
       preview.destroy();
     };
