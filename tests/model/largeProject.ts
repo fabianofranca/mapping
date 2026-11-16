@@ -29,6 +29,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
     name: 'Large',
     now: '2026-09-30T12:00:00.000Z',
     firstLayer: { id: 'L1', name: 'Bodywork', color: '#E53935' },
+    firstPage: { id: 'PG1', name: 'Page 1' },
   });
   const cols = 5;
   const scale = 1000 / Math.max(imageWidth, imageHeight);

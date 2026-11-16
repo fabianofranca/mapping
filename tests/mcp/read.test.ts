@@ -154,7 +154,7 @@ describe('list_projects and discovery', () => {
     expect(signup).toMatchObject({
       name: 'cadastro',
       projectName: 'Teste',
-      schemaVersion: 20,
+      schemaVersion: 21,
       revision: 0,
       counts: { containers: 1, markings: 6, annotations: 11, layers: 7 },
       specializations: [
@@ -245,7 +245,7 @@ describe('get_project', () => {
       }),
     ]);
     const legacy = ok(await mcp.call('get_project', { project: 'legado' }));
-    expect(legacy).toMatchObject({ schemaVersion: 20, revision: 0, migratedFrom: 5 });
+    expect(legacy).toMatchObject({ schemaVersion: 21, revision: 0, migratedFrom: 5 });
   });
 
   it('reading never rewrites mapping.json (not even the old-schema one)', () => {
@@ -854,7 +854,7 @@ describe('create_project', () => {
       name: 'shop',
       path: 'fresh/shop',
       projectName: 'Shop',
-      schemaVersion: 20,
+      schemaVersion: 21,
       revision: 0,
       // "Layer 1" and the Notas layer of the bundled library (applied by default).
       counts: { containers: 0, markings: 0, annotations: 0, layers: 2 },
