@@ -1,7 +1,9 @@
 import { createContext, type ComponentChildren } from 'preact';
+import { signal, type Signal } from '@preact/signals';
 import { useContext, useEffect, useMemo } from 'preact/hooks';
 import type { OpenProject } from '../app/controller';
 import type { CanvasController } from '../canvas/CanvasController';
+import type { PageArrowCrossing } from '../model';
 import { createCanvasViewState, type CanvasViewState } from '../canvas/viewState';
 import { createEditorDerived, type EditorDerived } from '../store/derived';
 import type { DisplayImages } from '../store/displayImages';
@@ -32,6 +34,11 @@ export interface EditorContextValue {
   readonly canvas: { current: CanvasController | null };
   /** Zoom, cursor and image area, written by the canvas and read by the interface. */
   readonly view: CanvasViewState;
+  /**
+   * The arrows that refused a "Move to page" (`page-arrow-crossing`); the editor's dialogs show them
+   * (`MovePageRefusedDialog`) and clear the signal. Written by the right-click menu and the Details.
+   */
+  readonly moveRefusal: Signal<readonly PageArrowCrossing[] | null>;
   /** Stops storing the view mode choice (when closing the editor). */
   readonly stopViewShow: () => void;
 }
@@ -79,6 +86,7 @@ export function createEditorContextValue(
     review,
     canvas: { current: null },
     view: createCanvasViewState(),
+    moveRefusal: signal<readonly PageArrowCrossing[] | null>(null),
     // What the view mode shows is restored, from a copy of the project, in this browser.
     stopViewShow: attachViewShowPersistence(ui, session.storage.copyId),
   };
