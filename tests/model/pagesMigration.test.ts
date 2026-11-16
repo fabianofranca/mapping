@@ -50,7 +50,7 @@ describe('migration v20 → v21 (pages)', () => {
       v20Text(withCanvasMarking()),
       undefined,
       undefined,
-      'Página 1',
+      'Seite 1',
     );
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     const { project } = result;
@@ -58,7 +58,7 @@ describe('migration v20 → v21 (pages)', () => {
     expect(result.readOnly).toBe(false);
     expect(project.pages).toHaveLength(1);
     const page = project.pages[0];
-    expect(page?.name).toBe('Página 1');
+    expect(page?.name).toBe('Seite 1');
     expect(page?.id).toMatch(/^[0-9a-f-]{36}$/);
     for (const c of project.containers) expect(c.pageId).toBe(page?.id);
     for (const m of project.markings) {

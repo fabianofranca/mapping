@@ -29,6 +29,7 @@ export async function avisosZip(): Promise<Buffer> {
     name: 'Notices',
     now: NOW,
     firstLayer: { id: 'L1', name: 'Free', color: '#1e88e5' },
+    firstPage: { id: 'PG1', name: 'Page 1' },
   });
   p = applySpecialization(p, parsed.spec, { newId: () => 'LS1' });
   p = addBackgroundContainer(p, {

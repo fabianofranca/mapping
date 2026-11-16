@@ -1185,7 +1185,7 @@ An earlier app rejects the v21 file as a "newer version", instead of discarding 
 
 ### Migration v20 → v21
 
-`pages` is created with one page (new UUID; the app names it "Page 1" / "Página 1" by its language); every container gets its `pageId` and
+`pages` is created with one page (new UUID; the app names it "Page 1" in English and by its language otherwise); every container gets its `pageId` and
 every canvas marking gets `pageId` of that page; markings inside a container get `pageId: null`. A `pages`/`pageId` already in the file is kept. As in
 every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
 
