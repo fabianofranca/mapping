@@ -34,7 +34,7 @@ test('new project → image → marking → annotation → zip with the mapping.
   await page.getByLabel('Value').press('Enter');
 
   const { mapping, files } = await exportMapping(page);
-  expect(mapping.schemaVersion).toBe(20);
+  expect(mapping.schemaVersion).toBe(21);
   expect(files).toContain('images/tela.webp');
   expect(mapping.containers).toHaveLength(1);
   expect(mapping.containers[0]).toMatchObject({
