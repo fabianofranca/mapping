@@ -89,6 +89,13 @@ export const pagesEnUS = {
   // Comments on an empty canvas spot (the anchor has no page of its own yet)
   'page.comment.canvasFirstPageOnly':
     'Comments on empty canvas are only on the first page for now',
+  // Reference preview (PG3, decision 13)
+  'refPreview.label': 'Reference preview',
+  'refPreview.title': '{page}: {item}',
+  'refPreview.goToPage': 'Go to the page',
+  'refPreview.close': 'Close',
+  'refPreview.hint': 'Read-only preview of an item on another page.',
+  'refPreview.details': 'Details of the item (read-only)',
 } as const;
 
 // portuguese-guard:begin pt-BR part of the bilingual module (decision 2 of #741)
@@ -168,5 +175,11 @@ export const pagesPtBR: Record<keyof typeof pagesEnUS, string> = {
 
   'page.comment.canvasFirstPageOnly':
     'Comentários no canvas vazio só existem na primeira página por enquanto',
+  'refPreview.label': 'Prévia da referência',
+  'refPreview.title': '{page} › {item}',
+  'refPreview.goToPage': 'Ir para a página',
+  'refPreview.close': 'Fechar',
+  'refPreview.hint': 'Prévia somente leitura de um item de outra página.',
+  'refPreview.details': 'Detalhes do item (somente leitura)',
 };
 // portuguese-guard:end

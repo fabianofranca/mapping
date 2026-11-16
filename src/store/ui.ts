@@ -84,6 +84,11 @@ export interface EditorUi {
   readonly noticesVisibleOnly: Signal<boolean>;
   /** Annotation to scroll to (and focus) in the panel as soon as it appears. */
   readonly focusAnnotation: Signal<string | null>;
+  /**
+   * Read-only preview of a reference to an annotation on another page (stage #883, PG3, decision 13):
+   * the target, or `null` when no preview is open. It changes neither the page nor the selection.
+   */
+  readonly refPreview: Signal<RefPreviewTarget | null>;
   /** Collapsed nodes of the Tree window (`treeKey`); empty = all open. */
   readonly collapsedTree: Signal<ReadonlySet<string>>;
   /**
@@ -197,6 +202,7 @@ function buildEditorUi(): EditorUi {
     noticesInUseOnly: signal<boolean>(true),
     noticesVisibleOnly: signal<boolean>(false),
     focusAnnotation: signal<string | null>(null),
+    refPreview: signal<RefPreviewTarget | null>(null),
     collapsedTree: signal<ReadonlySet<string>>(new Set()),
     focusField: signal<string | null>(null),
     collapsed: signal<ReadonlySet<string>>(new Set()),
@@ -477,6 +483,49 @@ export function goToAnnotation(
   ui.selection.value = { kind: onArrow ? 'arrow' : 'marking', id: annotation.markingId };
   ui.focusField.value = field;
   ui.focusAnnotation.value = annotation.id;
+}
+
+/** What the reference preview shows (decision 13). */
+export interface RefPreviewTarget {
+  readonly annotationId: string;
+  /** The marking or the arrow that owns the annotation. */
+  readonly itemId: string;
+  /** Where focus returns when the preview closes. */
+  readonly opener: HTMLElement | null;
+}
+
+export function openRefPreview(ui: EditorUi, target: RefPreviewTarget): void {
+  ui.refPreview.value = target;
+}
+
+export function closeRefPreview(ui: EditorUi): void {
+  ui.refPreview.value = null;
+}
+
+/**
+ * Follows a reference or a backlink (decision 13): an annotation on another page than the open one
+ * opens the read-only preview (no page switch, no selection); one on the open page goes through
+ * `fallback`, as before.
+ */
+export function followReference(
+  ui: EditorUi,
+  project: Project,
+  openPageId: string,
+  annotation: AnnotationLocation,
+  fallback: (annotation: AnnotationLocation) => void,
+  opener: HTMLElement | null,
+): 'previewed' | 'navigated' {
+  const page = projectIndex(project).pageOf.get(annotation.markingId);
+  if (page === undefined || page === openPageId) {
+    fallback(annotation);
+    return 'navigated';
+  }
+  openRefPreview(ui, {
+    annotationId: annotation.id,
+    itemId: annotation.markingId,
+    opener,
+  });
+  return 'previewed';
 }
 
 export function showAllLayers(ui: EditorUi): void {

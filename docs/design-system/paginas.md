@@ -11,6 +11,7 @@ Phase PG2 adds these items to the design system (all built from `src/ui/controls
 - **Page notices** (`PageNotices`, in the `CanvasNotices` foot overlay, `notice notice-info`): `removed`, `moved` (with **Open the page**, a `button-link`), `undone` and `redone`. Tokens of the existing `notice` family. The status bar gets "Page <name>" before the perspective, and the `undone`/`redone` messages.
 - **Move to page entries**: **Move to page ›** in the root context menu and a control in the root's Details, listing the other pages (an empty state when there is none). They reuse the existing menu and field styles; tokens as above.
 - **Perspective picker**: "Principal" becomes "Completa" (Full), and each row gets the root count on the open page (`perspective-row-page`: `--t-text-small`, `--color-text-muted`).
+- **Reference preview window** (`RefPreviewWindow`, classes `ref-preview`, `ref-preview-head`, `ref-preview-title`, `ref-preview-hint`, `ref-preview-body`, `ref-preview-canvas`, `ref-preview-details`, in `src/theme/refPreview.css`): a non-modal floating window with a header (title `{page} › {item}`, a **Go to the page** `Button` and a **Close** `IconButton`), a canvas area holding `.preview-host` and the Details in the "Read-only" state, reusing `.review-details`/`.review-panel`. Tokens: `--space-*`, `--z-popover`, `--color-surface`, `--color-border`, `--radius-md`, `--shadow-popup`, `--t-text-heading`, `--t-text-small`, `--color-focus`. No new icon or token. Keyboard: Esc closes and focus returns to the opener.
 
 ## Sincronização
 

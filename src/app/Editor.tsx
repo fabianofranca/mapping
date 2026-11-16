@@ -15,6 +15,7 @@ import { goToAnnotationOnAnyPage } from '../ui/pageNavigation';
 import { useMediaQuery } from '../ui/useMediaQuery';
 import type { OpenProject } from './controller';
 import { CanvasNotices } from './CanvasNotices';
+import { RefPreviewWindow } from '../ui/RefPreviewWindow';
 import { EditorDialogs } from './EditorDialogs';
 import { EditorMainBar } from './EditorMainBar';
 import type { EditorPanelProps } from './EditorPanel';
@@ -170,6 +171,7 @@ export function EditorScreen() {
         <CompareDialog />
         <ImageInputs intake={intake} />
         <EditorDialogs dialogs={dialogs} />
+        <RefPreviewWindow />
       </div>
       {narrow && <NarrowWindowNotice />}
     </>

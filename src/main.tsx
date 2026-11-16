@@ -14,6 +14,7 @@ import './theme/canvas.css';
 import './theme/forms.css';
 import './theme/dialogs.css';
 import './theme/review.css';
+import './theme/refPreview.css';
 import './theme/catalog.css';
 import { App } from './app/App';
 import { ErrorBoundary } from './app/ErrorBoundary';

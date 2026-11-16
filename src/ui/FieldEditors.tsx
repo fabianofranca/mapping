@@ -15,6 +15,7 @@ import { Segmented, Select, TextArea, TextField } from './controls';
 import { markingLabel } from './labels';
 import { mergeLinkedItems, type SuggestionItem } from './suggestions';
 import { annotationSourceLabel } from './typedText';
+import { useFollowRef } from './useFollowRef';
 
 // Shared pieces of the typed fields: the editor of a simple value (field or table cell)
 // and the list of incoming references.
@@ -427,6 +428,7 @@ export function BacklinkList({
   readonly backlinks: readonly Backlink[];
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }) {
+  const followRef = useFollowRef(onGoToAnnotation);
   if (backlinks.length === 0) return null;
   const markings = projectIndex(project).markings;
   return (
@@ -440,7 +442,7 @@ export function BacklinkList({
               type="button"
               class="link-button"
               title={t('ref.backlinkGo', { source })}
-              onClick={() => onGoToAnnotation(b.source)}
+              onClick={() => followRef(b.source)}
             >
               {t('ref.backlink', {
                 source,
