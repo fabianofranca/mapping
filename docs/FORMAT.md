@@ -115,7 +115,7 @@ such as `M1` in the examples are valid too). Colors are `#RRGGBB`.
 | `markings`         | array   | Rectangular markings (of a container or of the canvas, v13).                       |
 | `arrows`           | array   | Arrows (v13): markings that point, linking two markings.                           |
 | `perspectives`     | array   | "For everyone" perspectives (v16, see "Fields of v16").                            |
-| `arrivals`         | array   | "Came from…" marks of the Main perspective (v16, see "Fields of v16").             |
+| `arrivals`         | array   | "Came from…" marks of the Full perspective (v16, see "Fields of v16").             |
 | `annotations`      | array   | Annotations (free or typed).                                                       |
 
 **`layers[]`**: `id`; `name` (non-empty); `color`; `spec` (`null` or `{ specId, layerId }`).
@@ -942,7 +942,7 @@ Only `schemaVersion` changes to 15; no data is altered. As in every migration, t
 
 A **perspective** is a slice of the project: which roots appear, where they sit on the canvas and which layers stay
 hidden. The content is the project's; **only the position of the roots** changes from one perspective to another. The
-**Main** one is implicit (it shows everything, in the usual position) and is not in the file. `mapping.json` only stores the
+**Full** one is implicit (it shows everything, in the usual position) and is not in the file. `mapping.json` only stores the
 **"For everyone"** perspectives; the "Only me" ones stay in the browser of whoever created them, in the same format.
 
 ```json
@@ -970,7 +970,7 @@ hidden. The content is the project's; **only the position of the roots** changes
 - **`items[].x` and `items[].y`**: finite numbers, the **top-left corner of the root** in canvas units.
   It is the same as the container's `placement.x`/`placement.y` and the canvas or floating marking's `rect.x`/`rect.y`
   in Main. A root that is not in `items` does not appear in the perspective.
-- **`arrivals[]`**: a "Came from…" mark of a root **created outside Main** that has arrived there. `root` is the root;
+- **`arrivals[]`**: a "Came from…" mark of a root **created outside the Full one** that has arrived there. `root` is the root;
   `from` is the id of the source perspective (it may no longer exist); `fromName` is its name, stored so the mark
   survives the perspective.
 
