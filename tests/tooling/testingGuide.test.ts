@@ -1587,3 +1587,38 @@ describe('ID8 — R8.6 (Portuguese sample) and R11.15 (guide in Portuguese)', ()
     expect(r).toContain(`**${ptBR['home.openZip']}**`);
   });
 });
+
+describe('CL1 — script text of R3.19, R11.4, R17.32, R17.59 and R29.10 (#1134, #2012)', () => {
+  const guide = read('docs/TESTING.md');
+  const row = (code: string): string =>
+    guide.split('\n').find((l) => l.startsWith(`| ${code} |`)) ?? '';
+
+  it('R17.59 counts the list-item annotations after R17.53 and R17.55', () => {
+    const r = row('R17.59');
+    expect(r).toContain('"4 annotation(s)"');
+    expect(r).not.toMatch(/with "2 annotation\(s\)"\./);
+  });
+
+  it('R17.32 tolerates x 17 or 18 for the text ink', () => {
+    expect(row('R17.32')).toMatch(/`X` = 17 or 18/);
+  });
+
+  it('R3.19 names the layer and field after the update and the pending line', () => {
+    const r = row('R3.19');
+    expect(r).toContain('Portuguese names');
+    expect(r).toContain('1 pending item(s) remain');
+  });
+
+  it('R11.4 lists the provisional Library section of Diagnostics', () => {
+    const r = row('R11.4');
+    expect(r).toContain('**Library**');
+    expect(r).toContain('0 error(s) and 59 warning(s)');
+    expect(r).toContain('#1774');
+  });
+
+  it('R29.10 types a Height different from the Palette default (40)', () => {
+    const r = row('R29.10');
+    expect(r).toContain('**Height** `44`');
+    expect(r).not.toContain('**Height** `40`');
+  });
+});
