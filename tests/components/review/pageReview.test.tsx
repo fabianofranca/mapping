@@ -57,6 +57,10 @@ describe('choosing a change on another page opens its page', () => {
     });
     const { h, proposal } = await openWith(base, after);
     renderInEditor(h, <Wired />);
+    act(() => h.review.select({ level: 'proposal', id: null }));
+    act(() => {
+      h.session.page.open('PG1');
+    });
     expect(h.session.page.id.value).toBe('PG1');
     const created = changeOf(proposal, 'image', 'I9');
     act(() => h.review.select({ level: 'change', id: created.id }));
@@ -84,7 +88,9 @@ describe('choosing a change on another page opens its page', () => {
     const base = pagesProject();
     const { h, proposal } = await openWith(base, renamePage(base, 'PG3', 'Spare'));
     renderInEditor(h, <Wired />);
-    act(() => h.session.page.open('PG2'));
+    act(() => {
+      h.session.page.open('PG2');
+    });
     const rename = changeOf(proposal, 'page', 'PG3', 'name');
     act(() => h.review.select({ level: 'change', id: rename.id }));
     expect(h.session.page.id.value).toBe('PG2');

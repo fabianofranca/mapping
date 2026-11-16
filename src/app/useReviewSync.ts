@@ -1,11 +1,10 @@
 import { effect } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import { projectIndex, type ReviewTarget, type ReviewTree } from '../model';
-import { revealItem } from '../store/reveal';
 import { setReviewLayout } from '../store/toolWindows';
 import { resolveSelection, type Selection } from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
-import { canvasSelectionOf } from '../ui/review/canvasSelection';
+import { canvasSelectionOf, revealReviewItem } from '../ui/review/canvasSelection';
 
 // Connects the review to the rest of the editor: the bottom window layout (review height), the
 // Browse mode (Draw does not exist in read-only) and the selection in both directions —
@@ -53,8 +52,9 @@ export function useReviewSync(): void {
         const next = canvasSelectionOf(review, target);
         if (next === undefined) return;
         // The item may be on another page: the page opens before the selection (the review keeps
-        // the Completa locked, so only the page changes; an item the proposal creates is not found).
-        if (next !== null) revealItem(session, next.id);
+        // the Completa locked, so only the page changes). The page is the one of the view shown, so an
+        // item the proposal creates or moves is found too.
+        if (next !== null) revealReviewItem(session, review, target, next.id);
         if (!sameSelection(next, ui.selection.peek())) ui.selection.value = next;
       }),
     [review, ui, session],
