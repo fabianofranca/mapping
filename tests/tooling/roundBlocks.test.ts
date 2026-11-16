@@ -9,9 +9,10 @@ import { describe, expect, it } from 'vitest';
  * Stage #841 (decision 6): the generated guide of each block has up to 200 thousand characters. TE1 (#1557)
  * raised the ceiling by 500 (to 200,500): the additions of R23.12 and R23.13 (dark theme) took
  * block 5 to 200.2 thousand, and the five blocks were already stuck to the ceiling. Stage #824 (ID8, English
- * translation plus the new steps R8.6 and R11.15) left it as it was: the largest block, 3, measures 200,463.
+ * translation plus the new steps R8.6 and R11.15) left it as it was: the largest block, 3, measures 200,463. CL1 of #1134
+ * (#2012) raised it by another 500 (to 201,000): the text fixes of R3.19, R11.4, R17.32, R17.59 and R29.10 took block 5 to 200.7 thousand.
  */
-const MAX_BLOCK_GUIDE_CHARS = 200_500;
+const MAX_BLOCK_GUIDE_CHARS = 201_000;
 
 /**
  * Stage #1533 (TE1, decisions 3 and 5): the limit above measures what the tester reads, the block's guide without the
