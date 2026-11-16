@@ -143,7 +143,7 @@ test('desktop: tool windows open, resize and are remembered', async ({ page }) =
   await createProject(page, 'Windows');
 
   // Status bar and breadcrumbs with no selection.
-  await expect(page.getByText('schema v20')).toBeVisible();
+  await expect(page.getByText('schema v21')).toBeVisible();
   await expect(page.locator('.crumbs')).toContainText('Nothing selected');
 
   // Tree and Details open by default; the List opens from the strip.
