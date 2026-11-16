@@ -760,6 +760,7 @@ export const ptBR: Dictionary = {
   'thread.time.dateYear': '{day}/{month}/{year}',
   'thread.anchor.layer': 'Camada {name}',
   'thread.anchor.point': '{where} · ponto solto',
+  'thread.anchor.canvasPage': 'Canvas · página {page}',
   'thread.anchor.missing.marking': 'Marcação apagada · órfã',
   'thread.anchor.missing.container': 'Container apagado · órfã',
   'thread.anchor.missing.arrow': 'Seta apagada · órfã',

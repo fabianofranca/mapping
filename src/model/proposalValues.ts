@@ -189,7 +189,9 @@ export const COMPARED_FIELDS = {
  * Compared fields of a marking that exists before and after: a change of space is the composite
  * change `space` (the `rect` goes inside it); a change of page of a canvas marking is the composite
  * change `page` (`{ pageId, position }`, the `rect` goes inside it); without a change, `rect` is a
- * separate field. `pageBefore` is the page it was on (its container's, for a marking in a container).
+ * separate field. A marking that also leaves its container for the canvas of another page carries
+ * only `page` (applying it also puts the marking on the canvas), so no partial acceptance is
+ * incoherent. `pageBefore` is the page it was on (its container's, for a marking in a container).
  */
 export function markingFieldsFor(
   before: Pick<Marking, 'containerId'>,
@@ -200,7 +202,8 @@ export function markingFieldsFor(
   const paged = after.containerId === null && after.pageId !== pageBefore;
   return COMPARED_FIELDS.marking.filter((f) => {
     if (f === 'page') return paged;
-    if (f === 'space') return moved;
+    // A marking that leaves its container for the canvas of another page is one `page` change.
+    if (f === 'space') return moved && !paged;
     return f !== 'rect' || (!moved && !paged);
   });
 }

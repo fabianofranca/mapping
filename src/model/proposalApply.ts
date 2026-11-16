@@ -273,10 +273,12 @@ function withField(
           rect: to.rect as unknown as Rect,
         };
       }
-      // Page swap (a canvas marking): the page and the `rect` on it, together.
+      // Page swap: the page and the `rect` on it, together; a marking that was inside a container
+      // leaves it (the change is only proposed for a marking that ends on the canvas).
       if (field === 'page' && isRecord(to)) {
         return {
           ...m,
+          containerId: null,
           pageId: to.pageId as string,
           rect: to.position as unknown as Rect,
         };
@@ -513,7 +515,8 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
       if (!map.has(c.entityId)) problems.push({ code: 'entity-missing', changeId: c.id });
       else if (c.entity === 'layer') positions.push(c);
       else if (c.entity === 'page') pagePositions.push(c);
-      else markingPositions.push(c);
+      else if (c.entity === 'marking') markingPositions.push(c);
+      else problems.push({ code: 'field-mismatch', changeId: c.id });
     } else {
       const current = map.get(c.entityId);
       let next = current && withField(c.entity, current, c, maps.specialization);

@@ -506,3 +506,90 @@ describe('the reader and the version', () => {
     expect(change?.to).not.toHaveProperty('pageId');
   });
 });
+
+describe('a marking that leaves a container for the canvas of another page', () => {
+  /** M1 (in I1, on PG1) goes to the canvas of PG2. */
+  function leaving(): { base: Project; after: Project } {
+    const base = twoPages();
+    const after: Project = {
+      ...base,
+      markings: base.markings.map((m) =>
+        m.id === 'M1'
+          ? { ...m, containerId: null, pageId: 'PG2', rect: rect(7000, 7000, 120, 120) }
+          : m,
+      ),
+    };
+    return { base, after };
+  }
+
+  it('is one page change that also leaves the container (no separate space change)', () => {
+    const { base, after } = leaving();
+    const proposal = propose(base, after);
+    expect(
+      proposal.changes.filter((c) => c.entityId === 'M1' && c.field === 'space'),
+    ).toEqual([]);
+    expect(changeOf(proposal, 'marking', 'M1', 'page')).toMatchObject({
+      from: { pageId: 'PG1' },
+      to: { pageId: 'PG2', position: rect(7000, 7000, 120, 120) },
+    });
+  });
+
+  it('accepting it puts the marking on the canvas of the destination page; rejecting keeps it', () => {
+    const { base, after } = leaving();
+    const proposal = propose(base, after);
+    const change = changeOf(proposal, 'marking', 'M1', 'page');
+    const accepted = decided(
+      proposal,
+      base,
+      { level: 'change', id: change.id },
+      'accepted',
+    );
+    const result = applyAccepted(base, accepted, AT);
+    if (!result.ok) throw new Error('blocked');
+    expect(result.project.markings.find((m) => m.id === 'M1')).toMatchObject({
+      containerId: null,
+      pageId: 'PG2',
+      rect: rect(7000, 7000, 120, 120),
+    });
+    const rejected = decided(
+      proposal,
+      base,
+      { level: 'change', id: change.id },
+      'rejected',
+    );
+    const kept = applyAccepted(base, rejected, AT);
+    if (!kept.ok) throw new Error('blocked');
+    expect(kept.project.markings.find((m) => m.id === 'M1')).toMatchObject({
+      containerId: 'I1',
+      pageId: null,
+    });
+  });
+});
+
+describe('a created root with no pageId and a reorder of the first page in the same proposal', () => {
+  it('lands on the base first page whether the reorder is accepted or rejected', () => {
+    const base = twoPages();
+    const reordered = movePage(base, 'PG1', 1);
+    const after = createMarking(reordered, {
+      id: 'N1',
+      containerId: null,
+      rect: rect(9000, 9000, 100, 100),
+      pageId: 'PG1',
+    });
+    const proposal = propose(base, after);
+    expect(changeOf(proposal, 'marking', 'N1').to).not.toHaveProperty('pageId');
+    const order = proposal.changes.find(
+      (c) => c.entity === 'page' && c.field === 'position',
+    )!;
+    const create = changeOf(proposal, 'marking', 'N1');
+    for (const state of ['accepted', 'rejected'] as const) {
+      let d = decided(proposal, base, { level: 'proposal', id: null }, 'accepted');
+      d = decided(d, base, { level: 'change', id: order.id }, state);
+      const result = applyAccepted(base, d, AT);
+      if (!result.ok) throw new Error('blocked');
+      expect(result.project.markings.find((m) => m.id === create.entityId)?.pageId).toBe(
+        'PG1',
+      );
+    }
+  });
+});

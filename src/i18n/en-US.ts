@@ -758,6 +758,7 @@ export const enUS = {
   'thread.time.dateYear': '{month}/{day}/{year}',
   'thread.anchor.layer': 'Layer {name}',
   'thread.anchor.point': '{where} · loose point',
+  'thread.anchor.canvasPage': 'Canvas · {page}',
   'thread.anchor.missing.marking': 'Marking deleted · orphan',
   'thread.anchor.missing.container': 'Container deleted · orphan',
   'thread.anchor.missing.arrow': 'Arrow deleted · orphan',

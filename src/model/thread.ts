@@ -267,8 +267,8 @@ function checkVersionAnchor(
 export const threadSchema = z
   .object({
     format: z.literal(THREAD_FORMAT, { error: `must be "${THREAD_FORMAT}"` }),
-    formatVersion: z.union([z.literal(1), z.literal(2)], {
-      error: 'must be 1 or 2',
+    formatVersion: z.literal([...THREAD_FORMAT_VERSIONS], {
+      error: `must be ${THREAD_FORMAT_VERSIONS.join(' or ')}`,
     }),
     id: threadId,
     anchor: threadAnchorSchema,
