@@ -180,6 +180,8 @@
  * A row whose label carries the field's menu next to the help icon: the column also gains the menu's
  * width, so the label keeps its own width and breaks between words ("Navigation icon description"),
  * never in the middle of one. Compact windows (up to 1199px) keep the narrow column: the control needs the room there.
+ * A row whose control is a reference field keeps the narrow column at any width too: its target name is the one
+ * that gets cut by an ellipsis when the control loses those pixels.
  */
 .props:has(.props-label-cell > .action-menu) {
   grid-template-columns:
@@ -194,6 +196,13 @@
         1fr
       );
   }
+}
+
+.props:has(.props-label-cell > .action-menu):has(.ref-field) {
+  grid-template-columns: calc(var(--size-label-col) + var(--control-height-sm)) minmax(
+      0,
+      1fr
+    );
 }
 
 .props-label {
