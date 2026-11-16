@@ -11,13 +11,15 @@
 - Deleting a page with content asks first, counting roots, markings, arrows and annotations, with two exits: **Move the content to…** another page, or **Delete the page and everything in it**; each is one undo entry, and **Cancel** has focus. The last page cannot be deleted.
 - **Move to page** (right-click menu on a root or a selection, and the root's Details): the whole group goes along. If an arrow would be cut, nothing changes and a dialog lists the arrows with **Go to the arrow**. Otherwise the app stays on the page and shows the notice "Moved to <page>" with **Open the page**.
 - Performance budget: the derived state of the open page of a project split into 4 pages costs at most about a third of the whole project's.
+- Conversations: a comment on an empty spot of the canvas of any page comes back on that page (thread `formatVersion` 2, written only for such a point; a version 1 point is read onto the first page). Its pin shows only in the Full perspective of its page.
+- Proposals: a proposal that creates, renames, reorders or removes pages, or moves a root to another page, is written as `formatVersion` 10 (the `page` entity and the composite `page` change, accepted or rejected whole; created and removed roots carry their `pageId`). Proposals without pages keep today's versions, and the earlier versions are still read.
+- Review with pages: a proposal with changes on two pages is reviewed in the Full perspective, switching page through the page selector; choosing a change on another page opens its page, each row shows its page and a page change reads "<origin> → <destination>". Accepting only part of a group that changes page is the invalid set (an arrow would cross pages), with its two exits.
 - Following a reference or a "Referenced by" backlink to an item on another page opens a read-only preview window (the destination's root drawn and framed on the item, with its Details read-only); **Go to the page** switches page, selects and frames it, and Esc and **Close** return focus. On the same page nothing changes.
 
 ## Alterado
 
 - The `dist/index.html` ceiling went up 32 KiB, from 2244608 to 2277376, by the budget rule; above the limits, `bug` #2019 for the owner to review
 - The `dist/index.html` ceiling went up 16 KiB, from 2277376 to 2293760, by the budget rule; above the limits, `bug` #2021 for the owner to review
-- "Comment here" on an empty canvas spot is only offered on the first page for now: the anchor of a canvas point has no page until the conversations phase (PG4).
 - `createArrow` and `setArrowEndpoint` refuse ends on different pages (`arrow-cross-page`); `setMarkingSpace` refuses sending a marking with arrows into a container of another page.
 - A new container or canvas marking goes to the first page unless `pageId` says otherwise; placement only looks at the page.
 - The open page is remembered per project (UI state, outside undo; resumes the first page when the kept one no longer exists, with a notice). Only the open page is drawn and listed.
