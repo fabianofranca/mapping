@@ -50,10 +50,8 @@ describe('CB2 — implementar-fila, paragraph "Canaries B and C": the baseline r
 describe('CB2 — implementar-fila, "Panel": the commands, the import and the usage paragraph (decisions 3, 4 and 9)', () => {
   it('the commands block lists `canario … base`, `--nenhuma` and the new `sinal` fields', () => {
     const commands = between(panel, '```bash', '```\n');
-    expect(commands).toContain(
-      'painel.py canario <folder> base <id> <old folder> [fonte=<text>]',
-    );
-    expect(commands).toContain('painel.py canario <folder> base <id> --nenhuma');
+    expect(commands).toContain('canario <folder> base <id> <old folder> [fonte=<text>]');
+    expect(commands).toContain('(or `base <id> --nenhuma`)');
     const sinal = commands.split('\n').find((l) => l.startsWith('painel.py sinal'));
     expect(sinal).toContain('xFalso');
     expect(sinal).toContain('naoExec');
@@ -139,3 +137,4 @@ describe('CB2 — decision 11: the steps not executed of the tester notice', () 
     expect(tester).toContain('writes no `naoExec`');
   });
 });
+// portuguese-guard:end
