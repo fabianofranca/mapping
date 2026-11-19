@@ -1,4 +1,4 @@
-# Placement style review items — [Não lançado] (épico `epic/estilo-placement`)
+# Placement style review items — 2026-11-19 (épico `epic/estilo-placement`)
 
 ## Pendências
 
@@ -6,7 +6,7 @@ None. The epic only touches comments and internal code (`src/model/containers.ts
 
 ## Sincronização
 
-Nothing to write to the **Mapping** artifact: the epic does not change a component, token or icon of the app.
+Sem impacto: nothing to write to the **Mapping** artifact; the epic does not change a component, token or icon of the app.
 
 ## Ficou sem gravar
 

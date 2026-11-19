@@ -1,4 +1,4 @@
-# Placement style review items — [Não lançado]
+# Placement style review items — 2026-11-19 (épico `epic/estilo-placement`, PR #2222, MCP 0.45.1, schema v21)
 
 ## Alterado
 
