@@ -83,6 +83,28 @@ describe('painel.py pergunta — open (decision 4)', () => {
   });
 });
 
+describe('painel.py pergunta — review fixes', () => {
+  it('a stray pair is an Erro: resposta= without --fim, texto= with --fim, pairs before --fim', () => {
+    runAt(T0, 'pergunta', dir, '#7', 'segurar', 'texto=x');
+    for (const args of [
+      ['pergunta', dir, '#7', 'segurar', 'resposta=sim'],
+      ['pergunta', dir, '#7', 'segurar', '--fim', 'texto=q'],
+      ['pergunta', dir, '#7', 'segurar', 'resposta=sim', '--fim'],
+    ]) {
+      const r = tryRun(T3H, ...args);
+      expect(r.code).toBe(2);
+    }
+    expect(questions()).toHaveLength(1);
+  });
+
+  it('a question cannot be opened on a row in a final status', () => {
+    runAt(T0, 'row', dir, '#7', 'status=concluída');
+    const r = tryRun(T0, 'pergunta', dir, '#7', 'segurar', 'texto=x');
+    expect(r.code).toBe(2);
+    expect(questions()).toHaveLength(0);
+  });
+});
+
 describe('painel.py pergunta --fim (decision 4)', () => {
   it('(b) removes the question and writes the log line with the answer', () => {
     runAt(T0, 'pergunta', dir, '#7', 'segurar', 'texto=x');

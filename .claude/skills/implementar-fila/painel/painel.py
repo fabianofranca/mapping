@@ -1815,6 +1815,8 @@ def close_final_questions(s, issue, pairs):
 def open_question(s, issue, verbo, texto):
     if find_row(s.get("queue"), issue) is None:
         raise Erro(f"{issue} não está na fila")
+    if find_row(s.get("queue"), issue)["status"] in FINAL_STATUS:
+        raise Erro(f"{issue} is already in a final status: nothing to ask")
     if not texto.strip():
         raise Erro("falta texto=")
     meta = s.get("meta")[0]
@@ -1831,6 +1833,8 @@ def cmd_pergunta(a):
     validate_choice("verbo", a.verbo, PERGUNTA_VERBOS)
     issue = norm_issue(a.issue)
     closing = a.fim is not None
+    if closing and a.pairs:
+        raise Erro("the fields go after --fim: --fim resposta=\"…\"")
     pairs = parse_pairs(a.fim if closing else a.pairs)
     allowed = "resposta" if closing else "texto"
     for k in pairs:
