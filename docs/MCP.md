@@ -268,6 +268,10 @@ A library font never makes the server fail. `opentype.js` 2.0.0 applies only som
 - **Notice:** only `validate_library`, which reads each `.ttf`, `.otf` or `.woff` the specialization cites (up to 8 MB) and adds one warning per font with something skipped, at `fonts[<i>].file`, after the model's and the external documents' warnings and before `ignored-paths`: `without <n> substitution subtable(s) it cannot apply (lookup type 6 format 2 ×<k>, …)`, `without any glyph substitution` or `cannot lay out <file>`. The library stays valid. `get_project`, `plan_changes`, `apply_specialization` and the renders get no notice.
 - **What the server does not draw:** the skipped subtables (contextual alternates, alternate glyphs); the app draws them. Ship the designers' original fonts; do not strip subtables.
 
+### `fit_marking` checks the drawing (stage #2089, 0.47.0)
+
+`fit_marking`, the app's **Arrange** and the size of an instance born without `rect` never leave the marking a fraction short. After measuring, the fit (`fitComponentSize`) instantiates the component at the size it found and, if the drawing still reports a shortfall, grows each `hug` axis by `ceil` of the largest one and checks again, up to 3 times, never past the root's `maxWidth`/`maxHeight` nor the space to the edge of the image. A px-by-expression axis and a kept axis do not change, and a size that cannot settle stays as measured. The tools, the arguments and the responses do not change; only a marking that came out short (`component-overflow` by a fraction at a scale such as 0.96) now fits.
+
 ### Text in the notes library (0.45.0)
 
 `create_project` applies the notes library at **version 5**, which adds the type `notas/texto` (plain text: label, title or caption). The schema and the formats do not change.

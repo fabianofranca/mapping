@@ -5,7 +5,11 @@ import type {
   ComponentFile,
   FrameTemplate,
 } from '../../../src/model/components/componentFormat';
-import { approximateMeasurer } from '../../../src/model/components/instantiate';
+import {
+  approximateMeasurer,
+  instantiate,
+  type TextMeasurer,
+} from '../../../src/model/components/instantiate';
 import {
   fitComponentSize,
   followedAxes,
@@ -174,5 +178,82 @@ describe('fitComponentSize', () => {
     const hug = { ...component({ height: 'hug' }), minSize: { width: 20, height: 48 } };
     expect(fit(hug as ComponentFile, { msg: 'Ok' })?.height).toBe(48);
     expect(fit(component({ height: { $field: 'h' } }), { h: 0 })?.height).toBe(1);
+  });
+});
+
+describe('fitComponentSize checks the drawing (FM2, decision 5 of #2089)', () => {
+  // Measurement and drawing disagree: a line measures 0.2 units wider when it gets a finite limit.
+  const disagreeing: TextMeasurer = (text, font, maxWidth) => {
+    const base = approximateMeasurer(text, font, maxWidth);
+    return maxWidth === undefined ? base : { ...base, width: base.width + 0.2 };
+  };
+  const button = (extra: Record<string, unknown> = {}): ComponentFile =>
+    ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'b',
+      name: 'B',
+      size: { width: 100, height: 40 },
+      sizing: { width: 'hug', height: 'hug' },
+      ...extra,
+      template: {
+        type: 'frame',
+        layout: { type: 'row' },
+        padding: [8, 16],
+        children: [
+          {
+            type: 'text',
+            text: { $field: 'label' },
+            width: 'fill',
+            height: 'hug',
+            font: { size: 14, lineHeight: 20 },
+          },
+        ],
+      },
+    }) as unknown as ComponentFile;
+  const options = { measure: disagreeing };
+  const shortfalls = (c: ComponentFile, size: { width: number; height: number }) =>
+    Object.keys(
+      instantiate(c, { label: 'Confirm' }, { x: 0, y: 0, ...size }, options).shortfalls ??
+        {},
+    );
+
+  it('the fitted size has no shortfall and grew by at most ceil of the shortfall', () => {
+    const c = button();
+    const free = fitComponentSize(
+      c,
+      { label: 'Confirm' },
+      { measure: approximateMeasurer },
+      {},
+    );
+    const fitted = fitComponentSize(c, { label: 'Confirm' }, options, {});
+    expect(fitted).toBeDefined();
+    expect(shortfalls(c, fitted as { width: number; height: number })).toEqual([]);
+    expect((fitted?.width ?? 0) - (free?.width ?? 0)).toBeLessThanOrEqual(1);
+    expect(fitted?.height).toBe(free?.height);
+  });
+
+  it('never goes past the root maximum nor the fit maxWidth', () => {
+    const capped = button();
+    (capped.template as { maxWidth?: number }).maxWidth = 101;
+    const free = fitComponentSize(
+      capped,
+      { label: 'Confirm' },
+      { measure: approximateMeasurer },
+      {},
+    );
+    const fitted = fitComponentSize(capped, { label: 'Confirm' }, options, {});
+    expect(fitted?.width).toBeLessThanOrEqual(101);
+    const edge = fitComponentSize(button(), { label: 'Confirm' }, options, {
+      maxWidth: free?.width ?? 0,
+    });
+    expect(edge?.width).toBe(free?.width);
+  });
+
+  it('a kept axis does not change', () => {
+    const fitted = fitComponentSize(button(), { label: 'Confirm' }, options, {
+      auto: { width: false },
+    });
+    expect(fitted?.width).toBe(100);
   });
 });
