@@ -60,7 +60,7 @@ export const DOC_RESOURCES: readonly DocResource[] = [
     uri: 'mapping-docs://COMMENT-FORMAT.md',
     title: 'Conversation format',
     description:
-      'Format of the anchored conversation (mapping-thread, formatVersion 1): the file in comments/, the messages, the nine anchors, what is derived (awaiting, subject, orphan), who writes what, the reference grammar and the citation.',
+      'Format of the anchored conversation (mapping-thread, formatVersion 1 and 2): the file in comments/, the messages, the nine anchors, what is derived (awaiting, subject, orphan), who writes what, the reference grammar and the citation.',
     text: commentFormat,
   },
 ];

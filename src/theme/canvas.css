@@ -67,7 +67,8 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-4);
-  padding: var(--space-4);
+  /* The foot notices ("Moved to ... / Open the page") sit at the bottom: the content stays above them (CL1, 6.5). */
+  padding: var(--space-4) var(--space-4) calc(var(--space-8) * 3);
   text-align: center;
   pointer-events: none;
 }

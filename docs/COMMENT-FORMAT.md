@@ -1,4 +1,4 @@
-# Anchored conversation format (`mapping-thread`, `formatVersion` 1)
+# Anchored conversation format (`mapping-thread`, `formatVersion` 1 and 2)
 
 A **conversation** is a sequence of messages, from people and agents, anchored to an item of the mapping (a marking, an annotation field, a layer, a loose point on the canvas…). It stays open until **a person** resolves it. This document describes the conversation file, the grammar of references and citations, and the model API. The project format is in [`FORMAT.md`](FORMAT.md) and the proposal format is in [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md).
 
@@ -81,7 +81,7 @@ All are required; the "empty" value is `null`, as in the proposal.
 | Field           | Type             | Description                                                                                                                    |
 | --------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `format`        | string           | Always `"mapping-thread"`.                                                                                                     |
-| `formatVersion` | `1`              | Format version.                                                                                                                |
+| `formatVersion` | `1` or `2`       | Format version: `2` only when the anchor is a canvas `point` with a `pageId` (see "Anchors"); every other conversation is `1`. |
 | `id`            | string           | Conversation id (the file name). `[A-Za-z0-9._-]`, not starting with a dot.                                                    |
 | `anchor`        | object           | Where the conversation is anchored (see "Anchors").                                                                            |
 | `createdAt`     | string           | ISO 8601 date (UTC) when the conversation was opened.                                                                          |
@@ -106,27 +106,31 @@ All are required; the "empty" value is `null`, as in the proposal.
 
 The anchor is **by id**: it follows the item that moves or changes parent. There are nine forms:
 
-| `kind`       | Fields                         | Points to                                                                                                   | Where the pin lives (host)         |
-| ------------ | ------------------------------ | ----------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `marking`    | `id`                           | A marking.                                                                                                  | The marking itself.                |
-| `container`  | `id`                           | A container.                                                                                                | The container itself.              |
-| `annotation` | `id`                           | An annotation.                                                                                              | The marking or arrow that owns it. |
-| `arrow`      | `id`                           | An arrow.                                                                                                   | The arrow itself.                  |
-| `layer`      | `id`                           | A layer.                                                                                                    | None (a layer has no pin).         |
-| `field`      | `annotationId`, `key`          | A typed field of the annotation (the field's `key`).                                                        | The owner of the annotation.       |
-| `entry`      | `annotationId`, `entryId`      | A pair of the free annotation.                                                                              | The owner of the annotation.       |
-| `row`        | `annotationId`, `key`, `rowId` | A row of a `table` (the row's `_id`) in the `key` field.                                                    | The owner of the annotation.       |
-| `point`      | `containerId`, `x`, `y`        | A loose point. `containerId` not null: container pixels, and the point moves with it; `null`: canvas units. | The point itself.                  |
+| `kind`       | Fields                            | Points to                                                                                                                         | Where the pin lives (host)         |
+| ------------ | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `marking`    | `id`                              | A marking.                                                                                                                        | The marking itself.                |
+| `container`  | `id`                              | A container.                                                                                                                      | The container itself.              |
+| `annotation` | `id`                              | An annotation.                                                                                                                    | The marking or arrow that owns it. |
+| `arrow`      | `id`                              | An arrow.                                                                                                                         | The arrow itself.                  |
+| `layer`      | `id`                              | A layer.                                                                                                                          | None (a layer has no pin).         |
+| `field`      | `annotationId`, `key`             | A typed field of the annotation (the field's `key`).                                                                              | The owner of the annotation.       |
+| `entry`      | `annotationId`, `entryId`         | A pair of the free annotation.                                                                                                    | The owner of the annotation.       |
+| `row`        | `annotationId`, `key`, `rowId`    | A row of a `table` (the row's `_id`) in the `key` field.                                                                          | The owner of the annotation.       |
+| `point`      | `containerId`, `x`, `y`, `pageId` | A loose point. `containerId` not null: container pixels, and the point moves with it; `null`: canvas units, on the page `pageId`. | The point itself.                  |
 
 - A point's container is decided **once**, when the conversation is created: the topmost container under the cursor, or the canvas. The point is not a marking and does not go through `settleHierarchy`. `x` and `y` are any numbers (they may be negative and fractional, on the canvas).
+- **The page of a canvas point (`formatVersion` 2).** The canvas is one space per page, so a `point` with `containerId: null` also says **which page** it is on, in `pageId`. The pin of a canvas point only shows in the Completa (the Main one, no perspective) of its page. Every other anchor takes its page from the item it points to (the marking, the container, the arrow or the owner of the annotation), and a point inside a container takes it from the container: none of them carries `pageId`.
+- **Why a new version.** A reader that only knows version 1 would read a `point` with an unknown `pageId` by dropping the field (unknown fields are dropped) and put the point on the wrong page. Version 2 makes such a reader refuse the file (`formatVersion: must be 1 or 2`, an unreadable conversation) instead of silently misplacing it.
+- **Reading and writing.** Reading accepts 1 and 2. A version 1 canvas point has no `pageId` and is read onto the **first page** of the project (it was written before pages existed, when the canvas was one). Writing uses `2` **only when the anchor has a `pageId`**; any other conversation (every other kind of anchor, a point inside a container, and a canvas point without a page) is written as `1`, so it stays readable by an earlier reader. A conversation is never rewritten just to change its version.
+- **Version and anchor go together.** `pageId` only exists in version 2, and version 2 only carries a canvas `point` (`containerId: null`) with a `pageId`: a version 1 file with `pageId`, or a version 2 file without it, with a `containerId` or with another kind of anchor, is refused.
 - **One pin per item that hosts the anchor, not by proximity:** a conversation on a field appears on the owner marking's pin, with no second pin on top of the first.
 
 ### Orphan
 
-It is a conversation whose anchor **no longer exists in the project**: the item was deleted, or the point's container was deleted. The resolution says what disappeared (`marking`, `container`, `arrow`, `layer`, `annotation`, `entry` or `row`):
+It is a conversation whose anchor **no longer exists in the project**: the item was deleted, or the point's container, or the page of a canvas point, was deleted. The resolution says what disappeared (`marking`, `container`, `arrow`, `layer`, `annotation`, `entry`, `row` or `page`):
 
 - `field`: it is enough for the annotation to exist; `entry` and `row` also need to exist (the pair among the annotation's pairs, the row among the table's rows);
-- `point` is only orphan with a non-null `containerId` and the container deleted;
+- `point` is only orphan with a non-null `containerId` and the container deleted, or on the canvas with a `pageId` whose page was deleted (`missing: page`); a canvas point without `pageId` goes to the first page, which always exists;
 - an `annotation` or a `field` whose owner no longer exists has no pin, but is not an orphan either.
 
 The orphan conversation stays listed, without a pin ("<kind> deleted · orphan"). **Nothing deletes it on its own.**
@@ -204,12 +208,15 @@ If the file remains invalid, the app and MCP treat it as unreadable: they do not
 
 ## Validity rules
 
-`parseThread` / `parseThreadText` validate the file and return the errors with the exact path (`errors`, in the `path: message` format, and `issues`, with `path` and `message` separate); reading also returns `warnings` (empty in `formatVersion` 1). The actual errors:
+`parseThread` / `parseThreadText` validate the file and return the errors with the exact path (`errors`, in the `path: message` format, and `issues`, with `path` and `message` separate); reading also returns `warnings` (empty so far). The actual errors:
 
 | Situation                                                    | Error                                                                                                           |
 | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
 | Not JSON                                                     | `invalid JSON: Expected property name or '}' in JSON at position 1 (line 1 column 2)`                           |
-| Wrong `format` or `formatVersion`                            | `format: must be "mapping-thread"`, `formatVersion: must be 1`                                                  |
+| Wrong `format` or `formatVersion`                            | `format: must be "mapping-thread"`, `formatVersion: must be 1 or 2`                                             |
+| `pageId` in version 1                                        | `anchor.pageId: only allowed in formatVersion 2`                                                                |
+| Version 2 without `pageId`, or with another anchor           | `anchor.pageId: required in formatVersion 2 (a point on the canvas with its page)`                              |
+| Version 2 with a `containerId`                               | `anchor.containerId: must be null in formatVersion 2 (a point inside a container has no pageId)`                |
 | Invalid conversation id                                      | `id: invalid id; use [A-Za-z0-9._-], not starting with a dot`                                                   |
 | Date that is not ISO 8601                                    | `createdAt: invalid date; use ISO 8601 (UTC)` (also in `messages[i].at` and `resolved.at`)                      |
 | Conversation without a message                               | `messages: must have at least one message`                                                                      |
@@ -300,7 +307,7 @@ The chip shows the target's **current** name, resolved through the reference (`l
 
 ## API in `src/model/`
 
-- Format (`thread.ts`): `THREAD_FORMAT`, `THREAD_FORMAT_VERSION`, `COMMENTS_DIR`, `RESOLVED_DIR`, `THREAD_MESSAGE_MAX`, `THREAD_ID_RE`, `THREAD_ANCHOR_KINDS`, `threadFilePath`, `compareThreadMessages`, `sortThreadMessages`, `parseThread`, `parseThreadText`, `serializeThread`, and the schemas `threadSchema`, `threadMessageSchema`, `threadAuthorSchema`, `threadAnchorSchema`, `threadResolvedSchema`, `threadResolverSchema`; types `Thread`, `ThreadMessage`, `ThreadAuthor`, `ThreadAuthorKind`, `ThreadAnchor`, `ThreadAnchorKind`, `ThreadResolved`, `ThreadResolver`, `ThreadParseResult`.
+- Format (`thread.ts`): `THREAD_FORMAT`, `THREAD_FORMAT_VERSIONS` (`[1, 2]`), `threadFormatVersion` (the version an anchor is written in), `COMMENTS_DIR`, `RESOLVED_DIR`, `THREAD_MESSAGE_MAX`, `THREAD_ID_RE`, `THREAD_ANCHOR_KINDS`, `threadFilePath`, `compareThreadMessages`, `sortThreadMessages`, `parseThread`, `parseThreadText`, `serializeThread`, and the schemas `threadSchema`, `threadMessageSchema`, `threadAuthorSchema`, `threadAnchorSchema`, `threadResolvedSchema`, `threadResolverSchema`; types `Thread`, `ThreadMessage`, `ThreadAuthor`, `ThreadAuthorKind`, `ThreadAnchor`, `ThreadAnchorKind`, `ThreadResolved`, `ThreadResolver`, `ThreadParseResult`, `ThreadFormatVersion`.
 - Pure operations (`threadOps.ts`): `openThread`, `appendMessage`, `resolveThread`, `reopenThread`, `mergeThreadCopies` (the join of the two copies), `threadLocation` (`open` or `resolved`, the folder where the file must live), the class `ThreadError` (`thread-message-duplicate`, `invalid-thread`); types `OpenThreadArgs`, `MergedThread`, `ThreadLocation`, `ThreadErrorCode`.
 - View (`threadView.ts`): `resolveAnchor`, `isOrphan`, `hostOf`, `hostKey` (anchor, orphan and pin host), `lastMessage`, `awaiting`, `threadSubject` (with `SUBJECT_MAX` and an optional `resolveLabel` for the citations' live label), `isUnread`; types `ThreadHost`, `ThreadMissingKind`, `AnchorResolution`, `ThreadAwaiting`, `SubjectLabelResolver`, `ThreadViewer`.
 - Users (`threadUsers.ts`): `normalizeEmail`, `userKey` (`human:<email>` or `agent:<name>`), `userLabel`, `initials` (first and last word; the agent is `AG`), `threadUsers` (the User filter, with each one's conversation count); type `ThreadUser`.

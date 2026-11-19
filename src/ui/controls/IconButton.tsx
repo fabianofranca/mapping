@@ -2,6 +2,7 @@ import type { JSX, Ref } from 'preact';
 import { ariaKeys } from '../../app/shortcuts';
 import { Icon, type IconName } from '../icons';
 import { classes } from './classes';
+import { useHideDisabled } from './hideDisabled';
 import { Tooltip, type TooltipPlacement } from './Tooltip';
 
 type NativeButton = Omit<
@@ -45,8 +46,14 @@ function iconButtonClass(variant: string, size: 'md' | 'sm'): string {
   );
 }
 
-/** Icon button (28px), with a tip. */
-export function IconButton({
+/** Icon button (28px), with a tip. Renders nothing when disabled inside `HideDisabledContext`. */
+export function IconButton(props: IconButtonProps) {
+  const hideDisabled = useHideDisabled();
+  if (hideDisabled && props.disabled) return null;
+  return <IconButtonView {...props} />;
+}
+
+function IconButtonView({
   icon,
   label,
   tooltip,

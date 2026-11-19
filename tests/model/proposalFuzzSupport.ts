@@ -49,6 +49,7 @@ export const CONTAINER: ProjectContainer = {
   height: 100,
   placement: { x: 0, y: 0, scale: 1 },
   parentId: null,
+  pageId: 'PG1',
   markingColor: null,
   locked: false,
   source: null,

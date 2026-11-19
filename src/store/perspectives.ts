@@ -31,7 +31,9 @@ export type PerspectiveNotice =
   /** The open perspective disappeared (deleted here, in another browser or in an external reload). */
   | { readonly kind: 'removed'; readonly name: string }
   /** The review of a proposal opened Main. */
-  | { readonly kind: 'review' };
+  | { readonly kind: 'review' }
+  /** Going to an item that the perspective `name` does not show opened Main (`reveal.ts`, stage #883). */
+  | { readonly kind: 'outside'; readonly name: string };
 
 export interface PerspectiveState {
   /** The open perspective (`null` = Main). Write only through `open`. */

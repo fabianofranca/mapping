@@ -27,11 +27,16 @@ export type ThreadHost =
       readonly containerId: string | null;
       readonly x: number;
       readonly y: number;
+      /**
+       * The page of a canvas point (`containerId` null): its own `pageId` or, for a version 1
+       * thread, the first page. Absent for a point inside a container (the container decides).
+       */
+      readonly pageId?: string;
     };
 
 /** What the orphan anchor was looking for and no longer exists (the interface builds the text). */
 export type ThreadMissingKind =
-  'marking' | 'container' | 'arrow' | 'layer' | 'annotation' | 'entry' | 'row';
+  'marking' | 'container' | 'arrow' | 'layer' | 'annotation' | 'entry' | 'row' | 'page';
 
 export type AnchorResolution =
   | {
@@ -95,12 +100,29 @@ function hasRow(annotation: Annotation, key: string, rowId: string): boolean {
   );
 }
 
-function resolvePart(idx: ProjectIndex, a: PartAnchor): AnchorResolution {
-  if (a.kind === 'point') {
-    const lost = a.containerId !== null && !idx.containers.has(a.containerId);
-    if (lost) return orphan(a, 'container');
+function resolvePoint(
+  project: Project,
+  idx: ProjectIndex,
+  a: Extract<ThreadAnchor, { kind: 'point' }>,
+): AnchorResolution {
+  if (a.containerId !== null) {
+    if (!idx.containers.has(a.containerId)) return orphan(a, 'container');
     return found(a, { kind: 'point', containerId: a.containerId, x: a.x, y: a.y });
   }
+  // A canvas point: its own page or, from a version 1 thread, the first one.
+  const pageId = a.pageId ?? project.pages[0]?.id;
+  if (pageId === undefined || !project.pages.some((g) => g.id === pageId)) {
+    return orphan(a, 'page');
+  }
+  return found(a, { kind: 'point', containerId: null, x: a.x, y: a.y, pageId });
+}
+
+function resolvePart(
+  project: Project,
+  idx: ProjectIndex,
+  a: PartAnchor,
+): AnchorResolution {
+  if (a.kind === 'point') return resolvePoint(project, idx, a);
   const annotation = idx.annotations.get(a.annotationId);
   if (!annotation) return orphan(a, 'annotation');
   if (a.kind === 'entry' && !idx.entries.get(annotation.id)?.has(a.entryId)) {
@@ -124,7 +146,7 @@ export function resolveAnchor(project: Project, anchor: ThreadAnchor): AnchorRes
     case 'annotation':
       return resolveItem(idx, anchor);
     default:
-      return resolvePart(idx, anchor);
+      return resolvePart(project, idx, anchor);
   }
 }
 
@@ -141,9 +163,10 @@ export function hostOf(project: Project, anchor: ThreadAnchor): ThreadHost | nul
 
 /** Stable key of the host (groups the pins): `marking:<id>`, `point:<container>:<x>:<y>`… */
 export function hostKey(host: ThreadHost): string {
-  return host.kind === 'point'
-    ? `point:${host.containerId ?? ''}:${host.x}:${host.y}`
-    : `${host.kind}:${host.id}`;
+  if (host.kind !== 'point') return `${host.kind}:${host.id}`;
+  // A canvas point is one space per page: the page tells two pins at the same spot apart.
+  const space = host.containerId ?? `:${host.pageId ?? ''}`;
+  return `point:${space}:${host.x}:${host.y}`;
 }
 
 // ---------------------------------------------------------------------------

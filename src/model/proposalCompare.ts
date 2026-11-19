@@ -95,6 +95,8 @@ class Created {
       path = `annotation(${ref('marking', to.markingId)} › ${ref('layer', to.layerId)} › ${type} › ${text(to.name)})`;
     } else if (kind === 'layer') {
       path = `layer(${text(to.name)})`;
+    } else if (kind === 'page') {
+      path = `page(${text(to.name)})`;
     } else {
       path = `#${key}`;
     }

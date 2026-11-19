@@ -32,7 +32,7 @@ const threadRefArg = z
 const anchorArg = z
   .union([z.string(), z.record(z.string(), z.unknown())])
   .describe(
-    'Where the conversation sits: any reference in the project (marking or arrow `…/m/…`, container `…/i/…`, annotation `…/a/…`, layer `…/l/…`, field `…/a/<code>/f/<field>`, entry `…/a/<code>/e/<code>`, row `…/a/<code>/f/<field>/r/<code>`) or a loose point `{ point: { container, x, y } }` (`container` is the reference of a container, with x and y in its pixels, or null for the canvas).',
+    'Where the conversation sits: any reference in the project (marking or arrow `…/m/…`, container `…/i/…`, annotation `…/a/…`, layer `…/l/…`, field `…/a/<code>/f/<field>`, entry `…/a/<code>/e/<code>`, row `…/a/<code>/f/<field>/r/<code>`) or a loose point `{ point: { container, x, y, page } }` (`container` is the reference of a container, with x and y in its pixels, or null for the canvas; on the canvas `page` (id or name) says the page and is required when the project has several; a point inside a container has no `page`).',
   );
 
 const authorArg = z
@@ -49,7 +49,7 @@ export function registerThreadTools(server: McpServer, deps: ThreadToolDeps): vo
     'list_threads',
     {
       description:
-        "The project's conversation inbox. Without any filter, it brings the OPEN conversations awaiting you (the last message is from a person); with `text` or `anchor` (or just `status`/`awaiting`), whatever you do not give is `status: open` and `awaiting: any`. `status`: `open`, `resolved` or `all`; `awaiting`: `agent` (the last message is from a person), `human` (it is from an agent) or `any`; `anchor`: only those anchored to an item, layer, field, entry, row or point (and to its parts); `text`: searches the text of the messages, accent- and case-insensitive. Each row carries `ref` (`mapping://project/c/code`), `anchor` (the reference, or `{ point }`), `path`, `orphan` (the anchor's item was deleted), `status`, `awaiting`, `messages`, `subject` and `last` (the last message, with the `cites` resolved). Pagination by `limit` (default 50, maximum 200) and `offset`; `total` is the number that matches. `broken` lists unreadable conversation files. To read the whole conversation use get_thread.",
+        "The project's conversation inbox. Without any filter, it brings the OPEN conversations awaiting you (the last message is from a person); with `text` or `anchor` (or just `status`/`awaiting`), whatever you do not give is `status: open` and `awaiting: any`. `status`: `open`, `resolved` or `all`; `awaiting`: `agent` (the last message is from a person), `human` (it is from an agent) or `any`; `anchor`: only those anchored to an item, layer, field, entry, row or point (and to its parts); `text`: searches the text of the messages, accent- and case-insensitive. Each row carries `ref` (`mapping://project/c/code`), `anchor` (the reference, or `{ point }`), `path`, `orphan` (the anchor's item was deleted), `page` (`id`, `name`: the page of the item the conversation points to), `status`, `awaiting`, `messages`, `subject` and `last` (the last message, with the `cites` resolved). Pagination by `limit` (default 50, maximum 200) and `offset`; `total` is the number that matches. `broken` lists unreadable conversation files. To read the whole conversation use get_thread.",
       inputSchema: {
         project: projectArg,
         status: z.enum(['open', 'resolved', 'all']).optional(),
@@ -68,7 +68,7 @@ export function registerThreadTools(server: McpServer, deps: ThreadToolDeps): vo
     'get_thread',
     {
       description:
-        'A whole conversation: the state (`status`, `awaiting`, who resolved it), the resolved anchor (`ref`, `kind`, `path`, `name` and, on a field or entry, the current `value`; `orphan` if the item was deleted), the messages in order (author, time, text in markdown, the linked proposal and the `cites`: each `mapping://` link in the text resolved with `kind`, `ref`, `path`, `label`, `value` and `broken`), `citedIn` (the conversations that cite this one) and `proposals` (the linked proposals, with state and progress). Reply with post_message using the `id` of the LAST message as `after`.',
+        'A whole conversation: the state (`status`, `awaiting`, who resolved it), the resolved anchor (`ref`, `kind`, `path`, `name`, `page` (`id`, `name`) and, on a field or entry, the current `value`; `orphan` if the item was deleted; a canvas point carries its `page` inside `point` too), the messages in order (author, time, text in markdown, the linked proposal and the `cites`: each `mapping://` link in the text resolved with `kind`, `ref`, `path`, `label`, `value` and `broken`), `citedIn` (the conversations that cite this one) and `proposals` (the linked proposals, with state and progress). Reply with post_message using the `id` of the LAST message as `after`.',
       inputSchema: { ref: threadRefArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -79,7 +79,7 @@ export function registerThreadTools(server: McpServer, deps: ThreadToolDeps): vo
     'open_thread',
     {
       description:
-        'Opens a conversation anchored to an item of the project, with its first message (markdown, up to 10,000 characters), and returns its `ref`. Use it when facing an ambiguity the specialization does not settle, instead of guessing or dropping the task; carry on with the rest of the work: the person answers in the app, on the item. Cite items, fields and other conversations in the text as markdown links `[name](mapping://project/…)`; a citation that does not resolve is saved anyway, with the `broken-cite` warning. Writes only `comments/<id>.json`, as a new file (never overwrites); `mapping.json` does not change. The server does not resolve conversations: a person does, in the app.',
+        'Opens a conversation anchored to an item of the project (or to a loose point; a point on the canvas of a project with several pages needs `page`, otherwise it fails with `page-required`), with its first message (markdown, up to 10,000 characters), and returns its `ref`. Use it when facing an ambiguity the specialization does not settle, instead of guessing or dropping the task; carry on with the rest of the work: the person answers in the app, on the item. Cite items, fields and other conversations in the text as markdown links `[name](mapping://project/…)`; a citation that does not resolve is saved anyway, with the `broken-cite` warning. Writes only `comments/<id>.json`, as a new file (never overwrites); `mapping.json` does not change. The server does not resolve conversations: a person does, in the app.',
       inputSchema: {
         project: projectArg,
         anchor: anchorArg,

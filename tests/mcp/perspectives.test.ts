@@ -50,6 +50,7 @@ interface PerspectiveData {
     name: string | null;
     x: number;
     y: number;
+    page: { id: string; name: string };
   }[];
   missing: string[];
 }
@@ -139,7 +140,7 @@ afterAll(async () => {
 describe('get_project', () => {
   it('summarizes the perspectives and brings the arrival marks', async () => {
     const data = ok(await mcp.call<ProjectData>('get_project', { project: 'persp' }));
-    expect(data.schemaVersion).toBe(20);
+    expect(data.schemaVersion).toBe(21);
     expect(data.perspectives).toEqual([
       {
         id: id('P1'),
@@ -163,7 +164,7 @@ describe('get_project', () => {
     const path = join(base, 'v15', 'mapping.json');
     const before = hashOf(path);
     const data = ok(await mcp.call<ProjectData>('get_project', { project: 'v15' }));
-    expect(data).toMatchObject({ schemaVersion: 20, migratedFrom: 15 });
+    expect(data).toMatchObject({ schemaVersion: 21, migratedFrom: 15 });
     expect(data.perspectives).toEqual([]);
     expect(data.arrivals).toEqual([]);
     expect(hashOf(path)).toBe(before);
@@ -191,6 +192,7 @@ describe('get_perspective', () => {
         name: null,
         x: 1200,
         y: 40,
+        page: { id: expect.any(String), name: 'Page 1' },
       },
       {
         ref: `mapping://persp/m/${codeOf(id('F1'))}`,
@@ -198,6 +200,7 @@ describe('get_perspective', () => {
         name: 'Table',
         x: 1480,
         y: 260,
+        page: { id: expect.any(String), name: 'Page 1' },
       },
     ]);
   });

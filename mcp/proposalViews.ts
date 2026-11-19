@@ -74,6 +74,14 @@ export class ProposalLabels {
     return id;
   }
 
+  private pageName(id: string): string {
+    for (const refs of [this.proposed, this.current]) {
+      const page = refs.project.pages.find((g) => g.id === id);
+      if (page) return page.name;
+    }
+    return id;
+  }
+
   /** The readable target of a change. */
   target(c: Change): string {
     switch (c.entity) {
@@ -87,6 +95,8 @@ export class ProposalLabels {
         return this.ref('a', c.entityId) ?? `annotation ${c.entityId}`;
       case 'layer':
         return `layer "${this.layerName(c.entityId)}"`;
+      case 'page':
+        return `page "${this.pageName(c.entityId)}"`;
       case 'specialization':
         return `specialization ${c.entityId}`;
       case 'platformRepo':

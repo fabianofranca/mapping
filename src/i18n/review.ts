@@ -183,6 +183,7 @@ export const reviewEnUS = {
   'review.entity.project': 'Project',
   'review.arrow.label': '{from} → {to}',
   'review.entity.annotation': 'Annotation',
+  'review.entity.page': 'Page',
   'review.title.created': '{entity} {name} created',
   'review.title.removed': '{entity} {name} removed',
   'review.title.updated': '{entity} {name} updated',
@@ -226,6 +227,8 @@ export const reviewEnUS = {
   'review.field.color': 'Color',
   'review.field.spec': 'Specialization',
   'review.field.position': 'Order',
+  'review.field.page': 'Page',
+  'review.row.page': 'Page: {name}',
   'review.field.entry': 'Pair',
   'review.rect.x': 'x',
   'review.rect.y': 'y',
@@ -437,6 +440,10 @@ export const reviewEnUS = {
   'review.issue.missingImage': '{name} depends on an image that is not in the project.',
   'review.issue.acceptMissing': 'Accept the missing one(s) ({count})',
   'review.issue.rejectCause': 'Reject the cause ({count})',
+  'review.issue.crossPage':
+    '{name} would join items of different pages. The page changes of the group go together: accept the rest of them or reject this one.',
+  'review.issue.pageParent':
+    '{name} would end up on a different page than {other}. The page changes of the group go together: accept the rest of them or reject this one.',
   'review.locked.title': 'Locked item',
   'review.locked.text':
     'Accepting position or removal changes is allowed in review. The lock stays on after applying.',
@@ -691,6 +698,7 @@ export const reviewPtBR: Record<keyof typeof reviewEnUS, string> = {
   'review.entity.project': 'Projeto',
   'review.arrow.label': '{from} → {to}',
   'review.entity.annotation': 'Anotação',
+  'review.entity.page': 'Página',
   'review.title.created': '{entity} {name} criada',
   'review.title.removed': '{entity} {name} removida',
   'review.title.updated': '{entity} {name} atualizada',
@@ -734,6 +742,8 @@ export const reviewPtBR: Record<keyof typeof reviewEnUS, string> = {
   'review.field.color': 'Cor',
   'review.field.spec': 'Especialização',
   'review.field.position': 'Ordem',
+  'review.field.page': 'Página',
+  'review.row.page': 'Página: {name}',
   'review.field.entry': 'Par',
   'review.rect.x': 'x',
   'review.rect.y': 'y',
@@ -944,6 +954,10 @@ export const reviewPtBR: Record<keyof typeof reviewEnUS, string> = {
   'review.issue.missingImage': '{name} depende de uma imagem que não está no projeto.',
   'review.issue.acceptMissing': 'Aceitar a(s) que falta(m) ({count})',
   'review.issue.rejectCause': 'Rejeitar a(s) que causa(m) ({count})',
+  'review.issue.crossPage':
+    '{name} ligaria itens de páginas diferentes. As mudanças de página do grupo andam juntas: aceite as outras ou rejeite esta.',
+  'review.issue.pageParent':
+    '{name} ficaria em uma página diferente de {other}. As mudanças de página do grupo andam juntas: aceite as outras ou rejeite esta.',
   'review.locked.title': 'Item trancado',
   'review.locked.text':
     'Aceitar mudanças de posição ou remoção é permitido na revisão. A trava continua ligada depois de aplicar.',

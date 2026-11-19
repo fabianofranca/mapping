@@ -90,6 +90,7 @@ const MARKING_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
   'anchor-cycle': 'marking.error.anchor-cycle',
   'anchor-other-space': 'marking.error.anchor-other-space',
   'not-anchored': 'marking.error.not-anchored',
+  'arrow-cross-page': 'marking.error.arrow-cross-page',
   locked: 'marking.error.locked',
   reviewing: 'review.readOnly',
 };

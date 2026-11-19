@@ -12,6 +12,7 @@ import {
   canArrange,
   componentPlacement,
   createDrawingCache,
+  createPage,
   loadSpecComponents,
   parseSpec,
   type ComponentCatalog,
@@ -369,5 +370,35 @@ describe('Arrange and the drawing agree on `accepts` (CL5, finding 2)', () => {
     const arranged = arrangeMarking(p, cat, 'B', approximateMeasurer).project;
     const kid = arranged.markings.find((m) => m.id === 'PIN')!;
     expect(kid.rect.x + kid.rect.width / 2).toBeGreaterThan(100 + 180);
+  });
+});
+
+describe('componentPlacement: a canvas parent on another page', () => {
+  it('looks at the siblings of the parent page, not at the first page (closing review)', () => {
+    let p = createPage(baseProject(), { id: 'PG2', name: 'Second' });
+    p = add(p, 'B', 'bar', {
+      containerId: null,
+      pageId: 'PG2',
+      rect: { x: 100, y: 100, width: 360, height: 56 },
+    });
+    p = add(p, 'NAV', 'pin', {
+      containerId: null,
+      parentId: 'B',
+      slot: 'navigationIcon',
+    });
+    const placed = componentPlacement(
+      p,
+      catalog,
+      {
+        containerId: null,
+        parentId: 'B',
+        slot: 'navigationIcon',
+        specId: SPEC_ID,
+        typeId: 'pin',
+      },
+      approximateMeasurer,
+    );
+    expect(rectOf(p, 'NAV').x).toBeLessThan(placed.x + placed.width);
+    expect(placed).not.toEqual(rectOf(p, 'NAV'));
   });
 });

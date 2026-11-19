@@ -279,7 +279,7 @@ function hiddenVisibility(p: Project): ReadonlyMap<string, MarkingVisibility> {
 }
 
 /** All the whole markings, once per project version (view mode). */
-const fullVisibility = memoByProject(
+export const fullVisibility = memoByProject(
   (p: Project): ReadonlyMap<string, MarkingVisibility> =>
     new Map(p.markings.map((m) => [m.id, 'full' as const])),
 );
@@ -301,7 +301,7 @@ function layersWithDrawing(
  * without a file always; that of a photo only with the option on. `hiddenLayers`: layers with drawings
  * unchecked in view mode.
  */
-function drawnIds(
+export function drawnIds(
   all: ComponentDrawings,
   containers: ReadonlyMap<string, ProjectContainer>,
   onPhotos: boolean,
@@ -485,6 +485,25 @@ function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
 }
 
 /**
+ * The model's pending items of the project in view. They resolve against the project with every
+ * page (`across`), so a `ref` to an annotation on another page is not broken (stage #883, CL1),
+ * and only those of annotations of the page in view count.
+ */
+function pageIssues(
+  shown: Project | null,
+  across: Project | null | undefined,
+): ReadonlyMap<string, readonly AnnotationIssue[]> {
+  if (!shown) return NO_ISSUES;
+  if (!across || across === shown) return projectIssues(shown);
+  const { annotations } = projectIndex(shown);
+  const all = projectIssues(across);
+  if (all.size === 0) return all;
+  const kept = new Map<string, readonly AnnotationIssue[]>();
+  for (const [id, list] of all) if (annotations.has(id)) kept.set(id, list);
+  return kept.size === all.size ? all : kept;
+}
+
+/**
  * `shown`: the project in view (`review.derived.shownProject`): in the review's Proposed view,
  * the "as it would be"; otherwise, the confirmed one. Without it (editor tests without a review), the
  * confirmed one. Never the project with the gesture preview: nothing here depends on geometry,
@@ -576,8 +595,7 @@ export function createEditorDerived(
 
   let lastIssues: ReadonlyMap<string, readonly AnnotationIssue[]> = NO_ISSUES;
   const issues = computed(() => {
-    const p = project.value;
-    const base = p ? projectIssues(p) : NO_ISSUES;
+    const base = pageIssues(project.value, threadSources.project?.value);
     const drawn = [...scenes.value.values()].filter(
       (d) => d.overflow || d.slotIssues.length > 0,
     );
@@ -1004,6 +1022,11 @@ export interface ReviewSources {
    * Main one. The review locks the Main one, so it is `null` while a proposal is open.
    */
   readonly perspectiveId?: ReadonlySignal<string | null>;
+  /**
+   * Id of the open page (`session.page.id`). The project in view is cut by it before the
+   * perspective (stage #883, decision 16). Without it (editor tests), the whole project.
+   */
+  readonly pageId?: ReadonlySignal<string>;
 }
 
 /** Counts of the open proposal (the review strip and the Proposals window). */
@@ -1200,6 +1223,12 @@ export interface ReviewDerived {
    * of the canvas read from here (a new import has images only in the preview).
    */
   readonly shownProject: ReadonlySignal<Project | null>;
+  /**
+   * `shownProject` before the page cut (stage #883): the same project in view, with every page. The
+   * conversations resolve their anchors against it, so a conversation on another page is not an
+   * orphan and going to it can switch the page (`ThreadSources.project`).
+   */
+  readonly shownAcrossPages: ReadonlySignal<Project | null>;
   /**
    * The "as it would be" with all the changes not yet applied, ignoring the decisions: what
    * a rejected creation proposed (the Details show it even outside the two views).
@@ -1528,15 +1557,23 @@ export function createReviewDerived(
   });
 
   // The project in view: the confirmed one or the proposal's "as it would be", clipped by the open
-  // perspective (decision 3). `projectInPerspective` is memoized by project and perspective, and nothing
+  // page and then by the open perspective (decision 3; pages, decision 16). `projectInPerspective` is memoized by project and perspective, and nothing
   // here reads the viewport: pan and zoom do not recompute.
-  const shownProject = computed((): Project | null => {
-    const base =
-      sources.proposalId.value === null || sources.view.value === 'current'
-        ? project.value
-        : (preview.value?.project ?? project.value);
-    return projectInPerspective(base, sources.perspectiveId?.value ?? null);
-  });
+  const viewBase = computed((): Project | null =>
+    sources.proposalId.value === null || sources.view.value === 'current'
+      ? project.value
+      : (preview.value?.project ?? project.value),
+  );
+  const shownProject = computed((): Project | null =>
+    projectInPerspective(
+      viewBase.value,
+      sources.perspectiveId?.value ?? null,
+      sources.pageId?.value,
+    ),
+  );
+  const shownAcrossPages = computed((): Project | null =>
+    projectInPerspective(viewBase.value, sources.perspectiveId?.value ?? null),
+  );
 
   const fullPreview = computed((): Project | null => {
     const changes = changesOf.value;
@@ -1617,6 +1654,7 @@ export function createReviewDerived(
     hold,
     preview,
     shownProject,
+    shownAcrossPages,
     fullPreview,
     fieldIndex,
     visibleIds,

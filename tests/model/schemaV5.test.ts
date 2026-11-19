@@ -23,7 +23,7 @@ describe('migration v4 → v5 (lock)', () => {
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(4);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(20);
+    expect(result.project.schemaVersion).toBe(21);
     expect(result.project.containers.every((i) => i.locked === false)).toBe(true);
     expect(result.project.markings.every((m) => m.locked === false)).toBe(true);
     expect(result.project).toEqual(sampleProject());
@@ -33,7 +33,7 @@ describe('migration v4 → v5 (lock)', () => {
     const first = deserialize(v4Text());
     if (!first.ok) throw new Error('failed');
     const saved = serialize(first.project);
-    expect(JSON.parse(saved).schemaVersion).toBe(20);
+    expect(JSON.parse(saved).schemaVersion).toBe(21);
     const again = deserialize(saved);
     if (!again.ok) throw new Error('failed');
     expect(serialize(again.project)).toBe(saved);

@@ -3,12 +3,14 @@ import { catalogPtBR } from './catalog';
 import { modelMessagesPtBR } from './modelMessages';
 import { reviewPtBR } from './review';
 import { perspectivesPtBR } from './perspectives';
+import { pagesPtBR } from './pages';
 
 // Values only: the keys and their context (comments) live in `en-US.ts`; `Dictionary` makes the
 // compiler reject a missing or an extra key.
 export const ptBR: Dictionary = {
   ...reviewPtBR,
   ...perspectivesPtBR,
+  ...pagesPtBR,
   ...catalogPtBR,
   ...modelMessagesPtBR,
   'app.title': 'Mapping',
@@ -151,6 +153,7 @@ export const ptBR: Dictionary = {
   'marking.error.anchor-cycle': 'Essa marcação já depende desta (ciclo de âncoras).',
   'marking.error.anchor-other-space': 'A âncora precisa estar no mesmo container.',
   'marking.error.not-anchored': 'Esta marcação não tem âncora.',
+  'marking.error.arrow-cross-page': 'Uma seta não liga marcações de páginas diferentes.',
   'marking.error.generic': 'Não foi possível alterar a marcação.',
 
   'image.name': 'Nome',
@@ -371,6 +374,7 @@ export const ptBR: Dictionary = {
   'inconsistent.entity.spec': 'Especialização',
   'inconsistent.entity.perspective': 'Perspectiva',
   'inconsistent.entity.arrival': 'Chegada',
+  'inconsistent.entity.page': 'Página',
   'invariant.duplicate-id': 'id repetido',
   'invariant.duplicate-file': 'arquivo repetido',
   'invariant.container-content': 'cor de fundo e arquivo juntos (ou nenhum dos dois)',
@@ -419,6 +423,12 @@ export const ptBR: Dictionary = {
   'invariant.arrival-root-missing': 'raiz da chegada inexistente',
   'invariant.arrival-root-not-root': 'a chegada não aponta para uma raiz',
   'invariant.arrival-duplicate': 'chegada repetida para a mesma raiz',
+  'invariant.pages-empty': 'o projeto não tem nenhuma página',
+  'invariant.page-duplicate-name': 'nome de página repetido',
+  'invariant.page-missing': 'a página não existe',
+  'invariant.page-required': 'o item não tem página (ou tem uma que não deveria ter)',
+  'invariant.page-parent-mismatch': 'pai em outra página',
+  'invariant.arrow-cross-page': 'seta entre marcações de páginas diferentes',
   'repair.new-id': 'o par repetido ganha um id novo',
   'repair.clipped': 'recortada aos limites da imagem',
   'repair.removed': 'removida',
@@ -426,6 +436,9 @@ export const ptBR: Dictionary = {
   'repair.moved': 'movida para a direita das anteriores',
   'repair.renamed': 'renomeada com um número',
   'repair.released': 'âncora solta (a marcação fica onde está)',
+  'repair.created': 'uma página é criada',
+  'repair.page-set': 'vai para a primeira página',
+  'repair.page-cleared': 'a página é limpa (quem decide é o container)',
   'error.invalid-zip': 'O arquivo não é um zip válido.',
   'error.missing-mapping': 'O zip não contém um mapping.json.',
   'error.not-found': 'Projeto não encontrado.',
@@ -747,6 +760,7 @@ export const ptBR: Dictionary = {
   'thread.time.dateYear': '{day}/{month}/{year}',
   'thread.anchor.layer': 'Camada {name}',
   'thread.anchor.point': '{where} · ponto solto',
+  'thread.anchor.canvasPage': 'Canvas · página {page}',
   'thread.anchor.missing.marking': 'Marcação apagada · órfã',
   'thread.anchor.missing.container': 'Container apagado · órfã',
   'thread.anchor.missing.arrow': 'Seta apagada · órfã',
@@ -754,6 +768,7 @@ export const ptBR: Dictionary = {
   'thread.anchor.missing.annotation': 'Anotação apagada · órfã',
   'thread.anchor.missing.entry': 'Par apagado · órfã',
   'thread.anchor.missing.row': 'Linha apagada · órfã',
+  'thread.anchor.missing.page': 'Página apagada · órfã',
   'citation.unnamed': '(sem nome)',
   'citation.missing': 'O item citado não existe mais',
   'citation.chipLabel': '{name}, citação',
@@ -1344,6 +1359,7 @@ export const ptBR: Dictionary = {
   'perspective.error.name-taken': 'Já existe uma perspectiva com esse nome.',
   'perspective.error.not-root': 'Só itens soltos no canvas entram numa perspectiva.',
   'perspective.error.generic': 'Não foi possível alterar a perspectiva.',
+  'page.defaultName': 'Página 1',
   'arrowLinks.section': 'Ligado por seta',
   'arrowLinks.out': 'Sai para',
   'arrowLinks.in': 'Chega de',

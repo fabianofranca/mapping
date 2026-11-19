@@ -1,4 +1,5 @@
 import { Fragment, type ComponentChildren } from 'preact';
+import { useEffect } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   arrowDeletionImpact,
@@ -8,6 +9,10 @@ import {
 } from '../model';
 import { ContainerDialog } from '../ui/ContainerDialog';
 import { DeletePerspectiveDialog } from '../ui/DeletePerspectiveDialog';
+import { DeletePageDialog } from '../ui/DeletePageDialog';
+import { ManagePagesDialog } from '../ui/ManagePagesDialog';
+import { goToArrow } from '../ui/movePage';
+import { MovePageRefusedDialog } from '../ui/MovePageRefusedDialog';
 import { ManagePerspectivesDialog } from '../ui/ManagePerspectivesDialog';
 import { NewPerspectiveDialog } from '../ui/NewPerspectiveDialog';
 import { Dialog } from '../ui/Dialog';
@@ -285,6 +290,38 @@ function renderDialog(
           }
         />
       );
+    case 'managePages':
+      return (
+        <ManagePagesDialog
+          onClose={close}
+          focus={dialog.focus}
+          onDelete={(id) => dialogs.show({ kind: 'deletePage', id })}
+        />
+      );
+    case 'deletePage':
+      // Opened from Manage (the only origin): on closing, it goes back to it, like the perspectives.
+      return (
+        <DeletePageDialog
+          id={dialog.id}
+          onClose={() =>
+            dialogs.show({
+              kind: 'managePages',
+              focus: { kind: 'delete', id: dialog.id },
+            })
+          }
+          onDeleted={() =>
+            dialogs.show({ kind: 'managePages', focus: { kind: 'close' } })
+          }
+        />
+      );
+    case 'movePageRefused':
+      return (
+        <MovePageRefusedDialog
+          arrows={dialog.arrows}
+          onGoToArrow={dialog.onGoToArrow}
+          onClose={close}
+        />
+      );
     case 'confirmClose':
       return (
         <ConfirmDialog
@@ -337,7 +374,18 @@ function ExternalChangeDialog() {
 /** The dialog open in the editor (`dialogs.current`), if any. */
 export function EditorDialogs(props: EditorDialogsProps) {
   const ctx = useEditor();
-  const { current } = props.dialogs;
+  const { current, show } = props.dialogs;
+  // A "Move to page" that cut arrows (right-click menu, Details): the dialog lists them.
+  const refusal = ctx.moveRefusal.value;
+  useEffect(() => {
+    if (refusal === null) return;
+    ctx.moveRefusal.value = null;
+    show({
+      kind: 'movePageRefused',
+      arrows: refusal,
+      onGoToArrow: (arrowId) => goToArrow(ctx, arrowId),
+    });
+  }, [refusal, ctx, show]);
   return (
     <>
       {current && (

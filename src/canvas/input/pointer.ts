@@ -101,6 +101,8 @@ export interface PointerInputOptions {
   readonly containerTitles?: () => ReadonlyMap<string, Rect>;
   /** The thread pin under the canvas point (wins over the marking below); `null` if none. */
   readonly pinAt?: (c: Point) => PinPlace | null;
+  /** The open page: a canvas point comment is created on it (stage #883, PG4). */
+  readonly openPageId?: () => string | undefined;
 }
 
 /** Gestures that drag items: the cursor is the move one. */
@@ -821,6 +823,7 @@ export class PointerInput {
         arrows: this.arrowHit(project),
         titles: this.o.containerTitles?.(),
         pin: this.o.pinAt?.(c) ?? null,
+        pageId: this.o.openPageId?.(),
       },
       c,
     );
@@ -953,7 +956,13 @@ export class PointerInput {
       ui.selection.value = picked;
     }
     const c = viewport.toCanvas(viewport.screenPoint(e));
-    const menu = canvasMenuAt(this.project(), picked, c, { x: e.clientX, y: e.clientY });
+    const menu = canvasMenuAt(
+      this.project(),
+      picked,
+      c,
+      { x: e.clientX, y: e.clientY },
+      this.o.openPageId?.(),
+    );
     if (menu) ui.canvasMenu.value = menu;
   }
 

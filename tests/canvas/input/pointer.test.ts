@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createInteractionState } from '../../../src/canvas/frame';
-import { PointerInput } from '../../../src/canvas/input/pointer';
+import {
+  PointerInput,
+  type PointerInputOptions,
+} from '../../../src/canvas/input/pointer';
 import { ViewportController } from '../../../src/canvas/viewportController';
 import {
   addContainer,
@@ -31,6 +34,7 @@ function setup(
   readOnly = false,
   project: Project = canvasProject(),
   titles: ReadonlyMap<string, Rect> = new Map(),
+  extra: Partial<PointerInputOptions> = {},
 ) {
   const editor = editorFor(project, readOnly);
   const container = document.createElement('div');
@@ -47,6 +51,7 @@ function setup(
     spaceDown: () => spaceDown,
     reviewing: () => reviewing,
     containerTitles: () => titles,
+    ...extra,
   });
   const unbind = input.bind();
   const fire = (
@@ -453,6 +458,23 @@ describe('PointerInput: middle button and Ctrl+click (CR canvas/store, items 16 
     s.fire('pointerdown', 1050, 50, { button: 1 });
     s.fire('pointerup', 1050, 50, { button: 1 });
     expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
+    s.cleanup();
+  });
+
+  it('the armed Comment puts a canvas point on the open page, and still comments on an item', () => {
+    const s = setup(false, canvasProject(), new Map(), {
+      openPageId: () => 'PG2',
+    });
+    s.ui.commentArm.value = { mode: 'navigate' };
+    s.click(1050, 50);
+    expect(s.ui.composing.value?.anchor).toMatchObject({
+      kind: 'point',
+      containerId: null,
+      pageId: 'PG2',
+    });
+    s.ui.commentArm.value = { mode: 'navigate' };
+    s.click(250, 250);
+    expect(s.ui.composing.value).not.toBeNull();
     s.cleanup();
   });
 

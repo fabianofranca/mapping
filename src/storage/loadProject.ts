@@ -9,6 +9,7 @@ import {
   type Project,
   type RepairedLoad,
 } from '../model';
+import { t } from '../i18n';
 import { mapLimit } from '../utils/mapLimit';
 import { reportError } from '../utils/report';
 import { FOLDER_CONCURRENCY } from './folderConcurrency';
@@ -71,7 +72,7 @@ export async function loadProject(storage: ProjectStorage): Promise<LoadProjectR
     const spec = copies[i];
     if (spec !== null && spec !== undefined) specs.set(file, spec);
   });
-  const result = deserialize(text, migrations, specs);
+  const result = deserialize(text, migrations, specs, t('page.defaultName'));
   if (!result.ok) {
     const { error, repair } = result;
     if (error.code === 'invariant-violation' && repair) {

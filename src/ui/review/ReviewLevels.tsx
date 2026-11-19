@@ -20,7 +20,14 @@ import { Notice } from '../Notice';
 import { useMediaQuery } from '../useMediaQuery';
 import { Button, Chip, Choice, IconButton, Segmented, Select } from '../controls';
 import { ChangeKind, changeKindLabel } from './ChangeKind';
-import { changeSummary, changeTitle, targetName, type ReviewNames } from './changeText';
+import {
+  changePageName,
+  changeSummary,
+  changeTitle,
+  targetName,
+  tellsPages,
+  type ReviewNames,
+} from './changeText';
 import { REVIEW_KEYS, type DecisionValue } from './DecisionControl';
 import { Flag } from './Flag';
 import { DecisionCounts } from './ProposalRow';
@@ -456,6 +463,7 @@ export function ReviewLevels() {
   const comparison = d.supersession.value?.comparison ?? null;
   const open = p.status === 'open';
   const changesById = new Map(p.changes.map((c) => [c.id, c]));
+  const showPages = tellsPages(names);
   const closedReason = open ? undefined : t('review.closedReason');
 
   const toggle = (key: string) => {
@@ -481,6 +489,7 @@ export function ReviewLevels() {
         rowKey={key}
         depth={depth}
         label={label}
+        page={showPages ? changePageName(names, c) : null}
         state={state}
         type={types.get(c.id) ?? null}
         expandable={false}

@@ -18,6 +18,7 @@ import { classes } from './controls/classes';
 import { Icon } from './icons';
 import { RefPicker } from './RefPicker';
 import { labelTexts, refButtonName } from './typedText';
+import { useFollowRef } from './useFollowRef';
 
 // Cell of a table `ref` column (ME4, decision (e)): the compact version of `RefField`.
 // Shows the target (or "Choose…", or the broken reference) and opens the compact picker (also
@@ -65,6 +66,7 @@ export function RefCell({
   onGoToAnnotation,
 }: RefCellProps) {
   const [picking, setPicking] = useState(false);
+  const followRef = useFollowRef(onGoToAnnotation);
   const button = useRef<HTMLButtonElement>(null);
   const ref = parseRefValue(value);
   const target = ref ? resolveRef(project, ref) : null;
@@ -123,7 +125,7 @@ export function RefCell({
           aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.pickRef)}
           disabled={readOnly}
           onClick={(e) => {
-            if ((e.ctrlKey || e.metaKey) && target) onGoToAnnotation(target.annotation);
+            if ((e.ctrlKey || e.metaKey) && target) followRef(target.annotation);
             else open();
           }}
         >
@@ -150,7 +152,7 @@ export function RefCell({
           onPick={(picked, andGo) => {
             setPicking(false);
             onSet({ ...picked.ref });
-            if (andGo) onGoToAnnotation(picked.annotation);
+            if (andGo) followRef(picked.annotation);
           }}
         />
       )}

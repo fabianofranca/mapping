@@ -9,6 +9,7 @@ import { composingAnchor } from '../../src/store/threadUi';
 import { CanvasContextMenu } from '../../src/ui/CanvasContextMenu';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { sampleProject } from '../model/fixtures';
+import { pagesProject } from '../store/pageHarness';
 import { AGENT, HUMAN, T0, T1, message, sampleThread } from '../model/threadFixtures';
 import { createHarness, type Harness } from './harness';
 
@@ -141,5 +142,36 @@ describe('canvas context menu', () => {
     expect(
       screen.getByRole('menuitem', { name: t('comments.here') }).hasAttribute('disabled'),
     ).toBe(true);
+  });
+
+  it('Comment here on a canvas point stays enabled on a page that is not the first', async () => {
+    const h = createHarness(pagesProject());
+    h.context.session.page.open('PG2');
+    h.ui.canvasMenu.value = {
+      x: 10,
+      y: 10,
+      target: null,
+      comment: null,
+      here: { kind: 'point', containerId: null, x: 1, y: 2, pageId: 'PG2' },
+    };
+    mount(h, <CanvasContextMenu />);
+    expect(
+      screen.getByRole('menuitem', { name: t('comments.here') }).hasAttribute('disabled'),
+    ).toBe(false);
+  });
+
+  it('Comment on an item still works off the first page', async () => {
+    const h = createHarness(pagesProject());
+    h.context.session.page.open('PG2');
+    h.ui.canvasMenu.value = {
+      x: 10,
+      y: 10,
+      target: { kind: 'm', id: 'M5' },
+      comment: { kind: 'marking', id: 'M5' },
+      here: null,
+    };
+    mount(h, <CanvasContextMenu />);
+    fireEvent.click(screen.getByRole('menuitem', { name: t('comments.comment') }));
+    expect(composingAnchor(h.ui)).toEqual({ kind: 'marking', id: 'M5' });
   });
 });

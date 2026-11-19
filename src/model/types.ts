@@ -1,9 +1,9 @@
 import type { Spec } from './spec';
 
-// Types of the `mapping.json` (schema v20). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
+// Types of the `mapping.json` (schema v21). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
 // the operations always return a new project.
 
-export const SCHEMA_VERSION = 20;
+export const SCHEMA_VERSION = 21;
 /** The reading directions the file accepts (v20): single source of the type and the schemas (zod, MCP). */
 export const READING_DIRECTIONS = ['ltr', 'rtl'] as const;
 /** Reading direction (v20): left to right or right to left. */
@@ -81,6 +81,8 @@ export interface ProjectContainer {
    * (`settleHierarchy`); `null` = none. Never chosen by hand.
    */
   readonly parentId: string | null;
+  /** Page the container lives on (v21): a `pages[].id`. */
+  readonly pageId: string;
   /** Border color of this image's markings (`#RRGGBB`); `null` = the theme's neutral color. */
   readonly markingColor: string | null;
   /** Locked (v5): cannot be moved, resized or deleted. Selection stays free. */
@@ -140,6 +142,11 @@ export interface Marking {
    * never chosen by hand); `null` = none.
    */
   readonly parentId: string | null;
+  /**
+   * Page of the marking (v21): a `pages[].id` on a canvas marking (null `containerId`, floating
+   * included); `null` on a container marking (its page is the container's).
+   */
+  readonly pageId: string | null;
   readonly name: string | null;
   readonly rect: Rect;
   readonly needsReview: boolean;
@@ -364,6 +371,13 @@ export interface Arrival {
   readonly fromName: string;
 }
 
+/** Page of the project (v21): each canvas root lives on exactly one page. */
+export interface Page {
+  readonly id: string;
+  /** Unique among the pages, ignoring case and the spaces at the ends. */
+  readonly name: string;
+}
+
 export interface Project {
   readonly schemaVersion: typeof SCHEMA_VERSION;
   /**
@@ -394,6 +408,8 @@ export interface Project {
   readonly drawingMode?: string;
   /** Reading direction of the project (v20): `ltr` or `rtl`; absent = `ltr`. */
   readonly direction?: ReadingDirection;
+  /** Pages in display order (v21): at least one. */
+  readonly pages: readonly Page[];
   readonly layers: readonly Layer[];
   readonly containers: readonly ProjectContainer[];
   readonly markings: readonly Marking[];

@@ -35,7 +35,7 @@ describe('resolveAnchor / hostOf / isOrphan', () => {
     [
       'point on the canvas',
       { kind: 'point', containerId: null, x: 1.5, y: -2 },
-      'point::1.5:-2',
+      'point::PG1:1.5:-2',
     ],
   ];
 

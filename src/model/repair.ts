@@ -12,7 +12,9 @@ import {
   toCanvasRect,
 } from './geometry';
 import { IMAGE_GAP } from './containers';
+import { DEFAULT_PAGE_NAME } from './migrations';
 import {
+  pageNameKey,
   perspectiveNameKey,
   validateProject,
   type InvariantCode,
@@ -24,6 +26,7 @@ import type {
   Arrival,
   Arrow,
   Marking,
+  Page,
   Perspective,
   Project,
   ProjectContainer,
@@ -32,7 +35,16 @@ import type {
 
 /** What the repair did to the item. */
 export type RepairAction =
-  'new-id' | 'clipped' | 'removed' | 'made-root' | 'moved' | 'renamed' | 'released';
+  | 'new-id'
+  | 'clipped'
+  | 'removed'
+  | 'made-root'
+  | 'moved'
+  | 'renamed'
+  | 'released'
+  | 'created'
+  | 'page-set'
+  | 'page-cleared';
 
 export interface RepairRecord {
   readonly action: RepairAction;
@@ -83,11 +95,18 @@ const REPAIRABLE: ReadonlySet<InvariantCode> = new Set<InvariantCode>([
   'anchor-self',
   'anchor-cycle',
   'anchor-other-space',
+  'pages-empty',
+  'page-duplicate-name',
+  'page-missing',
+  'page-required',
+  'page-parent-mismatch',
+  'arrow-cross-page',
 ]);
 
 /**
  * The `duplicate-id` is only repairable on the perspective (nothing points to it by id besides
- * the arrival, which keeps the name); on the other entities the reference would be ambiguous.
+ * the arrival, which keeps the name); on the other entities, the page included, the reference
+ * would be ambiguous.
  */
 function isRepairable(issue: InvariantIssue): boolean {
   if (issue.code === 'duplicate-id') return issue.entity === 'perspective';
@@ -115,7 +134,11 @@ const MAX_ROUNDS = 8;
  * repeated id → the repeated one gets a new id, repeated name → the repeated one gets " (2)",
  * " (3)"…; arrival of a nonexistent root, one that is not a root or repeated → removed; anchor
  * (v20) with a nonexistent target, itself, in another space or in a cycle → the marking is left
- * without an anchor (`anchor: null`). It only makes the project valid: it does not settle (the
+ * without an anchor (`anchor: null`); pages (v21): none → one is created; an item with a missing
+ * or absent page → the first page; a `pageId` on a container marking → `null`; a parent on
+ * another page → the item becomes a root; an arrow between pages → removed, with its annotations
+ * (the only repair that deletes, and it is listed); a repeated page name → the repeated one gets
+ * " (2)", " (3)"… It only makes the project valid: it does not settle (the
  * next geometry operation does). What remains after the repairs (`validateProject` again) is
  * `unrepaired`.
  */
@@ -123,13 +146,14 @@ export function repairProject(
   project: Project,
   issues: readonly InvariantIssue[],
   newId: () => string = () => crypto.randomUUID(),
+  pageName: string = DEFAULT_PAGE_NAME,
 ): RepairResult {
   const repaired: RepairRecord[] = [];
   let p = project;
   let current = issues;
   for (let round = 0; round < MAX_ROUNDS; round++) {
     if (!current.some(isRepairable)) break;
-    p = repairRound(p, current, newId, repaired);
+    p = repairRound(p, current, newId, repaired, pageName);
     current = validateProject(p);
   }
   return { project: p, repaired, unrepaired: current };
@@ -201,6 +225,7 @@ function repairRound(
   issues: readonly InvariantIssue[],
   newId: () => string,
   out: RepairRecord[],
+  pageName: string,
 ): Project {
   const codesOf = new Map<string, Set<InvariantCode>>();
   for (const issue of issues) {
@@ -211,6 +236,10 @@ function repairRound(
   }
   const has = (entity: InvariantEntity, id: string, code: InvariantCode) =>
     codesOf.get(`${entity}:${id}`)?.has(code) ?? false;
+
+  const pages = repairPages(p, issues, newId, out, pageName);
+  const firstPage = (pages[0] as Page).id;
+  const pageIds = new Set(pages.map((g) => g.id));
 
   // Markings: removed (nonexistent image, clip with no area), clipped or made root.
   // A canvas marking (null `containerId`) has no image: it is never an orphan nor clipped.
@@ -230,7 +259,14 @@ function repairRound(
       const rect = image
         ? fromCanvasRect(IDENTITY_PLACEMENT, toCanvasRect(image.placement, m.rect), null)
         : m.rect;
-      next = { ...next, containerId: null, parentId: null, rect };
+      // It lands on the canvas of its container's page.
+      next = {
+        ...next,
+        containerId: null,
+        parentId: null,
+        pageId: image?.pageId ?? null,
+        rect,
+      };
       record(out, 'made-root', 'floating-in-container', 'marking', m);
     } else if (image && has('marking', m.id, 'rect-out-of-image')) {
       const rect = clipToImage(m.rect, image);
@@ -251,6 +287,16 @@ function repairRound(
       next = { ...next, parentId: null };
       record(out, 'made-root', 'hierarchy-cycle', 'marking', m);
     }
+    next = repairMarkingPage(next, has, pageIds, firstPage, out);
+    // A page set this round may already fix the mismatch: the next round decides.
+    if (
+      next.parentId !== null &&
+      next.pageId === m.pageId &&
+      has('marking', m.id, 'page-parent-mismatch')
+    ) {
+      next = { ...next, parentId: null };
+      record(out, 'made-root', 'page-parent-mismatch', 'marking', m);
+    }
     markings.push(next);
   }
   const anchored = markings.map((m) => releaseBrokenAnchor(m, has, out));
@@ -259,9 +305,9 @@ function repairRound(
   // annotations go in the next round, like those of any owner that stopped existing.
   const arrows: Arrow[] = [];
   for (const a of p.arrows) {
-    const code = (['arrow-endpoint-missing', 'arrow-self'] as const).find((c) =>
-      has('arrow', a.id, c),
-    );
+    const code = (
+      ['arrow-endpoint-missing', 'arrow-self', 'arrow-cross-page'] as const
+    ).find((c) => has('arrow', a.id, c));
     if (code) record(out, 'removed', code, 'arrow', a);
     else arrows.push(a);
   }
@@ -323,10 +369,13 @@ function repairRound(
   // Overlapping images: each one that touches a previous one goes to the right of all of them.
   let projectImages = p.containers;
   if (issues.some((i) => i.code === 'images-overlap')) {
-    const placed: Rect[] = [];
+    // Each page is its own canvas: only the containers of the same page push each other.
+    const placedBy = new Map<string, Rect[]>();
     projectImages = p.containers.map((image) => {
       let next = image;
       let rect = imageCanvasRect(image, image.placement);
+      const placed = placedBy.get(image.pageId) ?? [];
+      placedBy.set(image.pageId, placed);
       if (placed.some((r) => rectsOverlap(r, rect))) {
         const x = Math.max(...placed.map(right)) + IMAGE_GAP;
         next = { ...image, placement: snapPlacement({ ...image.placement, x }) };
@@ -343,22 +392,99 @@ function repairRound(
     'container-parent-missing',
     'container-parent-not-canvas',
     'container-outside-parent',
+    'page-parent-mismatch',
   ];
   projectImages = projectImages.map((image) => {
+    const repaged = repairContainerPage(image, has, pageIds, firstPage, out);
     const code = orphanCodes.find((c) => has('image', image.id, c));
-    if (code === undefined || image.parentId === null) return image;
+    if (code === undefined || repaged.parentId === null) return repaged;
+    if (code === 'page-parent-mismatch' && repaged.pageId !== image.pageId)
+      return repaged;
     record(out, 'made-root', code, 'image', image);
-    return { ...image, parentId: null };
+    return { ...repaged, parentId: null };
   });
 
   return {
     ...p,
+    pages,
     containers: projectImages,
     markings: anchored,
     arrows,
     ...repairPerspectives(p, issues, newId, out),
     annotations: kept,
   };
+}
+
+/**
+ * Pages (v21): none → one is created; a repeated name → the repeated one gets " (2)", " (3)"… (a
+ * repeated id has no repair: the items would point to either). With no page problem it returns the
+ * list as it is.
+ */
+function repairPages(
+  p: Project,
+  issues: readonly InvariantIssue[],
+  newId: () => string,
+  out: RepairRecord[],
+  pageName: string,
+): readonly Page[] {
+  if (p.pages.length === 0) {
+    const page = { id: newId(), name: pageName };
+    record(out, 'created', 'pages-empty', 'page', page);
+    return [page];
+  }
+  if (!issues.some((i) => i.code === 'page-duplicate-name')) return p.pages;
+  const taken = new Set(p.pages.map((g) => pageNameKey(g.name)));
+  const seen = new Set<string>();
+  return p.pages.map((g) => {
+    const key = pageNameKey(g.name);
+    if (!seen.has(key)) {
+      seen.add(key);
+      return g;
+    }
+    const name = numberedName(g.name, taken);
+    taken.add(pageNameKey(name));
+    seen.add(pageNameKey(name));
+    record(out, 'renamed', 'page-duplicate-name', 'page', g);
+    return { ...g, name };
+  });
+}
+
+/** A container without a page, or on one that does not exist, goes to the first page. */
+function repairContainerPage(
+  c: ProjectContainer,
+  has: (entity: InvariantEntity, id: string, code: InvariantCode) => boolean,
+  pageIds: ReadonlySet<string>,
+  firstPage: string,
+  out: RepairRecord[],
+): ProjectContainer {
+  const code = (['page-required', 'page-missing'] as const).find((x) =>
+    has('image', c.id, x),
+  );
+  if (code === undefined || pageIds.has(c.pageId)) return c;
+  record(out, 'page-set', code, 'image', c);
+  return { ...c, pageId: firstPage };
+}
+
+/** Canvas marking without a page or on a missing one → first page; container marking with a page → `null`. */
+function repairMarkingPage(
+  m: Marking,
+  has: (entity: InvariantEntity, id: string, code: InvariantCode) => boolean,
+  pageIds: ReadonlySet<string>,
+  firstPage: string,
+  out: RepairRecord[],
+): Marking {
+  const code = (['page-required', 'page-missing'] as const).find((x) =>
+    has('marking', m.id, x),
+  );
+  if (code === undefined) return m;
+  if (m.containerId !== null) {
+    if (m.pageId === null) return m;
+    record(out, 'page-cleared', code, 'marking', m);
+    return { ...m, pageId: null };
+  }
+  if (m.pageId !== null && pageIds.has(m.pageId)) return m;
+  record(out, 'page-set', code, 'marking', m);
+  return { ...m, pageId: firstPage };
 }
 
 /** A name free among those already used (case-insensitive comparison): `Name (2)`, `Name (3)`… */

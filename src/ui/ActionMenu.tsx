@@ -1,7 +1,7 @@
 import type { Ref } from 'preact';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { Icon } from './icons';
-import { IconButton } from './controls';
+import { IconButton, useHideDisabled } from './controls';
 import { assignRef, returnFocusToTrigger } from './focus';
 import { createOpenScrollGuard } from './openScrollGuard';
 import { place } from './Popover';
@@ -60,6 +60,8 @@ export function ActionMenu({
   const root = useRef<HTMLSpanElement>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const list = useRef<HTMLSpanElement>(null);
+  const hideDisabled = useHideDisabled();
+  const shown = hideDisabled ? items.filter((item) => !item.disabled) : items;
 
   const close = () => {
     returnFocusToTrigger(root.current, trigger.current);
@@ -120,7 +122,7 @@ export function ActionMenu({
           aria-label={menuLabel ?? label}
           ref={list}
         >
-          {items.map((item, i) => (
+          {shown.map((item, i) => (
             <button
               key={i}
               type="button"

@@ -42,6 +42,18 @@ export interface ThreadSources {
   readonly identity: ReadonlySignal<Identity | null>;
   /** The loaded proposals (id and title), to resolve the citations; without them, none. */
   readonly proposals?: ReadonlySignal<readonly CitationProposal[]>;
+  /**
+   * The project the anchors resolve against (`review.derived.shownAcrossPages`, stage #883): the
+   * project in view with every page, so a conversation on another page is found and the Comments
+   * window can go to it. The canvas pins stay on the project in view (the open page). Without it,
+   * the project in view.
+   */
+  readonly project?: ReadonlySignal<Project | null>;
+  /**
+   * The open page (`session.page.id`). A canvas point lives on one page (stage #883, PG4): its pin
+   * only shows while that page is open. Without it, no page filters the pins.
+   */
+  readonly pageId?: ReadonlySignal<string | undefined>;
 }
 
 export interface ThreadDerived {
@@ -96,8 +108,11 @@ export function createThreadDerived(
   ui: EditorUi,
   sources: ThreadSources = NO_SOURCES,
 ): ThreadDerived {
+  // Where the anchors resolve: every page (the pins below only draw the open one).
+  const anchors = sources.project ?? project;
+
   const entries = computed((): readonly ThreadEntry[] => {
-    const p = project.value;
+    const p = anchors.value;
     if (!p) return [];
     return sources.threads.value.map((thread) => ({
       thread,
@@ -143,10 +158,17 @@ export function createThreadDerived(
     const threads = ui.commentPins.value ? all : all.filter((t) => t.id === selected);
     if (threads.length === 0) return NO_PINS;
     const unread = unreadIds.value;
-    return pinGroups(p, threads, {
+    const groups = pinGroups(p, threads, {
       selectedThreadId: selected,
       unread: (t) => unread.has(t.id),
     });
+    const open = sources.pageId?.value;
+    if (open === undefined) return groups;
+    const here = groups.filter(
+      (g) =>
+        g.host.kind !== 'point' || g.host.pageId === undefined || g.host.pageId === open,
+    );
+    return here.length === groups.length ? groups : here;
   });
 
   const citedIn = computed(() => backlinks(sources.threads.value));
@@ -156,7 +178,7 @@ export function createThreadDerived(
   // threads and the proposals, so pan, zoom and selection changes do not recompute it. Lazy:
   // it only runs with the filter on.
   const citesByThread = computed((): ReadonlyMap<string, readonly string[]> => {
-    const p = project.value;
+    const p = anchors.value;
     const map = new Map<string, readonly string[]>();
     if (!p) return map;
     const threads = sources.threads.value;
@@ -173,7 +195,7 @@ export function createThreadDerived(
   });
 
   const rows = computed((): readonly ThreadEntry[] => {
-    const p = project.value;
+    const p = anchors.value;
     if (!p) return [];
     const user = ui.commentsUser.value;
     const selected = ui.commentsCiteSelection.value ? ui.selection.value : null;

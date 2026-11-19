@@ -85,8 +85,8 @@ describe('proposal format', () => {
     ],
     [
       'wrong formatVersion',
-      (p) => (p.formatVersion = 10),
-      'formatVersion: must be 1, 2, 3, 4, 5, 6, 7, 8 or 9',
+      (p) => (p.formatVersion = 11),
+      'formatVersion: must be 1, 2, 3, 4, 5, 6, 7, 8, 9 or 10',
     ],
     ['id with a slash', (p) => (p.id = '../outside'), 'id: invalid id'],
     ['empty title', (p) => (p.title = '  '), 'title: cannot be empty'],

@@ -52,7 +52,7 @@ describe('serialization', () => {
   it('uses 2 spaces, a fixed key order and a trailing newline', () => {
     const text = serialize(emptyProject());
     expect(text.endsWith('}\n')).toBe(true);
-    expect(text.split('\n')[1]).toBe('  "schemaVersion": 20,');
+    expect(text.split('\n')[1]).toBe('  "schemaVersion": 21,');
     expect(Object.keys(JSON.parse(text))).toEqual([
       'schemaVersion',
       'revision',
@@ -62,6 +62,7 @@ describe('serialization', () => {
       'specializations',
       'platformRepos',
       'docRepos',
+      'pages',
       'layers',
       'containers',
       'markings',
@@ -79,6 +80,7 @@ describe('serialization', () => {
       markings: p.markings,
       containers: p.containers,
       layers: p.layers,
+      pages: p.pages,
       platformRepos: p.platformRepos,
       docRepos: p.docRepos,
       specializations: p.specializations,
@@ -176,8 +178,8 @@ describe('product name (app)', () => {
 
 describe('migrations', () => {
   it('the current registry has no pending migrations', () => {
-    expect(SCHEMA_VERSION).toBe(20);
-    expect(migrate({ a: 1 }, 20)).toEqual({ ok: true, data: { a: 1 } });
+    expect(SCHEMA_VERSION).toBe(21);
+    expect(migrate({ a: 1 }, 21)).toEqual({ ok: true, data: { a: 1 } });
   });
 
   it('applies the registered migrations in sequence', () => {

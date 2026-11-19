@@ -9,7 +9,15 @@ import { formatSpecPath, type SpecIssue } from './spec';
 // Pure: no DOM or Node. Whoever writes (the app session, the MCP server) stays outside the model.
 
 export const THREAD_FORMAT = 'mapping-thread';
-export const THREAD_FORMAT_VERSION = 1;
+/**
+ * The versions a reader accepts. 1 is the original; 2 (stage #883, PG4) adds `pageId` to the `point`
+ * anchor on the canvas (`containerId: null`). The writer picks per thread (`threadFormatVersion`): 2
+ * only when the anchor has a `pageId`, so every other thread stays readable by an earlier reader,
+ * while a v1 reader refuses a version 2 (an unreadable thread) instead of silently putting its
+ * point on the wrong page.
+ */
+export const THREAD_FORMAT_VERSIONS = [1, 2] as const;
+export type ThreadFormatVersion = (typeof THREAD_FORMAT_VERSIONS)[number];
 /** Folder of the open threads, relative to the project root. */
 export const COMMENTS_DIR = 'comments';
 /** Folder of the resolved threads. */
@@ -71,6 +79,11 @@ export type ThreadAnchor =
       readonly containerId: string | null;
       readonly x: number;
       readonly y: number;
+      /**
+       * The page of a canvas point (formatVersion 2). Absent (version 1): it is read onto the first
+       * page. Never with a `containerId` (the container decides the page).
+       */
+      readonly pageId?: string;
     };
 
 export type ThreadAnchorKind = ThreadAnchor['kind'];
@@ -89,7 +102,7 @@ export const THREAD_ANCHOR_KINDS: readonly ThreadAnchorKind[] = [
 
 export interface Thread {
   readonly format: typeof THREAD_FORMAT;
-  readonly formatVersion: typeof THREAD_FORMAT_VERSION;
+  readonly formatVersion: ThreadFormatVersion;
   readonly id: string;
   readonly anchor: ThreadAnchor;
   readonly createdAt: string;
@@ -98,6 +111,11 @@ export interface Thread {
   readonly resolved: ThreadResolved | null;
   /** Sorted by `at` and, on a tie, by `id`. */
   readonly messages: readonly ThreadMessage[];
+}
+
+/** The version a thread is written in: 2 only for a canvas point that has a page, else 1. */
+export function threadFormatVersion(anchor: ThreadAnchor): ThreadFormatVersion {
+  return anchor.kind === 'point' && anchor.pageId !== undefined ? 2 : 1;
 }
 
 /** `comments/<id>.json` or, when resolved, `comments/resolved/<id>.json`. */
@@ -202,6 +220,7 @@ export const threadAnchorSchema = z.discriminatedUnion(
       containerId: id.nullable(),
       x: z.number(),
       y: z.number(),
+      pageId: id.optional(),
     }),
   ],
   { error: kindError },
@@ -214,11 +233,42 @@ export const threadResolverSchema = z.object({
 
 export const threadResolvedSchema = z.object({ by: threadResolverSchema, at: isoDate });
 
+/** `pageId` lives only in formatVersion 2, and formatVersion 2 only carries a canvas point with one. */
+function checkVersionAnchor(
+  version: number,
+  anchor: ThreadAnchor,
+  ctx: z.RefinementCtx,
+): void {
+  const pageId = anchor.kind === 'point' ? anchor.pageId : undefined;
+  if (version === 1 && pageId !== undefined) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['anchor', 'pageId'],
+      message: 'only allowed in formatVersion 2',
+    });
+  }
+  if (version !== 2) return;
+  if (anchor.kind === 'point' && anchor.containerId !== null) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['anchor', 'containerId'],
+      message:
+        'must be null in formatVersion 2 (a point inside a container has no pageId)',
+    });
+  } else if (pageId === undefined) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['anchor', 'pageId'],
+      message: 'required in formatVersion 2 (a point on the canvas with its page)',
+    });
+  }
+}
+
 export const threadSchema = z
   .object({
     format: z.literal(THREAD_FORMAT, { error: `must be "${THREAD_FORMAT}"` }),
-    formatVersion: z.literal(THREAD_FORMAT_VERSION, {
-      error: `must be ${THREAD_FORMAT_VERSION}`,
+    formatVersion: z.literal([...THREAD_FORMAT_VERSIONS], {
+      error: `must be ${THREAD_FORMAT_VERSIONS.join(' or ')}`,
     }),
     id: threadId,
     anchor: threadAnchorSchema,
@@ -228,6 +278,7 @@ export const threadSchema = z
     messages: z.array(threadMessageSchema).min(1, 'must have at least one message'),
   })
   .superRefine((t, ctx) => {
+    checkVersionAnchor(t.formatVersion, t.anchor, ctx);
     const seen = new Set<string>();
     t.messages.forEach((m, i) => {
       if (seen.has(m.id)) {
@@ -246,7 +297,7 @@ export type ThreadParseResult =
   | {
       readonly ok: true;
       readonly thread: Thread;
-      /** Warnings from reading (none in formatVersion 1; the field exists for the next ones). */
+      /** Warnings from reading (none so far; the field exists for the next ones). */
       readonly warnings: readonly string[];
     }
   | { readonly ok: false; readonly issues: SpecIssue[]; readonly errors: string[] };
@@ -289,7 +340,9 @@ function serializeAnchor(a: ThreadAnchor) {
     case 'row':
       return { kind: a.kind, annotationId: a.annotationId, key: a.key, rowId: a.rowId };
     case 'point':
-      return { kind: a.kind, containerId: a.containerId, x: a.x, y: a.y };
+      return a.pageId === undefined
+        ? { kind: a.kind, containerId: a.containerId, x: a.x, y: a.y }
+        : { kind: a.kind, containerId: a.containerId, x: a.x, y: a.y, pageId: a.pageId };
     default:
       return { kind: a.kind, id: a.id };
   }
@@ -306,13 +359,13 @@ function serializeMessage(m: ThreadMessage) {
 }
 
 /**
- * Text of the thread file: keys always in the same order, messages in canonical order
+ * Text of the thread file (the version follows the anchor: `threadFormatVersion`): keys always in the same order, messages in canonical order
  * (`at`, `id`), 2-space indentation and a line break at the end.
  */
 export function serializeThread(t: Thread): string {
   const canonical = {
     format: t.format,
-    formatVersion: t.formatVersion,
+    formatVersion: threadFormatVersion(t.anchor),
     id: t.id,
     anchor: serializeAnchor(t.anchor),
     createdAt: t.createdAt,

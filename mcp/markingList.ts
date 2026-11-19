@@ -11,10 +11,13 @@ import {
 } from '../src/model';
 import { projectIssuesWithDrawings } from './drawings';
 import { ToolError } from './errors';
+import { findPage } from './pages';
 import { CONTAINER_LABEL, type Refs } from './items';
 import { markingRow } from './views';
 
 export interface MarkingFilters {
+  /** Page: id or name; keeps the markings on it. */
+  readonly page?: string;
   /** Container: reference, id, name or file name. */
   readonly container?: string;
   /** Old: use `container` (accepted with a warning). */
@@ -180,6 +183,7 @@ export function listMarkings(
     }
     layerId = layer.id;
   }
+  const pageId = filters.page !== undefined ? findPage(p, filters.page).id : null;
   const text = filters.text !== undefined ? fold(filters.text.trim()) : '';
   const byAnnotation =
     layerId !== null ||
@@ -189,7 +193,10 @@ export function listMarkings(
   // Floating ones live on the canvas: asking only for floating ones, with no container, looks at the canvas.
   const canvasSpace =
     filters.canvas === true || (filters.floating === true && container === null);
-  const matching = inDisplayOrder(p, container, canvasSpace).filter((marking) => {
+  const inScope = inDisplayOrder(p, container, canvasSpace).filter(
+    (marking) => pageId === null || index.pageOf.get(marking.id) === pageId,
+  );
+  const matching = inScope.filter((marking) => {
     if (filters.floating !== undefined && marking.floating !== filters.floating) {
       return false;
     }

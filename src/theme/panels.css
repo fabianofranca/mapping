@@ -1297,3 +1297,20 @@ button.tree-toggle:hover {
     margin-right: 0;
   }
 }
+
+/* "Move to page": page names in the menu truncate instead of widening it; hint beside the disabled button. */
+.menu-item-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-move-row {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.page-move-hint {
+  font: var(--t-small);
+}

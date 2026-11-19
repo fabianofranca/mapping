@@ -9,6 +9,7 @@ import { LocalFileChecker } from './codeFiles';
 import { typeCodeView } from './codeViews';
 import { ToolError } from './errors';
 import { Refs } from './items';
+import { pageEntry } from './pages';
 import { projectSignatureReader } from './signatureFiles';
 import type { Roots } from './paths';
 import {
@@ -109,6 +110,7 @@ export async function findByCodeResult(
             markingName: index.markings.get(found.markingId)?.name ?? null,
             container:
               found.containerId === null ? null : refs.ref('i', found.containerId),
+            ...pageEntry(p, found.markingId),
           };
         }),
       });

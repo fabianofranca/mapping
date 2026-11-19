@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -23,6 +23,12 @@
   ],
   "platformRepos": {},
   "docRepos": {},
+  "pages": [
+    {
+      "id": "PG1",
+      "name": "Page 1"
+    }
+  ],
   "layers": [
     {
       "id": "L1",
@@ -95,6 +101,7 @@
         "scale": 0.5
       },
       "parentId": null,
+      "pageId": "PG1",
       "markingColor": null,
       "locked": false,
       "source": null,
@@ -112,6 +119,7 @@
         "scale": 1
       },
       "parentId": null,
+      "pageId": "PG1",
       "markingColor": null,
       "locked": false,
       "source": null,
@@ -123,6 +131,7 @@
       "id": "MT",
       "containerId": "I1",
       "parentId": null,
+      "pageId": null,
       "name": "Título",
       "rect": {
         "x": 100,
@@ -139,6 +148,7 @@
       "id": "MF",
       "containerId": "I1",
       "parentId": null,
+      "pageId": null,
       "name": "Formulário",
       "rect": {
         "x": 50,
@@ -155,6 +165,7 @@
       "id": "MN",
       "containerId": "I1",
       "parentId": "MF",
+      "pageId": null,
       "name": "Nome",
       "rect": {
         "x": 100,
@@ -171,6 +182,7 @@
       "id": "MI",
       "containerId": "I1",
       "parentId": "MF",
+      "pageId": null,
       "name": "Idade",
       "rect": {
         "x": 100,
@@ -187,6 +199,7 @@
       "id": "ME",
       "containerId": "I1",
       "parentId": "MF",
+      "pageId": null,
       "name": "E-mail",
       "rect": {
         "x": 100,
@@ -203,6 +216,7 @@
       "id": "MC",
       "containerId": "I1",
       "parentId": "MF",
+      "pageId": null,
       "name": "Cadastrar",
       "rect": {
         "x": 100,

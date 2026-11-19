@@ -15,6 +15,7 @@ import {
 import type { EditorDerived } from '../store/derived';
 import type { DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
+import { type PageState } from '../store/pages';
 import type { ProjectActions } from '../store/project';
 import type { ReviewState } from '../store/review';
 import { locale, showArrows } from '../store/settings';
@@ -118,6 +119,12 @@ export interface CanvasControllerOptions {
    */
   readonly perspective?: PerspectiveState;
   /**
+   * Open page (stage #883, PG2): the canvas draws the project cut by it (each page is a canvas of its
+   * own), fits the page's content when it changes and publishes it on the host (`data-page`). Without
+   * it, the whole project (a project with a single page is that page).
+   */
+  readonly page?: PageState;
+  /**
    * Remote images of the components (RI3): the app's two gates and the loader. Default: the production
    * source; tests pass a fake one.
    */
@@ -193,6 +200,7 @@ export class CanvasController {
   private readonly viewState: CanvasViewState;
   private readonly review: ReviewState | null;
   private readonly perspective: PerspectiveState | null;
+  private readonly page: PageState | null;
   private readonly remoteImages: RemoteImageSource;
   /** URLs whose images changed since the last frame (the frame redoes only their markings). */
   private readonly changedImageUrls = new Set<string>();
@@ -268,22 +276,31 @@ export class CanvasController {
    */
   private readonly drawnProject = computed(() => {
     const review = this.review;
-    // Outside the review: the store's project (with the gesture preview), cropped by the open
-    // perspective. The preview changes `perspectives[].items`, so the crop comes from the store's project, not
-    // from the confirmed one. In the review the perspective is the Main one (switching is locked).
+    // Outside the review: the store's project (with the gesture preview), cut by the open page and
+    // then by the open perspective. The preview changes `perspectives[].items`, so the cut comes from
+    // the store's project, not from the confirmed one. In the review the perspective is the Completa
+    // (switching is locked) but the page is free.
     if (!review || review.proposalId.value === null) {
       return projectInPerspective(
         this.store.project.value,
         this.perspective?.id.value ?? null,
+        this.page?.id.value,
       );
     }
     const shown = review.derived.shownProject.value;
-    if (shown === null || shown === this.store.committed.value) {
-      return this.store.project.value;
-    }
     const proposal = review.derived.proposal.value;
-    return proposal ? proposedDisplay(shown, proposal) : shown;
+    // The Current view (or a proposal with nothing to preview) draws the store's project, with the
+    // gesture preview; the Proposed view draws the "how it would look".
+    if (shown === null || !proposal || !this.previewShown(review)) {
+      return projectInPerspective(this.store.project.value, null, this.page?.id.value);
+    }
+    return proposedDisplay(shown, proposal);
   });
+
+  /** The review is in the Proposed view and the proposal has a "how it would look" to draw. */
+  private previewShown(review: ReviewState): boolean {
+    return review.view.value !== 'current' && review.derived.preview.value !== null;
+  }
 
   /** Review marks (type, conflict, invalid, ghosts, removed); `null` outside it. */
   private readonly reviewCanvas = computed((): ReviewCanvas | null => {
@@ -385,7 +402,8 @@ export class CanvasController {
     const project = this.drawnProject.value;
     const groups = this.derived.threads.pins.value;
     if (!project || groups.length === 0) return NO_PINS;
-    // A thread on a canvas point only appears on the Main one (decision 15).
+    // A thread on a canvas point only appears in the Completa (decision 15); the derived pins
+    // already hold only the points of the open page (stage #883, PG4).
     const principal = (this.perspective?.id.value ?? null) === null;
     return pinPlaces(project, groups, this.derived.canvasVisibility.value, principal);
   });
@@ -499,6 +517,7 @@ export class CanvasController {
     this.viewState = options.view;
     this.review = options.review ?? null;
     this.perspective = options.perspective ?? null;
+    this.page = options.page ?? null;
     this.remoteImages = options.remoteImages ?? sharedRemoteImageSource();
 
     // The drawings measure text with Konva (the layout matches what is painted) and redraw themselves
@@ -595,6 +614,7 @@ export class CanvasController {
         return pinHit(pins, c, this.view.scale, tokens.pin);
       },
       containerTitles: () => this.images.titleRects(),
+      openPageId: () => this.page?.id.value,
     });
 
     this.cleanups.push(
@@ -639,12 +659,14 @@ export class CanvasController {
           projectInPerspective(
             this.store.committed.value,
             this.perspective?.id.value ?? null,
+            this.page?.id.value,
           );
         this.viewState.bounds.value = imagesBounds(
           shown?.containers ?? [],
           shown?.markings,
         );
       }),
+      this.watchPage(container),
       this.watchCursor(),
       () => {
         if (this.frameRequest !== null) cancelFrame(this.frameRequest);
@@ -653,6 +675,24 @@ export class CanvasController {
         this.cursorRequest = null;
       },
     );
+  }
+
+  /**
+   * Publishes the open page on the host (`data-page`) and, when it changes, fits the new page's
+   * content (the project only depends on the page: pan and zoom never come through here).
+   */
+  private watchPage(host: HTMLElement): () => void {
+    const page = this.page;
+    if (page === null) return () => undefined;
+    let first = true;
+    return effect(() => {
+      host.dataset.page = page.id.value;
+      if (first) {
+        first = false;
+        return;
+      }
+      untracked(() => this.view.fitAll());
+    });
   }
 
   /** Fits all the images (or a default area, with the empty canvas). */

@@ -14,6 +14,7 @@ import {
 } from '../../src/ui/comments/CommentsWindow';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { sampleProject } from '../model/fixtures';
+import { pagesProject } from '../store/pageHarness';
 import { AGENT, HUMAN, T0, T1, T2, message, sampleThread } from '../model/threadFixtures';
 import {
   AWAITING_AGENT_PATHS,
@@ -274,6 +275,31 @@ describe.each(['pt-BR', 'en-US'] as const)('Comments window (%s)', (lang) => {
     expect(
       button.getAttribute('title') ?? button.getAttribute('aria-description') ?? '',
     ).toContain(t('comments.newNoSelection'));
+  });
+
+  it('New thread is disabled when the selected item is on another page (not in the shown project)', async () => {
+    const harness = createHarness(pagesProject());
+    renderLive(harness, () => (
+      <EditorContext.Provider value={harness.context}>
+        <CommentsHeaderActions />
+      </EditorContext.Provider>
+    ));
+    const user = userEvent.setup();
+    const first = harness.project().pages[0]?.id ?? '';
+    act(() => {
+      harness.context.session.page.open('PG2');
+      harness.ui.selection.value = { kind: 'marking', id: 'M5' };
+    });
+    const button = screen.getByRole('button', { name: t('comments.new') });
+    expect((button as HTMLButtonElement).disabled).toBe(false);
+    act(() => {
+      harness.context.session.page.open(first);
+    });
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+    await user.click(button);
+    expect(composingAnchor(harness.ui)).toBeNull();
+    // The selection is kept (reveal selects after switching).
+    expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M5' });
   });
 
   it('New thread without an identity still opens the draft', async () => {

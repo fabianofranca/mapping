@@ -12,6 +12,7 @@ import { markingCanvasRectOf, settleHierarchy } from './hierarchySettle';
 import { floatingSpotNear } from './markings';
 import {
   isMarkingRoot,
+  pageView,
   perspectiveView,
   rootFootprint,
   rootPosition,
@@ -299,7 +300,9 @@ export function placeCreatedRoot(
     ...perspective,
     items: perspective.items.filter((item) => item.root !== rootId),
   };
-  const obstacles = obstaclesOf(perspectiveView(p, others), new Set());
+  // Each page is a canvas of its own: only what the perspective shows on the root's page counts.
+  const page = projectIndex(p).pageOf.get(rootId);
+  const obstacles = obstaclesOf(perspectiveView(p, others, page), new Set());
   const whole = isMarkingRoot(p, rootId);
   const clean = (v: number) => snapCoordinate(whole ? Math.round(v) : v);
   const wanted = { x: clean(own.x), y: clean(own.y) };
@@ -330,7 +333,7 @@ function moveRootTo(p: Project, rootId: string, at: CanvasPosition): Project {
 /**
  * A root created outside Main arrives in it (decision 8). The root already exists in `p` (the
  * store created it) and is in `from.items`. It computes the spot with
- * `placeRootIn(p, perspectiveView(p, from))`, moves the root (only it), settles and ONLY THEN adds
+ * `placeRootIn` over the root's page (`pageView`) and the perspective cut to it, moves the root (only it), settles and ONLY THEN adds
  * the `Came from…` mark (replacing the previous one of the same root): the settle removes the
  * mark from whoever changed place. `kind` and `referenceId` are for the interface to tell where
  * the root ended up; they are not stored.
@@ -345,7 +348,9 @@ export function arriveInPrincipal(
   if (roots.get(rootId) !== rootId || !from.items.some((item) => item.root === rootId)) {
     fail('not-root', rootId);
   }
-  const place = placeRootIn(p, perspectiveView(p, from), rootId, {
+  // The spot is searched on the root's page: the arrival area is the right of that page's content.
+  const page = projectIndex(p).pageOf.get(rootId) as string;
+  const place = placeRootIn(pageView(p, page), perspectiveView(p, from, page), rootId, {
     arrivalsFrom: from.id,
   });
   const settled = settleHierarchy(moveRootTo(p, rootId, place), { before: p });
@@ -364,10 +369,15 @@ export function dismissArrival(p: Project, rootId: string): Project {
   return { ...p, arrivals: p.arrivals.filter((a) => a.root !== rootId) };
 }
 
-/** The box that wraps the roots with an arrival mark (the canvas band); `null` with no marks. */
-export function arrivalArea(p: Project): Rect | null {
+/**
+ * The box that wraps the roots with an arrival mark (the canvas band); `null` with no marks.
+ * With `pageId` (v21), only the marks of the roots of that page: each page has its own area.
+ */
+export function arrivalArea(p: Project, pageId?: string): Rect | null {
+  const { pageOf } = projectIndex(p);
   const rects: Rect[] = [];
   for (const a of p.arrivals) {
+    if (pageId !== undefined && pageOf.get(a.root) !== pageId) continue;
     const rect = rootFootprint(p, a.root);
     if (rect) rects.push(rect);
   }

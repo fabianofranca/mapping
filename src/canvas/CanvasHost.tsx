@@ -9,7 +9,7 @@ import { CanvasController } from './CanvasController';
 export function CanvasHost() {
   const { store, actions, display, ui, derived, canvas, view, review, session } =
     useEditor();
-  const { perspective } = session;
+  const { perspective, page } = session;
   const ref = useRef<HTMLDivElement>(null);
 
   // The controller lives while the project is open.
@@ -26,13 +26,14 @@ export function CanvasHost() {
       view,
       review,
       perspective,
+      page,
     });
     canvas.current = controller;
     return () => {
       canvas.current = null;
       controller.destroy();
     };
-  }, [store, actions, display, ui, derived, canvas, view, review, perspective]);
+  }, [store, actions, display, ui, derived, canvas, view, review, perspective, page]);
 
   return <div ref={ref} class="canvas-host" />;
 }

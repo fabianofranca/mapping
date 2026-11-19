@@ -65,7 +65,7 @@ function v13Me0Raw(): Raw {
 
 describe('migration v12 → v13 (no inheritance)', () => {
   it('the registry has the v12 → v13 migration', () => {
-    expect(SCHEMA_VERSION).toBe(20);
+    expect(SCHEMA_VERSION).toBe(21);
     expect(migrations.get(12)).toBe(migrateFrom12To13);
   });
 
@@ -74,7 +74,7 @@ describe('migration v12 → v13 (no inheritance)', () => {
     const result = load(JSON.stringify(raw));
     expect(result.migratedFrom).toBe(12);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(20);
+    expect(result.project.schemaVersion).toBe(21);
     expect(result.project.annotations.map((a) => a.id)).toEqual(
       raw.annotations.map((a: Raw) => a.id),
     );
@@ -86,7 +86,7 @@ describe('migration v12 → v13 (no inheritance)', () => {
     const result = load(JSON.stringify(v12Raw()));
     const saved = serialize(result.project);
     const data = JSON.parse(saved) as Raw;
-    expect(data.schemaVersion).toBe(20);
+    expect(data.schemaVersion).toBe(21);
     for (const a of data.annotations) expect(a).not.toHaveProperty('inherit');
     expect(saved).not.toContain('"inherit"');
     const again = load(saved);
@@ -139,16 +139,18 @@ describe('migration v12 → v13 (no inheritance)', () => {
   it('the migrated v12 writes the container `parentId` and the marking `floating`, in the fixed order', () => {
     const saved = serialize(load(JSON.stringify(v12Raw())).project);
     const data = JSON.parse(saved) as Raw;
-    expect(Object.keys(data.containers[0]).slice(4, 8)).toEqual([
+    expect(Object.keys(data.containers[0]).slice(4, 9)).toEqual([
       'height',
       'placement',
       'parentId',
+      'pageId',
       'markingColor',
     ]);
     expect(Object.keys(data.markings[0])).toEqual([
       'id',
       'containerId',
       'parentId',
+      'pageId',
       'name',
       'rect',
       'needsReview',
@@ -178,6 +180,7 @@ describe('opening a v13 (earlier than the membership fields)', () => {
     const data = JSON.parse(serialize(sampleProject())) as Raw;
     const base = {
       parentId: null,
+      pageId: data.pages[0].id,
       needsReview: false,
       locked: false,
       source: null,

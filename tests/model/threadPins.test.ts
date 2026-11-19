@@ -63,7 +63,7 @@ describe('pinGroups', () => {
       'arrow:r1',
       'point:A:1:2',
       'point:A:3:2',
-      'point::1:2',
+      'point::PG1:1:2',
     ]);
   });
 

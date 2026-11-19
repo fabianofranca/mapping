@@ -2,14 +2,16 @@ import { catalogEnUS } from './catalog';
 import { modelMessagesEnUS } from './modelMessages';
 import { reviewEnUS } from './review';
 import { perspectivesEnUS } from './perspectives';
+import { pagesEnUS } from './pages';
 
 // en-US is the base dictionary: it defines the keys (`TranslationKey`) and the comments here are the
 // context for whoever translates. `pt-BR.ts` is typed against it (`Dictionary`) and holds only the
-// values, with the same keys and the same {parameters}. The modules below (`review`, `perspectives`,
+// values, with the same keys and the same {parameters}. The modules below (`review`, `perspectives`, `pages`,
 // `catalog`, `modelMessages`) follow the same rule and enter the dictionary through a spread.
 export const enUS = {
   ...reviewEnUS,
   ...perspectivesEnUS,
+  ...pagesEnUS,
   ...catalogEnUS,
   ...modelMessagesEnUS,
   'app.title': 'Mapping',
@@ -153,6 +155,7 @@ export const enUS = {
     'That marking already depends on this one (anchor cycle).',
   'marking.error.anchor-other-space': 'The anchor must be in the same container.',
   'marking.error.not-anchored': 'This marking has no anchor.',
+  'marking.error.arrow-cross-page': 'An arrow cannot join markings of different pages.',
   'marking.error.generic': 'Could not change the marking.',
 
   'image.name': 'Name',
@@ -373,6 +376,7 @@ export const enUS = {
   'inconsistent.entity.spec': 'Specialization',
   'inconsistent.entity.perspective': 'Perspective',
   'inconsistent.entity.arrival': 'Arrival',
+  'inconsistent.entity.page': 'Page',
   'invariant.duplicate-id': 'duplicate id',
   'invariant.duplicate-file': 'duplicate file',
   'invariant.container-content': 'background color and file together (or neither)',
@@ -420,6 +424,12 @@ export const enUS = {
   'invariant.arrival-root-missing': 'arrival root does not exist',
   'invariant.arrival-root-not-root': 'the arrival does not point to a root',
   'invariant.arrival-duplicate': 'repeated arrival for the same root',
+  'invariant.pages-empty': 'the project has no page',
+  'invariant.page-duplicate-name': 'duplicate page name',
+  'invariant.page-missing': 'the page does not exist',
+  'invariant.page-required': 'the item has no page (or has one it must not have)',
+  'invariant.page-parent-mismatch': 'parent on another page',
+  'invariant.arrow-cross-page': 'arrow between markings of different pages',
   'repair.new-id': 'the duplicate entry gets a new id',
   'repair.clipped': 'clipped to the image bounds',
   'repair.removed': 'removed',
@@ -427,6 +437,9 @@ export const enUS = {
   'repair.moved': 'moved to the right of the previous ones',
   'repair.renamed': 'renamed with a number',
   'repair.released': 'anchor released (the marking stays where it is)',
+  'repair.created': 'a page is created',
+  'repair.page-set': 'goes to the first page',
+  'repair.page-cleared': 'the page is cleared (the container decides)',
   'error.invalid-zip': 'The file is not a valid zip.',
   'error.missing-mapping': 'The zip has no mapping.json.',
   'error.not-found': 'Project not found.',
@@ -745,6 +758,7 @@ export const enUS = {
   'thread.time.dateYear': '{month}/{day}/{year}',
   'thread.anchor.layer': 'Layer {name}',
   'thread.anchor.point': '{where} · loose point',
+  'thread.anchor.canvasPage': 'Canvas · {page}',
   'thread.anchor.missing.marking': 'Marking deleted · orphan',
   'thread.anchor.missing.container': 'Container deleted · orphan',
   'thread.anchor.missing.arrow': 'Arrow deleted · orphan',
@@ -752,6 +766,7 @@ export const enUS = {
   'thread.anchor.missing.annotation': 'Annotation deleted · orphan',
   'thread.anchor.missing.entry': 'Pair deleted · orphan',
   'thread.anchor.missing.row': 'Row deleted · orphan',
+  'thread.anchor.missing.page': 'Page deleted · orphan',
   // CM5-B: citations in the composer and in messages
   'citation.unnamed': '(unnamed)',
   'citation.missing': 'The cited item no longer exists',
@@ -1352,6 +1367,7 @@ export const enUS = {
   'perspective.error.not-root':
     'Only items loose on the canvas can be part of a perspective.',
   'perspective.error.generic': 'The perspective could not be changed.',
+  'page.defaultName': 'Page 1',
   // "Linked by arrow" section of the marking Details (stage #658)
   'arrowLinks.section': 'Linked by arrow',
   'arrowLinks.out': 'Goes to',

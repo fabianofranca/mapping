@@ -428,9 +428,10 @@
 }
 
 /* Width smaller than the tabs: the strip scrolls (inherited), but never shrinks below the content in the layout. */
+/* The neighbors are not glued (CL1, 4.4): 2px: all six must fit at the minimum width. */
 .tool-window-bottom .tool-window-tabs .tabs {
   flex: 1 1 auto;
-  gap: 0;
+  gap: var(--space-0-5);
 }
 
 /* Tighter tabs: all six fit in the minimum canvas width (`--size-canvas-min`). */
@@ -778,6 +779,12 @@
   min-width: calc(var(--space-8) * 3);
 }
 
+/* Open page (CL1, 6.4): never squeezed (the perspective and the selection give way first), but a long name stops at a limit and gets the ellipsis. */
+.status-item-page {
+  flex-shrink: 0;
+  max-width: calc(var(--space-8) * 6);
+}
+
 .status-item-text {
   min-width: 0;
   overflow: hidden;
@@ -900,6 +907,93 @@
   justify-content: flex-end;
 }
 
+/* Page menu (stage #883, PG2): button beside the perspective picker, list in a popover */
+.page-picker {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.page-trigger {
+  gap: var(--space-1-5);
+}
+
+.page-trigger-name {
+  min-width: 0;
+  max-width: calc(var(--space-8) * 3);
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-picker .popover {
+  min-width: 240px;
+  max-width: 360px;
+  padding: var(--space-1);
+}
+
+.page-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.page-row {
+  display: grid;
+  grid-template-columns: var(--control-icon) 1fr auto;
+  column-gap: var(--space-2);
+  align-items: center;
+  width: 100%;
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-2);
+  font: var(--t-text);
+  color: var(--color-text);
+  text-align: start;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--control-radius);
+  cursor: pointer;
+}
+
+.page-row:hover {
+  background: var(--color-hover);
+}
+
+.page-row:active {
+  background: var(--color-pressed);
+}
+
+.page-row-check {
+  display: inline-flex;
+  color: var(--color-accent);
+}
+
+.page-row-name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-row-count {
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.page-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--color-border);
+}
+
+.page-actions .button {
+  justify-content: flex-start;
+  border-color: transparent;
+}
+
 /* Perspective picker (stage #659, PE3): button beside the project and the list in a popover */
 .perspective-picker {
   flex: 0 1 auto;
@@ -949,7 +1043,7 @@
 
 .perspective-row {
   display: grid;
-  grid-template-columns: var(--control-icon) 1fr;
+  grid-template-columns: var(--control-icon) 1fr auto;
   column-gap: var(--space-2);
   align-items: center;
   width: 100%;
@@ -985,8 +1079,14 @@
   white-space: nowrap;
 }
 
+.perspective-row-page {
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
 .perspective-row-note {
-  grid-column: 2;
+  grid-column: 2 / span 2;
   overflow: hidden;
   font: var(--t-text-small);
   color: var(--color-text-muted);

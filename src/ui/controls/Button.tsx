@@ -1,5 +1,6 @@
 import type { ComponentChildren, JSX, Ref } from 'preact';
 import { classes } from './classes';
+import { useHideDisabled } from './hideDisabled';
 
 /**
  * `accept` and `reject`: the review decision buttons ("Accept item" / "Reject item",
@@ -30,6 +31,8 @@ export function Button({
   buttonRef,
   ...rest
 }: ButtonProps) {
+  const hideDisabled = useHideDisabled();
+  if (hideDisabled && rest.disabled) return null;
   return (
     <button
       {...rest}

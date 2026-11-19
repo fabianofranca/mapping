@@ -249,13 +249,18 @@ export function limitItemsMove(
   if (ids.size === 0 || (dx === 0 && dy === 0)) return { dx, dy };
   const { containers } = projectIndex(p);
   const walking: Rect[] = [];
+  const pages = new Set<string>();
   for (const id of ids) {
     const c = containers.get(id);
-    if (c) walking.push(imageCanvasRect(c, c.placement));
+    if (!c) continue;
+    walking.push(imageCanvasRect(c, c.placement));
+    pages.add(c.pageId);
   }
+  // Each page is a canvas of its own: only the containers of the moving ones' pages obstruct.
   const fixed: Rect[] = [];
   for (const c of p.containers) {
-    if (!ids.has(c.id)) fixed.push(imageCanvasRect(c, c.placement));
+    if (!ids.has(c.id) && pages.has(c.pageId))
+      fixed.push(imageCanvasRect(c, c.placement));
   }
   return touchDelta(walking, fixed, dx, dy, hasCanvasMarking(p, moving));
 }
@@ -275,12 +280,18 @@ function applyMoves(
   if (placements.size > 0) {
     const fixed = p.containers
       .filter((c) => !placements.has(c.id))
-      .map((c) => ({ id: c.id, rect: imageCanvasRect(c, c.placement) }));
+      .map((c) => ({
+        id: c.id,
+        pageId: c.pageId,
+        rect: imageCanvasRect(c, c.placement),
+      }));
     for (const [id, placement] of placements) {
       const container = index.containers.get(id);
       if (!container) continue;
       const moved = imageCanvasRect(container, placement);
-      const other = fixed.find((f) => rectsOverlap(moved, f.rect));
+      const other = fixed.find(
+        (f) => f.pageId === container.pageId && rectsOverlap(moved, f.rect),
+      );
       if (other) fail('image-overlap', undefined, { containerId: other.id });
     }
   }
@@ -700,11 +711,36 @@ function wrappable(p: Project, items: readonly ItemRef[]) {
  */
 export function canWrapItems(p: Project, items: readonly ItemRef[]): boolean {
   const { markings, containers } = wrappable(p, items);
-  return markings.length + containers.length > 0;
+  return (
+    markings.length + containers.length > 0 &&
+    wrapPage(p, markings, containers) !== undefined
+  );
+}
+
+/**
+ * The page of the wrapped set (`null` when every marking is in the same container: the new one
+ * has no page of its own); `undefined` when the items are on different pages, which cannot be
+ * wrapped together (each page is a canvas of its own).
+ */
+function wrapPage(
+  p: Project,
+  markings: readonly Marking[],
+  containers: readonly ProjectContainer[],
+): string | null | undefined {
+  const { pageOf } = projectIndex(p);
+  const pages = new Set<string | undefined>([
+    ...markings.map((m) => pageOf.get(m.id)),
+    ...containers.map((c) => c.pageId),
+  ]);
+  if (pages.size !== 1) return undefined;
+  const [page] = pages;
+  return page ?? null;
 }
 
 interface WrapPlan {
   readonly containerId: string | null;
+  /** The page of the new marking (`null` inside a container). */
+  readonly pageId: string | null;
   readonly rect: Rect;
   /** The set's current parent (`currentEnclosing`), or `null`. */
   readonly parentId: string | null;
@@ -741,6 +777,7 @@ function currentEnclosing(
   selected: ResolvedItems,
   containerId: string | null,
   bbox: Rect,
+  pageId: string | null,
 ): Marking | null {
   const excluded = new Set<string>();
   for (const m of selected.markings.values()) {
@@ -753,18 +790,27 @@ function currentEnclosing(
         (m) =>
           !m.floating &&
           m.containerId === containerId &&
+          (containerId !== null || m.pageId === pageId) &&
           !excluded.has(m.id) &&
           containsRect(m.rect, bbox),
       )
       .map((m) => m.id),
   );
-  const id = enclosingAmong(p, containerId, candidates, commonParent(selected));
+  const id = enclosingAmong(
+    p,
+    containerId,
+    candidates,
+    commonParent(selected),
+    pageId ?? undefined,
+  );
   return id === null ? null : (projectIndex(p).markings.get(id) ?? null);
 }
 
 function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
   const { selected, markings, containers } = wrappable(p, items);
   if (markings.length + containers.length === 0) return null;
+  const pageId = wrapPage(p, markings, containers);
+  if (pageId === undefined) return null;
   const index = projectIndex(p);
 
   const first = markings[0]?.containerId ?? null;
@@ -798,7 +844,7 @@ function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
     };
   }
 
-  const enclosing = currentEnclosing(p, selected, containerId, bbox);
+  const enclosing = currentEnclosing(p, selected, containerId, bbox, pageId);
 
   let limit: Rect | null = containerId
     ? imagePixelRect(index.containers.get(containerId) as ProjectContainer)
@@ -826,6 +872,7 @@ function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
   const bottomLimited = limit ? Math.min(bottomEdge, limit.y + limit.height) : bottomEdge;
   return {
     containerId,
+    pageId: containerId === null ? pageId : null,
     rect: { x: left, y: top, width: rightLimited - left, height: bottomLimited - top },
     parentId: enclosing?.id ?? null,
   };
@@ -853,7 +900,7 @@ export function wrapItems(
   if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   const target = planWrap(p, args.items);
   if (!target) fail('invalid-parent');
-  const { rect, containerId, parentId } = target;
+  const { rect, containerId, parentId, pageId } = target;
   if (!isIntegerRect(rect)) fail('rect-not-integer');
   checkRectSize(rect);
 
@@ -866,6 +913,7 @@ export function wrapItems(
     id: args.id,
     containerId,
     parentId,
+    pageId,
     name: null,
     rect,
     needsReview: false,

@@ -68,6 +68,13 @@ export interface ProjectIndex {
   readonly rootMembers: ReadonlyMap<string, RootMembers>;
   /** Root ids: containers with no parent (array order), then `canvasRoots`. */
   readonly roots: readonly string[];
+  /**
+   * The page of each container, marking (a container marking's is its container's) and arrow
+   * (the one of its origin), by id (v21). Whatever has no known page (invalid project) has no entry.
+   */
+  readonly pageOf: ReadonlyMap<string, string>;
+  /** The ids of `roots` on each page, in `roots` order. Every page of the project has an entry. */
+  readonly rootsByPage: ReadonlyMap<string, readonly string[]>;
   /** "For everyone" perspectives that have each root, in `perspectives` order. */
   readonly perspectivesByRoot: ReadonlyMap<string, readonly Perspective[]>;
   /** Annotations of each marking, in project order. */
@@ -199,6 +206,51 @@ function rootGroups(
   return { rootOf, rootMembers: groups, roots, perspectivesByRoot };
 }
 
+/** The page of each container, marking and arrow (a marking inside a container has its container's; an arrow, its `from`'s). */
+function itemPages(
+  p: Project,
+  containers: ReadonlyMap<string, ProjectContainer>,
+  markings: ReadonlyMap<string, Marking>,
+): Map<string, string> {
+  const pageOf = new Map<string, string>();
+  for (const c of p.containers) pageOf.set(c.id, c.pageId);
+  for (const m of p.markings) {
+    const page =
+      m.containerId === null ? m.pageId : containers.get(m.containerId)?.pageId;
+    if (page !== undefined && page !== null) pageOf.set(m.id, page);
+  }
+  for (const a of p.arrows) {
+    const page = markings.has(a.from) ? pageOf.get(a.from) : undefined;
+    if (page !== undefined) pageOf.set(a.id, page);
+  }
+  return pageOf;
+}
+
+/** Page of each container, marking and arrow, and the roots of each page (v21). */
+function pageGroups(
+  p: Project,
+  containers: ReadonlyMap<string, ProjectContainer>,
+  markings: ReadonlyMap<string, Marking>,
+  roots: readonly string[],
+): Pick<ProjectIndex, 'pageOf' | 'rootsByPage'> {
+  const pageOf = itemPages(p, containers, markings);
+  const rootsByPage = new Map<string, string[]>(p.pages.map((g) => [g.id, []]));
+  for (const id of roots) {
+    const page = pageOf.get(id);
+    if (page !== undefined) push(rootsByPage, page, id);
+  }
+  return { pageOf, rootsByPage };
+}
+
+function withPages<T extends Pick<ProjectIndex, 'roots'>>(
+  p: Project,
+  containers: ReadonlyMap<string, ProjectContainer>,
+  markings: ReadonlyMap<string, Marking>,
+  groups: T,
+): T & Pick<ProjectIndex, 'pageOf' | 'rootsByPage'> {
+  return { ...groups, ...pageGroups(p, containers, markings, groups.roots) };
+}
+
 function buildIndex(p: Project): ProjectIndex {
   const entries = new Map<string, ReadonlyMap<string, Entry>>();
   const children = new Map<string | null, Marking[]>();
@@ -255,7 +307,12 @@ function buildIndex(p: Project): ProjectIndex {
     children,
     containersByParent,
     canvasRoots,
-    ...rootGroups(p, containersById, markingsById, canvasRoots),
+    ...withPages(
+      p,
+      containersById,
+      markingsById,
+      rootGroups(p, containersById, markingsById, canvasRoots),
+    ),
     annotationsByMarking,
     annotationsByOwner,
     specializations: byId(p.specializations),
@@ -292,6 +349,7 @@ export function idInUse(p: Project, id: string): boolean {
   return (
     p.markings.some((m) => m.id === id) ||
     p.arrows.some((a) => a.id === id) ||
-    p.containers.some((c) => c.id === id)
+    p.containers.some((c) => c.id === id) ||
+    p.pages.some((g) => g.id === id)
   );
 }

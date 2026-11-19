@@ -107,6 +107,19 @@ function badgesOf(
   return out.slice(0, 2);
 }
 
+/** The placement a container creation change carries, or `null`. */
+function createdPlacement(p: Proposal, imageId: string): Placement | null {
+  const creation = p.changes.find(
+    (c) => c.entity === 'image' && c.kind === 'create' && c.entityId === imageId,
+  );
+  const value = creation && isRecord(creation.to) ? creation.to.placement : null;
+  if (!isRecord(value)) return null;
+  const { x, y, scale } = value;
+  return typeof x === 'number' && typeof y === 'number' && typeof scale === 'number'
+    ? { x, y, scale }
+    : null;
+}
+
 export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
   const { proposal: p, tree, types, conflicts, invalid, view, current, drawn } = input;
   const changes = proposalIndex(p).changes;
@@ -114,10 +127,15 @@ export function reviewMarks(input: ReviewMarksInput): ReviewCanvas {
   const drawnIndex = projectIndex(drawn);
   const rejected = (c: Change) => p.decisions[c.id]?.state === 'rejected';
   const applied = (c: Change) => Object.hasOwn(p.applied, c.id);
+  /**
+   * Position of a container: in the view, in the project, or, for one that only the proposal creates
+   * and the view does not have (a rejected item inside it, in the Current view), the `placement` its
+   * creation carries (PG4-b).
+   */
   const placementOf = (imageId: string): Placement | null =>
     drawnIndex.containers.get(imageId)?.placement ??
     currentIndex.containers.get(imageId)?.placement ??
-    null;
+    createdPlacement(p, imageId);
   /**
    * Name of the component type of a rejected creation with no `name` (the instance is born with
    * no name): that of the typed annotation the proposal creates for the marking, as the Tree shows.

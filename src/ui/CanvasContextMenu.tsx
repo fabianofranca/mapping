@@ -16,6 +16,7 @@ import { CopyMenuItems } from './CopyActions';
 import { Button } from './controls';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
+import { MovePageMenuItems } from './MovePageMenuItems';
 import { createOpenScrollGuard } from './openScrollGuard';
 import { placeComment } from '../store/threadUi';
 import { peekSelectedItems, isItemSelected } from '../store/ui';
@@ -126,6 +127,11 @@ function CommentMenuItems({
   const project = review.derived.shownProject.value;
   if (!project) return null;
   const openId = session.perspective.id.value;
+  /** A canvas-point comment is blocked outside Main (its final pin only shows there). */
+  const blocked = (anchor: ThreadAnchor): boolean =>
+    anchor.kind === 'point' &&
+    anchor.containerId === null &&
+    blockedOutsideMain(project, openId, 'draw-canvas');
   const items: readonly (readonly [ThreadAnchor | null, string])[] = [
     [comment, t('comments.comment')],
     [here, t('comments.here')],
@@ -137,11 +143,7 @@ function CommentMenuItems({
           <PrincipalOnlyItem
             key={label}
             // The draft of a canvas point shows outside Main, but the final pin does not.
-            blocked={
-              anchor.kind === 'point' &&
-              anchor.containerId === null &&
-              blockedOutsideMain(project, openId, 'draw-canvas')
-            }
+            blocked={blocked(anchor)}
             disabled={store.locked.value}
             onClick={() => {
               close();
@@ -302,6 +304,9 @@ export function CanvasContextMenu() {
       {commentable && <CommentMenuItems comment={comment} here={here} close={close} />}
       {perspectiveIds.length > 0 && (
         <PerspectiveMenuItems ids={perspectiveIds} close={close} />
+      )}
+      {perspectiveIds.length > 0 && (
+        <MovePageMenuItems ids={perspectiveIds} close={close} />
       )}
       {arrangeId !== null && (
         <div class="menu-items">

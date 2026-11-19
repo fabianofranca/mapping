@@ -7,7 +7,6 @@ import {
   computeChanges,
   projectIndex,
   type Change,
-  type ItemKind,
   type Project,
 } from '../src/model';
 import {
@@ -94,6 +93,7 @@ export function createdRefs(refs: Refs, result: BatchResult): Record<string, unk
     i: index.containers,
     m: index.markings,
     a: index.annotations,
+    page: new Map(refs.project.pages.map((g) => [g.id, g])),
   };
   return result.created
     .filter(
@@ -107,7 +107,11 @@ export function createdRefs(refs: Refs, result: BatchResult): Record<string, unk
         const layer = index.layers.get(item.id)!;
         return { ...base, kind: 'layer', id: layer.id, name: layer.name };
       }
-      const kind = item.kind as ItemKind;
+      if (item.kind === 'page') {
+        const page = refs.project.pages.find((g) => g.id === item.id)!;
+        return { ...base, kind: 'page', id: page.id, name: page.name };
+      }
+      const kind = item.kind;
       return {
         ...base,
         kind: index.arrows.has(item.id)

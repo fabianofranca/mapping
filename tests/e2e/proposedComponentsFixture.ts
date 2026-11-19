@@ -131,6 +131,7 @@ function baseProject(counter: { n: number }): Project {
     name: 'Screens',
     now: NOW,
     firstLayer: { id: 'L1', name: 'Components', color: '#1e88e5' },
+    firstPage: { id: 'PG1', name: 'Page 1' },
   });
   base = applySpecialization(base, loadSpec('material3-compose'), {
     newId: () => `LS${++counter.n}`,

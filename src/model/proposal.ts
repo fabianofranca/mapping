@@ -7,6 +7,7 @@ import {
   containerSchema,
   jsonValue,
   layerSchema,
+  pageSchema,
   anchorSchema,
   markingSchema,
   normalizeIsoDate,
@@ -27,7 +28,10 @@ import { READING_DIRECTIONS, type JsonValue } from './types';
 export const PROPOSAL_FORMAT = 'mapping-proposal';
 export const PROPOSAL_FORMAT_VERSION = 4;
 /**
- * Versions read, from 1 to 9: 9 adds the marking's anchor (the marking's `anchor` field and
+ * Versions read, from 1 to 10: 10 adds the pages (the `page` entity, the `pageId` in the value of a
+ * created or removed container and canvas marking, and the composite `page` change, schema v21)
+ * and is only written when the proposal uses them (it includes what 9 and the earlier ones
+ * have); 9 adds the marking's anchor (the marking's `anchor` field and
  * `anchor` in the value of a created marking, schema v20) and is only written when the proposal
  * uses it (it includes what 8 and the earlier ones have); 8 adds the reading direction (the
  * `direction` field of the container and of the project, schema v20) and is only written when
@@ -43,7 +47,7 @@ export const PROPOSAL_FORMAT_VERSION = 4;
  * `add_container` to the `operations`; 1 is still valid. Creation writes 4 (6, with the drawing
  * mode).
  */
-export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 
 /**
  * Proposal version that carries the drawing mode (schema v18): the `project` entity (field
@@ -149,29 +153,64 @@ function hasAnchor(value: JsonValue): boolean {
 }
 
 /**
- * The `formatVersion` that creation or revision writes: 9 with an anchor, 8 with a direction, 7
+ * Proposal version that carries the pages (schema v21): the `page` entity (creation, removal and the
+ * `name` and `position` fields), the composite `page` change of a container or canvas marking
+ * (`{ pageId, position }`) and the `pageId` in the value of a created or removed container and
+ * canvas marking. An earlier version would silently drop the `pageId` of a created value (the
+ * reader ignores unknown keys), so a proposal that uses pages is written as 10. A created root
+ * with no `pageId` goes to the first page when applied (what a proposal without pages always
+ * meant), so creating on the first page does not need 10.
+ */
+export const PROPOSAL_PAGES_FORMAT_VERSION = 10;
+
+/** Does the proposal use pages (so that only `formatVersion` 10 represents it)? */
+export function usesPages(changes: readonly Change[]): boolean {
+  return changes.some(changeUsesPages);
+}
+
+function changeUsesPages(c: Change): boolean {
+  if (c.entity === 'page') return true;
+  if (c.entity !== 'image' && c.entity !== 'marking') return false;
+  if (c.field !== null) return c.field === 'page';
+  return hasPageId(c.to) || hasPageId(c.from);
+}
+
+function hasPageId(value: JsonValue): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    typeof (value as { readonly pageId?: JsonValue }).pageId === 'string'
+  );
+}
+
+/**
+ * The `formatVersion` that creation or revision writes: 10 with pages, 9 with an anchor, 8 with a direction, 7
  * with a density, 6 with a drawing mode, otherwise `fallback` (4 on creation, 5 on revision).
- * `current` is the version of the proposal being rewritten: a 6, 7, 8 or 9 never goes down.
+ * `current` is the version of the proposal being rewritten: a 6, 7, 8, 9 or 10 never goes down.
  */
 export function proposalFormatVersionFor(
   changes: readonly Change[],
   fallback: number,
   current = 0,
 ): (typeof PROPOSAL_FORMAT_VERSIONS)[number] {
-  if (current === PROPOSAL_ANCHOR_FORMAT_VERSION || proposalUsesAnchor(changes)) {
-    return PROPOSAL_ANCHOR_FORMAT_VERSION;
-  }
-  if (current === PROPOSAL_DIRECTION_FORMAT_VERSION || proposalUsesDirection(changes)) {
-    return PROPOSAL_DIRECTION_FORMAT_VERSION;
-  }
-  if (current === PROPOSAL_DENSITY_FORMAT_VERSION || usesDensity(changes)) {
-    return PROPOSAL_DENSITY_FORMAT_VERSION;
-  }
-  if (current === PROPOSAL_DRAWING_MODE_FORMAT_VERSION || usesDrawingMode(changes)) {
-    return PROPOSAL_DRAWING_MODE_FORMAT_VERSION;
+  for (const [version, uses] of VERSIONS_BY_FEATURE) {
+    if (current === version || uses(changes)) return version;
   }
   return fallback as (typeof PROPOSAL_FORMAT_VERSIONS)[number];
 }
+
+/** The versions a feature requires, from the newest (it includes what the earlier ones have). */
+const VERSIONS_BY_FEATURE: readonly (readonly [
+  (typeof PROPOSAL_FORMAT_VERSIONS)[number],
+  (changes: readonly Change[]) => boolean,
+])[] = [
+  [PROPOSAL_PAGES_FORMAT_VERSION, usesPages],
+  [PROPOSAL_ANCHOR_FORMAT_VERSION, proposalUsesAnchor],
+  [PROPOSAL_DIRECTION_FORMAT_VERSION, proposalUsesDirection],
+  [PROPOSAL_DENSITY_FORMAT_VERSION, usesDensity],
+  [PROPOSAL_DRAWING_MODE_FORMAT_VERSION, usesDrawingMode],
+];
 
 function hasDrawingMode(value: JsonValue): boolean {
   return (
@@ -216,6 +255,7 @@ export type ChangeEntity =
   | 'docRepo'
   | 'project'
   | 'layer'
+  | 'page'
   | 'image'
   | 'marking'
   | 'arrow'
@@ -227,6 +267,7 @@ export const CHANGE_ENTITIES: readonly ChangeEntity[] = [
   'docRepo',
   'project',
   'layer',
+  'page',
   'image',
   'marking',
   'arrow',
@@ -235,7 +276,10 @@ export const CHANGE_ENTITIES: readonly ChangeEntity[] = [
 
 /**
  * Fields altered on an image (`file` is the swap: `{ file, width, height }`). `background` and
- * `size` (`{ width, height }`) only exist on a container without a file (v10).
+ * `size` (`{ width, height }`) only exist on a container without a file (v10). `page` is the page
+ * change (`{ pageId, position }`, the position being the `placement` on the destination page,
+ * formatVersion 10): one change, so the reviewer does not accept half of it; `placement` is only
+ * a separate field when the page does not change.
  */
 export const IMAGE_FIELDS = [
   'name',
@@ -249,6 +293,7 @@ export const IMAGE_FIELDS = [
   'drawingMode',
   'density',
   'direction',
+  'page',
 ] as const;
 /**
  * Fields altered on a marking. `space` is the change of space (`{ containerId, rect }`, a null
@@ -256,7 +301,9 @@ export const IMAGE_FIELDS = [
  * of it; `rect` is only a separate field when the space does not change. `floating` is
  * compared; `parentId` is derived (the settle recomputes it) and is not compared. `containerId`
  * alone is the format from before v13, still accepted when reading. `position`: index among the
- * siblings (same space and same parent), only when the relative order changes.
+ * siblings (same space and same parent), only when the relative order changes. `page` is the
+ * page change of a canvas marking (`{ pageId, position }`, the position being the `rect` on the
+ * destination page, formatVersion 10); it replaces `rect` when it is there.
  */
 export const MARKING_FIELDS = [
   'name',
@@ -268,6 +315,7 @@ export const MARKING_FIELDS = [
   'source',
   'position',
   'anchor',
+  'page',
 ] as const;
 /**
  * The arrow (v13, ME4) only has creation and removal (`create-arrow`, `delete-arrow`): no field
@@ -292,6 +340,8 @@ export const ANNOTATION_FIELDS = [
 ] as const;
 /** `position` is the index in the layer list (only when the relative order changes). */
 export const LAYER_FIELDS = ['name', 'color', 'spec', 'position'] as const;
+/** `position` is the index in the page list (only when the relative order changes). */
+export const PAGE_FIELDS = ['name', 'position'] as const;
 
 export const VALUES_FIELD_PREFIX = 'values.';
 export const ENTRIES_FIELD_PREFIX = 'entries.';
@@ -559,6 +609,7 @@ const entitySchemas: Record<ChangeEntity, z.ZodType> = {
   docRepo: docRepoSchema,
   project: projectValueSchema,
   layer: layerSchema,
+  page: pageSchema,
   image: containerSchema,
   marking: markingSchema,
   arrow: arrowValue,
@@ -577,6 +628,7 @@ const imageFieldSchemas: Record<(typeof IMAGE_FIELDS)[number], z.ZodType> = {
   drawingMode: drawingModeName.nullable(),
   density: z.number().min(0.5).max(8).nullable(),
   direction: readingDirection.nullable(),
+  page: z.object({ pageId: id, position: placementSchema }),
 };
 
 /**
@@ -600,6 +652,12 @@ const markingFieldSchemas: Record<(typeof MARKING_FIELDS)[number], z.ZodType> = 
   source: sourceSchema.nullable(),
   position: z.number().int().min(0),
   anchor: anchorSchema.nullable(),
+  page: z.object({ pageId: id, position: looseRect }),
+};
+
+const pageFieldSchemas: Record<(typeof PAGE_FIELDS)[number], z.ZodType> = {
+  name: z.string().trim().min(1),
+  position: z.number().int().min(0),
 };
 
 const annotationFieldSchemas: Record<(typeof ANNOTATION_FIELDS)[number], z.ZodType> = {
@@ -631,6 +689,8 @@ function fieldSchema(entity: ChangeEntity, field: string): z.ZodType | null {
       return has(markingFieldSchemas, field) ? markingFieldSchemas[field] : null;
     case 'layer':
       return has(layerFieldSchemas, field) ? layerFieldSchemas[field] : null;
+    case 'page':
+      return has(pageFieldSchemas, field) ? pageFieldSchemas[field] : null;
     case 'annotation':
       if (field.startsWith(VALUES_FIELD_PREFIX)) {
         return field.length > VALUES_FIELD_PREFIX.length ? jsonValue : null;
@@ -705,7 +765,8 @@ const changeSchema = z
       c.entity === 'platformRepo' ||
       c.entity === 'docRepo' ||
       c.entity === 'project' ||
-      c.entity === 'layer';
+      c.entity === 'layer' ||
+      c.entity === 'page';
     if (projectLevel && (c.imageId !== null || c.markingId !== null)) {
       add(['imageId'], 'project changes have neither imageId nor markingId');
     }
@@ -826,6 +887,23 @@ interface RevisionsToCheck {
 type AddIssue = (path: (string | number)[], message: string) => void;
 
 /**
+ * Pages exist from formatVersion 10: an earlier file with the `page` entity, the `page` field or a
+ * `pageId` in a created or removed value is refused (a reader of an earlier version would not
+ * know them, and the `pageId` of a created value would be lost without a trace).
+ */
+function checkPagesVersion(
+  p: { readonly formatVersion: number; readonly changes: readonly Change[] },
+  add: AddIssue,
+): void {
+  if (p.formatVersion >= PROPOSAL_PAGES_FORMAT_VERSION) return;
+  p.changes.forEach((c, i) => {
+    if (changeUsesPages(c)) {
+      add(['changes', i, 'entity'], 'pages only exist in formatVersion 10 or later');
+    }
+  });
+}
+
+/**
  * Rules of the revision history (formatVersion 5): `revisions` is required in 5 and does not
  * exist before; a withdrawn change is no longer in `changes`; a new change enters the history
  * only once. Ids cited in `changed`, `added` and `notes` that no longer exist are history.
@@ -875,8 +953,9 @@ export const proposalSchema = z
         z.literal(7),
         z.literal(8),
         z.literal(9),
+        z.literal(10),
       ],
-      { error: 'must be 1, 2, 3, 4, 5, 6, 7, 8 or 9' },
+      { error: 'must be 1, 2, 3, 4, 5, 6, 7, 8, 9 or 10' },
     ),
     id: proposalId,
     title: z.string().trim().min(1, 'cannot be empty'),
@@ -932,6 +1011,7 @@ export const proposalSchema = z
       }
     }
     checkRevisions(p, changeIds, add);
+    checkPagesVersion(p, add);
     const noteIds = new Set<string>();
     p.notes.forEach((n, i) => {
       if (noteIds.has(n.id)) add(['notes', i, 'id'], `duplicate id "${n.id}"`);

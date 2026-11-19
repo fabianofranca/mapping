@@ -181,7 +181,7 @@ test.describe('interactive guide', () => {
     await expect(tabs).toHaveText(perspectiveTabs(1, noPhoto));
     await expect(page.locator('#layers button[aria-pressed=false]')).toHaveCount(0);
 
-    await picker.selectOption({ label: 'Main' });
+    await picker.selectOption({ label: 'Full' });
     await expect(tabs).toHaveCount(example.containers.length);
     await tabs.first().click();
     await expect(page.locator('#layers button[aria-pressed=false]')).toHaveCount(0);

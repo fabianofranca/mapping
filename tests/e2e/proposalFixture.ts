@@ -81,6 +81,7 @@ export function fixtureProject(): Project {
     name: 'Store',
     now: NOW,
     firstLayer: { id: 'L1', name: 'Components', color: '#1e88e5' },
+    firstPage: { id: 'PG1', name: 'Page 1' },
   });
   p = addContainer(p, {
     id: 'I1',

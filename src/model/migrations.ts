@@ -2,10 +2,19 @@ import { removedFieldKeys } from './spec';
 import { isRecord } from './isRecord';
 import { SCHEMA_VERSION } from './types';
 
+/** Name of the first page when the caller gives none (the app passes the text of its language). */
+export const DEFAULT_PAGE_NAME = 'Page 1';
+
 /** What a migration can consult besides `mapping.json` itself. */
 export interface MigrationContext {
   /** Text of the specialization copies (path in `specs/` → text), as read. */
   readonly specs: ReadonlyMap<string, string>;
+  /**
+   * Name of the page the v20 → v21 migration creates (and the repair of a project without pages).
+   * The model does not translate: the app passes the text of its language. Absent:
+   * `DEFAULT_PAGE_NAME`.
+   */
+  readonly pageName?: string;
 }
 
 const NO_CONTEXT: MigrationContext = { specs: new Map() };
@@ -332,6 +341,29 @@ export const migrateFrom18To19: Migration = (data) => data;
  */
 export const migrateFrom19To20: Migration = (data) => data;
 
+/**
+ * v20 → v21 (pages): the project gets one page (a new UUID and the name `context.pageName`, default
+ * `DEFAULT_PAGE_NAME`) and `pageId` goes on every container and every canvas marking (`null` on the
+ * markings of a container: their page is the container's). Values already present are preserved:
+ * a file that already has `pages` keeps them and the items without `pageId` go to the first one.
+ */
+export const migrateFrom20To21: Migration = (data, context = NO_CONTEXT) => {
+  const existing = Array.isArray(data.pages) ? (data.pages as unknown[]) : [];
+  const first = existing.find(isRecord);
+  const page = { id: crypto.randomUUID(), name: context.pageName ?? DEFAULT_PAGE_NAME };
+  const keep = first !== undefined && typeof first.id === 'string';
+  const pageId = keep ? first.id : page.id;
+  return {
+    ...data,
+    pages: keep ? existing : [page],
+    containers: mapItems(data.containers, (c) => ({ pageId, ...c })),
+    markings: mapItems(data.markings, (m) => ({
+      pageId: m.containerId === null ? pageId : null,
+      ...m,
+    })),
+  };
+};
+
 /** Migration registry: the key is the source version. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -353,6 +385,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [17, migrateFrom17To18],
   [18, migrateFrom18To19],
   [19, migrateFrom19To20],
+  [20, migrateFrom20To21],
 ]);
 
 export type MigrationResult =
