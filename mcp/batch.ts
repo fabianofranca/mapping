@@ -1979,7 +1979,8 @@ class Batch {
         scale: op.scale ?? placement.scale,
       };
       project = setContainerPlacement(project, id, next);
-      // The value `setContainerPlacement` stores: the same pure function, free of floating-point noise.
+      // The value `setContainerPlacement` stores: the same pure function, free of floating-point noise
+      // (if it ever adjusts the placement after snapping, this text has to follow it).
       const saved = snapPlacement(next);
       changes.push(`position (${saved.x}, ${saved.y}) scale ${saved.scale}`);
     }
