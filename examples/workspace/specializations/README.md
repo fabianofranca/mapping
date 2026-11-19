@@ -1,0 +1,3 @@
+# specializations/
+
+Sources of the specializations (`<id>.json`, format in Mapping's `docs/SPEC-FORMAT.md`). This folder is a root of the MCP server: `validate_specialization({ path })` and `apply_specialization` read from here. The copy the app keeps in `projects/<project>/specs/` is derived; always edit the source, bump the `version` and apply again by proposal. A library (`formatVersion` 4) is a folder `<id>/` with the specialization, `components/`, `docs/`, `examples/` and `fonts/`: validate it with `validate_library({ path: "specializations/<id>" })`; the app is what applies it to a project.

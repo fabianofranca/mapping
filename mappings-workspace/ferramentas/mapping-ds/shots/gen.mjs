@@ -7,8 +7,8 @@ import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const SCRATCH = PATHS.base;
-const PROJECT = `${PATHS.ws}/projetos/comentarios`;
-const LIB = `${PATHS.ws}/especializacoes/mapping-ds`;
+const PROJECT = `${PATHS.ws}/projects/comentarios`;
+const LIB = `${PATHS.ws}/specializations/mapping-ds`;
 const require = createRequire(`${SCRATCH}/app/package.json`);
 const JSZip = require('jszip');
 

@@ -5,6 +5,7 @@
 // command that records each run, and wait by polling with a deadline (no long sleeps).
 import { spawn, type ChildProcess } from 'node:child_process';
 import {
+  copyFileSync,
   appendFileSync,
   existsSync,
   mkdirSync,
@@ -140,7 +141,7 @@ async function startWatcher(env: Record<string, string> = {}): Promise<void> {
 
 beforeEach(() => {
   const dir = mkdtempSync(join(tmpdir(), 'watch-comments-'));
-  const root = join(dir, 'projetos');
+  const root = join(dir, 'projects');
   mkdirSync(join(root, 'p1', 'comments'), { recursive: true });
   h = { dir, root, mark: join(dir, 'mark.log'), child: null, stderr: '' };
 });
@@ -254,6 +255,55 @@ describe('examples/workspace/watch-comments.mjs', { timeout: 20000 }, () => {
     expect(code).toBe(2);
     expect(err).toContain('watch-comments:');
     expect(err).toContain('usage');
+  });
+
+  describe('default root (stage #1879, decision 5)', () => {
+    /** Copies the script into a new folder with the given subfolders and starts it without --root. */
+    async function startDefault(
+      folders: string[],
+    ): Promise<{ err: string; root: string }> {
+      const dir = join(h.dir, 'ws');
+      mkdirSync(dir, { recursive: true });
+      const script = join(dir, 'watch-comments.mjs');
+      copyFileSync(SCRIPT, script);
+      for (const f of folders) mkdirSync(join(dir, f), { recursive: true });
+      const fake = join(h.dir, 'fake.mjs');
+      writeFileSync(fake, FAKE);
+      const child = spawn(
+        process.execPath,
+        [script, '--quiet', QUIET, '--', process.execPath, fake],
+        {
+          env: { ...process.env, MARK_FILE: h.mark },
+          stdio: ['ignore', 'ignore', 'pipe'],
+        },
+      );
+      let err = '';
+      child.stderr?.on('data', (d: Buffer) => {
+        err += d.toString();
+      });
+      h.child = child;
+      await waitFor(() => err.includes('watch-comments: observing'), 'the watcher');
+      return { err, root: dir };
+    }
+
+    it('uses projects/ next to the script', async () => {
+      const { err, root } = await startDefault(['projects']);
+      expect(err).toContain(`observing ${join(root, 'projects')}`);
+      expect(err).not.toContain('projetos');
+    });
+
+    it('uses projetos/ only when it is the only one, and says so in the start log', async () => {
+      const { err, root } = await startDefault(['projetos']);
+      expect(err).toContain(`observing ${join(root, 'projetos')}`);
+      expect(err).toContain('projetos/');
+      expect(err).toContain('legacy');
+    });
+
+    it('prefers projects/ when both exist', async () => {
+      const { err, root } = await startDefault(['projects', 'projetos']);
+      expect(err).toContain(`observing ${join(root, 'projects')}`);
+      expect(err).not.toContain('legacy');
+    });
   });
 
   it('exits cleanly on SIGTERM', async () => {

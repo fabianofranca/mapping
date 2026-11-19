@@ -1,4 +1,4 @@
 # Backups the app writes when migrating an old mapping.json.
-projetos/**/backups/
+projects/**/backups/
 .DS_Store
 Thumbs.db

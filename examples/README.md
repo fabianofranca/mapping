@@ -236,11 +236,11 @@ To apply a loose file: **Specializations** › **Apply specialization…**. The 
 
 **What it is.** The skeleton of a central folder of mappings to work with an AI agent: the MCP server, the roots, the `spec-author` skill and the instructions (`AGENTS.md`) for any MCP client.
 
-**How to open.** Copy the folder wherever you want, run `./setup.sh` (to update an old workspace, the transition line is in the folder's `README.md`) and open the folder in the agent (Claude Code, Cursor, Gemini CLI, Copilot or Codex). The projects live in `projetos/` and the specializations in `especializacoes/`.
+**How to open.** Copy the folder wherever you want, run `./setup.sh` (to update an old workspace, the transition line is in the folder's `README.md`) and open the folder in the agent (Claude Code, Cursor, Gemini CLI, Copilot or Codex). The projects live in `projects/` and the specializations in `specializations/`.
 
 **What you can see.**
 
-- The `setup.sh`, which downloads `tools/mapping-mcp.js`, the `spec-author` skill and the `AGENTS.md` rules block (between the `mapping:begin` and `mapping:end` markers) from the latest release, checks the `sha256` of everything before replacing any file and updates itself (`--no-self-update` turns it off). Running it again updates, without touching `projetos/`, `especializacoes/` or what you wrote outside the block.
+- The `setup.sh`, which downloads `tools/mapping-mcp.js`, the `spec-author` skill and the `AGENTS.md` rules block (between the `mapping:begin` and `mapping:end` markers) from the latest release, checks the `sha256` of everything before replacing any file and updates itself (`--no-self-update` turns it off). Running it again updates, without touching `projects/`, `specializations/` (or the old `projetos/` and `especializacoes/`, which it never moves) or what you wrote outside the block.
 - One configuration file per tool (`.mcp.json`, `.cursor/mcp.json` and the others), all pointing to the same command with the two roots.
 - The `AGENTS.md` with the "What these mappings are for" section for the person to fill in, and the `CLAUDE.md` that imports it.
 - How to work from the code's repository (`get_code_hints`, `find_by_code`).

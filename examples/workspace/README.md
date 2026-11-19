@@ -7,7 +7,7 @@ Skeleton of a folder that centralizes Mapping projects and comes ready for any A
 1. Copy this folder wherever you like (e.g. `~/mappings`) and start a Git repository in it.
 2. Run `./setup.sh` (needs Node ≥ 20 and `curl`). It downloads from the latest Mapping `mcp-v*` release the server (`tools/mapping-mcp.js`), the `spec-author` skill, the `AGENTS.md` rules, `watch-comments.mjs` (the conversation watcher, in the root) and the signature extractor (`tools/mapping-signature.mjs`), checks the `sha256` of all of them and only then updates the folder. For a specific version: `./setup.sh mcp-v0.5.0`; to test a release candidate or a PR build: `./setup.sh mcp-v0.5.0-rc.1` or `./setup.sh mcp-snapshot-pr172`.
 3. Fill in the "What these mappings are for" section of `AGENTS.md`: it is what the agent cannot discover on its own.
-4. Open the folder in the agent and approve the `mapping` server. Open the projects in the Mapping app as a **folder**, inside `projetos/`.
+4. Open the folder in the agent and approve the `mapping` server. Open the projects in the Mapping app as a **folder**, inside `projects/`.
 5. Version `tools/mapping-mcp.js` and its `.sha256` together: whoever clones has the server working without installing anything.
 
 ## Updating
@@ -45,7 +45,7 @@ The rules for the agent live in a **managed block**, between the lines `<!-- map
 
 ### What `setup.sh` touches and what it does not
 
-Touches: `tools/mapping-mcp.js` and `tools/mapping-signature.mjs` (and the `.sha256` files), `.agents/skills/spec-author/`, `.claude/skills/spec-author`, `watch-comments.mjs` (in the root) and the `AGENTS.md` block (with the backup when the structure changes). **Never touches:** `projetos/`, `especializacoes/`, an existing `CLAUDE.md`, `.mcp.json` and the configurations of the other clients (you may have other servers registered in them).
+Touches: `tools/mapping-mcp.js` and `tools/mapping-signature.mjs` (and the `.sha256` files), `.agents/skills/spec-author/`, `.claude/skills/spec-author`, `watch-comments.mjs` (in the root) and the `AGENTS.md` block (with the backup when the structure changes). **Never touches:** `projects/`, `specializations/`, an existing `CLAUDE.md`, `.mcp.json` and the configurations of the other clients (you may have other servers registered in them).
 
 ### Security
 
@@ -79,20 +79,30 @@ Last resort, if not even the API responds: download the release with `gh release
 
 ## Conversations: waking the agent (`watch-comments.mjs`)
 
-Anchored conversations live in `projetos/<project>/comments/` (format in Mapping's `docs/COMMENT-FORMAT.md`). The MCP server **never triggers an agent**: it only reads and writes conversations when the agent is already up. For the agent to wake up on its own when someone asks something, leave `watch-comments.mjs` (in the workspace root; `setup.sh` installs and updates it) running in a terminal (Node ≥ 20, no dependencies), passing the command that opens your agent after the `--`:
+Anchored conversations live in `projects/<project>/comments/` (format in Mapping's `docs/COMMENT-FORMAT.md`). The MCP server **never triggers an agent**: it only reads and writes conversations when the agent is already up. For the agent to wake up on its own when someone asks something, leave `watch-comments.mjs` (in the workspace root; `setup.sh` installs and updates it) running in a terminal (Node ≥ 20, no dependencies), passing the command that opens your agent after the `--`:
 
 ```bash
-node watch-comments.mjs -- claude -p "There are conversations awaiting you in projetos/. Follow the Conversations section of AGENTS.md."
+node watch-comments.mjs -- claude -p "There are conversations awaiting you in projects/. Follow the Conversations section of AGENTS.md."
 ```
 
-- Watches `projetos/*/comments/` and waits **5 s with no change** (`--quiet <seconds>` adjusts it) before acting.
+- Watches `projects/*/comments/` and waits **5 s with no change** (`--quiet <seconds>` adjusts it) before acting.
 - Only runs the command if there is an **open** conversation whose last message is from a person (it awaits the agent). A resolved conversation, or one that awaits a person, triggers nothing.
 - Runs **one command at a time**: a change during the run waits for it to finish and is reevaluated. Each conversation and last-message pair is handled once, so a conversation the agent left unanswered does not become a loop.
-- The command receives `MAPPING_AWAITING`, a JSON with `[{ "project", "thread", "path" }]` of the conversations that triggered the run. `--root <folder>` changes the watched folder (default: `projetos/` next to the script). Ctrl+C stops it.
+- The command receives `MAPPING_AWAITING`, a JSON with `[{ "project", "thread", "path" }]` of the conversations that triggered the run. `--root <folder>` changes the watched folder (default: `projects/` next to the script). Ctrl+C stops it.
+
+## Renaming the folders
+
+Workspaces created before the English names have `projetos/` and `especializacoes/`. They keep working: `setup.sh` never moves or renames anything, and the watcher and the skills read the root from the client configuration. `setup.sh` only warns once: it creates no `projects/` or `specializations/` next to an old folder. To rename, by hand:
+
+1. Close the agent and the Mapping app on the workspace.
+2. `mv projetos projects` and `mv especializacoes specializations` (each folder on its own; only the ones you have).
+3. In each client configuration (`.mcp.json`, `.cursor/mcp.json`, `.gemini/settings.json`, `.vscode/mcp.json`, `.codex/config.toml`), change `--root projetos` to `--root projects` and `--root especializacoes` to `--root specializations`.
+4. In `.gitignore`, change `projetos/**/backups/` to `projects/**/backups/`.
+5. Open the agent again and run `list_projects`: the roots must show the new paths. Reopen the projects in the app from `projects/`.
 
 ## Where each tool reads its configuration
 
-All of them point to the same command: `node tools/mapping-mcp.js --root projetos --root especializacoes`. The names change between versions; if a tool does not find the server, check its docs and adjust only the corresponding file.
+All of them point to the same command: `node tools/mapping-mcp.js --root projects --root specializations`. The names change between versions; if a tool does not find the server, check its docs and adjust only the corresponding file.
 
 | Tool              | MCP server              | Instructions                      | Skill                    |
 | ----------------- | ----------------------- | --------------------------------- | ------------------------ |
@@ -104,7 +114,7 @@ All of them point to the same command: `node tools/mapping-mcp.js --root projeto
 
 ## Two roots, not the whole folder
 
-`projetos/` is where the server looks for `mapping.json` (at any depth). `especializacoes/` holds the sources of the specializations, which must be inside a root for `validate_specialization({ path })` and `apply_specialization` to read them. `.git/` and `tools/` stay out.
+`projects/` is where the server looks for `mapping.json` (at any depth). `specializations/` holds the sources of the specializations, which must be inside a root for `validate_specialization({ path })` and `apply_specialization` to read them. `.git/` and `tools/` stay out.
 
 ## Writing the solution from the markings
 
@@ -115,7 +125,7 @@ Each type's `code` says how to create an instance of it on each platform; the fi
   "mcpServers": {
     "mapping": {
       "command": "node",
-      "args": ["/path/mappings/tools/mapping-mcp.js", "--root", "/path/mappings/projetos"]
+      "args": ["/path/mappings/tools/mapping-mcp.js", "--root", "/path/mappings/projects"]
     }
   }
 }

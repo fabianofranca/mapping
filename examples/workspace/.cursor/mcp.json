@@ -2,7 +2,7 @@
   "mcpServers": {
     "mapping": {
       "command": "node",
-      "args": ["tools/mapping-mcp.js", "--root", "projetos", "--root", "especializacoes"]
+      "args": ["tools/mapping-mcp.js", "--root", "projects", "--root", "specializations"]
     }
   }
 }

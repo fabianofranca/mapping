@@ -28,7 +28,7 @@
 //   1. after the `--` on the command line; 2. MAPPING_MCP_ARGS;
 //   3. `<WS>/.mcp.json`, if it exists and is valid (`mcpServers.mapping.command` = `node`,
 //      `mcpServers.mapping.args`), the same file the workspace's MCP client reads;
-//   4. the default of examples/workspace/: tools/mapping-mcp.js --root projetos --root especializacoes
+//   4. the default of examples/workspace/: tools/mapping-mcp.js --root projects --root specializations
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -37,9 +37,9 @@ import process from 'node:process';
 const DEFAULT_SERVER_ARGS = [
   'tools/mapping-mcp.js',
   '--root',
-  'projetos',
+  'projects',
   '--root',
-  'especializacoes',
+  'specializations',
 ];
 
 const argv = process.argv.slice(2);

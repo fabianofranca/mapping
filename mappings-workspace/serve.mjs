@@ -41,9 +41,9 @@ const child = spawn(
   [
     server,
     '--root',
-    join(here, 'projetos'),
+    join(here, 'projects'),
     '--root',
-    join(here, 'especializacoes'),
+    join(here, 'specializations'),
   ],
   { stdio: 'inherit' },
 )

@@ -1,4 +1,4 @@
 # Codex CLI: the Mapping MCP server (same command as the other clients).
 [mcp_servers.mapping]
 command = "node"
-args = ["tools/mapping-mcp.js", "--root", "projetos", "--root", "especializacoes"]
+args = ["tools/mapping-mcp.js", "--root", "projects", "--root", "specializations"]

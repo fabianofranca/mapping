@@ -6,7 +6,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 const SCRATCH = PATHS.base;
-const PROJECT = `${PATHS.ws}/projetos/comentarios`;
+const PROJECT = `${PATHS.ws}/projects/comentarios`;
 const require = createRequire(`${SCRATCH}/app/package.json`);
 const { chromium } = require('@playwright/test');
 const JSZip = require('jszip');
