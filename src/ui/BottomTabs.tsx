@@ -22,13 +22,16 @@ export function BottomTabs({ active }: { readonly active: ToolWindowId }) {
   const tabs: TabItem<ToolWindowId>[] = windowsOfSide('bottom').map((id) => {
     const meta = toolWindowMeta(id);
     const title = meta.title();
-    // Comments is the sixth tab: only the icon and the count, so the six fit in the canvas's
-    // minimum width; the accessible name and the tooltip remain the title.
+    // Comments is the sixth tab: only the icon and the count at every width. Notices and
+    // Diagnostics are compact: label when the bottom window is wide, icon only in a narrow one
+    // (`@container bottom-window`), so the six fit in the canvas's minimum width with a gap.
     const iconOnly = id === 'comments';
+    const compact = id === 'notices' || id === 'diagnostics';
     return {
       id,
       label: iconOnly ? '' : (meta.tab?.() ?? title),
       ...(iconOnly ? { icon: meta.icon, ariaLabel: title } : {}),
+      ...(compact ? { icon: meta.icon, compact } : {}),
       title,
       ...windowBadge(id, incomplete, fresh, noticed, openThreads),
       alert: id === 'diagnostics' && unseen,

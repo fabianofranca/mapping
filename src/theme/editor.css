@@ -205,6 +205,8 @@
 
 .tool-window-bottom {
   border-top: 1px solid var(--color-border);
+  /* Narrow rules follow the window's own width, not the viewport's (`@container bottom-window`). */
+  container: bottom-window / inline-size;
 }
 
 /*
@@ -428,23 +430,40 @@
 }
 
 /* Width smaller than the tabs: the strip scrolls (inherited), but never shrinks below the content in the layout. */
-/* The neighbors are not glued (CL1, 4.4): 2px: all six must fit at the minimum width. */
+/* The neighbors are not glued: 8px between visible contents at every width (AI1). */
 .tool-window-bottom .tool-window-tabs .tabs {
   flex: 1 1 auto;
-  gap: var(--space-0-5);
+  gap: 0;
 }
 
-/* Tighter tabs: all six fit in the minimum canvas width (`--size-canvas-min`). */
-/* A little breathing room per tab (4px between neighbors), so a counter does not read as part of the next tab's label. Compact windows (up to 1199px) keep the tight tabs: all six must fit the strip there. */
+/* 4px of padding each side: 8px between neighbors. */
 .tool-window-bottom .tool-window-tabs .tab {
-  padding: 0 var(--space-0-5);
+  padding: 0 var(--space-1);
   /* Six tabs: the small font leaves slack for the wider fonts of other machines. */
   font: var(--t-text-small);
 }
 
-@media (max-width: 1199px) {
-  .tool-window-bottom .tool-window-tabs .tab {
-    padding: 0;
+/* Compact tabs (Notices, Diagnostics): the icon shows only in a narrow bottom window. */
+.tool-window-bottom .tool-window-tabs .tab-icon {
+  display: none;
+}
+
+/*
+ * Narrow bottom window (about 360px at 900px with Tree, Layers and Details open; 576px at
+ * 1280px): Notices and Diagnostics keep only the icon, with the counter or the alert dot.
+ * Threshold (measured in Chromium): the labeled worst case (counters on every labeled tab,
+ * Notices with 2 digits, 8px gaps) takes 379px in en-US and 387px in pt-BR, so it fits at
+ * 576px (1280px viewport) and not at 360px (900px); 470px keeps about 80px of slack for the
+ * wider CI font.
+ */
+@container bottom-window (max-width: 470px) {
+  .tool-window-bottom .tool-window-tabs .tab-icon {
+    display: inline-flex;
+    vertical-align: middle;
+  }
+
+  .tool-window-bottom .tool-window-tabs .tab-icon + .tab-label {
+    display: none;
   }
 }
 
@@ -458,7 +477,7 @@
  * `--t-kbd` (11px, weight 400) and 1px inset. At 900px the strip is 360px (356 before: the 4px
  * header inset moved to the close button) and the tabs with label, with a counter on all and the
  * Warnings one with 2 digits, fit without scrolling or cutting the first tab, also with the
- * wider CI font (e2e test `bottomTabs.spec.ts`); at 1280px the strip is 417px.
+ * wider CI font (e2e test `bottomTabs.spec.ts`); at 1280px the strip is 417px (AI1: with 8px gaps, Notices and Diagnostics become icon-only in a narrow bottom window, see `@container bottom-window`).
  */
 .tool-window-bottom .tool-window-tabs .tab-badge {
   padding: 0 var(--space-px);

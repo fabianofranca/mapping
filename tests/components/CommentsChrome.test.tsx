@@ -102,7 +102,7 @@ describe.each(['pt-BR', 'en-US'] as const)('strip, tab and status bar (%s)', (la
     );
     const tab = screen
       .getAllByRole('tab')
-      .find((el) => el.getAttribute('aria-label') === t('comments.title'));
+      .find((el) => el.getAttribute('aria-label') === `${t('comments.title')} 2`);
     expect(tab?.textContent).toContain('2');
   });
 
