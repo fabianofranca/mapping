@@ -124,7 +124,7 @@ jobs:
       # expected files (each with its `.sha256`).
       - name: Check the downloaded files
         run: |
-          expected="AGENTS.mapping.md AGENTS.mapping.md.sha256 SKILL.md SKILL.md.sha256 mapping-mcp.js mapping-mcp.js.sha256 mapping-signature.mjs mapping-signature.mjs.sha256 setup.sh setup.sh.sha256 watch-comments.mjs watch-comments.mjs.sha256"
+          expected="AGENTS.mapping.md AGENTS.mapping.md.sha256 SKILL.md SKILL.md.sha256 mapping-mcp.js mapping-mcp.js.sha256 mapping-signature.mjs mapping-signature.mjs.sha256 setup.sh setup.sh.sha256 watch-comments.mjs watch-comments.mjs.sha256 watch-conversations.SKILL.md watch-conversations.SKILL.md.sha256"
           expected="$(printf '%s\n' $expected | LC_ALL=C sort | tr '\n' ' ')"
           found="$(ls -1 release-assets | LC_ALL=C sort | tr '\n' ' ')"
           if [ "$found" != "$expected" ]; then
@@ -137,7 +137,7 @@ jobs:
           tag="mcp-snapshot-pr${PR}"
           title="$tag"
           assets=(release-assets/*)
-          notes="Provisional build of PR #${PR}, for testing before it enters the epic. Commit ${HEAD_SHA:0:7}. Overwritten on every push and deleted when the PR closes. It also brings the workspace's \`setup.sh\`, the \`SKILL.md\` skill, the \`AGENTS.mapping.md\` rules and the \`watch-comments.mjs\` watcher, and the \`mapping-signature.mjs\` signature extractor, each with its \`.sha256\`. Installation: \`./setup.sh ${tag}\` (examples/workspace/) or download \`mapping-mcp.js\` and check it with the \`.sha256\`. To update a workspace that still has the old \`setup.sh\`, once: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
+          notes="Provisional build of PR #${PR}, for testing before it enters the epic. Commit ${HEAD_SHA:0:7}. Overwritten on every push and deleted when the PR closes. It also brings the workspace's \`setup.sh\`, the \`SKILL.md\` skill, the \`AGENTS.mapping.md\` rules and the \`watch-comments.mjs\` watcher, the \`watch-conversations.SKILL.md\` skill that wakes the agent in the same chat, and the \`mapping-signature.mjs\` signature extractor, each with its \`.sha256\`. Installation: \`./setup.sh ${tag}\` (examples/workspace/) or download \`mapping-mcp.js\` and check it with the \`.sha256\`. To update a workspace that still has the old \`setup.sh\`, once: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
           if gh release view "$tag" > /dev/null 2>&1; then
             # It already exists: move the tag to the new commit and replace the files.
             gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" \
@@ -283,7 +283,7 @@ jobs:
       # expected files (each with its `.sha256`).
       - name: Check the downloaded files
         run: |
-          expected="AGENTS.mapping.md AGENTS.mapping.md.sha256 SKILL.md SKILL.md.sha256 mapping-mcp.js mapping-mcp.js.sha256 mapping-signature.mjs mapping-signature.mjs.sha256 setup.sh setup.sh.sha256 watch-comments.mjs watch-comments.mjs.sha256"
+          expected="AGENTS.mapping.md AGENTS.mapping.md.sha256 SKILL.md SKILL.md.sha256 mapping-mcp.js mapping-mcp.js.sha256 mapping-signature.mjs mapping-signature.mjs.sha256 setup.sh setup.sh.sha256 watch-comments.mjs watch-comments.mjs.sha256 watch-conversations.SKILL.md watch-conversations.SKILL.md.sha256"
           expected="$(printf '%s\n' $expected | LC_ALL=C sort | tr '\n' ' ')"
           found="$(ls -1 release-assets | LC_ALL=C sort | tr '\n' ' ')"
           if [ "$found" != "$expected" ]; then
@@ -303,4 +303,4 @@ jobs:
             "${assets[@]}" \
             --prerelease --target "$TARGET_SHA" \
             --title "$RC_TAG" \
-            --notes "Release candidate of epic \`${EPIC}\`, commit ${TARGET_SHA:0:7}. Provisional: deleted when the stable mcp-v${SERVER_VERSION} is published. It also brings the workspace's \`setup.sh\`, the \`SKILL.md\` skill, the \`AGENTS.mapping.md\` rules and the \`watch-comments.mjs\` watcher, and the \`mapping-signature.mjs\` signature extractor, each with its \`.sha256\`. Installation: \`./setup.sh ${RC_TAG}\` (examples/workspace/) or download \`mapping-mcp.js\` and check it with the \`.sha256\`. To update a workspace that still has the old \`setup.sh\`, once: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${RC_TAG}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
+            --notes "Release candidate of epic \`${EPIC}\`, commit ${TARGET_SHA:0:7}. Provisional: deleted when the stable mcp-v${SERVER_VERSION} is published. It also brings the workspace's \`setup.sh\`, the \`SKILL.md\` skill, the \`AGENTS.mapping.md\` rules and the \`watch-comments.mjs\` watcher, the \`watch-conversations.SKILL.md\` skill that wakes the agent in the same chat, and the \`mapping-signature.mjs\` signature extractor, each with its \`.sha256\`. Installation: \`./setup.sh ${RC_TAG}\` (examples/workspace/) or download \`mapping-mcp.js\` and check it with the \`.sha256\`. To update a workspace that still has the old \`setup.sh\`, once: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${RC_TAG}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."

@@ -1,7 +1,9 @@
 // Workspace files that each MCP release publishes along with `mapping-mcp.js`
 // (stage #681, decision 1; stage #735, decision 1): `setup.sh`, `SKILL.md` (the `spec-author` skill),
-// `AGENTS.mapping.md` (the managed block of `examples/workspace/AGENTS.md`) and `watch-comments.mjs`
-// (the conversation watcher), each with its `.sha256`.
+// `AGENTS.mapping.md` (the managed block of `examples/workspace/AGENTS.md`), `watch-comments.mjs`
+// (the conversation watcher) and `watch-conversations.SKILL.md` (the `watch-conversations` skill; plain
+// `SKILL.md` stays the `spec-author` one, which older `setup.sh` copies download under that name),
+// each with its `.sha256` (stage #1879, decision 7).
 // The three publishing jobs (snapshot, rc and stable) use this script, without repeating the list.
 //   node scripts/release/workspaceAssets.mjs <output folder> [--root <repository root>]
 // Prints the files written, one per line, with the output folder in front. Node only, no
@@ -25,6 +27,7 @@ export const WORKSPACE_SOURCES = [
   '.claude/skills/spec-author/SKILL.md',
   AGENTS_PATH,
   'examples/workspace/watch-comments.mjs',
+  'examples/workspace/.agents/skills/watch-conversations/SKILL.md',
 ];
 
 /** How many times `needle` appears in `text`. */
@@ -76,6 +79,7 @@ export function buildWorkspaceAssets(outDir, root) {
     ['SKILL.md', readSource(root, WORKSPACE_SOURCES[1])],
     ['AGENTS.mapping.md', `${extractBlock(readSource(root, WORKSPACE_SOURCES[2]))}\n`],
     ['watch-comments.mjs', readSource(root, WORKSPACE_SOURCES[3])],
+    ['watch-conversations.SKILL.md', readSource(root, WORKSPACE_SOURCES[4])],
   ];
   mkdirSync(outDir, { recursive: true });
   const written = [];

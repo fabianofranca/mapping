@@ -105,7 +105,7 @@ describe('MCP release inputs', () => {
   }, 60_000);
 
   it('the list covers the sources of the workspace files', () => {
-    expect(WORKSPACE_SOURCES.length).toBe(4);
+    expect(WORKSPACE_SOURCES.length).toBe(5);
     for (const path of WORKSPACE_SOURCES) expect(isReleaseInput(path), path).toBe(true);
   });
 
