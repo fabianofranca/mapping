@@ -1,4 +1,4 @@
-# Placement style review items — [Não lançado] (épico `epic/estilo-placement`, MCP 0.45.1, schema v21)
+# Placement style review items — [Não lançado]
 
 ## Alterado
 
