@@ -1,5 +1,5 @@
 import { t } from '../i18n';
-import { projectIndex, type Page, type Project } from '../model';
+import { projectIndex, type Page, type PageAnchorCrossing, type Project } from '../model';
 import { showToast } from '../store/ui';
 import type { EditorContextValue } from './EditorContext';
 import { navigateTo } from './pageNavigation';
@@ -29,8 +29,8 @@ export function destinationPages(
 }
 
 /**
- * Takes the roots to the page. A refusal for crossing arrows asks the dialogs to list them
- * (`moveRefusal`); any other failure is a short notice. Success: the store already tells the "Moved
+ * Takes the roots to the page. A refusal for crossing arrows or anchors asks the dialogs to list
+ * them (`moveRefusal`); any other failure is a short notice. Success: the store already tells the "Moved
  * to" notice.
  */
 export function moveRootsToPage(
@@ -41,7 +41,7 @@ export function moveRootsToPage(
   const result = editor.actions.moveRootsToPage(roots, pageId);
   if (result.ok) return;
   if ('arrows' in result) {
-    editor.moveRefusal.value = result.arrows;
+    editor.moveRefusal.value = { arrows: result.arrows, anchors: result.anchors, roots };
   } else {
     showToast(editor.ui, t('page.error.generic'));
   }
@@ -51,5 +51,34 @@ export function moveRootsToPage(
 export function goToArrow(editor: EditorContextValue, arrowId: string): void {
   navigateTo(editor, { kind: 'arrow', id: arrowId }, () => {
     editor.ui.selection.value = { kind: 'arrow', id: arrowId };
+  });
+}
+
+/**
+ * The end of an anchor that stays outside the group being moved (the one to add to the selection or
+ * to unanchor): the target when the anchored marking leaves, the anchored marking when the target does.
+ */
+export function anchorEndThatStays(
+  project: Project,
+  anchor: PageAnchorCrossing,
+  roots: readonly string[],
+): string {
+  const { rootOf } = projectIndex(project);
+  const moving = new Set(roots);
+  const markingMoves = moving.has(rootOf.get(anchor.marking) ?? anchor.marking);
+  return markingMoves ? anchor.to : anchor.marking;
+}
+
+/** "Go to the marking" of the refusal dialog: opens the end that stays, selects it and frames it. */
+export function goToAnchorEnd(
+  editor: EditorContextValue,
+  anchor: PageAnchorCrossing,
+  roots: readonly string[],
+): void {
+  const project = editor.store.committed.peek();
+  if (!project) return;
+  const id = anchorEndThatStays(project, anchor, roots);
+  navigateTo(editor, { kind: 'marking', id }, () => {
+    editor.ui.selection.value = { kind: 'marking', id };
   });
 }

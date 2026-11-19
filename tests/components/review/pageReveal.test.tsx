@@ -1,8 +1,15 @@
-import { act, cleanup } from '@testing-library/preact';
+import { act, cleanup, screen } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { useReviewSync } from '../../../src/app/useReviewSync';
-import { createArrow, renameMarking, setArrowName } from '../../../src/model';
+import {
+  addContainer,
+  createArrow,
+  createPage,
+  renameMarking,
+  setArrowName,
+} from '../../../src/model';
 import { locale } from '../../../src/store/settings';
+import { StatusBar } from '../../../src/ui/StatusBar';
 import { propose } from '../../model/proposalFixtures';
 import { pagesProject } from '../../store/pageHarness';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
@@ -74,5 +81,53 @@ describe('review: items on other pages', () => {
     const h = await openReview();
     act(() => h.review.select({ level: 'item', id: 'M1' }));
     expect(h.session.page.id.value).toBe('PG1');
+  });
+});
+
+// A page the proposal itself creates (stage #2177, PF3, decision 13): the Proposed view opens it
+// from the creation row; the canvas host's `data-page` follows `session.page.id`
+// (tests/canvas/CanvasControllerPages.test.ts), so the id and the status bar are what is read here.
+describe('review: a page the proposal creates', () => {
+  async function openCreating() {
+    const base = pagesProject();
+    let after = createPage(base, { id: 'PGD', name: 'Drafts' });
+    after = addContainer(after, {
+      id: 'ID',
+      file: 'images/draft.png',
+      width: 500,
+      height: 500,
+      pageId: 'PGD',
+    });
+    const h = await openReviewHarness({
+      project: base,
+      proposals: [propose(base, after, { id: 'P1' })],
+    });
+    expect(h.review.open('P1').ok).toBe(true);
+    renderInEditor(
+      h,
+      <>
+        <Wired />
+        <StatusBar />
+      </>,
+    );
+    return h;
+  }
+
+  it('the row of the creation opens the new page and the status bar names it', async () => {
+    const h = await openCreating();
+    act(() => h.review.setView('proposed'));
+    act(() => h.review.select({ level: 'item', id: 'ID' }));
+    expect(h.session.page.id.value).toBe('PGD');
+    expect(await screen.findByText('Page Drafts')).toBeTruthy();
+  });
+
+  it('the Current view goes back to the page before, with no "no longer exists" notice', async () => {
+    const h = await openCreating();
+    act(() => h.review.setView('proposed'));
+    act(() => h.review.select({ level: 'item', id: 'ID' }));
+    act(() => h.review.setView('current'));
+    expect(h.session.page.id.value).toBe('PG1');
+    expect(h.session.page.notice.value).toBeNull();
+    expect(await screen.findByText('Page Page 1')).toBeTruthy();
   });
 });

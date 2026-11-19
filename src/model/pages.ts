@@ -4,7 +4,7 @@
 // never look at another page. Pure functions, no browser API.
 import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { IMAGE_GAP } from './containers';
-import { fail, type PageArrowCrossing } from './errors';
+import { fail, type PageAnchorCrossing, type PageArrowCrossing } from './errors';
 import { boundingBox, right } from './geometry';
 import { settleFrom, type SettleOptions } from './hierarchySettle';
 import { pageNameKey } from './invariants';
@@ -14,11 +14,12 @@ import { DEFAULT_PAGE_NAME } from './migrations';
 import { perspectiveView, rootFootprint } from './perspective';
 import { findById, moveItem, updateById } from './project';
 import { idInUse, projectIndex } from './projectIndex';
+import { refsBrokenBy } from './refs';
 import { firstPageId, requirePage } from './spaces';
 import type { Arrow, Page, Perspective, Project, Rect } from './types';
 
 export { DEFAULT_PAGE_NAME, pageNameKey, firstPageId, requirePage };
-export type { PageArrowCrossing };
+export type { PageAnchorCrossing, PageArrowCrossing };
 
 /** The page of a container, marking or arrow (`null` if the id does not exist or has none). */
 export function pageOfItem(p: Project, id: string): string | null {
@@ -137,6 +138,21 @@ function crossingArrows(
   return out;
 }
 
+/** The anchors with one end inside the group and the other outside it (the anchored marking or its target leaves alone). */
+function crossingAnchors(
+  p: Project,
+  markingIds: ReadonlySet<string>,
+): readonly PageAnchorCrossing[] {
+  const out: PageAnchorCrossing[] = [];
+  for (const m of p.markings) {
+    const to = m.anchor?.to;
+    if (to !== undefined && markingIds.has(m.id) !== markingIds.has(to)) {
+      out.push({ marking: m.id, to });
+    }
+  }
+  return out;
+}
+
 /** The waypoints of an arrow inside the group follow it when they are in canvas units. */
 function shiftedArrow(
   p: Project,
@@ -198,9 +214,11 @@ function repositionPerspectives(
  * offset (`ceil` in `x`, `round` in `y`); an empty destination puts it at the origin. The
  * perspectives that have a moved root put it at the right of what they already show on the
  * destination page. Roots already on the page are left alone; an id that is not a root fails with
- * `not-root`, an unknown id or page with `not-found`, a locked root with `locked`. An arrow with one
- * end inside the group and one outside is refused with `page-arrow-crossing` (`data.arrows` lists
- * them): nothing is written. Settles once, with the project before as the reference.
+ * `not-root`, an unknown id or page with `not-found`, a locked root with `locked`. An arrow or an
+ * anchor with one end inside the group and one outside is refused (`page-arrow-crossing` when an
+ * arrow crosses, `page-anchor-crossing` when only anchors do; `data` always carries `arrows` and
+ * `anchors`): nothing is written, because the settle would otherwise release the anchor in
+ * silence. Settles once, with the project before as the reference.
  */
 export function moveRootsToPage(
   p: Project,
@@ -208,13 +226,30 @@ export function moveRootsToPage(
   pageId: string,
   options?: SettleOptions,
 ): Project {
+  return moveRoots(p, rootIds, pageId, options, false);
+}
+
+/** `moveRootsToPage`; `ignoreLocks` is for the delete with a move (the confirmation counts, as for `discard`). */
+function moveRoots(
+  p: Project,
+  rootIds: readonly string[],
+  pageId: string,
+  options: SettleOptions | undefined,
+  ignoreLocks: boolean,
+): Project {
   requirePage(p, pageId);
   const index = projectIndex(p);
-  const moving = rootsToMove(p, rootIds, pageId);
+  const moving = rootsToMove(p, rootIds, pageId, ignoreLocks);
   if (moving.size === 0) return p;
   const group = groupOf(p, moving);
-  const crossing = crossingArrows(p, group.markingIds);
-  if (crossing.length > 0) fail('page-arrow-crossing', undefined, { arrows: crossing });
+  const arrows = crossingArrows(p, group.markingIds);
+  const anchors = crossingAnchors(p, group.markingIds);
+  if (arrows.length > 0 || anchors.length > 0) {
+    fail(arrows.length > 0 ? 'page-arrow-crossing' : 'page-anchor-crossing', undefined, {
+      arrows,
+      anchors,
+    });
+  }
 
   const box = boundingBox(footprints(p, moving));
   const content = footprints(p, index.rootsByPage.get(pageId) ?? []);
@@ -227,11 +262,12 @@ export function moveRootsToPage(
   return settleFrom(p, withPerspectives, options);
 }
 
-/** The roots that change page: each has to be a root, exist and be unlocked; the ones already there are left out. */
+/** The roots that change page: each has to be a root, exist and be unlocked (unless `ignoreLocks`); the ones already there are left out. */
 function rootsToMove(
   p: Project,
   rootIds: readonly string[],
   pageId: string,
+  ignoreLocks: boolean,
 ): Set<string> {
   const index = projectIndex(p);
   for (const id of rootIds) {
@@ -240,6 +276,7 @@ function rootsToMove(
     }
   }
   const moving = new Set(rootIds.filter((id) => index.pageOf.get(id) !== pageId));
+  if (ignoreLocks) return moving;
   for (const id of moving) {
     requireUnlocked(
       index.containers.has(id)
@@ -326,9 +363,9 @@ function withoutPageContent(p: Project, pageId: string): Project {
 
 /**
  * Deletes the page. The last page cannot be deleted (`page-last`). The content goes to another
- * page (`moveTo`: every root, as `moveRootsToPage`, and nothing is lost) or is discarded
- * (`discard`: containers, markings, arrows and annotations of the page go away; a locked item does
- * not prevent it, the person confirmed). A single operation: one undo entry, one settle.
+ * page (`moveTo`: every root, as `moveRootsToPage`, and nothing is lost; a locked root goes along,
+ * shifted like the others and still locked) or is discarded (`discard`: containers, markings,
+ * arrows and annotations of the page go away). A lock does not prevent either: the person confirmed. A single operation: one undo entry, one settle.
  */
 export function deletePage(
   p: Project,
@@ -343,8 +380,21 @@ export function deletePage(
     requirePage(p, how.moveTo);
     if (how.moveTo === pageId) fail('not-found', how.moveTo);
     const roots = projectIndex(p).rootsByPage.get(pageId) ?? [];
-    const moved = moveRootsToPage(p, roots, how.moveTo, options);
+    const moved = moveRoots(p, roots, how.moveTo, options, true);
     return { ...moved, pages };
   }
   return settleFrom(p, { ...withoutPageContent(p, pageId), pages }, options);
+}
+
+/**
+ * References from annotations that stay (on any page) that deleting the page breaks: the ones that
+ * point at an annotation of the page. `moveTo` keeps every annotation, so it breaks none; 0 if the
+ * deletion fails. The count the delete dialog warns about before confirming.
+ */
+export function pageDeletionBrokenRefs(
+  p: Project,
+  pageId: string,
+  how: PageDeletion,
+): number {
+  return refsBrokenBy(p, (project) => deletePage(project, pageId, how));
 }

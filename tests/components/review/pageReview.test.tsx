@@ -10,6 +10,7 @@ import {
   movePage,
   moveRootsToPage,
   renameMarking,
+  setMarkingAnchor,
   renamePage,
   type Project,
 } from '../../../src/model';
@@ -180,5 +181,34 @@ describe('the invalid set of a group that changes page', () => {
     expect(box.getByText(/Flow.*different pages.*page changes/)).toBeTruthy();
     expect(box.getByRole('button', { name: /^Accept: Page/ })).toBeTruthy();
     expect(box.getByRole('button', { name: /^Reject: Page/ })).toBeTruthy();
+  });
+
+  it('a partial acceptance that would release an anchor across pages names the anchor', async () => {
+    let base = createPage(pagesProject(), { id: 'PG4', name: 'Page 4' });
+    base = createMarking(base, {
+      id: 'A',
+      containerId: null,
+      rect: rectOf(6000, 100, 300, 300),
+    });
+    base = createMarking(base, {
+      id: 'B',
+      containerId: null,
+      rect: rectOf(6500, 100, 300, 300),
+    });
+    base = setMarkingAnchor(base, 'B', { to: 'A', side: 'end' });
+    base = renameMarking(renameMarking(base, 'A', 'Anchor A'), 'B', 'Anchored B');
+    const { h, proposal } = await openWith(
+      base,
+      moveRootsToPage(base, ['A', 'B'], 'PG4'),
+    );
+    const a = changeOf(proposal, 'marking', 'A', 'page');
+    await h.review.decide({ level: 'change', id: a.id }, 'accepted');
+    renderInEditor(h, <ReviewHeader target={{ level: 'proposal', id: null }} />);
+    const notice = document.querySelector('.notice-box-error') as HTMLElement;
+    const box = within(notice);
+    expect(
+      box.getByText('Anchored B would be anchored to Anchor A on another page.'),
+    ).toBeTruthy();
+    expect(box.queryByText(/would end up|would join items/)).toBeNull();
   });
 });

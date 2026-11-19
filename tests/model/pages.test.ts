@@ -5,17 +5,21 @@ import {
   addContainer,
   createArrow,
   createMarking,
+  countBrokenRefs,
   createPage,
   deletePage,
+  pageDeletionBrokenRefs,
   movePage,
   moveRootsToPage,
   pageContent,
   renamePage,
   setArrowEndpoint,
+  setMarkingAnchor,
   validateProject,
   type Project,
 } from '../../src/model';
 import { image, marking, sampleProject } from './fixtures';
+import { referenceAcrossPages, world } from './refAnnotationFixtures';
 
 // Pages (v21, PG1): the page list, what a page holds, moving roots and deleting a page.
 
@@ -269,6 +273,81 @@ describe('moveRootsToPage', () => {
     expect(validateProject(both)).toEqual([]);
   });
 
+  describe('anchors across pages', () => {
+    /** PG1 with the canvas roots A and B (B anchored to A) and the empty PG2. */
+    function anchored(): Project {
+      let p = withEmptyPage();
+      p = createMarking(p, {
+        id: 'A',
+        containerId: null,
+        rect: rect(6000, 100, 300, 300),
+      });
+      p = createMarking(p, {
+        id: 'B',
+        containerId: null,
+        rect: rect(6500, 100, 300, 300),
+      });
+      return setMarkingAnchor(p, 'B', { to: 'A', side: 'end' });
+    }
+
+    function refusal(fn: () => unknown): ModelError {
+      try {
+        fn();
+      } catch (e) {
+        if (e instanceof ModelError) return e;
+        throw e;
+      }
+      throw new Error('expected a refusal');
+    }
+
+    it('moving the target alone is refused with page-anchor-crossing and the anchors', () => {
+      const p = anchored();
+      const e = refusal(() => moveRootsToPage(p, ['A'], 'PG2'));
+      expect(e.code).toBe('page-anchor-crossing');
+      expect(e.data).toEqual({ arrows: [], anchors: [{ marking: 'B', to: 'A' }] });
+    });
+
+    it('moving the anchored marking alone is refused the same way', () => {
+      const p = anchored();
+      const e = refusal(() => moveRootsToPage(p, ['B'], 'PG2'));
+      expect(e.code).toBe('page-anchor-crossing');
+      expect(e.data).toEqual({ arrows: [], anchors: [{ marking: 'B', to: 'A' }] });
+    });
+
+    it('moving both keeps the anchor', () => {
+      const next = moveRootsToPage(anchored(), ['A', 'B'], 'PG2');
+      expect(next.markings.find((m) => m.id === 'B')?.anchor).toEqual({
+        to: 'A',
+        side: 'end',
+      });
+      expect(pageContent(next, 'PG2').roots).toBe(2);
+      expect(validateProject(next)).toEqual([]);
+    });
+
+    it('with an arrow crossing as well the code is page-arrow-crossing and both lists are filled', () => {
+      let p = anchored();
+      p = createMarking(p, {
+        id: 'C',
+        containerId: null,
+        rect: rect(7000, 100, 300, 300),
+      });
+      p = createArrow(p, { id: 'AR', from: 'A', to: 'C' });
+      const e = refusal(() => moveRootsToPage(p, ['A'], 'PG2'));
+      expect(e.code).toBe('page-arrow-crossing');
+      expect(e.data).toEqual({
+        arrows: [{ id: 'AR', from: 'A', to: 'C' }],
+        anchors: [{ marking: 'B', to: 'A' }],
+      });
+    });
+
+    it('a marking inside a container anchored to a sibling moves with its root and is not refused', () => {
+      const p = setMarkingAnchor(withEmptyPage(), 'M2', { to: 'M1', side: 'end' });
+      const next = moveRootsToPage(p, ['I1'], 'PG2');
+      expect(next.markings.find((m) => m.id === 'M2')?.anchor?.to).toBe('M1');
+      expect(validateProject(next)).toEqual([]);
+    });
+  });
+
   it('a perspective with a moved root shows it at the right of what it already shows on the destination', () => {
     const p: Project = {
       ...twoPages(),
@@ -294,6 +373,26 @@ describe('moveRootsToPage', () => {
   });
 });
 
+describe('pageDeletionBrokenRefs (PF5, finding 3)', () => {
+  it('counts the references from other pages that the discard breaks', () => {
+    const p = referenceAcrossPages();
+    expect(pageDeletionBrokenRefs(p, 'PG2', { discard: true })).toBe(1);
+    expect(pageDeletionBrokenRefs(p, 'PG2', { discard: true })).toBe(
+      countBrokenRefs(p, deletePage(p, 'PG2', { discard: true })),
+    );
+  });
+
+  it('moving the content breaks nothing, and an unrelated page counts 0', () => {
+    const p = referenceAcrossPages();
+    expect(pageDeletionBrokenRefs(p, 'PG2', { moveTo: 'PG1' })).toBe(0);
+    expect(
+      pageDeletionBrokenRefs(createPage(world(), { id: 'PG2', name: 'E' }), 'PG2', {
+        discard: true,
+      }),
+    ).toBe(0);
+  });
+});
+
 describe('deletePage', () => {
   it('the last page cannot be deleted', () => {
     expect(codeOf(() => deletePage(sampleProject(), 'PG1', { discard: true }))).toBe(
@@ -309,6 +408,34 @@ describe('deletePage', () => {
     expect(next.markings).toHaveLength(p.markings.length);
     expect(next.annotations).toHaveLength(p.annotations.length);
     expect(next.containers.every((c) => c.pageId === 'PG2')).toBe(true);
+    expect(validateProject(next)).toEqual([]);
+  });
+
+  it('moveTo takes locked roots along (shifted like the others, still locked) and the public move keeps refusing', () => {
+    const base = createMarking(twoPages(), {
+      id: 'L',
+      containerId: null,
+      rect: rect(6000, 100, 300, 300),
+    });
+    const p: Project = {
+      ...base,
+      containers: base.containers.map((c) =>
+        c.id === 'I1' ? { ...c, locked: true } : c,
+      ),
+      markings: base.markings.map((m) => (m.id === 'L' ? { ...m, locked: true } : m)),
+    };
+    expect(codeOf(() => moveRootsToPage(p, ['I1'], 'PG2'))).toBe('locked');
+    expect(codeOf(() => moveRootsToPage(p, ['L'], 'PG2'))).toBe('locked');
+    const next = deletePage(p, 'PG1', { moveTo: 'PG2' });
+    expect(next.pages.map((g) => g.id)).toEqual(['PG2']);
+    const i1 = next.containers.find((c) => c.id === 'I1');
+    const l = next.markings.find((m) => m.id === 'L');
+    expect(i1?.pageId).toBe('PG2');
+    expect(i1?.locked).toBe(true);
+    expect(i1?.placement.x).toBeGreaterThan(1000);
+    expect(l?.pageId).toBe('PG2');
+    expect(l?.locked).toBe(true);
+    expect(l?.rect.x).toBeGreaterThan(6000);
     expect(validateProject(next)).toEqual([]);
   });
 

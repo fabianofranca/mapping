@@ -4,6 +4,7 @@ import {
   hostOf,
   parseThread,
   parseThreadText,
+  pointThreadsOnPage,
   resolveAnchor,
   serializeThread,
   type Thread,
@@ -136,5 +137,35 @@ describe('reading', () => {
   it('refuses a version 2 thread with another anchor kind', () => {
     const [first] = errorsOf(raw({ kind: 'marking', id: 'M1' }, 2));
     expect(first).toMatch(/^anchor\.pageId: /);
+  });
+});
+
+describe('pointThreadsOnPage', () => {
+  const p = pagesProject();
+  const at = (id: string, anchor: ThreadAnchor) => sampleThread({ id, anchor });
+  const threads = [
+    at('a', PAGE_POINT),
+    at('b', { ...PAGE_POINT, x: 90 }),
+    at('c', { ...PAGE_POINT, pageId: 'PG3' }),
+    at('d', { kind: 'point', containerId: 'I1', x: 1, y: 2 }),
+    at('e', { kind: 'point', containerId: null, x: 1, y: 2 }),
+    at('f', { kind: 'marking', id: 'M1' }),
+    at('g', { ...PAGE_POINT, pageId: 'GONE' }),
+  ];
+
+  it('counts the canvas points of the page (a version 2 point with that pageId)', () => {
+    expect(pointThreadsOnPage(p, threads, 'PG2')).toBe(2);
+    expect(pointThreadsOnPage(p, threads, 'PG3')).toBe(1);
+  });
+
+  it('a version 1 point counts on the first page only', () => {
+    expect(pointThreadsOnPage(p, threads, 'PG1')).toBe(1);
+  });
+
+  it('does not count a point inside a container, another anchor kind or a missing page', () => {
+    const only = [threads[3], threads[5], threads[6]] as Thread[];
+    for (const id of ['PG1', 'PG2', 'PG3']) {
+      expect(pointThreadsOnPage(p, only, id)).toBe(0);
+    }
   });
 });

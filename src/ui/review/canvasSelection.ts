@@ -8,6 +8,7 @@ import {
 } from '../../model';
 import { revealItem, type RevealSession } from '../../store/reveal';
 import type { ReviewState } from '../../store/review';
+import type { PageState } from '../../store/pages';
 import type { Selection } from '../../store/ui';
 
 // The canvas selection that corresponds to a review level: a single function for the Details
@@ -126,10 +127,12 @@ export function reviewPageOf(
 
 /**
  * Opens the page of the review item before it is selected. The review keeps the Completa locked, so
- * only the page changes; a page the proposal itself creates cannot be opened and stays where it is.
+ * only the page changes. A page the proposal itself creates opens in the Proposed view (the page
+ * state knows the preview's pages, stage #2177, PF3); in the Current view it does not exist and the
+ * page stays where it is.
  */
 export function revealReviewItem(
-  session: RevealSession,
+  session: RevealSession & { readonly page: Pick<PageState, 'setProposed'> },
   review: Pick<ReviewState, 'derived'>,
   target: ReviewTarget | null,
   itemId: string,
@@ -139,5 +142,8 @@ export function revealReviewItem(
     revealItem(session, itemId);
     return;
   }
+  // The page state gets the preview here too, so the reveal does not depend on which effect (this one
+  // or the review's) ran first when the review opens at a saved selection.
+  session.page.setProposed(review.derived.proposedProject.peek());
   if (pageId !== session.page.openId()) session.page.open(pageId);
 }

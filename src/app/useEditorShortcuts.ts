@@ -389,12 +389,20 @@ export function useEditorShortcuts(
       nudge.step(e.key, dx, dy);
     };
 
+    /**
+     * Manage pages stays open while a page is deleted, so undo and redo must reach the
+     * project from inside it (PF5): they are the only keys that pass a modal, and only this one.
+     */
+    const historyKeyInPagesDialog = (shortcut: Shortcut | null): boolean =>
+      (shortcut?.kind === 'undo' || shortcut?.kind === 'redo') &&
+      dialogsRef.current.current?.kind === 'managePages';
+
     const onKeyDown = (e: KeyboardEvent) => {
       // Any other key (Shift released in the middle, Ctrl+Z...) closes the arrow gesture.
       const shortcut = shortcutFor(e, altNumbers);
       if (shortcut?.kind !== 'nudge') nudge.end();
       if (e.defaultPrevented || !enabledRef.current) return;
-      if (modalOpen.peek() > 0) return;
+      if (modalOpen.peek() > 0 && !historyKeyInPagesDialog(shortcut)) return;
       if (review.proposalId.peek() !== null && !isTextInput(e.target)) {
         const reviewShortcut = reviewShortcutFor(e);
         if (reviewShortcut) {

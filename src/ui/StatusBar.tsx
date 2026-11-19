@@ -196,9 +196,9 @@ const arrivalsTitle = (count: number) =>
 
 /** Open page (stage #883): "Page <name>", before the perspective. */
 function PageItem() {
-  const { session, store } = useEditor();
+  const { session } = useEditor();
   const id = session.page.id.value;
-  const name = store.committed.value?.pages.find((p) => p.id === id)?.name ?? '';
+  const name = session.page.pages.value.find((p) => p.id === id)?.name ?? '';
   return (
     <Item
       class="status-item status-item-page"

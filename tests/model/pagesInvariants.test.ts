@@ -210,6 +210,21 @@ describe('pages: invariants refuse the opening', () => {
     expect(result.repair?.unrepaired).toEqual([]);
   });
 
+  it('a v21 file with no `pages` key parses (pages []) and the repair creates the first page', () => {
+    const json = JSON.parse(serialize(sampleProject())) as Record<string, unknown>;
+    delete json.pages;
+    const result = deserialize(JSON.stringify(json));
+    if (result.ok || result.error.code !== 'invariant-violation') {
+      throw new Error('expected an invariant violation, not a schema error');
+    }
+    expect(result.error.issues.map((i) => i.code)).toContain('pages-empty');
+    expect(result.repair?.unrepaired).toEqual([]);
+    const fixed = result.repair?.project;
+    expect(fixed?.pages).toHaveLength(1);
+    expect(fixed?.containers.every((c) => c.pageId === fixed.pages[0]?.id)).toBe(true);
+    expect(validateProject(fixed as Project)).toEqual([]);
+  });
+
   it('a file without pageId reads and is refused as page-required (not as a schema error)', () => {
     const json = JSON.parse(serialize(twoPages())) as {
       containers: Record<string, unknown>[];

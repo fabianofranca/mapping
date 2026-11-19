@@ -19,14 +19,23 @@ const ARROWS = [
   { id: 'AR2', from: 'ME', to: 'GONE' },
 ];
 
-async function setup() {
+const ANCHORS = [{ marking: 'MN', to: 'MI' }];
+
+async function setup(arrows = ARROWS, anchors: typeof ANCHORS = []) {
   const { harness } = await setupPages([]);
   const onClose = vi.fn();
   const onGoToArrow = vi.fn();
+  const onGoToMarking = vi.fn();
   renderLive(harness, () => (
-    <MovePageRefusedDialog arrows={ARROWS} onGoToArrow={onGoToArrow} onClose={onClose} />
+    <MovePageRefusedDialog
+      arrows={arrows}
+      anchors={anchors}
+      onGoToArrow={onGoToArrow}
+      onGoToMarking={onGoToMarking}
+      onClose={onClose}
+    />
   ));
-  return { onClose, onGoToArrow };
+  return { onClose, onGoToArrow, onGoToMarking };
 }
 
 describe('MovePageRefusedDialog', () => {
@@ -61,5 +70,38 @@ describe('MovePageRefusedDialog', () => {
     await user.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onGoToArrow).not.toHaveBeenCalled();
+  });
+
+  it('anchors only: the title says anchors and each row reads "anchored to" with Go to the marking', async () => {
+    const { onClose, onGoToMarking, onGoToArrow } = await setup([], ANCHORS);
+    const dialog = screen.getByRole('alertdialog', {
+      name: 'The move would cut anchors',
+    });
+    const items = within(dialog).getAllByRole('listitem');
+    expect(items).toHaveLength(1);
+    expect(
+      within(items[0] as HTMLElement).getByText('Nome anchored to Idade'),
+    ).toBeTruthy();
+    expect(within(dialog).queryByRole('button', { name: 'Go to the arrow' })).toBeNull();
+    await userEvent
+      .setup()
+      .click(within(dialog).getByRole('button', { name: 'Go to the marking' }));
+    expect(onGoToMarking).toHaveBeenCalledWith(ANCHORS[0]);
+    expect(onGoToArrow).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('arrows and anchors: the combined title and both groups', async () => {
+    await setup(ARROWS, ANCHORS);
+    const dialog = screen.getByRole('alertdialog', {
+      name: 'The move would cut arrows and anchors',
+    });
+    expect(within(dialog).getAllByRole('listitem')).toHaveLength(3);
+    expect(
+      within(dialog).getAllByRole('button', { name: 'Go to the arrow' }),
+    ).toHaveLength(2);
+    expect(
+      within(dialog).getAllByRole('button', { name: 'Go to the marking' }),
+    ).toHaveLength(1);
   });
 });

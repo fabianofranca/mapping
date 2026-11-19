@@ -82,8 +82,8 @@ const ALLOWLIST = [
   'src/ui/MovePageControl.tsx',
   'src/ui/MovePageMenuItems.tsx',
   'src/ui/MovePageRefusedDialog.tsx',
-  'src/ui/PageMenu.tsx',
-  'src/ui/StatusBar.tsx',
+  // "Go to the marking" of the refusal (stage #2177, PF2): which end of an anchor stays comes from the real project.
+  'src/ui/movePage.ts',
   'src/ui/pageNavigation.ts',
   // Following a reference to another page (stage #883, PG3): the page of the target comes from the real project, not the one cut by the open page.
   'src/ui/useFollowRef.ts',

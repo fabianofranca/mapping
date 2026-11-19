@@ -3,7 +3,7 @@ import { signal, type Signal } from '@preact/signals';
 import { useContext, useEffect, useMemo } from 'preact/hooks';
 import type { OpenProject } from '../app/controller';
 import type { CanvasController } from '../canvas/CanvasController';
-import type { PageArrowCrossing } from '../model';
+import type { PageAnchorCrossing, PageArrowCrossing } from '../model';
 import { createCanvasViewState, type CanvasViewState } from '../canvas/viewState';
 import { createEditorDerived, type EditorDerived } from '../store/derived';
 import type { DisplayImages } from '../store/displayImages';
@@ -18,6 +18,16 @@ import { createEditorUi, type EditorUi } from '../store/ui';
 import { attachViewShowPersistence } from '../store/viewMode';
 
 /** Everything the editor components share, without going through props. */
+/**
+ * A "Move to page" that cut arrows or anchors (`page-arrow-crossing`, `page-anchor-crossing`): both
+ * lists and the roots that were being moved (they tell which end of an anchor stays).
+ */
+export interface MoveRefusal {
+  readonly arrows: readonly PageArrowCrossing[];
+  readonly anchors: readonly PageAnchorCrossing[];
+  readonly roots: readonly string[];
+}
+
 export interface EditorContextValue {
   readonly open: OpenProject;
   readonly session: ProjectSession;
@@ -38,7 +48,7 @@ export interface EditorContextValue {
    * The arrows that refused a "Move to page" (`page-arrow-crossing`); the editor's dialogs show them
    * (`MovePageRefusedDialog`) and clear the signal. Written by the right-click menu and the Details.
    */
-  readonly moveRefusal: Signal<readonly PageArrowCrossing[] | null>;
+  readonly moveRefusal: Signal<MoveRefusal | null>;
   /** Stops storing the view mode choice (when closing the editor). */
   readonly stopViewShow: () => void;
 }
@@ -87,7 +97,7 @@ export function createEditorContextValue(
     review,
     canvas: { current: null },
     view: createCanvasViewState(),
-    moveRefusal: signal<readonly PageArrowCrossing[] | null>(null),
+    moveRefusal: signal<MoveRefusal | null>(null),
     // What the view mode shows is restored, from a copy of the project, in this browser.
     stopViewShow: attachViewShowPersistence(ui, session.storage.copyId),
   };
