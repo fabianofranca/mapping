@@ -1,39 +1,27 @@
 #!/usr/bin/env node
 // Mapping conversation watcher (Node >= 20, no dependencies).
 //
-// Watches `projects/*/comments/` (or `projetos/*/comments/` in an old workspace that only has that folder) and, when some OPEN conversation awaits the agent (the last
-// message is from a person), either runs ONE command (the agent) with the list of them in
-// `MAPPING_AWAITING`, or (`--emit`) prints ONE line `MAPPING_WAKE <json>` per batch to stdout, which a
-// background-process notification (Claude Code's `Monitor`, Cursor's `notify_on_output`) turns into a wake
-// of the agent in the same chat. The JSON is `[{ "project", "thread", "path" }]`; the logs stay on stderr.
-// The MCP server never triggers an agent: this process, which you start, decides to wake it.
+// Watches `projetos/*/comments/` and, when some OPEN conversation awaits the agent (the last
+// message is from a person), runs ONE command (the agent) with the list of them in `MAPPING_AWAITING`.
+// The MCP server never triggers an agent: this process, which you start, decides to run it.
 //
-//   node watch-comments.mjs [--root <folder>] [--quiet <seconds>] [--state <file>] -- <command> [args…]
-//   node watch-comments.mjs [--root <folder>] [--quiet <seconds>] [--state <file>] --emit
+//   node watch-comments.mjs [--root <folder>] [--quiet <seconds>] -- <command> [args…]
 //   node watch-comments.mjs -- claude -p "<prompt>"
-//   node watch-comments.mjs --emit --state .mapping-watch/state.json --quiet 1
-//
-// `--emit` and `-- <command>` together, or neither, are a usage error (exit 2).
-// `--state <file>` keeps the handled conversation/message pairs between runs (temporary file + rename), so a
-// restart does not repeat a wake; a pair that no longer awaits the agent leaves the file. A missing file
-// starts empty; an invalid one starts empty with a warning and is overwritten on the next batch.
 //
 // Installed and updated by `setup.sh`; do not edit (the next update overwrites it).
 //
 // Conversation format: Mapping's `docs/COMMENT-FORMAT.md`.
 import { spawn } from 'node:child_process';
-import { existsSync, fstatSync, realpathSync, watch } from 'node:fs';
-import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { realpathSync, watch } from 'node:fs';
+import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const PREFIX = 'watch-comments:';
 const DEFAULT_QUIET_SECONDS = 5;
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
-const WAKE_PREFIX = 'MAPPING_WAKE';
-const STATE_FORMAT = 'mapping-watch-state';
 const USAGE =
-  'usage: node watch-comments.mjs [--root <folder>] [--quiet <seconds>] [--state <file>] (--emit | -- <command> [args…])';
+  'usage: node watch-comments.mjs [--root <folder>] [--quiet <seconds>] -- <command> [args…]';
 
 function log(message) {
   process.stderr.write(`${PREFIX} ${message}\n`);
@@ -134,50 +122,12 @@ function isCommentsPath(filename) {
 
 const pairKey = (item) => `${item.project}/${item.thread}:${item.messageId}`;
 
-/** Reads the handled pairs from the state file; missing -> empty, invalid -> empty with a warning. */
-async function loadState(statePath) {
-  if (statePath === null) return new Set();
-  let text;
-  try {
-    text = await readFile(statePath, 'utf8');
-  } catch (err) {
-    if (err.code !== 'ENOENT') log(`state file ignored (${statePath}): ${err.message}`);
-    return new Set();
-  }
-  try {
-    const state = JSON.parse(text);
-    const valid =
-      state !== null &&
-      state.format === STATE_FORMAT &&
-      Array.isArray(state.handled) &&
-      state.handled.every((key) => typeof key === 'string');
-    if (!valid) throw new Error('not a watch state file');
-    return new Set(state.handled);
-  } catch (err) {
-    log(`state file ignored (${statePath}): ${err.message}; starting empty`);
-    return new Set();
-  }
-}
-
-/** Writes the handled pairs: temporary file next to the state file + rename; a failure only warns. */
-async function saveState(statePath, handled) {
-  if (statePath === null) return;
-  const tmp = `${statePath}.tmp-${process.pid}`;
-  try {
-    await mkdir(dirname(statePath), { recursive: true });
-    const body = { format: STATE_FORMAT, handled: [...handled].sort() };
-    await writeFile(tmp, `${JSON.stringify(body, null, 2)}\n`);
-    await rename(tmp, statePath);
-  } catch (err) {
-    log(`could not write the state file (${statePath}): ${err.message}`);
-  }
-}
-
 /**
  * The watcher cycle: an event restarts the quiet period; once it has passed, reads the conversations
  * and runs the command if there is a new pair; one command at a time; a change during the run marks "pending".
  */
-function createRunner({ root, quietMs, command, args, emit, statePath, handled }) {
+function createRunner({ root, quietMs, command, args }) {
+  const handled = new Set();
   let timer = null;
   let busy = false;
   let pending = false;
@@ -197,19 +147,8 @@ function createRunner({ root, quietMs, command, args, emit, statePath, handled }
     schedule();
   }
 
-  const toPayload = (items) =>
-    items.map(({ project, thread, path }) => ({ project, thread, path }));
-
-  /** `--emit`: one line per batch on stdout; the batch is done right away. */
-  function emitWake(items) {
-    if (stopped) return;
-    process.stdout.write(`${WAKE_PREFIX} ${JSON.stringify(toPayload(items))}\n`);
-    log(`${items.length} conversation(s) awaiting the agent; MAPPING_WAKE emitted`);
-    release();
-  }
-
   function runCommand(items) {
-    const payload = toPayload(items);
+    const payload = items.map(({ project, thread, path }) => ({ project, thread, path }));
     log(`${items.length} conversation(s) awaiting the agent; running ${command}`);
     let finished = false;
     const finish = (message) => {
@@ -233,15 +172,12 @@ function createRunner({ root, quietMs, command, args, emit, statePath, handled }
     if (stopped || busy) return;
     busy = true;
     try {
-      const awaiting = await scanAwaiting(root);
-      const current = new Set(awaiting.map(pairKey));
-      for (const key of handled) if (!current.has(key)) handled.delete(key);
-      const fresh = awaiting.filter((item) => !handled.has(pairKey(item)));
+      const fresh = (await scanAwaiting(root)).filter(
+        (item) => !handled.has(pairKey(item)),
+      );
       if (stopped || fresh.length === 0) return release();
       for (const item of fresh) handled.add(pairKey(item));
-      await saveState(statePath, handled);
-      if (emit) emitWake(fresh);
-      else runCommand(fresh);
+      runCommand(fresh);
     } catch (err) {
       log(`error reading the conversations: ${err.message}`);
       release();
@@ -263,104 +199,52 @@ function createRunner({ root, quietMs, command, args, emit, statePath, handled }
   return { onEvent, schedule, stop };
 }
 
-/** Applies one option (`--emit` takes no value); returns the number of arguments used, or an error. */
-function applyOption(config, name, value) {
-  if (name === '--emit') {
-    config.emit = true;
-    return { used: 1 };
-  }
-  if (value === undefined) return { error: `option ${name} requires a value` };
-  if (name === '--root') config.root = resolve(value);
-  else if (name === '--quiet') config.quietSeconds = Number(value);
-  else if (name === '--state') config.statePath = resolve(value);
-  else return { error: `unknown option: ${name}` };
-  return { used: 2 };
-}
-
-/** The message for an invalid combination of options, or `null`. */
-function validateConfig(config, command) {
-  if (!Number.isFinite(config.quietSeconds) || config.quietSeconds < 0) {
-    return '--quiet requires a number of seconds (0 or more)';
-  }
-  if (config.emit && command.length > 0) {
-    return '--emit and a command after "--" cannot be used together';
-  }
-  if (!config.emit && command.length === 0)
-    return 'missing --emit or the command after "--"';
-  return null;
-}
-
 /** Reads the options; returns `{ error }` with the message, or the configuration. */
 function parseArgs(argv, defaultRoot) {
-  const config = {
-    root: defaultRoot,
-    quietSeconds: DEFAULT_QUIET_SECONDS,
-    statePath: null,
-    emit: false,
-  };
+  const config = { root: defaultRoot, quietSeconds: DEFAULT_QUIET_SECONDS };
   const split = argv.indexOf('--');
   const options = split === -1 ? argv : argv.slice(0, split);
   const command = split === -1 ? [] : argv.slice(split + 1);
-  for (let i = 0; i < options.length;) {
-    const result = applyOption(config, options[i], options[i + 1]);
-    if (result.error !== undefined) return { error: result.error };
-    i += result.used;
+  for (let i = 0; i < options.length; i += 2) {
+    const name = options[i];
+    const value = options[i + 1];
+    if (value === undefined) return { error: `option ${name} requires a value` };
+    if (name === '--root') config.root = resolve(value);
+    else if (name === '--quiet') config.quietSeconds = Number(value);
+    else return { error: `unknown option: ${name}` };
   }
-  const invalid = validateConfig(config, command);
-  if (invalid !== null) return { error: invalid };
+  if (!Number.isFinite(config.quietSeconds) || config.quietSeconds < 0) {
+    return { error: '--quiet requires a number of seconds (0 or more)' };
+  }
+  if (command.length === 0) return { error: 'missing the command after "--"' };
   return { ...config, command: command[0], args: command.slice(1) };
-}
-
-/** True when stdin is a pipe or socket (a live parent); a file, TTY or /dev/null is not watched. */
-function stdinIsPipe() {
-  try {
-    const st = fstatSync(0);
-    return st.isFIFO() || st.isSocket();
-  } catch {
-    return false;
-  }
 }
 
 /** Runs the watcher until SIGINT/SIGTERM. Returns the exit code (2 for incorrect usage). */
 export async function main(argv) {
-  const base = dirname(SCRIPT_PATH);
-  const legacyRoot = join(base, 'projetos');
-  // Default root: projects/ next to the script; only an old projetos/ present -> that one.
-  const useLegacy = !existsSync(join(base, 'projects')) && existsSync(legacyRoot);
-  const defaultRoot = useLegacy ? legacyRoot : join(base, 'projects');
+  const defaultRoot = join(dirname(SCRIPT_PATH), 'projetos');
   const config = parseArgs(argv, defaultRoot);
   if (config.error !== undefined) {
     log(config.error);
     log(USAGE);
     return 2;
   }
-  const handled = await loadState(config.statePath);
-  const projectCount = (await listDir(config.root)).filter((e) => e.isDirectory()).length;
   return await new Promise((done) => {
     const runner = createRunner({
       root: config.root,
       quietMs: config.quietSeconds * 1000,
       command: config.command,
       args: config.args,
-      emit: config.emit,
-      statePath: config.statePath,
-      handled,
     });
     let watcher;
     const quit = (code) => {
       process.off('SIGINT', onSignal);
       process.off('SIGTERM', onSignal);
-      process.stdin.off('end', onOrphaned);
-      process.stdin.off('close', onOrphaned);
-      process.stdout.off('error', onOrphaned);
       runner.stop();
       watcher?.close();
       done(code);
     };
     const onSignal = () => quit(0);
-    // The parent went away without a signal (a stopped `Monitor`): stdin (when it is a pipe) ends or
-    // stdout breaks. Without this the watcher would stay alive, orphaned, with nobody to read it.
-    const onOrphaned = () => quit(0);
     try {
       watcher = watch(config.root, { recursive: true }, (_event, filename) =>
         runner.onEvent(filename),
@@ -375,19 +259,9 @@ export async function main(argv) {
     });
     process.on('SIGINT', onSignal);
     process.on('SIGTERM', onSignal);
-    process.stdout.on('error', onOrphaned);
-    if (stdinIsPipe()) {
-      process.stdin.on('end', onOrphaned);
-      process.stdin.on('close', onOrphaned);
-      process.stdin.resume();
-    }
-    const folders = `${projectCount} project folder${projectCount === 1 ? '' : 's'}`;
     log(
-      `observing ${config.root} (${folders}, quiet period of ${config.quietSeconds}s); Ctrl+C stops`,
+      `observing ${config.root} (quiet period of ${config.quietSeconds}s); Ctrl+C stops`,
     );
-    if (useLegacy && config.root === legacyRoot) {
-      log('using the legacy projetos/ folder (no projects/ next to the script)');
-    }
     runner.schedule();
   });
 }

@@ -1,4 +1,4 @@
-# Watch conversations in the same chat — 2026-11-19 (épico `epic/watch-conversations`, PR #0, MCP 0.46.0, schema v21)
+# Watch conversations in the same chat — 2026-11-19 (épico `epic/watch-conversations`, PR #2252, MCP 0.46.0, schema v21)
 
 ## Adicionado
 
