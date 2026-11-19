@@ -261,6 +261,7 @@ describe('examples/workspace/watch-comments.mjs', { timeout: 20000 }, () => {
     /** Copies the script into a new folder with the given subfolders and starts it without --root. */
     async function startDefault(
       folders: string[],
+      until = 'watch-comments: observing',
     ): Promise<{ err: string; root: string }> {
       const dir = join(h.dir, 'ws');
       mkdirSync(dir, { recursive: true });
@@ -282,7 +283,7 @@ describe('examples/workspace/watch-comments.mjs', { timeout: 20000 }, () => {
         err += d.toString();
       });
       h.child = child;
-      await waitFor(() => err.includes('watch-comments: observing'), 'the watcher');
+      await waitFor(() => err.includes(until), 'the watcher');
       return { err, root: dir };
     }
 
@@ -293,7 +294,8 @@ describe('examples/workspace/watch-comments.mjs', { timeout: 20000 }, () => {
     });
 
     it('uses projetos/ only when it is the only one, and says so in the start log', async () => {
-      const { err, root } = await startDefault(['projetos']);
+      // the legacy line is a second log write: wait for it, not only for the first line
+      const { err, root } = await startDefault(['projetos'], 'legacy');
       expect(err).toContain(`observing ${join(root, 'projetos')}`);
       expect(err).toContain('projetos/');
       expect(err).toContain('legacy');
