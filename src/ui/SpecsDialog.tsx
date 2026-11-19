@@ -464,6 +464,7 @@ export function SpecsDialog({
                     ? t('spec.item', {
                         version: entry.version,
                         layers: entry.spec.layers.length,
+                        names: entry.spec.layers.map((layer) => layer.name).join(', '),
                       })
                     : t('spec.fileMissing')}
                 </span>
