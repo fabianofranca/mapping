@@ -238,7 +238,7 @@ describe('painel.py recusada (FQ1, decision 7)', () => {
     );
 
   it('(e) accepts the status, is final, and does not start, conflict or take a slot', () => {
-    refused('#10', 'scripts/ci/a.mjs', 'step=fora dos critérios');
+    refused('#10', 'scripts/ci/a.mjs', 'step=outside the criteria');
     expect(row('#10').status).toBe('recusada');
     expect(row('#10').ended).toBe(NOW);
     add('#11', ficha('nenhuma', 'scripts/ci/a.mjs'));

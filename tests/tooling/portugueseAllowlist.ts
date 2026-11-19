@@ -3171,6 +3171,12 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
       'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
   },
   {
+    path: 'tests/tooling/queueFastTrackPanel.test.ts',
+    pattern: /dep=\$\{dep\}|nenhuma|, há \d h|há \$\{/,
+    reason:
+      'fixture ficha of the panel (`nenhuma`, `mcp=não`) and the `há <h> h` of the `merge pedido ao dono:` line, frozen script output (decision 16 of #741)',
+  },
+  {
     path: 'tests/tooling/queueExclusive.test.ts',
     pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
     reason:

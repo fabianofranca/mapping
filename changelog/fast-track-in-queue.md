@@ -4,7 +4,7 @@
 
 - **The queue panel knows the fast track (for whoever drives the flow, #1791):** `painel.py` accepts the `via-rapida` kind and session kind and the final `recusada` status. A `via-rapida` row takes a slot and goes through dependency, file, schema, exclusive and draining like a stage; a `recusada` row never starts, never conflicts and stays out of the graph; `canario usar` always answers `atual` for a fast track.
 - **`painel.py end <folder>` (for whoever drives the flow, #1791):** writes `meta.runEnd`, so the panel's total time can stop at the end of the run; `start` clears it.
-- **`show` lists the merges asked to the owner (for whoever drives the flow, #1791):** `merge pedido ao dono: #n (PR #p, há <h> h)`, or `nenhum`.
+- **`show` lists the merges asked to the owner (for whoever drives the flow, #1791):** `merge pedido ao dono: #n (PR #p, <hours>)`, or `nenhum`.
 
 ## Alterado
 
