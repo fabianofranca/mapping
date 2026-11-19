@@ -232,9 +232,46 @@ describe('bottom window: tabs and strip', () => {
     );
     const count = harness.context.derived.incompleteCount.value;
     expect(count).toBeGreaterThan(0);
+    const tab = screen.getByRole('tab', { name: `${t('incomplete.title')} ${count}` });
+    expect(tab).toBeTruthy();
+    // The counter is decoration for the accessibility tree: the name already carries it.
+    expect(tab.querySelector('.tab-badge')?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('a tab without a counter keeps its name from the content', () => {
+    const harness = createHarness(sampleProject());
+    showToolWindow('list');
+    withContext(
+      harness,
+      <ToolWindow id="list">
+        <p>content</p>
+      </ToolWindow>,
+    );
     expect(
-      screen.getByRole('tab', { name: new RegExp(`${t('incomplete.title')}${count}`) }),
-    ).toBeTruthy();
+      screen.getByRole('tab', { name: t('view.list') }).hasAttribute('aria-label'),
+    ).toBe(false);
+  });
+
+  it('Notices and Diagnostics render the label in .tab-label and an icon (compact)', () => {
+    const harness = createHarness(sampleProject());
+    showToolWindow('list');
+    withContext(
+      harness,
+      <ToolWindow id="list">
+        <p>content</p>
+      </ToolWindow>,
+    );
+    for (const title of [t('notices.title'), t('diagnostics.title')]) {
+      const tab = screen
+        .getAllByRole('tab')
+        .find((el) => (el.getAttribute('aria-label') ?? el.textContent) === title)!;
+      expect(tab.querySelector('.tab-label')?.textContent).toBe(title);
+      expect(tab.querySelector('svg.icon')).toBeTruthy();
+      expect(tab.getAttribute('aria-label')).toBe(title);
+    }
+    // List keeps no icon.
+    const list = screen.getByRole('tab', { name: t('view.list') });
+    expect(list.querySelector('svg.icon')).toBeNull();
   });
 
   it('a new error lights the dot on the strip and the tab; viewing the window clears it', async () => {
