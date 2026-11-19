@@ -537,7 +537,7 @@ describe('Texto type: the specialization', () => {
 
 describe('Texto type: the drawing and the fit', () => {
   const catalog = notesCatalog();
-  const component = catalog.get(NOTES_ID)?.byType.get('texto')!;
+  const component = catalog.get(NOTES_ID)!.byType.get('texto')!;
   const type = notesV2().layers[0]!.annotationTypes.find((t) => t.id === 'texto')!;
   const measure = { measure: approximateMeasurer };
 
