@@ -8,3 +8,4 @@
   - It appears in the Palette and in `create_marking` (`notas/texto`, with or without `container`). On a plain marking, **New annotation** of the Notes layer now offers **Text** (before, it offered nothing: **Note** and **Table** are floating).
 - `docs/AGENT-GUIDE.md`: the modeling pattern for the notes library: `notas/texto` for the mapping's own labels and titles, the text type of the screen's library for the text the screen really has.
 - Tests: the ceiling of the generated guide of each block of the full round (`MAX_BLOCK_GUIDE_CHARS`) went from 201,000 to 207,000 characters: R12.45 to R12.53 took block 3 to 207.0 thousand.
+- MCP: the `type` of the operations resolves `specId/typeId`, then the type `id`, then the name (before, all three were mixed): the name "Text" of `notas/texto` does not make the id `text` of another library ambiguous.

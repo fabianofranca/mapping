@@ -248,6 +248,7 @@ function register(opened: Opened, op: FolderOp, since: Mark, limit?: number) {
   expect(repeated, `folders resolved more than once in ${op}`).toEqual([]);
 }
 
+// TX1 of #2081: the notes library has 7 files (it had 5), one more call per file in `save`, `library` and `decide`.
 describe('baseline of the calls to the folder (fixed project)', () => {
   let current: Opened | null = null;
   afterEach(async () => {
@@ -272,7 +273,7 @@ describe('baseline of the calls to the folder (fixed project)', () => {
     const result = opened.session.actions.renameMarking('M3', 'Fechadura nova');
     expect(result.ok).toBe(true);
     await opened.session.flush();
-    register(opened, 'save', since, 14);
+    register(opened, 'save', since, 16);
     // Decision 5: a single edit of `mapping.json` resolves no folder (the root is enough).
     expect(opened.resolved.length - since.resolved).toBe(0);
     expect(
@@ -295,7 +296,7 @@ describe('baseline of the calls to the folder (fixed project)', () => {
     expect(result.ok).toBe(true);
     await opened.session.flush();
     expect(await opened.root.read(`${PACKAGE_DIR}/docs/extra-1.md`)).toContain('(v2)');
-    register(opened, 'library', since, 113);
+    register(opened, 'library', since, 115);
   });
 
   it('decide and apply: one change of an open proposal', async () => {
@@ -310,7 +311,7 @@ describe('baseline of the calls to the folder (fixed project)', () => {
       'accepted',
     );
     expect(decided.ok).toBe(true);
-    register(opened, 'decide', since, 16);
+    register(opened, 'decide', since, 18);
 
     since = markOf(opened);
     const result = await opened.session.proposalActions.applyAccepted('P1');
