@@ -1,4 +1,4 @@
-# Component composition — [Não lançado] (épico `epic/component-composition`, PR #0, MCP 0.48.0, schema v21)
+# Component composition — [Não lançado] (épico `epic/component-composition`, PR #2292, MCP 0.48.0, schema v21)
 
 ## Adicionado
 
