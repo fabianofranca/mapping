@@ -1,4 +1,4 @@
-# Context hook notice — [Não lançado] (épico `epic/context-hook-notice`, PR #0, MCP 0.43.0 unchanged, schema v20)
+# Context hook notice — 2026-11-19 (épico `epic/context-hook-notice`, PR #2168, MCP 0.43.0 unchanged, schema v20)
 
 ## Alterado
 
