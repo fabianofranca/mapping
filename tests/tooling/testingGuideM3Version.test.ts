@@ -24,7 +24,7 @@ describe('R3.10 to R3.17 of the guide follow the Material 3 (Compose) package ve
 
   it('R3.10 shows the package version in the window and in the row', () => {
     expect(row('R3.10')).toContain(`"v${v} · 50 type(s)`);
-    expect(row('R3.10')).toContain(`"v${v} · 3 layer(s)"`);
+    expect(row('R3.10')).toContain(`"v${v} · 3 layer(s): Layout, Content, Components"`);
   });
 
   it('the setup generates mat-v(N+1) to mat-v(N+4) from the current version', () => {

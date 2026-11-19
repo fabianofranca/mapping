@@ -455,7 +455,7 @@ export const enUS = {
   'spec.designTokens': 'Drawing tokens',
   'spec.designModes': 'Modes',
   'spec.designIcons': 'Icons',
-  'spec.item': 'v{version} · {layers} layer(s)',
+  'spec.item': 'v{version} · {layers} layer(s): {names}',
   'spec.fileMissing': '(specialization file unavailable)',
   'spec.readFailed': 'Could not read the file.',
   'spec.invalidTitle': 'Invalid specialization file',
