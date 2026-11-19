@@ -1,0 +1,97 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 7,
+  "id": "notas",
+  "name": "Notes",
+  "version": 4,
+  "description": "Notes on the canvas: floating sticky notes, one with a title and free text and one shaped as a table (key and value), to comment on a screen, record a business rule, list the data of an event or leave a message for whoever reads the mapping.",
+  "layers": [
+    {
+      "id": "notas",
+      "name": "Notes",
+      "color": "#F5C400",
+      "annotationTypes": [
+        {
+          "id": "nota",
+          "name": "Note",
+          "description": "Loose comment on the canvas (this screen is for X, a business rule). It belongs to no screen: it sits on top of everything and neither carries nor is carried by what is underneath. The relation to a screen or an element is an arrow.",
+          "labelField": "titulo",
+          "floating": true,
+          "component": "components/nota.json",
+          "doc": "docs/nota.md",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "Title",
+              "type": "string",
+              "description": "Short summary of the note; shown in bold at the top of the sticky note. Can be left empty."
+            },
+            {
+              "key": "texto",
+              "label": "Text",
+              "type": "string",
+              "required": true,
+              "description": "The comment itself. Accepts multiple lines: Shift+Enter breaks the line (Enter confirms while the field is a single line; in the multi-line area, Enter also inserts a line)."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Business rule",
+              "values": {
+                "titulo": "Limit",
+                "texto": "Only sign up with an approved limit."
+              }
+            }
+          ]
+        },
+        {
+          "id": "tabela",
+          "name": "Table",
+          "description": "Loose key-value table on the canvas (the properties of an event, the parameters of a call). It belongs to no screen: it sits on top of everything and neither carries nor is carried by what is underneath. The relation to a screen or an element is an arrow.",
+          "labelField": "titulo",
+          "floating": true,
+          "component": "components/tabela.json",
+          "doc": "docs/tabela.md",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "Title",
+              "type": "string",
+              "description": "Short summary of the table; shown in bold at the top. Can be left empty."
+            },
+            {
+              "key": "linhas",
+              "label": "Rows",
+              "type": "table",
+              "description": "One row per record: the key on the left and the value on the right.",
+              "columns": [
+                {
+                  "key": "chave",
+                  "label": "Key",
+                  "type": "string",
+                  "required": true,
+                  "description": "The name of the data item (a property, a parameter)."
+                },
+                {
+                  "key": "valor",
+                  "label": "Value",
+                  "type": "string",
+                  "description": "The value or its description."
+                }
+              ]
+            }
+          ],
+          "examples": [
+            {
+              "name": "Analytics event",
+              "description": "Only the title goes into an example; the rows (source, items, total) come from the component preview.",
+              "values": {
+                "titulo": "checkout_started"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -379,7 +379,16 @@ export const operationSchema = z.discriminatedUnion('op', [
     op: z.literal('update_specialization'),
     file: z
       .string()
-      .describe('New (greater) version of an already applied specialization.'),
+      .optional()
+      .describe(
+        'New (greater) version of an already applied specialization. Exactly one of `file` and `builtin`.',
+      ),
+    builtin: z
+      .string()
+      .optional()
+      .describe(
+        'Id of a library built into the server (today `notas`): updates to its built-in version, as a package folder would. Exactly one of `file` and `builtin`.',
+      ),
   }),
   z.object({
     op: z.literal('remove_specialization'),

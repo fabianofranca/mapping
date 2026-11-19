@@ -522,6 +522,7 @@ export const enUS = {
   'spec.applyZip': 'Apply zip…',
   'spec.updateFolder': 'Update from folder…',
   'spec.updateZip': 'Update from zip…',
+  'spec.updateBundled': 'Update to the built-in version (v{version})',
   'spec.packageHint':
     'A library (formatVersion 4 or later) comes in a folder or a zip: the specialization, components, documents and fonts. If it does not refer to package files, a lone .json also works.',
   'spec.v4NeedsPackage':

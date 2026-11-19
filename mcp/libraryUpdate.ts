@@ -27,6 +27,8 @@ import { Refs } from './items';
 import {
   MAX_ISSUES,
   issueView,
+  builtinSpecInput,
+  checkBuiltinArgument,
   ignoredPathsIssues,
   readSpecInput,
   type ReadPackage,
@@ -365,7 +367,7 @@ function freedLayersSteps(impact: SpecUpdateImpact): string[] {
 }
 
 /** What the person and the agent do next, depending on the impact. */
-function updateHint(impact: SpecUpdateImpact, valid: boolean): string {
+function updateHint(impact: SpecUpdateImpact, valid: boolean, via: string): string {
   const steps: string[] = [];
   if (!valid) {
     steps.push(
@@ -383,11 +385,11 @@ function updateHint(impact: SpecUpdateImpact, valid: boolean): string {
     );
   } else if (impact.additive) {
     steps.push(
-      'additive change: propose update_specialization with `file` of this folder (propose_changes); the person applies it without an impact dialog',
+      `additive change: propose update_specialization with ${via} (propose_changes); the person applies it without an impact dialog`,
     );
   } else {
     steps.push(
-      'the declared migrations cover the breaks: propose update_specialization with `file` of this folder (propose_changes) and describe what changes in the proposal',
+      `the declared migrations cover the breaks: propose update_specialization with ${via} (propose_changes) and describe what changes in the proposal`,
     );
   }
   steps.push(...freedLayersSteps(impact));
@@ -411,16 +413,21 @@ function updateHint(impact: SpecUpdateImpact, valid: boolean): string {
  */
 export async function planLibraryUpdate(
   roots: Roots,
-  args: { project: string; path: string },
+  args: { project: string; path?: string | undefined; builtin?: string | undefined },
 ): Promise<Json> {
+  checkBuiltinArgument(args.path, args.builtin, 'path');
   const location = await findProject(roots, args.project);
   const loaded = await loadProject(roots, location);
   const p = loaded.project;
   const refs = new Refs(loaded);
-  const input: SpecInput = await readSpecInput(roots, args.path, undefined, {
-    raw: false,
-  });
-  const base = { project: { name: location.name, path: location.path }, path: args.path };
+  const input: SpecInput =
+    args.builtin !== undefined
+      ? builtinSpecInput(args.builtin)
+      : await readSpecInput(roots, args.path!, undefined, { raw: false });
+  const base = {
+    project: { name: location.name, path: location.path },
+    ...(args.builtin !== undefined ? { builtin: args.builtin } : { path: args.path }),
+  };
 
   let spec: Spec;
   if (input.kind === 'file') {
@@ -494,14 +501,20 @@ export async function planLibraryUpdate(
     return {
       ...base,
       ...identity,
-      hint: `${valid ? '' : 'fix the validation errors before proposing; '}the library is not applied to the project yet: propose apply_specialization with \`file\` of this ${input.kind === 'package' ? 'folder' : 'file'} (propose_changes)`,
+      hint:
+        args.builtin !== undefined
+          ? `the library is not applied to the project yet: \`apply_specialization\` does not take \`builtin\`; apply it in the app (Specializations) or propose apply_specialization with \`file\` of a package folder`
+          : `${valid ? '' : 'fix the validation errors before proposing; '}the library is not applied to the project yet: propose apply_specialization with \`file\` of this ${input.kind === 'package' ? 'folder' : 'file'} (propose_changes)`,
     };
   }
   if (decision === 'not-newer') {
     return {
       ...base,
       ...identity,
-      hint: `the version (v${spec.version}) is not greater than the applied one (v${applied?.version}): raise the package's \`version\` to update`,
+      hint:
+        args.builtin !== undefined
+          ? `the project already has the built-in version (v${applied?.version}) or a later one: nothing to update`
+          : `the version (v${spec.version}) is not greater than the applied one (v${applied?.version}): raise the package's \`version\` to update`,
     };
   }
   const impact = specializationUpdateImpact(p, spec);
@@ -509,6 +522,12 @@ export async function planLibraryUpdate(
     ...base,
     ...identity,
     ...updateView(refs, impact),
-    hint: updateHint(impact, valid),
+    hint: updateHint(
+      impact,
+      valid,
+      args.builtin === undefined
+        ? '`file` of this folder'
+        : `\`builtin\` \`${args.builtin}\``,
+    ),
   };
 }

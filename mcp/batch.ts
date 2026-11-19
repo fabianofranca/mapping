@@ -151,7 +151,12 @@ import {
   updateSummary,
   validatePackage,
 } from './libraryUpdate';
-import type { ReadPackage, SpecInput } from './library';
+import {
+  builtinSpecInput,
+  checkBuiltinArgument,
+  type ReadPackage,
+  type SpecInput,
+} from './library';
 import { MAX_BASE64_LENGTH, MIME, detectFormat } from './image/formats';
 import { builtinFontBook, measurerFor } from './image/textMeasurer';
 import { prepareImage } from './imagePrepare';
@@ -937,11 +942,15 @@ class Batch {
    * On an update, the applied copy binds the version contract (`previous`).
    */
   private async loadSpec(
-    file: string,
+    source: { file?: string | undefined; builtin?: string | undefined },
     mode: 'apply' | 'update',
     p: Project,
   ): Promise<LoadedSpec> {
-    const input = await this.io.readSpecInput(file);
+    checkBuiltinArgument(source.file, source.builtin, 'file');
+    const input =
+      source.builtin !== undefined
+        ? builtinSpecInput(source.builtin)
+        : await this.io.readSpecInput(source.file!);
     if (input.kind === 'file') {
       const impact = mode === 'update' ? checkUpdate(p, input.spec) : undefined;
       return { spec: input.spec, ...(impact ? { impact } : {}) };
@@ -1426,7 +1435,7 @@ class Batch {
       case 'move_to_page':
         return this.moveToPageOp(op, p);
       case 'apply_specialization': {
-        const loaded = await this.loadSpec(op.file, 'apply', p);
+        const loaded = await this.loadSpec({ file: op.file }, 'apply', p);
         const { spec } = loaded;
         const check = checkSpecApply(p, spec);
         if (check === 'update') {
@@ -1452,7 +1461,11 @@ class Batch {
         };
       }
       case 'update_specialization': {
-        const loaded = await this.loadSpec(op.file, 'update', p);
+        const loaded = await this.loadSpec(
+          { file: op.file, builtin: op.builtin },
+          'update',
+          p,
+        );
         const { spec } = loaded;
         const impact = loaded.impact!;
         const project = updateSpecialization(p, spec, this.specOptions(loaded));
