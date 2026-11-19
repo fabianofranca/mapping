@@ -6,7 +6,7 @@ Ready-to-use library packages (format in [`docs/SPEC-FORMAT.md`](../docs/SPEC-FO
 
 | Folder    | What it is                                                                                                       | How it reaches the project                                                                                       |
 | --------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `notas/`  | Floating notes and tables on the canvas (sticky notes).                                                          | **Embedded** in the build (`index.ts`) and applied by default in a new project.                                  |
+| `notas/`  | Floating notes and tables on the canvas (sticky notes), and plain text for labels, titles and captions.          | **Embedded** in the build (`index.ts`) and applied by default in a new project.                                  |
 | `kotlin/` | Kotlin declarations: the eleven kinds of class, object and interface, with properties, functions and supertypes. | **Not embedded.** Download the folder (or a zip of it) and apply it in **Specializations › Apply folder…/zip…**. |
 
 | `material3-compose/` | Material Design 3 (light and dark theme) for Jetpack Compose, with the composable of each type in `code` (`variants`). | **Not embedded.** Applied from the folder or from the ready-made zip `examples/material3-compose.zip` (`npm run build:material3-zip` regenerates it), like `kotlin/`. |

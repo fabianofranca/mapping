@@ -1,0 +1,74 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "texto",
+  "name": "Text",
+  "description": "Plain text with no background, border or shadow: a label, a title or a caption. Size, weight and color are optional; the width follows the text (auto) or is the marking's, wrapping the lines (fixa).",
+  "size": {
+    "width": 120,
+    "height": 20
+  },
+  "sizing": {
+    "width": {
+      "$switch": "largura",
+      "cases": {
+        "fixa": "fill"
+      },
+      "default": "hug"
+    },
+    "height": "hug"
+  },
+  "preview": {
+    "texto": "Text"
+  },
+  "template": {
+    "type": "frame",
+    "name": "texto",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "text",
+        "text": {
+          "$field": "texto"
+        },
+        "width": {
+          "$switch": "largura",
+          "cases": {
+            "fixa": "fill"
+          },
+          "default": "hug"
+        },
+        "height": "hug",
+        "font": {
+          "size": {
+            "$field": "tamanho",
+            "default": 14
+          },
+          "weight": {
+            "$switch": "peso",
+            "cases": {
+              "medium": 500,
+              "semibold": 600,
+              "bold": 700
+            },
+            "default": 400
+          },
+          "wrap": {
+            "$switch": "largura",
+            "cases": {
+              "fixa": "word"
+            },
+            "default": "none"
+          }
+        },
+        "color": {
+          "$field": "cor",
+          "default": "#1F1F1F"
+        }
+      }
+    ]
+  }
+}
