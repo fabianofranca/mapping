@@ -411,7 +411,10 @@ describe('examples/workspace/watch-comments.mjs', { timeout: 20000 }, () => {
           h.stderr += d.toString();
         });
         const code = new Promise<number | null>((r) => child.on('close', r));
-        await waitFor(() => h.stderr.includes('watch-comments: observing'), 'the watcher');
+        await waitFor(
+          () => h.stderr.includes('watch-comments: observing'),
+          'the watcher',
+        );
         child.stdin?.end();
         const e = { child, out: () => '', err: () => h.stderr, code };
         expect(await exitsWithin(e, 3000)).toBe(true);
