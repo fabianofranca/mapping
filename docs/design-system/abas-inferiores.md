@@ -1,4 +1,4 @@
-# Bottom window tabs — 2026-11-18 (épico `epic/abas-inferiores`)
+# Bottom window tabs — [Não lançado] (épico `epic/abas-inferiores`)
 
 ## Pendências
 
