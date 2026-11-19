@@ -5,7 +5,7 @@ description: Takes a small process tweak (skill text, docs/PROCESS.md, docs/FLOW
 
 # Fast track
 
-This session takes **one** `roadmap` or `bug` issue about a small process tweak, from start to merge, without going through the queue. The normal flow (detailing, epic with phases, tester, closing) is in [`docs/PROCESS.md`](../../../docs/PROCESS.md), and the messages and the Reading CI in [`docs/FLOW.md`](../../../docs/FLOW.md); what is specific to the fast track is here, and the rest is not repeated. A released fast track (the `via-rapida` label on the issue) is also run by the queue, in a slot, in **queue mode** ("Arguments, model and mode"); the queue's rules are in [`implementar-fila`](../implementar-fila/SKILL.md).
+This session takes **one** `roadmap` or `bug` issue about a small process tweak, from start to merge; in manual mode, without going through the queue. The normal flow (detailing, epic with phases, tester, closing) is in [`docs/PROCESS.md`](../../../docs/PROCESS.md), and the messages and the Reading CI in [`docs/FLOW.md`](../../../docs/FLOW.md); what is specific to the fast track is here, and the rest is not repeated. A released fast track (the `via-rapida` label on the issue) is also run by the queue, in a slot, in **queue mode** ("Arguments, model and mode"); the queue's rules are in [`implementar-fila`](../implementar-fila/SKILL.md).
 
 ## Arguments, model and mode
 

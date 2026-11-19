@@ -66,6 +66,15 @@ describe('implementar-fila: the queue runs the released fast tracks', () => {
     ]);
   });
 
+  it('review: a refused fast track clears `child=`, takes no `sinal` and a red merge goes to the owner', () => {
+    const s = section(QUEUE, '## 3. Per stage');
+    has('row', s, [
+      '`row \'#n\' status=recusada child= step="<criterion>"`',
+      'No `sinal` (`painel.py` refuses it for `kind=via-rapida`)',
+      'not green and mergeable',
+    ]);
+  });
+
   it('decision 15: a fast track that loses the label leaves the queue', () => {
     const s = section(QUEUE, '## Queue changes during the run');
     has('changes', s, [
