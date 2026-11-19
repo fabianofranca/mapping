@@ -779,17 +779,35 @@ function widthToImageEdge(p: Project, marking: Marking): number | undefined {
     : right(imagePixelRect(container)) - marking.rect.x;
 }
 
-/** The rectangle clamped to the container's image (the fit does not go past it); on the canvas there is no limit. */
+/**
+ * One axis of a fitted box inside the image's span: a box that fits the image slides back from the edge
+ * (the content stays whole); only one larger than the image keeps its start and is cut at the edge.
+ */
+function slideInto(
+  start: number,
+  size: number,
+  lo: number,
+  hi: number,
+): { start: number; size: number } {
+  if (start + size <= hi) return { start, size };
+  return size <= hi - lo
+    ? { start: hi - size, size }
+    : { start, size: Math.max(0, hi - start) };
+}
+
+/**
+ * The rectangle inside the container's image (the fit does not go past it): a fitted box that is past the
+ * edge but fits the image moves back inside (a hug text that cannot wrap is not cut at the edge); one
+ * larger than the image is cut at it. On the canvas there is no limit.
+ */
 function withinImage(p: Project, marking: Marking, rect: Rect): Rect {
   if (marking.containerId === null) return rect;
   const container = projectIndex(p).containers.get(marking.containerId);
   if (container === undefined) return rect;
   const image = imagePixelRect(container);
-  return {
-    ...rect,
-    width: Math.min(rect.width, right(image) - rect.x),
-    height: Math.min(rect.height, bottom(image) - rect.y),
-  };
+  const across = slideInto(rect.x, rect.width, image.x, right(image));
+  const down = slideInto(rect.y, rect.height, image.y, bottom(image));
+  return { x: across.start, y: down.start, width: across.size, height: down.size };
 }
 
 /**
@@ -798,7 +816,8 @@ function withinImage(p: Project, marking: Marking, rect: Rect): Rect {
  * values, rounded up, between the `minSize` and the limits of the component's root and never below
  * `MIN_STORED_MARKING_SIZE`. The position (top-left corner) stays; the `fill` axis, the absent one
  * and the one the parent's `align: stretch` stretches do not change; the result never goes past the
- * image. Only by the person's or the agent's action: never on load or when editing a value. Settles
+ * image (a box that fits the image slides back inside it, one larger is cut at the edge). Only by the
+ * person's or the agent's action: never on load or when editing a value. Settles
  * at the end (the marking may come to contain others), in one undo entry. Returns the same
  * `Project` when nothing changes; fails with `not-found`, `not-fittable` (no axis depends on the
  * content, the marking is not of a component or is a component with children in the slot, which

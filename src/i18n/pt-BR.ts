@@ -1239,6 +1239,7 @@ export const ptBR: Dictionary = {
   'arrange.done': 'Arrumado',
   'arrange.doneWarnings': 'Arrumado com {count} aviso(s): {first}',
   'arrange.nothing': 'Nada a arrumar',
+  'arrange.stillOverflow': 'Arrumado, mas o conteúdo ainda não cabe',
   'arrange.hintAnchor': 'Encosta a marcação na âncora.',
   'anchor.section': 'Âncora',
   'anchor.target': 'Ancorada a',
