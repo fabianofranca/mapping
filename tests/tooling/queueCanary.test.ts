@@ -950,12 +950,12 @@ describe('`show` and the candidates (decisions 7 and 13)', () => {
     session(D(13), 'r1', '#10', 'reteste', 'RT1', 'A');
     session(D(13), 'r2', '#10', 'reteste', 'RT2', 'A');
     expect(runAt(D(20), 'show', dir)).toContain(
-      'canários: A reteste Sonnet medium → Haiku medium 2/5 (retrabalhos 0/2, ativo); B fase Sonnet high → Sonnet medium 0/5 (retrabalhos 0/2, ativo)',
+      'canários: A reteste Sonnet medium → Haiku medium 2/5 (retrabalhos 0/2, ativo; sem base — rodar canario base); B fase Sonnet high → Sonnet medium 0/5 (retrabalhos 0/2, ativo; sem base — rodar canario base)',
     );
     runAt(D(14), 'sinal', dir, 'r1', 'falso=high');
     runAt(D(14), 'canario', dir, 'end', 'B', 'motivo=parou');
     expect(runAt(D(20), 'show', dir)).toContain(
-      'A reteste Sonnet medium → Haiku medium 2/5 (retrabalhos 1/2, ativo); B fase Sonnet high → Sonnet medium 0/5 (retrabalhos 0/2, terminado pelo dono)',
+      'A reteste Sonnet medium → Haiku medium 2/5 (retrabalhos 1/2, ativo; sem base — rodar canario base); B fase Sonnet high → Sonnet medium 0/5 (retrabalhos 0/2, terminado pelo dono; sem base — rodar canario base)',
     );
   });
 
