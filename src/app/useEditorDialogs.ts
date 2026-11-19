@@ -8,6 +8,7 @@ import {
   type ItemRef,
   markingDeletionImpact,
   type Marking,
+  type PageAnchorCrossing,
   type PageArrowCrossing,
   type ProjectContainer,
 } from '../model';
@@ -49,13 +50,16 @@ export type EditorDialog =
   | { readonly kind: 'managePages'; readonly focus?: ManagePagesFocus }
   | { readonly kind: 'deletePage'; readonly id: string }
   /**
-   * "Move to page" refused (`page-arrow-crossing`): lists the arrows. `onGoToArrow` is the opener's
-   * navigation (select the arrow, switch to its page, frame it); the dialog closes after calling it.
+   * "Move to page" refused (`page-arrow-crossing` or `page-anchor-crossing`): lists the arrows and
+   * the anchors. `onGoToArrow` and `onGoToMarking` are the opener's navigation (select the item,
+   * switch to its page, frame it); the dialog closes after calling it.
    */
   | {
       readonly kind: 'movePageRefused';
       readonly arrows: readonly PageArrowCrossing[];
+      readonly anchors: readonly PageAnchorCrossing[];
       readonly onGoToArrow: (arrowId: string) => void;
+      readonly onGoToMarking: (anchor: PageAnchorCrossing) => void;
     };
 
 export interface EditorDialogs {

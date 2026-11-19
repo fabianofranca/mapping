@@ -150,6 +150,26 @@ export function resolveAnchor(project: Project, anchor: ThreadAnchor): AnchorRes
   }
 }
 
+/**
+ * How many of the threads sit on an empty spot of the page (stage #2177, decision 8): the anchor
+ * resolves to a canvas point of that page (a version 2 point with its `pageId`; a version 1 point
+ * when the page is the first). A point inside a container goes with its container: not counted.
+ */
+export function pointThreadsOnPage(
+  project: Project,
+  threads: readonly Thread[],
+  pageId: string,
+): number {
+  let count = 0;
+  for (const thread of threads) {
+    const host = hostOf(project, thread.anchor);
+    if (host?.kind === 'point' && host.containerId === null && host.pageId === pageId) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
 /** The anchor no longer exists in the project (deleted item, or deleted container of the point). */
 export function isOrphan(project: Project, anchor: ThreadAnchor): boolean {
   return resolveAnchor(project, anchor).orphan;

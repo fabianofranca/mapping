@@ -164,6 +164,8 @@ export function issueText(names: ReviewNames, issue: ProposalIssue): string {
       return t('review.issue.missingImage', params);
     case 'arrow-cross-page':
       return t('review.issue.crossPage', params);
+    case 'page-anchor-crossing':
+      return t('review.issue.anchorCrossPage', params);
     case 'page-parent-mismatch':
       return t('review.issue.pageParent', params);
     default:
