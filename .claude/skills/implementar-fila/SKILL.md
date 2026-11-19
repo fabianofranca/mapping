@@ -375,6 +375,7 @@ painel.py session <folder> '#n' <id> kind=<kind> [label=<code>]   # session crea
 painel.py cost <folder> <id> usd=<x> ctx=<tokens> model=<m> effort=<e> [served=<model>] [issue='#n' kind=<kind>]   # the session's cost (from get_session); kind required with a new id
 painel.py costs [--desde <ISO>] <folder>              # total, by kind (sessions, US$, median) and by stage; reads only the meta
 painel.py uso [--desde <ISO>] <folder>                # usage and quality per role × model × effort (meta.uso): one line per key and the signals; reads only the meta
+painel.py outliers [--desde <ISO>] <folder>   # stages above 2× the median of their group per planned phase, with the cause; reads only queue and meta
 painel.py sinal <folder> <id> campo=valor…            # quality signals of a session, in meta.sessions[i].sinais (phase and fix: ci cr crFix ciclo dono sub; testador/reteste: ok falha alta media baixa falso=<high|medium|low> sub); a number replaces, +k adds; code 2 and nothing written on a bad field
 painel.py escapado <folder> '#<bug>' etapa='#<n>' sev=<high|medium|low>   # escaped defect, in meta.escapados (the same bug replaces)
 painel.py escapado <folder> --conferido               # records the time of the last check of the escaped defects (meta.escapadosAt)
