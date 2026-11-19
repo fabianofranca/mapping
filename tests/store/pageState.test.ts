@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { deletePage, type Project } from '../../src/model';
+import { createPage, deletePage, type Project } from '../../src/model';
 import { openHarness, type Harness } from './proposalHarness';
 import { pagesProject } from './pageHarness';
 
@@ -213,5 +213,71 @@ describe('expectRemoval: a deliberate delete of the open page', () => {
     session.page.expectRemoval(null);
     session.actions.deletePage('PG2', { discard: true });
     expect(session.page.notice.value).toEqual({ kind: 'removed', name: 'Page 2' });
+  });
+});
+
+// The review's proposed pages (stage #2177, PF3, decision 13): while the Proposed view of an open
+// proposal is shown, the page state also knows the pages that only the proposal creates.
+describe("the open page with the review's proposed pages", () => {
+  const proposedWithD = (): Project =>
+    createPage(pagesProject(), { id: 'D', name: 'Drafts' });
+
+  it('open() accepts a page only the proposal creates and the id follows it', async () => {
+    const { session } = await start();
+    expect(session.page.open('D')).toBe(false);
+    session.page.setProposed(proposedWithD());
+    expect(session.page.open('D')).toBe(true);
+    expect(session.page.id.value).toBe('D');
+    expect(session.page.openId()).toBe('D');
+  });
+
+  it('goes back to the page that was open before, with no notice, when the proposed pages go away', async () => {
+    const { session } = await start();
+    session.page.open('PG2');
+    session.page.setProposed(proposedWithD());
+    session.page.open('D');
+    session.page.setProposed(null);
+    expect(session.page.id.value).toBe('PG2');
+    expect(session.page.notice.value).toBeNull();
+  });
+
+  it('never writes the proposed page to the kept choice', async () => {
+    const { session } = await start();
+    session.page.open('PG2');
+    const before = localStorage.getItem(KEY);
+    session.page.setProposed(proposedWithD());
+    session.page.open('D');
+    expect(localStorage.getItem(KEY)).toBe(before);
+    session.page.setProposed(null);
+    expect(localStorage.getItem(KEY)).toBe(before);
+  });
+
+  it('a committed page chosen meanwhile stays when the proposed pages go away', async () => {
+    const { session } = await start();
+    session.page.setProposed(proposedWithD());
+    session.page.open('D');
+    session.page.open('PG3');
+    session.page.setProposed(null);
+    expect(session.page.id.value).toBe('PG3');
+  });
+
+  it('lists the pages of the view being shown, with the ones only the proposal creates', async () => {
+    const { session } = await start();
+    expect(session.page.pages.value.map((g) => g.id)).toEqual(['PG1', 'PG2', 'PG3']);
+    expect(session.page.createdByProposal.value.size).toBe(0);
+    session.page.setProposed(proposedWithD());
+    expect(session.page.pages.value.map((g) => g.id)).toEqual(['PG1', 'PG2', 'PG3', 'D']);
+    expect([...session.page.createdByProposal.value]).toEqual(['D']);
+    session.page.setProposed(null);
+    expect(session.page.pages.value).toHaveLength(3);
+  });
+
+  it('a proposed page that the new preview lacks no longer holds the open page', async () => {
+    const { session } = await start();
+    session.page.setProposed(proposedWithD());
+    session.page.open('D');
+    session.page.setProposed(pagesProject());
+    expect(session.page.id.value).toBe('PG1');
+    expect(session.page.notice.value).toBeNull();
   });
 });

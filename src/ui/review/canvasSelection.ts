@@ -126,7 +126,9 @@ export function reviewPageOf(
 
 /**
  * Opens the page of the review item before it is selected. The review keeps the Completa locked, so
- * only the page changes; a page the proposal itself creates cannot be opened and stays where it is.
+ * only the page changes. A page the proposal itself creates opens in the Proposed view (the page
+ * state knows the preview's pages, stage #2177, PF3); in the Current view it does not exist and the
+ * page stays where it is.
  */
 export function revealReviewItem(
   session: RevealSession,

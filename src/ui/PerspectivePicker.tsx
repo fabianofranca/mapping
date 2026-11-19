@@ -1,13 +1,12 @@
 import { useComputed } from '@preact/signals';
-import { useLayoutEffect, useRef } from 'preact/hooks';
 import type { EditorDialogs } from '../app/useEditorDialogs';
 import { t } from '../i18n';
 import { Button, Tooltip } from './controls';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
+import { PickerList, PickerOption } from './PickerList';
 import { Popover } from './Popover';
 import { perspectiveContentText } from './perspectiveContentText';
-import { cycleStops } from './pickerKeys';
 
 // Perspective picker of the main bar (stage #659, PE3): the button shows the open one and
 // who sees it; the list has the "For everyone" group (Main first) and "Only mine".
@@ -33,22 +32,15 @@ const pageCountText = (count: number): string =>
 
 function Row({ name, note, pageCount, selected, onPick }: RowProps) {
   return (
-    /* Exception to Button: list option (role="option") (docs/DESIGN-SYSTEM.md, "Loose buttons") */
-    <button
-      type="button"
-      role="option"
-      class="perspective-row"
-      aria-selected={selected}
-      data-name={name}
-      onClick={onPick}
+    <PickerOption
+      rowClass="perspective-row"
+      name={name}
+      selected={selected}
+      onPick={onPick}
     >
-      <span class="perspective-row-check" aria-hidden="true">
-        {selected && <Icon name="check" />}
-      </span>
-      <span class="perspective-row-name">{name}</span>
       <span class="perspective-row-page">{pageCountText(pageCount)}</span>
       <span class="perspective-row-note">{note}</span>
-    </button>
+    </PickerOption>
   );
 }
 
@@ -57,22 +49,14 @@ interface ListProps {
   readonly close: () => void;
 }
 
-function PickerList({ dialogs, close }: ListProps) {
+function PerspectiveList({ dialogs, close }: ListProps) {
   const { session, store } = useEditor();
-  const root = useRef<HTMLDivElement>(null);
   const project = store.committed.value;
   const openId = session.perspective.id.value;
   const localIds = session.perspective.localIds.value;
   const openPage = session.page.id.value;
   const pageCounts = session.page.perspectiveCounts.value;
   const completeCount = session.page.rootCounts.value.get(openPage) ?? 0;
-
-  // Focus enters the open row, in the same commit that opens the list.
-  useLayoutEffect(() => {
-    root.current
-      ?.querySelector<HTMLElement>('[aria-selected="true"]')
-      ?.focus({ preventScroll: true });
-  }, []);
 
   if (project === null) return null;
   const shared = project.perspectives.filter((p) => !localIds.has(p.id));
@@ -87,63 +71,64 @@ function PickerList({ dialogs, close }: ListProps) {
   };
 
   return (
-    <div
+    <PickerList
       class="perspective-list"
-      ref={root}
-      onKeyDown={(e) => cycleStops(root.current, e, STOPS)}
+      label={t('perspective.picker.list')}
+      stops={STOPS}
+      actionsClass="perspective-actions"
+      actions={
+        <>
+          <Button class="perspective-action" onClick={() => run('newPerspective')}>
+            {t('perspective.picker.new')}
+          </Button>
+          <Button class="perspective-action" onClick={() => run('managePerspectives')}>
+            {t('perspective.picker.manage')}
+          </Button>
+        </>
+      }
     >
-      <div role="listbox" aria-label={t('perspective.picker.list')}>
-        <div role="group" aria-label={t('perspective.picker.shared')}>
-          <div class="perspective-group" aria-hidden="true">
-            {t('perspective.picker.shared')}
-          </div>
+      <div role="group" aria-label={t('perspective.picker.shared')}>
+        <div class="perspective-group" aria-hidden="true">
+          {t('perspective.picker.shared')}
+        </div>
+        <Row
+          name={t('perspective.principal')}
+          note={t('perspective.principalNote')}
+          pageCount={completeCount}
+          selected={openId === null}
+          onPick={() => pick(null)}
+        />
+        {shared.map((p) => (
           <Row
-            name={t('perspective.principal')}
-            note={t('perspective.principalNote')}
-            pageCount={completeCount}
-            selected={openId === null}
-            onPick={() => pick(null)}
+            key={p.id}
+            name={p.name}
+            note={perspectiveContentText(project, p)}
+            pageCount={pageCounts.get(p.id) ?? 0}
+            selected={openId === p.id}
+            onPick={() => pick(p.id)}
           />
-          {shared.map((p) => (
+        ))}
+      </div>
+      {mine.length > 0 && (
+        <div role="group" aria-label={t('perspective.picker.mine')}>
+          <div class="perspective-group" aria-hidden="true">
+            {t('perspective.picker.mine')}
+          </div>
+          {mine.map((p) => (
             <Row
               key={p.id}
               name={p.name}
-              note={perspectiveContentText(project, p)}
+              note={t('perspective.noteMine', {
+                content: perspectiveContentText(project, p),
+              })}
               pageCount={pageCounts.get(p.id) ?? 0}
               selected={openId === p.id}
               onPick={() => pick(p.id)}
             />
           ))}
         </div>
-        {mine.length > 0 && (
-          <div role="group" aria-label={t('perspective.picker.mine')}>
-            <div class="perspective-group" aria-hidden="true">
-              {t('perspective.picker.mine')}
-            </div>
-            {mine.map((p) => (
-              <Row
-                key={p.id}
-                name={p.name}
-                note={t('perspective.noteMine', {
-                  content: perspectiveContentText(project, p),
-                })}
-                pageCount={pageCounts.get(p.id) ?? 0}
-                selected={openId === p.id}
-                onPick={() => pick(p.id)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-      <div class="perspective-actions">
-        <Button class="perspective-action" onClick={() => run('newPerspective')}>
-          {t('perspective.picker.new')}
-        </Button>
-        <Button class="perspective-action" onClick={() => run('managePerspectives')}>
-          {t('perspective.picker.manage')}
-        </Button>
-      </div>
-    </div>
+      )}
+    </PickerList>
   );
 }
 
@@ -195,7 +180,7 @@ export function PerspectivePicker({ dialogs }: { readonly dialogs: EditorDialogs
         );
       }}
     >
-      {(close) => <PickerList dialogs={dialogs} close={close} />}
+      {(close) => <PerspectiveList dialogs={dialogs} close={close} />}
     </Popover>
   );
 }

@@ -4,13 +4,14 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   addContainer,
   createMarking,
+  createPage,
   moveRootsToPage,
   setMarkingRect,
   type Project,
   type ReviewTarget,
 } from '../../src/model';
 import { locale } from '../../src/store/settings';
-import { reviewPageOf } from '../../src/ui/review/canvasSelection';
+import { reviewPageOf, revealReviewItem } from '../../src/ui/review/canvasSelection';
 import { propose } from '../model/proposalFixtures';
 import { pagesProject, rectOf } from './pageHarness';
 import { openHarness } from './proposalHarness';
@@ -94,5 +95,56 @@ describe('reviewPageOf: items the proposal moves', () => {
     const review = await reviewOf(base, after);
     review.setView('current');
     expect(reviewPageOf(review, item('M5'), 'M5')).toBe('PG2');
+  });
+});
+
+describe('revealReviewItem: a page the proposal creates', () => {
+  async function creatingPage() {
+    const base = pagesProject();
+    let after = createPage(base, { id: 'PGD', name: 'Drafts' });
+    after = addContainer(after, {
+      id: 'ID',
+      file: 'images/draft.png',
+      width: 500,
+      height: 500,
+      pageId: 'PGD',
+    });
+    const h = await openHarness({ project: base, proposals: [propose(base, after)] });
+    expect(h.review.open('P1').ok).toBe(true);
+    return h;
+  }
+
+  it('Proposed view: choosing the container creation opens the new page, which shows it', async () => {
+    const h = await creatingPage();
+    h.review.setView('proposed');
+    revealReviewItem(h.session, h.review, item('ID'), 'ID');
+    expect(h.session.page.id.value).toBe('PGD');
+    const shown = h.review.derived.shownProject.value;
+    expect(shown?.containers.map((c) => c.id)).toEqual(['ID']);
+  });
+
+  it('Current view: the same choice does not switch the page', async () => {
+    const h = await creatingPage();
+    h.review.setView('current');
+    revealReviewItem(h.session, h.review, item('ID'), 'ID');
+    expect(h.session.page.id.value).toBe('PG1');
+  });
+
+  it('the Current view after it goes back to the page that was open before', async () => {
+    const h = await creatingPage();
+    h.review.setView('proposed');
+    revealReviewItem(h.session, h.review, item('ID'), 'ID');
+    h.review.setView('current');
+    expect(h.session.page.id.value).toBe('PG1');
+    expect(h.session.page.notice.value).toBeNull();
+  });
+
+  it('exiting the review goes back to a committed page with no notice', async () => {
+    const h = await creatingPage();
+    h.review.setView('proposed');
+    revealReviewItem(h.session, h.review, item('ID'), 'ID');
+    h.review.close();
+    expect(h.session.page.id.value).toBe('PG1');
+    expect(h.session.page.notice.value).toBeNull();
   });
 });
