@@ -67,7 +67,7 @@ phases and lists, per group (`process` by `is_process_stage`, else `product`), t
 median, with the cause: the session kind that went furthest above the group's median in that kind. A group under `OUTLIER_MIN_BASE` stages
 flags nothing; a stage without a usable ficha (and one only in `meta.merged`) enters `without ficha`.
 Tester ceiling (decision 9 of #1639): a `cost` of a `testador` or `reteste` session with `ctx` above TESTER_CONTEXT_LIMIT
-is written as always, exits with 0 and prints `acima do teto do testador (300 mil): <id> <ctx>`; `show` brings `testador acima do teto: <stage> <label> <ctx in thousands>k; …` (or `nenhum`), only for the stages not `concluída` and outside `meta.merged`.
+is written as always, exits with 0 and prints `acima do teto do testador (300 mil): <id> <ctx>`; `show` brings `testador acima do teto: <stage> <label> <ctx in thousands>k; …` (or `nenhum`), only for the stages not `concluída` or `recusada` and outside `meta.merged`.
 Current session of each role (decision 7 of #1532): `role DIR <coordenador|supervisor> <id> [link=<url>]` writes
 `meta.roles.<role> = {id, n, at, link, previous}` (`previous` = the id registered before) with `n` = the previous one + 1 (or 1); `roles DIR` reads only the `meta` and prints
 `coordenador <n>: <id>` and `supervisor <n>: <id> (<link>)`, or `—`. A session that is not the registered one does not act.
@@ -750,8 +750,8 @@ def over_tester_limit(e):
 
 
 def tester_over_limit_text(q, meta):
-    """`testador acima do teto:` of `show`: `<stage> <label> <ctx in thousands>k` of the stages not yet delivered."""
-    done = set(meta.get("merged") or []) | {r["issue"] for r in q if r["status"] == "concluída"}
+    """`testador acima do teto:` of `show`: `<stage> <label> <ctx in thousands>k` of the stages not yet delivered (not `concluída`, `recusada` or in `meta.merged`)."""
+    done = set(meta.get("merged") or []) | {r["issue"] for r in q if r["status"] in ("concluída", "recusada")}
     return "; ".join(
         f"{e.get('issue') or '—'} {e.get('label') or e['id']} {math.ceil(e['cost']['ctx'] / 1000)}k"
         for e in meta.get("sessions", []) if over_tester_limit(e) and e.get("issue") and e["issue"] not in done) or "nenhum"
