@@ -1,4 +1,4 @@
-# Context and cost — [Não lançado] (épico `epic/context-and-cost`, PR #0, MCP 0.44.0 unchanged, schema v20)
+# Context and cost — 2026-11-19 (épico `epic/context-and-cost`, PR #0, MCP 0.44.0 unchanged, schema v20)
 
 ## Adicionado
 
