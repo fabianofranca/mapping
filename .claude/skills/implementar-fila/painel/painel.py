@@ -149,7 +149,7 @@ tries a cheaper configuration (`modelo` and `esforco` default to those of `de`; 
 `canario DIR base <id> <old folder> [fonte=<text>]` (stage #2260) reads `queue.json` and `meta.json` of the old folder, read-only, and writes as the
 canary's `base` the side of the canary's role, `de` and filter over the old sessions with a cost created before `inicio`, summarized with the old
 panel's own ruler (its decided stages), plus `fonte` (default `painel anterior`) and `at`; it prints `base: <k> sessões` and, with 0 sessions, exits with
-code 1 and writes nothing. `canario DIR base <id> --nenhuma` writes `base = {fonte: nenhuma, sessoes: 0}`. A repeat replaces the base; an unknown canary
+code 3 and writes nothing (1 is an uncaught error, 2 an unreadable folder or a bad argument). `canario DIR base <id> --nenhuma` writes `base = {fonte: nenhuma, sessoes: 0}`. A repeat replaces the base; an unknown canary
 or a missing folder or file is code 2. It reads another folder, so it stays out of `apply` (an `Erro` there, as `usar`).
 `canario DIR usar <fase|correção|reteste|testador> '#n' modelo=<m> esforco=<e>` only reads (outside `apply`) and prints `canario=<id> modelo=<m> esforco=<e>` when the
 requested configuration is the `de` of an `ativo` canary of the role that has not counted `n` and, with `filtro=processo`, the ficha of `#n`
@@ -271,6 +271,7 @@ SIGNAL_FIELDS = {"fase": PHASE_SIGNALS, "correção": PHASE_SIGNALS, "testador":
 SIGNAL_SUMS = ["ci", "cr", "crFix", "ciclo", "dono", "ok", "falha", "alta", "media", "baixa", "xFalso", "naoExec"]  # the numeric signals `uso` adds up
 PROMOTE_MAX_REWORK = 1  # a canary can be promoted with at most this much rework (decision 13, P3 of the stage)
 STEP_KINDS = ("testador", "reteste")  # the roles whose sessions carry ok/falha: compared per tested step (decision 6 of #2260)
+NO_SESSIONS_CODE = 3  # `canario base` over an old panel with no session of the canary (1 stays the uncaught error, 2 `Erro`)
 NO_SOURCE = "nenhuma"  # the `fonte` of a side with no baseline
 EFFORTS = ["low"] + EFFORT_LADDER  # the efforts a canary `de=` and `esforco=` accept
 CANARY_FILTERS = ["processo"]  # the only stage filter: process stages (decision 14)
@@ -1331,11 +1332,14 @@ def canary_end(a):
 def old_panel_side(c, old_dir):
     """`(sessions, side)` of the canary's role over an old panel, read-only: the sessions with a cost of the role, `de` and
     filter created before `inicio`, summarized with the old panel's own ruler (its decided stages)."""
-    old_q, old_m = load(old_dir, "queue"), load(old_dir, "meta")
-    meta = old_m[0] if old_m else {}
-    ruler = Ruler(old_q, meta)
-    es = canary_before(c, meta, old_q, ruler)
-    return es, side_summary(es, ruler, c["papel"])
+    try:
+        old_q, old_m = load(old_dir, "queue"), load(old_dir, "meta")
+        meta = old_m[0] if old_m else {}
+        ruler = Ruler(old_q, meta)
+        es = canary_before(c, meta, old_q, ruler)
+        return es, side_summary(es, ruler, c["papel"])
+    except (ValueError, KeyError, TypeError, AttributeError, IndexError) as e:  # a corrupt or partial download is not "0 sessions"
+        raise Erro(f"{old_dir} is not a readable panel ({type(e).__name__}: {e})")
 
 
 def base_arguments(a):
@@ -1373,7 +1377,7 @@ def canary_base(a):
         es, side = old_panel_side(c, old_dir)
         print(f"base: {len(es)} sessões")
         if not es:
-            return 1
+            return NO_SESSIONS_CODE
         c["base"] = {**side, "fonte": fonte, "at": now()}
     s.touch("meta")
     s.commit()
@@ -1653,11 +1657,13 @@ def side_summary(es, ruler, papel):
 
 
 def canary_before(c, meta, q, ruler):
-    """The panel's own "before": sessions with a cost of the same role and the `de` configuration (and the same filter) created before `inicio`."""
+    """The panel's own "before": sessions with a cost of the same role and the `de` configuration (and the same filter)
+    created before `inicio`, leaving out the members of any canary (a test, and all the `import` carries with a cost)."""
     model, effort = parse_de(c["de"])
+    members = {sid for k in meta.get("canarios") or [] for sid in k.get("sessoes") or []}
     out = []
     for e in costed(meta):
-        if usage_key(e) != (c["papel"], model, effort) or ruler.okey(e)[0] >= c["inicio"]:
+        if e.get("id") in members or usage_key(e) != (c["papel"], model, effort) or ruler.okey(e)[0] >= c["inicio"]:
             continue
         if c.get("filtro") == "processo" and not is_process_stage(find_row(q, e.get("issue"))):
             continue
@@ -1746,7 +1752,8 @@ def update_canaries(q, meta, log):
 def canary_entry(c):
     """One entry of `canários:`; a `sem base` canary whose base was not declared `nenhuma` asks for `canario base`."""
     verdict = (c.get("resumo") or {}).get("veredito") or "—"
-    hint = " — rodar canario base" if verdict == "sem base" and (c.get("base") or {}).get("fonte") != NO_SOURCE else ""
+    asks = verdict == "sem base" and c.get("estado") in CANARY_BUSY and (c.get("base") or {}).get("fonte") != NO_SOURCE
+    hint = " — rodar canario base" if asks else ""
     return (f"{c['id']} {c['papel']} {c['de']} → {c['modelo']} {c['esforco']} {c.get('contadas', 0)}/{c['n']} "
             f"(retrabalhos {len(c.get('retrabalhos') or [])}/{c['volta']}, {c['estado']}; {verdict}{hint})")
 
@@ -3223,6 +3230,8 @@ def main(argv=None):
     try:
         if a.now:
             NOW_OVERRIDE = check_iso(a.now)
+        if getattr(a, "nenhuma", False) and not (a.fn is cmd_canario and a.action == "base"):
+            raise Erro("--nenhuma only goes with `canario base`")
         return a.fn(a) or 0
     except Erro as e:
         print(f"erro: {e}", file=sys.stderr)

@@ -18,3 +18,7 @@
 
 - A canary on a panel with no "before" session (a queue opened with `painel=novo`, or an imported panel) said `não promover` whatever it did; with an empty baseline it now says `sem base`.
 - The `import` dropped the sessions a canary had counted, so `k/n` went back to 0 and both sides of the summary came out empty; the canary's sessions now come over (the other sessions of the same stages without `cost`), and so does its side.
+- After the `import`, a canary's frozen `base` could be replaced by a smaller partial "before" made of other canaries' carried sessions; a canary's own "before" now leaves out the members of any canary.
+- `canario base` read a corrupt or partial old panel as "0 sessions" (an uncaught error also exits 1), which ended the baseline with `--nenhuma`; "0 sessions" now exits 3 and an unreadable old panel is an error (code 2).
+- `show` asked for `canario base` on finished canaries; only an `ativo` or `em avaliação` one asks now.
+- `--nenhuma` was accepted on every `canario` action and read only by `base`; the others now refuse it.
