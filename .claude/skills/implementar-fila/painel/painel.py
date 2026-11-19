@@ -122,13 +122,14 @@ Rework per role: `fase` has it with a `correção` or a `testador` with `alta`+`
 or `ciclo` >= 1; `correção`, with `ci` >= 2, `ciclo` >= 1, an escaped defect of the stage, another `correção` of a different label created after it or a `reteste`
 created after it with `alta`+`media` > 0; `testador`, with an escaped defect `high`/`medium` of its stage; `reteste`, with a `falso` of `high` or `medium`.
 `fechamento`, `coordenador` and `supervisor` have no ruler. The escaped `low`, `ci` 1 and a successor `correção` of the same label are not rework.
-Canaries (stage #1889, decisions 12 to 15): `meta.canarios` holds `{id, papel, de, modelo, esforco, filtro, n, volta, inicio,
+Canaries (stage #1889, decisions 12 to 15, and #2165): canary A (retest on Haiku) was promoted, so the ones in use are B (the phase) and C (the
+tester), with A kept as history; `meta.canarios` holds `{id, papel, de, modelo, esforco, filtro, n, volta, inicio,
 sessoes, estado, motivo, fim}` plus what every write recomputes (`contadas`, `retrabalhos`, `resumo`; the page draws them in the "Canaries" block).
 `canario DIR add <id> papel=<role with a ruler> de="<model> <effort>" [modelo=<family>] [esforco=<effort>] [filtro=processo] n=<k> volta=<k>`
 tries a cheaper configuration (`modelo` and `esforco` default to those of `de`; at least one has to change; `filtro` only `processo`;
 `n` and `volta` positive; a repeated id, a role without ruler or any other bad field is code 2 and nothing is written);
 `canario DIR end <id> [motivo="…"]` makes it `terminado pelo dono` (not a `revertido` one); both go into `apply`.
-`canario DIR usar <role> '#n' modelo=<m> esforco=<e>` only reads (outside `apply`) and prints `canario=<id> modelo=<m> esforco=<e>` when the
+`canario DIR usar <fase|reteste|testador> '#n' modelo=<m> esforco=<e>` only reads (outside `apply`) and prints `canario=<id> modelo=<m> esforco=<e>` when the
 requested configuration is the `de` of an `ativo` canary of the role that has not counted `n` and, with `filtro=processo`, the ficha of `#n`
 passes (decision 14: `testador=nenhum` and every citation of `toca=` is `.claude/`, `.github/`, `scripts/ci/`, `tests/tooling/`, `changelog/`,
 `docs/design-system/`, `docs/PROCESS.md`, `docs/FLOW.md`, `docs/TESTING-NUVEM.md` or `CLAUDE.md`, with or without `#section`); otherwise `atual`.
@@ -229,6 +230,7 @@ PROMOTE_MAX_REWORK = 1  # a canary can be promoted with at most this much rework
 EFFORTS = ["low"] + EFFORT_LADDER  # the efforts a canary `de=` and `esforco=` accept
 CANARY_FILTERS = ["processo"]  # the only stage filter: process stages (decision 14)
 CANARY_KEYS = ["papel", "de", "modelo", "esforco", "filtro", "n", "volta"]  # the fields of `canario add` after the id
+CANARIO_HELP = "canaries B (phase) and C (tester), A is history: add <id> papel= de=\"<model> <effort>\" [modelo=] [esforco=] [filtro=processo] n= volta= | end <id> [motivo=] | usar <fase|reteste|testador> '#n' modelo= esforco= (read-only: `canario=<id> modelo=<m> esforco=<e>` or `atual`)"  # the help of `canario` (the list of commands and `canario --help`)
 CANARY_BUSY = ("ativo", "em avaliação")  # the canary still running: its role has no candidate and `usar` may offer it
 CANARY_FULL = ("em avaliação", "encerrado")  # reached n: a later session runs outside it
 CANARY_FINAL = ("revertido", "terminado pelo dono")  # the states that never change again
@@ -1148,7 +1150,7 @@ def candidates_text(rows):
                      for u in rows if u.get("candidato")) or "nenhum"
 
 
-# --- canaries A and B (stage #1889, phase QM3, decisions 12 to 15) ---
+# --- canaries (stage #1889, phase QM3, decisions 12 to 15; B for the phase and C for the tester since #2165, A is history) ---
 
 def canary_list(meta):
     return meta.get("canarios") or []
@@ -2712,7 +2714,8 @@ def build_parser():
     sp.add_argument("pairs", nargs="*", help="only to report a missing --feito")
     sp.add_argument("--feito", nargs="*", default=None, metavar="campo=valor",
                     help="the recovery is done: desde=<ISO> ate=<ISO> [linhas=<k>] (it takes the pairs itself: the positionals of an older argparse come out empty)")
-    sp = add("canario", cmd_canario, "canaries A and B: add <id> papel= de=\"<model> <effort>\" [modelo=] [esforco=] [filtro=processo] n= volta= | end <id> [motivo=] | usar <papel> '#n' modelo= esforco= (read-only: `canario=<id> modelo=<m> esforco=<e>` or `atual`)")
+    sp = add("canario", cmd_canario, CANARIO_HELP)
+    sp.description = CANARIO_HELP
     sp.add_argument("action", help="add, end or usar")
     sp.add_argument("args", nargs="*", help="the id and campo=valor pairs (add, end) or the role, '#n' and pairs (usar)")
     sp = add("merged", cmd_merged, "records a stage merged into main (without repeating)")

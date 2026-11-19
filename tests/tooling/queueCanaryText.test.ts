@@ -1,5 +1,6 @@
 // @vitest-environment node
 // Stage #2165: canary A (retest on Haiku) was promoted and canary C (tester on Haiku) is tried.
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { between, section } from '../support/textSlice';
@@ -11,6 +12,7 @@ const CANARIES = between(
   '**Canaries B and C**',
   '**Child that waits for the coordinator**',
 );
+const PAINEL = '.claude/skills/implementar-fila/painel/painel.py';
 const ADD_C =
   'canario <folder> add C papel=testador de="Sonnet medium" modelo=Haiku esforco=medium n=12 volta=2';
 
@@ -45,5 +47,18 @@ describe('implementar-fila: retest on Haiku, canary C on the tester', () => {
       l.startsWith('painel.py canario <folder> usar'),
     );
     expect(cmd).toContain('testador');
+  });
+
+  it('the `canario` help and the painel.py docstring name canaries B and C and list `testador` in `usar`', () => {
+    const help = execFileSync('python3', [PAINEL, 'canario', '--help'], {
+      encoding: 'utf8',
+    });
+    const docstring = readFileSync(PAINEL, 'utf8').split('"""')[1] ?? '';
+    for (const text of [help, docstring]) {
+      expect(text).toContain('<fase|reteste|testador>');
+      expect(text).toMatch(/\bB\b/);
+      expect(text).toMatch(/\bC\b/);
+      expect(text).not.toContain('canaries A and B');
+    }
   });
 });
