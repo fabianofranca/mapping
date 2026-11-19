@@ -88,7 +88,7 @@ describe('implementar-fila: in-run questions by text (decisions 1 and 13)', () =
     const item = between(economy, '10. **The chat stays almost silent.**', '\n11.');
     expect(item).toContain('without case');
     expect(item).toMatch(
-      /bare verb counts when exactly one question of that verb is open/,
+      /bare verb counts when exactly one question of its pair of verbs is open/,
     );
     expect(item).toMatch(/Only the owner's own message in the queue chat counts/);
     expect(item).toContain('"o dono aprovou"');
@@ -187,6 +187,19 @@ describe('implementar-fila: each question has its notification, line, two comman
     expect(direction).toMatch(/`manter #<n>` only closes the question/);
     expect(direction).toContain('resposta="fase avisou"');
     expect(direction).toMatch(/opens no other/);
+  });
+});
+
+describe('implementar-fila: a declined question is not asked again (code review)', () => {
+  it('esperar and manter record the answer and the same run or direction is not asked again', () => {
+    expect(stuck).toContain('resposta="esperar (run <id>)"');
+    expect(stuck).toMatch(/same `run` is not asked again/);
+    expect(direction).toContain('resposta="manter"');
+    expect(direction).toMatch(/same direction \(same file\) is not asked again/);
+  });
+
+  it('the Pause rule no longer cites the picker option', () => {
+    expect(changes).not.toContain('"Segurar"');
   });
 });
 

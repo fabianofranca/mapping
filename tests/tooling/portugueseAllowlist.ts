@@ -1469,11 +1469,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'owner-chat',
   },
   {
-    term: 'Segurar',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
     term: 'Começar nesta ordem (Recomendado)',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
