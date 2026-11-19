@@ -1015,6 +1015,55 @@ button.tree-toggle:hover {
   border-bottom: 1px solid var(--color-border);
 }
 
+/* Notices window, narrow (stage #1783, CL1): the kind filters wrap into rows instead of spilling
+   out of the window, the headers end in an ellipsis and the annotation cell breaks at spaces. */
+.notices-kinds {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.notices-table thead th {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notices-table .notices-cell {
+  overflow-wrap: break-word;
+}
+
+@container bottom-window (max-width: 470px) {
+  .notices-kinds .segmented {
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .notices-kinds .segmented .segmented-item {
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--control-radius);
+  }
+
+  .notices-table .list-col-marking {
+    width: 30%;
+  }
+
+  .notices-table .list-col-layer {
+    width: 20%;
+  }
+
+  .notices-table .list-col-annotation {
+    width: 26%;
+  }
+
+  .notices-table thead th,
+  .notices-table .list-cell {
+    padding-inline: var(--space-2);
+  }
+}
+
 /* Comments window (Comments stage, CM3): thread table, filters and status badges */
 .comments-view {
   container: comments-window / inline-size;

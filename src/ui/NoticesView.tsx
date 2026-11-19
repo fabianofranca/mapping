@@ -134,7 +134,7 @@ function AccessibilitySection({
             <td class="list-cell list-cell-layer" data-label={t('list.col.layer')}>
               <LayerCell layer={layer} />
             </td>
-            <td class="list-cell" data-label={t('list.col.annotation')}>
+            <td class="list-cell notices-cell" data-label={t('list.col.annotation')}>
               <AnnotationTitle
                 project={project}
                 annotation={annotation}
@@ -171,16 +171,18 @@ export function NoticesView({ onGoToAnnotation }: NoticesViewProps) {
   return (
     <div class="list-view">
       <div class="list-filters">
-        <Segmented
-          label={t(
-            counts.unit === 'notices'
-              ? 'notices.kindFilterNotices'
-              : 'notices.kindFilter',
-          )}
-          items={kindItems(counts, counts.present, kind)}
-          value={kind ?? 'all'}
-          onSelect={(id) => (ui.noticeKind.value = id === 'all' ? null : id)}
-        />
+        <div class="notices-kinds">
+          <Segmented
+            label={t(
+              counts.unit === 'notices'
+                ? 'notices.kindFilterNotices'
+                : 'notices.kindFilter',
+            )}
+            items={kindItems(counts, counts.present, kind)}
+            value={kind ?? 'all'}
+            onSelect={(id) => (ui.noticeKind.value = id === 'all' ? null : id)}
+          />
+        </div>
         <Choice
           checked={ui.noticesInUseOnly.value}
           label={t('notices.inUseOnly')}
@@ -199,19 +201,28 @@ export function NoticesView({ onGoToAnnotation }: NoticesViewProps) {
         </p>
       ) : (
         <div class="list-scroll">
-          <table class="list-table list-table-fixed" aria-label={t('notices.title')}>
+          <table
+            class="list-table list-table-fixed notices-table"
+            aria-label={t('notices.title')}
+          >
             <thead>
               <tr>
-                <th scope="col" class="list-col-marking">
+                <th scope="col" class="list-col-marking" title={t('list.col.marking')}>
                   {t('list.col.marking')}
                 </th>
-                <th scope="col" class="list-col-layer">
+                <th scope="col" class="list-col-layer" title={t('list.col.layer')}>
                   {t('list.col.layer')}
                 </th>
-                <th scope="col" class="list-col-annotation">
+                <th
+                  scope="col"
+                  class="list-col-annotation"
+                  title={t('list.col.annotation')}
+                >
                   {t('list.col.annotation')}
                 </th>
-                <th scope="col">{t('notices.col.value')}</th>
+                <th scope="col" title={t('notices.col.value')}>
+                  {t('notices.col.value')}
+                </th>
               </tr>
             </thead>
             {list.map((group, index) => (
@@ -250,7 +261,10 @@ export function NoticesView({ onGoToAnnotation }: NoticesViewProps) {
                       >
                         <LayerCell layer={layer} />
                       </td>
-                      <td class="list-cell" data-label={t('list.col.annotation')}>
+                      <td
+                        class="list-cell notices-cell"
+                        data-label={t('list.col.annotation')}
+                      >
                         <AnnotationTitle
                           project={project}
                           annotation={annotation}
