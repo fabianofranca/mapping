@@ -4,7 +4,10 @@
 // limit command do not copy the resume arguments (decision 2, finding 3 of #1789), that the merge
 // is asked by text and served late, after the End (decision 3, finding 4), and that the End runs
 // `painel.py end` (decision 6).
-import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { between, section } from '../support/textSlice';
 
@@ -72,7 +75,7 @@ describe('implementar-fila: merge asked by text (decision 3, finding 4 of #1789)
     expect(dflt).toContain('wait="merge pedido ao dono: PR #<p>"');
     expect(dflt).toContain('status="esperando dono"');
     expect(dflt).toMatch(/end the turn/);
-    expect(dflt).toMatch(/no `child`/);
+    expect(dflt).toContain('child= wait=');
   });
 
   it('"mesclar #<n>" runs the pre-merge check and merges; "ainda não #<n>" only logs', () => {
@@ -112,5 +115,47 @@ describe('docs/FLOW.md: the merge is requested by text (decision 3)', () => {
     expect(flow).toContain('The merge of each epic is requested from the owner by text');
     expect(flow).toContain('`mesclar #<n>`');
     expect(flow).not.toContain('requested from the owner through the question picker');
+  });
+});
+
+describe('implementar-fila: the merge recipe produces a row that `show` lists', () => {
+  const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
+  const NOW = '2026-11-10T10:00:00Z';
+  const py = (...args: string[]): string =>
+    execFileSync('python3', [SCRIPT, '--now', NOW, ...args], { encoding: 'utf8' });
+
+  it('a row that still has the closing phase `child` is listed after the recipe command', () => {
+    const merge = section(skill, '## Merge');
+    expect(merge).toContain(
+      `status="esperando dono" child= wait="merge pedido ao dono: PR #<p>"`,
+    );
+    const dir = mkdtempSync(path.join(tmpdir(), 'skill-fixes-'));
+    try {
+      py('init', dir);
+      py('start', dir, '--paralelo', '2');
+      py(
+        'row',
+        dir,
+        '#5',
+        'title=Item',
+        'status=esperando dono',
+        'child=sess-1',
+        'wait=CI esperando',
+      );
+      py(
+        'row',
+        dir,
+        '#5',
+        'status=esperando dono',
+        'child=',
+        'wait=merge pedido ao dono: PR #9',
+      );
+      const line = py('show', dir)
+        .split('\n')
+        .find((l) => l.startsWith('merge pedido ao dono:'));
+      expect(line).toMatch(/^merge pedido ao dono: #5 \(PR #9, /);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
