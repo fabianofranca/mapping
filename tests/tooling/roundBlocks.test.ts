@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Stage #424 (PL1, decision 2): the full round runs in parallel blocks (5, stage #841, RB4). The blocks table
+// Stage #424 (PL1, decision 2): the full round runs in parallel blocks (5, stage #841, RB4; 6 since stage #2024). The blocks table
 // of docs/TESTING-NUVEM.md is checked against the steps of docs/TESTING.md: a new test script (R26)
 // or a new step outside the table makes this test fail until it is put in a block.
 import { readFileSync } from 'node:fs';
@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 /**
  * Stage #841 (decision 6): the generated guide of each block has up to 200 thousand characters. TE1 (#1557)
  * raised the ceiling by 500 (to 200,500): the additions of R23.12 and R23.13 (dark theme) took
- * block 5 to 200.2 thousand, and the five blocks were already stuck to the ceiling. Stage #824 (ID8, English
+ * block 5 to 200.2 thousand, and the five blocks of that time were already stuck to the ceiling. Stage #824 (ID8, English
  * translation plus the new steps R8.6 and R11.15) left it as it was: the largest block, 3, measures 200,463. CL1 of #1134
  * (#2012) raised it by another 500 (to 201,000): the text fixes of R3.19, R11.4, R17.32, R17.59 and R29.10 took block 5 to 200.7 thousand.
  */
@@ -24,15 +24,9 @@ const MAX_BLOCK_BASE_CHARS = 45_000;
 const GUIDE = readFileSync('docs/TESTING.md', 'utf8');
 const CLOUD = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
 
-/**
- * Test scripts that run outside the 5 blocks of the table, in a sixth session of the round (PG6 of #883: R30, Pages;
- * no block had room for it under `MAX_BLOCK_GUIDE_CHARS`; the final rule is the owner's, in `bug` #2024).
- */
-const SIXTH_SESSION = ['R30'];
-
 const STEP_RE = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^|]*\|/;
 
-/** The steps of the main test scripts (R0 to R29), in the order of the guide, outside the on-demand test scripts. */
+/** The steps of the main test scripts (R0 to R30), in the order of the guide, outside the on-demand test scripts. */
 function guideSteps(): string[] {
   const lines = GUIDE.split('\n');
   const start = lines.findIndex((l) => /^## 8\. Test scripts/.test(l));
@@ -118,24 +112,23 @@ function readBlocks(steps: string[]): Block[] {
   return blocks;
 }
 
-const allSteps = guideSteps();
-const steps = allSteps.filter((s) => !SIXTH_SESSION.includes(s.split('.')[0] as string));
+const steps = guideSteps();
 const blocks = readBlocks(steps);
 const blockOf = (step: string): number[] =>
   blocks.filter((b) => b.steps.includes(step)).map((b) => b.n);
 
-describe('split of the full round into 5 blocks (stages #424 and #841)', () => {
-  it('the guide has the steps from R0 to R29 and the table has 5 blocks numbered 1 to 5', () => {
+describe('split of the full round into blocks (stages #424, #841 and #2024)', () => {
+  it('the guide has the steps from R0 to R30 and the table has 6 blocks numbered 1 to 6', () => {
     expect(steps.length).toBeGreaterThan(200);
     expect(steps.some((s) => s.startsWith('R17.'))).toBe(true);
     expect(steps.some((s) => s.startsWith('R26.'))).toBe(true);
-    expect(blocks.map((b) => b.n)).toEqual([1, 2, 3, 4, 5]);
+    expect(blocks.map((b) => b.n)).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
-  it('every step from R0 to R29 is in exactly one block, and R0 in all of them', () => {
+  it('every step from R0 to R30 is in exactly one block, and R0 in all of them', () => {
     for (const s of steps) {
       const where = blockOf(s);
-      if (scriptOf(s) === 'R0') expect(where, s).toEqual([1, 2, 3, 4, 5]);
+      if (scriptOf(s) === 'R0') expect(where, s).toEqual([1, 2, 3, 4, 5, 6]);
       else expect(where, `${s} must be in a single block`).toHaveLength(1);
     }
   });
@@ -212,9 +205,9 @@ describe('split of the full round into 5 blocks (stages #424 and #841)', () => {
       ) => string;
       buildGuideBase: (md: string, scripts: string[], o?: { commit?: string }) => string;
     } = await import('../../scripts/testing/round-guide.mjs');
-    expect(blocks.length).toBe(5);
+    expect(blocks.length).toBe(6);
     for (const b of blocks) {
-      // As in item 1 of "modo completo, bloco k de 5": the test script that the table splits between blocks comes in only
+      // As in item 1 of "modo completo, bloco k de n": the test script that the table splits between blocks comes in only
       // through the block's step range (`R6.3-R6.7`), without the rest of the test script.
       const out = mod.buildRoundGuide(GUIDE, b.guideItems, {
         commit: 'abc1234',
@@ -227,32 +220,6 @@ describe('split of the full round into 5 blocks (stages #424 and #841)', () => {
       expect(base.length, `base of block ${b.n}`).toBeLessThanOrEqual(
         MAX_BLOCK_BASE_CHARS,
       );
-    }
-  });
-
-  it('the scripts of the sixth session exist in the guide, are in no block and their guide fits the limit', async () => {
-    const mod: {
-      buildRoundGuide: (
-        md: string,
-        scripts: string[],
-        o?: { commit?: string; mandatoryOnly?: boolean },
-      ) => string;
-    } = await import('../../scripts/testing/round-guide.mjs');
-    for (const script of SIXTH_SESSION) {
-      expect(
-        allSteps.some((s) => s.startsWith(`${script}.`)),
-        script,
-      ).toBe(true);
-      expect(
-        blocks.some((b) => b.scripts.includes(script)),
-        script,
-      ).toBe(false);
-      const out = mod.buildRoundGuide(GUIDE, ['R0', script], {
-        commit: 'abc1234',
-        mandatoryOnly: true,
-      });
-      expect(out, script).toMatch(new RegExp(`^### ${script} `, 'm'));
-      expect(out.length, script).toBeLessThanOrEqual(MAX_BLOCK_GUIDE_CHARS);
     }
   });
 });

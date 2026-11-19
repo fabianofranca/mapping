@@ -928,7 +928,7 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   { term: 'passagem por contexto', source: 'docs/FLOW.md', group: 'session-notices' },
   { term: 'pode mesclar', source: 'docs/FLOW.md', group: 'session-notices' },
   { term: 'sem R21', source: 'docs/FLOW.md', group: 'session-notices' },
-  { term: 'Bloco k de 5', source: 'docs/TESTING-NUVEM.md', group: 'session-notices' },
+  { term: 'Bloco k de n', source: 'docs/TESTING-NUVEM.md', group: 'session-notices' },
   {
     term: 'Modo: completo, bloco',
     source: 'docs/TESTING-NUVEM.md',

@@ -86,7 +86,7 @@ describe('QM2 — TESTING-NUVEM, "Report", item 5: the subagents line of the tes
     for (const start of [
       '`Relato em`',
       '`Grupo 2 de 3: relato em`',
-      '`Bloco 2 de 5: relato em`',
+      '`Bloco 2 de 6: relato em`',
     ]) {
       const example = between(notice(), start, '")');
       const sub = example.indexOf('subagentes');

@@ -203,7 +203,7 @@ describe('implementar-fila: coordinator fine-tuning (FC2)', () => {
     'For the tester',
     'Directed round in groups',
     'Retest together',
-    'Full round in 5 blocks',
+    'Full round in blocks',
   ];
 
   it('lists the exact titles of the FLOW.md messages and the read command (decision 2)', () => {
