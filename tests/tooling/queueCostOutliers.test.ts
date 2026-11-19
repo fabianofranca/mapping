@@ -39,7 +39,7 @@ function ficha(o: StageOptions): string {
   const codes = Array.from({ length: o.phases ?? 2 }, (_, i) => `P${i + 1}:#1:high`).join(
     ',',
   );
-  return `dep=nenhuma | nivel=impact: low | mcp=não | schema=não | epico=epic/x | fases=${
+  return `fases=${
     o.fases ?? codes
   } | toca=${o.toca ?? PRODUCT_TOCA} | testador=${o.testador ?? 'R12'} ; visual=nenhuma ; Sonnet medium`;
 }
