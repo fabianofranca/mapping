@@ -54,10 +54,10 @@ describe('implementar-fila: retest on Haiku, canary C on the tester', () => {
       encoding: 'utf8',
     });
     const docstring = readFileSync(PAINEL, 'utf8').split('"""')[1] ?? '';
-    for (const text of [help, docstring]) {
-      expect(text).toContain('<fase|reteste|testador>');
-      expect(text).toMatch(/\bB\b/);
-      expect(text).toMatch(/\bC\b/);
+    for (const raw of [help, docstring]) {
+      const text = raw.replace(/\s+/g, ' ');
+      expect(text).toContain('<fase|correção|reteste|testador>');
+      expect(text).toMatch(/\bB\b.*\bC\b/);
       expect(text).not.toContain('canaries A and B');
     }
   });

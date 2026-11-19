@@ -129,7 +129,7 @@ sessoes, estado, motivo, fim}` plus what every write recomputes (`contadas`, `re
 tries a cheaper configuration (`modelo` and `esforco` default to those of `de`; at least one has to change; `filtro` only `processo`;
 `n` and `volta` positive; a repeated id, a role without ruler or any other bad field is code 2 and nothing is written);
 `canario DIR end <id> [motivo="…"]` makes it `terminado pelo dono` (not a `revertido` one); both go into `apply`.
-`canario DIR usar <fase|reteste|testador> '#n' modelo=<m> esforco=<e>` only reads (outside `apply`) and prints `canario=<id> modelo=<m> esforco=<e>` when the
+`canario DIR usar <fase|correção|reteste|testador> '#n' modelo=<m> esforco=<e>` only reads (outside `apply`) and prints `canario=<id> modelo=<m> esforco=<e>` when the
 requested configuration is the `de` of an `ativo` canary of the role that has not counted `n` and, with `filtro=processo`, the ficha of `#n`
 passes (decision 14: `testador=nenhum` and every citation of `toca=` is `.claude/`, `.github/`, `scripts/ci/`, `tests/tooling/`, `changelog/`,
 `docs/design-system/`, `docs/PROCESS.md`, `docs/FLOW.md`, `docs/TESTING-NUVEM.md` or `CLAUDE.md`, with or without `#section`); otherwise `atual`.
@@ -230,7 +230,7 @@ PROMOTE_MAX_REWORK = 1  # a canary can be promoted with at most this much rework
 EFFORTS = ["low"] + EFFORT_LADDER  # the efforts a canary `de=` and `esforco=` accept
 CANARY_FILTERS = ["processo"]  # the only stage filter: process stages (decision 14)
 CANARY_KEYS = ["papel", "de", "modelo", "esforco", "filtro", "n", "volta"]  # the fields of `canario add` after the id
-CANARIO_HELP = "canaries B (phase) and C (tester), A is history: add <id> papel= de=\"<model> <effort>\" [modelo=] [esforco=] [filtro=processo] n= volta= | end <id> [motivo=] | usar <fase|reteste|testador> '#n' modelo= esforco= (read-only: `canario=<id> modelo=<m> esforco=<e>` or `atual`)"  # the help of `canario` (the list of commands and `canario --help`)
+CANARIO_HELP = "canaries B (phase) and C (tester), A is history: add <id> papel= de=\"<model> <effort>\" [modelo=] [esforco=] [filtro=processo] n= volta= | end <id> [motivo=] | usar <fase|correção|reteste|testador> '#n' modelo= esforco= (read-only: `canario=<id> modelo=<m> esforco=<e>` or `atual`)"  # the help of `canario` (the list of commands and `canario --help`)
 CANARY_BUSY = ("ativo", "em avaliação")  # the canary still running: its role has no candidate and `usar` may offer it
 CANARY_FULL = ("em avaliação", "encerrado")  # reached n: a later session runs outside it
 CANARY_FINAL = ("revertido", "terminado pelo dono")  # the states that never change again
