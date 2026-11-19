@@ -199,6 +199,19 @@ describe('probe at load', () => {
     expect(book.hasLibraryFonts).toBe(true);
     expect(book.fontFor('Gsub', 400, false)).not.toBe(book.embeddedFor('Gsub', 400));
   });
+
+  it('the embedded stand-in follows the same first-match rule as `fontFor`', () => {
+    const book = createFontBook([
+      { family: 'Gsub', weight: '400', style: 'normal', path: 'fonts/Gsub.ttf', bytes },
+    ]);
+    const mono = book.embeddedFor('monospace', 400);
+    const sans = book.embeddedFor('sans-serif', 400);
+    expect(mono).not.toBe(sans);
+    // The library font comes first in the stack: its stand-in is proportional, not the mono face.
+    expect(book.embeddedFor('Gsub, monospace', 400)).toBe(sans);
+    // A mono family first: the mono face, as `fontFor` resolves it.
+    expect(book.embeddedFor('monospace, Gsub', 400)).toBe(mono);
+  });
 });
 
 describe('guardedLayout', () => {

@@ -122,9 +122,6 @@ function candidateOf(entry: LoadedFont): Candidate | null {
   };
 }
 
-const isMonoStack = (family: string): boolean =>
-  familyNames(family).some((name) => MONO_FAMILY.test(name));
-
 export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
   const candidates: Candidate[] = [];
   for (const entry of extra) {
@@ -140,6 +137,8 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
     )[0];
     return best?.font ?? null;
   };
+  const isLibraryFamily = (name: string): boolean =>
+    candidates.some((c) => c.family === name.toLowerCase());
   const resolved = new Map<string, Font>();
   const resolve = (family: string, weight: number, italic: boolean): Font => {
     const names = familyNames(family);
@@ -156,9 +155,14 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
   };
   return {
     hasLibraryFonts: candidates.length > 0,
+    // The embedded face `resolve` would end on: the first name that is a library font or a mono name.
     embeddedFor(family, weight) {
       const b = builtinFonts();
-      if (isMonoStack(family)) return weight >= BOLD_FROM ? b.monoBold : b.mono;
+      const first = familyNames(family).find(
+        (name) => isLibraryFamily(name) || MONO_FAMILY.test(name),
+      );
+      if (first !== undefined && MONO_FAMILY.test(first) && !isLibraryFamily(first))
+        return weight >= BOLD_FROM ? b.monoBold : b.mono;
       return weight >= BOLD_FROM ? b.sansBold : b.sans;
     },
     // Cache by family/weight/italic: the measurer asks for the font once per word.
