@@ -700,18 +700,22 @@ function meantAnchors(project: Project, pending: readonly Change[]): Map<string,
   for (const m of project.markings) if (m.anchor) meant.set(m.id, m.anchor.to);
   for (const c of pending) {
     if (c.entity !== 'marking') continue;
-    if (c.kind === 'create') {
-      // A created marking carries its anchor inside the whole value.
-      const to = isRecord(c.to) && isRecord(c.to.anchor) ? c.to.anchor.to : undefined;
-      if (typeof to === 'string') meant.set(c.entityId, to);
-      continue;
-    }
-    if (c.field !== 'anchor') continue;
-    const target = isRecord(c.to) ? c.to.to : undefined;
-    if (typeof target === 'string') meant.set(c.entityId, target);
-    else meant.delete(c.entityId);
+    const target = anchorTargetOf(c);
+    if (target === undefined) continue;
+    if (target === null) meant.delete(c.entityId);
+    else meant.set(c.entityId, target);
   }
   return meant;
+}
+
+/** The anchor target a marking change decides: a string, `null` to remove it, `undefined` if it says nothing about it. A creation carries its anchor inside the whole value. */
+function anchorTargetOf(c: Change): string | null | undefined {
+  if (c.kind === 'create') {
+    const anchor = isRecord(c.to) ? c.to.anchor : undefined;
+    return isRecord(anchor) && typeof anchor.to === 'string' ? anchor.to : undefined;
+  }
+  if (c.field !== 'anchor') return undefined;
+  return isRecord(c.to) && typeof c.to.to === 'string' ? c.to.to : null;
 }
 
 export interface AcceptedValidation {
