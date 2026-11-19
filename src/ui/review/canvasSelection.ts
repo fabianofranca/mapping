@@ -3,6 +3,7 @@ import {
   projectIndex,
   proposalIndex,
   type Change,
+  type Proposal,
   type ReviewTarget,
 } from '../../model';
 import { revealItem, type RevealSession } from '../../store/reveal';
@@ -67,12 +68,42 @@ function carriedPage(c: Change): string | undefined {
   return undefined;
 }
 
+/** The container a created marking sits in (its creation change says it), or `undefined`. */
+function createdIn(c: Change): string | undefined {
+  return isRecord(c.to) && typeof c.to.containerId === 'string'
+    ? c.to.containerId
+    : undefined;
+}
+
+/**
+ * The page a created item gets from the changes that create it: its own creation carries the
+ * `pageId` of a root, and a marking inside a created container takes the container's (PG4-a).
+ */
+function createdPageOf(
+  proposal: Proposal,
+  itemId: string,
+  depth = 0,
+): string | undefined {
+  if (depth > 4) return undefined;
+  const creation = proposal.changes.find(
+    (c) => c.kind === 'create' && c.entityId === itemId && c.field === null,
+  );
+  if (!creation) return undefined;
+  const own = carriedPage(creation);
+  if (own !== undefined) return own;
+  const container = createdIn(creation);
+  return container === undefined
+    ? undefined
+    : createdPageOf(proposal, container, depth + 1);
+}
+
 /**
  * The page where a review item is, in the view being shown (stage #883, PG4, decision 16): the Current
  * view has an item moved by a page change on its origin page, the Proposed view on its destination.
- * An item that only the proposal creates is not in the Current view: the `pageId` its change carries
- * answers. `undefined` when the item is on no page (a change of the page list, a new image on the
- * first page of a view that lacks it).
+ * An item that only the proposal creates is not in the Current view: the `pageId` of its creation (or
+ * of the container it is created in) answers, and so does the one the target change carries.
+ * `undefined` when the item is on no page (a change of the page list, a new image on the first page
+ * of a view that lacks it).
  */
 export function reviewPageOf(
   review: Pick<ReviewState, 'derived'>,
@@ -83,8 +114,11 @@ export function reviewPageOf(
   const found = shown ? projectIndex(shown).pageOf.get(itemId) : undefined;
   if (found !== undefined) return found;
   const proposal = review.derived.proposal.peek();
+  if (!proposal) return undefined;
+  const created = createdPageOf(proposal, itemId);
+  if (created !== undefined) return created;
   const change =
-    proposal && target?.level === 'change' && target.id
+    target?.level === 'change' && target.id
       ? proposalIndex(proposal).changes.get(target.id)
       : undefined;
   return change ? carriedPage(change) : undefined;

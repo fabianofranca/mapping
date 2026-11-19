@@ -416,3 +416,77 @@ describe('visible badges', () => {
     expect(visibleBadges(['created'], rect(30), 4)).toEqual(['created']);
   });
 });
+
+describe('reviewMarks: composite space (CL1, pending defect PG4-b)', () => {
+  /** M4 (in I2) lands inside I1: the container changes, so the `space` change carries both sides. */
+  function crossContainer() {
+    const base = sampleProject();
+    const after = moveMarking(base, 'M4', -1000, 0);
+    return { base, after, moved: after.markings.find((m) => m.id === 'M4') };
+  }
+
+  it('accepted: the ghost is in the origin space (Proposed) and in the destination one (Current)', () => {
+    const { base, after, moved } = crossContainer();
+    expect(moved?.containerId).not.toBe('I2');
+    const p = propose(base, after);
+    const i2 = base.containers.find((i) => i.id === 'I2');
+    expect(marks(p, base, 'proposed').ghosts).toEqual([
+      expect.objectContaining({
+        key: 'moved:M4',
+        placement: i2?.placement,
+        rect: { x: 0, y: 0, width: 100, height: 100 },
+      }),
+    ]);
+    const current = marks(p, base, 'current').ghosts;
+    const destination = base.containers.find((i) => i.id === moved?.containerId);
+    expect(current).toEqual([
+      expect.objectContaining({
+        key: 'moved:M4',
+        placement: destination?.placement,
+        rect: moved?.rect,
+      }),
+    ]);
+  });
+
+  it('rejected: the Current view draws the ghost of the rejected destination, in its space', () => {
+    const { base, after, moved } = crossContainer();
+    const p = propose(base, after);
+    const rejected = decided(p, base, { level: 'item', id: 'M4' }, 'rejected');
+    const destination = base.containers.find((i) => i.id === moved?.containerId);
+    expect(marks(rejected, base, 'current').ghosts).toEqual([
+      expect.objectContaining({
+        key: 'rejected:M4',
+        placement: destination?.placement,
+        rect: moved?.rect,
+        badges: ['rejected'],
+      }),
+    ]);
+    expect(marks(rejected, base, 'proposed').ghosts).toEqual([]);
+  });
+
+  it('rejected creation inside a created container: the ghost has the container placement', () => {
+    const base = sampleProject();
+    let after = addBackgroundContainer(base, {
+      id: 'IN',
+      width: 400,
+      height: 300,
+      background: '#FFFFFF',
+    });
+    after = createMarking(after, {
+      id: 'CN',
+      containerId: 'IN',
+      rect: { x: 10, y: 20, width: 60, height: 40 },
+      name: 'Inside',
+    });
+    const p = propose(base, after);
+    const rejected = decided(p, base, { level: 'item', id: 'CN' }, 'rejected');
+    const created = after.containers.find((i) => i.id === 'IN');
+    expect(marks(rejected, base, 'current').ghosts).toEqual([
+      expect.objectContaining({
+        key: 'rejected:CN',
+        placement: created?.placement,
+        rect: { x: 10, y: 20, width: 60, height: 40 },
+      }),
+    ]);
+  });
+});
