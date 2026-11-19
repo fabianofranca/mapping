@@ -14,7 +14,7 @@ const skill = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
 const orchestrator = section(flow, '## Orchestrator — step by step');
 const fixPhase = section(flow, '## Fix phase');
 const groups = section(flow, '## Directed round in groups');
-const fiveBlocks = section(flow, '## Full round in 5 blocks');
+const fiveBlocks = section(flow, '## Full round in blocks');
 const limitations = section(flow, '### Known limitations');
 const candidates = section(skill, '## 1. Candidates');
 
@@ -94,10 +94,10 @@ describe('DN1 — the tester that does not notify follows the same (decision 3)'
     expect(l).not.toMatch(/calls the owner/i);
   });
 
-  it('Full round in 5 blocks cites **Limits** and keeps the send_later and the five notices', () => {
+  it('Full round in blocks cites **Limits** and keeps the send_later and one notice per block', () => {
     const l = fallback(fiveBlocks);
     expect(l).toContain('60 min `send_later`');
-    expect(l).toContain('**five notices**');
+    expect(l).toContain('**one notice per block**');
     expect(l).toContain(
       'same as the phase that does not report (**Limits** paragraph of "Orchestrator — step by step")',
     );

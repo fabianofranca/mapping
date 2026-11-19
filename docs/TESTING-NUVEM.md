@@ -8,7 +8,7 @@ The session is created by the **orchestrator** of the automated flow (`docs/PROC
 - **Directed by the findings of a previous report:** "… in `modo dirigido`: findings 2 to 5 of the report at <comment link>. `<tail>`" (finding number or code, such as "A1 to A3")
 - **Directed by the phases of a stage:** "… in `modo dirigido`: phases X and Y of stage #301. `<tail>`"
 - **Full:** "Read `docs/TESTING-NUVEM.md` and run the `modo completo`. Branch `epic/x`, commit `abc1234`. `Relato na sub-issue #123`. `Coordenador: session_…`." (R0 to R28; order in "What to run")
-- **Full, in a block:** "Read `docs/TESTING-NUVEM.md` and run the `modo completo, bloco k de 5`. `<tail>`" (only the scripts of block k in the table of "Full round in blocks")
+- **Full, in a block:** "Read `docs/TESTING-NUVEM.md` and run the `modo completo, bloco k de n`. `<tail>`" (only the scripts of block k in the table of "Full round in blocks")
 - **Directed, in a group:** "… in `modo dirigido`, `grupo k de n`: R12. `<tail>`" (only the scripts of group k from `round-guide.mjs --grupos`; see "Directed round in groups")
 - **Only a link to a Mapping PR** ("Test <link>"): treat it as directed by the scripts the PR touches; read the PR body and files, build the list and follow the usual mode.
 
@@ -93,7 +93,7 @@ Rules of this session:
 
 ## What to run
 
-**Full round (default).** All the scripts, **R0 to R29** (without RP, RF, RA, RB and RT), in the order of the guide's "Start here" table and with the dependencies at the beginning of section 8: R0, R1, R2, section 6 (test repository and MCP), R3, R4, R6, R7, R5, R8 and R9 to R29. Section 9 of the guide does not come in. With `bloco k de 5` in the message, you run only block k (see "Full round in blocks").
+**Full round (default).** All the scripts, **R0 to R30** (without RP, RF, RA, RB and RT), in the order of the guide's "Start here" table and with the dependencies at the beginning of section 8: R0, R1, R2, section 6 (test repository and MCP), R3, R4, R6, R7, R5, R8 and R9 to R30. Section 9 of the guide does not come in. With `bloco k de n` in the message, you run only block k (see "Full round in blocks").
 
 **R21 and the release tag; a step that requires the owner.** Before R21, or before a step that only a person could do: `node scripts/testing/cloud.mjs secao consulta.regras`. R21 tests the real release and uses the tag in the message (`sem R21` takes it out of the round).
 
@@ -121,7 +121,7 @@ In the three cases, **do not ask for confirmation**: build the list and put it a
 
 ## Full round in blocks
 
-The full round (R0 to R29) runs in **5 simultaneous sessions**, one per block, with the fixed split below. Each session sets up the environment, runs the whole R0 and the scripts of its block, and delivers its own report; a coordinator (the stage's orchestrator or a standalone chat of the owner, see [`docs/FLOW.md`](FLOW.md)) creates the five and summarizes.
+The full round (R0 to R30) runs in **simultaneous sessions, one per block of the table**. Each sets up the environment, runs the whole R0 and its block's scripts and delivers its own report; a coordinator (the stage's orchestrator or the owner's standalone chat, see [`docs/FLOW.md`](FLOW.md)) creates them and summarizes.
 
 | Block | Scripts, in the order of the guide                                                      | Steps |
 | ----- | --------------------------------------------------------------------------------------- | ----- |
@@ -130,17 +130,18 @@ The full round (R0 to R29) runs in **5 simultaneous sessions**, one per block, w
 | 3     | R0, section 6, R12, R18, R19, R27 and R29                                               | 147   |
 | 4     | R0, section 6, R4, R6.8a to R6.11, R9, R10, R13, R16, R22, R24, R28 and the visual pass | 169   |
 | 5     | R0, section 6, R11, R17, R20, R21 and R23                                               | 142   |
+| 6     | R0, section 6 and R30                                                                   | 28    |
 
-There are 5 blocks by decision of the owner (2026-11-09). The visual pass stays in block 4 (decision 6 of stage #841). The limit of each block's generated guide (`MAX_BLOCK_GUIDE_CHARS`, in `tests/tooling/roundBlocks.test.ts`), the earlier sizes, the dependencies per block and the baselines: `cloud.mjs secao consulta.historico`.
+There are 6 blocks: 5 by decision of the owner (2026-11-09) and the 6th by #2024 (2026-11-17). The visual pass stays in block 4 (decision 6 of stage #841). The guide limit (`MAX_BLOCK_GUIDE_CHARS`), sizes, dependencies and baselines: `cloud.mjs secao consulta.historico`.
 
-**Mode `modo completo, bloco k de 5`.** The message "run the `modo completo, bloco k de 5`" (k from 1 to 5) tells you to:
+**Mode `modo completo, bloco k de n`.** The message "run the `modo completo, bloco k de n`" (k from 1 to n) tells you to:
 
-1. Build the round list with the scripts of block k and generate the round guide with them: `node scripts/testing/round-guide.mjs <scripts of the block> --out …/apoio/guia.md`; read `guia-base.md` whole and ask for the scripts through `passo` and the on-demand sections through `secao` (item 3). A script that the table splits between blocks comes in through the block's **step range** (`R6.3-R6.7`, `R6.8a-R6.11`); the guide already comes without the excerpts of section 8 and appendix A that only other blocks use. The environment, working folders and MCP are yours alone: five blocks share no folder, Chrome profile nor port.
-2. Run the **whole R0 first** (it is in all five blocks) and then the scripts of the block, in the order of the table.
-3. Report in the template of section 10: `Modo: completo, bloco k de 5 (<scripts>)`; the first line of the comment is "Full round — block k of 5"; the findings are numbered `k.1`, `k.2`… (the finding code carries the block, so the directed retest finds where it came from).
-4. The notice to the coordinator (item 5 of "Delivery") cites the block: `Bloco k de 5: relato em` <link>: …
+1. Build the round list with the scripts of block k and generate the round guide with them: `node scripts/testing/round-guide.mjs <scripts of the block> --out …/apoio/guia.md`; read `guia-base.md` whole and ask for the scripts through `passo` and the on-demand sections through `secao` (item 3). A script that the table splits between blocks comes in through the block's **step range** (`R6.3-R6.7`, `R6.8a-R6.11`); the guide already comes without the excerpts of section 8 and appendix A that only other blocks use. The environment, working folders and MCP are yours alone: blocks share no folder, Chrome profile nor port.
+2. Run the **whole R0 first** (it is in all the blocks) and then the scripts of the block, in the order of the table.
+3. Report in the template of section 10: `Modo: completo, bloco k de n (<scripts>)`; the first line of the comment is "Full round — block k of n"; the findings are numbered `k.1`, `k.2`… (the finding code carries the block, so the directed retest finds where it came from).
+4. The notice to the coordinator (item 5 of "Delivery") cites the block: `Bloco k de n: relato em` <link>: …
 
-A long block becomes "Full round — block k of 5 · Part i of n" (comments above 65 thousand characters). The `modo completo` without a block remains valid: one session runs everything.
+A long block becomes "Full round — block k of n · Part i of n" (comments above 65 thousand characters). The `modo completo` without a block remains valid: one session runs everything.
 
 **Context up to 300 thousand.** In every tester session, the main session's final context (`get_session`) stays below **300 thousand**; it is the session that guarantees it, with the subagents per batch, measuring with `node scripts/ci/contextUsage.mjs` before handing over each batch and before the notice, noting in "What got in the way" `Context per batch: <batch> <thousand>k; …; before the notice <thousand>k`. Whoever coordinates records any excess (the queue's `log` and the `roadmap` "Teto de contexto do testador"), without holding up the stage, redoing the round or calling the owner.
 
@@ -177,7 +178,7 @@ The body (chains, group mode and retests together): `node scripts/testing/cloud.
 2. **In parts if it goes over 65 thousand characters** (GitHub's limit is 65,536; check with `wc -m relato.md`): cut between sections or scripts, never in the middle of a table or a finding, and put "Part i of n" on the first line of each comment. The header and the Summary go in part 1.
 3. **End each comment with the attribution footer** that the session requires for what it writes on GitHub.
 4. **Attachments:** a comment does not accept attachments through the API. Upload the ❌ captures to the `evidencias` branch, at `<sub-issue>/achado-<n>-<name>.png`, through `docs/FLOW.md` ("Bug evidence"), in a single commit, **before** posting. Each ❌ shows the image with `![…](…?raw=true)`, **describes in text what it shows** and pastes the `mapping.json` excerpt in a code block. If the push fails: the text description and the `anexos/` files through the session's upload tool, if there is one.
-5. **Notify the coordinator** (the id at the end of the message) with the `send_message` tool of the `claude-code-remote` server (not `SendMessage`, which fails): one line with the link to the first comment, the total of ✅ and ❌, the findings by severity, `; subagentes <n> <modelo> <esforço>, …` (`; subagentes: nenhum` without any) and the measured duration (e.g. "`Relato em` <link>: 212 ✅, 3 ❌; findings: high 1, medium 1; subagentes 2 Haiku low; 19min32s; `contexto 180 mil`"). Group mode starts the line with the group (e.g. "`Grupo 2 de 3: relato em` <link>: 27 ✅, 0 ❌; subagentes: nenhum; 11min40s; `contexto 150 mil`"); block mode, with the block and the "not executed" total (e.g. "`Bloco 2 de 5: relato em` <link>: 88 ✅, 2 ❌, 2 not executed; subagentes 1 Haiku low; …; `contexto 150 mil`"). It ends with `; contexto <n> mil` (without a measure: `; contexto sem medida (<reason>)`). Without the id, skip this item.
+5. **Notify the coordinator** (the id at the end of the message) with the `send_message` tool of the `claude-code-remote` server (not `SendMessage`, which fails): one line with the link to the first comment, the total of ✅ and ❌, the findings by severity, `; subagentes <n> <modelo> <esforço>, …` (`; subagentes: nenhum` without any) and the measured duration (e.g. "`Relato em` <link>: 212 ✅, 3 ❌; findings: high 1, medium 1; subagentes 2 Haiku low; 19min32s; `contexto 180 mil`"). Group mode starts the line with the group (e.g. "`Grupo 2 de 3: relato em` <link>: 27 ✅, 0 ❌; subagentes: nenhum; 11min40s; `contexto 150 mil`"); block mode, with the block and the "not executed" total (e.g. "`Bloco 2 de 6: relato em` <link>: 88 ✅, 2 ❌, 2 not executed; subagentes 1 Haiku low; …; `contexto 150 mil`"). It ends with `; contexto <n> mil` (without a measure: `; contexto sem medida (<reason>)`). Without the id, skip this item.
 6. **Paste the Summary in the conversation**, with the full path of `relato.md`, and say which steps stayed "not executed (needs the owner)" and whether any finding prevents use with people.
 
 You do not create a branch, do not commit nor open a PR, and do not edit anything in the repository. Do not delete the working folder.
