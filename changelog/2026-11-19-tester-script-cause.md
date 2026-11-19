@@ -1,4 +1,4 @@
-# Tester: script mismatch versus product defect — [Não lançado] (épico `epic/tester-script-cause`, PR #2265, MCP unchanged, schema v21)
+# Tester: script mismatch versus product defect — 2026-11-19 (épico `epic/tester-script-cause`, PR #2266, MCP unchanged, schema v21)
 
 ## Alterado
 
