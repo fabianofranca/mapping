@@ -392,6 +392,46 @@ describe('examples/workspace/watch-comments.mjs', { timeout: 20000 }, () => {
       }
     });
 
+    describe('orphaned watcher (finding R40.5 of round #2134)', () => {
+      const exitsWithin = async (e: Emitter, ms: number): Promise<boolean> =>
+        Promise.race([
+          e.code.then(() => true),
+          new Promise<boolean>((r) => setTimeout(() => r(false), ms)),
+        ]);
+
+      it('exits when its stdin pipe closes (the parent went away without a signal)', async () => {
+        h.stderr = '';
+        const child = spawn(
+          process.execPath,
+          [SCRIPT, '--emit', '--root', h.root, '--quiet', QUIET],
+          { stdio: ['pipe', 'pipe', 'pipe'] },
+        );
+        h.child = child;
+        child.stderr?.on('data', (d: Buffer) => {
+          h.stderr += d.toString();
+        });
+        const code = new Promise<number | null>((r) => child.on('close', r));
+        await waitFor(() => h.stderr.includes('watch-comments: observing'), 'the watcher');
+        child.stdin?.end();
+        const e = { child, out: () => '', err: () => h.stderr, code };
+        expect(await exitsWithin(e, 3000)).toBe(true);
+        expect(await code).toBe(0);
+      });
+
+      it('exits when its stdout pipe breaks and writes no wake line after it', async () => {
+        const e = await startEmit();
+        e.child.stdout?.destroy();
+        putThread('t1', ['human']);
+        expect(await exitsWithin(e, 3000)).toBe(true);
+      });
+
+      it('keeps running while the parent is alive and the watcher is idle', async () => {
+        const e = await startEmit();
+        expect(await exitsWithin(e, 1000)).toBe(false);
+        await stop(e);
+      });
+    });
+
     describe('--state', () => {
       const statePath = (): string => join(h.dir, 'sub', 'state.json');
 

@@ -856,6 +856,23 @@ const releaseJsonCalls = (mock: Mock): string[] =>
   mock.calls.filter((c) => /\/releases\/(latest|tags\/[^/]+)$/.test(c));
 
 describe('release download (stage #877)', () => {
+  it('the download message names the local base (MAPPING_RELEASE_BASE) and, otherwise, the release', async () => {
+    const local = setup();
+    const withBase = run(local, ['--no-self-update']);
+    expect(withBase.status, withBase.all).toBe(0);
+    expect(withBase.out).toContain(`Downloading from file://${local.release}...`);
+    expect(withBase.out).not.toContain('Downloading from release');
+
+    const env = setup();
+    const mock = await startMock(env, {});
+    try {
+      const result = await runMock(env, mock.base, ['--no-self-update']);
+      expect(result.out).toContain('Downloading from release latest...');
+    } finally {
+      await mock.close();
+    }
+  });
+
   it(
     '504 on the direct download and 200 on the API: installs through the second path, with the warning and sha256 checked',
     async () => {

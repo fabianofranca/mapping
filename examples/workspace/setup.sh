@@ -239,7 +239,11 @@ verify() {
 }
 
 download_all() {
-  echo "Downloading from release ${TAG:-latest}..."
+  if [ -n "${MAPPING_RELEASE_BASE:-}" ]; then
+    echo "Downloading from $RELEASE_BASE..."
+  else
+    echo "Downloading from release ${TAG:-latest}..."
+  fi
   fetch_with_hash mapping-mcp.js || die "$FETCH_MSG"
   if fetch_optional setup.sh; then HAVE_SETUP=1; fi
   if fetch_optional AGENTS.mapping.md; then HAVE_BLOCK=1; fi
