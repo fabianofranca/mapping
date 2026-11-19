@@ -1303,3 +1303,259 @@ describe('queue panel page: "Queue cost" card (PA2)', () => {
     expect(document.querySelector('#mp-custo tbody')?.children).toHaveLength(0);
   });
 });
+
+// Phase FQ2 (stage #1791, decisions 6 and 8): the total time stops at `meta.runEnd` (or at the latest
+// valid `ended` once every row is final), the fast track has its own tag and tone, and the `recusada`
+// rows show in "Completed".
+describe('queue panel page: fast track in the queue (FQ2)', () => {
+  const NOW = '2026-11-13T14:00:00Z';
+  const START = '2026-11-13T10:00:00Z';
+  const mount = (meta: Row, queue: Row[] = [], opts: { colors?: unknown } = {}) => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(NOW));
+    const panel = loadPanel(meta, queue, opts);
+    panel.render();
+    return panel;
+  };
+  const total = () => ({ big: text('#mp-total'), lab: text('#mp-totlab') });
+  const fin = (issue: string, status: string, ended: string) =>
+    queueRow({ issue, status, ended, started: START });
+
+  describe('total time', () => {
+    it('stops at meta.runEnd even with a row still waiting for the owner', () => {
+      mount({ runStart: START, runEnd: '2026-11-13T12:30:00Z' }, [
+        fin('#1', 'concluída', '2026-11-13T11:00:00Z'),
+        queueRow({ issue: '#2', status: 'esperando dono' }),
+      ]);
+      expect(total()).toEqual({ big: '02:30:00', lab: 'finished' });
+    });
+
+    it('stops at runEnd when a stage failed and the others are not final', () => {
+      const panel = mount({ runStart: START, runEnd: '2026-11-13T11:00:00Z' }, [
+        fin('#1', 'falhou', '2026-11-13T10:30:00Z'),
+        queueRow({ issue: '#2', status: 'aguardando' }),
+      ]);
+      vi.setSystemTime(new Date('2026-11-14T10:00:00Z'));
+      panel.tick();
+      expect(total()).toEqual({ big: '01:00:00', lab: 'finished' });
+    });
+
+    it('without runEnd, stops at the latest valid ended once every row is concluída, falhou or recusada', () => {
+      mount({ runStart: START }, [
+        fin('#1', 'concluída', '2026-11-13T11:00:00Z'),
+        fin('#2', 'falhou', '2026-11-13T13:00:00Z'),
+        fin('#3', 'recusada', '2026-11-13T12:00:00Z'),
+      ]);
+      expect(total()).toEqual({ big: '03:00:00', lab: 'finished' });
+    });
+
+    it('without runEnd and with a row not final, runs in real time', () => {
+      mount({ runStart: START }, [
+        fin('#1', 'concluída', '2026-11-13T11:00:00Z'),
+        queueRow({ issue: '#2', status: 'em andamento' }),
+      ]);
+      expect(total()).toEqual({ big: '04:00:00', lab: 'real time' });
+    });
+
+    it('an empty or invalid runEnd does not stop the total', () => {
+      mount({ runStart: START, runEnd: '' }, [
+        queueRow({ issue: '#2', status: 'em andamento' }),
+      ]);
+      expect(total().lab).toBe('real time');
+      mount({ runStart: START, runEnd: 'not a date' }, [
+        queueRow({ issue: '#2', status: 'em andamento' }),
+      ]);
+      expect(total()).toEqual({ big: '04:00:00', lab: 'real time' });
+    });
+
+    it('a final row with a missing or invalid ended never gives NaN', () => {
+      mount({ runStart: START }, [
+        fin('#1', 'concluída', '2026-11-13T11:00:00Z'),
+        fin('#2', 'falhou', ''),
+        fin('#3', 'recusada', 'garbage'),
+      ]);
+      expect(total()).toEqual({ big: '01:00:00', lab: 'finished' });
+    });
+
+    it('every row final and no valid ended: "—", never NaN', () => {
+      mount({ runStart: START }, [
+        fin('#1', 'concluída', ''),
+        fin('#2', 'recusada', 'garbage'),
+      ]);
+      expect(total().big).toBe('—');
+      expect(text('#mp-total')).not.toContain('NaN');
+      expect(text('#mp-custo-hora')).not.toContain('NaN');
+    });
+
+    it('the cost per hour follows the same end: runEnd, then every row final', () => {
+      const sessions = [{ id: 's', kind: 'fase', issue: '#1', cost: { usd: 4 } }];
+      mount({ sessions, runStart: START, runEnd: '2026-11-13T12:00:00Z' }, [
+        fin('#1', 'concluída', '2026-11-13T11:00:00Z'),
+        queueRow({ issue: '#2', status: 'esperando dono' }),
+      ]);
+      expect(text('#mp-custo-hora')).toBe('US$ 2,00');
+      mount({ sessions, runStart: START }, [
+        fin('#1', 'concluída', '2026-11-13T11:00:00Z'),
+        fin('#2', 'falhou', '2026-11-13T12:00:00Z'),
+      ]);
+      expect(text('#mp-custo-hora')).toBe('US$ 2,00');
+    });
+
+    it('a panel without runEnd still renders as before (waiting time and "—")', () => {
+      mount({ waitingSince: '2026-11-13T13:00:00Z' });
+      expect(total()).toEqual({
+        big: '01:00:00',
+        lab: "waiting for the owner's command (waiting time)",
+      });
+    });
+  });
+
+  describe('via-rapida kind', () => {
+    const VR_NODES = [
+      {
+        issue: '#9',
+        titulo: 'Fast',
+        onda: 0,
+        rank: 1,
+        estado: 'rodando',
+        motivo: '',
+        fase: '',
+        feitas: 0,
+        total: 0,
+      },
+    ];
+    it('the tag of a via-rapida row has its own class, in the track and in Completed', () => {
+      mount({ grafoNos: VR_NODES, grafoSetas: [] }, [
+        queueRow({ issue: '#9', status: 'em andamento', kind: 'via-rapida' }),
+        queueRow({
+          issue: '#8',
+          status: 'concluída',
+          kind: 'via-rapida',
+          ended: '2026-11-13T11:00:00Z',
+        }),
+        queueRow({
+          issue: '#7',
+          status: 'concluída',
+          kind: 'etapa',
+          ended: '2026-11-13T11:00:00Z',
+        }),
+      ]);
+      const track = document.querySelector(
+        '#mp-andamento article[data-issue="#9"] .tags .tipo',
+      );
+      expect(track?.textContent).toBe('via-rapida');
+      expect(track?.classList.contains('tipo-via-rapida')).toBe(true);
+      const lines = Array.from(document.querySelectorAll('#mp-concluidas .cl'));
+      const tagOf = (n: string) =>
+        lines
+          .find((l) => l.querySelector('a.num')?.textContent === n)
+          ?.querySelector('.tipo');
+      expect(tagOf('#8')?.classList.contains('tipo-via-rapida')).toBe(true);
+      expect(tagOf('#7')?.classList.contains('tipo-via-rapida')).toBe(false);
+    });
+
+    it('a meta.sessions entry of kind via-rapida gets the eighth tone and the last position', () => {
+      mount(
+        {
+          sessions: [
+            {
+              id: 'a',
+              kind: 'via-rapida',
+              issue: '#9',
+              cost: { usd: 1 },
+              created: START,
+            },
+            {
+              id: 'b',
+              kind: 'supervisor',
+              issue: null,
+              cost: { usd: 2 },
+              created: START,
+            },
+            { id: 'c', kind: 'fase', issue: '#9', cost: { usd: 3 }, created: START },
+          ],
+        },
+        [],
+      );
+      const segs = Array.from(
+        document.querySelectorAll<HTMLElement>('#mp-custo-dias [data-tipo]'),
+      );
+      expect(segs.map((s) => s.dataset.tipo)).toEqual([
+        'fase',
+        'supervisor',
+        'via-rapida',
+      ]);
+      expect(segs[2]?.classList.contains('cor-7')).toBe(true);
+      expect(segs[1]?.classList.contains('cor-6')).toBe(true);
+      const bars = Array.from(
+        document.querySelectorAll<HTMLElement>('#mp-custo-tipo [data-tipo]'),
+      );
+      expect(bars.map((b) => b.dataset.tipo)).toEqual([
+        'fase',
+        'supervisor',
+        'via-rapida',
+      ]);
+      expect(bars[2]?.classList.contains('cor-7')).toBe(true);
+    });
+
+    it('the page comment says eight tones and the CSS has cor-7', () => {
+      const page = readFileSync(PAGE, 'utf8');
+      expect(page).toContain('Eight neutral tones');
+      expect(page).toMatch(/#mp \.cor-7 \{/);
+    });
+  });
+
+  describe('recusada in Completed', () => {
+    const ROWS = [
+      queueRow({
+        issue: '#10',
+        title: 'Merged',
+        status: 'concluída',
+        kind: 'etapa',
+        ended: '2026-11-13T11:00:00Z',
+        started: '2026-11-13T10:13:00Z',
+      }),
+      queueRow({
+        issue: '#11',
+        title: 'Refused',
+        status: 'recusada',
+        kind: 'via-rapida',
+        ended: '2026-11-13T09:00:00Z',
+        started: '2026-11-13T08:00:00Z',
+      }),
+    ];
+    const line = (issue: string) =>
+      Array.from(document.querySelectorAll<HTMLElement>('#mp-concluidas .cl')).find(
+        (l) => l.querySelector('a.num')?.textContent === issue,
+      );
+
+    it('a recusada row appears with the recusada tag, on the day of ended, and no merge time or duration', () => {
+      mount({}, ROWS);
+      const l = line('#11');
+      expect(l).toBeDefined();
+      expect(l?.querySelector('.tit')?.textContent).toBe('Refused');
+      expect(l?.querySelector('.recusada')?.textContent).toBe('recusada');
+      expect(l?.querySelector('.hora')).toBeNull();
+      expect(l?.querySelector('.dur')).toBeNull();
+      expect(line('#10')?.querySelector('.recusada')).toBeNull();
+      expect(line('#10')?.querySelector('.hora')).not.toBeNull();
+      expect(document.querySelectorAll('#mp-concluidas .dia')).toHaveLength(1);
+    });
+
+    it('the summary counts the merged stages and the refused ones apart', () => {
+      mount({}, ROWS);
+      expect(text('#mp-concluidas-resumo')).toBe('1 stage · 1 refused');
+      mount({}, [ROWS[1] as Row]);
+      expect(text('#mp-concluidas-resumo')).toBe('1 refused');
+    });
+
+    it('a recusada row is outside the "Completed" tile total, so a finished queue reaches 100%', () => {
+      const panel = mount({}, [...ROWS, queueRow({ issue: '#12', status: 'concluída' })]);
+      const s = panel.data('summary');
+      expect(s.status === 'ok' && s.data[0]).toMatchObject({ total: 2, done: 2 });
+      expect(document.querySelector<HTMLElement>('#mp-bar')?.style.width).toBe('100%');
+      mount({}, [ROWS[0] as Row]);
+      expect(text('#mp-concluidas-resumo')).toBe('1 stage');
+    });
+  });
+});
