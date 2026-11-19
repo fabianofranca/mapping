@@ -93,7 +93,7 @@ Write each line with `row '#n' plan="<the line>"` (and `title`). The phases in `
    - the `mcp__github__*` ones: `list_issues`, `issue_write` (only to swap labels and create issues without a parent), `add_issue_comment`, `create_pull_request`, `update_pull_request` and `merge_pull_request`. Reads of issue, PR, Actions and Release stay with the subagents ("Context economy");
    - the `mcp__claude-code-remote__*` ones: `create_session`, `send_message`, `create_trigger`, `delete_trigger`, `get_session`, `list_environments` and `list_events`.
 4. Without `retomar`, create the session's fallback check (section "Fallback checks") and write its id on the panel as soon as it exists (step 5 of "Queue"): `painel.py reserve <folder> <trig_id>`.
-5. With `retomar`, follow "Session switch" › "In the new session" (which runs `painel.py start <folder> --paralelo N` with the call's N) and go back to step 4 of "Queue".
+5. With `retomar`, follow "Session switch" › "In the new session" (which runs `painel.py start <folder> --paralelo N` with the call's N) and it **continues where it left off** (step 4 of that list), without steps 4 to 7 of "2. Queue": the order, the rewrite as `aguardando`, the confirmation and the `start` of the run are not redone, because the panel already holds the queue. The `ready` issues that arrived in the meantime enter through "Queue changes during the run", as usual.
 
 ## 2. Queue
 
@@ -323,14 +323,15 @@ Once the request is applied, `sup … estado=aplicado evidencia="…"`; the `log
 
 With the closing done and the CI green. Before merging, also check the `SERVER_VERSION` of `origin/main`: if it caught up with the epic's (another epic was merged in the meantime), the coordinator redoes the version choice (rule 3), pushes and waits for the CI again before merging. Whoever checks the CI and whether the PR can be merged is a subagent (`model: "haiku"`, "Check, read-only, PR #<n> of fabianofranca/mapping by the **Reading CI** rule of item 6 of 'For the phase session' in `docs/FLOW.md` (read the section with the `awk` of item 9 of 'Context economy') and whether it is mergeable. Return one line: green and mergeable, or what is missing, with the name of the check that failed"):
 
-- **Default:**
-  - send `PushNotification` "Etapa #<n> pronta: <resumo>. PR do épico: <link>" and ask through `AskUserQuestion` ("#<n> — mesclar o épico na main?"), with the options "Mesclar (Recomendado)" and "Ainda não";
-  - the stage stays `esperando dono` in the panel;
-  - while the answer does not arrive, the next free stage can already start;
-  - with "Mesclar", merge (`merge_pull_request`, `merge_method: merge`).
+- **Default** (asked by text, never through the question picker, which blocks the turn):
+  - send `PushNotification` "Etapa #<n> pronta: <resumo>. PR do épico: <link>" and write **one** line in the queue chat: "#<n> pronta para mesclar: <resumo>. PR: <link>. Responda `mesclar #<n>` ou `ainda não #<n>`.";
+  - record the wait on the panel: `painel.py row <folder> '#n' status="esperando dono" wait="merge pedido ao dono: PR #<p>"` (no `child`: the stage takes no slot and `show` lists it in `merge pedido ao dono:`), publish it and **end the turn**; the next free stage can already start, and the dependents of this epic stay `aguardando` by item 1 of "Order";
+  - the owner's `mesclar #<n>` (also `pode mesclar #<n>`, or "Mesclar" when only one merge is pending) triggers the pre-merge check above and then the merge (`merge_pull_request`, `merge_method: merge`), the check of the MCP Release and `concluída`; `ainda não #<n>` only writes a `log` line, and the row stays as it is (`show` keeps listing it in `merge pedido ao dono:`; the queue does not ask again).
 - **With `mesclar=auto`** (written by the owner in the call): merge straight away and send `PushNotification` "#<n> mesclada: <resumo>".
 - **Closing that did not record:** the DS record with real `## Pendências` and no recording (the `## Sincronização` does not open with "Gravado no artefato", "Versão <n>" or "Sem impacto") is a pending defect, and the epic does not merge until it records. If the `Artifact` tool really fails (no edit permission, repeated refusal), the stage stays `esperando dono`, with `PushNotification` and the tool's error. "Sem acesso" without a tool error does not count as a reason.
 - The merge, or the question to the owner, comes right after the green CI and **does not wait** for the return of the issues and closing-comment subagent (step 5 of "Per stage"). The DS recording is another matter: its subagent has already returned and the record with the `## Sincronização` is in the PR's commit before the push, and the coordinator checks that (the opening of the `## Sincronização`) before merging.
+
+**Late merge, after the End:** a `mesclar #<n>` that arrives after "End" is served by the registered coordinator (the one in `painel.py roles`): the same pre-merge check, the merge, the check of the MCP Release, `concluída` on the row, `painel.py end <folder>` again (so the total time stops at the real end) and the publication of the panel. A session that is no longer the registered one forwards it, as in "Session switch".
 
 **Do not hold the merge of another epic** waiting for the previous one's Release: a ready epic whose Release does not depend on the previous one is merged without waiting. The order of the stable versions is guaranteed by the order of the merges, not by waiting.
 
@@ -478,7 +479,7 @@ Write to `painel.py` **at every advance** (phase opened and merged, PR, tester, 
 - **Small:** reread the whole `SKILL.md`, never just the diff, in the session itself: open `.claude/skills/implementar-fila/SKILL.md` with `Read`, without `offset` or `limit`. The `git diff --numstat` is only for classifying; the `SKILL.md` diff is not opened before the reread. Record the proof in the panel's `log`: first "skill <commit>: relido inteiro, <n> linhas" and then, a line "skill <commit>: <regra> → <o que faço agora>" for each rule that changed.
   The new `painel.py` applies from the next command. A change only in `painel/` triggers nothing: the new panel page is published by whoever changed it.
 
-**Lineage limit.** Each successor is a session created by `create_session` inside another, and the environment stops at one lineage level. Before creating the successor, read `lineage.depth` and `lineage.limit` in the `get_session` itself. If `depth + 2 > limit`, **do not create the successor**: it could not create phases. In that case, publish the panel, send the owner a `PushNotification` with the full resume command (`/implementar-fila retomar anterior=<this session's id> painel=<url>` and the same arguments), for them to open in a new chat, which starts at level 0, and say in the `current` "aguardando o dono abrir a sessão nova da fila". Keep working while the context allows.
+**Lineage limit.** Each successor is a session created by `create_session` inside another, and the environment stops at one lineage level. Before creating the successor, read `lineage.depth` and `lineage.limit` in the `get_session` itself. If `depth + 2 > limit`, **do not create the successor**: it could not create phases. In that case, publish the panel, send the owner a `PushNotification` with the full resume command (`/implementar-fila retomar anterior=<this session's id> painel=<url>`, followed by this session's call arguments **except** `painel=`, `importar=`, `retomar` and `anterior=`, then `sem-confirmar`, and `mesclar=auto` only if the owner wrote it in this session's call), for them to open in a new chat, which starts at level 0, and say in the `current` "aguardando o dono abrir a sessão nova da fila". Keep working while the context allows.
 
 **In the old session:**
 
@@ -489,7 +490,7 @@ Write to `painel.py` **at every advance** (phase opened and merged, PR, tester, 
    - the same `model`;
    - the repository's `source_url`, `source_revision` `main`;
    - title "Fila — coordenador <n>", with <n> = the `n` of `roles` (`painel.py roles <folder>`) plus 1;
-   - message: **only** `/implementar-fila retomar anterior=<this session's id> painel=<url>`, followed by this session's same arguments and `sem-confirmar`. Copy `mesclar=auto` only if the owner wrote it in this session's call. No handoff notes: what is not in the panel, write to the `log` first.
+   - message: **only** `/implementar-fila retomar anterior=<this session's id> painel=<url>`, followed by this session's call arguments **except** `painel=`, `importar=`, `retomar` and `anterior=` (the command already carries the `painel=` and the `anterior=` of this session, and the successor must not import again; `#n ...`, `paralelo=` and `modelo=tabela` stay), and then `sem-confirmar`. Copy `mesclar=auto` only if the owner wrote it in this session's call. No handoff notes: what is not in the panel, write to the `log` first.
    - As soon as `create_session` returns the id, register the successor: `painel.py role <folder> coordenador <new id> link=https://claude.ai/code/<new id>` (the `previous` keeps this session's id), and publish the panel. From then on this session is not the registered one and does not act.
 3. Send each child session that is still owed a notice (the `child` rows of the panel) `send_message`: "O coordenador mudou: mande seus avisos para `<id novo>`".
 4. Delete your check (`delete_trigger` with the panel's `reserve`).
@@ -522,7 +523,7 @@ Write to `painel.py` **at every advance** (phase opened and merged, PR, tester, 
 
 ## End
 
-When no stage is in progress or waiting (apart from the queue's own `bug` rows that wait for the dependency) and none is `esperando dono` with `child` and `wait` "dono no chat da fase: …" (the `show` line "esperando o dono no chat da fase": it is still working, and the queue continues with the hourly check), first check the `kind=bug` rows that the queue itself created (step 4 of "Per stage"):
+When no stage is in progress or waiting (apart from the queue's own `bug` rows that wait for the dependency) and none is `esperando dono` with `child` and `wait` "dono no chat da fase: …" (the `show` line "esperando o dono no chat da fase": it is still working, and the queue continues with the hourly check) (a stage whose `wait` is `merge pedido ao dono:` does not hold the End: it is listed under "o que espera o dono", with the PR link; a late `mesclar #<n>` after the End is served by this session, "Merge" › "Late merge, after the End"), first check the `kind=bug` rows that the queue itself created (step 4 of "Per stage"):
 
 - dependency already merged and the `bug` still `aguardando`: it runs before ending;
 - dependency still in progress or `esperando dono`: the queue does not end; it continues with the hourly check until the dependency lands;
@@ -531,6 +532,6 @@ When no stage is in progress or waiting (apart from the queue's own `bug` rows t
 With nothing pending from the queue:
 
 1. Record this session's cost (`painel.py cost <folder> <id> usd=… ctx=… model=… effort=… kind=coordenador`) and run `painel.py costs <folder>`. Answer in the chat with a table, one row per stage: the issue with a link, the result (`concluída`, `falhou` or `esperando dono`), the epic's PR, the duration, the number of phases and fixes, the MCP version and the US$ column (the stage's cost, from `costs`); after the table, the queue's total. Then list the issues created (the GitHub search `Origem: etapa` gathers them), with a link, and what is waiting on the owner.
-2. Update the panel (`current` "Fila concluída") and delete the fallback check (`delete_trigger` with the `reserve`).
+2. Run `painel.py end <folder>` (the panel's total time stops at the end of the run), update the panel (`current` "Fila concluída") and delete the fallback check (`delete_trigger` with the `reserve`).
 3. Send `PushNotification` with the total, for example "Fila concluída: 8 mescladas, 1 esperando você".
 4. Archive what is left in the `sessions` of the delivered stages (`archive_session`, first recording each one's `painel.py cost`, as in "Archive the sessions"), but not those of stages `falhou` or `esperando dono`. The coordinator does not archive itself: the owner archives the chat when they wish.
