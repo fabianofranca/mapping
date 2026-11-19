@@ -1,4 +1,4 @@
-# MCP fonts with unsupported GSUB, `fit_marking` and `measure_component` — [Não lançado] (épico `epic/mcp-fonts-fit-measure`)
+# MCP fonts with unsupported GSUB, `fit_marking` and `measure_component` — 2026-11-19 (épico `epic/mcp-fonts-fit-measure`)
 
 ## Pendências
 
