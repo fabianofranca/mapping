@@ -1895,6 +1895,31 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'script-output',
   },
   {
+    term: 'rodar canario base',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'sem base',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'sessão',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'xFalso',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'naoExec',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
     term: '<rótulo>: ainda trabalhando',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'panel-values',
