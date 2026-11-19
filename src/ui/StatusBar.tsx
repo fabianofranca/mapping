@@ -201,7 +201,7 @@ function PageItem() {
   const name = store.committed.value?.pages.find((p) => p.id === id)?.name ?? '';
   return (
     <Item
-      class="status-item status-item-s4"
+      class="status-item status-item-page"
       title={t('page.status.name', { name })}
       icon="file"
     >

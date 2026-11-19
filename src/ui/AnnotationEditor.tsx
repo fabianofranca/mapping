@@ -72,8 +72,13 @@ function TypedBody({
   readonly readOnly: boolean;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }) {
-  const { actions } = useEditor();
+  const { actions, review } = useEditor();
   const resolved = typeOfAnnotation(project, annotation);
+  // The fields resolve references on every page (stage #883, CL1): a target on another page is
+  // not broken. Only when `project` is the one in view (a given project stays as it is).
+  const across = review.derived.shownAcrossPages.value;
+  const fieldProject =
+    across && project === review.derived.shownProject.value ? across : project;
   if (!resolved) {
     return (
       <>
@@ -98,7 +103,7 @@ function TypedBody({
       </>
     );
   }
-  const ctx = { project, annotation, readOnly, onGoToAnnotation };
+  const ctx = { project: fieldProject, annotation, readOnly, onGoToAnnotation };
   return (
     <>
       {sortNotices(resolved.type.notices ?? []).map((notice, index) => (

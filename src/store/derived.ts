@@ -485,6 +485,25 @@ function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
 }
 
 /**
+ * The model's pending items of the project in view. They resolve against the project with every
+ * page (`across`), so a `ref` to an annotation on another page is not broken (stage #883, CL1),
+ * and only those of annotations of the page in view count.
+ */
+function pageIssues(
+  shown: Project | null,
+  across: Project | null | undefined,
+): ReadonlyMap<string, readonly AnnotationIssue[]> {
+  if (!shown) return NO_ISSUES;
+  if (!across || across === shown) return projectIssues(shown);
+  const { annotations } = projectIndex(shown);
+  const all = projectIssues(across);
+  if (all.size === 0) return all;
+  const kept = new Map<string, readonly AnnotationIssue[]>();
+  for (const [id, list] of all) if (annotations.has(id)) kept.set(id, list);
+  return kept.size === all.size ? all : kept;
+}
+
+/**
  * `shown`: the project in view (`review.derived.shownProject`): in the review's Proposed view,
  * the "as it would be"; otherwise, the confirmed one. Without it (editor tests without a review), the
  * confirmed one. Never the project with the gesture preview: nothing here depends on geometry,
@@ -576,8 +595,7 @@ export function createEditorDerived(
 
   let lastIssues: ReadonlyMap<string, readonly AnnotationIssue[]> = NO_ISSUES;
   const issues = computed(() => {
-    const p = project.value;
-    const base = p ? projectIssues(p) : NO_ISSUES;
+    const base = pageIssues(project.value, threadSources.project?.value);
     const drawn = [...scenes.value.values()].filter(
       (d) => d.overflow || d.slotIssues.length > 0,
     );

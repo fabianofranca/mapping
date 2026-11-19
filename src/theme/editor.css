@@ -428,9 +428,16 @@
 }
 
 /* Width smaller than the tabs: the strip scrolls (inherited), but never shrinks below the content in the layout. */
+/* The neighbors are not glued (CL1, 4.4): 2px in the compact windows, where all six must fit, 4px from 1200px. */
 .tool-window-bottom .tool-window-tabs .tabs {
   flex: 1 1 auto;
-  gap: 0;
+  gap: var(--space-0-5);
+}
+
+@media (min-width: 1200px) {
+  .tool-window-bottom .tool-window-tabs .tabs {
+    gap: var(--space-1);
+  }
 }
 
 /* Tighter tabs: all six fit in the minimum canvas width (`--size-canvas-min`). */
@@ -776,6 +783,12 @@
 
 .status-item-sel {
   min-width: calc(var(--space-8) * 3);
+}
+
+/* Open page (CL1, 6.4): never squeezed (the perspective and the selection give way first), but a long name stops at a limit and gets the ellipsis. */
+.status-item-page {
+  flex-shrink: 0;
+  max-width: calc(var(--space-8) * 6);
 }
 
 .status-item-text {
