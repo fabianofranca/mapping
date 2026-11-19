@@ -63,7 +63,8 @@ async function mcp(tool, args) {
   return JSON.parse(res.result?.content?.map((c) => c.text).join('\n') ?? '{}');
 }
 const v = await mcp('validate_library', { path: PKG, previous: `${WS}/projects/comentarios/specs/mapping-ds/mapping-ds.spec.json` });
-writeFileSync(`${OUT}/validate.json`, JSON.stringify(v, null, 1));
+// `path` relative to ferramentas/mapping-ds, so the file carries no absolute path of the machine.
+writeFileSync(`${OUT}/validate.json`, JSON.stringify({ ...v, path: relative(BASE, PKG).split('\\').join('/') }, null, 1));
 console.log(`validate_library: valid=${v.valid} erros=${v.errors?.length} avisos=${v.warnings?.length}`);
 for (const i of [...(v.errors ?? []), ...(v.warnings ?? [])].slice(0, 30)) console.log(`  ${i.severity} ${i.file} ${i.path}: ${i.message}`);
 

@@ -42,13 +42,14 @@ Mapping is a web app to mark rectangular areas on images, organize them into lay
 | 30 | R28 — Named slots | the `REPO/tests/fixtures/slots/` library (the shell copies it), the shell, ImageMagick, the MCP over stdio (section 6) and the app | 48 min |
 | 31 | R29 — Accessibility | the `REPO/tests/fixtures/accessibility/` library, the shell, ImageMagick, the MCP over stdio (section 6) and the app | 35 min |
 | 32 | R30 — Pages | a folder `paginas` (a schema 20 `mapping.json` that the shell writes), the shell, the MCP over stdio (section 6) and the app | 75 min |
+| 33 | R40 — Watch conversations in the same chat | the shell, Node and the MCP over stdio (section 6 not needed); the commit's `setup.sh` and a release built from the commit; the session's `Monitor` in R40.5; no app | 20 min |
 | on demand | RP — Installed app (PWA), in the **on-demand scripts (manual)** | main version or preview (`https:`) and the installable app; only when the owner asks | 15 min |
 | on demand | RF — `index.html` over `file://` (formerly R0.5), in the **on-demand scripts (manual)** | shell with access to GitHub Pages and the computer's Chrome; only when the owner asks | 10 min |
 | on demand | RA — Close the tab in the middle of a save (formerly R6.2), in the **on-demand scripts (manual)** | the `principal` folder and a `tela2.png`; only when the owner asks | 10 min |
 | on demand | RB — Esc in the middle of a drag right after renaming (formerly R6.1), in the **on-demand scripts (manual)** | the `principal` folder; only when the owner asks | 5 min |
 | on demand | RT — Folder on an Android tablet, in the **on-demand scripts (manual)** | an Android tablet with Chrome and a real project folder; only when the owner asks | 15 min |
 
-The times are approximate (by number of steps); record the real time in the report. Without the MCP, do only step 2 of section 6 from row 4 (the test repository and the folders, without the `mapping-mcp.js`), run R3.1 to R3.5 and skip R3.6, R3.21, R3.23 and R5, marking them "not executed (no MCP)". The main scripts (R0 to R30) are made for the cloud agent to run **alone**. The **on-demand scripts (manual)**, today RP, RF, RA, RB and RT, are not part of the full round or the directed one: they run apart, in an on-demand session, only when the owner asks (end of section 8). The dependencies between the scripts are at the start of section 8. Section 9 (advanced manual testing) is a script of its own, after a full round without high or medium findings.
+The times are approximate (by number of steps); record the real time in the report. Without the MCP, do only step 2 of section 6 from row 4 (the test repository and the folders, without the `mapping-mcp.js`), run R3.1 to R3.5 and skip R3.6, R3.21, R3.23 and R5, marking them "not executed (no MCP)". The main scripts (R0 to R40) are made for the cloud agent to run **alone**. The **on-demand scripts (manual)**, today RP, RF, RA, RB and RT, are not part of the full round or the directed one: they run apart, in an on-demand session, only when the owner asks (end of section 8). The dependencies between the scripts are at the start of section 8. Section 9 (advanced manual testing) is a script of its own, after a full round without high or medium findings.
 
 What this guide **does not** test: whether a panel is easy to find or whether a text is clear to someone who has not read the documentation. That is left to people, in real use.
 
@@ -245,7 +246,7 @@ Also counted as a finding: noticeable slowness (more than a second to respond), 
 - _Italics at the end of the Expected_ mark a **known regression**: something that already broke in a previous round and is checked again, not the goal of the step.
 - **[person]** marks the steps the cloud agent does not do alone (appendix A); whoever tests by hand can ignore the mark. The "or `action`" names the recipe that replaces the person in native dialogs (`select_folder`, `save_file`, `open_file`, `accept_permission_prompt`, `cancel_dialog`; each name is a recipe in appendix A, "Native dialogs in the cloud (Xvfb)") and the MCP client over stdio in the requests to Claude Code. In the main scripts no step is left without a substitute (a test checks).
 - **Who changes the guide: marked passages.** `round-guide.mjs` generates the guide with only the requested scripts (also by step range, `R6.3-R6.7`). A passage of this introduction or of appendix A that only certain scripts use goes between `<!-- roteiros: R12 R22 -->` and `<!-- /roteiros -->`, on their own lines; it only enters the guide if one of them is requested. Without a mark, it goes in all of them (when in doubt, do not mark).
-- **Rule for whoever changes the scripts (agents and people).** The main scripts (R0 to R30) are made for the cloud agent to run **alone**: every new or changed step needs a way for the cloud agent to do it (cloud recipe from appendix A, Playwright over CDP, shell or MCP client over stdio) and must say so in the Action.
+- **Rule for whoever changes the scripts (agents and people).** The main scripts (R0 to R40) are made for the cloud agent to run **alone**: every new or changed step needs a way for the cloud agent to do it (cloud recipe from appendix A, Playwright over CDP, shell or MCP client over stdio) and must say so in the Action.
 - **A test that needs the owner.** If a test needs interaction from the owner (no cloud recipe does it) and **is not very relevant**, it goes to the **on-demand scripts (manual)** (end of this section), which the owner does by hand.
 - **A test that needs the owner and is very relevant.** If it needs interaction from the owner and **is very relevant** (risk of data loss, integrity of the `mapping.json`, security), the agent **does not decide alone**: it warns the owner, in the conversation and in the PR description, so they decide together; until they decide, the step stays where it is, marked as **pending decision**.
 
@@ -390,6 +391,11 @@ Also counted as a finding: noticeable slowness (more than a second to respond), 
 <!-- roteiros: R30 -->
 
 - R30 uses the folder of its own `paginas` (a schema 20 `mapping.json` that the shell writes in `design/mapeamentos/`, which the MCP reads), the shell, the MCP client over stdio and the app; the steps follow in sequence (R30.6 on moves Screen D to the second page, R30.14 and R30.15 create the annotations that R30.16 follows) and do not depend on any other script. Without the MCP, mark the MCP steps (R30.13, R30.14 and R30.17) "not executed (no MCP)".
+
+<!-- /roteiros -->
+<!-- roteiros: R40 -->
+
+- R40 uses its own folder `r40` (workspaces `ws-new` and `ws-old` that `setup.sh` fills, with a release built from the commit through `MAPPING_RELEASE_BASE=file://`), the shell, the MCP client over stdio and the session's `Monitor` (R40.5); the steps follow in sequence and do not depend on any other script or on a release tag. Without `Monitor`, mark R40.5 "not executed (no Monitor)".
 
 <!-- /roteiros -->
 <!-- roteiros: R24 -->
@@ -2047,9 +2053,9 @@ printf '# Badge\n\nBadge document, inside the package.\n' > assets/docs-externos
 
 ### R21 — Workspace updated by the release
 
-**What it covers:** the Workspace updated stage (WA1 and WA2): the `setup.sh` of `examples/workspace/` that each MCP release publishes together with `mapping-mcp.js`, the `SKILL.md` skill, the `AGENTS.mapping.md` block and `watch-comments.mjs` (the conversation watcher, which `setup.sh` installs at the workspace root) and `mapping-signature.mjs` (the signature extractor, which `setup.sh` installs in `tools/`) (each file with its `.sha256`). The steps check, against the **real release on GitHub**, the new workspace through the single line, the migration of the old workspace through the transition line (the old skeleton's `AGENTS.md` becomes the block between `mapping:begin` and `mapping:end`, with a backup and the "Para que servem" section intact), the `setup.sh` self-update and `--no-self-update`, the repeat with no change, the updated copy of the skill in `.claude/skills/`, the `sha256` check of every file before replacing any of them, the workspace server answering through the stdio client and, with a local server that imitates GitHub, the commit's `setup.sh` showing the reason for a download failure (HTTP 504 and 404) and using the assets API when the release's direct download answers 5xx (stage #877). It uses neither the app nor the browser.
+**What it covers:** the Workspace updated stage (WA1 and WA2): the `setup.sh` of `examples/workspace/` that each MCP release publishes together with `mapping-mcp.js`, the `SKILL.md` skill, the `AGENTS.mapping.md` block and `watch-comments.mjs` (the conversation watcher, which `setup.sh` installs at the workspace root), `watch-conversations.SKILL.md` (the `watch-conversations` skill, which `setup.sh` installs in `.agents/skills/watch-conversations/` with its `.claude/skills/` link) and `mapping-signature.mjs` (the signature extractor, which `setup.sh` installs in `tools/`) (each file with its `.sha256`). The steps check, against the **real release on GitHub**, the new workspace through the single line, the migration of the old workspace through the transition line (the old skeleton's `AGENTS.md` becomes the block between `mapping:begin` and `mapping:end`, with a backup and the "Para que servem" section intact), the `setup.sh` self-update and `--no-self-update`, the repeat with no change, the updated copy of the skill in `.claude/skills/`, the `sha256` check of every file before replacing any of them, the workspace server answering through the stdio client and, with a local server that imitates GitHub, the commit's `setup.sh` showing the reason for a download failure (HTTP 504 and 404) and using the assets API when the release's direct download answers 5xx (stage #877). It uses neither the app nor the browser.
 
-**Setup.** Only shell and the MCP client over stdio (appendix A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`). `REPO` is the Mapping clone (recipe 1 of appendix A). Each step works in its own subfolder of `W21`. The `TAG` comes from the tester's message (the epic's release candidate); in a full round on `main`, it is the latest stable. R21 downloads from the **real** release, not from the local build: with no network to `github.com`, mark them all "not executed (no network to the release)"; if the release for `TAG` does not have `setup.sh`, mark them all "not executed (the release does not ship setup.sh)". `setup.sh`'s summary has the lines `Server:`, `Skill:`, `AGENTS.md:` (this one says `created`, `updated`, `migrated`, `no change` or `not recognized…`) and `Watcher:` (`installed`, `updated`, `no change` or `not updated (release without the watcher)`); warnings go to stderr, which is why the output is saved with `2>&1`.
+**Setup.** Only shell and the MCP client over stdio (appendix A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`). `REPO` is the Mapping clone (recipe 1 of appendix A). Each step works in its own subfolder of `W21`. The `TAG` comes from the tester's message (the epic's release candidate); in a full round on `main`, it is the latest stable. R21 downloads from the **real** release, not from the local build: with no network to `github.com`, mark them all "not executed (no network to the release)"; if the release for `TAG` does not have `setup.sh`, mark them all "not executed (the release does not ship setup.sh)". `setup.sh`'s summary has the lines `Server:`, `Skill:`, `Watch skill:` (`installed`, `updated`, `no change` or a skip with a warning when the release has no such file), `AGENTS.md:` (this one says `created`, `updated`, `migrated`, `no change` or `not recognized…`) and `Watcher:` (`installed`, `updated`, `no change` or `not updated (release without the watcher)`); warnings go to stderr, which is why the output is saved with `2>&1`.
 
 ```bash
 export W21=<work folder>/release-ws && mkdir -p "$W21" && cd "$W21"
@@ -2058,7 +2064,7 @@ TAG=$(basename "$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.
 export TAG BASE="https://github.com/fabianofranca/mapping/releases/download/$TAG"
 curl -fsSI "$BASE/setup.sh" > /dev/null && echo "release with setup.sh"
 mkdir downloaded
-for f in mapping-mcp.js setup.sh SKILL.md AGENTS.mapping.md watch-comments.mjs mapping-signature.mjs; do
+for f in mapping-mcp.js setup.sh SKILL.md AGENTS.mapping.md watch-comments.mjs watch-conversations.SKILL.md mapping-signature.mjs; do
   curl -fsSL "$BASE/$f" -o "downloaded/$f" && curl -fsSL "$BASE/$f.sha256" -o "downloaded/$f.sha256"
 done
 (cd downloaded && sha256sum -c *.sha256)
@@ -2076,6 +2082,8 @@ curl -fsSL "$BASE/setup.sh" -o setup.sh && chmod +x setup.sh
 node tools/mapping-mcp.js --version; node ../downloaded/mapping-mcp.js --version
 cmp .agents/skills/spec-author/SKILL.md ../downloaded/SKILL.md
 cmp watch-comments.mjs ../downloaded/watch-comments.mjs
+cmp .agents/skills/watch-conversations/SKILL.md ../downloaded/watch-conversations.SKILL.md
+test -L .claude/skills/watch-conversations && echo watch-link
 (cd tools && sha256sum -c mapping-signature.mjs.sha256)
 cmp tools/mapping-signature.mjs ../downloaded/mapping-signature.mjs
 node tools/mapping-signature.mjs --help > /dev/null; echo "signature-exit=$?"
@@ -2203,7 +2211,7 @@ cat out-r11.txt; snap ws-r11 > after-r11.txt && diff before-r11.txt after-r11.tx
 
 | Step | Action | Expected |
 | --- | --- | --- |
-| R21.1 | **New workspace through the single line.** Run the R21.1 shell (empty `ws-new` folder, the `setup.sh` downloaded from the release and run with the tag). | **Disk:** `exit=0`; `mapping-mcp.js: OK`; the two `--version` equal and starting with the tag's number; `cmp` with no output (the skill, `watch-comments.mjs` and `tools/mapping-signature.mjs`); `mapping-signature.mjs: OK` and `signature-exit=0`; `watcher-exit=2` and the watcher's usage message (`usage: node watch-comments.mjs …`); `link`; both counts `1`; the `grep` finds `# Mappings` and `## What these mappings are for`. **Response:** the summary has `Server:` (the same version), `Skill:` citing the release, `AGENTS.md: created` and `Watcher: installed`. |
+| R21.1 | **New workspace through the single line.** Run the R21.1 shell (empty `ws-new` folder, the `setup.sh` downloaded from the release and run with the tag). | **Disk:** `exit=0`; `mapping-mcp.js: OK`; the two `--version` equal and starting with the tag's number; `cmp` with no output (the skill, `watch-comments.mjs`, the `watch-conversations` skill and `tools/mapping-signature.mjs`); `watch-link`; `mapping-signature.mjs: OK` and `signature-exit=0`; `watcher-exit=2` and the watcher's usage message (`usage: node watch-comments.mjs …`); `link`; both counts `1`; the `grep` finds `# Mappings` and `## What these mappings are for`. **Response:** the summary has `Server:` (the same version), `Skill:` citing the release, `Watch skill: installed`, `AGENTS.md: created` and `Watcher: installed`. |
 | R21.2 | **Old workspace migrated through the transition line.** Run the R21.2 shell (builds `ws-old` from the history, with the owner's text in "Para que servem" (the old skeleton's heading), and runs the transition line) and its check. | **Disk:** `exit=0`; `setup.sh` is the release's (`cmp` with no output; the line's download already replaced it, so there is **no** "setup.sh updated"); **one** `AGENTS.md.bak-YYYYMMDD-HHMMSS`, equal to the copy; `1` `mapping:begin` marker; `block-same`; the owner's section byte-for-byte identical (`cmp` with no output) and with the text (`1`); `## Structure` once (inside the block) and none of the old sections outside it; `note.txt: OK` and `CLAUDE.md: OK`; `watch-comments.mjs` arrived equal to the release's (`cmp watch-comments.mjs ../downloaded/watch-comments.mjs`, no output). **Response:** the summary says `AGENTS.md: migrated` and `Watcher: installed`; `setup.sh` warns once (`see "Renaming the folders" in README.md`) because `projetos/` exists. **Disk:** no `projects/` was created next to `projetos/demo` (and `projetos/demo/note.txt` did not move). |
 | R21.3 | **`setup.sh` self-update.** Run the R21.3 shell (a copy of `ws-new` with the old `setup.sh`, run with the tag). | **Disk:** `exit=0`; `setup.sh` equal to the release's (`cmp` with no output). **Response:** "setup.sh updated" appears **once** and the summary (`Server:`) also **once**: the script ran again only once; `AGENTS.md: no change`. |
 | R21.4 | **Run again with no change.** Run the first part of the R21.4/R21.5 shell (`snap` of `ws-old`, `./setup.sh "$TAG"` and `snap` again). | **Disk:** `exit=0`; `same` (no file changed or appeared; if the script leaves a temporary directory in the folder, name which one in the report); `ls` shows the same single backup as R21.2; `0` occurrences of "setup.sh updated". **Response:** `AGENTS.md: no change`. |
@@ -2906,9 +2914,92 @@ snap() { sha256sum "$PROJ/mapping.json"; }
 | R30.21 | **Visual pass, 1280×720.** `page.setViewportSize({ width: 1280, height: 720 })`. With **Flows** open, capture each screen below, one report line each ("Visual: <name>"): the open **Page** list; **Manage pages…**; the delete confirmation of a page with content (**Delete Flows**, then **Cancel**) and the empty one (create `Scratch` and **Delete Scratch**, then **Cancel**); the "The move would cut arrows" dialog (R30.8's move, then close); the right-click menu with **Move to page ›** open; the "Moved to …" notice (move Screen D to **Page 1** from the menu, capture, then `Ctrl+Z`); the reference preview (R30.16). Close each dialog once with Esc and once with **Cancel** (or the X). Repeat the **Page** list and **Manage pages…** in dark (**Theme** › **Dark**) and go back to light. Delete `Scratch` at the end. | **Screen:** the list, both delete dialogs (with the counts and the two exits), the refusal with its arrows, the menu, the notice and the preview fit without clipping, overlap or a horizontal bar; in dark too; the status bar reads "Page Flows" before the perspective. **Disk:** `estado` with the two pages and the 4 containers. |
 | R30.22 | **Visual pass, 900×720.** `page.setViewportSize({ width: 900, height: 720 })` and repeat the captures and the checks of the previous step (with the dark ones), with the same "Visual: <name>" lines plus the suffix "900". Go back to 1280×720 at the end. | **Screen:** the same at the minimum window: the **Page** button next to the perspective picker and the status bar "Page <name>" fit in the canvas bar; **Manage pages** with its 3 columns, the delete dialogs and the preview fit without a horizontal bar. **Disk:** `estado` as in the previous step. |
 
+### R40 — Watch conversations in the same chat
+
+**What it covers:** the Watch conversations stage (#1879, WC1 to WC5; MCP 0.46.0): the commit's `setup.sh` creating the English folders `projects/` and `specializations/` and installing the two skills (`spec-author` and `watch-conversations`, in `.agents/skills/` with the `.claude/skills/` links) and printing `Watch skill: installed`; an old workspace with `projetos/` and `especializacoes/` that `setup.sh` neither moves nor completes (one warning) and whose server still answers with `--root projetos`; the watcher `watch-comments.mjs --emit` (one `MAPPING_WAKE <json>` line per batch on stdout, logs only on stderr) and `--state` (a restart does not repeat a wake; a message that arrived while it was stopped fires on start); the same command run by the cloud tester's own `Monitor`, which wakes the chat; the usage error of `--emit` with `-- <command>`.
+
+**Setup.** Only the shell, Node and the MCP client over stdio (appendix A). `REPO` is the Mapping clone (recipe 1 of appendix A). R40 uses the **commit's** files (the `setup.sh` of `examples/workspace/` and a local release built from the commit), so it does not depend on a release tag and needs no network. `W40` is the working folder.
+
+```bash
+export W40=<work folder>/r40 && mkdir -p "$W40" && cd "$REPO"
+npm run build:mcp
+node scripts/release/workspaceAssets.mjs "$W40/release" > /dev/null
+cp dist-mcp/mapping-mcp.js dist-mcp/mapping-signature.mjs "$W40/release/"
+(cd "$W40/release" && for f in mapping-mcp.js mapping-signature.mjs; do sha256sum "$f" > "$f.sha256"; done && sha256sum -c *.sha256)
+export MAPPING_RELEASE_BASE="file://$W40/release"
+cat > "$W40/humano.py" <<'PY'
+import datetime, json, os, sys, uuid
+path, text = sys.argv[1], sys.argv[2]
+d = json.load(open(path, encoding='utf-8'))
+d['messages'].append({"id": str(uuid.uuid4()), "author": {"kind": "human", "name": "Cloud Test", "email": "test@example.com"},
+  "at": datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z'), "text": text, "proposal": None})
+d['revision'] += 1
+json.dump(d, open(path + '.tmp', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+os.replace(path + '.tmp', path)
+PY
+humano() { python3 -I "$W40/humano.py" "$1" "$2"; }
+```
+
+R40.1 runs the commit's `setup.sh` in an empty folder:
+
+```bash
+cd "$W40" && mkdir ws-new && cd ws-new && cp "$REPO/examples/workspace/setup.sh" . && chmod +x setup.sh
+./setup.sh > ../out-new.txt 2>&1; echo "exit=$?"; cat ../out-new.txt
+ls -d projects specializations .agents/skills/spec-author .agents/skills/watch-conversations
+test -L .claude/skills/spec-author && test -L .claude/skills/watch-conversations && echo links
+cmp .agents/skills/watch-conversations/SKILL.md "$W40/release/watch-conversations.SKILL.md"; echo "cmp=$?"
+```
+
+R40.2 builds an old workspace that has only the Portuguese folders:
+
+```bash
+cd "$W40" && mkdir ws-old && cd ws-old && cp "$REPO/examples/workspace/setup.sh" . && chmod +x setup.sh
+mkdir projetos especializacoes && cp -a "$REPO/examples/full-example" projetos/full-example
+./setup.sh > ../out-old.txt 2>&1; echo "exit=$?"; cat ../out-old.txt
+ls -d projects specializations 2>&1; ls projetos
+echo '[{"name":"list_projects","args":{}}]' > calls.json
+WS="$W40/ws-old" node "$REPO/scripts/testing/mcp-stdio-client.mjs" calls.json -- tools/mapping-mcp.js --root projetos
+```
+
+R40.3 and R40.4 run in `ws-new` with a copy of the example project, whose open conversations are in `projects/full-example/comments/`:
+
+```bash
+cd "$W40/ws-new" && cp -a "$REPO/examples/full-example" projects/full-example
+C=projects/full-example/comments; T1=c3a96f10-8e24-47bd-b5d0-1f7a2e9c6b38; T2=5d0e8a41-2c7b-4f1e-9a63-b8c1d4e7f902
+# R40.3: stdout to a file, stderr to another, a message added while the watcher runs
+node watch-comments.mjs --emit --quiet 1 > ../emit.out 2> ../emit.err & P=$!
+sleep 4; wc -l < ../emit.out; humano "$C/$T2.json" "R40.3 message"; sleep 4; kill $P; wait $P 2>/dev/null
+wc -l < ../emit.out; cut -c1-80 ../emit.out; cut -c1-70 ../emit.err
+# R40.4: --state, a restart and a message added while stopped
+S=.mapping-watch/state.json; rm -rf .mapping-watch
+timeout 4 node watch-comments.mjs --emit --state "$S" --quiet 1 > ../s1.out 2>/dev/null; wc -l < ../s1.out
+timeout 4 node watch-comments.mjs --emit --state "$S" --quiet 1 > ../s2.out 2>/dev/null; wc -l < ../s2.out
+humano "$C/$T1.json" "R40.4 while stopped"
+timeout 4 node watch-comments.mjs --emit --state "$S" --quiet 1 > ../s3.out 2>/dev/null; wc -l < ../s3.out; grep -o '"thread":"[^"]*"' ../s3.out
+```
+
+R40.5 uses the session's own `Monitor` (the command of the `watch-conversations` skill, in `ws-new`), and R40.6 the usage error:
+
+```bash
+cd "$W40/ws-new" && rm -rf .mapping-watch
+# R40.5, with the Monitor tool (timeout_ms 1800000): node watch-comments.mjs --emit --state .mapping-watch/state.json --quiet 1 --root projects
+# then: humano "projects/full-example/comments/$T2.json" "R40.5 message"; TaskStop on the monitor; start the same command again
+# R40.6
+node watch-comments.mjs --emit -- echo hi; echo "exit=$?"
+```
+
+| Step | Action | Expected |
+| --- | --- | --- |
+| R40.1 | **New workspace.** Run the R40.1 shell (empty `ws-new` folder, the commit's `setup.sh` with `MAPPING_RELEASE_BASE`). | **Disk:** `exit=0`; `projects` and `specializations` exist; both skill folders exist and `.claude/skills/` has the two links (`links`); `cmp=0` (the installed skill equals the release's copy). **Response:** the summary has `Watch skill: installed`, `Skill:`, `AGENTS.md: created` and `Watcher: installed`; no warning about `projetos/`. |
+| R40.2 | **Old workspace.** Run the R40.2 shell (`ws-old` with `projetos/` and `especializacoes/`, then the commit's `setup.sh`). | **Disk:** `exit=0`; `ls -d projects specializations` fails for both ("No such file"), so nothing was created next to the old folders; `projetos/full-example` is still there. **Response:** one warning (`this workspace uses projetos/ (or especializacoes/); to rename, see "Renaming the folders" in README.md`) and `Watch skill: installed`; the client's `list_projects` answers with `full-example`, with the root `…/projetos`. |
+| R40.3 | **`--emit`.** Run the first part of the R40.3/R40.4 shell (watcher in the background, one message added by `humano` to the second conversation). | **Response:** `emit.out` has `1` line before the message and `2` after, each `MAPPING_WAKE [{"project":"full-example","thread":"<id>","path":"…"}]` (the first one for `c3a96f10…`, the second for `5d0e8a41…`); `emit.err` has only `watch-comments:` log lines (no `MAPPING_WAKE`). |
+| R40.4 | **`--state`.** Run the second part of the R40.3/R40.4 shell (two runs with the state file, a message added while stopped, a third run). | **Response:** the counts are `1`, `0` and `1`: the first run fires for the conversation that waits, the restart repeats nothing, and the third fires only for `c3a96f10…` (the one that got a message while the watcher was stopped). **Disk:** `.mapping-watch/state.json` exists. |
+| R40.5 | **`Monitor` in the same chat.** Remove `.mapping-watch`; start the skill's command with the `Monitor` tool; read the first notification; add a message with `humano` to `$T2`; read the notification; `TaskStop` the monitor; start the same command again and wait about 10 s. Mark "not executed (no Monitor)" only if the session has no `Monitor` tool. | **Screen (the chat):** each `MAPPING_WAKE` line arrives as a notification in this same chat: first for the conversation that already waits, then, after the message, for `5d0e8a41…`. After `TaskStop`, no process is left (`pgrep -fl watch-comments` empty). After the re-arm, **no** notification for what was already handled. |
+| R40.6 | **`--emit` with a command.** Run the R40.6 line. | **Response:** `exit=2`, the message `--emit and a command after "--" cannot be used together` and the usage line, with no stack trace. |
+
 ### On-demand scripts (manual)
 
-**Entry criterion.** The main test scripts (R0 to R30) are made for the cloud agent to run on its own. A test goes here when it needs the owner's interaction and is **not very relevant** (the rule is in the conventions at the start of this section). These test scripts **only run when the owner asks**, in an on-demand session: they never enter the full round or the directed one, and outside the requested session they do not even appear in the report. The codes and the content do not change. R0.5 and R6.2 have already moved here (RF and RA), by the owner's decision, after not working on their own in a round without interaction.
+**Entry criterion.** The main test scripts (R0 to R40) are made for the cloud agent to run on its own. A test goes here when it needs the owner's interaction and is **not very relevant** (the rule is in the conventions at the start of this section). These test scripts **only run when the owner asks**, in an on-demand session: they never enter the full round or the directed one, and outside the requested session they do not even appear in the report. The codes and the content do not change. R0.5 and R6.2 have already moved here (RF and RA), by the owner's decision, after not working on their own in a round without interaction.
 
 #### RP — Installed app (PWA)
 
