@@ -1549,10 +1549,11 @@ describe('queue panel page: fast track in the queue (FQ2)', () => {
       expect(text('#mp-concluidas-resumo')).toBe('1 refused');
     });
 
-    it('a recusada row does not count in the "Completed" tile and a panel without recusada is unchanged', () => {
-      const panel = mount({}, ROWS);
+    it('a recusada row is outside the "Completed" tile total, so a finished queue reaches 100%', () => {
+      const panel = mount({}, [...ROWS, queueRow({ issue: '#12', status: 'concluída' })]);
       const s = panel.data('summary');
-      expect(s.status === 'ok' && s.data[0]).toMatchObject({ total: 2, done: 1 });
+      expect(s.status === 'ok' && s.data[0]).toMatchObject({ total: 2, done: 2 });
+      expect(document.querySelector<HTMLElement>('#mp-bar')?.style.width).toBe('100%');
       mount({}, [ROWS[0] as Row]);
       expect(text('#mp-concluidas-resumo')).toBe('1 stage');
     });

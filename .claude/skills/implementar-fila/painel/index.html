@@ -843,7 +843,8 @@
           const q = queue;
           return [
             {
-              total: q.length,
+              // A refused fast track never merges: it is outside the total, so a finished queue reaches 100%.
+              total: q.filter((r) => r.status !== 'recusada').length,
               done: q.filter((r) => r.status === 'concluída').length,
               running: q.filter((r) => r.status === 'em andamento').length,
               failed: q.filter((r) => r.status === 'falhou').length,
@@ -1351,7 +1352,7 @@
         const back = card ? card.querySelector('button') : null;
         if (back) back.focus();
       }
-      // Completed (stage #1840): the `concluída` rows of the queue, per day of `ended` in Brasilia.
+      // Completed (stage #1840): the `concluída` rows of the queue and the `recusada` ones (stage #1791), per day of `ended` in Brasilia.
       const diaKey = (ms) => new Date(ms).toLocaleDateString('en-CA', { timeZone: TZ });
       // Only the weekday label is English; the other locale-formatted values (US$ with a decimal
       // comma, times, the log date) keep the pt-BR format, which the owner reads and tests compare.
