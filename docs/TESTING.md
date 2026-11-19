@@ -2967,7 +2967,7 @@ For those who maintain the project, after a full round with no high or medium fi
 
 ### Round report
 
-One template only, for the full round, the directed one and the advanced test. Whoever tests through an agent saves `relato.md` in the working folder and delivers it as a comment on the sub-issue of the tested phase (the comment is this template; see `docs/TESTING-NUVEM.md`). In the directed round, use the **Source finding** column and the **Regressions outside the target** section; in the others, delete them. In the `modo completo, bloco k de n` ("full round in blocks") mode, the comment's first line is "Full round — block k of 5" and the findings carry the code `k.n` (block k, finding n). The header's first line is `Modo: completo, bloco k de n (<scripts>)` in block mode and `Modo: dirigido, grupo k de n (<scripts>)` in group mode, as in `docs/TESTING-NUVEM.md`.
+One template only, for the full round, the directed one and the advanced test. Whoever tests through an agent saves `relato.md` in the working folder and delivers it as a comment on the sub-issue of the tested phase (the comment is this template; see `docs/TESTING-NUVEM.md`). In the directed round, use the **Source finding** column and the **Regressions outside the target** section; in the others, delete them. In the `modo completo, bloco k de n` ("full round in blocks") mode, the comment's first line is "Full round — block k of n" and the findings carry the code `k.n` (block k, finding n). The header's first line is `Modo: completo, bloco k de n (<scripts>)` in block mode and `Modo: dirigido, grupo k de n (<scripts>)` in group mode, as in `docs/TESTING-NUVEM.md`.
 
 ```markdown
 # Test report — Mapping

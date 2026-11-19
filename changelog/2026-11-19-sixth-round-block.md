@@ -1,4 +1,4 @@
-# Sixth round block — 2026-11-19 (épico `epic/sixth-round-block`, PR #0, MCP 0.44.0 unchanged, schema v21)
+# Sixth round block — 2026-11-19 (épico `epic/sixth-round-block`, PR #2216, MCP 0.44.0 unchanged, schema v21)
 
 ## Alterado
 
