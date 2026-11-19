@@ -1,4 +1,4 @@
-# Context and cost — 2026-11-19 (épico `epic/context-and-cost`, PR #0, MCP unchanged, schema v20)
+# Context and cost — 2026-11-19 (épico `epic/context-and-cost`, PR #2187, MCP unchanged, schema v20)
 
 ## Adicionado
 
