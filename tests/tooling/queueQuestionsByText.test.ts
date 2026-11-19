@@ -173,6 +173,7 @@ describe('implementar-fila: each question has its notification, line, two comman
       /one question per pending type B request \(at most 4 per call\)/,
     );
     expect(typeB).toContain('SUP-<k> (tipo B): <pedido>.');
+    expect(typeB).toMatch(/beyond 4[^.]*next call/);
     expect(typeB).toMatch(/no `PushNotification`/);
     expect(typeB).toContain('estado=perguntado ao dono');
     expect(typeB).toMatch(/opens no phase, tester or merge/);
