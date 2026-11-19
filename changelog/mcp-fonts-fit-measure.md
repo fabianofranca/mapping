@@ -1,4 +1,4 @@
-# MCP fonts with unsupported GSUB, `fit_marking` and `measure_component` — [Não lançado] (épico `epic/mcp-fonts-fit-measure`, PR #2089, MCP 0.47.0, schema v20)
+# MCP fonts with unsupported GSUB, `fit_marking` and `measure_component` — [Não lançado] (épico `epic/mcp-fonts-fit-measure`, PR #2255, MCP 0.47.0, schema v20)
 
 ## Adicionado
 
