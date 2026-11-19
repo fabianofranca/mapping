@@ -321,7 +321,7 @@ export function useEditorShortcuts(
         case 'toggle-window': {
           const { window } = shortcut;
           // Closed or without focus inside: opens and focuses; already focused: hides.
-          if (focusedWindow()?.id === window) closeToolWindow(window);
+          if (focusedWindow()?.id === window) closeToolWindow(window, true);
           else showAndFocusToolWindow(window);
           return;
         }

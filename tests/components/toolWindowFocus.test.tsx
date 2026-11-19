@@ -1,7 +1,8 @@
-import { cleanup, render, screen } from '@testing-library/preact';
+import { cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { t } from '../../src/i18n';
+import { useEditorShortcuts } from '../../src/app/useEditorShortcuts';
 import { Dialog } from '../../src/ui/Dialog';
 import { ActionMenu } from '../../src/ui/ActionMenu';
 import { locale } from '../../src/store/settings';
@@ -338,5 +339,37 @@ describe('Esc closes Details, Comments and Catalog', () => {
     await user.keyboard('{Shift>}{Escape}{/Shift}');
     await settle();
     expect(isToolWindowOpen('details')).toBe(true);
+  });
+});
+
+// Finding 2.1 (CL1): a window that closes by its own shortcut sends focus to the canvas, even
+// when it was opened from the strip button (whose click made it the "opener").
+describe('closing by the window shortcut focuses the canvas', () => {
+  function ShortcutShell() {
+    useEditorShortcuts(
+      { current: null, slot: null, show: () => {}, close: () => {} } as never,
+      { exportProject: async () => {}, closeProject: async () => {} },
+    );
+    return <Shell />;
+  }
+
+  it.each([
+    ['tree', { key: '1', code: 'Digit1' }],
+    ['catalog', { key: '9', code: 'Digit9' }],
+  ] as const)('%s opened from the strip, shortcut closes → canvas', async (id, key) => {
+    const user = userEvent.setup();
+    harness.context.canvas.current = { cancelInteraction: () => false } as never;
+    render(
+      <EditorContext.Provider value={harness.context}>
+        <ShortcutShell />
+      </EditorContext.Provider>,
+    );
+    await user.click(stripButton(id) as HTMLElement);
+    await settle();
+    control(id).focus();
+    fireEvent.keyDown(window, { ...key, ctrlKey: true, shiftKey: true });
+    await settle();
+    expect(isToolWindowOpen(id)).toBe(false);
+    expect(active()?.hasAttribute('data-canvas-area')).toBe(true);
   });
 });
