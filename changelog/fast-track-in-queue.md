@@ -19,3 +19,4 @@
 - **The merge no longer blocks the turn, and a late merge after the End is served (#1789, finding 4).**
 - **`phase` no longer raises a traceback (#1789, finding 5):** `row … phases=` is validated as `<code>:<todo|open|ok>` and `phase` counts an item without `:` as `open`.
 - **`ended` follows the status (#1789, finding 6):** `concluída`, `falhou` and `recusada` write `ended`; `aguardando`, `em andamento` and `esperando dono` clear it.
+- **`show` no longer lists a `recusada` stage in `testador acima do teto:` (#1791, finding CL1):** `tester_over_limit_text` drops the rows with status `recusada`, like `concluída` and `meta.merged`.

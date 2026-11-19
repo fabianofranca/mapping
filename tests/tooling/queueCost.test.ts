@@ -564,6 +564,16 @@ describe('painel.py: the tester ceiling of 300 thousand (TC2, decision 9 of #163
     expect(run('show', dir)).toMatch(/^testador acima do teto: nenhum$/m);
   });
 
+  it('show does not list the stage of a recusada row', () => {
+    recordCost('sess_a', 'testador', 339000, '#20', 'group2');
+    recordCost('sess_b', 'testador', 523000, '#10', 'group1');
+    expect(run('show', dir)).toMatch(/^testador acima do teto: .*#20 group2 339k/m);
+    runAt(at, 'row', dir, '#20', 'status=recusada');
+    const after = run('show', dir);
+    expect(after).not.toMatch(/#20 group2/);
+    expect(after).toMatch(/#10 group1 523k/);
+  });
+
   it('show does not trap forever the tester above the ceiling with no registered stage', () => {
     runAt(at, 'cost', dir, 'sess_n', 'usd=1', 'ctx=400000', 'kind=testador');
     expect(run('show', dir)).toMatch(/^testador acima do teto: nenhum$/m);
