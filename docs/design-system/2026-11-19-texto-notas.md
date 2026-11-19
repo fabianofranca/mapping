@@ -6,8 +6,8 @@
 
 ## Sincronização
 
-Gravado no artefato **Mapping** on 2026-11-19: version 95. `components/SpecsDialog/README.md` (the list item's buttons now include **Update to the built-in version (vN)**, shown when the app bundles a newer copy) and `components/SpecsDialog/preview.html` (the button in the item row of the "after applying a file" card). The index was read right before and only its `lastChange` changed.
+Gravado no artefato **Mapping** on 2026-11-19, by the owner, after the closing session's write was refused by the permission classifier. Recorded: `components/SpecsDialog/README.md` now names the **Update to the built-in version (vN)** button in the list item's buttons (shown when the app bundles a newer copy), and `components/SpecsDialog/preview.html` shows **Update to the built-in version (v4)** in the card "after applying a file". Artifact version read: 1795082524-6d34; the index `lastChange` is 2026-11-19T08:45:00Z ("Claude Code (epic texto-notas, closing)").
 
 ## Ficou sem gravar
 
-None.
+Nothing.
