@@ -1,4 +1,4 @@
-# Text type in the notes library — [Não lançado] (épico `epic/texto-notas`, MCP 0.45.0, schema v20)
+# Text type in the notes library — [Não lançado] (PR #0, épico `epic/texto-notas`, MCP 0.45.0, schema v20)
 
 ## Adicionado
 
