@@ -404,6 +404,218 @@ describe('queue panel page: the canaries', () => {
   });
 });
 
+// Stage #2260 (CB2, decision 13): the per-step cost, the false ❌ and not executed rates and the source of the "before".
+const STEP_SIDES = {
+  antes: {
+    sessoes: 68,
+    medianaSessao: 8.77,
+    medianaEtapa: 19.15,
+    decididas: 67,
+    comRetrabalho: 5,
+    passos: 4700,
+    usdPorPasso: 0.143,
+    xFalso: 6,
+    naoExec: 56,
+    xFalsoPct: 6.25,
+    naoExecPct: 2.5,
+    fonte: 'painel anterior',
+  },
+  canario: {
+    sessoes: 8,
+    medianaSessao: 1.86,
+    medianaEtapa: null,
+    decididas: 2,
+    comRetrabalho: 0,
+    passos: 250,
+    usdPorPasso: 0.099,
+    xFalso: null,
+    naoExec: null,
+    xFalsoPct: null,
+    naoExecPct: null,
+  },
+};
+const stepCanary = (resumo: Row, extra: Row = {}): Row => ({
+  id: 'C',
+  papel: 'testador',
+  de: 'Sonnet medium',
+  modelo: 'Haiku',
+  esforco: 'medium',
+  n: 12,
+  volta: 2,
+  estado: 'ativo',
+  contadas: 8,
+  retrabalhos: [],
+  resumo,
+  ...extra,
+});
+
+describe('queue panel page: the canary baseline and the per-step figures (stage #2260)', () => {
+  it('(a) a tester canary with medida "passo" shows the cost per step on both sides', () => {
+    const panel = loadPanel({
+      canarios: [
+        stepCanary({ ...STEP_SIDES, medida: 'passo', veredito: 'não promover' }),
+      ],
+    });
+    panel.render();
+    const [first, line] = canaryItems()[0] as string[];
+    expect(first).toContain('C · testador · Sonnet medium → Haiku medium · 8/12 · ativo');
+    expect(line).toContain(
+      'before (source painel anterior): US$ 0,143 per step, rework 5 of 67',
+    );
+    expect(line).toContain('canary: US$ 0,099 per step, rework 0 of 2');
+    expect(line).not.toContain('per session');
+  });
+
+  it('(b) the false ❌ and not executed rates show on both sides, with "—" when null', () => {
+    const panel = loadPanel({
+      canarios: [
+        stepCanary({ ...STEP_SIDES, medida: 'passo', veredito: 'não promover' }),
+      ],
+    });
+    panel.render();
+    const rates = canaryItems()[0]?.[2];
+    expect(rates).toBe(
+      'before: false ❌ 6,3%, not executed 2,5% · canary: false ❌ —, not executed —',
+    );
+  });
+
+  it('(c) a "sessão" measure keeps the median per session and still shows the source and the rates', () => {
+    const panel = loadPanel({
+      canarios: [
+        stepCanary({
+          antes: { ...STEP_SIDES.antes, usdPorPasso: null },
+          canario: STEP_SIDES.canario,
+          medida: 'sessão',
+          veredito: 'sem base',
+        }),
+      ],
+    });
+    panel.render();
+    const line = canaryItems()[0]?.[1];
+    expect(line).toContain(
+      'before (source painel anterior): median US$ 8,77 per session',
+    );
+    expect(line).toContain('canary: median US$ 1,86 per session');
+    expect(canaryItems()[0]).toHaveLength(4);
+  });
+
+  it('(d) "sem base" is neutral: neither the ok class nor the bad class', () => {
+    const panel = loadPanel({
+      canarios: [
+        stepCanary({
+          antes: {
+            ...STEP_SIDES.antes,
+            sessoes: 0,
+            medianaSessao: null,
+            usdPorPasso: null,
+            fonte: 'nenhuma',
+          },
+          canario: STEP_SIDES.canario,
+          medida: 'sessão',
+          veredito: 'sem base',
+        }),
+      ],
+    });
+    panel.render();
+    const verdict = document.querySelector('#mp-canarios .canario .veredito');
+    expect(verdict?.textContent).toBe('sem base');
+    expect(verdict?.className).toBe('veredito');
+    expect(verdict?.classList.contains('ok')).toBe(false);
+    expect(verdict?.classList.contains('bad')).toBe(false);
+  });
+
+  it('(e) a canary without the new fields renders as before: no source, no per-step line, no rates', () => {
+    const panel = loadPanel({ canarios: CANARIOS });
+    panel.render();
+    for (const box of canaryItems()) {
+      expect(box).toHaveLength(3);
+      expect(box[1]).toMatch(
+        /^before: median US\$ .* per session, rework \d+ of \d+ · canary: median /,
+      );
+      expect(box[1]).not.toContain('source');
+      expect(box[1]).not.toContain('per step');
+    }
+  });
+
+  it('(f) a role without steps (null figures and no fonte) keeps the median per session', () => {
+    const [first] = CANARIOS as [Row];
+    const resumo = first.resumo as { antes: Row; canario: Row };
+    const panel = loadPanel({
+      canarios: [
+        {
+          ...first,
+          resumo: {
+            ...resumo,
+            medida: 'sessão',
+            antes: { ...resumo.antes, passos: null, usdPorPasso: null, fonte: 'painel' },
+          },
+        },
+      ],
+    });
+    panel.render();
+    const [, line] = canaryItems()[0] as string[];
+    expect(line).toContain('before (source painel): median US$ 3,55 per session');
+    expect(canaryItems()[0]).toHaveLength(3);
+  });
+});
+
+describe('queue panel page: review fixes of the canary figures (stage #2260)', () => {
+  it('(g) a phase canary with the rates keys all null (the real shape) gets no rates line', () => {
+    const none = { xFalso: null, naoExec: null, xFalsoPct: null, naoExecPct: null };
+    const panel = loadPanel({
+      canarios: [
+        stepCanary(
+          {
+            antes: { ...STEP_SIDES.antes, ...none, usdPorPasso: null, passos: null },
+            canario: { ...STEP_SIDES.canario, ...none, usdPorPasso: null, passos: null },
+            medida: 'sessão',
+            veredito: 'não promover',
+          },
+          { id: 'B', papel: 'fase' },
+        ),
+      ],
+    });
+    panel.render();
+    expect(canaryItems()[0]).toHaveLength(3);
+  });
+
+  it('(h) a tester canary with every figure null still shows the rates line, with "—"', () => {
+    const none = { xFalso: null, naoExec: null, xFalsoPct: null, naoExecPct: null };
+    const panel = loadPanel({
+      canarios: [
+        stepCanary({
+          antes: { ...STEP_SIDES.antes, ...none },
+          canario: { ...STEP_SIDES.canario, ...none },
+          medida: 'passo',
+          veredito: 'não promover',
+        }),
+      ],
+    });
+    panel.render();
+    expect(canaryItems()[0]?.[2]).toBe(
+      'before: false ❌ —, not executed — · canary: false ❌ —, not executed —',
+    );
+  });
+
+  it('(i) both sides use the same unit: a side without usdPorPasso turns both to the median per session', () => {
+    const panel = loadPanel({
+      canarios: [
+        stepCanary({
+          antes: STEP_SIDES.antes,
+          canario: { ...STEP_SIDES.canario, usdPorPasso: null },
+          medida: 'passo',
+          veredito: 'não promover',
+        }),
+      ],
+    });
+    panel.render();
+    const line = canaryItems()[0]?.[1];
+    expect(line).not.toContain('per step');
+    expect(line).toContain('median US$ 8,77 per session');
+    expect(line).toContain('canary: median US$ 1,86 per session');
+  });
+});
+
 describe('queue panel page: the new blocks of the "Queue cost" card', () => {
   it('(a) the headings sit after "Most expensive stages" and before the folded table', () => {
     loadPanel({});
