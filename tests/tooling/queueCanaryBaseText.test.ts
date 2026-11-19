@@ -40,10 +40,9 @@ describe('CB2 — implementar-fila, paragraph "Canaries B and C": the baseline r
     expect(canaries()).toContain('`log`');
   });
 
-  it('acts in the cycle where `show` asks, canary C of the live panel included', () => {
+  it('acts in the cycle where `show` asks, a canary of a live panel included', () => {
     expect(canaries()).toContain('in that cycle');
-    expect(canaries()).toContain('canary C');
-    expect(canaries()).toContain('XAdCiaqXjhFMpNR5HJNv3W');
+    expect(canaries()).toContain('a canary of a live panel included');
   });
 });
 

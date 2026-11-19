@@ -1764,6 +1764,7 @@
       const sourceText = (s) =>
         isObj(s) && s.fonte ? ' (source ' + asText(s.fonte) + ')' : '';
       const pctOrDash = (v) => dashIfNull(v, (x) => pct1(x) + '%');
+      const TESTER_ROLES = ['testador', 'reteste'];
       const hasRates = (s) => isObj(s) && (has(s, 'xFalsoPct') || has(s, 'naoExecPct'));
       const ratesText = (s) =>
         isObj(s)
@@ -1786,7 +1787,13 @@
           'rework ' + back.length + '/' + asText(c.volta),
         ].join(' · ');
         const r = isObj(c.resumo) ? c.resumo : null;
-        const perStep = !!r && r.medida === 'passo';
+        const perStep =
+          !!r &&
+          r.medida === 'passo' &&
+          isObj(r.antes) &&
+          isObj(r.canario) &&
+          r.antes.usdPorPasso != null &&
+          r.canario.usdPorPasso != null;
         const line =
           'before' +
           (r ? sourceText(r.antes) : '') +
@@ -1799,7 +1806,11 @@
         const v = el('div', 'veredito', verdict);
         if (has(VEREDITO_COR, verdict)) v.classList.add(VEREDITO_COR[verdict]);
         box.append(el('div', '', head), el('div', 'regua', line));
-        if (r && (hasRates(r.antes) || hasRates(r.canario))) {
+        if (
+          r &&
+          TESTER_ROLES.includes(c.papel) &&
+          (hasRates(r.antes) || hasRates(r.canario))
+        ) {
           box.append(
             el(
               'div',

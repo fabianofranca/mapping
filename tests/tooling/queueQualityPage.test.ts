@@ -559,6 +559,63 @@ describe('queue panel page: the canary baseline and the per-step figures (stage 
   });
 });
 
+describe('queue panel page: review fixes of the canary figures (stage #2260)', () => {
+  it('(g) a phase canary with the rates keys all null (the real shape) gets no rates line', () => {
+    const none = { xFalso: null, naoExec: null, xFalsoPct: null, naoExecPct: null };
+    const panel = loadPanel({
+      canarios: [
+        stepCanary(
+          {
+            antes: { ...STEP_SIDES.antes, ...none, usdPorPasso: null, passos: null },
+            canario: { ...STEP_SIDES.canario, ...none, usdPorPasso: null, passos: null },
+            medida: 'sessão',
+            veredito: 'não promover',
+          },
+          { id: 'B', papel: 'fase' },
+        ),
+      ],
+    });
+    panel.render();
+    expect(canaryItems()[0]).toHaveLength(3);
+  });
+
+  it('(h) a tester canary with every figure null still shows the rates line, with "—"', () => {
+    const none = { xFalso: null, naoExec: null, xFalsoPct: null, naoExecPct: null };
+    const panel = loadPanel({
+      canarios: [
+        stepCanary({
+          antes: { ...STEP_SIDES.antes, ...none },
+          canario: { ...STEP_SIDES.canario, ...none },
+          medida: 'passo',
+          veredito: 'não promover',
+        }),
+      ],
+    });
+    panel.render();
+    expect(canaryItems()[0]?.[2]).toBe(
+      'before: false ❌ —, not executed — · canary: false ❌ —, not executed —',
+    );
+  });
+
+  it('(i) both sides use the same unit: a side without usdPorPasso turns both to the median per session', () => {
+    const panel = loadPanel({
+      canarios: [
+        stepCanary({
+          antes: STEP_SIDES.antes,
+          canario: { ...STEP_SIDES.canario, usdPorPasso: null },
+          medida: 'passo',
+          veredito: 'não promover',
+        }),
+      ],
+    });
+    panel.render();
+    const line = canaryItems()[0]?.[1];
+    expect(line).not.toContain('per step');
+    expect(line).toContain('median US$ 8,77 per session');
+    expect(line).toContain('canary: median US$ 1,86 per session');
+  });
+});
+
 describe('queue panel page: the new blocks of the "Queue cost" card', () => {
   it('(a) the headings sit after "Most expensive stages" and before the folded table', () => {
     loadPanel({});
