@@ -1741,17 +1741,38 @@
           tb.append(tr);
         }
       }
-      // "Canaries" (stage #1889, QM4): the head, the before x canary ruler and the verdict, all in text; the color
-      // of the verdict only repeats what the words already say.
-      const sideText = (s) =>
+      // "Canaries" (stage #1889, QM4; #2260, CB2): the head, the before x canary ruler, the false ❌ and not executed
+      // rates of the tester roles and the verdict, all in text; the color of the verdict only repeats what the words
+      // already say. The ruler shows the cost per tested step when `resumo.medida` is `passo`; the "before" side shows
+      // its `fonte`; a missing field (an old panel or a role without steps) shows "—" or nothing, as before.
+      const usdStep = (x) =>
+        'US$ ' +
+        finite(x).toLocaleString('pt-BR', {
+          minimumFractionDigits: 3,
+          maximumFractionDigits: 3,
+        });
+      const sideText = (s, perStep) =>
         isObj(s)
-          ? 'median ' +
-            moneyOrDash(s.medianaSessao) +
-            ' per session, rework ' +
+          ? (perStep && s.usdPorPasso != null
+              ? usdStep(s.usdPorPasso) + ' per step'
+              : 'median ' + moneyOrDash(s.medianaSessao) + ' per session') +
+            ', rework ' +
             asText(s.comRetrabalho) +
             ' of ' +
             asText(s.decididas)
           : '—';
+      const sourceText = (s) =>
+        isObj(s) && s.fonte ? ' (source ' + asText(s.fonte) + ')' : '';
+      const pctOrDash = (v) => dashIfNull(v, (x) => pct1(x) + '%');
+      const hasRates = (s) => isObj(s) && (has(s, 'xFalsoPct') || has(s, 'naoExecPct'));
+      const ratesText = (s) =>
+        isObj(s)
+          ? 'false ❌ ' +
+            pctOrDash(s.xFalsoPct) +
+            ', not executed ' +
+            pctOrDash(s.naoExecPct)
+          : '—';
+      // `sem base` has no entry: it stays neutral, like `não promover`.
       const VEREDITO_COR = { 'pode promover': 'ok', revertido: 'bad' };
       function canaryItem(c) {
         const back = asList(c.retrabalhos) || [];
@@ -1765,16 +1786,29 @@
           'rework ' + back.length + '/' + asText(c.volta),
         ].join(' · ');
         const r = isObj(c.resumo) ? c.resumo : null;
+        const perStep = !!r && r.medida === 'passo';
         const line =
-          'before: ' +
-          (r ? sideText(r.antes) : '—') +
+          'before' +
+          (r ? sourceText(r.antes) : '') +
+          ': ' +
+          (r ? sideText(r.antes, perStep) : '—') +
           ' · canary: ' +
-          (r ? sideText(r.canario) : '—');
+          (r ? sideText(r.canario, perStep) : '—');
         const verdict = r && r.veredito ? asText(r.veredito) : '—';
         const box = el('div', 'canario');
         const v = el('div', 'veredito', verdict);
         if (has(VEREDITO_COR, verdict)) v.classList.add(VEREDITO_COR[verdict]);
-        box.append(el('div', '', head), el('div', 'regua', line), v);
+        box.append(el('div', '', head), el('div', 'regua', line));
+        if (r && (hasRates(r.antes) || hasRates(r.canario))) {
+          box.append(
+            el(
+              'div',
+              'regua',
+              'before: ' + ratesText(r.antes) + ' · canary: ' + ratesText(r.canario),
+            ),
+          );
+        }
+        box.append(v);
         const li = el('li');
         li.append(box);
         return li;
