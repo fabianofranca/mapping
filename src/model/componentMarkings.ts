@@ -1000,7 +1000,7 @@ export function componentPlacement(
     args.containerId,
     placed,
     { parent, area: slot.area },
-    args.pageId,
+    args.pageId ?? projectIndex(p).pageOf.get(parent.id),
   );
   const free = freeRectIn(level, placed);
   // Full slot: the previous position, but never contained in or equal to a sibling (3.1): otherwise the settle
