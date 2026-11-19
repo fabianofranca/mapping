@@ -8,7 +8,7 @@ import { pathToFileURL } from 'node:url';
 
 const BASE = PATHS.base;
 const SHOTS = `${BASE}/shots`;
-const LIB = `${PATHS.ws}/especializacoes/mapping-ds`;
+const LIB = `${PATHS.ws}/specializations/mapping-ds`;
 process.env.SRC = `${BASE}/app25`;
 const { extract, args, openApp } = await import(pathToFileURL(`${SHOTS}/extractor.mjs`).href);
 const safe = (s) => s.replace(/[^\p{L}\p{N}]+/gu, '_');

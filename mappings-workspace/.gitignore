@@ -6,7 +6,7 @@
 /AGENTS.md.bak-*
 
 # Backups the app writes when it migrates an old mapping.json.
-projetos/**/backups/
+projects/**/backups/
 .DS_Store
 Thumbs.db
 

@@ -8,8 +8,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { PATHS } from '../paths.mjs';
 
 const SHOTS = `${PATHS.base}/shots`;
-const PROJECT = `${PATHS.ws}/projetos/comentarios`;
-const LIB = `${PATHS.ws}/especializacoes/mapping-ds`;
+const PROJECT = `${PATHS.ws}/projects/comentarios`;
+const LIB = `${PATHS.ws}/specializations/mapping-ds`;
 const extracted = JSON.parse(readFileSync(process.argv[2] ?? `${SHOTS}/extracted.json`, 'utf8'));
 const p = JSON.parse(readFileSync(`${PROJECT}/mapping.json`, 'utf8'));
 const ann = new Map(p.annotations.map((a) => [a.markingId, a]));

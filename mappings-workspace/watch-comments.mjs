@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Mapping conversation watcher (Node >= 20, no dependencies).
 //
-// Watches `projetos/*/comments/` and, when some OPEN conversation awaits the agent (the last
+// Watches `projects/*/comments/` (or `projetos/*/comments/` in an old workspace that only has that folder) and, when some OPEN conversation awaits the agent (the last
 // message is from a person), runs ONE command (the agent) with the list of them in `MAPPING_AWAITING`.
 // The MCP server never triggers an agent: this process, which you start, decides to run it.
 //
@@ -12,7 +12,7 @@
 //
 // Conversation format: Mapping's `docs/COMMENT-FORMAT.md`.
 import { spawn } from 'node:child_process';
-import { realpathSync, watch } from 'node:fs';
+import { existsSync, realpathSync, watch } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -222,7 +222,11 @@ function parseArgs(argv, defaultRoot) {
 
 /** Runs the watcher until SIGINT/SIGTERM. Returns the exit code (2 for incorrect usage). */
 export async function main(argv) {
-  const defaultRoot = join(dirname(SCRIPT_PATH), 'projetos');
+  const base = dirname(SCRIPT_PATH);
+  const legacyRoot = join(base, 'projetos');
+  // Default root: projects/ next to the script; only an old projetos/ present -> that one.
+  const useLegacy = !existsSync(join(base, 'projects')) && existsSync(legacyRoot);
+  const defaultRoot = useLegacy ? legacyRoot : join(base, 'projects');
   const config = parseArgs(argv, defaultRoot);
   if (config.error !== undefined) {
     log(config.error);
@@ -262,6 +266,9 @@ export async function main(argv) {
     log(
       `observing ${config.root} (quiet period of ${config.quietSeconds}s); Ctrl+C stops`,
     );
+    if (useLegacy && config.root === legacyRoot) {
+      log('using the legacy projetos/ folder (no projects/ next to the script)');
+    }
     runner.schedule();
   });
 }

@@ -1,6 +1,6 @@
 # Mapping DS — estado e como continuar
 
-Biblioteca `especializacoes/mapping-ds/` (o design system do app Mapping como especialização) e o projeto `projetos/comentarios/` (o sistema de comentários do app, mapeado item a item com ela). Atualizado em 2026-11-08 (MCP 0.28.1).
+Biblioteca `specializations/mapping-ds/` (o design system do app Mapping como especialização) e o projeto `projects/comentarios/` (o sistema de comentários do app, mapeado item a item com ela). Atualizado em 2026-11-08 (MCP 0.28.1).
 
 **Onde isto mora:** `mappings-workspace/ferramentas/mapping-ds/`, dentro do próprio repositório do Mapping (antes ficava fora dele). Os caminhos dos scripts saem de `paths.mjs` (`PATHS.base` = esta pasta, `PATHS.ws` = `mappings-workspace/`, `PATHS.repo` = a raiz do repositório), então funcionam em qualquer clone; nenhum script tem caminho absoluto. As tags e o código do app (`git show mcp-v0.28.2:…`, `src/ui/icons.tsx`) são os do repositório onde esta pasta está. `app/`, `app25/`, `mcp25/` e as saídas de `shots/` não vão para o git (ver o `.gitignore` do `mappings-workspace/`) e se recriam: `app/` e `app25/` com o `git clone --local` da tabela abaixo (a tag é `mcp-v0.28.1` e `mcp-v0.25.0`); `mcp25/` é o `mapping-mcp.js` da release 0.25.0.
 
@@ -23,7 +23,7 @@ Biblioteca `especializacoes/mapping-ds/` (o design system do app Mapping como es
 | Arquivo | O que faz |
 | --- | --- |
 | `lib.mjs` | Os desenhos (componentes), documentos, exemplos, campos e a migração. Ícones avaliados do `src/ui/icons.tsx` do repo. Organizado em blocos "Revisão N" (o último vence). |
-| `build-spec.mjs` | Os tipos (id, descrição, `code` conferido no repo) e a versão; grava o pacote em `especializacoes/mapping-ds/`. **Suba `version` a cada mudança** (a aplicada é a do projeto). |
+| `build-spec.mjs` | Os tipos (id, descrição, `code` conferido no repo) e a versão; grava o pacote em `specializations/mapping-ds/`. **Suba `version` a cada mudança** (a aplicada é a do projeto). |
 | `app/` | Clone compilado do repo do Mapping em **mcp-v0.28.1** (fora do git): é o que desenha a prévia (formato 4). Recriar: `git clone --local ../../.. app && cd app && git checkout <tag> && npm ci && npm run build` (com `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`; o Chromium do cache do Playwright já serve). |
 | `app25/` | O mesmo em **mcp-v0.25.0**: o app cujo layout o projeto mapeia. É o que `extract.mjs` mede (`SRC=…/app25`). |
 | `shots/fixture.mjs` | Remonta em `shots/fixture/` o projeto comentarios de antes da v5 (as conversas de teste ancoram em marcações que a v5 apagou). É o que `extract.mjs` abre. Diferença conhecida: as notas foram movidas depois, então o zoom ajustado sai 11% (o projeto tem 12%) e o minimapa muda. |
@@ -39,7 +39,7 @@ Biblioteca `especializacoes/mapping-ds/` (o design system do app Mapping como es
 | `shots/zooms.mjs` | `node zooms.mjs <prefixo-do-id-do-container> <base> 50 100 200`: captura um container do projeto em vários zooms. `DSF=3` densidade, `VW`/`VH` viewport, `KEYS=Alt+h` modo Visualizar, `CLIP50=x,y,w,h` recorte, `LIB=<pasta>` usa a biblioteca da pasta, `OPS=<ops-min.json>` aplica os `update_marking`/`update_annotation` em memória (prévia da proposta), `DM=dark` desenha no modo escuro. O container do Editor fica 1:1 a 144%. |
 | `shots/mcp-propose.mjs` | `node mcp-propose.mjs plan_changes` (simula) ou `propose_changes` (envia, com título/descrição/origem de `shots/ops-meta.json`), com `shots/ops-min.json`, falando direto com `tools/mapping-mcp.js`. |
 
-Ciclo: editar `lib.mjs`/`build-spec.mjs` → `node build-spec.mjs` → `validate_library` (com `previous` = `projetos/comentarios/specs/mapping-ds/mapping-ds.spec.json`) → `node shots/extract.mjs` → `node shots/gen.mjs` → conferir a prévia com `shoot2.mjs` → propor.
+Ciclo: editar `lib.mjs`/`build-spec.mjs` → `node build-spec.mjs` → `validate_library` (com `previous` = `projects/comentarios/specs/mapping-ds/mapping-ds.spec.json`) → `node shots/extract.mjs` → `node shots/gen.mjs` → conferir a prévia com `shoot2.mjs` → propor.
 
 ## Limitações descobertas (motor de componentes / app)
 

@@ -28,8 +28,8 @@
 #
 # Touches: tools/mapping-mcp.js(.sha256), tools/mapping-signature.mjs(.sha256), .agents/skills/spec-author, .claude/skills/spec-author,
 # watch-comments.mjs (in the root; overwritten by the release's version, no backup), setup.sh itself and the block between the mapping:begin/end markers of AGENTS.md (with a copy
-# AGENTS.md.bak-YYYYMMDD-HHMMSS when the file changes). Never changes projetos/ and especializacoes/
-# (it only creates the folders), an existing CLAUDE.md (and does not create one), .mcp.json or the
+# AGENTS.md.bak-YYYYMMDD-HHMMSS when the file changes). Never changes or moves projetos/, especializacoes/,
+# projects/ and specializations/ (it only creates the new-name folder of a pair when neither name exists), an existing CLAUDE.md (and does not create one), .mcp.json or the
 # configs of the other clients.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -446,6 +446,20 @@ update_agents() {
   fi
 }
 
+# Each folder pair is checked on its own: neither name exists -> creates the English one; the old
+# Portuguese one exists -> creates nothing and moves nothing. One warning when an old name exists.
+ensure_folders() {
+  local old_found=0 pair old new
+  for pair in "projetos:projects" "especializacoes:specializations"; do
+    old="${pair%%:*}"; new="${pair##*:}"
+    if [ -e "$old" ]; then old_found=1
+    elif [ ! -e "$new" ]; then mkdir -p "$new"; fi
+  done
+  if [ "$old_found" = 1 ]; then
+    warn "this workspace uses projetos/ (or especializacoes/); to rename, see \"Renaming the folders\" in README.md"
+  fi
+}
+
 # --- main ----------------------------------------------------------------------------------
 
 main() {
@@ -454,7 +468,7 @@ main() {
   download_all
   verify_all
   self_update "$@"
-  mkdir -p projetos especializacoes
+  ensure_folders
   install_server
   install_skill
   install_watcher

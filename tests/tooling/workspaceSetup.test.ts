@@ -522,11 +522,69 @@ describe('idempotence', () => {
   });
 });
 
-describe('what is never touched', () => {
-  it('projetos/, especializacoes/, CLAUDE.md and the client configs stay the same', () => {
+describe('folder names (stage #1879, decision 9)', () => {
+  const bare = (env: Env): void => {
+    for (const name of ['projetos', 'especializacoes', 'projects', 'specializations'])
+      rmSync(join(env.ws, name), { recursive: true, force: true });
+  };
+  const WARNING = 'see "Renaming the folders" in README.md';
+
+  it('new workspace: creates projects/ and specializations/ and no Portuguese folder', () => {
     const env = setup();
+    bare(env);
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(lstatSync(join(env.ws, 'projects')).isDirectory()).toBe(true);
+    expect(lstatSync(join(env.ws, 'specializations')).isDirectory()).toBe(true);
+    expect(existsSync(join(env.ws, 'projetos'))).toBe(false);
+    expect(existsSync(join(env.ws, 'especializacoes'))).toBe(false);
+    expect(result.err).not.toContain(WARNING);
+  });
+
+  it('old workspace: creates nothing, moves nothing and warns once', () => {
+    const env = setup();
+    bare(env);
     write(env, 'projetos/a/mapping.json', '{"x":1}\n');
     write(env, 'especializacoes/s.json', '{"id":"s"}\n');
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(existsSync(join(env.ws, 'projects'))).toBe(false);
+    expect(existsSync(join(env.ws, 'specializations'))).toBe(false);
+    expect(read(env, 'projetos/a/mapping.json')).toBe('{"x":1}\n');
+    expect(read(env, 'especializacoes/s.json')).toBe('{"id":"s"}\n');
+    expect(result.err.split(WARNING).length - 1).toBe(1);
+  });
+
+  it('each pair on its own: old projetos/ with no specializations/ creates specializations/', () => {
+    const env = setup();
+    bare(env);
+    write(env, 'projetos/a/mapping.json', '{}\n');
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(existsSync(join(env.ws, 'projects'))).toBe(false);
+    expect(existsSync(join(env.ws, 'specializations'))).toBe(true);
+    expect(existsSync(join(env.ws, 'especializacoes'))).toBe(false);
+    expect(result.err).toContain(WARNING);
+  });
+
+  it('workspace with projects/ and no projetos/: no projetos/ is created', () => {
+    const env = setup();
+    bare(env);
+    mkdirSync(join(env.ws, 'projects'));
+    mkdirSync(join(env.ws, 'specializations'));
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(existsSync(join(env.ws, 'projetos'))).toBe(false);
+    expect(existsSync(join(env.ws, 'especializacoes'))).toBe(false);
+    expect(result.err).not.toContain(WARNING);
+  });
+});
+
+describe('what is never touched', () => {
+  it('projects/, specializations/, CLAUDE.md and the client configs stay the same', () => {
+    const env = setup();
+    write(env, 'projects/a/mapping.json', '{"x":1}\n');
+    write(env, 'specializations/s.json', '{"id":"s"}\n');
     write(env, 'CLAUDE.md', '# my claude\n');
     write(
       env,
@@ -535,8 +593,8 @@ describe('what is never touched', () => {
     );
     write(env, '.cursor/mcp.json', '{"mcpServers":{"outro":{"command":"y"}}}\n');
     const paths = [
-      'projetos/a/mapping.json',
-      'especializacoes/s.json',
+      'projects/a/mapping.json',
+      'specializations/s.json',
       'CLAUDE.md',
       '.mcp.json',
       '.cursor/mcp.json',

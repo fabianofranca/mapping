@@ -12,7 +12,7 @@ writeFileSync(`${SCRATCH}/shots/lote/operacoes.json`, JSON.stringify(operations)
 
 // Lote com mais de 1000 operações: vai por operationsFile, num .json dentro de uma raiz (shots/lote).
 const LOTE = `${SCRATCH}/shots/lote`;
-const server = spawn('node', ['tools/mapping-mcp.js', '--root', 'projetos', '--root', 'especializacoes', '--root', LOTE], { cwd: WS, stdio: ['pipe', 'pipe', 'inherit'] });
+const server = spawn('node', ['tools/mapping-mcp.js', '--root', 'projects', '--root', 'specializations', '--root', LOTE], { cwd: WS, stdio: ['pipe', 'pipe', 'inherit'] });
 let buf = '';
 const pending = new Map();
 server.stdout.on('data', (d) => {

@@ -9,7 +9,7 @@ for (const o of b) {
   if (o.op === 'add_container') screens.push([]);
   screens[screens.length - 1].push(o);
 }
-const A = [{ op: 'update_specialization', file: `${PATHS.ws}/especializacoes/mapping-ds` }, ...a];
+const A = [{ op: 'update_specialization', file: `${PATHS.ws}/specializations/mapping-ds` }, ...a];
 const B = [];
 for (const s of screens) (B.length === 0 && A.length + s.length <= 1000 ? A : B).push(...s);
 writeFileSync('ops-v9-A.json', JSON.stringify(A));

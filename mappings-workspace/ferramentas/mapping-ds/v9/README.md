@@ -1,6 +1,6 @@
 # v9 da Mapping DS: desenhos dos 43 tipos sem componente
 
-Cada grupo trabalha **só** na própria pasta `v9/<grupo>/` e entrega três arquivos. Ninguém edita `lib.mjs`, `build-spec.mjs`, `shots/*`, `v9/preview.mjs`, `especializacoes/`, `projetos/` nem o repositório `C:/Pessoal/mapping/repo` (só leitura). Precisou mudar algo compartilhado: diga no relatório, com o trecho.
+Cada grupo trabalha **só** na própria pasta `v9/<grupo>/` e entrega três arquivos. Ninguém edita `lib.mjs`, `build-spec.mjs`, `shots/*`, `v9/preview.mjs`, `specializations/`, `projects/` nem o repositório `C:/Pessoal/mapping/repo` (só leitura). Precisou mudar algo compartilhado: diga no relatório, com o trecho.
 
 ## Contexto
 

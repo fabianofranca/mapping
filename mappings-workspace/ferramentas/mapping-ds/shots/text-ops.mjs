@@ -5,8 +5,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { PATHS } from '../paths.mjs';
 
 const SCRATCH = PATHS.base;
-const PROJECT = `${PATHS.ws}/projetos/comentarios`;
-const LIB = `${PATHS.ws}/especializacoes/mapping-ds`;
+const PROJECT = `${PATHS.ws}/projects/comentarios`;
+const LIB = `${PATHS.ws}/specializations/mapping-ds`;
 const [beforeFile, afterFile] = process.argv.slice(2);
 const before = JSON.parse(readFileSync(beforeFile, 'utf8'));
 const after = JSON.parse(readFileSync(afterFile, 'utf8'));
