@@ -11,6 +11,8 @@ const SCRIPT = 'scripts/release/workspaceAssets.mjs';
 const BEGIN =
   '<!-- mapping:begin (gerenciado pelo setup.sh; não edite entre estas linhas) -->';
 const END = '<!-- mapping:end -->';
+const WATCH_SKILL_DIR = 'examples/workspace/.agents/skills/watch-conversations';
+const WATCH_SKILL = `${WATCH_SKILL_DIR}/SKILL.md`;
 const read = (path: string): string => readFileSync(path, 'utf8');
 
 const dirs: string[] = [];
@@ -34,6 +36,8 @@ function fakeRoot(agents: string): string {
   );
   writeFileSync(join(root, '.claude/skills/spec-author/SKILL.md'), '# skill\n');
   writeFileSync(join(root, 'examples/workspace/watch-comments.mjs'), '// watcher\n');
+  mkdirSync(join(root, WATCH_SKILL_DIR), { recursive: true });
+  writeFileSync(join(root, WATCH_SKILL), '# watch skill\n');
   writeFileSync(join(root, 'examples/workspace/AGENTS.md'), agents);
   return root;
 }
@@ -79,7 +83,7 @@ describe('the examples/workspace/AGENTS.md skeleton', () => {
 });
 
 describe('scripts/release/workspaceAssets.mjs', () => {
-  it('writes the four files and the four .sha256, and prints the list (one per line)', () => {
+  it('writes the five files and the five .sha256, and prints the list (one per line)', () => {
     const out = tmp();
     const result = run(out);
     expect(result.status, result.stderr).toBe(0);
@@ -93,6 +97,8 @@ describe('scripts/release/workspaceAssets.mjs', () => {
       'AGENTS.mapping.md.sha256',
       'watch-comments.mjs',
       'watch-comments.mjs.sha256',
+      'watch-conversations.SKILL.md',
+      'watch-conversations.SKILL.md.sha256',
     ]);
     for (const file of files) expect(read(file).length).toBeGreaterThan(0);
   });
@@ -105,6 +111,7 @@ describe('scripts/release/workspaceAssets.mjs', () => {
       'SKILL.md',
       'AGENTS.mapping.md',
       'watch-comments.mjs',
+      'watch-conversations.SKILL.md',
     ]) {
       const check = spawnSync('sha256sum', ['-c', `${name}.sha256`], {
         cwd: out,
@@ -123,6 +130,7 @@ describe('scripts/release/workspaceAssets.mjs', () => {
     expect(read(join(out, 'watch-comments.mjs'))).toBe(
       read('examples/workspace/watch-comments.mjs'),
     );
+    expect(read(join(out, 'watch-conversations.SKILL.md'))).toBe(read(WATCH_SKILL));
     const agents = read('examples/workspace/AGENTS.md');
     const block = agents.slice(agents.indexOf(BEGIN), agents.indexOf(END) + END.length);
     expect(read(join(out, 'AGENTS.mapping.md'))).toBe(`${block}\n`);
@@ -160,6 +168,24 @@ describe('scripts/release/workspaceAssets.mjs', () => {
     const result = run(tmp(), root);
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain('watch-comments.mjs');
+  });
+
+  it('publishes the watch-conversations skill under its own name, and SKILL.md stays the spec-author skill', () => {
+    const out = tmp();
+    expect(run(out).status).toBe(0);
+    expect(read(join(out, 'SKILL.md'))).toBe(read('.claude/skills/spec-author/SKILL.md'));
+    expect(read(join(out, 'watch-conversations.SKILL.md'))).toBe(read(WATCH_SKILL));
+    expect(read(join(out, 'watch-conversations.SKILL.md.sha256'))).toMatch(
+      /^[0-9a-f]{64} {2}watch-conversations\.SKILL\.md\n$/,
+    );
+  });
+
+  it('fails, naming the file, if the source of the watch-conversations skill is missing', () => {
+    const root = fakeRoot(`${BEGIN}\nx\n${END}\n`);
+    rmSync(join(root, WATCH_SKILL));
+    const result = run(tmp(), root);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('watch-conversations/SKILL.md');
   });
 
   it('fails if a source file is missing', () => {
@@ -235,6 +261,20 @@ describe('the release workflows publish the workspace files', () => {
       });
     }
   }
+
+  it('the expected lists of the publishing jobs and the notes carry the watch-conversations skill', () => {
+    const pre = read('.github/workflows/mcp-prerelease.yml');
+    for (const name of ['snapshot-publish', 'rc-publish']) {
+      const job = jobOf(pre, name);
+      expect(job, name).toContain(
+        'watch-conversations.SKILL.md watch-conversations.SKILL.md.sha256',
+      );
+      expect(job, name).toContain('watch-conversations.SKILL.md');
+    }
+    expect(read('.github/workflows/mcp-release.yml')).toContain(
+      'watch-conversations.SKILL.md',
+    );
+  });
 
   it('the release notes quote the transition line', () => {
     for (const file of [

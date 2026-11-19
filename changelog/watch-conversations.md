@@ -6,6 +6,8 @@
 - `watch-comments.mjs --state <file>`: keeps the handled conversation/message pairs between runs (temporary file + rename), so a restart does not repeat a wake and a pair that arrived while the watcher was stopped fires on start. The start log names the root and the number of project folders.
 - `watch-conversations` skill (`examples/workspace/.agents/skills/watch-conversations/SKILL.md`): from "watch the conversations" it checks the preparation, answers what already waits, starts `watch-comments.mjs --emit --state .mapping-watch/state.json` with Claude Code's `Monitor` or Cursor's shell tool, answers each wake in the same chat and stops on request. The workspace `README.md` (both modes, the limits, the `.mapping-watch/` line for existing workspaces), the skills `README.md`, the `AGENTS.md` block and `docs/AGENT-GUIDE.md` ("Conversations") cite it; `mappings-workspace/` follows.
 - `.mapping-watch/` (the state folder) in the `.gitignore` of the example workspace and of `mappings-workspace/`.
+- The MCP release publishes `watch-conversations.SKILL.md` (and its `.sha256`) next to the other workspace files, copied from `examples/workspace/.agents/skills/watch-conversations/SKILL.md`; the pre-release and stable jobs check it in their `expected=` lists. Plain `SKILL.md` stays the `spec-author` skill.
+- `setup.sh` installs that skill in `.agents/skills/watch-conversations/` and links `.claude/skills/watch-conversations`, with the same rules as `spec-author`, and prints `Watch skill: installed | updated | no change | not updated (release without the skill)`. A release without the file warns and the run goes on.
 
 ## Alterado
 

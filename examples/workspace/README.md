@@ -5,7 +5,7 @@ Skeleton of a folder that centralizes Mapping projects and comes ready for any A
 ## How to use
 
 1. Copy this folder wherever you like (e.g. `~/mappings`) and start a Git repository in it.
-2. Run `./setup.sh` (needs Node ≥ 20 and `curl`). It downloads from the latest Mapping `mcp-v*` release the server (`tools/mapping-mcp.js`), the `spec-author` skill, the `AGENTS.md` rules, `watch-comments.mjs` (the conversation watcher, in the root) and the signature extractor (`tools/mapping-signature.mjs`), checks the `sha256` of all of them and only then updates the folder. For a specific version: `./setup.sh mcp-v0.5.0`; to test a release candidate or a PR build: `./setup.sh mcp-v0.5.0-rc.1` or `./setup.sh mcp-snapshot-pr172`.
+2. Run `./setup.sh` (needs Node ≥ 20 and `curl`). It downloads from the latest Mapping `mcp-v*` release the server (`tools/mapping-mcp.js`), the `spec-author` and `watch-conversations` skills, the `AGENTS.md` rules, `watch-comments.mjs` (the conversation watcher, in the root) and the signature extractor (`tools/mapping-signature.mjs`), checks the `sha256` of all of them and only then updates the folder. For a specific version: `./setup.sh mcp-v0.5.0`; to test a release candidate or a PR build: `./setup.sh mcp-v0.5.0-rc.1` or `./setup.sh mcp-snapshot-pr172`.
 3. Fill in the "What these mappings are for" section of `AGENTS.md`: it is what the agent cannot discover on its own.
 4. Open the folder in the agent and approve the `mapping` server. Open the projects in the Mapping app as a **folder**, inside `projects/`.
 5. Version `tools/mapping-mcp.js` and its `.sha256` together: whoever clones has the server working without installing anything.
@@ -14,14 +14,15 @@ Skeleton of a folder that centralizes Mapping projects and comes ready for any A
 
 Run `./setup.sh` again (or `./setup.sh <tag>`). Each run, in this order:
 
-1. Downloads everything from the release (`mapping-mcp.js`, `mapping-signature.mjs`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md` and `watch-comments.mjs`, each with its `.sha256`) to a temporary folder and **checks the `sha256` of all of them before replacing any file**. If one does not match, the script stops with an error and nothing in the folder changes.
+1. Downloads everything from the release (`mapping-mcp.js`, `mapping-signature.mjs`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md`, `watch-comments.mjs` and `watch-conversations.SKILL.md`, each with its `.sha256`) to a temporary folder and **checks the `sha256` of all of them before replacing any file**. If one does not match, the script stops with an error and nothing in the folder changes.
 2. **Updates itself.** If the release's `setup.sh` differs from the local one, it replaces the file at once, warns "setup.sh updated" and runs again, once only. `./setup.sh --no-self-update` (or `./setup.sh <tag> --no-self-update`) turns that off and carries on with the script you have. A release without `setup.sh` (an old tag): carries on with the current one and warns.
 3. Replaces the server in `tools/`.
 4. Brings the `spec-author` skill **from the same release as the server** to `.agents/skills/spec-author/SKILL.md` (if the release does not have it, it uses the one from `main` and warns). In `.claude/skills/spec-author`: if it is already a link, nothing; if it is a folder (a copy), copies again; if it does not exist, creates the link (and a copy where links do not exist).
-5. Installs `watch-comments.mjs` in the workspace root, over whatever is there, with no backup (it is a managed file, like the server; do not edit it). A release without it (an old tag): warns and the local file, if any, stays.
-6. Installs the extractor `tools/mapping-signature.mjs` (and its `.sha256`) next to the server, also with no backup; a release without it: warns and the local one stays. Usage: `node tools/mapping-signature.mjs kotlin --file … --symbol … [--path] [--ref] [--also] [--overload] [--out]`; it extracts the signature sheet that the agent passes to `plan_signature_import`.
-7. Updates the rules block of `AGENTS.md`, described below.
-8. Prints a summary: the server version, where the skill came from, what happened to `AGENTS.md` and the `Watcher:` and `Extractor:` lines (`installed`, `updated`, `no change` or `not updated (release without the …)`). Running twice in a row changes nothing the second time (and creates no backup).
+5. Installs the `watch-conversations` skill (release file `watch-conversations.SKILL.md`) in `.agents/skills/watch-conversations/SKILL.md`, with the same rules as `spec-author` in `.claude/skills/watch-conversations` (a link stays a link, a copy is copied again, absent: link, or a copy where links do not exist). A release without it (an old tag): warns and whatever is there stays.
+6. Installs `watch-comments.mjs` in the workspace root, over whatever is there, with no backup (it is a managed file, like the server; do not edit it). A release without it (an old tag): warns and the local file, if any, stays.
+7. Installs the extractor `tools/mapping-signature.mjs` (and its `.sha256`) next to the server, also with no backup; a release without it: warns and the local one stays. Usage: `node tools/mapping-signature.mjs kotlin --file … --symbol … [--path] [--ref] [--also] [--overload] [--out]`; it extracts the signature sheet that the agent passes to `plan_signature_import`.
+8. Updates the rules block of `AGENTS.md`, described below.
+9. Prints a summary: the server version, where the `spec-author` skill came from, what happened to `AGENTS.md` and the `Watch skill:` (`installed`, `updated`, `no change` or `not updated (release without the skill)`), `Watcher:` and `Extractor:` lines (`installed`, `updated`, `no change` or `not updated (release without the …)`). Running twice in a row changes nothing the second time (and creates no backup).
 
 ### Workspace created before this
 
@@ -45,7 +46,7 @@ The rules for the agent live in a **managed block**, between the lines `<!-- map
 
 ### What `setup.sh` touches and what it does not
 
-Touches: `tools/mapping-mcp.js` and `tools/mapping-signature.mjs` (and the `.sha256` files), `.agents/skills/spec-author/`, `.claude/skills/spec-author`, `watch-comments.mjs` (in the root) and the `AGENTS.md` block (with the backup when the structure changes). **Never touches:** `projects/`, `specializations/`, an existing `CLAUDE.md`, `.mcp.json` and the configurations of the other clients (you may have other servers registered in them).
+Touches: `tools/mapping-mcp.js` and `tools/mapping-signature.mjs` (and the `.sha256` files), `.agents/skills/spec-author/`, `.claude/skills/spec-author`, `.agents/skills/watch-conversations/`, `.claude/skills/watch-conversations`, `watch-comments.mjs` (in the root) and the `AGENTS.md` block (with the backup when the structure changes). **Never touches:** `projects/`, `specializations/`, an existing `CLAUDE.md`, `.mcp.json` and the configurations of the other clients (you may have other servers registered in them).
 
 ### Security
 
@@ -73,9 +74,10 @@ Last resort, if not even the API responds: download the release with `gh release
 1. Download `mapping-mcp.js` and `mapping-mcp.js.sha256` into `tools/`, and check the `sha256` (`certutil -hashfile tools\mapping-mcp.js SHA256`).
 2. Download `SKILL.md` into `.agents/skills/spec-author/` and copy that folder to `.claude/skills/spec-author/`.
 3. Download `AGENTS.mapping.md` and paste its content (the lines from `<!-- mapping:begin … -->` to `<!-- mapping:end -->`) into your `AGENTS.md`, in place of the block that is already there (or at the end of the file, if it is the first).
-4. Download `watch-comments.mjs` and `watch-comments.mjs.sha256` into the workspace root and check the `sha256` (`certutil -hashfile watch-comments.mjs SHA256`).
-5. Download `mapping-signature.mjs` and `mapping-signature.mjs.sha256` into `tools/` and check the `sha256`.
-6. The release's `setup.sh` is not needed; download it only if you will run it later in WSL.
+4. Download `watch-conversations.SKILL.md` into `.agents/skills/watch-conversations/` and rename it to `SKILL.md`, then copy that folder to `.claude/skills/watch-conversations/`; check the `sha256` against `watch-conversations.SKILL.md.sha256` (`certutil -hashfile watch-conversations.SKILL.md SHA256`).
+5. Download `watch-comments.mjs` and `watch-comments.mjs.sha256` into the workspace root and check the `sha256` (`certutil -hashfile watch-comments.mjs SHA256`).
+6. Download `mapping-signature.mjs` and `mapping-signature.mjs.sha256` into `tools/` and check the `sha256`.
+7. The release's `setup.sh` is not needed; download it only if you will run it later in WSL.
 
 ## Conversations: waking the agent (`watch-comments.mjs`)
 
