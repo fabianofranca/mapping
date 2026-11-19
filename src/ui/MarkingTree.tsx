@@ -27,6 +27,9 @@ import { isMultiSelectClick } from '../utils/platform';
 import { Icon } from './icons';
 import { arrowEndLabel, arrowShort, arrowText, imageLabel, markingLabel } from './labels';
 
+/** The `CanvasMenu` target kind of each kind of Tree row. */
+const TREE_MENU_KIND = { image: 'i', marking: 'm', arrow: 'arrow' } as const;
+
 interface MarkingTreeProps {
   readonly project: Project;
   readonly selection: Selection;
@@ -72,7 +75,7 @@ export function LayerDots({ dots }: { readonly dots: readonly LayerDot[] }) {
  * list, breadcrumbs), the tree opens the ancestors and scrolls to the row.
  */
 export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) {
-  const { ui, derived, store, actions } = useEditor();
+  const { ui, derived, store, actions, review } = useEditor();
   const readOnly = store.locked.value;
   const locks = derived.markingLocks.value;
   const collapsed = ui.collapsedTree.value;
@@ -90,6 +93,24 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
   const pick = (e: MouseEvent, item: SelectionItem) => {
     if (isMultiSelectClick(e)) toggleSelectedItem(ui, item);
     else onSelect(item);
+  };
+
+  /**
+   * Right-click on a row: selects it (unless it is already in the selection) and opens the same
+   * menu as the canvas (`CanvasContextMenu`), instead of the browser's. Not in review.
+   */
+  const openMenu = (e: MouseEvent, item: SelectionItem) => {
+    e.preventDefault();
+    if (review.proposalId.value !== null) return;
+    if (!isItemSelected(selectedItems(ui), item)) onSelect(item);
+    (e.currentTarget as HTMLElement | null)?.focus();
+    ui.canvasMenu.value = {
+      x: e.clientX,
+      y: e.clientY,
+      target: { kind: TREE_MENU_KIND[item.kind], id: item.id },
+      comment: { kind: item.kind === 'image' ? 'container' : item.kind, id: item.id },
+      here: null,
+    };
   };
 
   const list = useRef<HTMLUListElement>(null);
@@ -201,6 +222,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
             title={imageLabel(image)}
             aria-current={current || undefined}
             onClick={(e) => pick(e, { kind: 'image', id: image.id })}
+            onContextMenu={(e) => openMenu(e, { kind: 'image', id: image.id })}
           >
             <span class="tree-label">{imageLabel(image)}</span>
           </button>,
@@ -238,6 +260,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
             aria-label={t('arrow.treeItem', { name: to })}
             title={arrowText(project, arrow)}
             onClick={(e) => pick(e, { kind: 'arrow', id: arrow.id })}
+            onContextMenu={(e) => openMenu(e, { kind: 'arrow', id: arrow.id })}
           >
             <Icon name="arrow" />
             <span class={arrow.name === null ? 'tree-label muted' : 'tree-label'}>
@@ -279,6 +302,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
                   title={markingLabel(project, m)}
                   aria-current={current || undefined}
                   onClick={(e) => pick(e, { kind: 'marking', id: m.id })}
+                  onContextMenu={(e) => openMenu(e, { kind: 'marking', id: m.id })}
                 >
                   {m.needsReview && (
                     <span class="tree-warning" title={t('marking.needsReview')}>

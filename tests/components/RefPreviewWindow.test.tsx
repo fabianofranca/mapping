@@ -61,6 +61,13 @@ describe('RefPreviewWindow', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('is found by the documented name "Reference preview" and keeps its heading (finding 6.2)', async () => {
+    const { h, opener } = setup();
+    open(h, opener);
+    const win = await screen.findByRole('dialog', { name: 'Reference preview' });
+    expect(within(win).getByRole('heading').textContent).toContain('Second');
+  });
+
   it('shows the page name and the item path in the title, with Go to the page and Close', async () => {
     const { h, opener } = setup();
     open(h, opener);

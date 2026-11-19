@@ -152,7 +152,7 @@ function PreviewWindow({ target, project, annotation, preview, pageName }: Windo
       class="ref-preview"
       role="dialog"
       aria-modal="false"
-      aria-labelledby={titleId}
+      aria-label={t('refPreview.label')}
       aria-describedby="ref-preview-hint"
       onKeyDown={onKeyDown}
     >
