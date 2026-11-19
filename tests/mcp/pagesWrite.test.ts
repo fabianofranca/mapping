@@ -1,6 +1,13 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   addBackgroundContainer,
@@ -8,11 +15,18 @@ import {
   createArrow,
   createMarking,
   createPage,
+  applySpecialization,
   createProject,
+  parseSpecText,
   serialize,
+  setMarkingAnchor,
   type Project,
 } from '../../src/model';
 import { PROPOSAL_PAGES_FORMAT_VERSION } from '../../src/model/proposal';
+import { runBatch, type BatchResult } from '../../mcp/batch';
+import type { Operation } from '../../mcp/operations';
+import { Roots } from '../../mcp/paths';
+import { findProject, loadProject } from '../../mcp/projects';
 import { NOW } from '../model/fixtures';
 import {
   acceptAllAndApply,
@@ -41,6 +55,7 @@ interface OpError {
   hint?: string;
   contents?: Record<string, number>;
   arrows?: { arrow: string; from: string; to: string }[];
+  anchors?: { marking: string; to: string }[];
 }
 interface Plan {
   valid: boolean;
@@ -118,6 +133,25 @@ function sample(): Project {
   p = createArrow(p, { id: id('A-solo'), from: id('M-solo1'), to: id('M-solo2') });
   p = createArrow(p, { id: id('A-cross'), from: id('M-home'), to: id('K-main') });
   return p;
+}
+
+/** The sample plus two canvas roots on Empty, the second anchored to the first. */
+function anchoredSample(): Project {
+  let p = createMarking(sample(), {
+    id: id('K-a'),
+    containerId: null,
+    pageId: PAGE_EMPTY,
+    rect: { x: 100, y: 100, width: 80, height: 40 },
+    name: 'Anchor A',
+  });
+  p = createMarking(p, {
+    id: id('K-b'),
+    containerId: null,
+    pageId: PAGE_EMPTY,
+    rect: { x: 300, y: 100, width: 80, height: 40 },
+    name: 'Anchored B',
+  });
+  return setMarkingAnchor(p, id('K-b'), { to: id('K-a'), side: 'end' });
 }
 
 /** A project folder of its own (tests that apply a proposal change it). */
@@ -438,6 +472,148 @@ describe('move_to_page', () => {
       { op: 'move_to_page', roots: ['$fresh'], page: 'Flows' },
     ]);
     expect(result.errors, JSON.stringify(result.errors)).toBeUndefined();
+  });
+});
+
+describe('anchors and locks across pages', () => {
+  const A = id('K-a');
+  const B = id('K-b');
+  let project: { name: string; dir: string };
+
+  beforeAll(() => {
+    project = fresh(anchoredSample());
+  });
+
+  it('move_to_page of the target alone is refused with page-anchor-crossing and the anchors as references', async () => {
+    const result = await plan(
+      [{ op: 'move_to_page', roots: [A], page: 'Flows' }],
+      project.name,
+    );
+    expect(codes(result)).toEqual(['page-anchor-crossing']);
+    const error = result.errors![0]!;
+    expect(error.anchors).toEqual([
+      { marking: expect.stringContaining('/m/'), to: expect.stringContaining('/m/') },
+    ]);
+    expect(error.hint).toMatch(/anchor: null/);
+  });
+
+  it('move_to_page of the anchored marking alone is refused the same way', async () => {
+    const result = await plan(
+      [{ op: 'move_to_page', roots: [B], page: 'Flows' }],
+      project.name,
+    );
+    expect(codes(result)).toEqual(['page-anchor-crossing']);
+  });
+
+  it('move_to_page with both roots is valid', async () => {
+    const result = await plan(
+      [{ op: 'move_to_page', roots: [A, B], page: 'Flows' }],
+      project.name,
+    );
+    expect(result.errors, JSON.stringify(result.errors)).toBeUndefined();
+    expect(result.valid).toBe(true);
+  });
+
+  it('delete_page with move_to on a page with a locked root is valid', async () => {
+    const base = anchoredSample();
+    const locked: Project = {
+      ...base,
+      containers: base.containers.map((c) =>
+        c.id === id('Detail') ? { ...c, locked: true } : c,
+      ),
+    };
+    const target = fresh(locked);
+    const result = await plan(
+      [{ op: 'delete_page', page: 'Flows', move_to: 'Main' }],
+      target.name,
+    );
+    expect(result.errors, JSON.stringify(result.errors)).toBeUndefined();
+    expect(result.valid).toBe(true);
+  });
+
+  it('update_page with neither name nor position is valid and its summary says nothing', async () => {
+    const result = await plan([{ op: 'update_page', page: 'Flows' }]);
+    expect(result.errors, JSON.stringify(result.errors)).toBeUndefined();
+    expect(result.valid).toBe(true);
+    expect(result.summary?.[0]).toMatch(/nothing/);
+  });
+});
+
+describe('create_marking with `inside` a canvas parent of the second page', () => {
+  const LIBRARY = resolve('tests/fixtures/material3');
+  const PG_ONE = 'aaaaaaaa-0000-4000-8000-0000000000a1';
+  const PG_TWO = 'aaaaaaaa-0000-4000-8000-0000000000a2';
+  let dir: string;
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'mapping-pages-inside-'));
+    const folder = join(dir, 'telas');
+    mkdirSync(join(folder, 'specs'), { recursive: true });
+    cpSync(LIBRARY, join(folder, 'specs', 'material3'), { recursive: true });
+    const parsed = parseSpecText(
+      readFileSync(join(LIBRARY, 'material3.spec.json'), 'utf8'),
+    );
+    if (!parsed.ok) throw new Error('invalid material3');
+    let p = createProject({
+      name: 'Screens',
+      now: NOW,
+      firstLayer: { id: id('IL1'), name: 'Layer 1', color: '#D32F2F' },
+      firstPage: { id: PG_ONE, name: 'Main' },
+    });
+    p = createPage(p, { id: PG_TWO, name: 'Second' });
+    p = applySpecialization(p, parsed.spec, { packageSpecName: 'material3.spec.json' });
+    writeFileSync(join(folder, 'mapping.json'), serialize(p));
+  });
+
+  afterAll(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('places the child against the second page siblings, in the parent space', async () => {
+    const roots = new Roots([dir]);
+    const loaded = await loadProject(roots, await findProject(roots, 'telas'));
+    const column = {
+      op: 'create_marking',
+      as: '$col',
+      page: 'Second',
+      rect: { x: 5000, y: 5000, width: 300, height: 400 },
+      annotation: { type: 'material3/m3-column' },
+    } as Operation;
+    const child = (as: string): Operation =>
+      ({
+        op: 'create_marking',
+        as,
+        inside: '$col',
+        annotation: { type: 'material3/m3-button' },
+      }) as Operation;
+    const result: BatchResult = await runBatch(
+      loaded,
+      [column, child('$b1'), child('$b2')],
+      {
+        readSource: () => Promise.reject(new Error('no files')),
+        readSpecInput: () => Promise.reject(new Error('no files')),
+        takenImageFiles: new Set<string>(),
+        now: () => new Date(NOW),
+      },
+    );
+    expect(result.errors).toEqual([]);
+    expect(result.invariantIssues).toEqual([]);
+    const byAlias = (alias: string) =>
+      result.project.markings.find(
+        (m) => m.id === (result.aliases.get(alias) as { id: string }).id,
+      )!;
+    const parent = byAlias('$col');
+    const [b1, b2] = [byAlias('$b1'), byAlias('$b2')];
+    expect(parent.pageId).toBe(PG_TWO);
+    for (const b of [b1, b2]) {
+      expect(b.pageId).toBe(PG_TWO);
+      expect(b.parentId).toBe(parent.id);
+      expect(b.containerId).toBeNull();
+      expect(b.rect.x).toBe(parent.rect.x);
+    }
+    // Stacked in the Column, against the page's canvas coordinates (not the first page's).
+    expect(b2.rect.y).toBeGreaterThan(b1.rect.y);
+    expect(b1.rect.y).toBeGreaterThanOrEqual(parent.rect.y);
   });
 });
 

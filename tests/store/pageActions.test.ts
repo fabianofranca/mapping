@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createArrow, createPage, projectIndex, type Project } from '../../src/model';
+import {
+  createArrow,
+  createMarking,
+  createPage,
+  projectIndex,
+  setMarkingAnchor,
+  type Project,
+} from '../../src/model';
 import { createProjectStore, type ProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { SPEC_ID, componentProject, testCatalog } from '../model/componentFixtures';
@@ -180,6 +187,24 @@ describe('page actions', () => {
     expect(s.store.canUndo.value).toBe(false);
   });
 
+  it('deletePage with moveTo takes a locked root along, in ONE undo entry', async () => {
+    const base = pagesProject();
+    const locked: Project = {
+      ...base,
+      containers: base.containers.map((c) =>
+        c.id === 'I3' ? { ...c, locked: true } : c,
+      ),
+    };
+    const s = await start(locked);
+    expect(s.actions.deletePage('PG2', { moveTo: 'PG1' }).ok).toBe(true);
+    const after = s.store.committed.peek() as Project;
+    expect(pageOf(after, 'I3')).toBe('PG1');
+    expect(after.containers.find((c) => c.id === 'I3')?.locked).toBe(true);
+    expect(s.store.undo()).toBe(true);
+    expect(pageOf(s.store.committed.peek(), 'I3')).toBe('PG2');
+    expect(s.store.canUndo.value).toBe(false);
+  });
+
   it('deletePage with discard removes the page and everything on it, in ONE undo entry', async () => {
     const s = await start();
     expect(s.actions.deletePage('PG2', { discard: true }).ok).toBe(true);
@@ -269,9 +294,43 @@ describe('moveRootsToPage', () => {
       ok: false,
       error: 'page-arrow-crossing',
       arrows: [{ id: 'R1', from: 'M1', to: 'M4' }],
+      anchors: [],
     });
     expect(s.store.committed.peek()).toBe(before);
     expect(s.page.notice.value).toBeNull();
+  });
+
+  it('refuses a move that would cut an anchor, listing the anchors, and writes no undo entry', async () => {
+    let base = createMarking(pagesProject(), {
+      id: 'KB',
+      containerId: null,
+      rect: { x: 5600, y: 5000, width: 400, height: 400 },
+      pageId: 'PG2',
+    });
+    base = setMarkingAnchor(base, 'KB', { to: 'K', side: 'end' });
+    const s = await start(base);
+    const before = s.store.committed.peek();
+    const result = s.actions.moveRootsToPage(['K'], 'PG3');
+    expect(result).toEqual({
+      ok: false,
+      error: 'page-anchor-crossing',
+      arrows: [],
+      anchors: [{ marking: 'KB', to: 'K' }],
+    });
+    expect(s.store.committed.peek()).toBe(before);
+    expect(s.store.canUndo.value).toBe(false);
+    expect(s.page.notice.value).toBeNull();
+  });
+
+  it('keeps the arrows in the refusal result of an arrow', async () => {
+    const base = createArrow(pagesProject(), { id: 'R1', from: 'M1', to: 'M4' });
+    const s = await start(base);
+    expect(s.actions.moveRootsToPage(['I2'], 'PG2')).toEqual({
+      ok: false,
+      error: 'page-arrow-crossing',
+      arrows: [{ id: 'R1', from: 'M1', to: 'M4' }],
+      anchors: [],
+    });
   });
 
   it('moves both ends together without refusing', async () => {

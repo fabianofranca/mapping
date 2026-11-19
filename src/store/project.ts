@@ -58,15 +58,17 @@ export interface ActionDeps {
 }
 
 /**
- * Result of `moveRootsToPage`. A move that would cut arrows is refused with `page-arrow-crossing`
- * and the arrows (the dialog lists them, with "Go to the arrow").
+ * Result of `moveRootsToPage`. A move that would cut arrows or anchors is refused with
+ * `page-arrow-crossing` (an arrow crosses) or `page-anchor-crossing` (only anchors do), and both
+ * lists (the dialog lists them, with "Go to the arrow" and "Go to the marking").
  */
 export type MoveRootsResult =
   | ActionResult
   | {
       readonly ok: false;
-      readonly error: 'page-arrow-crossing';
+      readonly error: 'page-arrow-crossing' | 'page-anchor-crossing';
       readonly arrows: readonly model.PageArrowCrossing[];
+      readonly anchors: readonly model.PageAnchorCrossing[];
     };
 
 /**
@@ -148,10 +150,18 @@ function touchingPlacement(
     : { ...placement, x: own.placement.x + dx, y: own.placement.y + dy };
 }
 
-/** The arrows `data` of a `page-arrow-crossing` error. */
-function crossingArrowsOf(e: ModelError): readonly model.PageArrowCrossing[] {
-  const arrows = e.data?.arrows;
-  return Array.isArray(arrows) ? (arrows as readonly model.PageArrowCrossing[]) : [];
+/** The `data` of a `page-arrow-crossing` or `page-anchor-crossing` error. */
+function crossingOf(e: ModelError): {
+  readonly arrows: readonly model.PageArrowCrossing[];
+  readonly anchors: readonly model.PageAnchorCrossing[];
+} {
+  const { arrows, anchors } = e.data ?? {};
+  return {
+    arrows: Array.isArray(arrows) ? (arrows as readonly model.PageArrowCrossing[]) : [],
+    anchors: Array.isArray(anchors)
+      ? (anchors as readonly model.PageAnchorCrossing[])
+      : [],
+  };
 }
 
 /**
@@ -362,28 +372,34 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) => model.deletePage(p, pageId, how, settleOptions(p))),
     /**
      * Takes the roots to the page, with everything in them (one undo entry). A move that cuts an
-     * arrow changes nothing and comes back as `page-arrow-crossing` with the arrows.
+     * arrow or an anchor changes nothing and comes back as `page-arrow-crossing` or
+     * `page-anchor-crossing`, with both lists.
      */
     moveRootsToPage(rootIds: readonly string[], pageId: string): MoveRootsResult {
-      const refused: { arrows: readonly model.PageArrowCrossing[] | null } = {
-        arrows: null,
-      };
+      const refused: {
+        code: 'page-arrow-crossing' | 'page-anchor-crossing' | null;
+        crossing: ReturnType<typeof crossingOf> | null;
+      } = { code: null, crossing: null };
       const before = store.committed.peek();
       const result = store.apply((p) => {
         try {
           return model.moveRootsToPage(p, rootIds, pageId, settleOptions(p));
         } catch (e) {
-          if (e instanceof ModelError && e.code === 'page-arrow-crossing') {
-            refused.arrows = crossingArrowsOf(e);
+          if (
+            e instanceof ModelError &&
+            (e.code === 'page-arrow-crossing' || e.code === 'page-anchor-crossing')
+          ) {
+            refused.code = e.code;
+            refused.crossing = crossingOf(e);
           }
           throw e;
         }
       });
       if (!result.ok) {
-        const { arrows } = refused;
-        return arrows === null
+        const { code, crossing } = refused;
+        return code === null || crossing === null
           ? result
-          : { ok: false, error: 'page-arrow-crossing', arrows };
+          : { ok: false, error: code, ...crossing };
       }
       if (store.committed.peek() !== before) deps.onMoved?.(pageId);
       return result;
