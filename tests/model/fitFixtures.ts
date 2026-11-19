@@ -137,7 +137,46 @@ function row(id: string, align: string, layoutType = 'row', sizing?: Json): Json
   };
 }
 
+/** A column of rows (`hug` height) drawn from the `items` table: the height grows with the rows. */
+function list(id: string): Json {
+  return {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id,
+    name: id,
+    size: { width: 200, height: 40 },
+    sizing: { height: 'hug' },
+    template: {
+      type: 'frame',
+      layout: { type: 'column', padding: 8 },
+      fill: '#EEEEEE',
+      children: [
+        {
+          type: 'repeat',
+          field: 'items',
+          template: {
+            type: 'frame',
+            name: 'row',
+            layout: { type: 'row' },
+            children: [
+              {
+                type: 'text',
+                text: { $field: 'text', default: '' },
+                width: 'fill',
+                height: 'hug',
+                font: { size: 14, lineHeight: 20 },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  };
+}
+
 export const FIT_COMPONENTS: Record<string, Json> = {
+  // A list with a `table` field and a `ref` field (the table's rows set the height).
+  'fit-list': list('fit-list'),
   // The height follows the label; the width stays (no `sizing` on it).
   'fit-button': button('fit-button', { width: 120, height: 40 }, { height: 'hug' }),
   // The same with the root cap at 60 height.
@@ -197,9 +236,21 @@ const FIELDS = [
   { key: 'tall', type: 'string' },
 ];
 
+const LIST_FIELDS = [
+  {
+    key: 'items',
+    type: 'table',
+    columns: [
+      { key: 'text', type: 'string' },
+      { key: 'link', type: 'ref', accepts: { free: true } },
+    ],
+  },
+  { key: 'target', type: 'ref', accepts: { free: true } },
+];
+
 export const FIT_SPEC_JSON = {
   format: 'mapping-spec',
-  formatVersion: 4,
+  formatVersion: 7,
   id: FIT_SPEC_ID,
   name: 'Fit',
   version: 1,
@@ -212,7 +263,7 @@ export const FIT_SPEC_JSON = {
         id,
         name: id,
         component: `components/${id}.json`,
-        fields: FIELDS,
+        fields: id === 'fit-list' ? [...FIELDS, ...LIST_FIELDS] : FIELDS,
       })),
     },
   ],

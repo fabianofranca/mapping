@@ -3,7 +3,9 @@ import type { ModelMessage } from './modelMessage';
 import { fail } from './errors';
 import { findById } from './project';
 import { findSpecType } from './specLookup';
-import { defaultValues, setFieldValues } from './typed';
+import { addTableRow, defaultValues, setFieldValues, setTableCells } from './typed';
+import { fieldOf } from './specLookup';
+import { isRecord } from './isRecord';
 import { drawingValues } from './componentValues';
 import { componentForDrawing, drawOptions } from './drawingMode';
 import { effectiveDensity, unitsToPixels } from './density';
@@ -62,9 +64,45 @@ function scratchProject(
   const project =
     args.values === undefined
       ? withScratch
-      : setFieldValues(withScratch, SCRATCH_ANNOTATION_ID, args.values);
+      : applyValues(withScratch, found.type, args.values);
   const scratch = project.annotations.find((a) => a.id === SCRATCH_ANNOTATION_ID);
   return { project, annotation: scratch ?? annotation };
+}
+
+/**
+ * The scratch annotation's values: a `table` field takes its rows (a list of objects, `null` = none) through
+ * the row operations, as `create_marking` does; the other fields go through `setFieldValues`.
+ */
+function applyValues(
+  p: Parameters<typeof findSpecType>[0],
+  type: NonNullable<ReturnType<typeof findSpecType>>['type'],
+  values: Readonly<Record<string, JsonValue>>,
+): typeof p {
+  const simple: Record<string, JsonValue> = {};
+  const tables: [string, JsonValue][] = [];
+  for (const [key, value] of Object.entries(values)) {
+    if (fieldOf(type, key)?.type === 'table') tables.push([key, value]);
+    else simple[key] = value;
+  }
+  let next = setFieldValues(p, SCRATCH_ANNOTATION_ID, simple);
+  for (const [key, rows] of tables) next = withRows(next, key, rows);
+  return next;
+}
+
+/** The table `key` with exactly `rows` (the defaults of a column stay where a cell is absent). */
+function withRows(p: Parameters<typeof findSpecType>[0], key: string, rows: JsonValue) {
+  if (rows !== null && !Array.isArray(rows)) fail('invalid-value', key);
+  let next = p;
+  (rows ?? []).forEach((row, i) => {
+    if (!isRecord(row)) fail('invalid-value', `${key}[${i}]`);
+    const rowId = `__row${i}__`;
+    const cells = Object.fromEntries(
+      Object.entries(row).filter(([column]) => column !== '_id' && column !== '_as'),
+    );
+    next = addTableRow(next, SCRATCH_ANNOTATION_ID, key, rowId);
+    next = setTableCells(next, SCRATCH_ANNOTATION_ID, key, rowId, cells);
+  });
+  return next;
 }
 
 /** The base of the axes that do not follow the content: the given `size` over the component's. */

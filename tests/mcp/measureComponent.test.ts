@@ -3,7 +3,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  addAnnotation,
   addContainer,
+  createMarking,
   applySpecialization,
   createProject,
   parseSpec,
@@ -30,6 +32,9 @@ import { connect, type Connection } from './workspace';
 const IMAGE = 'bbbbbbbb-0000-4000-8000-000000000001';
 const DENSE = 'bbbbbbbb-0000-4000-8000-000000000003';
 const LAYER = 'cccccccc-0000-4000-8000-000000000001';
+const MARKING = 'dddddddd-0000-4000-8000-000000000001';
+const ANNOTATION = 'eeeeeeee-0000-4000-8000-000000000001';
+const TARGET = 'mapping://telas/a/eeeeeeee';
 
 let base: string;
 let roots: Roots;
@@ -71,6 +76,18 @@ function writeProject(name: string, extra: Record<string, unknown>): void {
   p = addContainer(p, { id: IMAGE, file: 'images/foto.png', width: 600, height: 400 });
   p = addContainer(p, { id: DENSE, file: 'images/dense.png', width: 1800, height: 1200 });
   p = setContainerDensity(p, DENSE, 3);
+  // A free annotation that a `ref` of the list type can point to.
+  p = createMarking(p, {
+    id: MARKING,
+    containerId: IMAGE,
+    rect: { x: 10, y: 10, width: 50, height: 50 },
+  });
+  p = addAnnotation(p, {
+    id: ANNOTATION,
+    markingId: MARKING,
+    layerId: LAYER,
+    entries: [{ id: 'ffffffff-0000-4000-8000-000000000001', key: 'note', value: 'x' }],
+  });
   p = applySpecialization(p, parsed.spec, { packageSpecName: 'fit.spec.json' });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
 }
@@ -123,7 +140,8 @@ describe('measure_component: the response', () => {
     expect(r.hint).toBeUndefined();
     expect(r.approximate).toBe(true);
     const again = await loadProject(roots, await findProject(roots, 'telas'));
-    expect(again.project.markings).toEqual([]);
+    expect(again.project.markings).toHaveLength(1);
+    expect(again.project.annotations).toHaveLength(1);
   });
 
   it('accepts the type by name and the container by id, with the density', async () => {
@@ -160,6 +178,46 @@ describe('measure_component: the response', () => {
     );
     expect(r.follows).toEqual({ width: false, height: true });
     expect(r.units.width).toBe(200);
+  });
+});
+
+describe('measure_component: table and ref values', () => {
+  const rows = (n: number) => Array.from({ length: n }, (_, i) => ({ text: `Row ${i}` }));
+
+  it('measures a list from the rows of its table', async () => {
+    const none = ok(await measure('fit-list'));
+    const six = ok(await measure('fit-list', { values: { items: rows(6) } }));
+    expect(six.units.height).toBeGreaterThan(none.units.height);
+    expect(six.follows).toEqual({ width: false, height: true });
+  });
+
+  it('takes `ref` values like create_marking: a field and a cell, by `mapping://` reference', async () => {
+    const r = ok(
+      await measure('fit-list', {
+        values: {
+          target: { annotation: TARGET, entry: 'note' },
+          items: [
+            { text: 'One', link: { annotation: TARGET, entry: 'note' } },
+            { text: 'Two' },
+          ],
+        },
+      }),
+    );
+    expect(r.units.height).toBeGreaterThan(40);
+  });
+
+  it('a reference that does not exist or an alias that is not in a batch fails by its code', async () => {
+    expect(
+      errorOf(
+        await measure('fit-list', {
+          values: { target: { annotation: 'mapping://telas/a/ffffffff', entry: 'note' } },
+        }),
+      ).code,
+    ).toBe('not-found');
+    expect(
+      errorOf(await measure('fit-list', { values: { target: { annotation: '$a' } } }))
+        .code,
+    ).toBe('unknown-alias');
   });
 });
 

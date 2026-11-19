@@ -3,8 +3,10 @@ import {
   measureComponentSize,
   type ComponentMeasure,
   type JsonValue,
+  type SpecAnnotationType,
 } from '../src/model';
 import { ToolError } from './errors';
+import { storedRefValues } from './batch';
 import { modelToolError } from './modelErrors';
 import { findTypeEntry, openPackage, type ComponentArgs } from './componentTools';
 import { resolveItem } from './items';
@@ -56,6 +58,7 @@ function measured(
   ids: { specId: string; typeId: string; containerId: string | null },
   args: MeasureComponentToolArgs,
   fonts: FontBook,
+  type: SpecAnnotationType,
 ): ComponentMeasure {
   try {
     return measureComponentSize(
@@ -65,7 +68,13 @@ function measured(
         ...ids,
         ...(args.values === undefined
           ? {}
-          : { values: args.values as Record<string, JsonValue> }),
+          : {
+              values: storedRefValues(
+                loaded,
+                type,
+                args.values as Record<string, JsonValue>,
+              ),
+            }),
         size: sizeOf(args.size),
       },
       measurerFor(fonts),
@@ -97,7 +106,7 @@ export async function measureComponent(
   const containerId = await containerIdOf(roots, args.project, args.container);
   const fonts = loaded!.fonts ?? builtinFontBook();
   const ids = { specId: source.spec.id, typeId: type.id, containerId };
-  const result = measured(loaded!, ids, args, fonts);
+  const result = measured(loaded!, ids, args, fonts, type);
   const follows = result.follows.width || result.follows.height;
   return {
     type: { specId: source.spec.id, id: type.id, name: type.name },

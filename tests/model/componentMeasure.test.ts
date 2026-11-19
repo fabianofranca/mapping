@@ -6,6 +6,7 @@ import {
   setContainerDensity,
   unitsToPixels,
   type ComponentFile,
+  type JsonValue,
   type Project,
 } from '../../src/model';
 import { FIT_SPEC_ID, LONG_LABEL, fitCatalog, fitProject } from './fitFixtures';
@@ -21,7 +22,7 @@ const measure = (
   p: Project,
   typeId: string,
   extra: {
-    values?: Record<string, string>;
+    values?: Record<string, JsonValue>;
     containerId?: string | null;
     size?: { width?: number; height?: number };
   } = {},
@@ -113,5 +114,27 @@ describe('measureComponentSize', () => {
     const before = JSON.stringify(p);
     measure(p, 'fit-hug', { values: { label: LONG_LABEL } });
     expect(JSON.stringify(p)).toBe(before);
+  });
+});
+
+describe('measureComponentSize: a table field', () => {
+  const p = fitProject();
+  const rows = (n: number) => Array.from({ length: n }, (_, i) => ({ text: `Row ${i}` }));
+
+  it('takes the rows from `values` and the height grows with them', () => {
+    const none = measure(p, 'fit-list');
+    const three = measure(p, 'fit-list', { values: { items: rows(3) } });
+    const six = measure(p, 'fit-list', { values: { items: rows(6) } });
+    expect(three.units.height).toBeGreaterThan(none.units.height);
+    expect(six.units.height).toBeGreaterThan(three.units.height);
+  });
+
+  it('a row that is not an object, and a column that is not there, fail', () => {
+    expect(() => measure(p, 'fit-list', { values: { items: ['x'] } })).toThrow(
+      /invalid-value|not an object/,
+    );
+    expect(() => measure(p, 'fit-list', { values: { items: [{ nope: 'x' }] } })).toThrow(
+      /nope/,
+    );
   });
 });

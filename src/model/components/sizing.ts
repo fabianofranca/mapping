@@ -199,13 +199,36 @@ function rootMax(
   return name === 'width' && edge !== undefined ? Math.min(max, edge) : max;
 }
 
+/** The shortfalls the instance reports at `size`: the sum (the progress of a growth) and the largest. */
+function shortOf(
+  component: ComponentFile,
+  values: FieldValues,
+  options: InstantiateOptions,
+  size: { width: number; height: number },
+): { total: number; largest: number } {
+  const found = Object.values(
+    instantiate(component, values, { x: 0, y: 0, ...size }, options).shortfalls ?? {},
+  ).filter((missing) => missing > 0);
+  return { total: found.reduce((sum, v) => sum + v, 0), largest: Math.max(0, ...found) };
+}
+
+/** What may grow in one step: each `hug` axis alone first (the smallest change), then all of them together. */
+function growthSets(hug: Record<SizingAxis, boolean>): Record<SizingAxis, boolean>[] {
+  const alone = (['width', 'height'] as const)
+    .filter((name) => hug[name])
+    .map((name) => ({ width: name === 'width', height: name === 'height' }));
+  return alone.length > 1 ? [...alone, { ...hug }] : alone;
+}
+
 /**
  * Checks the drawing at the fitted size: the measure and the drawing can disagree by a fraction (a line that
  * gets a width limit measures wider), and the marking would be left short (`component-overflow`). While the
- * instance reports a shortfall, each `hug` axis grows by `ceilFit` of the largest one, up to
- * `DRAWING_CHECKS` times and never past the root's `max` nor the fit's `maxWidth`. An axis that is
- * not `hug` (px by expression, kept) does not change. If the growth does not remove the shortfall, the
- * measured size stays.
+ * instance reports a shortfall, a `hug` axis grows by `ceilFit` of the largest one, up to `DRAWING_CHECKS`
+ * times and never past the root's `max` nor the fit's `maxWidth`. Each step tries the axes alone before both
+ * (an axis that is not short does not grow) and keeps the first growth that ends the shortfall or else the one
+ * that reduces it the most; a step that does not reduce it stops the loop. An axis that is not `hug` (px by
+ * expression, kept) does not change. The size reached stays, even if a shortfall the growth cannot remove is
+ * left (the growth that worked is not lost).
  */
 function checkDrawing(
   component: ComponentFile,
@@ -216,22 +239,46 @@ function checkDrawing(
   maxWidth: number | undefined,
 ): { width: number; height: number } {
   if (!hug.width && !hug.height) return start;
-  let size = start;
-  for (let attempt = 0; attempt <= DRAWING_CHECKS; attempt++) {
-    const missing = Math.max(
-      0,
-      ...Object.values(
-        instantiate(component, values, { x: 0, y: 0, ...size }, options).shortfalls ?? {},
-      ),
-    );
-    if (missing <= 0) return size;
-    const next = grown(component, values, size, hug, ceilFit(missing), maxWidth);
-    if (next.width === size.width && next.height === size.height) break;
-    size = next;
+  let reached: Reached = {
+    size: start,
+    short: shortOf(component, values, options, start),
+  };
+  for (
+    let attempt = 0;
+    attempt < DRAWING_CHECKS && reached.short.largest > 0;
+    attempt++
+  ) {
+    const best = bestGrowth(component, values, options, reached, hug, maxWidth);
+    if (best === undefined || best.short.total >= reached.short.total) break;
+    reached = best;
   }
-  // The growth did not settle (the image edge or the root's `max` stops it, or the shortfall is not the fit's):
-  // the measured size stays, as before the check.
-  return start;
+  return reached.size;
+}
+
+interface Reached {
+  readonly size: { width: number; height: number };
+  readonly short: { total: number; largest: number };
+}
+
+/** The growth of one step: the first that ends the shortfall or else the one that reduces it the most. */
+function bestGrowth(
+  component: ComponentFile,
+  values: FieldValues,
+  options: InstantiateOptions,
+  from: Reached,
+  hug: Record<SizingAxis, boolean>,
+  maxWidth: number | undefined,
+): Reached | undefined {
+  let best: Reached | undefined;
+  for (const axes of growthSets(hug)) {
+    const grow = ceilFit(from.short.largest);
+    const size = grown(component, values, from.size, axes, grow, maxWidth);
+    if (size.width === from.size.width && size.height === from.size.height) continue;
+    const short = shortOf(component, values, options, size);
+    if (best === undefined || short.total < best.short.total) best = { size, short };
+    if (short.largest <= 0) break;
+  }
+  return best;
 }
 
 /** The final size of the axis: the measured one (integer rounded up) on `hug`, otherwise the given one. */

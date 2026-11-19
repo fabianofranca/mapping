@@ -98,7 +98,18 @@ export function pruneSubstitutions(font: Font): SkippedSubtable[] {
 
 /** Turns the font's glyph substitutions off (no GSUB table: kerning and metrics stay). */
 export function turnOffSubstitutions(font: Font): void {
+  if (font.tables?.gsub !== undefined) substitutionsOffCount++;
   if (font.tables !== undefined) delete font.tables.gsub;
+}
+
+let substitutionsOffCount = 0;
+
+/**
+ * Counts the fonts whose glyph substitutions were turned off. A width measured before a font loses them
+ * (a ligature that no longer applies) is stale: the measurer's memo drops its entries when this changes.
+ */
+export function substitutionsEpoch(): number {
+  return substitutionsOffCount;
 }
 
 /** The text the load probe lays out: letters, an `ffi` and an `fl`, and digits. */

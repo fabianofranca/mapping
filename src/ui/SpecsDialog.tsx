@@ -461,11 +461,13 @@ export function SpecsDialog({
                 <strong>{entry.spec?.name ?? entry.id}</strong>
                 <span class="muted">
                   {entry.spec
-                    ? t('spec.item', {
-                        version: entry.version,
-                        layers: entry.spec.layers.length,
-                        names: entry.spec.layers.map((layer) => layer.name).join(', '),
-                      })
+                    ? entry.spec.layers.length === 0
+                      ? t('spec.itemNoLayers', { version: entry.version, layers: 0 })
+                      : t('spec.item', {
+                          version: entry.version,
+                          layers: entry.spec.layers.length,
+                          names: entry.spec.layers.map((layer) => layer.name).join(', '),
+                        })
                     : t('spec.fileMissing')}
                 </span>
                 {entry.spec && <SpecTokensInfo spec={entry.spec} />}
