@@ -5,8 +5,10 @@ import {
   addContainer,
   createArrow,
   createMarking,
+  countBrokenRefs,
   createPage,
   deletePage,
+  pageDeletionBrokenRefs,
   movePage,
   moveRootsToPage,
   pageContent,
@@ -17,6 +19,7 @@ import {
   type Project,
 } from '../../src/model';
 import { image, marking, sampleProject } from './fixtures';
+import { referenceAcrossPages, world } from './refAnnotationFixtures';
 
 // Pages (v21, PG1): the page list, what a page holds, moving roots and deleting a page.
 
@@ -367,6 +370,26 @@ describe('moveRootsToPage', () => {
     expect(kept).toEqual({ root: 'I3', x: 5000, y: 0 });
     expect(moved?.x).toBeGreaterThan(5000 + 1000);
     expect(validateProject(next)).toEqual([]);
+  });
+});
+
+describe('pageDeletionBrokenRefs (PF5, finding 3)', () => {
+  it('counts the references from other pages that the discard breaks', () => {
+    const p = referenceAcrossPages();
+    expect(pageDeletionBrokenRefs(p, 'PG2', { discard: true })).toBe(1);
+    expect(pageDeletionBrokenRefs(p, 'PG2', { discard: true })).toBe(
+      countBrokenRefs(p, deletePage(p, 'PG2', { discard: true })),
+    );
+  });
+
+  it('moving the content breaks nothing, and an unrelated page counts 0', () => {
+    const p = referenceAcrossPages();
+    expect(pageDeletionBrokenRefs(p, 'PG2', { moveTo: 'PG1' })).toBe(0);
+    expect(
+      pageDeletionBrokenRefs(createPage(world(), { id: 'PG2', name: 'E' }), 'PG2', {
+        discard: true,
+      }),
+    ).toBe(0);
   });
 });
 

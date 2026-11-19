@@ -3,7 +3,9 @@
 import {
   addTypedAnnotation,
   applySpecialization,
+  addContainer,
   createMarking,
+  createPage,
   setFieldValue,
   type Project,
   type Spec,
@@ -101,4 +103,31 @@ export function world(): Project {
   });
   p = setFieldValue(p, 'AX', 'titulo', 'Alheio');
   return p;
+}
+
+/** `world()` (AL references AM) with AM moved onto PG2, inside a container of its own. */
+export function referenceAcrossPages(): Project {
+  let p = createPage(world(), { id: 'PG2', name: 'Flows' });
+  p = addContainer(p, {
+    id: 'IF',
+    file: 'images/flows.jpg',
+    width: 500,
+    height: 500,
+    pageId: 'PG2',
+  });
+  p = createMarking(p, {
+    id: 'MF',
+    containerId: 'IF',
+    rect: { x: 10, y: 10, width: 100, height: 100 },
+  });
+  return {
+    ...p,
+    annotations: p.annotations.map((a) =>
+      a.id === 'AM'
+        ? { ...a, markingId: 'MF' }
+        : a.id === 'AL'
+          ? { ...a, values: { ...a.values, item: { annotationId: 'AM' } } }
+          : a,
+    ),
+  };
 }

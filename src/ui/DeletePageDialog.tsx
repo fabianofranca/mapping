@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   pageContent,
+  pageDeletionBrokenRefs,
   pointThreadsOnPage,
   type PageContent,
   type Project,
@@ -79,6 +80,12 @@ function ThreadsWarning({ count }: { readonly count: number }) {
   );
 }
 
+/** The references from annotations that stay that "delete the page and everything in it" breaks. */
+function BrokenRefsWarning({ count }: { readonly count: number }) {
+  if (count === 0) return null;
+  return <p role="status">{t('page.delete.brokenRefs', { count })}</p>;
+}
+
 export function DeletePageDialog({ id, onClose, onDeleted }: DeleteProps) {
   const { actions, session, store } = useEditor();
   const project = store.committed.value;
@@ -92,6 +99,7 @@ export function DeletePageDialog({ id, onClose, onDeleted }: DeleteProps) {
   const content = pageContent(project, id);
   const lost = pointThreadsOnPage(project, threads, id);
   const empty = isEmpty(content);
+  const broken = pageDeletionBrokenRefs(project, id, { discard: true });
   const run = (how: { readonly moveTo: string } | { readonly discard: true }) => {
     // The store takes the app to the first page when the open one goes; announcing it first means
     // that the "no longer exists" notice (for an undo or an external reload) is not shown.
@@ -145,6 +153,7 @@ export function DeletePageDialog({ id, onClose, onDeleted }: DeleteProps) {
           onTarget={setTarget}
         />
       )}
+      <BrokenRefsWarning count={broken} />
       <ThreadsWarning count={lost} />
       {failed && (
         <p class="field-error" role="alert">

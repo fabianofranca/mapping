@@ -81,6 +81,8 @@ export const pagesEnUS = {
     'An anchor cannot join markings of different pages. Nothing was moved. These anchors cross between the group and the rest of the page:',
   'page.move.refusedAnchor': '{marking} anchored to {to}',
   'page.move.goToMarking': 'Go to the marking',
+  'page.delete.brokenRefs':
+    '{count} reference(s) from annotations that stay will break if you delete the page and everything in it. You can undo.',
   'page.delete.threadsOne':
     '1 conversation on an empty spot of this page loses its place: it stays in Comments, without a place.',
   'page.delete.threadsMany':
@@ -178,6 +180,8 @@ export const pagesPtBR: Record<keyof typeof pagesEnUS, string> = {
     'Uma âncora não pode ligar marcações de páginas diferentes. Nada foi movido. Estas âncoras cruzam entre o grupo e o resto da página:',
   'page.move.refusedAnchor': '{marking} ancorada em {to}',
   'page.move.goToMarking': 'Ir para a marcação',
+  'page.delete.brokenRefs':
+    '{count} referência(s) de anotações que ficam vão quebrar se você apagar a página e tudo nela. Dá para desfazer.',
   'page.delete.threadsOne':
     '1 conversa em um ponto vazio desta página perde o lugar: ela fica em Comentários, sem lugar.',
   'page.delete.threadsMany':
