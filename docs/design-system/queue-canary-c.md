@@ -2,7 +2,7 @@
 
 ## Pendências
 
-nenhuma (só processo)
+Pending items: none (process only).
 
 ## Sincronização
 
@@ -10,4 +10,4 @@ Sem impacto: the epic only changes the text of the `implementar-fila` skill and 
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.
