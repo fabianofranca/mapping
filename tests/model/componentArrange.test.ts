@@ -918,9 +918,9 @@ describe('fitMarking (MC3, decision 14 of #898)', () => {
     expect(fit(short, 'B')).toBe(short);
   });
 
-  it('does not go past the image: the excess is cut', () => {
+  it('does not go past the image: a box that fits the image slides back inside, so the content is not cut', () => {
     const p = withLabel('fit-button', LONG_LABEL, box(100, 740, 120, 40));
-    expect(rectOf(fit(p, 'B'), 'B')).toMatchObject({ y: 740, height: 60 });
+    expect(rectOf(fit(p, 'B'), 'B')).toMatchObject({ y: 684, height: 116 });
   });
 
   it('locked geometry fails with locked (and nothing changes if it is already the right size)', () => {

@@ -1,6 +1,7 @@
 // Suggestions in the text field (SG1, decision 3): the TextField combobox in commit mode and the
 // three surfaces that wire it (Details field, table cell, Catalog form).
 import { cleanup, fireEvent, render, screen } from '@testing-library/preact';
+import { useState } from 'preact/hooks';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SpecField } from '../../src/model';
@@ -102,14 +103,15 @@ describe('TextField with suggestions', () => {
   });
 
   it('navigates with ↑ and ↓ between the items', async () => {
-    const { input, user } = setup();
+    const { input, onCommit, user } = setup();
     await user.type(input, 'li');
     // Opens with the first item active.
     expect(screen.getAllByRole('option')[0]?.getAttribute('aria-selected')).toBe('true');
     await user.keyboard('{ArrowDown}');
     expect(screen.getAllByRole('option')[1]?.getAttribute('aria-selected')).toBe('true');
     await user.keyboard('{ArrowUp}{ArrowUp}{Enter}');
-    expect(input.value).toBe('MutableList');
+    // The pick is the whole text: Enter also saves it.
+    expect(onCommit).toHaveBeenCalledWith('MutableList');
   });
 
   it('replaces only the word under the cursor, keeping the rest of the text', async () => {
@@ -123,15 +125,17 @@ describe('TextField with suggestions', () => {
     expect(input.selectionStart).toBe('Map<String'.length);
   });
 
-  it('Enter with the list open chooses the first item and does not save', async () => {
+  it('Enter with the list open picks the first item; when it is the whole text it saves too', async () => {
     const { input, onCommit, user } = setup();
     await user.type(input, 'Str');
     expect(screen.getAllByRole('option')[0]?.getAttribute('aria-selected')).toBe('true');
     await user.keyboard('{Enter}');
-    expect(input.value).toBe('String');
-    expect(onCommit).not.toHaveBeenCalled();
-    await user.keyboard('{Enter}');
+    expect(onCommit).toHaveBeenCalledTimes(1);
     expect(onCommit).toHaveBeenCalledWith('String');
+    // The extra Enter does not save twice.
+    await user.keyboard('{Enter}');
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(input.value).toBe('');
   });
 
   it('filtering resets the active one to the first item', async () => {
@@ -167,9 +171,7 @@ describe('TextField with suggestions', () => {
     await user.type(input, 'Int');
     expect(options()).toEqual(['Int', 'UInt']);
     await user.keyboard('{Enter}');
-    expect(input.value).toBe('Int');
-    expect(onCommit).not.toHaveBeenCalled();
-    await user.keyboard('{Enter}');
+    expect(onCommit).toHaveBeenCalledTimes(1);
     expect(onCommit).toHaveBeenCalledWith('Int');
   });
 
@@ -290,6 +292,62 @@ describe('TextField with suggestions', () => {
     await user.click(screen.getByRole('option', { name: 'List' }));
     await user.type(input, '?');
     expect(input.value).toBe('List?');
+  });
+});
+
+describe('icon-like field: Enter on a picked option saves it (finding 2.2 / 2.4)', () => {
+  const ICONS: SpecField = {
+    key: 'actionIcon1',
+    type: 'string',
+    suggestions: ['Home', 'Search', 'Person'],
+  };
+
+  // Stand-in for the project: what `onSet` receives is what the field gets back.
+  function Stored({ onStore }: { onStore: (value: string | null) => void }) {
+    const [value, setValue] = useState('');
+    return (
+      <StringEditor
+        field={ICONS as never}
+        value={value}
+        label="Action 1"
+        readOnly={false}
+        onSet={
+          ((next: string | null) => {
+            onStore(next);
+            setValue(next ?? '');
+            return { ok: true as const };
+          }) as never
+        }
+      />
+    );
+  }
+
+  function iconSetup() {
+    const stored: (string | null)[] = [];
+    render(<Stored onStore={(v) => stored.push(v)} />);
+    return {
+      stored,
+      user: userEvent.setup(),
+      input: () => screen.getByLabelText<HTMLInputElement>('Action 1'),
+    };
+  }
+
+  it('ArrowDown to an option and Enter saves the picked option (stored == shown)', async () => {
+    const { stored, user, input } = iconSetup();
+    await user.click(input());
+    await user.keyboard('{ArrowDown}{Enter}');
+    expect(input().value).toBe('Search');
+    expect(stored.at(-1)).toBe('Search');
+  });
+
+  it('after clearing the field, typing and picking never stores a "(none)" prefix', async () => {
+    const { stored, user, input } = iconSetup();
+    await user.clear(input());
+    await user.type(input(), 'Sea');
+    await user.keyboard('{Enter}');
+    expect(input().value).toBe('Search');
+    expect(stored.every((v) => v === null || !v.includes('(none)'))).toBe(true);
+    expect(stored.at(-1)).toBe('Search');
   });
 });
 

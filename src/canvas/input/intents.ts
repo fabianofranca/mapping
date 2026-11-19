@@ -6,6 +6,7 @@ import {
   canEditImagePlacement,
   canEditMarkingGeometry,
   canMoveItems,
+  containsRect,
   imageCanvasRect,
   markingCanvasRectOf,
   projectIndex,
@@ -100,6 +101,7 @@ export type Intent =
 const PAN: Intent = { kind: 'pan' };
 const LOCKED: Intent = { kind: 'locked' };
 const RECT_SELECT: Intent = { kind: 'select-rect' };
+const EMPTY_RECT: Rect = { x: 0, y: 0, width: 0, height: 0 };
 
 /** Editor state that decides the intent (read without subscribing, at the moment of the event). */
 export interface IntentContext {
@@ -155,9 +157,87 @@ export interface IntentContext {
  * in Draw mode stays with the space bar, the middle button and the wheel.
  */
 export function intentAt(ctx: IntentContext, c: Point): Intent {
-  const intent = baseIntentAt(ctx, c);
+  const intent = grabTopmost(ctx, c, baseIntentAt(ctx, c));
   const swap = ctx.rectSelect && ctx.project && !ctx.spaceDown;
   return swap && (intent.kind === 'pan' || intent.kind === 'draw') ? RECT_SELECT : intent;
+}
+
+/**
+ * A press grabs the item that a click at the point would select (the first of `hitChain`), not the
+ * item that happens to be selected below or above it: a move that starts over another item moves
+ * that one (the pointer then selects it), and a handle of the selection reached through another
+ * item's area is not a resize (with Shift it starts the rectangle). Handles of the selection that
+ * sit where no item is (or where a selected item is) stay as they are; several selected items
+ * move together, as before.
+ */
+function grabTopmost(ctx: IntentContext, c: Point, intent: Intent): Intent {
+  const { project } = ctx;
+  if (!project || ctx.items.length > 1) return intent;
+  if (!isResize(intent) && !isMove(intent)) return intent;
+  const hits = hitChain(project, ctx.visibility ?? new Map(), c, undefined, ctx.titles);
+  const top = hits.find((item) => item.kind !== 'arrow');
+  if (!top || isSelectedItem(ctx, top)) return intent;
+  return isResize(intent) ? resizeUnder(ctx, project, intent, top) : moveOf(project, top);
+}
+
+/**
+ * A handle of the selection reached through `top`, another item: with Shift it starts the
+ * rectangle, unless `top` wraps the selection (its container or ancestor), whose area is the
+ * selection's own surroundings.
+ */
+function resizeUnder(
+  ctx: IntentContext,
+  project: Project,
+  intent: ResizeIntent,
+  top: HitItem,
+): Intent {
+  const wraps = containsRect(canvasRectOf(project, top), selectedRect(project, intent));
+  return ctx.rectSelect && !ctx.spaceDown && !wraps ? RECT_SELECT : intent;
+}
+
+type ResizeIntent = Extract<Intent, { kind: 'resize-marking' | 'resize-image' }>;
+
+function isResize(intent: Intent): intent is ResizeIntent {
+  return intent.kind === 'resize-marking' || intent.kind === 'resize-image';
+}
+
+function isMove(intent: Intent): boolean {
+  return intent.kind === 'move-marking' || intent.kind === 'move-image';
+}
+
+function isSelectedItem(ctx: IntentContext, item: HitItem): boolean {
+  const same = (i: HitItem) => i.kind === item.kind && i.id === item.id;
+  return ctx.items.some(same) || (ctx.selection !== null && same(ctx.selection));
+}
+
+/** Dragging `item` (the topmost under a press): move it, or `locked` if it cannot go. */
+function moveOf(project: Project, item: HitItem): Intent {
+  if (item.kind === 'marking') {
+    return canEditMarkingGeometry(project, item.id)
+      ? { kind: 'move-marking', markingId: item.id }
+      : LOCKED;
+  }
+  return canEditImagePlacement(project, item.id)
+    ? { kind: 'move-image', containerId: item.id }
+    : LOCKED;
+}
+
+function canvasRectOf(project: Project, item: HitItem): Rect {
+  const index = projectIndex(project);
+  const marking = item.kind === 'marking' ? index.markings.get(item.id) : undefined;
+  const container = item.kind === 'image' ? index.containers.get(item.id) : undefined;
+  if (marking) return markingCanvasRectOf(project, marking);
+  return container ? imageCanvasRect(container, container.placement) : EMPTY_RECT;
+}
+
+/** Canvas rectangle of the item that a resize intent targets. */
+function selectedRect(project: Project, intent: ResizeIntent): Rect {
+  return canvasRectOf(
+    project,
+    intent.kind === 'resize-marking'
+      ? { kind: 'marking', id: intent.markingId }
+      : { kind: 'image', id: intent.containerId },
+  );
 }
 
 function baseIntentAt(ctx: IntentContext, c: Point): Intent {

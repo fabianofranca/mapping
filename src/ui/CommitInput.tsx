@@ -29,8 +29,8 @@ interface CommitInputProps extends InputProps {
   /**
    * Field suggestions (ARIA combobox). The list opens (typing, ↓, Ctrl+Space or a click on the empty field) with the
    * first item active, which returns to the first on every filtering; Enter with it open picks the
-   * active one and does not save (with it closed, it saves). Picking replaces only the word under the cursor and does not
-   * save: the next confirmation saves. It does not restrict the value. Without them, or with the field
+   * active one (with it closed, it saves). Picking replaces only the word under the cursor: when the
+   * pick becomes the whole text Enter saves it too; inside a longer text the next confirmation saves. It does not restrict the value. Without them, or with the field
    * `readOnly`/`disabled`, the field is the usual one.
    */
   readonly suggestions?: readonly SuggestionInput[];
@@ -91,14 +91,15 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
   // Items with an `id` picked in this edit (and over which external value): reset on confirm,
   // on the Esc that reverts and when the external value changes.
   const chosen = useRef<{ readonly item: SuggestionItem; readonly base: string }[]>([]);
-  const choose = (item: SuggestionItem) => {
+  const choose = (item: SuggestionItem): string | null => {
     const el = inputEl.current;
-    if (!el) return;
+    if (!el) return null;
     if (item.id !== undefined) chosen.current.push({ item, base: value });
     const next = replaceWord(el.value, el.selectionStart ?? el.value.length, item.label);
     pendingCursor.current = next.cursor;
     setText(next.text);
     closeList();
+    return next.text;
   };
 
   // Changing the text from JS moves the cursor to the end: put it after the suggestion.
@@ -223,7 +224,10 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
           if (visible && plain && e.key === 'Enter' && active >= 0) {
             e.preventDefault();
             const item = shown[active];
-            if (item) choose(item);
+            const next = item ? choose(item) : null;
+            // The pick filled the whole value (an icon name): Enter also confirms it, so the stored
+            // value is never behind the field. A word inside a longer text waits for the next Enter.
+            if (item && next === item.label) commit(next);
             return;
           }
           if (visible && e.key === 'Tab') closeList();
