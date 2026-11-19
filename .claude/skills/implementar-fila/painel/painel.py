@@ -150,6 +150,15 @@ is `revertido`, `pode promover` (`encerrado`, at most PROMOTE_MAX_REWORK = 1 rew
 A role with a canary `ativo` or `em avaliação` has no `candidato` in `meta.uso`.
 `show` prints the line `canários: <id> <role> <de> → <model> <effort> <k>/<n> (retrabalhos <r>/<volta>, <state>); …`
 (or `canários: nenhum`) right after the `meta.uso` candidates line.
+Fast track in the queue (stage #1791, decisions 3 to 7): `KINDS` has `via-rapida` and `STATUS` has `recusada`, a final state (not a
+candidate, not started, out of `grafoNos` and `fichas a refazer:`, skipped by `fill_phases` and `import`; a row that depends on it stays `dep`).
+A `via-rapida` row takes a slot and goes through dependency, file, schema, exclusive and draining like any row (there is no code path by kind in
+`slots_plan`); its session kind `via-rapida` is in `SESSION_KINDS` (no ruler, signals or ceiling; it shows in `costs` and `uso`) and `canario usar`
+answers `atual` for it. `row … phases=` takes only `<code>:<todo|open|ok>` items (an Erro, code 2, otherwise); `phase` counts an item without `:` as `open`.
+`ended` follows the status in `row`: `concluída`, `falhou` or `recusada` write `ended=now` (if the row has none), `aguardando`, `em andamento` or
+`esperando dono` clear it, and an explicit `ended=` wins. `end DIR` writes `meta.runEnd = now` (into `apply`); `start` clears it. A merge asked to the owner by
+text is a row `esperando dono` with a `wait` starting with `merge pedido ao dono:` and no `child` (`row` stamps `childAt` on a new ask): `show` prints
+`merge pedido ao dono: #n (PR #p, <hours since the ask>); …` (or `nenhum`), and the row is not in `esperando o coordenador:` nor `atrasadas:`.
 Standard library only. Usage: painel.py [--now ISO] <subcommand> DIR ...
 (the subcommand comes BEFORE the folder: `painel.py row <folder> '#n' status=...`).
 """
@@ -167,11 +176,13 @@ import subprocess
 import sys
 import unicodedata
 
-STATUS = ["aguardando", "em andamento", "concluída", "falhou", "esperando dono"]
-KINDS = ["etapa", "bug", "patch"]
+STATUS = ["aguardando", "em andamento", "concluída", "falhou", "esperando dono", "recusada"]
+FINAL_STATUS = ("concluída", "falhou", "recusada")  # `ended` is written with them (decision 5 of #1791)
+OPEN_STATUS = ("aguardando", "em andamento", "esperando dono")  # `ended` is cleared with them
+KINDS = ["etapa", "bug", "patch", "via-rapida"]
 STAGES = ["", "Fases", "Testador", "Correção", "Fechamento", "Mesclada"]
 FILES = ["queue", "meta", "log"]
-SESSION_KINDS = ["fase", "correção", "testador", "reteste", "fechamento", "coordenador", "supervisor"]
+SESSION_KINDS = ["fase", "correção", "testador", "reteste", "fechamento", "coordenador", "supervisor", "via-rapida"]
 CONTEXT_LIMIT = 35
 CONTEXT_STALE_MINUTES = 70  # a context measure older than this is flagged by `show` (decision 5 of #1874)
 CONTEXT_MEASURE_TIMEOUT = 30  # seconds for `contextUsage.mjs` to answer
@@ -185,6 +196,7 @@ IMPORT_STATUS = ["aguardando", "em andamento", "esperando dono", "falhou"]
 IMPORT_FIELDS = ["issue", "title", "kind", "plan", "phases", "phasesTotal", "phasesDone", "stage", "step", "pr",
                  "started", "hold"]
 OWNER_WAIT_PREFIX = "dono no chat da fase:"  # the mark of the `wait` of a phase waiting for the owner in its chat
+MERGE_ASK_PREFIX = "merge pedido ao dono:"  # the mark of the `wait` of a merge asked to the owner by text (decision 3 of #1791)
 OWNER_RECHECK_MINUTES = 60  # the hourly check rereads the phase waiting for the owner
 OWNER_DEADLINE_MINUTES = 240  # with no answer from the owner by here, the coordinator interrupts the question
 IMPORT_RUNNING_FIELDS = ["child", "childAt", "wait", "ciWait", "ciWaitAt", "sessions"]
@@ -388,6 +400,15 @@ def count_phases(phases):
 
 
 PHASE_CODE = re.compile(r"[A-Za-z][A-Za-z0-9-]*")
+PHASE_STATES = ("todo", "open", "ok")
+
+
+def validate_phases(value):
+    """`phases=` is `<code>:<state>` items separated by `|` (empty clears it); anything else is an Erro (decision 4 of #1791)."""
+    for item in value.split("|") if value else []:
+        code, sep, st = item.partition(":")
+        if not (sep and PHASE_CODE.fullmatch(code) and st in PHASE_STATES):
+            raise Erro(f"invalid phases item '{item}': each one is <code>:<state>, with the state todo, open or ok")
 
 
 def plan_phase_codes(plan):
@@ -405,7 +426,7 @@ def plan_phase_codes(plan):
 
 def fill_phases(row):
     """Completes `phases` from the ficha (its phases first, `todo` where missing) and returns whether the row changed."""
-    if row.get("status") == "concluída":
+    if row.get("status") in ("concluída", "recusada"):
         return False
     codes = plan_phase_codes(row.get("plan") or "")
     if codes is None:
@@ -457,6 +478,7 @@ def cmd_start(a):
     m = s.get("meta")[0]
     if not m.get("runStart"):
         m["runStart"] = now()
+    m["runEnd"] = ""  # a new run is not over (decision 6 of #1791)
     if a.paralelo is not None:
         if a.paralelo < 1:
             raise Erro("--paralelo precisa ser um inteiro a partir de 1")
@@ -465,24 +487,57 @@ def cmd_start(a):
     s.commit()
 
 
-def cmd_row(a):
+def cmd_end(a):
+    """Marks the end of the run: `meta.runEnd = now` (the page stops the total there); `start` clears it."""
     s = open_session(a.dir)
-    q = s.get("queue")
-    issue = norm_issue(a.issue)
-    pairs = parse_pairs(a.pairs)
+    s.get("meta")[0]["runEnd"] = now()
+    s.touch("meta")
+    s.commit()
+
+
+def ended_follows_status(pairs, row):
+    """Decision 5 of #1791: a final status writes `ended` (if the row has none), an open one clears it; an explicit `ended=` wins."""
+    st = pairs.get("status")
+    if "ended" in pairs:
+        return
+    if st in FINAL_STATUS and not (row or {}).get("ended"):
+        pairs["ended"] = "now"
+    elif st in OPEN_STATUS:
+        pairs["ended"] = ""
+
+
+def stamp_merge_ask(pairs, row):
+    """A merge asked by text has no `child`: the `childAt` says since when (the hours of `show`), once per ask."""
+    wait = pairs.get("wait") or ""
+    if not wait.startswith(MERGE_ASK_PREFIX) or "childAt" in pairs:
+        return
+    child = pairs["child"] if "child" in pairs else (row or {}).get("child")
+    if not child and not ((row or {}).get("wait") or "").startswith(MERGE_ASK_PREFIX):
+        pairs["childAt"] = "now"
+
+
+def validate_row_pairs(pairs, issue):
+    """The `row` fields: known names, the closed values and the `phases=` form."""
     for k in pairs:
         if k not in QUEUE_EMPTY:
             raise Erro(f"campo desconhecido '{k}'; válidos: " + ", ".join(QUEUE_EMPTY))
     if "issue" in pairs and pairs["issue"] != issue:
         raise Erro("não é possível trocar o campo issue")
-    if "status" in pairs:
-        validate_choice("status", pairs["status"], STATUS)
-    if "kind" in pairs:
-        validate_choice("kind", pairs["kind"], KINDS)
-    if "exclusive" in pairs:
-        validate_choice("exclusive", pairs["exclusive"], ["", "sim"])
-    if "stage" in pairs:
-        validate_choice("stage", pairs["stage"], STAGES)
+    for k, allowed in (("status", STATUS), ("kind", KINDS), ("exclusive", ["", "sim"]), ("stage", STAGES)):
+        if k in pairs:
+            validate_choice(k, pairs[k], allowed)
+    if "phases" in pairs:
+        validate_phases(pairs["phases"])
+
+
+def cmd_row(a):
+    s = open_session(a.dir)
+    q = s.get("queue")
+    issue = norm_issue(a.issue)
+    pairs = parse_pairs(a.pairs)
+    validate_row_pairs(pairs, issue)
+    row = find_row(q, issue)
+    ended_follows_status(pairs, row)
     if pairs.get("child") == "":
         pairs["childAt"] = ""
     if pairs.get("ciWait") == "":
@@ -490,7 +545,8 @@ def cmd_row(a):
     if pairs.get("ciWait") and "ciWaitAt" not in pairs:
         # New PR in the wait: the time is now, never that of the previous PR (nor blank).
         pairs["ciWaitAt"] = "now"
-    if (pairs.get("status") in ("concluída", "falhou") or pairs.get("ended")) and "ciWait" not in pairs:
+    stamp_merge_ask(pairs, row)
+    if (pairs.get("status") in FINAL_STATUS or pairs.get("ended")) and "ciWait" not in pairs:
         # A finished stage does not wait for CI: a forgotten ciWait does not stay in the check forever.
         pairs["ciWait"] = pairs["ciWaitAt"] = ""
     if "child" in pairs and "wait" not in pairs:
@@ -502,7 +558,6 @@ def cmd_row(a):
     for k in INT_FIELDS:
         if k in pairs:
             pairs[k] = to_int(k, pairs[k])
-    row = find_row(q, issue)
     if row is None:
         row = dict(QUEUE_EMPTY)
         row["issue"] = issue
@@ -528,7 +583,8 @@ def cmd_phase(a):
     changes = parse_pairs(a.pairs)
     for v in changes.values():
         validate_choice("estado de fase", v, ["ok", "open"])
-    parts = [p.split(":", 1) for p in row["phases"].split("|") if p]
+    # an item without ":" (an old panel, by hand) counts as `open`, as `fill_phases` does
+    parts = [[c, st or "open"] for c, _, st in (item.partition(":") for item in row["phases"].split("|") if item)]
     for code, st in changes.items():
         for p in parts:
             if p[0] == code:
@@ -1366,6 +1422,8 @@ def canary_offers(c, meta, q, papel, issue, want):
     """`usar`: this canary is active, of the role, with `want` as its `de`, still short of `n` and, with a filter, the stage passes."""
     if c.get("estado") != "ativo" or c.get("papel") != papel or parse_de(c["de"]) != want:
         return False
+    if (find_row(q, issue) or {}).get("kind") == "via-rapida":
+        return False  # the fast track always runs at `high` and never joins canary B (decision 7 of #1791)
     if canary_units(c, meta) >= c["n"]:
         return False
     return c.get("filtro") != "processo" or is_process_stage(find_row(q, issue))
@@ -2293,7 +2351,7 @@ def row_incomplete(r):
 
 def redo_rows(q):
     """Non-`concluída` rows with an incomplete ficha (the ficha is redone in the cycle)."""
-    return [r for r in q if r["status"] != "concluída" and row_incomplete(r)]
+    return [r for r in q if r["status"] not in ("concluída", "recusada") and row_incomplete(r)]
 
 
 def changes_schema(plan):
@@ -2502,7 +2560,7 @@ def first_open_phase(r):
 
 def queue_graph(q, meta, reasons):
     """(grafoNos, grafoSetas) of the queue; decisions 3 to 8 of #1761. Reads what `slots_plan` already decided."""
-    rows = sorted((r for r in q if r["status"] != "concluída"), key=lambda r: r["order"])
+    rows = sorted((r for r in q if r["status"] not in ("concluída", "recusada")), key=lambda r: r["order"])
     nodes = {r["issue"]: r for r in rows}
     merged = set(meta.get("merged", []))
     deps = {k: graph_deps(r, nodes, merged) for k, r in nodes.items()}
@@ -2593,6 +2651,20 @@ def owner_recheck_text(r):
 def waiting_rows(q):
     """A child waiting for the coordinator: `child` and `wait`, without those waiting for the owner."""
     return [r for r in q if r.get("child") and r.get("wait") and not is_owner_wait(r)]
+
+
+def merge_ask_rows(q):
+    """Rows waiting for the owner to answer a merge asked by text: `esperando dono`, no `child`, `wait` with MERGE_ASK_PREFIX."""
+    return [r for r in q if r.get("status") == "esperando dono" and not r.get("child")
+            and (r.get("wait") or "").startswith(MERGE_ASK_PREFIX)]
+
+
+def merge_ask_text(r):
+    """`#n (PR #p, <hours>)`: the PR is what follows the mark in the `wait`; the hours come from `childAt`."""
+    pr = r["wait"][len(MERGE_ASK_PREFIX):].strip()
+    since = r.get("childAt")
+    hours = f", há {minutes_since(since) // 60} h" if since else ""
+    return f"{r['issue']} ({pr}{hours})"
 
 
 def ci_wait_rows(q):
@@ -2747,6 +2819,7 @@ def cmd_show(a):
         f"{r['issue']} ({r['wait']})" for r in waiting_rows(q)) or "nenhuma"))
     print("CI esperando o coordenador: " + ("; ".join(
         ci_wait_text(r) for r in ci_wait_rows(q)) or "nenhuma"))
+    print("merge pedido ao dono: " + ("; ".join(merge_ask_text(r) for r in merge_ask_rows(q)) or "nenhum"))
     print("últimas do log:")
     for e in lg[-5:]:
         print(f"  {e['at']}  {e['text']}")
@@ -2776,6 +2849,7 @@ def build_parser():
     sp.add_argument("--force", action="store_true")
     sp = add("start", cmd_start, "marks the start of the run (and the slots with --paralelo N)")
     sp.add_argument("--paralelo", type=int, help="number of slots (default 2)")
+    add("end", cmd_end, "marks the end of the run (meta.runEnd = now; `start` clears it)")
     sp = add("row", cmd_row, "inserts or updates a queue row")
     sp.add_argument("issue")
     sp.add_argument("pairs", nargs="*")

@@ -358,7 +358,8 @@ The panel is an artifact of the **Dashboard** type. It has 3 JSON file datasets 
 ```bash
 painel.py init <folder>
 painel.py start <folder> --paralelo N                  # start of the run and slots (default 2); can repeat
-painel.py row <folder> '#n' status=… stage=… step=… pr=… started=now ended=now
+painel.py row <folder> '#n' status=… stage=… step=… pr=… started=now ended=now   # status: `aguardando`, `em andamento`, `esperando dono`, `concluída`, `falhou`, `recusada` (a refused fast track, final); kind: etapa, bug, patch, via-rapida; `ended` follows the status (a final one writes it, an open one clears it) and `phases=` is validated
+painel.py row <folder> '#n' status="esperando dono" wait="merge pedido ao dono: PR #<p>"   # merge asked by text (no `child`): `show` prints it in `merge pedido ao dono:`
 painel.py row <folder> '#n' hold="<owner's reason>"     # stage held by the owner; hold= clears
 painel.py row <folder> '#n' exclusive=sim             # exclusive stage (starts with the queue empty, and no other starts with it); exclusive= clears
 painel.py row <folder> '#n' plan="<ficha>"            # the stage's ficha
@@ -368,10 +369,11 @@ painel.py row <folder> '#n' ciWait="PR #<n>" ciWaitAt=now   # the PR's CI waits 
 painel.py phase <folder> '#n' CL3=open|ok             # phase state: open on creating the session, ok on merging; the total comes from the ficha (`fases=`) and is not recorded
 painel.py reorder <folder> '#a' '#b' …
 painel.py apply <folder> <file|->                  # several commands at once (below)
+painel.py end <folder>                             # end of the run: `meta.runEnd = now` (the page stops the total there; `start` clears it); goes into `apply`
 painel.py log <folder> "text"
 painel.py current <folder> "text"
 painel.py reserve <folder> <trig_id>                  # the session's fallback check
-painel.py session <folder> '#n' <id> kind=<kind> [label=<code>]   # session created for the stage (no repeats); kind: fase, correção, testador, reteste, fechamento, coordenador, supervisor
+painel.py session <folder> '#n' <id> kind=<kind> [label=<code>]   # session created for the stage (no repeats); kind: fase, correção, testador, reteste, fechamento, coordenador, supervisor, via-rapida (no rework ruler, signals or context ceiling; it shows in `costs` and `uso`)
 painel.py cost <folder> <id> usd=<x> ctx=<tokens> model=<m> effort=<e> [served=<model>] [issue='#n' kind=<kind>]   # the session's cost (from get_session); kind required with a new id
 painel.py costs [--desde <ISO>] <folder>              # total, by kind (sessions, US$, median) and by stage; reads only the meta
 painel.py uso [--desde <ISO>] <folder>                # usage and quality per role × model × effort (meta.uso): one line per key and the signals; reads only the meta
@@ -394,7 +396,7 @@ painel.py slug "<title of the ##>"                      # prints the section anc
 painel.py toca "<comma-separated citations>"     # checks the ficha's toca (no folder): `ok` (code 0) or `inválida: <citation> — <reason>` per citation (code 1)
 painel.py published <folder> [--done]                 # prints `at:` (the real time) and the files to upload; `--done`, after the batch, clears what is left to publish; on resuming, `published <folder> --done` over the downloaded copy clears the `não publicado` it carries ("Session switch" › "In the new session")
 painel.py touch <folder>                              # publishing failed: marks the 3 files again
-painel.py show <folder>          # summary: em andamento, `vagas:`, `começar agora:`, `contexto:`, `custo:`, `testador acima do teto:`, `escapados:`, `histórico:`, `candidatos a teste:`, `canários:`, `pedidos do supervisor:`, `regras em vigor:`, `fichas a refazer:`, children, overdue ones, `esperando o dono no chat da fase:`, waiting for the coordinator, `CI esperando o coordenador:`, reserve, `não publicado`, latest of the log
+painel.py show <folder>          # summary: em andamento, `vagas:`, `começar agora:`, `contexto:`, `custo:`, `testador acima do teto:`, `escapados:`, `histórico:`, `candidatos a teste:`, `canários:`, `pedidos do supervisor:`, `regras em vigor:`, `fichas a refazer:`, `merge pedido ao dono:`, children, overdue ones, `esperando o dono no chat da fase:`, waiting for the coordinator, `CI esperando o coordenador:`, reserve, `não publicado`, latest of the log
 painel.py show <folder> '#n'     # one whole row, with the ficha
 ```
 
