@@ -1,4 +1,4 @@
-# Canary baseline — 2026-11-19 (épico `epic/canary-baseline`, PR #0, MCP unchanged, schema v21)
+# Canary baseline — 2026-11-19 (épico `epic/canary-baseline`, PR #2280, MCP unchanged, schema v21)
 
 ## Adicionado
 
