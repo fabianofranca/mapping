@@ -549,6 +549,7 @@ describe('scripts/testing/ listed in the repository', () => {
         'cloud.mjs',
         'fiel.mjs',
         'fx.mjs',
+        'gsub-font.mjs',
         'herdada.mjs',
         'justificado.mjs',
         'large-project.mjs',
