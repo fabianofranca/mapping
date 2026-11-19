@@ -1,13 +1,17 @@
 import 'fake-indexeddb/auto';
-import { cleanup, screen, within } from '@testing-library/preact';
+import { act, cleanup, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EditorDialogs } from '../../src/app/useEditorDialogs';
 import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
+import { addContainer, createPage } from '../../src/model';
 import { PageMenu } from '../../src/ui/PageMenu';
+import { propose } from '../model/proposalFixtures';
+import { pagesProject } from '../store/pageHarness';
 import { renderLive } from './harness';
 import { setupPages } from './pageUiHarness';
+import { openReviewHarness, renderInEditor } from './review/reviewHarness';
 
 // Page menu of the canvas bar (stage #883, PG2, decision 9).
 
@@ -120,5 +124,65 @@ describe('PageMenu', () => {
     expect(screen.getByRole('listbox', { name: t('page.picker.list') })).toBeTruthy();
     expect(screen.getByRole('button', { name: t('page.picker.new') })).toBeTruthy();
     expect(screen.getByRole('button', { name: t('page.picker.manage') })).toBeTruthy();
+  });
+});
+
+// The Page menu in the review (stage #2177, PF3, decision 14): the pages of the view being shown.
+describe('PageMenu in the review', () => {
+  async function setupReview() {
+    const base = pagesProject();
+    let after = createPage(base, { id: 'PGD', name: 'Drafts' });
+    after = addContainer(after, {
+      id: 'ID',
+      file: 'images/draft.png',
+      width: 500,
+      height: 500,
+      pageId: 'PGD',
+    });
+    const h = await openReviewHarness({
+      project: base,
+      proposals: [propose(base, after, { id: 'P1' })],
+    });
+    expect(h.review.open('P1').ok).toBe(true);
+    renderInEditor(
+      h,
+      <PageMenu dialogs={{ show: vi.fn() } as unknown as EditorDialogs} />,
+    );
+    return h;
+  }
+  const names = () =>
+    screen.getAllByRole('option').map((o) => o.getAttribute('data-name'));
+
+  it('the Proposed view lists the proposal\'s page with the "New in this proposal" tag', async () => {
+    const h = await setupReview();
+    act(() => h.review.setView('proposed'));
+    const user = userEvent.setup();
+    await user.click(trigger('Page 1'));
+    expect(names()).toEqual(['Page 1', 'Page 2', 'Page 3', 'Drafts']);
+    const drafts = screen.getAllByRole('option')[3] as HTMLElement;
+    expect(within(drafts).getByText('New in this proposal')).toBeTruthy();
+    expect(within(drafts).getByText('1 item')).toBeTruthy();
+    expect(screen.getAllByText('New in this proposal')).toHaveLength(1);
+    await user.click(drafts);
+    expect(h.session.page.id.value).toBe('PGD');
+    expect(trigger('Drafts')).toBeTruthy();
+  });
+
+  it('the Current view lists only the committed pages', async () => {
+    const h = await setupReview();
+    act(() => h.review.setView('current'));
+    const user = userEvent.setup();
+    await user.click(trigger('Page 1'));
+    expect(names()).toEqual(['Page 1', 'Page 2', 'Page 3']);
+    expect(screen.queryByText('New in this proposal')).toBeNull();
+  });
+});
+
+describe('PageMenu outside the review', () => {
+  it('lists only the committed pages, with no tag', async () => {
+    await setup();
+    const user = userEvent.setup();
+    await user.click(trigger('Page 1'));
+    expect(screen.queryByText('New in this proposal')).toBeNull();
   });
 });

@@ -1230,6 +1230,12 @@ export interface ReviewDerived {
    */
   readonly shownAcrossPages: ReadonlySignal<Project | null>;
   /**
+   * The "as it would be" while the Proposed view of an open proposal is shown; `null` in the Current
+   * view, with no proposal open or with a proposal that does not apply. The page state reads its pages
+   * (`PageState.setProposed`), so the review can open a page the proposal creates (stage #2177, PF3).
+   */
+  readonly proposedProject: ReadonlySignal<Project | null>;
+  /**
    * The "as it would be" with all the changes not yet applied, ignoring the decisions: what
    * a rejected creation proposed (the Details show it even outside the two views).
    * Memoized by the changes, the applied ones and the project; read only when the interface asks.
@@ -1574,6 +1580,11 @@ export function createReviewDerived(
   const shownAcrossPages = computed((): Project | null =>
     projectInPerspective(viewBase.value, sources.perspectiveId?.value ?? null),
   );
+  const proposedProject = computed((): Project | null =>
+    sources.proposalId.value === null || sources.view.value === 'current'
+      ? null
+      : (preview.value?.project ?? null),
+  );
 
   const fullPreview = computed((): Project | null => {
     const changes = changesOf.value;
@@ -1655,6 +1666,7 @@ export function createReviewDerived(
     preview,
     shownProject,
     shownAcrossPages,
+    proposedProject,
     fullPreview,
     fieldIndex,
     visibleIds,

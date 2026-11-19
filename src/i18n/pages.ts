@@ -14,6 +14,7 @@ export const pagesEnUS = {
   'page.picker.list': 'Pages',
   'page.picker.new': 'New page…',
   'page.picker.manage': 'Manage pages…',
+  'page.picker.created': 'New in this proposal',
 
   // Perspective picker: what each perspective shows on the open page
   'page.perspectiveCount.many': '{count} items on this page',
@@ -115,6 +116,7 @@ export const pagesPtBR: Record<keyof typeof pagesEnUS, string> = {
   'page.picker.list': 'Páginas',
   'page.picker.new': 'Nova página…',
   'page.picker.manage': 'Gerenciar páginas…',
+  'page.picker.created': 'Nova nesta proposta',
 
   'page.perspectiveCount.many': '{count} itens nesta página',
   'page.perspectiveCount.one': '1 item nesta página',

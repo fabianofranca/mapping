@@ -498,6 +498,10 @@ export function createReviewState(session: ProjectSession): ReviewState {
 
   // A proposal deleted from outside closes the review; an external change that removes the selected item
   // from the proposal goes back to the first pending one.
+  // The Proposed view's pages go to the page state (stage #2177, PF3, decision 13): a page the
+  // proposal creates can be opened; `null` (the Current view, exiting, closing) takes them back.
+  const stopSharingPages = effect(() => page.setProposed(derived.proposedProject.value));
+
   const stopWatching = effect(() => {
     const id = proposalId.value;
     if (id === null) return;
@@ -830,6 +834,8 @@ export function createReviewState(session: ProjectSession): ReviewState {
 
     dispose() {
       stopWatching();
+      stopSharingPages();
+      page.setProposed(null);
       closeReview();
       flushResume();
       components.dispose();

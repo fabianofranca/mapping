@@ -152,3 +152,25 @@ describe('review on pages: accepting part of a group that changes page', () => {
     expect(await review.apply()).toMatchObject({ ok: true });
   });
 });
+
+describe('the page state in the review (decision 13)', () => {
+  it('knows the pages of the Proposed view and drops them in the Current view and on exit', async () => {
+    const base = pagesProject();
+    const after = createPage(base, { id: 'PGD', name: 'Drafts' });
+    const h = await openHarness({ project: base, proposals: [propose(base, after)] });
+    const { review, session } = h;
+    expect(review.open('P1').ok).toBe(true);
+    review.setView('proposed');
+    expect(session.page.pages.value.map((g) => g.id)).toContain('PGD');
+    expect(session.page.open('PGD')).toBe(true);
+    review.setView('current');
+    expect(session.page.pages.value.map((g) => g.id)).not.toContain('PGD');
+    expect(session.page.open('PGD')).toBe(false);
+    review.setView('proposed');
+    expect(session.page.open('PGD')).toBe(true);
+    review.close();
+    expect(session.page.pages.value.map((g) => g.id)).not.toContain('PGD');
+    expect(session.page.id.value).toBe('PG1');
+    expect(session.page.notice.value).toBeNull();
+  });
+});

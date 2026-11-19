@@ -7,7 +7,7 @@ import {
   type Signal,
 } from '@preact/signals';
 import { z } from 'zod';
-import { projectIndex, type Project } from '../model';
+import { projectIndex, type Page, type Project } from '../model';
 import { readSetting, writeSetting } from '../utils/safeStorage';
 import type { HistoryStep, ProjectStore } from './history';
 import { pageOfChange } from './pageChange';
@@ -21,7 +21,11 @@ import { openPerspectiveIn } from './perspectives';
 // - The open page is UI state (it does not enter undo and writes nothing to the project). It is kept
 //   in this browser by `project.id` (localStorage, through `safeStorage`), like the open perspective.
 // - It is always a page of the committed project: if the open one stops existing (deleted, undone,
-//   external reload) the first page opens, with the `removed` notice.
+//   external reload) the first page opens, with the `removed` notice. The one exception is the
+//   review (stage #2177, PF3, decision 13): while the Proposed view of an open proposal is shown, the
+//   review hands the preview over (`setProposed`) and a page that only the proposal creates can be
+//   opened. That choice is never kept (`mapping.openPage`) and, when the preview goes away (the
+//   Current view, exiting the review), the page that was open before comes back, with no notice.
 
 /** What the interface tells about the pages; it shows the notice and clears it. */
 export type PageNotice =
@@ -35,12 +39,28 @@ export type PageNotice =
   | { readonly kind: 'redone'; readonly name: string };
 
 export interface PageState {
-  /** The open page: always a page of the committed project. Write only through `open`. */
+  /**
+   * The open page: a page of the committed project, or (only in the review's Proposed view) a page
+   * the proposal creates. Write only through `open`.
+   */
   readonly id: ReadonlySignal<string>;
   /** The open id without tracking (for the actions, inside operations). */
   openId(): string;
-  /** Opens the page. Refuses (`false`) an id the project does not have. Outside undo; kept in this browser. */
+  /**
+   * Opens the page. Refuses (`false`) an id the project does not have (nor the review's preview, in
+   * its Proposed view). Outside undo; kept in this browser, except a page only the proposal creates.
+   */
   open(id: string): boolean;
+  /**
+   * The review hands over the project the Proposed view shows ("as it would be"), or `null` in the
+   * Current view and outside the review. Its pages become openable (decision 13); when it goes away
+   * a page only it had stops being the open one and the one before comes back, with no notice.
+   */
+  setProposed(project: Project | null): void;
+  /** The pages of the view being shown (the Page menu): the preview's in the Proposed view, else the committed ones. */
+  readonly pages: ReadonlySignal<readonly Page[]>;
+  /** The ids of the pages only the proposal creates (empty outside the review's Proposed view). */
+  readonly createdByProposal: ReadonlySignal<ReadonlySet<string>>;
   /**
    * The page `pageId` is about to be deleted on purpose (the delete dialog): when it is the open
    * one, the move to the first page skips the `removed` notice, once. `null` takes it back; any
@@ -49,7 +69,7 @@ export interface PageState {
   expectRemoval(pageId: string | null): void;
   /** Last notice about the pages; the interface shows it and clears it (`notice.value = null`). */
   readonly notice: Signal<PageNotice | null>;
-  /** The roots of each page in the Completa, by page id (the page picker's count). */
+  /** The roots of each page in the Completa of the view being shown, by page id (the page picker's count). */
   readonly rootCounts: ReadonlySignal<ReadonlyMap<string, number>>;
   /** The roots each perspective shows on the OPEN page, by perspective id (the perspective picker's count). */
   readonly perspectiveCounts: ReadonlySignal<ReadonlyMap<string, number>>;
@@ -120,9 +140,38 @@ function writeOpen(projectId: string, entry: StoredOpen): void {
   );
 }
 
+const NO_PAGES: ReadonlySet<string> = new Set();
+
 /** The name of the page `id` in `p`, or `null` if `p` does not have it. */
 function nameOf(p: Project | null, id: string): string | null {
   return p?.pages.find((g) => g.id === id)?.name ?? null;
+}
+
+/** Whether `p` has the page `id`. */
+const hasPage = (p: Project | null, id: string): boolean =>
+  p?.pages.some((g) => g.id === id) === true;
+
+/** The kept choice, or the first page of `committed` if it is gone. */
+function committedOpen(committed: Project | null, chosen: string): string {
+  if (committed === null || hasPage(committed, chosen)) return chosen;
+  return committed.pages[0]?.id ?? chosen;
+}
+
+/**
+ * The open page, never one the project in view lacks: the review's choice of a page only the preview
+ * has, else the kept choice; and when the preview (a proposal that removes the open page) lacks that
+ * one, the preview's first.
+ */
+function resolveOpenId(
+  committed: Project | null,
+  view: Project | null,
+  chosen: string,
+  extra: string | null,
+): string {
+  if (extra !== null && hasPage(view, extra)) return extra;
+  const open = committedOpen(committed, chosen);
+  if (view === null || hasPage(view, open)) return open;
+  return view.pages[0]?.id ?? open;
 }
 
 // ---------------------------------------------------------------------------
@@ -139,6 +188,10 @@ export function createPageState(deps: PageStateDeps): PageStateHandle {
   const first = store.committed.peek()?.pages[0];
   const chosen = signal<string>(first?.id ?? '');
   const notice = signal<PageNotice | null>(null);
+  /** The project the review's Proposed view shows; `null` outside it (decision 13). */
+  const proposed = signal<Project | null>(null);
+  /** The page of `proposed` the person opened that the committed project lacks; never kept. */
+  const proposedChoice = signal<string | null>(null);
   /** The name of the open one the last time the project had it (for the `removed` notice). */
   let knownName = first?.name ?? '';
   /** The page whose next removal is deliberate (`expectRemoval`); every change of the project clears it. */
@@ -157,12 +210,14 @@ export function createPageState(deps: PageStateDeps): PageStateHandle {
   }
 
   // Never a page the project does not have, not even for the instant before the effect moves it.
-  const id = computed((): string => {
-    const p = store.committed.value;
-    const wanted = chosen.value;
-    if (p === null || p.pages.some((g) => g.id === wanted)) return wanted;
-    return p.pages[0]?.id ?? wanted;
-  });
+  const id = computed((): string =>
+    resolveOpenId(
+      store.committed.value,
+      proposed.value,
+      chosen.value,
+      proposedChoice.value,
+    ),
+  );
 
   const stop = effect(() => {
     const p = store.committed.value;
@@ -186,22 +241,35 @@ export function createPageState(deps: PageStateDeps): PageStateHandle {
     }
   });
 
+  const pages = computed((): readonly Page[] => {
+    return proposed.value?.pages ?? store.committed.value?.pages ?? [];
+  });
+
+  const createdByProposal = computed((): ReadonlySet<string> => {
+    const p = proposed.value;
+    const base = store.committed.value;
+    if (p === null || base === null) return NO_PAGES;
+    const known = new Set(base.pages.map((g) => g.id));
+    const created = p.pages.filter((g) => !known.has(g.id)).map((g) => g.id);
+    return created.length === 0 ? NO_PAGES : new Set(created);
+  });
+
   const rootCounts = computed((): ReadonlyMap<string, number> => {
-    const p = store.committed.value;
+    const p = proposed.value ?? store.committed.value;
     if (p === null) return new Map();
     const { rootsByPage } = projectIndex(p);
     return new Map(p.pages.map((g) => [g.id, rootsByPage.get(g.id)?.length ?? 0]));
   });
 
   const perspectiveCounts = computed((): ReadonlyMap<string, number> => {
-    const p = store.committed.value;
+    const p = proposed.value ?? store.committed.value;
     if (p === null) return new Map();
     const page = id.value;
     return new Map(p.perspectives.map((x) => [x.id, perspectiveRootsOnPage(p, x, page)]));
   });
 
   const perspectiveEmpty = computed((): boolean => {
-    const p = store.committed.value;
+    const p = proposed.value ?? store.committed.value;
     const open =
       p === null ? null : openPerspectiveIn(p, deps.perspectiveId?.value ?? null);
     return p !== null && open !== null && perspectiveRootsOnPage(p, open, id.value) === 0;
@@ -212,12 +280,30 @@ export function createPageState(deps: PageStateDeps): PageStateHandle {
     openId: () => id.peek(),
     open(page) {
       const name = nameOf(store.committed.peek(), page);
-      if (name === null) return false;
+      if (name === null) {
+        // Only the review's preview has it (decision 13): shown, never kept.
+        if (nameOf(proposed.peek(), page) === null) return false;
+        proposedChoice.value = page;
+        return true;
+      }
       knownName = name;
-      chosen.value = page;
+      batch(() => {
+        chosen.value = page;
+        proposedChoice.value = null;
+      });
       writeOpen(projectId, { id: page, name });
       return true;
     },
+    setProposed(project) {
+      batch(() => {
+        proposed.value = project;
+        const extra = proposedChoice.peek();
+        if (extra !== null && nameOf(project, extra) === null)
+          proposedChoice.value = null;
+      });
+    },
+    pages,
+    createdByProposal,
     expectRemoval(pageId) {
       expected = pageId;
     },
