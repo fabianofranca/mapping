@@ -52,21 +52,23 @@ const plusOfNotes = () =>
   screen.getByRole('button', { name: t('annotation.addIn', { layer: 'Notes' }) });
 
 describe('+ of the Notes layer', () => {
-  it('on a plain marking it offers neither Note nor Table and says the note comes from the Palette', async () => {
+  it('on a plain marking it offers only Text (Note and Table are floating)', async () => {
     const harness = createHarness(plainMarking());
     const user = renderPanel(harness, 'M1');
     await user.click(plusOfNotes());
-    expect(screen.getByText(emptyMessage())).toBeTruthy();
+    expect(screen.queryByText(emptyMessage())).toBeNull();
     const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('button', { name: /^Text/ })).toBeTruthy();
     expect(within(dialog).queryByRole('button', { name: /^Note/ })).toBeNull();
     expect(within(dialog).queryByRole('button', { name: /^Table/ })).toBeNull();
   });
 
-  it('on an arrow, the same message', async () => {
+  it('on an arrow, it says that no type applies to arrows', async () => {
     const harness = createHarness(plainMarking());
     const user = renderPanel(harness, 'M1', 'arrow');
     await user.click(plusOfNotes());
-    expect(screen.getByText(emptyMessage())).toBeTruthy();
+    expect(screen.getByText(t('typed.empty.arrow'))).toBeTruthy();
+    expect(screen.queryByText(emptyMessage())).toBeNull();
   });
 
   it('on a floating marking (the Note), it still offers the types', async () => {

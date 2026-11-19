@@ -779,7 +779,7 @@ is born in the migration.
 `floating: true` (specialization `formatVersion` 7, see [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Floating type"):
 when an instance of the type is added, the app writes the marking with `containerId: null`, `parentId: null` and
 `floating: true`, on the canvas. The app ships a library like that embedded, the **notes** one (`libraries/notas/`, id
-`notas`, version 2: layer "Notes", type `nota` with the fields `titulo` and `texto` and type `tabela` with `titulo` and `linhas`, a key-and-value list drawn by a `repeat`), and **applies it by default**:
+`notas`, version 5: layer "Notes", type `nota` with the fields `titulo` and `texto`, type `tabela` with `titulo` and `linhas`, a key-and-value list drawn by a `repeat`, and type `texto` with `texto`, `tamanho`, `peso`, `cor` and `largura`: plain text that is **not floating**, so it lives on the canvas or inside a container, by geometry, like any marking), and **applies it by default**:
 
 - a **new** project (folder or on this device) is born with it, with the copy in `specs/notas/` and the entry in
   `specializations[]`;

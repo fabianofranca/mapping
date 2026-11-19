@@ -600,13 +600,14 @@ describe('round-guide.mjs: base, index and excerpts (#1232, GL1)', () => {
       expect(out).toContain('#### R12.34 to R12.40');
       expect(out).toContain('#### R12.41 to R12.43');
       expect(out).toContain('#### R12.44');
+      expect(out).toContain('#### R12.45 to R12.53');
       expect(
         out.match(/\*\*(?:Setup|Preparation)\.\*\*/g)?.length,
       ).toBeGreaterThanOrEqual(6);
       const steps = out.split('\n').filter((l) => l.startsWith('Steps ('));
-      expect(steps).toHaveLength(6);
+      expect(steps).toHaveLength(7);
       const sum = steps.reduce((n, l) => n + Number(/^Steps \((\d+)\)/.exec(l)?.[1]), 0);
-      expect(sum).toBe(64);
+      expect(sum).toBe(73);
       expect(out).not.toMatch(/^\| R12\.\d/m);
     });
 

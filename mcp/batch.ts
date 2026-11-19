@@ -905,10 +905,16 @@ class Batch {
         fold(type.id) === wanted ||
         fold(type.name) === wanted,
     );
-    const exact = matches.filter(
-      ({ spec, type }) => fold(`${spec.id}/${type.id}`) === wanted,
-    );
-    const chosen = exact.length > 0 ? exact : matches;
+    // Strongest first: `specId/typeId`, then the type `id`, then the name. A type named like the id of
+    // another one (`notas/texto` is named "Text", `sdui/text` has the id `text`) does not make the id ambiguous.
+    const tiers = [
+      ({ spec, type }: (typeof matches)[number]) =>
+        fold(`${spec.id}/${type.id}`) === wanted,
+      ({ type }: (typeof matches)[number]) => fold(type.id) === wanted,
+    ];
+    const chosen =
+      tiers.map((tier) => matches.filter(tier)).find((found) => found.length > 0) ??
+      matches;
     if (chosen.length === 1)
       return { specId: chosen[0]!.spec.id, typeId: chosen[0]!.type.id };
     throw new ToolError(
