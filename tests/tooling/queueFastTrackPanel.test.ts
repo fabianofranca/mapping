@@ -358,6 +358,18 @@ describe('painel.py show: `merge pedido ao dono:` (FQ1, decision 3)', () => {
     expect(showLine('merge pedido ao dono:')).toBe('merge pedido ao dono: nenhum');
   });
 
+  it('(h) `import` carries a merge ask (wait and childAt) to the new panel', () => {
+    ask('#7', 'merge pedido ao dono: PR #42', 'child=');
+    const fresh = path.join(dir, 'new');
+    run('init', fresh);
+    run('import', fresh, dir);
+    const imported = (
+      JSON.parse(readFileSync(path.join(fresh, 'queue.json'), 'utf8')) as Entry[]
+    ).find((r) => r.issue === '#7');
+    expect(imported?.wait).toBe('merge pedido ao dono: PR #42');
+    expect(imported?.childAt).toBeTruthy();
+  });
+
   it('(h) lists the row waiting for the merge with the PR and the hours', () => {
     ask('#7', 'merge pedido ao dono: PR #42');
     expect(showLine('merge pedido ao dono:')).toBe(

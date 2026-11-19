@@ -1941,11 +1941,14 @@ def cmd_upgrade(a):
 def imported_row(old, order):
     """The new row, with only what `import` brings (the rest stays at the default empty)."""
     row = dict(QUEUE_EMPTY)
-    # the phase waiting for the owner in its chat (#1602) carries the session; a requested merge carries none of that
+    # the phase waiting for the owner in its chat (#1602) carries the session; a requested merge carries only its `wait` and `childAt`
     running = carries_session(old)
     for k in IMPORT_FIELDS + (IMPORT_RUNNING_FIELDS if running else []):
         if k in old:
             row[k] = old[k]
+    if (old.get("wait") or "").startswith(MERGE_ASK_PREFIX):  # a merge asked to the owner keeps its mark and its hours
+        row["wait"] = old["wait"]
+        row["childAt"] = old.get("childAt", "")
     row["order"] = order
     row["status"] = old["status"]
     row["exclusive"] = old.get("exclusive", "")
