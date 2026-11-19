@@ -1354,13 +1354,28 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   { term: 'Janela Comentários', source: 'docs/DESIGN-SYSTEM.md', group: 'names' },
   {
-    term: 'Mesclar (Recomendado)',
+    term: 'mesclar #<n>',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
   },
   {
-    term: 'Ainda não',
+    term: 'ainda não #<n>',
     source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'pronta para mesclar',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Mesclar (Recomendado)',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Ainda não',
+    source: '.claude/skills/via-rapida/SKILL.md',
     group: 'owner-chat',
   },
   {
@@ -1946,11 +1961,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   {
     term: 'Etapa #<n> pronta: <resumo>. PR do épico: <link>',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
-    term: '#<n> — mesclar o épico na main?',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
   },

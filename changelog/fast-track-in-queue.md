@@ -9,9 +9,12 @@
 ## Alterado
 
 - **The queue panel page shows the fast track and the end of the run (for whoever reads the panel, #1791):** the "Total duration" stops at `meta.runEnd`, or, without it, when every row is `concluída`, `falhou` or `recusada` (at the latest valid `ended`), instead of growing forever; a row with a missing or invalid `ended` no longer gives `NaN` (no valid one shows "—"). The `via-rapida` kind has its own tag and the eighth tone (`cor-7`) in the cost bars, and the `recusada` rows show in "Completed" with a `recusada` tag, on the day of `ended`, without merge time (#1789, finding 8).
-- **The merge is asked by text, not by a blocking question (for whoever drives the flow, #1791):** a row `esperando dono` whose `wait` starts with `merge pedido ao dono:` takes no slot and the queue goes on. (Skill and page text arrive in the next phases of the epic.)
+- **The merge is asked by text, not by a blocking question (for whoever drives the flow, #1791):** a row `esperando dono` whose `wait` starts with `merge pedido ao dono:` takes no slot and the queue goes on. The queue skill's "Merge" now writes one line in the queue chat (`mesclar #<n>` or `ainda não #<n>`) and records the wait on the panel instead of opening the blocking question, and `docs/FLOW.md` says so; a late `mesclar #<n>` after the End is served by the registered coordinator, which runs `painel.py end` again (the "End" step also runs it). The rest of the skill text arrives in the next phases of the epic.
 
 ## Corrigido
 
+- **The resume no longer reorders the queue (#1791, decision 1):** step 5 of "1. Start" continues where the previous session left off, without steps 4 to 7 of "2. Queue".
+- **The successor message and the lineage-limit command no longer repeat `painel=`, `importar=`, `retomar` or `anterior=` (#1789, finding 3).**
+- **The merge no longer blocks the turn, and a late merge after the End is served (#1789, finding 4).**
 - **`phase` no longer raises a traceback (#1789, finding 5):** `row … phases=` is validated as `<code>:<todo|open|ok>` and `phase` counts an item without `:` as `open`.
 - **`ended` follows the status (#1789, finding 6):** `concluída`, `falhou` and `recusada` write `ended`; `aguardando`, `em andamento` and `esperando dono` clear it.
