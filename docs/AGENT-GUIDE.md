@@ -750,7 +750,7 @@ To stay on call, instead of being woken from outside:
 
 - A conversation that **was already awaiting** when the wait started does not count: that is why the read comes first (step 1). One that you left unanswered is not returned again; keep track of what you have already handled.
 - The 50 s limit exists because Claude Code, by default, cuts any tool at 60 s and the progress that the server sends every 15 s does not extend that deadline: repeat the call instead of asking for a longer wait (the server does not accept more than 50 s, even if the user raises the client's deadline).
-- For the app to notify you by itself, without keeping a session open, use `watch-comments.mjs` (it lives at the workspace root, outside the server, and `setup.sh` installs and updates it; it opens your agent when a conversation comes to await it).
+- For the app to notify you by itself, without looping on this call, use `watch-comments.mjs` (it lives at the workspace root, outside the server, and `setup.sh` installs and updates it; never edit it). It has two modes: with a command after the `--` it opens a new agent when a conversation comes to await it; with `--emit` it prints a `MAPPING_WAKE <json>` line that wakes **the same chat**, through Claude Code's `Monitor` or Cursor's shell tool with `notify_on_output`, and spends no tokens while waiting. The person starts the second mode with "watch the conversations", which runs the `watch-conversations` skill of the workspace (`.agents/skills/watch-conversations/SKILL.md`; it also stops it). The `wait_for_comment` loop above is plan B for clients without output notifications.
 
 ## Reading an annotation
 
