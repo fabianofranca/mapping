@@ -14,7 +14,7 @@ Cada grupo trabalha **só** na própria pasta `v9/<grupo>/` e entrega três arqu
 1. **Cada item visível é uma marcação.** Compostos (painel, diálogo, janela, linha de lista, barra) desenham **só a moldura** (fundo, borda, raio, sombra, divisórias, e no máximo o título que é dado do próprio composto); textos, ícones, botões, selos e campos dentro deles são marcações filhas dos tipos que já existem (Texto `text`, Ícone `icon`, Button, IconButton, Selo `badge`, Caixa `box`, TextField, Select, Choice, Segmented/Opção, Tabs/Aba…). Um **átomo** (selo de tipo de mudança, marcador, decisão, flag) desenha tudo.
 2. **Layout medido do app real**, nunca de memória: medidas do CSS do repositório na tag `mcp-v0.25.0` e conferidas na captura real.
 3. **Biblioteca sem avisos:** `validate_library` com 0 erros e 0 avisos.
-4. **Conferir visualmente** (`out/real-*.png` contra `out/preview-*.png`) antes de dar por pronto.
+4. **Conferir visualmente** (`out/real-*.png` contra `out/preview-*.png`) antes de dar por pronto. As imagens (`out/real-*`, `out/preview-*`, `out/dark/preview-*`) e `out/validate.json` **não são versionadas** (ficam no `.gitignore`): regere-as com `node v9/preview.mjs <grupo>`, depois de recriar `app/` (tag `mcp-v0.28.1`) e `app25/` (tag `mcp-v0.25.0`) pela receita do `HANDOFF.md`. `pkg/` e `extracted.json` continuam versionados.
 
 ## O que entregar em `v9/<grupo>/`
 

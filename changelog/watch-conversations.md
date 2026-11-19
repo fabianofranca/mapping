@@ -9,9 +9,15 @@
 - The MCP release publishes `watch-conversations.SKILL.md` (and its `.sha256`) next to the other workspace files, copied from `examples/workspace/.agents/skills/watch-conversations/SKILL.md`; the pre-release and stable jobs check it in their `expected=` lists. Plain `SKILL.md` stays the `spec-author` skill.
 - `setup.sh` installs that skill in `.agents/skills/watch-conversations/` and links `.claude/skills/watch-conversations`, with the same rules as `spec-author`, and prints `Watch skill: installed | updated | no change | not updated (release without the skill)`. A release without the file warns and the run goes on.
 
+## Corrigido
+
+- `mappings-workspace/serve.mjs` no longer hangs the MCP client: `setup.sh` runs with a 25 s timeout (below the 30 s Claude Code waits); on a timeout or failure, an installed server still starts, with a warning on stderr, and only without one does it exit 1. A failure to start the server prints `could not start the MCP server: <message>` instead of a stack trace (#1916 items 2 and 3).
+
 ## Alterado
 
 - The example workspace folders are in English: `projetos/` → `projects/` and `especializacoes/` → `specializations/` (the five client configurations, `.gitignore`, README, the `AGENTS.md` block, the folder READMEs and the stdio client's default).
 - `setup.sh` checks each folder pair on its own: when neither name exists it creates the English one; when the old one exists it creates and moves nothing and warns once, pointing to "Renaming the folders" in the workspace `README.md`. It still never edits `.mcp.json` or the other clients' configurations.
 - The watcher's default root is `projects/` next to the script; when only `projetos/` exists it uses that one and says so in the start log.
 - `mappings-workspace/` follows the same rename (`projects/`, `specializations/`), with no change of content in the moved files.
+- The regenerable outputs of `mappings-workspace/ferramentas/mapping-ds/v9/*/out/` (`preview-*`, `real-*`, `out/dark/preview-*` and `validate.json`) are no longer versioned (`git rm --cached` and `.gitignore`); `preview.mjs` writes the `path` of `validate.json` relative to `ferramentas/mapping-ds`, and the README and `HANDOFF.md` say how to regenerate them (#1916 items 4 to 6).
+- `docs/TESTING.md`: new script R40 (watch conversations in the same chat), in block 6 of the full round; R21 also checks the `watch-conversations` skill and the `Watch skill:` line.

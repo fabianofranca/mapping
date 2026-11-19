@@ -17,6 +17,11 @@ ferramentas/mapping-ds/mcp25/
 ferramentas/mapping-ds/shots/*.png
 ferramentas/mapping-ds/shots/*.zip
 ferramentas/mapping-ds/shots/*.json
+# v9 capture outputs (images and the validation report); `preview.mjs` recreates them.
+ferramentas/mapping-ds/v9/*/out/preview-*
+ferramentas/mapping-ds/v9/*/out/real-*
+ferramentas/mapping-ds/v9/*/out/dark/preview-*
+ferramentas/mapping-ds/v9/*/out/validate.json
 node_modules/
 
 # Watcher state (--state .mapping-watch/state.json).
