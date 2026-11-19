@@ -12,4 +12,4 @@ Schema and formats unchanged (proposal `formatVersion` 10, conversation `formatV
 ## Alterado
 
 - **The Delete page confirmation says how many conversations on empty spots of the page lose their place:** a line in the empty, the move and the discard forms ("N conversations on empty spots of this page lose their place: they stay in Comments, without a place."); no line when there is none.
-- **The `dist/index.html` ceiling went up 16 KiB, from 2310144 to 2326528, by the budget rule; above the limits, `bug` for the owner to review.**
+- **The `dist/index.html` ceiling went up 16 KiB, from 2310144 to 2326528, by the budget rule; above the limits, `bug` #2282 for the owner to review.**
