@@ -1,4 +1,4 @@
-# Supervisor type B requests through the picker — [Não lançado] (épico `epic/queue-typeb-picker`, PR #0, MCP unchanged, schema v21)
+# Supervisor type B requests through the picker — 2026-11-19 (épico `epic/queue-typeb-picker`, PR #2275, MCP unchanged, schema v21)
 
 ## Alterado
 
