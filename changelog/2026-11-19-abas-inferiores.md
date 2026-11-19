@@ -1,4 +1,4 @@
-# Bottom window tabs and the Incomplete columns — [Não lançado] (épico `epic/abas-inferiores`, PR #0, MCP unchanged, schema v20)
+# Bottom window tabs and the Incomplete columns — 2026-11-19 (épico `epic/abas-inferiores`, PR #2184, MCP unchanged, schema v20)
 
 ## Corrigido
 
