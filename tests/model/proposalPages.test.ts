@@ -13,6 +13,7 @@ import {
   movePage,
   moveRootsToPage,
   parseProposal,
+  removeMarking,
   prepareRevision,
   renamePage,
   reviseProposal,
@@ -418,6 +419,49 @@ describe('invalid set: part of a group that changes page', () => {
       expect(issue?.changeIds).toEqual([a.id]);
       expect(issue?.related).toEqual([b.id]);
       expect(applyAccepted(base, onlyA, AT).ok).toBe(false);
+    });
+
+    it('deleting the anchored marking (no page change) is not an anchor problem', () => {
+      const base = anchorBase();
+      const proposal = propose(base, removeMarking(base, 'B'));
+      const accepted = decided(
+        proposal,
+        base,
+        { level: 'proposal', id: null },
+        'accepted',
+      );
+      const check = validateAccepted(base, accepted);
+      expect(check.issues.map((i) => i.code)).not.toContain('page-anchor-crossing');
+      expect(check.ok).toBe(true);
+    });
+
+    it('a retargeted anchor whose new target changes page alone is still blocked', () => {
+      let base = anchorBase();
+      base = createMarking(base, {
+        id: 'C',
+        containerId: null,
+        rect: rect(7000, 100, 300, 300),
+      });
+      const after = moveRootsToPage(
+        setMarkingAnchor(base, 'B', { to: 'C', side: 'end' }),
+        ['B', 'C'],
+        'PG2',
+      );
+      const proposal = propose(base, after);
+      const anchorChange = changeOf(proposal, 'marking', 'B', 'anchor');
+      const c = changeOf(proposal, 'marking', 'C', 'page');
+      let partial = decided(
+        proposal,
+        base,
+        { level: 'change', id: anchorChange.id },
+        'accepted',
+      );
+      partial = decided(partial, base, { level: 'change', id: c.id }, 'accepted');
+      const issue = validateAccepted(base, partial).issues.find(
+        (i) => i.code === 'page-anchor-crossing',
+      );
+      expect(issue?.id).toBe('B');
+      expect(issue?.otherId).toBe('C');
     });
 
     it('accepting both is ok and keeps the anchor', () => {

@@ -683,23 +683,28 @@ function anchorsReleasedByPages(
   pending: readonly Change[],
 ): { id: string; otherId: string }[] {
   if (pending.length === 0) return [];
-  const explicit = new Set(
-    pending
-      .filter((c) => c.entity === 'marking' && c.field === 'anchor')
-      .map((c) => c.entityId),
-  );
   const after = projectIndex(result);
   const out: { id: string; otherId: string }[] = [];
-  for (const m of project.markings) {
-    const to = m.anchor?.to;
-    if (to === undefined || explicit.has(m.id)) continue;
-    if (after.markings.get(m.id)?.anchor != null) continue;
-    const pageOf = after.pageOf;
-    if (after.markings.has(to) && pageOf.get(m.id) !== pageOf.get(to)) {
-      out.push({ id: m.id, otherId: to });
-    }
+  for (const [id, to] of meantAnchors(project, pending)) {
+    const kept = after.markings.get(id);
+    // A deleted marking or target is not a page problem; an anchor that survived is fine.
+    if (kept === undefined || kept.anchor != null || !after.markings.has(to)) continue;
+    if (after.pageOf.get(id) !== after.pageOf.get(to)) out.push({ id, otherId: to });
   }
   return out;
+}
+
+/** The anchor target each marking is meant to have once the accepted set applies: an accepted `anchor` change decides (`null` removes it), else the current one. */
+function meantAnchors(project: Project, pending: readonly Change[]): Map<string, string> {
+  const meant = new Map<string, string>();
+  for (const m of project.markings) if (m.anchor) meant.set(m.id, m.anchor.to);
+  for (const c of pending) {
+    if (c.entity !== 'marking' || c.field !== 'anchor') continue;
+    const target = isRecord(c.to) ? c.to.to : undefined;
+    if (typeof target === 'string') meant.set(c.entityId, target);
+    else meant.delete(c.entityId);
+  }
+  return meant;
 }
 
 export interface AcceptedValidation {
