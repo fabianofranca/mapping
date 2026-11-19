@@ -742,7 +742,7 @@ describe('CI stuck in the queue (#1669)', () => {
     expect(paragraph).toContain('PushNotification');
     expect(paragraph).toContain('node scripts/ci/ciRerun.mjs queued');
     expect(paragraph).toMatch(/16 min/);
-    expect(paragraph).toMatch(/[Oo]nly the owner's answer in the queue chat counts/);
+    expect(paragraph).toMatch(/[Oo]nly the owner's own message in the queue chat counts/);
   });
 
   it('skill: the paragraph comes after the red CI on the epic PR and before the item that refers to it', () => {

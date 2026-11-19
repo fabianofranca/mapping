@@ -60,8 +60,7 @@ describe('implementar-fila: in-run questions by text (decisions 1 and 13)', () =
     const where = lines.map((l) => {
       if (l.text.startsWith('   - `AskUserQuestion`, `PushNotification`'))
         return 'loading';
-      if (l.text.includes('ask through `AskUserQuestion`: "Começar nesta ordem'))
-        return 'step6';
+      if (l.text.includes('ask through `AskUserQuestion`')) return 'step6';
       if (l.text.includes('the text of the pending `AskUserQuestion`')) return 'blocked';
       if (l.text.includes('Find or create') || l.text.includes('Usar um painel novo'))
         return 'panel';
@@ -142,7 +141,7 @@ describe('implementar-fila: each question has its notification, line, two comman
     it(`${c.name}: PushNotification, chat line with both commands, mark, no waiting`, () => {
       const t = c.text();
       expect(t).toContain('`PushNotification`');
-      expect(t).toContain('Responda');
+      expect(t).toMatch(/[Rr]esponda/);
       for (const command of c.commands) expect(t).toContain(command);
       expect(t).toContain(c.mark);
       expect(t).toMatch(/the turn (does not wait|ends)/);
@@ -151,7 +150,7 @@ describe('implementar-fila: each question has its notification, line, two comman
   }
 
   it('hold: segurar keeps the stopped-by-the-owner rule, seguir only closes the question, no answer runs the stage', () => {
-    expect(hold).toContain('#<n> começou apesar do recado');
+    expect(hold).toContain('“<frase>”');
     expect(hold).toContain('parada pelo dono');
     expect(hold).toContain('`hold`');
     expect(hold).toMatch(/`seguir #<n>` only closes the question/);

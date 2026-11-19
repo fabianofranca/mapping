@@ -1439,6 +1439,11 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'owner-chat',
   },
   {
+    term: 'Fecho e reabro o PR #<n> para criar uma execução nova do CI?',
+    source: 'changelog/2026-11-11-ci-preso-na-fila.md',
+    group: 'owner-chat',
+  },
+  {
     term: 'mesclar #<n>',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
