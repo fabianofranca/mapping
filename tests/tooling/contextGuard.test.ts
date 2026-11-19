@@ -18,10 +18,25 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { between, section } from '../support/textSlice';
-// @ts-expect-error .mjs module without type declarations
-import { GATILHO, MARCADOR } from '../../scripts/ci/contextGuard.mjs';
+import {
+  GATILHO,
+  GATILHO_COORDENADOR,
+  MARCADOR,
+  MARCADOR_COORDENADOR,
+  sessionRole,
+  shouldWarn,
+  // @ts-expect-error .mjs module without type declarations
+} from '../../scripts/ci/contextGuard.mjs';
 
 const TRIGGER = GATILHO as number;
+const COORD_TRIGGER = GATILHO_COORDENADOR as number;
+const COORD_MARK = MARCADOR_COORDENADOR as RegExp;
+const roleOf = sessionRole as (texts: string[]) => 'fase' | 'coordenador' | null;
+const warns = shouldWarn as (
+  contexto: number,
+  ultimoAviso: number | null,
+  gatilho?: number,
+) => boolean;
 const MARK = MARCADOR as string;
 const TAIL = 2 * 1024 * 1024;
 
@@ -127,6 +142,7 @@ function hook(
 
 interface State {
   fase: boolean;
+  papel?: 'fase' | 'coordenador' | 'nenhum';
   contexto?: number;
   ferramenta?: string;
   ultimoAviso: number | null;
@@ -191,16 +207,84 @@ describe('GC1 — contextGuard.mjs: the silent outputs (decision 4)', () => {
     expect(stateOf(box).fase).toBe(false);
   });
 
-  it('the coordinator, the tester and the supervision stay out', () => {
+  it('the tester, the supervision and the fast track stay out (papel nenhum)', () => {
     for (const prompt of [
-      '/implementar-fila #1856',
       'You are the tester of stage #1856.',
       '/supervisionar-fila',
+      '/via-rapida #1856 fila=x',
     ]) {
       const box = sandbox([userLine(prompt), measure(300_000)]);
       silent(hook(box));
       expect(stateOf(box).fase, prompt).toBe(false);
+      expect(stateOf(box).papel, prompt).toBe('nenhum');
     }
+  });
+
+  it('the coordinator (/implementar-fila) is a coordinator, not a phase: fase false, papel coordenador', () => {
+    const box = sandbox([userLine('/implementar-fila #1856'), measure(100_000)]);
+    silent(hook(box));
+    expect(stateOf(box)).toMatchObject({ fase: false, papel: 'coordenador' });
+  });
+});
+
+describe('CH1 — contextGuard.mjs: the constants (decisions 1 and 3)', () => {
+  it('the coordinator trigger is 320,000 and the phase one is still 270,000', () => {
+    expect(COORD_TRIGGER).toBe(320_000);
+    expect(TRIGGER).toBe(270_000);
+  });
+});
+
+describe('CH1 — contextGuard.mjs: the coordinator prompt and the role (decisions 1 and 2)', () => {
+  const resume =
+    '/implementar-fila retomar anterior=session_01ABC painel=https://claude.ai/artifact/x paralelo=2 sem-confirmar';
+
+  it('a prompt that opens with /implementar-fila counts, with arguments or alone, after leading blanks', () => {
+    for (const text of [resume, '/implementar-fila', '  \n/implementar-fila #1856']) {
+      expect(COORD_MARK.test(text.trimStart()), text).toBe(true);
+      expect(roleOf([text]), text).toBe('coordenador');
+    }
+  });
+
+  it('the form recorded for a typed slash command counts', () => {
+    const text =
+      '<command-message>implementar-fila</command-message>\n<command-name>/implementar-fila</command-name>\n<command-args>#1856</command-args>';
+    expect(roleOf([text])).toBe('coordenador');
+  });
+
+  it('the negatives of decision 1 do not count', () => {
+    for (const text of [
+      '/implementar-filas #1',
+      '/supervisionar-fila',
+      '/via-rapida #1856 fila=/implementar-fila',
+      'Please run /implementar-fila for me',
+      '<command-name>/implementar-filas</command-name>',
+      'Hi',
+    ]) {
+      expect(roleOf([text]), text).toBeNull();
+    }
+  });
+
+  it('a phase prompt is a phase, even with a coordinator command inside it', () => {
+    expect(roleOf([phasePrompt])).toBe('fase');
+    expect(roleOf([queuePrompt])).toBe('fase');
+    expect(
+      roleOf([`${phasePrompt}\n<command-name>/implementar-fila</command-name>`]),
+    ).toBe('fase');
+  });
+
+  it('the text blocks are searched too (string and block list)', () => {
+    const asString = sandbox([userLine(resume), measure(100_000)]);
+    silent(hook(asString));
+    expect(stateOf(asString).papel).toBe('coordenador');
+    const asBlocks = sandbox([
+      userLine([
+        { type: 'text', text: '<system-reminder>x</system-reminder>' },
+        { type: 'text', text: resume },
+      ]),
+      measure(100_000),
+    ]);
+    silent(hook(asBlocks));
+    expect(stateOf(asBlocks)).toMatchObject({ fase: false, papel: 'coordenador' });
   });
 });
 
@@ -308,6 +392,151 @@ describe('GC1 — contextGuard.mjs: the state and the trigger (decisions 5, 6 an
     const out = warningOf(hook(box));
     expect(out.hookSpecificOutput.additionalContext).toContain('281 thousand');
     expect(stateOf(box).ultimoAviso).toBe(280_001);
+  });
+});
+
+describe('CH1 — contextGuard.mjs: the trigger of the coordinator (decision 3)', () => {
+  const coordinator = '/implementar-fila retomar anterior=session_01ABC painel=x';
+
+  it('shouldWarn takes the trigger as a third parameter, defaulting to the phase one', () => {
+    expect(warns(TRIGGER, null)).toBe(false);
+    expect(warns(TRIGGER + 1, null)).toBe(true);
+    expect(warns(COORD_TRIGGER, null, COORD_TRIGGER)).toBe(false);
+    expect(warns(COORD_TRIGGER + 1, null, COORD_TRIGGER)).toBe(true);
+    expect(warns(300_000, null, COORD_TRIGGER)).toBe(false);
+  });
+
+  it('a coordinator at 320,000 is silent and at 320,001 warns; a phase at 300,000 warns with the unchanged text', () => {
+    const quiet = sandbox([userLine(coordinator), measure(COORD_TRIGGER)]);
+    silent(hook(quiet));
+    expect(stateOf(quiet).ultimoAviso).toBeNull();
+
+    const at300 = sandbox([userLine(coordinator), measure(300_000)]);
+    silent(hook(at300));
+
+    const loud = sandbox([userLine(coordinator), measure(COORD_TRIGGER + 1)]);
+    const text = warningOf(hook(loud)).hookSpecificOutput.additionalContext;
+    expect(text).toContain('this coordinator session is at 321 thousand');
+    expect(stateOf(loud)).toMatchObject({
+      fase: false,
+      papel: 'coordenador',
+      ultimoAviso: COORD_TRIGGER + 1,
+    });
+
+    const phase = sandbox([userLine(phasePrompt), measure(300_000)]);
+    const phaseText = warningOf(hook(phase)).hookSpecificOutput.additionalContext;
+    expect(phaseText).toContain(
+      'this session is at 300 thousand, above the trigger of 270 thousand',
+    );
+    expect(phaseText).not.toContain('coordinator');
+  });
+
+  it('repeats at +10 thousand and resets when the context returns to the coordinator trigger or below', () => {
+    const box = sandbox([userLine(coordinator), measure(COORD_TRIGGER + 1)]);
+    warningOf(hook(box));
+    appendFileSync(box.transcript, measure(329_999) + '\n');
+    silent(hook(box));
+    appendFileSync(box.transcript, measure(330_001) + '\n');
+    expect(warningOf(hook(box)).hookSpecificOutput.additionalContext).toContain(
+      '331 thousand',
+    );
+
+    // 300,000 is below the coordinator trigger: compaction clears the last notice.
+    appendFileSync(box.transcript, measure(300_000) + '\n');
+    silent(hook(box));
+    expect(stateOf(box).ultimoAviso).toBeNull();
+    appendFileSync(box.transcript, measure(325_000) + '\n');
+    warningOf(hook(box));
+    expect(stateOf(box).ultimoAviso).toBe(325_000);
+  });
+});
+
+describe('CH1 — contextGuard.mjs: the coordinator notice (decision 5)', () => {
+  const notice = (): string => {
+    const box = sandbox([
+      userLine('/implementar-fila retomar anterior=session_01ABC'),
+      measure(100_000),
+    ]);
+    silent(hook(box, { tool_name: 'Read', tool_input: { file_path: 'a.md' } }));
+    appendFileSync(box.transcript, measure(COORD_TRIGGER + 5000) + '\n');
+    return warningOf(hook(box)).hookSpecificOutput.additionalContext;
+  };
+
+  it('is one line and states the context and the trigger', () => {
+    const text = notice();
+    expect(text).not.toContain('\n');
+    expect(text).toContain(
+      'Context hook: this coordinator session is at 325 thousand, above its trigger of 320 thousand',
+    );
+  });
+
+  it('counts as "above 35%" of "Session switch": hand over now, in this turn, after the lineage check, with no SKILL.md reread', () => {
+    const text = notice();
+    expect(text).toContain('"above 35%"');
+    expect(text).toContain('"Session switch"');
+    expect(text).toContain('.claude/skills/implementar-fila/SKILL.md');
+    expect(text).toContain('in this turn');
+    expect(text).toContain('"Lineage limit"');
+    expect(text).toContain('without rereading a changed SKILL.md');
+  });
+
+  it('covers no room in the lineage, the session that already handed over, the jumps and the subagent line', () => {
+    const text = notice();
+    expect(text).toContain('no room in the lineage');
+    expect(text).toContain('once');
+    expect(text).toContain('later notices do not repeat');
+    expect(text).toContain('no longer the registered coordinator');
+    expect(text).toContain('Largest jumps (approximate): Read: a.md +');
+    expect(text).toContain('Subagent: ignore this notice.');
+  });
+});
+
+describe('CH1 — contextGuard.mjs: the state without papel (decision 4)', () => {
+  const coordinator = '/implementar-fila retomar anterior=session_01ABC';
+  const seed = (box: Sandbox, state: Record<string, unknown>): void => {
+    mkdirSync(join(box.tmp, 'context-guard'), { recursive: true });
+    writeFileSync(box.state, JSON.stringify(state));
+  };
+
+  it('{fase: false} without papel in a coordinator session is decided again, rewritten with papel and warns', () => {
+    const box = sandbox([userLine(coordinator), measure(COORD_TRIGGER + 1)]);
+    seed(box, { fase: false, ultimoAviso: null, saltos: [], erro: null });
+    warningOf(hook(box));
+    expect(stateOf(box)).toMatchObject({ fase: false, papel: 'coordenador' });
+  });
+
+  it('{fase: true} without papel stays a phase, with the phase trigger', () => {
+    const box = sandbox([userLine(phasePrompt), measure(300_000)]);
+    seed(box, { fase: true, ultimoAviso: null, saltos: [], erro: null });
+    const text = warningOf(hook(box)).hookSpecificOutput.additionalContext;
+    expect(text).toContain('this session is at 300 thousand');
+    expect(stateOf(box)).toMatchObject({ fase: true, papel: 'fase' });
+  });
+
+  it('{fase: false} without papel in a silent session becomes papel nenhum, once', () => {
+    const box = sandbox([userLine('Hi'), measure(400_000)]);
+    seed(box, { fase: false, ultimoAviso: null, saltos: [], erro: null });
+    silent(hook(box));
+    expect(stateOf(box)).toMatchObject({ fase: false, papel: 'nenhum' });
+  });
+
+  it('a state with papel nenhum is final: no rewrite and no rereading of the transcript', () => {
+    const box = sandbox([userLine('Hi'), measure(400_000)]);
+    silent(hook(box));
+    expect(stateOf(box).papel).toBe('nenhum');
+    writeFileSync(
+      box.transcript,
+      [userLine(coordinator), measure(400_000)].join('\n') + '\n',
+    );
+    const before = readFileSync(box.state, 'utf8');
+    silent(hook(box));
+    expect(readFileSync(box.state, 'utf8')).toBe(before);
+  });
+
+  it('a state with papel coordenador is used as it is', () => {
+    const box = sandbox([userLine('Hi'), measure(COORD_TRIGGER + 1)]);
+    seed(box, { fase: false, papel: 'coordenador', ultimoAviso: null, saltos: [] });
+    warningOf(hook(box));
   });
 });
 
@@ -484,6 +713,31 @@ describe('GC1 — contextGuard.mjs: failures never block the call (decision 6)',
     box.sessionId = '../outside';
     silent(hook(box));
     expect(existsSync(join(box.tmp, 'outside.json'))).toBe(false);
+  });
+});
+
+describe('CH1 — the "Session switch" section of the implementar-fila skill (decision 6)', () => {
+  const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const switching = section(skill, '## Session switch');
+  const first = switching.split('\n\n')[1] ?? '';
+  const newSkill = between(switching, '**New skill on `main`.**', '**Lineage limit.**');
+
+  it('the first paragraph cites the hook, the 320 thousand and the same-turn switch', () => {
+    expect(first).toContain('scripts/ci/contextGuard.mjs');
+    expect(first).toContain(`${COORD_TRIGGER / 1000} thousand`);
+    expect(first).toContain('counts as "above 35%"');
+    expect(first).toContain('same turn');
+    expect(first).toContain('after the lineage check');
+    expect(first).toContain('painel.py context <folder> --medir --max <max_tokens>');
+  });
+
+  it('"New skill on main" skips the check with the context above 35% or the hook notice', () => {
+    expect(newSkill).toContain('above 35%');
+    expect(newSkill).toContain("hook's notice");
+    expect(newSkill).toContain('skip this check entirely');
+    expect(newSkill).toContain('the successor reads the new skill');
+    // With no room in the lineage there is no successor to read it: the check stays.
+    expect(newSkill).toContain('with room in the lineage');
   });
 });
 
