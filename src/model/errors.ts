@@ -80,6 +80,7 @@ export type ModelErrorCode =
   | 'page-last'
   | 'arrow-cross-page'
   | 'page-arrow-crossing'
+  | 'page-anchor-crossing'
   // Pages through the MCP (PG5): a root without a page in a project with several, items of different
   // pages in one wrap, a page with content deleted without saying where the content goes
   | 'page-required'
@@ -113,9 +114,19 @@ export type PageArrowCrossing = {
   readonly to: string;
 };
 
-/** `data` of `page-arrow-crossing`: the arrows with one end inside the group that moves and one outside. */
-export type PageArrowCrossingData = {
+/** One anchor that stops `moveRootsToPage` (`data.anchors` of the page refusals): the anchored marking and its target. */
+export type PageAnchorCrossing = {
+  readonly marking: string;
+  readonly to: string;
+};
+
+/**
+ * `data` of `page-arrow-crossing` and `page-anchor-crossing`: the arrows and the anchors with one
+ * end inside the group that moves and one outside (either list may be empty).
+ */
+export type PageCrossingData = {
   readonly arrows: readonly PageArrowCrossing[];
+  readonly anchors: readonly PageAnchorCrossing[];
 };
 
 export class ModelError extends Error {

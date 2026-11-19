@@ -594,6 +594,8 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
 export type ProposalIssueCode =
   | InvariantCode
   | PatchProblemCode
+  /** An anchor of the current project that a page change in the accepted set would release (the two markings end on different pages). */
+  | 'page-anchor-crossing'
   /** Layer or typed annotation of a specialization that would not stay applied. */
   | 'missing-specialization'
   /** The proposal is neither open nor superseded: nothing else can be applied. */
@@ -648,6 +650,7 @@ function specializationIssues(p: Project): { id: string; otherId: string }[] {
 const PAGE_ISSUES: ReadonlySet<string> = new Set([
   'arrow-cross-page',
   'page-parent-mismatch',
+  'page-anchor-crossing',
 ]);
 
 const isPageChange = (c: Change): boolean => c.field === 'page';
@@ -669,6 +672,36 @@ function pageIssueIds(
   });
 }
 
+/**
+ * Anchors of the current project that the accepted set releases through a page change: the settle
+ * sets `anchor: null` because the marking and its target end on different pages, and no accepted
+ * change touches that marking's `anchor`. `id` is the anchored marking, `otherId` its target.
+ */
+function anchorsReleasedByPages(
+  project: Project,
+  result: Project,
+  pending: readonly Change[],
+): { id: string; otherId: string }[] {
+  if (pending.length === 0) return [];
+  const explicit = new Set(
+    pending
+      .filter((c) => c.entity === 'marking' && c.field === 'anchor')
+      .map((c) => c.entityId),
+  );
+  const after = projectIndex(result);
+  const out: { id: string; otherId: string }[] = [];
+  for (const m of project.markings) {
+    const to = m.anchor?.to;
+    if (to === undefined || explicit.has(m.id)) continue;
+    if (after.markings.get(m.id)?.anchor != null) continue;
+    const pageOf = after.pageOf;
+    if (after.markings.has(to) && pageOf.get(m.id) !== pageOf.get(to)) {
+      out.push({ id: m.id, otherId: to });
+    }
+  }
+  return out;
+}
+
 export interface AcceptedValidation {
   readonly ok: boolean;
   /** The changes that would be applied. */
@@ -685,6 +718,8 @@ interface Outcome {
   readonly fresh: ReturnType<typeof validateProject>;
   /** Specializations cited and missing in the result that the current project did not have yet. */
   readonly freshSpecs: ReturnType<typeof specializationIssues>;
+  /** Anchors that a page change in the accepted set would release (`anchorsReleasedByPages`). */
+  readonly freshAnchors: ReturnType<typeof anchorsReleasedByPages>;
 }
 
 let lastOutcome: {
@@ -729,7 +764,8 @@ function validateOutcome(project: Project, pending: readonly Change[]): Outcome 
   const freshSpecs = specializationIssues(result).filter(
     (i) => !specBefore.has(key('missing-specialization', i.id, i.otherId)),
   );
-  const outcome = { project: result, problems, fresh, freshSpecs };
+  const freshAnchors = anchorsReleasedByPages(project, result, pending);
+  const outcome = { project: result, problems, fresh, freshSpecs, freshAnchors };
   lastOutcome = { project, pending, outcome };
   return outcome;
 }
@@ -758,6 +794,7 @@ export function validateAccepted(project: Project, p: Proposal): AcceptedValidat
     problems,
     fresh,
     freshSpecs,
+    freshAnchors,
   } = validateOutcome(project, pending);
   const byEntity = new Map<string, Change[]>();
   for (const c of p.changes) {
@@ -799,6 +836,13 @@ export function validateAccepted(project: Project, p: Proposal): AcceptedValidat
       ...(PAGE_ISSUES.has(issue.code)
         ? involved(pageIssueIds(result, issue), isPageChange)
         : involved([issue.id, issue.otherId])),
+    });
+  }
+  for (const issue of freshAnchors) {
+    issues.push({
+      code: 'page-anchor-crossing',
+      ...issue,
+      ...involved(pageIssueIds(result, issue), isPageChange),
     });
   }
   for (const issue of freshSpecs) {

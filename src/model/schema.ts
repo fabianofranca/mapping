@@ -252,8 +252,8 @@ export const projectSchema: z.ZodType<ProjectFile> = z.object({
   drawingMode: z.string().min(1).optional(),
   /** Project reading direction (v20); absent = `ltr`. */
   direction: readingDirection.optional(),
-  /** Pages in display order (v21); an empty list is the `pages-empty` invariant. */
-  pages: z.array(pageSchema),
+  /** Pages in display order (v21); absent or empty is the `pages-empty` invariant, repaired by "Repair and open". */
+  pages: z.array(pageSchema).default([]),
   layers: z.array(layerSchema),
   containers: z.array(containerSchema),
   markings: z.array(markingSchema),

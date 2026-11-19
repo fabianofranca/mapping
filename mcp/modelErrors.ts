@@ -90,7 +90,9 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'arrow-cross-page':
     'an arrow joins two markings of the same page: the ends are on different pages',
   'page-arrow-crossing':
-    'an arrow joins the roots that move to another page and others that stay: the arrows are in `arrows`',
+    'an arrow joins the roots that move to another page and others that stay: the arrows are in `arrows` (and the anchors that would be cut too, in `anchors`)',
+  'page-anchor-crossing':
+    'an anchor joins a marking that moves to another page and one that stays: the anchors are in `anchors`',
   'page-required':
     'the project has more than one page: say in which one the new root goes',
   'page-mixed': 'the items are on different pages: a wrap takes items of a single page',
@@ -121,7 +123,9 @@ export const MODEL_ERROR_HINTS: Readonly<Partial<Record<ModelErrorCode, string>>
   'page-not-empty':
     'pass `move_to` (the page that receives the content) or `discard: true` (delete the content with the page); `contents` says what is on the page',
   'page-arrow-crossing':
-    'an arrow cannot join two pages: move the other end with the group (add its root to `roots`), or delete the arrow, then call `move_to_page` again',
+    'an arrow cannot join two pages: move the other end with the group (add its root to `roots`), or delete the arrow, then call `move_to_page` again; `anchors` lists the anchors that would be cut as well',
+  'page-anchor-crossing':
+    "add the other marking's root to `roots`, or remove the anchor with `update_marking` and `anchor: null`, then call again",
   'container-density':
     'from 0.5 to 8; 3 for a 1080 px capture of a 360 dp phone (image pixels per component unit); `null` goes back to 1',
   'image-overlap':
@@ -193,6 +197,28 @@ function crossingArrows(
   });
 }
 
+/** One anchor that stops a `move_to_page`: the references of the anchored marking and of its target. */
+export interface CrossingAnchorView {
+  readonly marking: string;
+  readonly to: string;
+}
+
+/** The anchors of a page refusal (ids in the model's `data`), as references when there are `refs`. */
+function crossingAnchors(
+  data: ModelErrorData | undefined,
+  refs?: Refs,
+): CrossingAnchorView[] | undefined {
+  const anchors = data?.anchors;
+  if (!Array.isArray(anchors)) return undefined;
+  const ref = (id: string) => (refs ? refs.ref('m', id) : id);
+  return anchors.flatMap((a: unknown) => {
+    if (typeof a !== 'object' || a === null) return [];
+    const { marking, to } = a as Record<string, unknown>;
+    if (typeof marking !== 'string' || typeof to !== 'string') return [];
+    return [{ marking: ref(marking), to: ref(to) }];
+  });
+}
+
 /** What is on the page of a `page-not-empty` (counts of `pageContent`), as the error carries it. */
 function pageContents(
   data: ModelErrorData | undefined,
@@ -210,10 +236,15 @@ function pageContents(
 function structuredFacts(
   error: ModelError,
   refs?: Refs,
-): { arrows?: CrossingArrowView[]; contents?: Record<string, number> } {
-  if (error.code === 'page-arrow-crossing') {
+): {
+  arrows?: CrossingArrowView[];
+  anchors?: CrossingAnchorView[];
+  contents?: Record<string, number>;
+} {
+  if (error.code === 'page-arrow-crossing' || error.code === 'page-anchor-crossing') {
     const arrows = crossingArrows(error.data, refs);
-    return arrows ? { arrows } : {};
+    const anchors = crossingAnchors(error.data, refs);
+    return { ...(arrows ? { arrows } : {}), ...(anchors ? { anchors } : {}) };
   }
   if (error.code === 'page-not-empty') {
     const contents = pageContents(error.data);
@@ -225,7 +256,8 @@ function structuredFacts(
 /**
  * Detail and hint of a model error. The `data` becomes text here (the model only keeps facts); the id
  * of the other container becomes a reference when there are `refs`. Without `data`, the detail is the message text.
- * `page-arrow-crossing` adds `arrows` (references) and `page-not-empty` adds `contents` (counts).
+ * `page-arrow-crossing` and `page-anchor-crossing` add `arrows` and `anchors` (references) and
+ * `page-not-empty` adds `contents` (counts).
  */
 export function describeModelError(
   error: ModelError,
@@ -234,6 +266,7 @@ export function describeModelError(
   detail?: string;
   hint?: string;
   arrows?: CrossingArrowView[];
+  anchors?: CrossingAnchorView[];
   contents?: Record<string, number>;
 } {
   const hint = MODEL_ERROR_HINTS[error.code];
