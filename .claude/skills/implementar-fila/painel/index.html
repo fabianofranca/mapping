@@ -130,6 +130,18 @@
       overflow-wrap: anywhere;
       min-width: 0;
     }
+    #mp .tipo.tipo-via-rapida {
+      border-style: dashed;
+      color: var(--color-fg);
+    }
+    #mp .recusada {
+      font-size: var(--cds-font-size-caption);
+      padding: 0 6px;
+      border-radius: 4px;
+      border: 1px solid var(--color-border-line);
+      color: var(--color-fg-muted);
+      text-decoration: line-through;
+    }
     #mp .num {
       font-weight: 600;
       font-variant-numeric: tabular-nums;
@@ -523,27 +535,30 @@
       display: block;
       width: 100%;
     }
-    /* Seven neutral tones (one per session kind), without reusing ok/warn/bad, which are states. */
+    /* Eight neutral tones (one per session kind), without reusing ok/warn/bad, which are states. */
     #mp .cor-0 {
       background: var(--color-fg-muted);
     }
     #mp .cor-1 {
-      background: color-mix(in srgb, var(--color-fg-muted) 80%, var(--color-panel));
+      background: color-mix(in srgb, var(--color-fg-muted) 82%, var(--color-panel));
     }
     #mp .cor-2 {
-      background: color-mix(in srgb, var(--color-fg-muted) 62%, var(--color-panel));
+      background: color-mix(in srgb, var(--color-fg-muted) 66%, var(--color-panel));
     }
     #mp .cor-3 {
-      background: color-mix(in srgb, var(--color-fg-muted) 46%, var(--color-panel));
+      background: color-mix(in srgb, var(--color-fg-muted) 52%, var(--color-panel));
     }
     #mp .cor-4 {
-      background: color-mix(in srgb, var(--color-fg-muted) 32%, var(--color-panel));
+      background: color-mix(in srgb, var(--color-fg-muted) 40%, var(--color-panel));
     }
     #mp .cor-5 {
-      background: color-mix(in srgb, var(--color-fg-muted) 20%, var(--color-panel));
+      background: color-mix(in srgb, var(--color-fg-muted) 29%, var(--color-panel));
     }
     #mp .cor-6 {
-      background: color-mix(in srgb, var(--color-fg-muted) 10%, var(--color-panel));
+      background: color-mix(in srgb, var(--color-fg-muted) 20%, var(--color-panel));
+    }
+    #mp .cor-7 {
+      background: color-mix(in srgb, var(--color-fg-muted) 12%, var(--color-panel));
     }
     #mp .cor-neutra {
       background: var(--color-fg-muted);
@@ -802,6 +817,24 @@
           return null;
         }
       };
+      // End of the run (stage #1791, decision 6): `meta.runEnd`; without it, the latest valid `ended` once
+      // every row is final (`concluída`, `falhou` or `recusada`); otherwise the run is still going
+      // (`finished` false). A missing or invalid `ended` is ignored; with no valid one `end` is null.
+      const FINAL = ['concluída', 'falhou', 'recusada'];
+      const runWindow = (m, rows) => {
+        const re = typeof m.runEnd === 'string' && m.runEnd ? Date.parse(m.runEnd) : NaN;
+        if (Number.isFinite(re)) return { finished: true, end: re };
+        const list = (rows || []).filter((r) => r && typeof r === 'object');
+        if (!list.length || !list.every((r) => FINAL.includes(r.status))) {
+          return { finished: false, end: null };
+        }
+        const ends = list
+          .map((r) =>
+            typeof r.ended === 'string' && r.ended ? Date.parse(r.ended) : NaN,
+          )
+          .filter(Number.isFinite);
+        return { finished: true, end: ends.length ? Math.max(...ends) : null };
+      };
       dash.calc('summary', {
         inputs: ['queue'],
         title: 'Queue summary',
@@ -828,6 +861,7 @@
         'fechamento',
         'coordenador',
         'supervisor',
+        'via-rapida',
       ];
       const kindPos = (k) => KINDS.indexOf(k) + 1 || 99;
       // Queue cost: meta.sessions (with `cost`), per kind and per stage; without it the card shows "—".
@@ -889,14 +923,9 @@
           const done = rows.filter((r) => r.status === 'concluída');
           const rs = Date.parse(m.runStart);
           let inicio = rs > 0 ? rs : null;
-          let fim = null;
-          if (rows.length && done.length === rows.length) {
-            fim = Math.max(...done.map((r) => Date.parse(r.ended)));
-            if (!Number.isFinite(fim)) {
-              fim = null;
-              inicio = null;
-            }
-          }
+          const w = runWindow(m, rows);
+          const fim = w.finished ? w.end : null;
+          if (w.finished && fim == null) inicio = null;
           return [
             {
               usd,
@@ -1060,9 +1089,12 @@
         });
         return b;
       }
+      // The kind tag; a fast track has its own class (stage #1791, decision 8).
+      const kindTag = (kind) =>
+        el('span', kind === 'via-rapida' ? 'tipo tipo-via-rapida' : 'tipo', asText(kind));
       function buildTags(r) {
         const tags = el('div', 'tags');
-        if (r.kind) tags.append(el('span', 'tipo', asText(r.kind)));
+        if (r.kind) tags.append(kindTag(r.kind));
         const fluxo = fluxoText(r);
         if (fluxo) tags.append(el('span', 'fluxo', fluxo));
         const pr = prLink(r.pr);
@@ -1355,13 +1387,16 @@
         const tit = el('span', 'tit', asText(r.title));
         tit.title = asText(r.title);
         const resto = el('div', 'resto');
-        if (r.kind) resto.append(el('span', 'tipo', asText(r.kind)));
+        if (r.kind) resto.append(kindTag(r.kind));
+        const refused = r.status === 'recusada';
+        if (refused) resto.append(el('span', 'recusada', 'recusada'));
         const pr = prLink(r.pr);
         if (pr) resto.append(pr);
         const s = validTime(r.started);
         const e = validTime(r.ended);
-        if (Number.isFinite(e)) resto.append(el('span', 'hora', horaDe(e)));
-        if (Number.isFinite(s) && Number.isFinite(e) && e >= s) {
+        // A refused fast track never merged: no merge time or duration.
+        if (!refused && Number.isFinite(e)) resto.append(el('span', 'hora', horaDe(e)));
+        if (!refused && Number.isFinite(s) && Number.isFinite(e) && e >= s) {
           resto.append(el('span', 'dur', minutesText(e - s)));
         }
         if (usd > 0) resto.append(el('span', 'custo', 'US$ ' + brl(usd)));
@@ -1391,12 +1426,20 @@
       }
       function resumoDone(done, usd) {
         if (!done.length) return '—';
+        const merged = done.filter((r) => r.status !== 'recusada');
+        const refused = done.length - merged.length;
         const sum = done.reduce((acc, r) => acc + (usd.get(asText(r.issue)) || 0), 0);
-        const base = done.length + (done.length === 1 ? ' stage' : ' stages');
-        return sum > 0 ? base + ' · US$ ' + brl(sum) : base;
+        const parts = [];
+        if (merged.length)
+          parts.push(merged.length + (merged.length === 1 ? ' stage' : ' stages'));
+        if (refused) parts.push(refused + ' refused');
+        if (sum > 0) parts.push('US$ ' + brl(sum));
+        return parts.join(' · ');
       }
       function renderConcluidas(rows, usd) {
-        const done = rows.filter((r) => r.status === 'concluída').sort(compareDone);
+        const done = rows
+          .filter((r) => r.status === 'concluída' || r.status === 'recusada')
+          .sort(compareDone);
         byId('mp-concluidas-resumo').textContent = resumoDone(done, usd);
         const list = byId('mp-concluidas-lista');
         const old = list.querySelector('details');
@@ -1633,11 +1676,13 @@
           lab = document.getElementById('mp-totlab');
         const rs = t(m.runStart);
         if (rs > 0) {
-          const rows = q('queue');
-          const all = rows.length && rows.every((r) => r.status === 'concluída');
-          const end = all ? Math.max(...rows.map((r) => t(r.ended))) : now;
-          tot.textContent = fmt(end - rs);
-          lab.textContent = all ? 'finished' : 'real time';
+          const w = runWindow(m, q('queue'));
+          tot.textContent = w.finished
+            ? w.end == null
+              ? '—'
+              : fmt(w.end - rs)
+            : fmt(now - rs);
+          lab.textContent = w.finished ? 'finished' : 'real time';
         } else {
           tot.textContent = fmt(now - t(m.waitingSince));
           lab.textContent = "waiting for the owner's command (waiting time)";
