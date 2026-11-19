@@ -511,7 +511,7 @@ describe('intentAt: multiple selection', () => {
 
   it('only one item (or none): nothing changes, the primary applies', () => {
     const one = multi([mk('M1')]);
-    expect(intentAt(one, { x: 400, y: 400 })).toEqual({
+    expect(intentAt(one, { x: 150, y: 150 })).toEqual({
       kind: 'move-marking',
       markingId: 'M1',
     });
