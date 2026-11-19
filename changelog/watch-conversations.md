@@ -1,4 +1,4 @@
-# Watch conversations in the same chat — [Não lançado] (épico `epic/watch-conversations`, MCP minor, schema unchanged)
+# Watch conversations in the same chat — [Não lançado] (épico `epic/watch-conversations`, PR #1879, MCP 0.46.0, schema v21)
 
 ## Alterado
 
