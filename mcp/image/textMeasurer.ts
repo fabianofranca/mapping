@@ -1,5 +1,11 @@
 import { parse, type Font } from 'opentype.js';
 import { fontExtents } from './glyphs';
+import {
+  guardedLayout,
+  inspectFont,
+  substitutionsEpoch,
+  type FontInspection,
+} from './fontSubstitutions';
 import monoBold from 'font:mono-bold';
 import mono from 'font:mono';
 import sansBold from 'font:sans-bold';
@@ -82,26 +88,50 @@ const gap = (weight: number, c: Candidate) =>
 export interface FontBook {
   /** The font that draws/measures `family` with the requested weight and style. */
   fontFor(family: string, weight: number, italic: boolean): Font;
+  /** The embedded font for `family` and `weight`: where a text goes when its library font cannot lay it out. */
+  embeddedFor(family: string, weight: number): Font;
   /** Whether any library font (`fonts`) was read; otherwise everything is measured with the embedded one. */
   readonly hasLibraryFonts: boolean;
+}
+
+/** A library font, parsed, with what loading it skipped and how the probe ended. */
+export interface LibraryFont extends FontInspection {
+  readonly font: Font;
+}
+
+/**
+ * Parses a library font, skips the GSUB subtables `opentype.js` cannot apply and probes it with a
+ * sample text (`mcp/image/fontSubstitutions.ts`). `null` when the bytes cannot be read as a font
+ * (`woff2`, for example); a font whose probe is `unusable` comes back and the book leaves it out.
+ */
+export function loadLibraryFont(bytes: ArrayBuffer): LibraryFont | null {
+  try {
+    const font = parse(bytes);
+    return { font, ...inspectFont(font) };
+  } catch {
+    return null;
+  }
+}
+
+function candidateOf(entry: LoadedFont): Candidate | null {
+  if (entry.bytes === undefined) return null;
+  const loaded = loadLibraryFont(entry.bytes);
+  if (loaded === null || loaded.probe === 'unusable') return null;
+  const [low, high] = weightRange(entry.weight);
+  return {
+    family: entry.family.toLowerCase(),
+    low,
+    high,
+    italic: entry.style === 'italic',
+    font: loaded.font,
+  };
 }
 
 export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
   const candidates: Candidate[] = [];
   for (const entry of extra) {
-    if (entry.bytes === undefined) continue;
-    try {
-      const [low, high] = weightRange(entry.weight);
-      candidates.push({
-        family: entry.family.toLowerCase(),
-        low,
-        high,
-        italic: entry.style === 'italic',
-        font: parse(entry.bytes),
-      });
-    } catch {
-      // Unreadable font (woff2, for example): the embedded one applies.
-    }
+    const candidate = candidateOf(entry);
+    if (candidate !== null) candidates.push(candidate);
   }
   const fromLibrary = (name: string, weight: number, italic: boolean): Font | null => {
     const same = candidates.filter((c) => c.family === name.toLowerCase());
@@ -112,6 +142,8 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
     )[0];
     return best?.font ?? null;
   };
+  const isLibraryFamily = (name: string): boolean =>
+    candidates.some((c) => c.family === name.toLowerCase());
   const resolved = new Map<string, Font>();
   const resolve = (family: string, weight: number, italic: boolean): Font => {
     const names = familyNames(family);
@@ -128,6 +160,16 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
   };
   return {
     hasLibraryFonts: candidates.length > 0,
+    // The embedded face `resolve` would end on: the first name that is a library font or a mono name.
+    embeddedFor(family, weight) {
+      const b = builtinFonts();
+      const first = familyNames(family).find(
+        (name) => isLibraryFamily(name) || MONO_FAMILY.test(name),
+      );
+      if (first !== undefined && MONO_FAMILY.test(first) && !isLibraryFamily(first))
+        return weight >= BOLD_FROM ? b.monoBold : b.mono;
+      return weight >= BOLD_FROM ? b.sansBold : b.sans;
+    },
     // Cache by family/weight/italic: the measurer asks for the font once per word.
     fontFor(family, weight, italic) {
       const key = `${family}|${weight}|${italic}`;
@@ -148,7 +190,11 @@ export function textWidth(
   font: Pick<MeasureFont, 'family' | 'size' | 'weight' | 'italic' | 'letterSpacing'>,
 ): number {
   const face = book.fontFor(font.family, font.weight, font.italic);
-  const advance = face.getAdvanceWidth(text, font.size, { kerning: true });
+  const advance = guardedLayout(
+    face,
+    () => book.embeddedFor(font.family, font.weight),
+    (f) => f.getAdvanceWidth(text, font.size, { kerning: true }),
+  );
   return Math.max(0, advance + font.letterSpacing * [...text].length);
 }
 
@@ -170,7 +216,7 @@ export function measurerFor(book: FontBook): TextMeasurer {
           (value) => textWidth(book, value, font),
           fontExtents(book.fontFor(font.family, font.weight, font.italic), font.size),
         ),
-      { limit: MEASURE_CACHE_LIMIT },
+      { limit: MEASURE_CACHE_LIMIT, epoch: substitutionsEpoch },
     );
     measurers.set(book, measure);
   }

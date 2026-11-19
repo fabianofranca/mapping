@@ -72,7 +72,14 @@ function lineInk(
   const face = book.fontFor(spec.family, spec.weight, spec.italic);
   const { ascent, descent } = fontExtents(face, spec.size);
   const baseline = lineBaseline(top, lineHeight, { ascent, descent });
-  const polygons = textPolygons(face, text, x, baseline, spec);
+  const polygons = textPolygons(
+    face,
+    () => book.embeddedFor(spec.family, spec.weight),
+    text,
+    x,
+    baseline,
+    spec,
+  );
   if (decoration === undefined) return polygons;
   return [
     ...polygons,

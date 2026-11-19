@@ -44,6 +44,7 @@ export { approximateMeasurer, type TextMeasurer } from './components/instantiate
 export { cachedMeasurer, MEASURE_CACHE_LIMIT } from './components/measureCache';
 export type { ComponentFile, FieldValues } from './components/componentFormat';
 export { fitComponentSize, resolveSizing } from './components/sizing';
+export * from './componentMeasure';
 export type { FrameNode } from './components/scene';
 export * from './componentCatalog';
 export * from './structural';

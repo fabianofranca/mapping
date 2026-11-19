@@ -21,12 +21,37 @@ declare module 'opentype.js' {
     readonly index: number;
     getBoundingBox(): { x1: number; y1: number; x2: number; y2: number };
   }
+  /** A GSUB lookup subtable: `substFormat`, and for type 7 (extension) the inner type and the subtable. */
+  export interface GsubSubtable {
+    readonly substFormat: number;
+    readonly lookupType?: number;
+    readonly extension?: GsubSubtable;
+    /** Chaining and context rules: the lookups they apply (`lookupListIndex` into `lookups`). */
+    readonly lookupRecords?: readonly {
+      readonly sequenceIndex: number;
+      readonly lookupListIndex: number;
+    }[];
+  }
+  export interface GsubLookup {
+    readonly lookupType: number;
+    /** The server drops the subtables it cannot apply (`mcp/image/fontSubstitutions.ts`). */
+    subtables: readonly GsubSubtable[];
+  }
+  export interface GsubTable {
+    readonly lookups: readonly GsubLookup[];
+  }
   export interface Font {
     readonly unitsPerEm: number;
     readonly ascender: number;
     readonly descender: number;
-    /** Tables read; `os2.sCapHeight` only exists in version 2 or later of the table. */
-    readonly tables?: { readonly os2?: { readonly sCapHeight?: number } };
+    /**
+     * Tables read; `os2.sCapHeight` only exists in version 2 or later of the table. `gsub` is
+     * removed to turn a font's glyph substitutions off.
+     */
+    readonly tables?: {
+      readonly os2?: { readonly sCapHeight?: number };
+      gsub?: GsubTable;
+    };
     charToGlyph(char: string): Glyph;
     getAdvanceWidth(text: string, fontSize: number, options?: GlyphOptions): number;
     getPath(

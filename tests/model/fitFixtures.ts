@@ -33,6 +33,51 @@ function labelText(): Json {
   };
 }
 
+const SCALE = 0.96;
+const scaled = (value: number): Json => ({ $mul: [value, SCALE] });
+
+/**
+ * A `hug` × `hug` row button drawn at scale 0.96 (a `pressed` state): padding, font size, line height, letter
+ * spacing, gap and an 18-unit icon (a `rect`, no icon set needed) are × 0.96 through `$mul` (#2086).
+ */
+function scaledButton(id: string): Json {
+  return {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id,
+    name: id,
+    size: { width: 120, height: 40 },
+    minSize: { width: 48, height: 40 },
+    sizing: { width: 'hug', height: 'hug' },
+    template: {
+      type: 'frame',
+      layout: {
+        type: 'row',
+        align: 'center',
+        gap: scaled(8),
+        padding: scaled(10),
+      },
+      fill: '#EEEEEE',
+      children: [
+        { type: 'rect', width: scaled(18), height: scaled(18), fill: '#6750A4' },
+        {
+          type: 'text',
+          name: 'label',
+          text: { $field: 'label', default: '' },
+          width: 'hug',
+          height: 'hug',
+          font: {
+            size: scaled(14),
+            lineHeight: scaled(20),
+            letterSpacing: scaled(0.1),
+            weight: 500,
+          },
+        },
+      ],
+    },
+  };
+}
+
 function button(id: string, size: Json, sizing: Json | undefined, root: Json = {}): Json {
   return {
     format: 'mapping-component',
@@ -92,7 +137,46 @@ function row(id: string, align: string, layoutType = 'row', sizing?: Json): Json
   };
 }
 
+/** A column of rows (`hug` height) drawn from the `items` table: the height grows with the rows. */
+function list(id: string): Json {
+  return {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id,
+    name: id,
+    size: { width: 200, height: 40 },
+    sizing: { height: 'hug' },
+    template: {
+      type: 'frame',
+      layout: { type: 'column', padding: 8 },
+      fill: '#EEEEEE',
+      children: [
+        {
+          type: 'repeat',
+          field: 'items',
+          template: {
+            type: 'frame',
+            name: 'row',
+            layout: { type: 'row' },
+            children: [
+              {
+                type: 'text',
+                text: { $field: 'text', default: '' },
+                width: 'fill',
+                height: 'hug',
+                font: { size: 14, lineHeight: 20 },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  };
+}
+
 export const FIT_COMPONENTS: Record<string, Json> = {
+  // A list with a `table` field and a `ref` field (the table's rows set the height).
+  'fit-list': list('fit-list'),
   // The height follows the label; the width stays (no `sizing` on it).
   'fit-button': button('fit-button', { width: 120, height: 40 }, { height: 'hug' }),
   // The same with the root cap at 60 height.
@@ -108,6 +192,8 @@ export const FIT_COMPONENTS: Record<string, Json> = {
     { width: 120, height: 40 },
     { width: 'hug', height: 'hug' },
   ),
+  // Everything scaled by 0.96 (#2086): the fit must not leave it short at any density.
+  'fit-scaled': scaledButton('fit-scaled'),
   // L4: the width with no wrapping (`max-content`) and by the widest word (`min-content`).
   'fit-max': button(
     'fit-max',
@@ -150,9 +236,21 @@ const FIELDS = [
   { key: 'tall', type: 'string' },
 ];
 
+const LIST_FIELDS = [
+  {
+    key: 'items',
+    type: 'table',
+    columns: [
+      { key: 'text', type: 'string' },
+      { key: 'link', type: 'ref', accepts: { free: true } },
+    ],
+  },
+  { key: 'target', type: 'ref', accepts: { free: true } },
+];
+
 export const FIT_SPEC_JSON = {
   format: 'mapping-spec',
-  formatVersion: 4,
+  formatVersion: 7,
   id: FIT_SPEC_ID,
   name: 'Fit',
   version: 1,
@@ -165,7 +263,7 @@ export const FIT_SPEC_JSON = {
         id,
         name: id,
         component: `components/${id}.json`,
-        fields: FIELDS,
+        fields: id === 'fit-list' ? [...FIELDS, ...LIST_FIELDS] : FIELDS,
       })),
     },
   ],

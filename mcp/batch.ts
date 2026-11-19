@@ -137,6 +137,7 @@ import {
   type RefValue,
   type Spec,
   type SpecField,
+  type SpecAnnotationType,
   type SpecUpdateImpact,
   canWrapItems,
   wrapItems,
@@ -1042,6 +1043,11 @@ class Batch {
       height: prepared.height,
       note,
     };
+  }
+
+  /** The model's `RefValue` of a reference in the agent's format (`measure_component` takes `values` this way). */
+  storedRef(input: JsonValue, key: string): JsonValue {
+    return this.refValue(input, key, this.p);
   }
 
   /** Reference of a `ref` field in the agent's format → the model's `RefValue`. */
@@ -3011,6 +3017,50 @@ function kindLabel(kind: AliasTarget['kind']): string {
 
 function fail(code: 'not-found', message: string): never {
   throw new ToolError(code, message);
+}
+
+/** Batch with no operations: only to read references (the io is not used by `storedRef`). */
+const NO_IO: BatchIo = {
+  readSource: () => Promise.reject(new ToolError('invalid-arguments', 'no io')),
+  readSpecInput: () => Promise.reject(new ToolError('invalid-arguments', 'no io')),
+  takenImageFiles: new Set(),
+  now: () => new Date(0),
+};
+
+/**
+ * `values` of a typed annotation with the `ref` fields and `ref` cells of the type in the agent's format
+ * (`{ annotation: "mapping://…" }`) turned into the model's stored `RefValue`, as `create_marking` does.
+ * An alias (`$name`) fails: there is no batch to have created it.
+ */
+export function storedRefValues(
+  loaded: LoadedProject,
+  type: SpecAnnotationType,
+  values: Readonly<Record<string, JsonValue>>,
+): Record<string, JsonValue> {
+  const batch = new Batch(loaded, NO_IO);
+  const out: Record<string, JsonValue> = {};
+  for (const [key, value] of Object.entries(values)) {
+    const field = fieldOf(type, key);
+    if (field?.type === 'ref') out[key] = batch.storedRef(value, key);
+    else if (field?.type === 'table' && Array.isArray(value)) {
+      out[key] = value.map((row) => refCells(batch, field, row));
+    } else out[key] = value;
+  }
+  return out;
+}
+
+function refCells(
+  batch: Batch,
+  field: Extract<SpecField, { type: 'table' }>,
+  row: JsonValue,
+): JsonValue {
+  if (!isRecord(row)) return row;
+  const cells: Record<string, JsonValue> = {};
+  for (const [column, cell] of Object.entries(row)) {
+    const isRef = field.columns.find((c) => c.key === column)?.type === 'ref';
+    cells[column] = isRef ? batch.storedRef(cell, column) : cell;
+  }
+  return cells;
 }
 
 /** Applies the batch on the loaded project, without writing anything. */

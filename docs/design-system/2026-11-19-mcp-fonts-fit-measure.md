@@ -1,0 +1,13 @@
+# MCP fonts with unsupported GSUB, `fit_marking` and `measure_component` — 2026-11-19 (épico `epic/mcp-fonts-fit-measure`)
+
+## Pendências
+
+None (the app does not change: the epic touches the MCP server, the guide and the skill).
+
+## Sincronização
+
+Sem impacto: there were no pending items to record (the app does not change; the epic touches the MCP server, the guide and the skill). Nothing was written to the artifact.
+
+## Ficou sem gravar
+
+None.

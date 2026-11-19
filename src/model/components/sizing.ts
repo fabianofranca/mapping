@@ -17,7 +17,7 @@ import type {
 } from './componentFormat';
 import { MIN_STORED_MARKING_SIZE } from '../geometry';
 import { evaluate } from './expressions';
-import { type InstantiateOptions, measureComponent } from './instantiate';
+import { type InstantiateOptions, instantiate, measureComponent } from './instantiate';
 import {
   describeValue,
   intrinsicModeOf,
@@ -171,11 +171,114 @@ export function fitComponentSize(
     kinds[name] === 'keep'
       ? value
       : Math.max(value, component.minSize?.[name] ?? 0, MIN_STORED_MARKING_SIZE);
-  return {
+  const size = {
     width: floor('width', axisSize(hug.width, given('width'), measured?.width)),
     height: floor('height', axisSize(hug.height, given('height'), measured?.height)),
+  };
+  const checked = checkDrawing(component, values, options, size, hug, fit.maxWidth);
+  return {
+    ...checked,
     messages: [...resolved.messages, ...(measured?.messages ?? [])],
   };
+}
+
+/** How many times the fit grows the `hug` axes after checking the drawing (decision 5 of #2089). */
+const DRAWING_CHECKS = 3;
+
+/** The root's `max` on the axis (an expression evaluated with the values), `Infinity` if there is none. */
+function rootMax(
+  component: ComponentFile,
+  values: FieldValues,
+  name: SizingAxis,
+  edge: number | undefined,
+): number {
+  const expr =
+    name === 'width' ? component.template.maxWidth : component.template.maxHeight;
+  const limit = expr === undefined ? Infinity : evaluate<number>(expr, values, Infinity);
+  const max = typeof limit === 'number' && Number.isFinite(limit) ? limit : Infinity;
+  return name === 'width' && edge !== undefined ? Math.min(max, edge) : max;
+}
+
+/** The shortfalls the instance reports at `size`: the sum (the progress of a growth) and the largest. */
+function shortOf(
+  component: ComponentFile,
+  values: FieldValues,
+  options: InstantiateOptions,
+  size: { width: number; height: number },
+): { total: number; largest: number } {
+  const found = Object.values(
+    instantiate(component, values, { x: 0, y: 0, ...size }, options).shortfalls ?? {},
+  ).filter((missing) => missing > 0);
+  return { total: found.reduce((sum, v) => sum + v, 0), largest: Math.max(0, ...found) };
+}
+
+/** What may grow in one step: each `hug` axis alone first (the smallest change), then all of them together. */
+function growthSets(hug: Record<SizingAxis, boolean>): Record<SizingAxis, boolean>[] {
+  const alone = (['width', 'height'] as const)
+    .filter((name) => hug[name])
+    .map((name) => ({ width: name === 'width', height: name === 'height' }));
+  return alone.length > 1 ? [...alone, { ...hug }] : alone;
+}
+
+/**
+ * Checks the drawing at the fitted size: the measure and the drawing can disagree by a fraction (a line that
+ * gets a width limit measures wider), and the marking would be left short (`component-overflow`). While the
+ * instance reports a shortfall, a `hug` axis grows by `ceilFit` of the largest one, up to `DRAWING_CHECKS`
+ * times and never past the root's `max` nor the fit's `maxWidth`. Each step tries the axes alone before both
+ * (an axis that is not short does not grow) and keeps the first growth that ends the shortfall or else the one
+ * that reduces it the most; a step that does not reduce it stops the loop. An axis that is not `hug` (px by
+ * expression, kept) does not change. The size reached stays, even if a shortfall the growth cannot remove is
+ * left (the growth that worked is not lost).
+ */
+function checkDrawing(
+  component: ComponentFile,
+  values: FieldValues,
+  options: InstantiateOptions,
+  start: { width: number; height: number },
+  hug: Record<SizingAxis, boolean>,
+  maxWidth: number | undefined,
+): { width: number; height: number } {
+  if (!hug.width && !hug.height) return start;
+  let reached: Reached = {
+    size: start,
+    short: shortOf(component, values, options, start),
+  };
+  for (
+    let attempt = 0;
+    attempt < DRAWING_CHECKS && reached.short.largest > 0;
+    attempt++
+  ) {
+    const best = bestGrowth(component, values, options, reached, hug, maxWidth);
+    if (best === undefined || best.short.total >= reached.short.total) break;
+    reached = best;
+  }
+  return reached.size;
+}
+
+interface Reached {
+  readonly size: { width: number; height: number };
+  readonly short: { total: number; largest: number };
+}
+
+/** The growth of one step: the first that ends the shortfall or else the one that reduces it the most. */
+function bestGrowth(
+  component: ComponentFile,
+  values: FieldValues,
+  options: InstantiateOptions,
+  from: Reached,
+  hug: Record<SizingAxis, boolean>,
+  maxWidth: number | undefined,
+): Reached | undefined {
+  let best: Reached | undefined;
+  for (const axes of growthSets(hug)) {
+    const grow = ceilFit(from.short.largest);
+    const size = grown(component, values, from.size, axes, grow, maxWidth);
+    if (size.width === from.size.width && size.height === from.size.height) continue;
+    const short = shortOf(component, values, options, size);
+    if (best === undefined || short.total < best.short.total) best = { size, short };
+    if (short.largest <= 0) break;
+  }
+  return best;
 }
 
 /** The final size of the axis: the measured one (integer rounded up) on `hug`, otherwise the given one. */
@@ -237,4 +340,21 @@ function measureHug(
     options,
   );
   return { ...limited, messages: [...free.messages, ...limited.messages] };
+}
+
+/** The size with each `hug` axis `grow` larger, capped by the root's `max` (and the fit's `maxWidth`). */
+function grown(
+  component: ComponentFile,
+  values: FieldValues,
+  size: { width: number; height: number },
+  hug: Record<SizingAxis, boolean>,
+  grow: number,
+  maxWidth: number | undefined,
+): { width: number; height: number } {
+  const axis = (name: SizingAxis): number => {
+    if (!hug[name]) return size[name];
+    const max = rootMax(component, values, name, name === 'width' ? maxWidth : undefined);
+    return Math.min(size[name] + grow, Math.max(size[name], max));
+  };
+  return { width: axis('width'), height: axis('height') };
 }
