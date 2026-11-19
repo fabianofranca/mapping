@@ -456,6 +456,7 @@ export const enUS = {
   'spec.designModes': 'Modes',
   'spec.designIcons': 'Icons',
   'spec.item': 'v{version} · {layers} layer(s): {names}',
+  'spec.itemNoLayers': 'v{version} · {layers} layer(s)',
   'spec.fileMissing': '(specialization file unavailable)',
   'spec.readFailed': 'Could not read the file.',
   'spec.invalidTitle': 'Invalid specialization file',

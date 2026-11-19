@@ -128,6 +128,15 @@ describe('SpecsDialog', () => {
     expect(within(design).getByText('icons/set.json')).toBeTruthy();
   });
 
+  it('a specialization with no layers shows its version without a dangling colon (CL2)', () => {
+    let n = 0;
+    const empty: Spec = { ...libSpec(1), layers: [] };
+    setup(applySpecialization(emptyProject(), empty, { newId: () => `LS${++n}` }));
+    const item = document.querySelector<HTMLElement>('.spec-item');
+    expect(item?.textContent).toContain('v1 · 0 layer(s)');
+    expect(item?.textContent).not.toContain('layer(s):');
+  });
+
   it('a library without tokens or icons does not show the block', () => {
     let n = 0;
     setup(applySpecialization(emptyProject(), libSpec(1), { newId: () => `LS${++n}` }));

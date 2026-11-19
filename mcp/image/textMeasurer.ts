@@ -1,6 +1,11 @@
 import { parse, type Font } from 'opentype.js';
 import { fontExtents } from './glyphs';
-import { guardedLayout, inspectFont, type FontInspection } from './fontSubstitutions';
+import {
+  guardedLayout,
+  inspectFont,
+  substitutionsEpoch,
+  type FontInspection,
+} from './fontSubstitutions';
 import monoBold from 'font:mono-bold';
 import mono from 'font:mono';
 import sansBold from 'font:sans-bold';
@@ -211,7 +216,7 @@ export function measurerFor(book: FontBook): TextMeasurer {
           (value) => textWidth(book, value, font),
           fontExtents(book.fontFor(font.family, font.weight, font.italic), font.size),
         ),
-      { limit: MEASURE_CACHE_LIMIT },
+      { limit: MEASURE_CACHE_LIMIT, epoch: substitutionsEpoch },
     );
     measurers.set(book, measure);
   }

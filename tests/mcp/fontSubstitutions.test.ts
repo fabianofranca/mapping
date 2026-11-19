@@ -11,7 +11,12 @@ import {
   pruneSubstitutions,
   turnOffSubstitutions,
 } from '../../mcp/image/fontSubstitutions';
-import { createFontBook, loadLibraryFont, textWidth } from '../../mcp/image/textMeasurer';
+import {
+  createFontBook,
+  loadLibraryFont,
+  measurerFor,
+  textWidth,
+} from '../../mcp/image/textMeasurer';
 
 // Stage #2089 (FM1, decisions 1 and 2): the server skips the GSUB subtables `opentype.js` cannot
 // apply, probes each library font when it loads and guards every layout.
@@ -306,5 +311,38 @@ describe('the book guards the text it measures', () => {
       embedded.getAdvanceWidth('fit', 14, { kerning: true }),
       6,
     );
+  });
+});
+
+describe('the measurer forgets the widths measured with the substitutions it later turns off (CL2)', () => {
+  it('a width measured with a ligature is measured again once the font lays out without GSUB', () => {
+    const book = createFontBook([
+      { family: 'Gsub', weight: '400', style: 'normal', path: 'fonts/Gsub.ttf', bytes },
+    ]);
+    const measure = measurerFor(book);
+    const font = {
+      family: 'Gsub',
+      size: 20,
+      weight: 400,
+      italic: false,
+      lineHeight: 24,
+      letterSpacing: 0,
+    };
+    const plain = fresh();
+    turnOffSubstitutions(plain);
+    const without = plain.getAdvanceWidth('iii', 20, { kerning: true });
+    const withLigature = measure('iii', font).width;
+    expect(withLigature).not.toBeCloseTo(without, 3);
+
+    // A later text makes the layout throw: the face's GSUB goes off for good.
+    const face = book.fontFor('Gsub', 400, false);
+    const real = face.getAdvanceWidth.bind(face);
+    let throws = 1;
+    face.getAdvanceWidth = (text, size, options) => {
+      if (throws-- > 0) throw new Error('boom');
+      return real(text, size, options);
+    };
+    measure('zzz', font);
+    expect(measure('iii', font).width).toBeCloseTo(without, 3);
   });
 });

@@ -455,6 +455,7 @@ export const ptBR: Dictionary = {
   'spec.designModes': 'Modos',
   'spec.designIcons': 'Ícones',
   'spec.item': 'v{version} · {layers} camada(s): {names}',
+  'spec.itemNoLayers': 'v{version} · {layers} camada(s)',
   'spec.fileMissing': '(arquivo da especialização indisponível)',
   'spec.readFailed': 'Não foi possível ler o arquivo.',
   'spec.invalidTitle': 'Arquivo de especialização inválido',
