@@ -5,6 +5,7 @@ import { t } from '../../src/i18n';
 import type { Thread } from '../../src/model';
 import { clearIdentity, setIdentity } from '../../src/store/identity';
 import { locale } from '../../src/store/settings';
+import { hideToolWindow, isToolWindowOpen } from '../../src/store/toolWindows';
 import { composingAnchor } from '../../src/store/threadUi';
 import { CanvasContextMenu } from '../../src/ui/CanvasContextMenu';
 import { EditorContext } from '../../src/ui/EditorContext';
@@ -127,6 +128,32 @@ describe('canvas context menu', () => {
     expect(screen.queryByRole('menuitem', { name: t('comments.here') })).toBeNull();
     fireEvent.click(screen.getByRole('menuitem', { name: t('comments.comment') }));
     expect(composingAnchor(h.ui)).toEqual({ kind: 'marking', id: 'M1' });
+  });
+
+  it('Comment and Comment here open the Details when they were closed', async () => {
+    const h = await setup();
+    const menus = [
+      {
+        target: null,
+        comment: null,
+        here: { kind: 'point', containerId: null, x: 5, y: 6 },
+      },
+      {
+        target: { kind: 'm', id: 'M1' },
+        comment: { kind: 'marking', id: 'M1' },
+        here: null,
+      },
+    ] as const;
+    const names = [t('comments.here'), t('comments.comment')];
+    for (const [i, menu] of menus.entries()) {
+      hideToolWindow('details');
+      expect(isToolWindowOpen('details')).toBe(false);
+      h.ui.canvasMenu.value = { x: 10, y: 10, ...menu };
+      const view = mount(h, <CanvasContextMenu />);
+      fireEvent.click(screen.getByRole('menuitem', { name: names[i]! }));
+      expect(isToolWindowOpen('details')).toBe(true);
+      view.unmount();
+    }
   });
 
   it('the items are disabled in read-only', async () => {

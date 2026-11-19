@@ -6,6 +6,7 @@ import {
   type Thread,
   type ThreadAnchor,
 } from '../model';
+import { showToolWindow } from './toolWindows';
 import { expandSections, type EditorUi, type Selection } from './ui';
 
 // Thread selection and drafts (Comments stage, decisions 19 and 20): UI-only state.
@@ -121,6 +122,8 @@ export function placeComment(ui: EditorUi, project: Project, anchor: ThreadAncho
   batch(() => {
     cancelComment(ui);
     startComposing(ui, project, anchor);
+    // The draft lives in the Details: with them closed it would show nowhere.
+    showToolWindow('details');
   });
 }
 

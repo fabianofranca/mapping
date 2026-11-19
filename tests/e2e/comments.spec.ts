@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   addImage,
@@ -352,4 +353,55 @@ test('the chip is live: renaming the target changes the name and deleting the ta
   await page.mouse.click(anchor.x, anchor.y);
   const broken = page.locator('button.citation-chip.citation-chip-broken');
   await expect(broken).toHaveCount(1);
+});
+
+test('with no identity, New conversation, Comment and the menu Comment lead to the notice with the focus', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/');
+  await page
+    .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
+    .setInputFiles({
+      name: 'full-example.zip',
+      mimeType: 'application/zip',
+      buffer: readFileSync('examples/full-example.zip'),
+    });
+  const host = page.locator('.canvas-host');
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
+  await page.keyboard.press('Control+Shift+Digit3');
+  await page.keyboard.press('Control+Shift+Digit2');
+  await page.locator('.tree-row', { hasText: 'Register' }).first().click();
+  const notice = page.getByRole('button', { name: 'Fill in Settings' });
+  const expectNotice = async (): Promise<void> => {
+    await expect(notice).toBeFocused();
+    await expect(notice).toBeInViewport();
+  };
+
+  // (1) New conversation, in the Comments window.
+  await page.keyboard.press('Control+Shift+Digit0');
+  await page.getByRole('button', { name: 'New conversation' }).click();
+  await expectNotice();
+
+  // (2) Details closed: the armed Comment, then the click on the selected marking.
+  await page.keyboard.press('Control+Shift+Digit3');
+  await expect(notice).toBeHidden();
+  const box = (await host.getAttribute('data-selection-box'))!
+    .match(/-?\d+(\.\d+)?/g)!
+    .map(Number) as [number, number, number, number];
+  const hostBox = (await host.boundingBox())!;
+  await page.getByRole('button', { name: 'Comment', exact: true }).first().click();
+  await page.mouse.click(
+    hostBox.x + box[0] + box[2] / 2,
+    hostBox.y + box[1] + box[3] / 2,
+  );
+  await expectNotice();
+
+  // (3) The Comment of the ⋯ of the style field.
+  await page
+    .getByRole('button', { name: /Actions for field style/i })
+    .first()
+    .click();
+  await page.getByRole('menuitem', { name: 'Comment', exact: true }).click();
+  await expectNotice();
 });
