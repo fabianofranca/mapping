@@ -19,7 +19,7 @@
 - **Text Arrange and fit (F.2, F.3, V.1):** in a container, a fitted box that fits the image but sticks out of it slides back inside instead of being cut at the edge, so `fixa` holds every wrapped line and `auto` holds the whole line; a box larger than the image is still cut at the edge. When Arrange leaves the content not fitting, the notice says "Arranged, but the content still does not fit" instead of "Nothing to arrange".
 - **Enter in the icon combobox (2.2):** Enter on a picked option that becomes the whole text saves it (disk equals the field); a pick inside a longer text still waits for the next Enter.
 - **Focus after a window shortcut (2.1):** closing the Tree or the Catalog by its shortcut returns focus to the canvas, not to the strip button.
-- **Test scripts (`docs/TESTING.md`):** R12.48 (leaving the field saves a text with a break; Enter breaks the line, by design), R3.19 (existing commit), R10.1 and R10.10 (what the screen shows).
+- **Test scripts (`docs/TESTING.md`):** R12.48 (leaving the field saves a text with a break; Enter breaks the line, by design), R3.19 (existing commit), R10.1 and R10.10 (what the screen shows); and, after the retest, R12.10c (**Esc** until cleared before each Shift+drag), R12.20c (the `Button` must not contain `Child`), R12.48 (the width follows the widest line) and R12.49 (a text that fits for the `auto` part).
 
 ## Alterado
 
