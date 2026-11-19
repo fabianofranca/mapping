@@ -583,3 +583,48 @@ describe('GC2 — docs/FLOW.md: the hook rule in the phase session (decisions 9 
     expect(block.startsWith(MARK)).toBe(true);
   });
 });
+
+describe("CC1 — the notice exempts only the phase's last PR (#1949)", () => {
+  /** The notice the hook writes at `TRIGGER + 1`. */
+  const notice = (): string => {
+    const box = sandbox([userLine(phasePrompt), measure(TRIGGER + 1)]);
+    return warningOf(hook(box)).hookSpecificOutput.additionalContext;
+  };
+
+  it('says that the exemption holds only with the last PR open or in session 5 of 5', () => {
+    const text = notice();
+    expect(text).toContain("the phase's last PR is not open");
+    expect(text).toContain(
+      'a phase that opens several PRs hands over between a merged PR and the next one',
+    );
+    expect(text).toContain(
+      "With the phase's last PR open, or in session 5 of 5, carry on.",
+    );
+  });
+
+  it('no longer exempts any open PR', () => {
+    const text = notice();
+    expect(text).not.toContain('If the phase PR is not open yet');
+    expect(text).not.toContain('With the PR open,');
+  });
+
+  it('is still a single line with the handover, the 5 of 5 session and the subagent line', () => {
+    const text = notice();
+    expect(text).not.toContain('\n');
+    expect(text).toContain('hand over');
+    expect(text).toContain('5 of 5');
+    expect(text).toContain('Subagent: ignore this notice');
+  });
+
+  it('follows the rule of the "Phase context ceiling" sub-item of docs/FLOW.md', () => {
+    const flow = readFileSync('docs/FLOW.md', 'utf8');
+    const phase = section(flow, '## For the phase session');
+    const ceiling = between(
+      phase,
+      '   - **Phase context ceiling:**',
+      '4. Every briefing for a behavior change',
+    );
+    expect(ceiling).toContain("the phase's **last** PR");
+    expect(ceiling).toContain('between a merged PR and the next one');
+  });
+});
