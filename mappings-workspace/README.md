@@ -64,16 +64,37 @@ O `setup.sh` precisa de um shell POSIX. No Windows sem WSL, faça os passos à m
 
 ## Conversas: acordar o agente (`watch-comments.mjs`)
 
-As conversas ancoradas ficam em `projects/<projeto>/comments/` (formato em `docs/COMMENT-FORMAT.md` do Mapping). O servidor MCP **nunca dispara um agente**: ele só lê e escreve conversas quando o agente já está de pé. Para o agente acordar sozinho quando alguém pergunta algo, deixe o `watch-comments.mjs` (um arquivo desta pasta, que o `setup.sh` não atualiza) rodando num terminal (Node ≥ 20, sem dependências), passando o comando que abre o seu agente depois do `--`:
+As conversas ancoradas ficam em `projects/<projeto>/comments/` (formato em `docs/COMMENT-FORMAT.md` do Mapping). O servidor MCP **nunca dispara um agente**: ele só lê e escreve conversas quando o agente já está de pé. Para o agente acordar sozinho quando alguém pergunta algo, deixe o `watch-comments.mjs` (um arquivo desta pasta, que o `setup.sh` atualiza) rodando (Node ≥ 20, sem dependências). **Nunca edite o `watch-comments.mjs`**: o `setup.sh` desfaz a edição na próxima atualização; use as opções dele. Há dois modos.
+
+### Modo 1: um agente novo a cada acordada
+
+Passe o comando que abre o seu agente depois do `--`, num terminal:
 
 ```bash
 node watch-comments.mjs -- claude -p "Há conversas aguardando você em projects/. Siga a seção Conversas do AGENTS.md."
 ```
 
+O comando recebe `MAPPING_AWAITING`, um JSON com `[{ "project", "thread", "path" }]` das conversas que motivaram a execução. Cada acordada abre um agente sem o contexto do chat em que você está.
+
+### Modo 2: o mesmo chat, com a skill `watch-conversations`
+
+Com `--emit` o observador não roda comando: imprime **uma** linha `MAPPING_WAKE <json>` (o mesmo JSON) por lote na saída padrão, e os logs ficam no stderr. Um processo em segundo plano do cliente transforma essa linha numa acordada do **chat atual** (o `Monitor` do Claude Code; a ferramenta de shell do Cursor com `notify_on_output`). Nada é gasto enquanto espera.
+
+Não é preciso digitar o comando: abra o agente nesta pasta e diga **"watch the conversations"** (a descrição da skill é só em inglês, mas o pedido em português casa pelo sentido: "observe as conversas"). A skill `watch-conversations` (`.agents/skills/watch-conversations/SKILL.md`) confere o preparo, responde o que já espera, inicia o observador com a raiz de projetos da configuração do cliente, responde cada acordada e, em "stop watching the conversations", encerra. O comando que ela roda é:
+
+```bash
+node watch-comments.mjs --emit --state .mapping-watch/state.json --quiet 1 --root <raiz>
+```
+
+- `--state <arquivo>` guarda entre as execuções os pares conversa e mensagem já tratados (arquivo temporário + renomeação), então reiniciar o observador não repete acordadas, e um par que chegou com ele parado dispara na reinicialização. A pasta `.mapping-watch/` está no `.gitignore` desta pasta.
+- **Limites:** o cliente e o chat precisam ficar abertos. Um chat longo custa mais a cada resposta: abra um chat novo e rode a skill de novo. A latência é de cerca de 1 s do observador mais o tempo de escrita do agente. Para um cliente sem notificação de saída, o agente pode repetir `wait_for_comment` (plano B, no guia do agente).
+
+### O que os dois modos fazem
+
 - Observa `projects/*/comments/` e espera **5 s sem nenhuma mudança** (`--quiet <segundos>` ajusta) antes de agir.
-- Só roda o comando se houver conversa **aberta** cuja última mensagem é de pessoa (aguarda o agente). Conversa resolvida, ou que aguarda pessoa, não dispara nada.
-- Roda **um comando de cada vez**: mudança durante a execução espera o fim dele e é reavaliada. Cada par conversa e última mensagem é tratado uma vez, então uma conversa que o agente deixou sem resposta não vira laço.
-- O comando recebe `MAPPING_AWAITING`, um JSON com `[{ "project", "thread", "path" }]` das conversas que motivaram a execução. `--root <pasta>` troca a pasta observada (padrão: `projects/` ao lado do script). Ctrl+C encerra.
+- Só acorda o agente se houver conversa **aberta** cuja última mensagem é de pessoa (aguarda o agente). Conversa resolvida, ou que aguarda pessoa, não dispara nada.
+- Cada par conversa e última mensagem é tratado uma vez, então uma conversa que o agente deixou sem resposta não vira laço. No modo de comando roda **um comando de cada vez**: mudança durante a execução espera o fim dele e é reavaliada.
+- `--root <pasta>` troca a pasta observada (padrão: `projects/` ao lado do script). Ctrl+C encerra.
 
 ## Onde cada ferramenta lê a configuração
 

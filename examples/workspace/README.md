@@ -79,16 +79,38 @@ Last resort, if not even the API responds: download the release with `gh release
 
 ## Conversations: waking the agent (`watch-comments.mjs`)
 
-Anchored conversations live in `projects/<project>/comments/` (format in Mapping's `docs/COMMENT-FORMAT.md`). The MCP server **never triggers an agent**: it only reads and writes conversations when the agent is already up. For the agent to wake up on its own when someone asks something, leave `watch-comments.mjs` (in the workspace root; `setup.sh` installs and updates it) running in a terminal (Node ≥ 20, no dependencies), passing the command that opens your agent after the `--`:
+Anchored conversations live in `projects/<project>/comments/` (format in Mapping's `docs/COMMENT-FORMAT.md`). The MCP server **never triggers an agent**: it only reads and writes conversations when the agent is already up. For the agent to wake up on its own when someone asks something, leave `watch-comments.mjs` (in the workspace root; `setup.sh` installs and updates it) running (Node ≥ 20, no dependencies). **Never edit `watch-comments.mjs`**: `setup.sh` undoes the edit on the next update; use its options. There are two modes.
+
+### Mode 1: a new agent per wake
+
+Pass the command that opens your agent after the `--`, in a terminal:
 
 ```bash
 node watch-comments.mjs -- claude -p "There are conversations awaiting you in projects/. Follow the Conversations section of AGENTS.md."
 ```
 
+The command receives `MAPPING_AWAITING`, a JSON with `[{ "project", "thread", "path" }]` of the conversations that triggered the run. Each wake starts an agent without the context of the chat you are in.
+
+### Mode 2: the same chat, with the `watch-conversations` skill
+
+With `--emit` the watcher runs no command: it prints **one** `MAPPING_WAKE <json>` line (the same JSON) per batch to stdout, and the logs stay on stderr. A background process of the client turns that line into a wake of the **current chat** (Claude Code's `Monitor`; Cursor's shell tool with `notify_on_output`). Nothing is spent while waiting.
+
+You do not have to type the command: open the agent in the workspace and say **"watch the conversations"**. The `watch-conversations` skill (`.agents/skills/watch-conversations/SKILL.md`, installed by `setup.sh` like `spec-author`) checks the preparation, answers what is already waiting, starts the watcher with the projects root of the client configuration, answers each wake and, on "stop watching the conversations", stops it. The command it runs is:
+
+```bash
+node watch-comments.mjs --emit --state .mapping-watch/state.json --quiet 1 --root <root>
+```
+
+- `--state <file>` keeps the handled conversation and message pairs between runs (temporary file + rename), so restarting the watcher does not repeat wakes, and a pair that arrived while it was stopped fires on the restart. A missing or invalid file starts empty.
+- `.mapping-watch/` (the state folder) is in this example's `.gitignore`. **Existing workspaces:** `setup.sh` never touches `.gitignore`; add the line `.mapping-watch/` yourself.
+- **Limits:** the client and the chat must stay open (Claude Code cloud sessions do not work: the container stops when idle). A long chat costs more with each answer: open a new chat and run the skill again. The latency is about 1 s from the watcher plus the time the agent takes to write. For a client without output notifications, the agent can loop on `wait_for_comment` (plan B, in the agent guide; it spends tokens on every round).
+
+### What both modes do
+
 - Watches `projects/*/comments/` and waits **5 s with no change** (`--quiet <seconds>` adjusts it) before acting.
-- Only runs the command if there is an **open** conversation whose last message is from a person (it awaits the agent). A resolved conversation, or one that awaits a person, triggers nothing.
-- Runs **one command at a time**: a change during the run waits for it to finish and is reevaluated. Each conversation and last-message pair is handled once, so a conversation the agent left unanswered does not become a loop.
-- The command receives `MAPPING_AWAITING`, a JSON with `[{ "project", "thread", "path" }]` of the conversations that triggered the run. `--root <folder>` changes the watched folder (default: `projects/` next to the script). Ctrl+C stops it.
+- Only wakes the agent if there is an **open** conversation whose last message is from a person (it awaits the agent). A resolved conversation, or one that awaits a person, triggers nothing.
+- Each conversation and last-message pair is handled once, so a conversation the agent left unanswered does not become a loop. In the command mode it runs **one command at a time**: a change during the run waits for it to finish and is reevaluated.
+- `--root <folder>` changes the watched folder (default: `projects/` next to the script, or `projetos/` if that is the only one). The start log names the root and how many project folders it found. Ctrl+C stops it.
 
 ## Renaming the folders
 
