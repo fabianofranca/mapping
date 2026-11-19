@@ -1,4 +1,4 @@
-# painel.py canary help names B and C — [Não lançado] (épico `epic/painel-canary-help`)
+# painel.py canary help names B and C — 2026-11-19 (épico `epic/painel-canary-help`)
 
 ## Pendências
 

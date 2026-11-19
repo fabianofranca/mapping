@@ -1,4 +1,4 @@
-# painel.py canary help names B and C — [Não lançado] (MCP unchanged, schema v20)
+# painel.py canary help names B and C — 2026-11-19 (épico `epic/painel-canary-help`, PR #2180, MCP unchanged, schema v20)
 
 ## Alterado
 
