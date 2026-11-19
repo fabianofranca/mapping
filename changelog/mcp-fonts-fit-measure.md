@@ -2,6 +2,7 @@
 
 ## Adicionado
 
+- `measure_component({ project, specId, type, values?, container?, size? })`, a read-only tool that returns the size of a component for given field values, in units and in pixels (`units` × the container's density, the size `fit_marking` gives with room), with no marking created and no batch planned. It reports which axes follow the content (`follows`), whether the text was measured without library fonts (`approximate`) and, for a component that does not follow its content, a `hint`. The guide tells agents to measure with it before writing a `rect` by hand (#2083).
 - `validate_library` warns about each library font (`.ttf`, `.otf` or `.woff`) that the MCP server cannot use as it is, with `file` = the specialization file and `path` = `fonts[<i>].file`: the glyph-substitution subtables it skips (`lookup type 6 format 2 ×1, …`), a font whose substitutions it turns off altogether, or a font it cannot lay out (the embedded font applies). The library stays valid, project reads stay silent and the app is not affected. A font does not need to be cut by hand any more: ship the designers' original file (#2089).
 
 ## Corrigido

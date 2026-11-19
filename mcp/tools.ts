@@ -23,6 +23,7 @@ import { Threads, resolveExtended } from './threads';
 import { registerThreadTools } from './threadTools';
 import { findBySourceResult, findTypesBySourceResult } from './sourceTools';
 import { getComponent, listComponents } from './componentTools';
+import { measureComponent } from './measureComponent';
 import { listPackageFiles, validateLibraryTool } from './library';
 import { planLibraryUpdate } from './libraryUpdate';
 import { planSignatureImportTool } from './signatureImport';
@@ -1223,5 +1224,43 @@ export function registerTools(
       annotations: READ_ONLY,
     },
     (args) => respond(() => getComponent(roots, args)),
+  );
+
+  server.registerTool(
+    'measure_component',
+    {
+      description:
+        "The size a component has for given field values, in component units (`units`) and in image pixels (`pixels`, `units` × the container's `density`, rounded up), to place a component by hand (a `rect` for `create_marking`) with no dry-run batch. It creates no marking and plans nothing: it is read-only. The values are the type's defaults plus `values` (the form of `create_marking`'s `annotation.values`), with no `preview`; an unknown field fails with `unknown-field` and a refused value with `invalid-value`. `container` (a reference or an id) gives the density and the drawing mode and direction of a marking in it; without it, density 1 and the canvas's. `size` (`width`/`height`, in units) is the base of the axes that do not follow the content (default: the component's `size`). `follows` says which axes follow the content; with none, `units` is the base and `hint` says `fit_marking` would give `not-fittable`. `pixels` is what `fit_marking` gives with room (no image-edge limit). `approximate` is true when the project has no library font read (the text is measured with the built-in font). Provide `project` + `specId` (the applied copy); `type` is the id (or the name). Read-only.",
+      inputSchema: {
+        project: z.string().describe('Project (name or folder).'),
+        specId: z.string().describe('Id of an applied specialization, see get_project.'),
+        type: z
+          .string()
+          .describe('Id of the annotation type (or the name), see list_components.'),
+        values: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe(
+            "Field values over the type's defaults, as in `create_marking`'s `annotation.values`.",
+          ),
+        container: z
+          .string()
+          .optional()
+          .describe(
+            'Container (reference or id) whose density and drawing options apply. Absent: density 1 and the canvas.',
+          ),
+        size: z
+          .object({
+            width: z.number().positive().optional(),
+            height: z.number().positive().optional(),
+          })
+          .optional()
+          .describe(
+            "The base, in units, for the axes that do not follow the content (default: the component's `size`).",
+          ),
+      },
+      annotations: READ_ONLY,
+    },
+    (args) => respond(() => measureComponent(roots, args)),
   );
 }
