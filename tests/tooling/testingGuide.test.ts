@@ -858,7 +858,7 @@ describe('TR2 — reduced R0 in the retest, visual pass and real time', () => {
   it('the FLOW.md retest message cites the R0 reduced to R0.1', () => {
     const retest = flow.slice(
       flow.indexOf('Retest, after the fix'),
-      flow.indexOf('## Full round in 5 blocks'),
+      flow.indexOf('## Full round in blocks'),
     );
     expect(retest).toMatch(/R0\.1/);
     // TR3 (decision 13): the message spells out the R0, so it does not diverge from the guide.
@@ -992,7 +992,7 @@ describe('TS2 — prompt with the round guide, foreground, state() and grouped r
   it('GL2 — items 1 of the block and group modes cite the guide base and the passo, and the report records what the passo did not give', () => {
     const withConsulta = `${cloud}\n${read('docs/TESTING-NUVEM-CONSULTA.md')}`;
     for (const heading of [
-      '**Mode `modo completo, bloco k de 5`.**',
+      '**Mode `modo completo, bloco k de n`.**',
       '**Mode `modo dirigido, grupo k de n`.**',
     ]) {
       const from = withConsulta.indexOf(heading);
@@ -1110,14 +1110,14 @@ describe('TS2 — prompt with the round guide, foreground, state() and grouped r
   });
 });
 
-describe('full round in 5 blocks (stages #424 and #841)', () => {
+describe('full round in blocks (stages #424 and #841)', () => {
   const cloud = read('docs/TESTING-NUVEM.md');
   const flow = read('docs/FLOW.md');
   const claude = read('docs/PROCESS.md');
   const guide = read('docs/TESTING.md');
 
-  it('the prompt has the "modo completo, bloco k de 5" mode, the whole R0 first and the block round guide', () => {
-    expect(cloud).toContain('run the `modo completo, bloco k de 5`');
+  it('the prompt has the "modo completo, bloco k de n" mode, the whole R0 first and the block round guide', () => {
+    expect(cloud).toContain('run the `modo completo, bloco k de n`');
     expect(cloud).toMatch(/## Full round in blocks/);
     expect(cloud).toMatch(/whole R0/);
     expect(cloud).toMatch(/round guide with them/);
@@ -1125,24 +1125,24 @@ describe('full round in 5 blocks (stages #424 and #841)', () => {
   });
 
   it('the block report: Modo, first line, findings k.n and coordinator notice with the block', () => {
-    expect(cloud).toContain('Modo: completo, bloco k de 5 (<scripts>)');
-    expect(cloud).toContain('Full round — block k of 5');
+    expect(cloud).toContain('Modo: completo, bloco k de n (<scripts>)');
+    expect(cloud).toContain('Full round — block k of n');
     expect(cloud).toMatch(/`k\.1`, `k\.2`/);
     expect(cloud).toMatch(/notice to the coordinator[^\n]*block/i);
     expect(cloud).toMatch(/Part i of n/);
   });
 
   it('the report template (section 10) accepts the block mode and the k.n numbering', () => {
-    expect(guide).toContain('completo, bloco k de 5');
+    expect(guide).toContain('completo, bloco k de n');
     expect(guide).toMatch(/k\.n/);
     expect(guide).toMatch(/TESTING-NUVEM\.md`, "Full round in blocks"/);
   });
 
   it('FLOW.md has the tester message per block, the standalone one and the summary template', () => {
     expect(flow).toMatch(
-      /run the modo completo, bloco <k> de 5\.[^\n]*Branch `[^`]+`, commit `[^`]+`\. Relato na sub-issue #[^\n]+\. Coordenador: `/,
+      /run the modo completo, bloco <k> de <n>\.[^\n]*Branch `[^`]+`, commit `[^`]+`\. Relato na sub-issue #[^\n]+\. Coordenador: `/,
     );
-    expect(flow).toContain('Testador — <target>, bloco <k> de 5');
+    expect(flow).toContain('Testador — <target>, bloco <k> de <n>');
     expect(flow).toContain(
       'Run the full tester round in blocks on branch `<branch>`, commit `<hash>`. Summary and reports in issue #<N>.',
     );
@@ -1161,14 +1161,14 @@ describe('full round in 5 blocks (stages #424 and #841)', () => {
 
   it('FLOW.md: 60 min backup check, 5 notices, retest in a single session and the standalone one opens a bug per ❌', () => {
     expect(flow).toMatch(/60 min/);
-    expect(flow).toMatch(/five notices/i);
+    expect(flow).toMatch(/one notice per block/i);
     expect(flow).toMatch(/a single session/i);
     expect(flow).toMatch(/`bug` issue[^\n]*duplicate/i);
   });
 
-  it('docs/PROCESS.md: the orchestrator creates the 5 sessions when the sub-issue asks for the full round', () => {
-    expect(claude).toMatch(/full round[^\n]*5 sessions/);
-    expect(claude).toContain('bloco k de 5');
+  it('docs/PROCESS.md: the orchestrator creates one session per block when the sub-issue asks for the full round', () => {
+    expect(claude).toMatch(/full round[^\n]*one session per block/);
+    expect(claude).toContain('bloco k de n');
     expect(claude).toMatch(/\bk\.n\b/);
   });
 });

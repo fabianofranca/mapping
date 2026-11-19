@@ -220,18 +220,18 @@ Read `docs/TESTING-NUVEM.md` and run in modo dirigido, grupo <k> de <n>: <script
 
 The retest of a stage is **a single session**, with the findings of **all** the groups or blocks (codes `k.n`, with the link to each one's comment; findings of low severity stay out of the retest, except one the fix did not reproduce) and the steps that the pending-defect fixes affect, in the retest message of "For the tester". It is only split into groups if the list, without R0, goes over 40 steps (same rule as above). If another fix is merged into the epic while the retest has not started yet, it enters the same retest: the commit in the message is the epic's after it, and the steps it affects are added to the list.
 
-## Full round in 5 blocks
+## Full round in blocks
 
-When the **Testador** section of the last phase's sub-issue asks for the full round, the orchestrator (the **coordinator**) creates **five** tester sessions at once, one per block of the table in [`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md) ("Full round in blocks"). Each one uses `list_environments` ("Mapping - testes"), `create_session` with the repository's `source_url`, `source_revision` = `epic/<name>`, the same commit in all five and the title "Testador — <target>, bloco <k> de 5". Message of block `<k>` (1 to 5):
+When the **Testador** section of the last phase's sub-issue asks for the full round, the orchestrator (the **coordinator**) creates one tester session per block at once, one per block of the table in [`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md) ("Full round in blocks"). Each one uses `list_environments` ("Mapping - testes"), `create_session` with the repository's `source_url`, `source_revision` = `epic/<name>`, the same commit in all the blocks and the title "Testador — <target>, bloco <k> de <n>". Message of block `<k>` (1 to `<n>`):
 
 ```text
-Read `docs/TESTING-NUVEM.md` and run the modo completo, bloco <k> de 5. Passada visual: <list from the sub-issue, in block 4; "no bloco 4" in blocks 1, 2, 3 and 5>. Branch `epic/<name>`, commit `<hash>`. Relato na sub-issue #<last phase>. Tag da release: <mcp-v…-rc.n, or "sem R21">. Coordenador: `<coordinator session id>`.
+Read `docs/TESTING-NUVEM.md` and run the modo completo, bloco <k> de <n>. Passada visual: <list from the sub-issue, in block 4; "no bloco 4" in blocks 1, 2, 3, 5 and 6>. Branch `epic/<name>`, commit `<hash>`. Relato na sub-issue #<last phase>. Tag da release: <mcp-v…-rc.n, or "sem R21">. Coordenador: `<coordinator session id>`.
 ```
 
-- **Release tag:** only block 5 has R21; in blocks 1 to 4 the blank is `sem R21`, and in 5 it is the epic's rc (in a round on `main`, the latest stable).
-- **Fallback check:** schedules a 60 min `send_later` and only goes on with the **five notices** (one per block, each citing the block). A block that did not report by then: same as the phase that does not report (**Limits** paragraph of "Orchestrator — step by step").
-- **With the five notices,** it posts the summary (below) in the same sub-issue. The coordinator does not rewrite the reports.
-- **With ❌,** the usual flow: one fix phase with the findings of the five blocks (codes `k.n`, with the link to each one's comment) and the directed retest in a single session ("Retest together"), for the findings `k.n` of all the blocks, in the retest message above.
+- **Release tag:** only block 5 has R21; in blocks 1 to 4 and 6 the blank is `sem R21`, and in 5 it is the epic's rc (in a round on `main`, the latest stable).
+- **Fallback check:** schedules a 60 min `send_later` and only goes on with **one notice per block** (each citing the block). A block that did not report by then: same as the phase that does not report (**Limits** paragraph of "Orchestrator — step by step").
+- **With one notice per block,** it posts the summary (below) in the same sub-issue. The coordinator does not rewrite the reports.
+- **With ❌,** the usual flow: one fix phase with the findings of all the blocks (codes `k.n`, with the link to each one's comment) and the directed retest in a single session ("Retest together"), for the findings `k.n` of all the blocks, in the retest message above.
 
 ### Standalone round (the owner's)
 
@@ -241,11 +241,11 @@ The owner sends this in a Sonnet chat in **Auto** mode:
 Run the full tester round in blocks on branch `<branch>`, commit `<hash>`. Summary and reports in issue #<N>.
 ```
 
-That chat is the coordinator: it creates the five blocks as above (report in issue `#<N>`, coordinator = its own id), waits for the five notices, posts the summary and, for each ❌, opens a `bug` issue with the duplicate search from `docs/PROCESS.md` ("Bugs and visual evidence"), with the severity and the link to the report. It fixes nothing and does not open a fix phase.
+That chat is the coordinator: it creates the blocks as above (report in issue `#<N>`, coordinator = its own id), waits for one notice per block, posts the summary and, for each ❌, opens a `bug` issue with the duplicate search from `docs/PROCESS.md` ("Bugs and visual evidence"), with the severity and the link to the report. It fixes nothing and does not open a fix phase.
 
 ## Summary of the round in blocks
 
-A short comment in the same sub-issue (or issue), after the five notices. In the directed round in groups, the same template applies with "Grupo" in place of "Bloco", the rows of the n groups and the title "Directed round in groups — summary". The **Context** column carries the `ctx` in thousands of the `cost` recorded when the block's (or group's) session was archived and also applies to groups; the **Context:** line lists what went over 300 thousand ([`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md), "Context up to 300 thousand"), without holding up the stage. The coordinator does not rewrite the reports: it only adds up and points to them.
+A short comment in the same sub-issue (or issue), after one notice per block. In the directed round in groups, the same template applies with "Grupo" in place of "Bloco", the rows of the n groups and the title "Directed round in groups — summary". The **Context** column carries the `ctx` in thousands of the `cost` recorded when the block's (or group's) session was archived and also applies to groups; the **Context:** line lists what went over 300 thousand ([`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md), "Context up to 300 thousand"), without holding up the stage. The coordinator does not rewrite the reports: it only adds up and points to them.
 
 ```markdown
 ## Full round in blocks — summary
@@ -259,13 +259,14 @@ Branch `<branch>`, commit `<hash>`.
 | 3     | N   | N   | N            | <min>           | <ctx>k  |
 | 4     | N   | N   | N            | <min>           | <ctx>k  |
 | 5     | N   | N   | N            | <min>           | <ctx>k  |
+| 6     | N   | N   | N            | <min>           | <ctx>k  |
 | Total | N   | N   | N            | <sum of blocks> | —       |
 
 - **Findings by severity:** blocks N, high N, medium N, low N.
   - <k.n> — <title> — <severity> — <comment link>
 - **Context:** above the ceiling (300 thousand): <block or group, ctx> or none.
 - **Time:** sum of the blocks <min>; wall time <min> (from the creation of the first block to the last notice). Each block's times are the ones in the report ("Time per script"); without the data, "time not measured".
-- **Reports:** block 1 <link>, block 2 <link>, block 3 <link>, block 4 <link>, block 5 <link>.
+- **Reports:** block 1 <link>, block 2 <link>, block 3 <link>, block 4 <link>, block 5 <link>, block 6 <link>.
 
 <attribution footer>
 ```

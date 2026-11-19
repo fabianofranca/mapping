@@ -500,7 +500,7 @@ Also counted as a finding: noticeable slowness (more than a second to respond), 
 
 <!-- /roteiros -->
 
-**Full or directed round.** The **full round** runs all the scripts, in the order of "Start here"; it is the gate before use with people. In the cloud it can run in 5 blocks at the same time, each with its report (the split is in `docs/TESTING-NUVEM.md`, "Full round in blocks"). The **directed round** checks a target: the findings of a previous report (the report is a comment on an issue), a list of scripts or the phases of a stage. In all of them, the whole R0 first, then only the steps tied to the target. The directed round's report uses the same template (section 10), with the **Originating finding** column and the **Regressions outside the target** section.
+**Full or directed round.** The **full round** runs all the scripts, in the order of "Start here"; it is the gate before use with people. In the cloud it can run in blocks at the same time, each with its report (the split is in `docs/TESTING-NUVEM.md`, "Full round in blocks"). The **directed round** checks a target: the findings of a previous report (the report is a comment on an issue), a list of scripts or the phases of a stage. In all of them, the whole R0 first, then only the steps tied to the target. The directed round's report uses the same template (section 10), with the **Originating finding** column and the **Regressions outside the target** section.
 
 ### R0 — Setup and smoke test
 
@@ -2967,12 +2967,12 @@ For those who maintain the project, after a full round with no high or medium fi
 
 ### Round report
 
-One template only, for the full round, the directed one and the advanced test. Whoever tests through an agent saves `relato.md` in the working folder and delivers it as a comment on the sub-issue of the tested phase (the comment is this template; see `docs/TESTING-NUVEM.md`). In the directed round, use the **Source finding** column and the **Regressions outside the target** section; in the others, delete them. In the `modo completo, bloco k de 5` ("full round in blocks") mode, the comment's first line is "Full round — block k of 5" and the findings carry the code `k.n` (block k, finding n). The header's first line is `Modo: completo, bloco k de 5 (<scripts>)` in block mode and `Modo: dirigido, grupo k de n (<scripts>)` in group mode, as in `docs/TESTING-NUVEM.md`.
+One template only, for the full round, the directed one and the advanced test. Whoever tests through an agent saves `relato.md` in the working folder and delivers it as a comment on the sub-issue of the tested phase (the comment is this template; see `docs/TESTING-NUVEM.md`). In the directed round, use the **Source finding** column and the **Regressions outside the target** section; in the others, delete them. In the `modo completo, bloco k de n` ("full round in blocks") mode, the comment's first line is "Full round — block k of 5" and the findings carry the code `k.n` (block k, finding n). The header's first line is `Modo: completo, bloco k de n (<scripts>)` in block mode and `Modo: dirigido, grupo k de n (<scripts>)` in group mode, as in `docs/TESTING-NUVEM.md`.
 
 ```markdown
 # Test report — Mapping
 
-- Mode: full | full, block k of 5 (<test scripts of the block>) | directed — <target: findings of a report, list of steps or phases of a plan> | advanced
+- Mode: full | full, block k of n (<test scripts of the block>) | directed — <target: findings of a report, list of steps or phases of a plan> | advanced
 - Build id: abc1234 · YYYY-MM-DD
 - Channel (as the app shows it): stable | preview
 - How it was opened: main version | preview | standalone index.html (file://) | installed app

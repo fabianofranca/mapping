@@ -380,7 +380,7 @@ describe('CM1 — flow texts that use the measure (decisions 5 to 10)', () => {
     expect(notice).toContain('`; contexto sem medida (<reason>)`');
     expect(notice).toContain('19min32s; `contexto ');
     expect(notice).toMatch(/Grupo 2 de 3: [^"]*; `contexto \d+ mil`"/);
-    expect(notice).toMatch(/Bloco 2 de 5: [^"]*; `contexto \d+ mil`"/);
+    expect(notice).toMatch(/Bloco 2 de 6: [^"]*; `contexto \d+ mil`"/);
   });
 
   const perStage = section(queue, '## 3. Per stage');
