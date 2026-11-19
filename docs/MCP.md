@@ -260,6 +260,14 @@ node tools/mapping-signature.mjs --help
 - **Reading.** `get_project` returns `drawingMode` (`null` without a mode) and, in each container, the pinned one and the `effectiveDrawingMode`; `get_container` likewise; `list_markings` carries `effectiveDrawingMode` on each row. The effective one is the container's, else the project's, else the first mode declared in `tokens.modes` by the specializations, else `null`.
 - **Proposals.** The mode change becomes the `project` entity (and the container's `drawingMode` field) in the proposal, which is then written in `formatVersion` 6 (`docs/PROPOSAL-FORMAT.md`); proposals without the mode stay on 4 (creation) and 5 (revision).
 
+### Component node (stage #2093, 0.48.0)
+
+The component format 4 gains the `component` node (another component of the same library, with `values` and `provide`; no new `formatVersion`). The tools do not change.
+
+- **`validate_library`** checks the node at levels 1 and 2, at the node's path in the component file: `the type "<id>" does not exist in the specialization`, `the type "<id>" has no component`, `the component of the type "<id>" has a slot and cannot be drawn by a component node`, `the component of the type "<id>" draws in screen pixels and cannot be drawn by a component node`, `the type "<id>" has no field "<key>"`, `required field missing in values: <key>`, `"<value>" is not an option of the field "<key>"`, `the table field "<key>" only accepts { "$field": … } of a table field`, `the ref field "<key>" cannot be given in values` and `component cycle: a → b → a`. In a `formatVersion` 1 to 3 component the node is `only allowed with formatVersion 4`.
+- **Reads:** `list_components` and `get_component` read format 4 files with the node. Drawing it comes in the next phase of the stage.
+- **Update the MCP first:** a version earlier than 0.48.0 rejects the unknown node type at its path; update it before opening a library that uses the node. See `COMPONENT-FORMAT.md`, "`component`".
+
 ### Fonts with GSUB the server cannot apply (stage #2089, 0.47.0)
 
 A library font never makes the server fail. `opentype.js` 2.0.0 applies only some glyph-substitution (GSUB) subtables (single 1.1 and 1.2, multiple 2.1, ligature 4.1, context 5.1 and 5.3, chaining 6.3) and threw `internal-error` (`substitutionType : 62 lookupType: 6 - substFormat: 2 is not yet supported`) on the rest (Inter and Citrina have them). The schema and the formats do not change.

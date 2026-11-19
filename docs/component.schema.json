@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/component.schema.json",
   "title": "Mapping — component (mapping-component, formatVersion 1, 2, 3 and 4)",
-  "description": "Validates only the structure of the component file. The source of truth is the code (src/model/components/parseComponent.ts), which also checks what the schema does not see: fields cited by the expressions that exist in the specialization's type, minSize not greater than size, the template root being required to be of type frame, the single slot, and the drawing proof. See COMPONENT-FORMAT.md. The repeat node (the drawn table) is valid from formatVersion 2: in formatVersion 1 it is a parseComponent error; the repeat cannot have a repeat or slot inside it, and the schema does not check that the cited field is a table of the type. The image node (remote image) exists only in formatVersion 3: in a 1 or 2 it is a parseComponent error; the schema checks that src is an https:// literal or exactly {\"$field\"}, but not that the bound field is of type string nor the full shape of the URL (no username and password, up to 2048 characters). formatVersion 4 adds rotation (any node except the root, which the schema does not check: that is parseComponent's job; degrees, clockwise, around the center of the box, drawing only), stroke.cap, stroke.join and stroke.sides, minWidth, maxWidth, minHeight and maxHeight (any node), repeat.distribute and an expression in width, height, layout.type, layout.align and layout.justify (in a lower version it is a parseComponent error; the literal in those five keys is valid in all versions). The schema does not check that minWidth is not greater than maxWidth. formatVersion 4 also adds stroke.offset (frame, rect and ellipse), stroke.dash by expression, $token in shadow.x, shadow.y and shadow.blur and in each item of cornerRadius and of stroke.dash, layout.justify space-around and space-evenly, layout.reverse and alpha in the color $token (the schema does not check the version nor the type of the position: that is parseComponent's job). formatVersion 4 also adds stroke.gap (frame and rect, without sides; the cited node must exist in the template, which the schema does not check), shadow as a list of 1 to 4 shadows and shadow.spread (the schema does not check the version: that is parseComponent's job). formatVersion 4 also adds font.align justify, over in the color $token (the color composited over another, opaque) and the image fit values fill-width, fill-height, scale-down and none (the schema does not check the version nor the position: that is parseComponent's job). formatVersion 4 also accepts { \"$token\": \"name\" } where a color, number or font family is expected (the schema leaves the expression in keys of a compatible type, but does not check the position nor that the token exists in the specialization's tokens: that is the job of parseComponent and validate_library). formatVersion 4 also adds layout.wrap, layout.lineGap, layout.maxPerLine and layout.maxLines (frame and slot) and wrap, lineGap, maxPerLine and maxLines in the repeat (the row break; the schema does not check the version nor that lineGap, maxPerLine and maxLines are valid only with wrap: that is parseComponent's job). formatVersion 4 also adds align and justify in the none layout (start, center, end or stretch, literal or expression), clip on the slot and clip of the frame by expression (the schema does not check the version: that is parseComponent's job). formatVersion 4 also adds provide on the slot (name → text or number expression, resolved in the parent) and { \"$provided\": \"name\", \"default\": … } in expressions (the color inherited from the nearest ancestor that offers the name; valid only in a color position, which the schema does not check; the schema does not check the version nor the src of the image, which remains only literal or $field: that is parseComponent's job). formatVersion 4 also adds variables: let on the frame (name → expression, valid in the frame and in the descendants) and { \"$var\": \"name\" } where an expression or condition is valid (the schema checks the name and the shape, not that the variable exists, the cycle, nor the type of the content at the place of use: that is parseComponent's job).",
+  "description": "Validates only the structure of the component file. The source of truth is the code (src/model/components/parseComponent.ts), which also checks what the schema does not see: fields cited by the expressions that exist in the specialization's type, minSize not greater than size, the template root being required to be of type frame, the single slot, and the drawing proof. See COMPONENT-FORMAT.md. The repeat node (the drawn table) is valid from formatVersion 2: in formatVersion 1 it is a parseComponent error; the repeat cannot have a repeat or slot inside it, and the schema does not check that the cited field is a table of the type. The image node (remote image) exists only in formatVersion 3: in a 1 or 2 it is a parseComponent error; the schema checks that src is an https:// literal or exactly {\"$field\"}, but not that the bound field is of type string nor the full shape of the URL (no username and password, up to 2048 characters). formatVersion 4 adds rotation (any node except the root, which the schema does not check: that is parseComponent's job; degrees, clockwise, around the center of the box, drawing only), stroke.cap, stroke.join and stroke.sides, minWidth, maxWidth, minHeight and maxHeight (any node), repeat.distribute and an expression in width, height, layout.type, layout.align and layout.justify (in a lower version it is a parseComponent error; the literal in those five keys is valid in all versions). The schema does not check that minWidth is not greater than maxWidth. formatVersion 4 also adds stroke.offset (frame, rect and ellipse), stroke.dash by expression, $token in shadow.x, shadow.y and shadow.blur and in each item of cornerRadius and of stroke.dash, layout.justify space-around and space-evenly, layout.reverse and alpha in the color $token (the schema does not check the version nor the type of the position: that is parseComponent's job). formatVersion 4 also adds stroke.gap (frame and rect, without sides; the cited node must exist in the template, which the schema does not check), shadow as a list of 1 to 4 shadows and shadow.spread (the schema does not check the version: that is parseComponent's job). formatVersion 4 also adds font.align justify, over in the color $token (the color composited over another, opaque) and the image fit values fill-width, fill-height, scale-down and none (the schema does not check the version nor the position: that is parseComponent's job). formatVersion 4 also accepts { \"$token\": \"name\" } where a color, number or font family is expected (the schema leaves the expression in keys of a compatible type, but does not check the position nor that the token exists in the specialization's tokens: that is the job of parseComponent and validate_library). formatVersion 4 also adds layout.wrap, layout.lineGap, layout.maxPerLine and layout.maxLines (frame and slot) and wrap, lineGap, maxPerLine and maxLines in the repeat (the row break; the schema does not check the version nor that lineGap, maxPerLine and maxLines are valid only with wrap: that is parseComponent's job). formatVersion 4 also adds align and justify in the none layout (start, center, end or stretch, literal or expression), clip on the slot and clip of the frame by expression (the schema does not check the version: that is parseComponent's job). formatVersion 4 also adds provide on the slot (name → text or number expression, resolved in the parent) and { \"$provided\": \"name\", \"default\": … } in expressions (the color inherited from the nearest ancestor that offers the name; valid only in a color position, which the schema does not check; the schema does not check the version nor the src of the image, which remains only literal or $field: that is parseComponent's job). formatVersion 4 also adds variables: let on the frame (name → expression, valid in the frame and in the descendants) and { \"$var\": \"name\" } where an expression or condition is valid (the schema checks the name and the shape, not that the variable exists, the cycle, nor the type of the content at the place of use: that is parseComponent's job). formatVersion 4 also adds the component node (another component of the library, with values and provide; the schema checks only the shape: the type, its fields, a slot or screen in the inner component and cycles are validate_library's job; in a lower version it is a parseComponent error).",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "size", "template"],
@@ -57,14 +57,22 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "side": { "enum": ["top", "bottom", "start", "end"] },
-        "align": { "enum": ["start", "center", "end"] },
+        "side": {
+          "enum": ["top", "bottom", "start", "end"]
+        },
+        "align": {
+          "enum": ["start", "center", "end"]
+        },
         "offset": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "main": { "type": "number" },
-            "cross": { "type": "number" }
+            "main": {
+              "type": "number"
+            },
+            "cross": {
+              "type": "number"
+            }
           },
           "description": "In component units (the container's density converts them to pixels). When absent they are 0."
         }
@@ -3131,11 +3139,7 @@
           "$ref": "#/$defs/expr_boolean"
         },
         "provide": {
-          "description": "Colors or values that the slot offers to the child markings (formatVersion 4): free, non-empty name (the schema does not check the empty name: that is parseComponent's job) → text or number expression, resolved in the parent. Only on the slot. The child reads with { \"$provided\": \"name\", \"default\": … }.",
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/$defs/provide_value"
-          }
+          "$ref": "#/$defs/provide"
         }
       }
     },
@@ -3168,6 +3172,9 @@
         },
         {
           "$ref": "#/$defs/node_icon"
+        },
+        {
+          "$ref": "#/$defs/node_component"
         }
       ]
     },
@@ -4693,6 +4700,98 @@
         "$var": {
           "type": "string",
           "pattern": "^[a-z][a-zA-Z0-9]*$"
+        }
+      }
+    },
+    "provide": {
+      "description": "Colors or values that the slot offers to the child markings (formatVersion 4): free, non-empty name (the schema does not check the empty name: that is parseComponent's job) → text or number expression, resolved in the parent. Only on the slot. The child reads with { \"$provided\": \"name\", \"default\": … }.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/provide_value"
+      }
+    },
+    "node_component": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "formatVersion 4. Draws another component of the same library with the given field values (drawn by the engine). Accepts no fill, stroke, shadow, cornerRadius or children: the drawing is the inner component's. The schema checks only the shape; the type, its fields, a slot or screen in the inner component and cycles are checked by validate_library.",
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "const": "component"
+        },
+        "id": {
+          "description": "Annotation type id of the same specialization that has a component (the type pattern). The type's fields are the ones values fills.",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "values": {
+          "description": "Inner field key → literal (text, number, null) or expression evaluated in the OUTER scope. A table field accepts only { \"$field\": outer table field }; a ref field cannot be given. The schema does not check that the keys belong to the type: that is validate_library's job.",
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/expr_textOrNumber"
+              },
+              {
+                "$ref": "#/$defs/expr_boolean"
+              },
+              {
+                "$ref": "#/$defs/expr_color"
+              }
+            ]
+          }
+        },
+        "provide": {
+          "description": "Values that the node offers to the inner component's $provided (formatVersion 4), on top of the outer scope; resolved in the OUTER scope, same rules as the slot's provide.",
+          "$ref": "#/$defs/provide"
+        },
+        "visible": {
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "opacity": {
+          "$ref": "#/$defs/expr_unit"
+        },
+        "rotation": {
+          "$ref": "#/$defs/expr_number"
+        },
+        "direction": {
+          "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
+          "enum": ["ltr", "rtl"]
+        },
+        "width": {
+          "$ref": "#/$defs/expr_size"
+        },
+        "height": {
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "span": {
+          "description": "formatVersion 4: how many tracks the child occupies in a grid (integer greater than or equal to 1, default 1); the literal is valid only on a child of a grid layout, which the schema does not check: that is parseComponent's job.",
+          "$ref": "#/$defs/expr_positiveInteger"
+        },
+        "weight": {
+          "description": "formatVersion 4: weight of the fill child on the main axis of row or column (number greater than 0, default 1); what is left over is divided in proportion to the weights. The literal is valid only on a fill child on the main axis, which the schema does not check: that is parseComponent's job.",
+          "$ref": "#/$defs/expr_positiveNumber"
+        },
+        "anchors": {
+          "$ref": "#/$defs/anchors"
         }
       }
     }
