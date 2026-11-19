@@ -421,6 +421,33 @@ describe('invalid set: part of a group that changes page', () => {
       expect(applyAccepted(base, onlyA, AT).ok).toBe(false);
     });
 
+    it('a created marking anchored to a target that stays on another page is blocked', () => {
+      const base = anchorBase();
+      let after = createMarking(base, {
+        id: 'N',
+        containerId: null,
+        rect: rect(7000, 100, 300, 300),
+      });
+      after = setMarkingAnchor(after, 'N', { to: 'A', side: 'end' });
+      after = moveRootsToPage(after, ['A', 'B', 'N'], 'PG2');
+      const proposal = propose(base, after);
+      const created = proposal.changes.find(
+        (c) => c.entity === 'marking' && c.entityId === 'N' && c.kind === 'create',
+      );
+      expect(created).toBeDefined();
+      const onlyN = decided(
+        proposal,
+        base,
+        { level: 'change', id: created?.id ?? '' },
+        'accepted',
+      );
+      const check = validateAccepted(base, onlyN);
+      const issue = check.issues.find((i) => i.code === 'page-anchor-crossing');
+      expect(issue?.id).toBe('N');
+      expect(issue?.otherId).toBe('A');
+      expect(check.ok).toBe(false);
+    });
+
     it('deleting the anchored marking (no page change) is not an anchor problem', () => {
       const base = anchorBase();
       const proposal = propose(base, removeMarking(base, 'B'));

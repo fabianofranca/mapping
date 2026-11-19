@@ -699,7 +699,14 @@ function meantAnchors(project: Project, pending: readonly Change[]): Map<string,
   const meant = new Map<string, string>();
   for (const m of project.markings) if (m.anchor) meant.set(m.id, m.anchor.to);
   for (const c of pending) {
-    if (c.entity !== 'marking' || c.field !== 'anchor') continue;
+    if (c.entity !== 'marking') continue;
+    if (c.kind === 'create') {
+      // A created marking carries its anchor inside the whole value.
+      const to = isRecord(c.to) && isRecord(c.to.anchor) ? c.to.anchor.to : undefined;
+      if (typeof to === 'string') meant.set(c.entityId, to);
+      continue;
+    }
+    if (c.field !== 'anchor') continue;
     const target = isRecord(c.to) ? c.to.to : undefined;
     if (typeof target === 'string') meant.set(c.entityId, target);
     else meant.delete(c.entityId);
