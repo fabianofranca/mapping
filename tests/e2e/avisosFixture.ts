@@ -43,6 +43,7 @@ export async function avisosZip(): Promise<Buffer> {
   const rows = [
     ['M1', 'Card', 'card', 40],
     ['M2', 'Simple', 'simple', 300],
+    ['M3', 'Legacy', 'legacy', 560],
   ] as const;
   for (const [id, name, typeId, y] of rows) {
     p = createMarking(p, {

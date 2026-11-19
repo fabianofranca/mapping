@@ -47,16 +47,22 @@ export function IncompleteView({ onGoToAnnotation }: IncompleteViewProps) {
           >
             <thead>
               <tr>
-                <th scope="col" class="list-col-marking">
+                <th scope="col" class="list-col-marking" title={t('list.col.marking')}>
                   {t('list.col.marking')}
                 </th>
-                <th scope="col" class="list-col-layer">
+                <th scope="col" class="list-col-layer" title={t('list.col.layer')}>
                   {t('list.col.layer')}
                 </th>
-                <th scope="col" class="list-col-annotation">
+                <th
+                  scope="col"
+                  class="list-col-annotation"
+                  title={t('list.col.annotation')}
+                >
                   {t('list.col.annotation')}
                 </th>
-                <th scope="col">{t('incomplete.col.reasons')}</th>
+                <th scope="col" title={t('incomplete.col.reasons')}>
+                  {t('incomplete.col.reasons')}
+                </th>
               </tr>
             </thead>
             {list.map(({ image, items }) => (
@@ -86,6 +92,10 @@ export function IncompleteView({ onGoToAnnotation }: IncompleteViewProps) {
                           })}
                           arrow={arrow !== undefined}
                         />
+                        {/* Narrow bottom window: the Layer column is hidden and the layer goes here. */}
+                        <div class="incomplete-layer-line">
+                          <LayerCell layer={layer} />
+                        </div>
                       </td>
                       <td
                         class="list-cell list-cell-layer"

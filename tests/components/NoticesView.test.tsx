@@ -53,6 +53,20 @@ describe('Notices window', () => {
     expect(head(0)).toContain(t('notices.count', { count: 1 }));
   });
 
+  it('the headers carry their full text as a title and the filters sit in their own wrapper', () => {
+    const harness = createHarness(noticeProject());
+    withContext(harness, <NoticesView onGoToAnnotation={vi.fn()} />);
+    const table = screen.getByRole('table', { name: t('notices.title') });
+    const heads = [...table.querySelectorAll('thead th')];
+    expect(heads).toHaveLength(4);
+    for (const th of heads) expect(th.getAttribute('title')).toBe(th.textContent);
+    expect(table.classList.contains('notices-table')).toBe(true);
+    expect(document.querySelector('.notices-kinds .segmented')).toBeTruthy();
+    // Annotation cells break at spaces: the shared class, not an `anywhere` rule per cell.
+    const cell = table.querySelector('.list-row .notices-cell');
+    expect(cell).toBeTruthy();
+  });
+
   it('each row carries marking, layer, annotation and the value in the field', () => {
     const harness = createHarness(noticeProject());
     withContext(harness, <NoticesView onGoToAnnotation={vi.fn()} />);

@@ -43,7 +43,9 @@ export function LayerCell({ layer }: { readonly layer: Layer }) {
   return (
     <span class="list-layer-tag" style={{ '--layer-color': layer.color }}>
       <span class="layer-dot" aria-hidden="true" />
-      <span class="list-layer-name">{layer.name}</span>
+      <span class="list-layer-name" title={layer.name}>
+        {layer.name}
+      </span>
     </span>
   );
 }

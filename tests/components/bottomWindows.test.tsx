@@ -125,6 +125,23 @@ describe('List: link by role (stage #559, PD4)', () => {
 });
 
 describe('Incomplete (B5)', () => {
+  it('has the layer line in the Marking cell, titled headers and a titled layer name', () => {
+    const harness = createHarness(cadastroProject());
+    withContext(harness, <IncompleteView onGoToAnnotation={vi.fn()} />);
+    const table = screen.getByRole('table', { name: t('incomplete.title') });
+    const markingCell = table.querySelector('.list-cell-marking');
+    const line = markingCell?.querySelector('.incomplete-layer-line');
+    expect(line).toBeTruthy();
+    const name = line?.querySelector('.list-layer-name');
+    expect(name?.getAttribute('title')).toBe(name?.textContent);
+    const heads = Array.from(table.querySelectorAll('thead th'));
+    expect(heads.length).toBe(4);
+    for (const th of heads) expect(th.getAttribute('title')).toBe(th.textContent);
+    expect(
+      table.querySelector('.list-cell-layer .list-layer-name')?.getAttribute('title'),
+    ).toBeTruthy();
+  });
+
   it('lists the pending items per image, with the reasons', () => {
     const harness = createHarness(cadastroProject());
     withContext(harness, <IncompleteView onGoToAnnotation={vi.fn()} />);
@@ -232,9 +249,46 @@ describe('bottom window: tabs and strip', () => {
     );
     const count = harness.context.derived.incompleteCount.value;
     expect(count).toBeGreaterThan(0);
+    const tab = screen.getByRole('tab', { name: `${t('incomplete.title')} ${count}` });
+    expect(tab).toBeTruthy();
+    // The counter is decoration for the accessibility tree: the name already carries it.
+    expect(tab.querySelector('.tab-badge')?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('a tab without a counter keeps its name from the content', () => {
+    const harness = createHarness(sampleProject());
+    showToolWindow('list');
+    withContext(
+      harness,
+      <ToolWindow id="list">
+        <p>content</p>
+      </ToolWindow>,
+    );
     expect(
-      screen.getByRole('tab', { name: new RegExp(`${t('incomplete.title')}${count}`) }),
-    ).toBeTruthy();
+      screen.getByRole('tab', { name: t('view.list') }).hasAttribute('aria-label'),
+    ).toBe(false);
+  });
+
+  it('Notices and Diagnostics render the label in .tab-label and an icon (compact)', () => {
+    const harness = createHarness(sampleProject());
+    showToolWindow('list');
+    withContext(
+      harness,
+      <ToolWindow id="list">
+        <p>content</p>
+      </ToolWindow>,
+    );
+    for (const title of [t('notices.title'), t('diagnostics.title')]) {
+      const tab = screen
+        .getAllByRole('tab')
+        .find((el) => (el.getAttribute('aria-label') ?? el.textContent) === title)!;
+      expect(tab.querySelector('.tab-label')?.textContent).toBe(title);
+      expect(tab.querySelector('svg.icon')).toBeTruthy();
+      expect(tab.getAttribute('aria-label')).toBe(title);
+    }
+    // List keeps no icon.
+    const list = screen.getByRole('tab', { name: t('view.list') });
+    expect(list.querySelector('svg.icon')).toBeNull();
   });
 
   it('a new error lights the dot on the strip and the tab; viewing the window clears it', async () => {
