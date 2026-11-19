@@ -736,6 +736,8 @@ describe('CH1 — the "Session switch" section of the implementar-fila skill (de
     expect(newSkill).toContain("hook's notice");
     expect(newSkill).toContain('skip this check entirely');
     expect(newSkill).toContain('the successor reads the new skill');
+    // With no room in the lineage there is no successor to read it: the check stays.
+    expect(newSkill).toContain('with room in the lineage');
   });
 });
 
