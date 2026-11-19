@@ -24,9 +24,14 @@ import {
   addTypedAnnotation,
   applySpecialization,
   checkSpecApply,
+  addComponentMarking,
+  createDrawingCache,
   createMarking,
   drawingValues,
   getAnnotationIssues,
+  moveContainer,
+  moveMarking,
+  setContainerDensity,
   setFieldValue,
   setTableCell,
   specializationUpdateImpact,
@@ -35,6 +40,7 @@ import {
   type Spec,
 } from '../../src/model';
 import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
+import { fitComponentSize } from '../../src/model/components/sizing';
 import type { FrameNode, SceneNode, TextNode } from '../../src/model/components/scene';
 import { buildCatalog, drawEntry, findEntry } from '../../src/model/catalog';
 import { notesCatalog, notesProject } from './notesFixtures';
@@ -88,16 +94,16 @@ describe('package libraries/notas', () => {
     // The `minSize` (160 × 96) fits the `preview` and the example with short text.
     expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
-    expect(report.summary).toMatchObject({ level: 3, types: 2, components: 2, docs: 2 });
+    expect(report.summary).toMatchObject({ level: 3, types: 3, components: 3, docs: 3 });
   });
 
-  it('the specialization is formatVersion 7, version 3, with the floating note and table and with a component', () => {
+  it('the specialization is formatVersion 7, version 5, with the floating note and table, the plain text and a component each', () => {
     const parsed = parseSpecText(NOTES_FILES.get(NOTES_SPEC_FILE) ?? '');
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.spec.formatVersion).toBe(7);
     expect(parsed.spec.id).toBe('notas');
-    expect(parsed.spec.version).toBe(4);
+    expect(parsed.spec.version).toBe(5);
     const [layer] = parsed.spec.layers;
     expect(layer?.name).toBe('Notes');
     const [type, table] = layer?.annotationTypes ?? [];
@@ -150,7 +156,7 @@ describe('applyBundledLibrary', () => {
     expect(applied.project.specializations).toEqual([
       expect.objectContaining({
         id: 'notas',
-        version: 4,
+        version: 5,
         file: 'specs/notas/notas.spec.json',
       }),
     ]);
@@ -162,8 +168,10 @@ describe('applyBundledLibrary', () => {
     expect([...applied.packageFiles.keys()].sort()).toEqual([
       'components/nota.json',
       'components/tabela.json',
+      'components/texto.json',
       'docs/nota.md',
       'docs/tabela.md',
+      'docs/texto.md',
     ]);
   });
 
@@ -178,8 +186,10 @@ describe('applyBundledLibrary', () => {
     expect([...files.keys()].sort()).toEqual([
       'specs/notas/components/nota.json',
       'specs/notas/components/tabela.json',
+      'specs/notas/components/texto.json',
       'specs/notas/docs/nota.md',
       'specs/notas/docs/tabela.md',
+      'specs/notas/docs/texto.md',
       'specs/notas/notas.spec.json',
     ]);
     expect(JSON.parse(files.get('specs/notas/notas.spec.json') ?? '{}')).toMatchObject({
@@ -202,7 +212,9 @@ function notesV1(): Spec {
   if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
   const layers = parsed.spec.layers.map((layer) => ({
     ...layer,
-    annotationTypes: layer.annotationTypes.filter((t) => t.id !== 'tabela'),
+    annotationTypes: layer.annotationTypes.filter(
+      (t) => t.id !== 'tabela' && t.id !== 'texto',
+    ),
   }));
   return { ...parsed.spec, version: 1, layers };
 }
@@ -255,7 +267,7 @@ describe('update of the notes library from version 1 to 2', () => {
   it('updates: the version goes up, the note stays as it was and the Tabela starts to exist', () => {
     const p = withV1();
     const next = updateSpecialization(p, notesV2(), { newId: () => 'X' });
-    expect(next.specializations[0]).toMatchObject({ id: NOTES_ID, version: 4 });
+    expect(next.specializations[0]).toMatchObject({ id: NOTES_ID, version: 5 });
     expect(next.layers.map((l) => l.id)).toEqual(p.layers.map((l) => l.id));
     expect(next.annotations.find((a) => a.id === 'AN1')).toEqual(
       p.annotations.find((a) => a.id === 'AN1'),
@@ -456,5 +468,304 @@ describe('Catalog with the Tabela', () => {
     expect(findEntry(catalog, 'nota')?.previewValues?.texto).toBe(
       'Write your comment here.',
     );
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// The Text type (version 5): plain text, a non-floating type with a component.
+
+describe('Texto type: the specialization', () => {
+  it('the package lists the 7 files of the folder', () => {
+    expect([...NOTES_FILES.keys()].sort()).toEqual([
+      'components/nota.json',
+      'components/tabela.json',
+      'components/texto.json',
+      'docs/nota.md',
+      'docs/tabela.md',
+      'docs/texto.md',
+      'notas.spec.json',
+    ]);
+  });
+
+  it('is not floating, its label is the text, and the fields and options are those of the decision', () => {
+    const type = notesV2().layers[0]!.annotationTypes.find((t) => t.id === 'texto')!;
+    expect(type.floating).toBeUndefined();
+    expect(type).toMatchObject({
+      id: 'texto',
+      name: 'Text',
+      labelField: 'texto',
+      component: 'components/texto.json',
+      doc: 'docs/texto.md',
+    });
+    expect(type.fields.map((f) => f.key)).toEqual([
+      'texto',
+      'tamanho',
+      'peso',
+      'cor',
+      'largura',
+    ]);
+    const field = (key: string) => type.fields.find((f) => f.key === key)!;
+    expect(field('texto')).toMatchObject({ type: 'string', required: true });
+    expect(field('tamanho')).toMatchObject({ type: 'number' });
+    expect(field('cor')).toMatchObject({ type: 'string' });
+    for (const key of ['tamanho', 'peso', 'cor', 'largura']) {
+      expect(field(key).required, key).toBeUndefined();
+      expect('default' in field(key), key).toBe(false);
+    }
+    const options = (key: string) => (field(key) as { options?: string[] }).options;
+    expect(field('peso').type).toBe('enum');
+    expect(options('peso')).toEqual(['regular', 'medium', 'semibold', 'bold']);
+    expect(field('largura').type).toBe('enum');
+    expect(options('largura')).toEqual(['auto', 'fixa']);
+    expect(type.examples).toEqual([
+      {
+        name: 'Column label',
+        values: { texto: 'enabled', tamanho: 12, cor: '#49454F' },
+      },
+    ]);
+  });
+
+  it('the component preview has only the text', () => {
+    const component = JSON.parse(NOTES_FILES.get('components/texto.json') ?? '{}') as {
+      formatVersion: number;
+      preview: Record<string, unknown>;
+    };
+    expect(component.formatVersion).toBe(4);
+    expect(component.preview).toEqual({ texto: 'Text' });
+  });
+});
+
+describe('Texto type: the drawing and the fit', () => {
+  const catalog = notesCatalog();
+  const component = catalog.get(NOTES_ID)!.byType.get('texto')!;
+  const type = notesV2().layers[0]!.annotationTypes.find((t) => t.id === 'texto')!;
+  const measure = { measure: approximateMeasurer };
+
+  function textProject(values: Record<string, string | number>): Project {
+    const p = addComponentMarking(
+      notesProject(),
+      catalog,
+      {
+        markingId: 'X1',
+        annotationId: 'AX1',
+        containerId: null,
+        parentId: null,
+        specId: NOTES_ID,
+        typeId: 'texto',
+        rect: { x: 0, y: 0, width: 200, height: 40 },
+        values,
+      },
+      approximateMeasurer,
+    );
+    return p;
+  }
+
+  function drawnText(values: Record<string, string | number>): TextNode {
+    const p = textProject(values);
+    const annotation = p.annotations.find((a) => a.id === 'AX1')!;
+    const drawn = drawingValues(p, annotation, type).values;
+    const { root, warnings } = instantiate(
+      component,
+      drawn,
+      { x: 0, y: 0, width: 200, height: 40 },
+      measure,
+    );
+    expect(warnings).toEqual([]);
+    const [node] = collectTexts(root);
+    return node!.node;
+  }
+
+  const fit = (
+    values: Record<string, string | number>,
+    base?: { width: number; height: number },
+  ) =>
+    fitComponentSize(component, values as never, measure, base ? { base } : {}) as {
+      width: number;
+      height: number;
+    };
+
+  it('the component is a bare frame: no fill, border, shadow or padding', () => {
+    const { root } = instantiate(
+      component,
+      { texto: 'Hello' },
+      { x: 0, y: 0, width: 120, height: 20 },
+      measure,
+    );
+    expect(root.fills).toEqual([]);
+    expect(root.stroke).toBeUndefined();
+    expect(root.effects).toEqual([]);
+  });
+
+  it('auto: the box fits one line of the text', () => {
+    const one = fit({ texto: 'enabled' });
+    const measured = approximateMeasurer(
+      'enabled',
+      {
+        family: '',
+        size: 14,
+        weight: 400,
+        lineHeight: undefined,
+        letterSpacing: 0,
+      } as never,
+      undefined,
+    );
+    expect(one.width).toBe(Math.ceil(measured.width - 1e-6));
+    expect(one.height).toBeGreaterThan(0);
+  });
+
+  it('auto: two typed lines fit two lines, as wide as the longer one', () => {
+    const one = fit({ texto: 'Line 1' });
+    const two = fit({ texto: 'Line 1\nLine 2' });
+    expect(two.width).toBe(one.width);
+    expect(Math.abs(two.height - 2 * one.height)).toBeLessThanOrEqual(1);
+    const uneven = fit({ texto: 'Hi\nA longer line' });
+    expect(uneven.width).toBe(fit({ texto: 'A longer line' }).width);
+  });
+
+  it('auto: a long text does not wrap by itself', () => {
+    const long = 'a long text that would wrap at any narrow width of the marking';
+    const fitted = fit({ texto: long }, { width: 60, height: 20 });
+    expect(fitted.width).toBeGreaterThan(60);
+    expect(fitted.height).toBe(fit({ texto: 'x' }).height);
+  });
+
+  it('fixa: the width stays and the height follows the wrapped lines', () => {
+    const long = 'a long text that wraps at the width of the marking when it is fixed';
+    const fitted = fit({ texto: long, largura: 'fixa' }, { width: 100, height: 20 });
+    expect(fitted.width).toBe(100);
+    expect(fitted.height).toBeGreaterThan(fit({ texto: 'x' }).height * 2);
+    const wider = fit({ texto: long, largura: 'fixa' }, { width: 400, height: 20 });
+    expect(wider.width).toBe(400);
+    expect(wider.height).toBeLessThan(fitted.height);
+  });
+
+  it('draws the size and the weight written', () => {
+    const node = drawnText({ texto: 'Title', tamanho: 20, peso: 'bold' });
+    expect(node.style.fontSize).toBe(20);
+    expect(node.style.fontWeight).toBe(700);
+  });
+
+  it('the weights are 400, 500, 600 and 700', () => {
+    const weights = ['regular', 'medium', 'semibold', 'bold'].map(
+      (peso) => drawnText({ texto: 'T', peso }).style.fontWeight,
+    );
+    expect(weights).toEqual([400, 500, 600, 700]);
+  });
+
+  it('empty fields draw 14, 400 and #1F1F1F, with no wrap', () => {
+    const node = drawnText({ texto: 'Plain' });
+    expect(node.style.fontSize).toBe(14);
+    expect(node.style.fontWeight).toBe(400);
+    expect(node.fills).toEqual([{ type: 'solid', color: '#1F1F1F' }]);
+    expect(node.style.wrap).toBe('none');
+  });
+
+  it('the color written is the one drawn, and fixa wraps by word', () => {
+    const node = drawnText({ texto: 'Colored', cor: '#49454F', largura: 'fixa' });
+    expect(node.fills).toEqual([{ type: 'solid', color: '#49454F' }]);
+    expect(node.style.wrap).toBeUndefined();
+  });
+
+  it('a value that is not a color: the library does not check it and the drawing gets it as it is', () => {
+    const node = drawnText({ texto: 'Odd', cor: 'banana' });
+    expect(node.fills).toEqual([{ type: 'solid', color: 'banana' }]);
+  });
+
+  it('density 2 doubles the font size, as for any component', () => {
+    let p = setContainerDensity(notesProject(), 'I1', 2);
+    p = addComponentMarking(
+      p,
+      catalog,
+      {
+        markingId: 'X1',
+        annotationId: 'AX1',
+        containerId: 'I1',
+        parentId: null,
+        specId: NOTES_ID,
+        typeId: 'texto',
+        rect: { x: 10, y: 10, width: 200, height: 40 },
+        values: { texto: 'Dense', tamanho: 20 },
+      },
+      approximateMeasurer,
+    );
+    const scene = createDrawingCache()(p, catalog, approximateMeasurer, 0).get('X1')!;
+    const [node] = collectTexts(scene.root);
+    expect(node!.node.style.fontSize).toBe(20);
+    expect(scene.root.transform.slice(0, 4)).toEqual([2, 0, 0, 2]);
+    // The drawn size in image pixels: unit size times the scale of the root.
+    expect(node!.node.style.fontSize * scene.root.transform[0]).toBe(40);
+  });
+});
+
+describe('Texto type: the space', () => {
+  const catalog = notesCatalog();
+  const add = (
+    p: Project,
+    id: string,
+    containerId: string | null,
+    rect?: { x: number; y: number; width: number; height: number },
+  ): Project =>
+    addComponentMarking(
+      p,
+      catalog,
+      {
+        markingId: id,
+        annotationId: `A-${id}`,
+        containerId,
+        parentId: null,
+        specId: NOTES_ID,
+        typeId: 'texto',
+        ...(rect ? { rect } : {}),
+        values: { texto: 'Label' },
+      },
+      approximateMeasurer,
+    );
+  const get = (p: Project, id: string) => p.markings.find((m) => m.id === id)!;
+  const area = (p: Project) => {
+    const { placement, width, height } = p.containers.find((c) => c.id === 'I1')!;
+    return {
+      x: placement.x,
+      y: placement.y,
+      width: width * placement.scale,
+      height: height * placement.scale,
+    };
+  };
+
+  it('on the canvas it is born not floating', () => {
+    const p = add(notesProject(), 'X1', null, {
+      x: 5000,
+      y: 5000,
+      width: 80,
+      height: 20,
+    });
+    expect(get(p, 'X1')).toMatchObject({ containerId: null, floating: false });
+  });
+
+  it('in I1 it is born in the container space, not floating', () => {
+    const p = add(notesProject(), 'X1', 'I1', { x: 20, y: 30, width: 80, height: 20 });
+    expect(get(p, 'X1')).toMatchObject({
+      containerId: 'I1',
+      floating: false,
+      rect: { x: 20, y: 30, width: 80, height: 20 },
+    });
+  });
+
+  it('a canvas text moved entirely inside I1 settles into I1', () => {
+    const base = notesProject();
+    const box = area(base);
+    const start = { x: box.x + box.width + 400, y: box.y, width: 80, height: 20 };
+    let p = add(base, 'X1', null, start);
+    expect(get(p, 'X1').containerId).toBeNull();
+    p = moveMarking(p, 'X1', box.x + 50 - start.x, 0);
+    expect(get(p, 'X1')).toMatchObject({ containerId: 'I1', floating: false });
+    expect(get(p, 'X1').rect.width).toBe(80);
+  });
+
+  it('a text inside I1 keeps its rect in container pixels when I1 is moved', () => {
+    const rect = { x: 40, y: 60, width: 80, height: 20 };
+    const p = add(notesProject(), 'X1', 'I1', rect);
+    const { placement } = p.containers.find((c) => c.id === 'I1')!;
+    const moved = moveContainer(p, 'I1', placement.x + 300, placement.y + 200);
+    expect(get(moved, 'X1')).toMatchObject({ containerId: 'I1', rect });
   });
 });

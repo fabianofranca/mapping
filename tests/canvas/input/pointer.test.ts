@@ -2377,3 +2377,53 @@ describe('PointerInput: a gesture restarts the click cycle (CC1)', () => {
     s.cleanup();
   });
 });
+
+// Directed tester round: a press grabs the item the click would select (BC.1, 1, E.1).
+describe('PointerInput: a press grabs the item a click would select', () => {
+  const withCanvasMarking = (id: string, rect: Rect): Project =>
+    createMarking(canvasProject(), { id, containerId: null, rect, name: id });
+
+  it('E.1: dragging a marking inside a selected container moves the marking, not the container', () => {
+    const s = setup();
+    s.ui.selection.value = { kind: 'image', id: 'I1' };
+    s.drag([250, 250], [300, 320]);
+    expect(s.containerOf('I1')?.placement).toEqual({ x: 0, y: 0, scale: 1 });
+    expect(s.markingRect('M2')).toEqual({ x: 250, y: 270, width: 100, height: 100 });
+    expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
+    s.cleanup();
+  });
+
+  it('1: dragging a container under a selected canvas marking moves the container', () => {
+    const s = setup(
+      false,
+      withCanvasMarking('G', { x: -100, y: 50, width: 300, height: 700 }),
+    );
+    s.ui.selection.value = { kind: 'marking', id: 'G' };
+    s.drag([150, 650], [190, 700]);
+    expect(s.markingOf('G')?.rect).toEqual({ x: -100, y: 50, width: 300, height: 700 });
+    expect(s.containerOf('I1')?.placement).toEqual({ x: 40, y: 50, scale: 1 });
+    s.cleanup();
+  });
+
+  it('BC.1: Shift+drag near a corner of another item, after a cancelled rectangle, starts a rectangle', () => {
+    const s = setup(
+      false,
+      withCanvasMarking('G2', { x: 1005, y: 805, width: 80, height: 60 }),
+    );
+    s.ui.selection.value = { kind: 'image', id: 'I1' };
+    const SHIFT = { shift: true };
+    s.fire('pointerdown', 1200, 900, SHIFT);
+    s.fire('pointermove', 1300, 950, SHIFT);
+    expect(s.input.cancelInteraction()).toBe(true);
+    s.fire('pointerup', 1300, 950, SHIFT);
+    const before = s.containerOf('I1')?.placement;
+    s.fire('pointerdown', 1008, 808, SHIFT);
+    s.fire('pointermove', 1040, 840, SHIFT);
+    s.fire('pointermove', 1070, 860, SHIFT);
+    expect(s.state.marquee.value).not.toBeNull();
+    s.fire('pointerup', 1070, 860, SHIFT);
+    expect(s.containerOf('I1')?.placement).toEqual(before);
+    expect(s.store.canUndo.value).toBe(false);
+    s.cleanup();
+  });
+});

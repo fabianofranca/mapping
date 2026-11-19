@@ -70,9 +70,11 @@ export function focusCanvasArea(): boolean {
  * If focus is inside window `id`, moves it, with the window still in the DOM, to: whoever opened →
  * window button in the strip → canvas. Synchronous: no frame has focus on `body`.
  */
-function releaseFocus(id: ToolWindowId): void {
+function releaseFocus(id: ToolWindowId, toCanvas = false): void {
   const el = windowElement(id);
   if (!el?.contains(document.activeElement)) return;
+  if (toCanvas && focusIfOutside(document.querySelector(`[${CANVAS_AREA_ATTR}]`), el))
+    return;
   if (focusIfOutside(openers.get(id), el)) return;
   if (focusIfOutside(document.querySelector(`[${STRIP_BUTTON_ATTR}="${id}"]`), el))
     return;
@@ -116,9 +118,10 @@ export function openToolWindow(id: ToolWindowId): void {
 /**
  * Closes the window and returns focus, if it was inside it (decision 1). Sole owner of
  * closing: the X, `hide-window`, `toggle-window` and the strip click all go through here.
+ * `toCanvas` (the window's own shortcut): focus goes to the canvas, not to whoever opened it.
  */
-export function closeToolWindow(id: ToolWindowId): void {
-  releaseFocus(id);
+export function closeToolWindow(id: ToolWindowId, toCanvas = false): void {
+  releaseFocus(id, toCanvas);
   openers.delete(id);
   hideToolWindow(id);
 }

@@ -703,3 +703,128 @@ describe('propose_changes with the package folder', () => {
     }
   });
 });
+
+// `builtin` (stage #2081, TX2): the notes library at version 4 moves to the built-in version 5.
+describe('builtin: update to the built-in version of the notes library', () => {
+  const name = 'projetos/notes-v4';
+  let dir: string;
+
+  /** Writes the v4 copy over a project created with the notes library (version 5). */
+  function downgradeToV4(): void {
+    const notes = join(dir, 'specs', 'notas');
+    writeFileSync(
+      join(notes, 'notas.spec.json'),
+      readFileSync(join('tests', 'model', 'fixtures', 'notas-v4.spec.json'), 'utf8'),
+    );
+    rmSync(join(notes, 'components', 'texto.json'));
+    rmSync(join(notes, 'docs', 'texto.md'));
+    const file = join(dir, 'mapping.json');
+    const project = JSON.parse(readFileSync(file, 'utf8')) as {
+      specializations: { id: string; version: number }[];
+    };
+    for (const s of project.specializations) if (s.id === 'notas') s.version = 4;
+    writeFileSync(file, JSON.stringify(project, null, 2));
+  }
+
+  beforeAll(async () => {
+    ok(await mcp.call('create_project', { path: name, name: 'Notes v4' }));
+    dir = join(root, name);
+    downgradeToV4();
+  });
+
+  it('plan_library_update with builtin: update from 4 to 5, additive, builtin in the response', async () => {
+    const plan = ok(
+      await mcp.call<Plan & { builtin?: string; path?: string }>('plan_library_update', {
+        project: name,
+        builtin: 'notas',
+      }),
+    );
+    expect(plan.decision).toBe('update');
+    expect(plan.from).toBe(4);
+    expect(plan.to).toBe(5);
+    expect(plan.additive).toBe(true);
+    expect(plan.builtin).toBe('notas');
+    expect(plan.path).toBeUndefined();
+    expect(plan.validation.valid).toBe(true);
+    expect(plan.hint).toContain('builtin');
+  });
+
+  it('propose_changes: update_specialization builtin and create_marking notas/texto in the same batch', async () => {
+    const result = await propose(mcp, name, [
+      { op: 'update_specialization', builtin: 'notas' },
+      {
+        op: 'add_container',
+        name: 'Screen',
+        width: 400,
+        height: 300,
+        background: '#FFFFFF',
+      },
+      {
+        op: 'create_marking',
+        container: 'Screen',
+        annotation: { type: 'notas/texto', values: { texto: 'Hello' } },
+        name: 'Label',
+      },
+    ]);
+    expect(result.proposed, JSON.stringify(result)).toBe(true);
+    expect(result.summary[0]).toMatch(/Update the specialization "notas" to v5/);
+    expect(result.files.packages).toEqual([
+      expect.objectContaining({ files: 7 }) as unknown,
+    ]);
+    const id = result.proposal.id;
+    const proposal = readProposal(dir, id);
+    const texto = proposal.changes.find(
+      (c) =>
+        c.entity === 'annotation' &&
+        JSON.stringify(c.to).includes('"texto"') &&
+        JSON.stringify(c.to).includes('Hello'),
+    );
+    expect(texto).toBeDefined();
+    reviewDecide(dir, id, { level: 'proposal', id: null }, 'accepted');
+    const applied = applyAccepted(readProject(dir), readProposal(dir, id), NOW);
+    if (!applied.ok) throw new Error(JSON.stringify(applied.issues));
+    expect(applied.project.specializations.find((s) => s.id === 'notas')?.version).toBe(
+      5,
+    );
+    expect(applied.packages).toHaveLength(1);
+    expect(readdirSync(join(dir, applied.packages[0]!.from)).sort()).toEqual([
+      'components',
+      'docs',
+      'notas.spec.json',
+    ]);
+    expect(
+      readdirSync(join(dir, applied.packages[0]!.from, 'components')).sort(),
+    ).toEqual(['nota.json', 'tabela.json', 'texto.json']);
+  });
+
+  it('builtin with path/file, neither, or an unknown id: invalid-arguments listing notas', async () => {
+    const expectInvalid = (failure: ReturnType<typeof errorOf>) => {
+      expect(failure.code).toBe('invalid-arguments');
+      expect(failure.builtin).toEqual(['notas']);
+    };
+    expectInvalid(
+      errorOf(
+        await mcp.call('plan_library_update', {
+          project: name,
+          builtin: 'notas',
+          path: 'lib/material3',
+        }),
+      ),
+    );
+    expectInvalid(errorOf(await mcp.call('plan_library_update', { project: name })));
+    expectInvalid(
+      errorOf(await mcp.call('plan_library_update', { project: name, builtin: 'xyz' })),
+    );
+    for (const op of [
+      { op: 'update_specialization', builtin: 'notas', file: 'lib/material3' },
+      { op: 'update_specialization' },
+      { op: 'update_specialization', builtin: 'xyz' },
+    ]) {
+      const failed = await mcp.call<{
+        errors?: { code: string; detail?: { builtin?: string[] } }[];
+      }>('propose_changes', { project: name, title: 'x', operations: [op] });
+      expect(JSON.stringify(failed), JSON.stringify(op)).toContain('invalid-arguments');
+      expect(JSON.stringify(failed)).toContain('notas');
+    }
+  });
+});

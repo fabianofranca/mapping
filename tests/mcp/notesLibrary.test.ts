@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { NOTES_FILES } from '../../libraries/notas';
 import { deserialize } from '../../src/model';
-import { errorOf, ok } from './proposalSupport';
+import { decodeImage } from '../../mcp/image/codecs';
+import { acceptAllAndApply, errorOf, ok, propose, readProject } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
 // The embedded notes library (ME3) through `create_project`: applied by default, with the folder
@@ -81,7 +82,7 @@ describe('create_project with the notes library', () => {
     expect(project.issues.total).toBe(0);
   });
 
-  it('get_specialization returns notas: formatVersion 7, floating note type', async () => {
+  it('get_specialization returns notas: formatVersion 7, the floating note and table and the plain text', async () => {
     const data = ok(
       await mcp.call<{
         id: string;
@@ -98,7 +99,7 @@ describe('create_project with the notes library', () => {
     expect(data).toMatchObject({ id: 'notas', file: 'specs/notas/notas.spec.json' });
     expect(data.spec.formatVersion).toBe(7);
     const types = data.spec.layers.flatMap((l) => l.annotationTypes);
-    expect(types.map((t) => t.id)).toEqual(['nota', 'tabela']);
+    expect(types.map((t) => t.id)).toEqual(['nota', 'tabela', 'texto']);
     expect(types[0]).toMatchObject({
       floating: true,
       component: 'components/nota.json',
@@ -137,5 +138,123 @@ describe('create_project with the notes library', () => {
         }),
       ).code,
     ).toBe('not-found');
+  });
+});
+
+describe('the Text type of the notes library through the MCP', () => {
+  const name = 'with-text';
+  let dir: string;
+
+  interface Plan {
+    valid: boolean;
+    errors?: { index: number; op: string; code: string; message: string }[];
+    warnings?: { code: string; op: number; message: string }[];
+  }
+
+  interface MarkingData {
+    ref: string;
+    space: string;
+    floating: boolean;
+    container: unknown;
+  }
+
+  const markingNamed = (markingName: string) =>
+    readProject(dir).markings.find((m) => m.name === markingName)!;
+
+  const get = async (id: string) =>
+    ok(await mcp.call<MarkingData>('get_marking', { project: name, ref: id }));
+
+  beforeAll(async () => {
+    const created = ok(
+      await mcp.call<{ specs: unknown }>('create_project', { path: name, name }),
+    );
+    expect(created).toBeDefined();
+    dir = join(root, name);
+    const proposed = await propose(mcp, name, [
+      {
+        op: 'add_container',
+        name: 'Screen',
+        width: 400,
+        height: 300,
+        background: '#FFFFFF',
+      },
+    ]);
+    expect(proposed.valid, JSON.stringify(proposed.errors)).toBe(true);
+    acceptAllAndApply(dir, proposed.proposal.id);
+  });
+
+  it('lists the three types in the notes layer', async () => {
+    const data = ok(
+      await mcp.call<{
+        spec: { layers: { annotationTypes: { id: string; floating?: boolean }[] }[] };
+      }>('get_specialization', { project: name, specId: 'notas' }),
+    );
+    const types = data.spec.layers.flatMap((l) => l.annotationTypes);
+    expect(types.map((t) => t.id)).toEqual(['nota', 'tabela', 'texto']);
+    expect(types.find((t) => t.id === 'texto')?.floating).toBeUndefined();
+  });
+
+  const operations = (): unknown[] => [
+    {
+      op: 'create_marking',
+      container: 'Screen',
+      rect: { x: 20, y: 20, width: 80, height: 20 },
+      annotation: { type: 'notas/texto', values: { texto: 'In the container' } },
+      name: 'Inside',
+    },
+    {
+      op: 'create_marking',
+      annotation: { type: 'notas/texto', values: { texto: 'On the canvas' } },
+      name: 'Loose',
+    },
+  ];
+
+  it('plan_changes: with container and rect, and without container (canvas), with no ignored-argument', async () => {
+    const result = ok(
+      await mcp.call<Plan>('plan_changes', { project: name, operations: operations() }),
+    );
+    expect(result.errors, JSON.stringify(result.errors)).toBeUndefined();
+    expect(result.valid).toBe(true);
+    expect(result.warnings?.filter((w) => w.code === 'ignored-argument') ?? []).toEqual(
+      [],
+    );
+  });
+
+  it('propose_changes, once applied: space container and floating false; on the canvas, floating false', async () => {
+    const proposed = await propose(mcp, name, operations());
+    expect(proposed.valid, JSON.stringify(proposed.errors)).toBe(true);
+    expect(proposed.warnings?.filter((w) => w.code === 'ignored-argument') ?? []).toEqual(
+      [],
+    );
+    acceptAllAndApply(dir, proposed.proposal.id);
+    const inside = await get(markingNamed('Inside').id);
+    expect(inside).toMatchObject({ space: 'container', floating: false });
+    expect(inside.container).not.toBeNull();
+    const loose = await get(markingNamed('Loose').id);
+    expect(loose).toMatchObject({ space: 'canvas', floating: false, container: null });
+  });
+
+  it('render_container draws the text over the white container', async () => {
+    const view = ok(
+      await mcp.call<{ containers: { ref: string; name: string }[] }>('get_project', {
+        project: name,
+      }),
+    );
+    const screen = view.containers.find((c) => c.name === 'Screen')!;
+    const result = await mcp.client.callTool({
+      name: 'render_container',
+      arguments: { ref: screen.ref },
+    });
+    expect(result.isError).not.toBe(true);
+    const image = (result.content as { type: string; data?: string }[]).find(
+      (c) => c.type === 'image',
+    );
+    expect(image?.data).toBeTruthy();
+    const { raster } = await decodeImage(Buffer.from(image!.data!, 'base64'));
+    let dark = 0;
+    for (let i = 0; i < raster.data.length; i += 4) {
+      if (raster.data[i]! < 128 && raster.data[i + 3]! > 0) dark += 1;
+    }
+    expect(dark).toBeGreaterThan(20);
   });
 });

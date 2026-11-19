@@ -3,8 +3,8 @@
   "formatVersion": 7,
   "id": "notas",
   "name": "Notes",
-  "version": 4,
-  "description": "Notes on the canvas: floating sticky notes, one with a title and free text and one shaped as a table (key and value), to comment on a screen, record a business rule, list the data of an event or leave a message for whoever reads the mapping.",
+  "version": 5,
+  "description": "Notes on the canvas: floating sticky notes, one with a title and free text and one shaped as a table (key and value), to comment on a screen, record a business rule, list the data of an event or leave a message for whoever reads the mapping; and plain text, loose on the canvas or inside a container, for labels, titles and captions.",
   "layers": [
     {
       "id": "notas",
@@ -87,6 +87,59 @@
               "description": "Only the title goes into an example; the rows (source, items, total) come from the component preview.",
               "values": {
                 "titulo": "checkout_started"
+              }
+            }
+          ]
+        },
+        {
+          "id": "texto",
+          "name": "Text",
+          "description": "Plain text with no frame: a label, a title or a caption, loose on the canvas or inside a container. Where it lives is decided by geometry, as for any marking; inside a container it follows the container. Turn Floating on to put it above everything.",
+          "labelField": "texto",
+          "component": "components/texto.json",
+          "doc": "docs/texto.md",
+          "fields": [
+            {
+              "key": "texto",
+              "label": "Text",
+              "type": "string",
+              "required": true,
+              "description": "The text itself. Accepts multiple lines: Shift+Enter breaks the line."
+            },
+            {
+              "key": "tamanho",
+              "label": "Size",
+              "type": "number",
+              "description": "Font size in the component's units (multiplied by the container's density). Empty draws 14."
+            },
+            {
+              "key": "peso",
+              "label": "Weight",
+              "type": "enum",
+              "options": ["regular", "medium", "semibold", "bold"],
+              "description": "Font weight. Empty draws regular."
+            },
+            {
+              "key": "cor",
+              "label": "Color",
+              "type": "string",
+              "description": "Text color as #RRGGBB. Empty draws #1F1F1F. The value is not checked: it goes to the drawing as it is."
+            },
+            {
+              "key": "largura",
+              "label": "Width",
+              "type": "enum",
+              "options": ["auto", "fixa"],
+              "description": "auto: the box follows the text and a line breaks only where one was typed. fixa: the text wraps at the marking's width and only the height follows. Empty draws auto."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Column label",
+              "values": {
+                "texto": "enabled",
+                "tamanho": 12,
+                "cor": "#49454F"
               }
             }
           ]

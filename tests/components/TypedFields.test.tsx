@@ -522,6 +522,17 @@ describe('TypedFields: text field (StringEditor)', () => {
     expect(valueOf(harness, 'AB', 'texto')).toBe('a\nb');
   });
 
+  it('typing Line 1, Shift+Enter, Line 2 and Enter does not save: leaving the field does (F.1)', async () => {
+    const { harness, user } = setup('AB', 'texto', withText(''));
+    const input = screen.getByLabelText('texto');
+    await user.type(input, 'Line 1{Shift>}{Enter}{/Shift}Line 2{Enter}');
+    const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
+    expect(area.value).toBe('Line 1\nLine 2\n');
+    expect(valueOf(harness, 'AB', 'texto')).toBeNull();
+    await user.tab();
+    expect(valueOf(harness, 'AB', 'texto')).toBe('Line 1\nLine 2');
+  });
+
   it('during IME composition Enter does not save', async () => {
     const { harness } = setup('AB', 'texto', withText(LONG));
     const area = screen.getByLabelText('texto') as HTMLTextAreaElement;

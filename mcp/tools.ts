@@ -1110,13 +1110,20 @@ export function registerTools(
     'plan_library_update',
     {
       description:
-        'Preview, WITHOUT writing anything, of bringing a library to a project: returns what `apply_specialization` or `update_specialization` would do. `path` is the folder of the new package (or the specialization file inside it; it also accepts a v1 to v3 file), inside the roots; `project` is the project. Returns `specId`, `from` (applied version, `null` if not applied) and `to`, `decision` (`apply`: not applied yet; `update`: version greater than the applied one; `not-newer`), `validation` (`valid`, `errors`, `warnings`: the same levels as validate_library, with the applied copy as `previous`) and, in `update`: `additive` (only adds, with no break and no `freedLayers`: applies directly; false when some layer becomes free), `refused` (a break without migration: `update_specialization` would fail with `spec-missing-migrations`) with `missingMigrations`, `changes` (the differences between the versions), `steps` (each step of `migrations`, including the role steps `rename-role`, `remove-role` and `set-role`, with the counts of what it does in this project (`unlinked` counts the links undone by `remove-role` with `unlink`) and its losses), `losses` (values the migration erases or overwrites, cleared roles (`cleared-role`) and undone links (`unlinked`), each with the annotation, the marking and, for the role ones, the `role`), `pending` (new pending items the migration leaves), `brokenRefs`, `addedLayers`, `freedLayers` and a `hint` for the next step. Large lists come cut at 100, with the total in `…Total`. Run it before proposing `update_specialization`; if there are losses, confirm with the person.',
+        'Preview, WITHOUT writing anything, of bringing a library to a project: returns what `apply_specialization` or `update_specialization` would do. `path` is the folder of the new package (or the specialization file inside it; it also accepts a v1 to v3 file), inside the roots, or `builtin` is the id of a library built into the server (today `notas`; exactly one of the two, otherwise `invalid-arguments` with `detail.builtin` listing the ids): the response then carries `builtin` in place of `path`, and `update_specialization` takes `builtin` too. `project` is the project. Returns `specId`, `from` (applied version, `null` if not applied) and `to`, `decision` (`apply`: not applied yet; `update`: version greater than the applied one; `not-newer`), `validation` (`valid`, `errors`, `warnings`: the same levels as validate_library, with the applied copy as `previous`) and, in `update`: `additive` (only adds, with no break and no `freedLayers`: applies directly; false when some layer becomes free), `refused` (a break without migration: `update_specialization` would fail with `spec-missing-migrations`) with `missingMigrations`, `changes` (the differences between the versions), `steps` (each step of `migrations`, including the role steps `rename-role`, `remove-role` and `set-role`, with the counts of what it does in this project (`unlinked` counts the links undone by `remove-role` with `unlink`) and its losses), `losses` (values the migration erases or overwrites, cleared roles (`cleared-role`) and undone links (`unlinked`), each with the annotation, the marking and, for the role ones, the `role`), `pending` (new pending items the migration leaves), `brokenRefs`, `addedLayers`, `freedLayers` and a `hint` for the next step. Large lists come cut at 100, with the total in `…Total`. Run it before proposing `update_specialization`; if there are losses, confirm with the person.',
       inputSchema: {
         project: projectArg,
         path: z
           .string()
+          .optional()
           .describe(
-            'Folder of the new package or specialization file inside it, relative to a root or absolute inside them.',
+            'Folder of the new package or specialization file inside it, relative to a root or absolute inside them. Exactly one of `path` and `builtin`.',
+          ),
+        builtin: z
+          .string()
+          .optional()
+          .describe(
+            'Id of a library built into the server (today `notas`): previews the update to its built-in version. Exactly one of `path` and `builtin`.',
           ),
       },
       annotations: READ_ONLY,

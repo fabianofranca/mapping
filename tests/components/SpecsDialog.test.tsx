@@ -11,7 +11,9 @@ import {
 } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { NOTES_LIBRARY } from '../../libraries/notas';
 import {
+  applyBundledLibrary,
   applySpecialization,
   parseSpecText,
   removeLayer,
@@ -1082,6 +1084,66 @@ describe('model messages in the app language (MB3)', () => {
     // pt-BR kept: the pt-BR text of the model message is the object of the test
     expect(items).toContain(
       'o campo "label" do tipo "button" foi removido; declare um passo "remove-field" ou "rename-field" em migrations',
+    );
+  });
+});
+
+// Update to the built-in version (stage #2081, TX2): the notes library at version 4 moves to 5.
+describe('SpecsDialog: update to the built-in version', () => {
+  const v4Text = readFileSync(
+    join(process.cwd(), 'tests', 'model', 'fixtures', 'notas-v4.spec.json'),
+    'utf8',
+  );
+  const v4Project = (): Project => {
+    const parsed = parseSpecText(v4Text);
+    if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+    return applySpecialization(emptyProject(), parsed.spec, { newId: () => 'LN' });
+  };
+  const BUTTON = 'Update to the built-in version (v5)';
+  const setupBundled = (project: Project, readOnly = false) => {
+    const harness: Harness = createHarness(project, readOnly);
+    const view = renderLive(harness, (p) => (
+      <SpecsDialog
+        project={p}
+        readOnly={readOnly}
+        bundled={[NOTES_LIBRARY]}
+        onClose={vi.fn()}
+      />
+    ));
+    return { harness, view, user: userEvent.setup() };
+  };
+
+  it('notes at v4 show the button; Update brings the texto type in one undo entry', async () => {
+    const { harness, user } = setupBundled(v4Project());
+    await user.click(screen.getByRole('button', { name: BUTTON }));
+    const dialog = await dialogTitled('Package "Notes"', 30_000);
+    expect(within(dialog).getByText('From version 4 to 5.')).toBeTruthy();
+    await user.click(within(dialog).getByRole('button', { name: 'Update' }));
+    await screen.findByText(/updated to version 5/);
+    const entry = harness.project().specializations[0];
+    expect(entry?.version).toBe(5);
+    expect(
+      entry?.spec?.layers.flatMap((l) => l.annotationTypes.map((x) => x.id)),
+    ).toContain('texto');
+    await harness.store.undo();
+    expect(harness.project().specializations[0]?.version).toBe(4);
+  }, 120_000);
+
+  it('at v5 and on another specialization the button does not exist', () => {
+    const applied = applyBundledLibrary(emptyProject(), NOTES_LIBRARY).project;
+    setupBundled(applied);
+    expect(screen.queryByRole('button', { name: BUTTON })).toBeNull();
+    cleanup();
+    const parsed = parseSpecText(exampleText('sdui'));
+    if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+    setupBundled(applySpecialization(emptyProject(), parsed.spec));
+    expect(screen.queryByRole('button', { name: /built-in/ })).toBeNull();
+  });
+
+  it('read-only: the button is disabled', () => {
+    setupBundled(v4Project(), true);
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: BUTTON }).disabled).toBe(
+      true,
     );
   });
 });

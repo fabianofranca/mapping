@@ -48,7 +48,20 @@ export function arrangeHintKey(
   return isAnchored(project, markingId) ? 'arrange.hintAnchor' : 'arrange.hintFit';
 }
 
-/** Arranges the marking and notifies: "Arranged", "Arranged with N warnings: …" or "Nothing to arrange". */
+/** The marking still has a component that "does not fit" (the drawing's pending item). */
+function stillOverflows(editor: EditorContextValue, markingId: string): boolean {
+  const project = editor.review.derived.shownProject.peek();
+  if (project === null) return false;
+  const issues = editor.derived.issues.peek();
+  return (projectIndex(project).annotationsByMarking.get(markingId) ?? []).some((a) =>
+    issues.get(a.id)?.some((issue) => issue.code === 'component-overflow'),
+  );
+}
+
+/**
+ * Arranges the marking and notifies: "Arranged", "Arranged with N warnings: …" or "Nothing to arrange".
+ * "Nothing to arrange" never shows on a component that still does not fit: it says what is left.
+ */
 export function arrangeMarking(editor: EditorContextValue, markingId: string): void {
   const { actions, review, ui } = editor;
   const before = review.derived.shownProject.peek();
@@ -65,6 +78,8 @@ export function arrangeMarking(editor: EditorContextValue, markingId: string): v
       ui,
       t('arrange.doneWarnings', { count: warnings.length, first: messageText(first) }),
     );
+  } else if (stillOverflows(editor, markingId)) {
+    showToast(ui, t('arrange.stillOverflow'));
   } else {
     showToast(ui, t(changed ? 'arrange.done' : 'arrange.nothing'));
   }

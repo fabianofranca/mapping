@@ -170,9 +170,11 @@ test('R25.84 to R25.86: the child inherits the Card color and the disk does not 
   await page.getByRole('tab', { name: 'Palette' }).click();
   await page.getByRole('button', { name: /^Add to screen Screens: Card$/ }).click();
   await setPosition(page, 20, 20);
-  await page.getByRole('button', { name: /^Add inside Card: Text$/ }).click();
+  // The notes library also offers a "Text" (type `texto`): the Material 3 one is picked by its region.
+  const material = page.getByRole('region', { name: 'Material 3 (Compose)' });
+  await material.getByRole('button', { name: /^Add inside Card: Text$/ }).click();
   await setPosition(page, 30, 30);
-  await page.getByRole('button', { name: /^Add to screen Screens: Text$/ }).click();
+  await material.getByRole('button', { name: /^Add to screen Screens: Text$/ }).click();
   await setPosition(page, 20, 160);
 
   let raw = '';

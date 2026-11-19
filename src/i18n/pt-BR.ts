@@ -521,6 +521,7 @@ export const ptBR: Dictionary = {
   'spec.applyZip': 'Aplicar zip…',
   'spec.updateFolder': 'Atualizar de pasta…',
   'spec.updateZip': 'Atualizar de zip…',
+  'spec.updateBundled': 'Atualizar para a versão embutida (v{version})',
   'spec.packageHint':
     'Uma biblioteca (formatVersion 4 em diante) vem numa pasta ou num zip: a especialização, os componentes, os documentos e as fontes. Se não citar arquivos do pacote, um .json isolado também serve.',
   'spec.v4NeedsPackage':
@@ -1238,6 +1239,7 @@ export const ptBR: Dictionary = {
   'arrange.done': 'Arrumado',
   'arrange.doneWarnings': 'Arrumado com {count} aviso(s): {first}',
   'arrange.nothing': 'Nada a arrumar',
+  'arrange.stillOverflow': 'Arrumado, mas o conteúdo ainda não cabe',
   'arrange.hintAnchor': 'Encosta a marcação na âncora.',
   'anchor.section': 'Âncora',
   'anchor.target': 'Ancorada a',

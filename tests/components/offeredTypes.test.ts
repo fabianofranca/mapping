@@ -39,31 +39,40 @@ const plain = (types: readonly SpecAnnotationType[], appliesTo?: 'arrow' | 'mark
   });
 
 describe('offeredTypeChoice', () => {
-  it('plain marking: the floating types drop out and the reason is "floating"', () => {
+  it('plain marking: the floating types drop out and only Texto is offered', () => {
     const choice = offeredTypeChoice(notesProject(), 'LN', {
       kind: 'marking',
       floating: false,
     });
-    expect(choice.types).toEqual([]);
-    expect(choice.empty).toBe('floating');
+    expect(choice.empty).toBeNull();
+    expect(choice.types.map((type) => type.id)).toEqual(['texto']);
   });
 
-  it('arrow: the reason is also "floating"', () => {
+  it('arrow: nothing is offered, because Texto applies only to markings', () => {
     const choice = offeredTypeChoice(notesProject(), 'LN', {
       kind: 'arrow',
       floating: false,
     });
     expect(choice.types).toEqual([]);
-    expect(choice.empty).toBe('floating');
+    expect(choice.empty).toBe('not-for-arrow');
   });
 
-  it('floating marking: the list stays as today (Nota and Tabela)', () => {
+  it('floating marking: the list is Nota, Tabela and Texto', () => {
     const choice = offeredTypeChoice(notesProject(), 'LN', {
       kind: 'marking',
       floating: true,
     });
     expect(choice.empty).toBeNull();
-    expect(choice.types.map((type) => type.id)).toEqual(['nota', 'tabela']);
+    expect(choice.types.map((type) => type.id)).toEqual(['nota', 'tabela', 'texto']);
+  });
+
+  it('a layer with only floating types: the plain marking gets "floating"', () => {
+    const project = withTypes((types) => types.filter((type) => type.floating));
+    const choice = offeredTypeChoice(project, 'LN', { kind: 'marking', floating: false });
+    expect(choice).toEqual({ types: [], empty: 'floating' });
+    expect(
+      offeredTypeChoice(project, 'LN', { kind: 'arrow', floating: false }).empty,
+    ).toBe('floating');
   });
 
   it('layer with a specialization that does not load: "unavailable"', () => {
@@ -95,7 +104,7 @@ describe('offeredTypeChoice', () => {
       floating: false,
     });
     expect(marking.empty).toBeNull();
-    expect(marking.types).toHaveLength(2);
+    expect(marking.types).toHaveLength(3);
   });
 
   it('plain type that applies only to arrows: the marking gets "not-for-marking"', () => {
@@ -111,6 +120,6 @@ describe('offeredTypeChoice', () => {
     );
     const choice = offeredTypeChoice(project, 'LN', { kind: 'marking', floating: false });
     expect(choice.empty).toBeNull();
-    expect(choice.types.map((type) => type.id)).toEqual(['tabela']);
+    expect(choice.types.map((type) => type.id)).toEqual(['tabela', 'texto']);
   });
 });

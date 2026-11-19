@@ -522,6 +522,7 @@ export const enUS = {
   'spec.applyZip': 'Apply zip…',
   'spec.updateFolder': 'Update from folder…',
   'spec.updateZip': 'Update from zip…',
+  'spec.updateBundled': 'Update to the built-in version (v{version})',
   'spec.packageHint':
     'A library (formatVersion 4 or later) comes in a folder or a zip: the specialization, components, documents and fonts. If it does not refer to package files, a lone .json also works.',
   'spec.v4NeedsPackage':
@@ -1243,6 +1244,7 @@ export const enUS = {
   'arrange.done': 'Arranged',
   'arrange.doneWarnings': 'Arranged with {count} warning(s): {first}',
   'arrange.nothing': 'Nothing to arrange',
+  'arrange.stillOverflow': 'Arranged, but the content still does not fit',
   'arrange.hintAnchor': 'Snaps the marking to its anchor.',
   // Anchor between markings (stage "direction and anchor", R4)
   'anchor.section': 'Anchor',

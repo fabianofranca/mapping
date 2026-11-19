@@ -151,7 +151,12 @@ import {
   updateSummary,
   validatePackage,
 } from './libraryUpdate';
-import type { ReadPackage, SpecInput } from './library';
+import {
+  builtinSpecInput,
+  checkBuiltinArgument,
+  type ReadPackage,
+  type SpecInput,
+} from './library';
 import { MAX_BASE64_LENGTH, MIME, detectFormat } from './image/formats';
 import { builtinFontBook, measurerFor } from './image/textMeasurer';
 import { prepareImage } from './imagePrepare';
@@ -905,10 +910,16 @@ class Batch {
         fold(type.id) === wanted ||
         fold(type.name) === wanted,
     );
-    const exact = matches.filter(
-      ({ spec, type }) => fold(`${spec.id}/${type.id}`) === wanted,
-    );
-    const chosen = exact.length > 0 ? exact : matches;
+    // Strongest first: `specId/typeId`, then the type `id`, then the name. A type named like the id of
+    // another one (`notas/texto` is named "Text", `sdui/text` has the id `text`) does not make the id ambiguous.
+    const tiers = [
+      ({ spec, type }: (typeof matches)[number]) =>
+        fold(`${spec.id}/${type.id}`) === wanted,
+      ({ type }: (typeof matches)[number]) => fold(type.id) === wanted,
+    ];
+    const chosen =
+      tiers.map((tier) => matches.filter(tier)).find((found) => found.length > 0) ??
+      matches;
     if (chosen.length === 1)
       return { specId: chosen[0]!.spec.id, typeId: chosen[0]!.type.id };
     throw new ToolError(
@@ -931,11 +942,15 @@ class Batch {
    * On an update, the applied copy binds the version contract (`previous`).
    */
   private async loadSpec(
-    file: string,
+    source: { file?: string | undefined; builtin?: string | undefined },
     mode: 'apply' | 'update',
     p: Project,
   ): Promise<LoadedSpec> {
-    const input = await this.io.readSpecInput(file);
+    checkBuiltinArgument(source.file, source.builtin, 'file');
+    const input =
+      source.builtin !== undefined
+        ? builtinSpecInput(source.builtin)
+        : await this.io.readSpecInput(source.file!);
     if (input.kind === 'file') {
       const impact = mode === 'update' ? checkUpdate(p, input.spec) : undefined;
       return { spec: input.spec, ...(impact ? { impact } : {}) };
@@ -1420,7 +1435,7 @@ class Batch {
       case 'move_to_page':
         return this.moveToPageOp(op, p);
       case 'apply_specialization': {
-        const loaded = await this.loadSpec(op.file, 'apply', p);
+        const loaded = await this.loadSpec({ file: op.file }, 'apply', p);
         const { spec } = loaded;
         const check = checkSpecApply(p, spec);
         if (check === 'update') {
@@ -1446,7 +1461,11 @@ class Batch {
         };
       }
       case 'update_specialization': {
-        const loaded = await this.loadSpec(op.file, 'update', p);
+        const loaded = await this.loadSpec(
+          { file: op.file, builtin: op.builtin },
+          'update',
+          p,
+        );
         const { spec } = loaded;
         const impact = loaded.impact!;
         const project = updateSpecialization(p, spec, this.specOptions(loaded));

@@ -646,8 +646,24 @@ export class PointerInput {
       () => actions.beginGesture().ok,
     );
     if (!started) return { kind: 'pan', pointerId, last: start };
+    this.grabSelection(intent);
     if (started.draft) state.draft.value = started.draft;
     return started.gesture;
+  }
+
+  /** A move that grabbed an item other than the selected one (`grabTopmost`) selects it. */
+  private grabSelection(intent: Intent): void {
+    const grabbed: Selection =
+      intent.kind === 'move-marking'
+        ? { kind: 'marking', id: intent.markingId }
+        : intent.kind === 'move-image'
+          ? { kind: 'image', id: intent.containerId }
+          : null;
+    const { selection } = this.o.ui;
+    const current = selection.peek();
+    if (grabbed && (current?.kind !== grabbed.kind || current.id !== grabbed.id)) {
+      selection.value = grabbed;
+    }
   }
 
   private previewPlacement(containerId: string, placement: Placement): void {
