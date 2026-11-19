@@ -11,11 +11,11 @@ DS impact of PF1 (model, store result, MCP and docs): none.
 
 ## Sincronização
 
-Gravado no artefato **Mapping** em 2026-11-19: versão 98 (guides at version 97, the index last at 98, read right before with `lastChange` filled in). No file deleted, no preview touched (the three components have a guide only, no preview).
+Gravado no artefato **Mapping** on 2026-11-19: version 98 (guides at version 97, the index last at 98, read right before with `lastChange` filled in). No file deleted, no preview touched (the three components have a guide only, no preview).
 
 - **`PageDialogs` guide (PF2):** the "Move to page refused" dialog now covers arrows and anchors: the anchor group (the same `page-refused-list` row, "<anchored> anchored to <target>" and **Go to the marking**), the three titles (arrows only unchanged, plus "The move would cut anchors" and "The move would cut arrows and anchors"), the labels `page.move.refusedAnchor*` and `page.move.goToMarking`. The "Delete page" section gained the muted line about conversations on empty spots (N > 0, singular for 1, in the empty, move and discard forms), the two states and the code references.
-- **`PageMenu` guide (PF3):** the "New in this proposal" tag (`page-row-tag`, `--color-accent-text` over `--color-accent`, `--radius-full`, `--t-text-small`, before the count in `page-row-trail`; Proposed view of the review only), the shared `PickerList` and `PickerOption` and the new classes and files in "No código". Contrast checked from `src/theme/tokens.ts`: 5.7:1 in the light theme, 6.8:1 in the dark theme.
-- **`PerspectivePicker` guide (PF3):** the list and the row come from the same `PickerList` and `PickerOption` (shell with focus on the open row and ↑/↓; look and classes unchanged), and `src/ui/PickerList.tsx` in "No código".
+- **`PageMenu` guide (PF3):** the "New in this proposal" tag (`page-row-tag`, `--color-accent-text` over `--color-accent`, `--radius-full`, `--t-text-small`, before the count in `page-row-trail`; Proposed view of the review only), the shared `PickerList` and `PickerOption` and the new classes and files in "In the code". Contrast checked from `src/theme/tokens.ts`: 5.7:1 in the light theme, 6.8:1 in the dark theme.
+- **`PerspectivePicker` guide (PF3):** the list and the row come from the same `PickerList` and `PickerOption` (shell with focus on the open row and ↑/↓; look and classes unchanged), and `src/ui/PickerList.tsx` in "In the code".
 
 ## Ficou sem gravar
 
