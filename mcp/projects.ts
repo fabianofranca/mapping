@@ -305,7 +305,7 @@ async function loadCatalog(
 }
 
 /** Largest font file read (the rest falls back to the built-in font). */
-const MAX_FONT_BYTES = 8 * 1024 * 1024;
+export const MAX_FONT_BYTES = 8 * 1024 * 1024;
 
 interface FontFile {
   readonly entry: SpecFont;

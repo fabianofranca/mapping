@@ -128,6 +128,15 @@ describe('SpecsDialog', () => {
     expect(within(design).getByText('icons/set.json')).toBeTruthy();
   });
 
+  it('a specialization with no layers shows its version without a dangling colon (CL2)', () => {
+    let n = 0;
+    const empty: Spec = { ...libSpec(1), layers: [] };
+    setup(applySpecialization(emptyProject(), empty, { newId: () => `LS${++n}` }));
+    const item = document.querySelector<HTMLElement>('.spec-item');
+    expect(item?.textContent).toContain('v1 · 0 layer(s)');
+    expect(item?.textContent).not.toContain('layer(s):');
+  });
+
   it('a library without tokens or icons does not show the block', () => {
     let n = 0;
     setup(applySpecialization(emptyProject(), libSpec(1), { newId: () => `LS${++n}` }));
@@ -151,7 +160,20 @@ describe('SpecsDialog', () => {
       ['sdui', SDUI_VERSION],
     ]);
     expect(p.layers.filter((l) => l.spec?.specId === 'sdui')).toHaveLength(SDUI_LAYERS);
-    expect(screen.getByText(`v${SDUI_VERSION} · ${SDUI_LAYERS} layer(s)`)).toBeTruthy();
+    expect(
+      screen.getByText(new RegExp(`^v${SDUI_VERSION} · ${SDUI_LAYERS} layer\\(s\\)`)),
+    ).toBeTruthy();
+  });
+
+  it('the list entry names the layers of the applied specialization (R17.3)', () => {
+    let n = 0;
+    const spec = libSpec(1, { c: [buttonType()] });
+    const names = spec.layers.map((l) => l.name);
+    setup(applySpecialization(emptyProject(), spec, { newId: () => `LS${++n}` }));
+    const item = document.querySelector<HTMLElement>('.spec-item');
+    expect(item?.textContent).toContain(
+      `v1 · ${names.length} layer(s): ${names.join(', ')}`,
+    );
   });
 
   it('the result of a successful operation uses the success notice', async () => {

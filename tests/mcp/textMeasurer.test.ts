@@ -1,6 +1,9 @@
-import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { parse } from 'opentype.js';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createMeasurer } from '../../mcp/image/textMeasurer';
 import type { MeasureFont } from '../../src/model/components/instantiate';
 
@@ -95,5 +98,40 @@ describe('measurer with opentype.js: baseline (MC1, decision 2)', () => {
     const m = measure('Pay invoice', font, 60);
     expect(m.lineCount).toBe(2);
     expect((m.lastBaseline ?? 0) - (m.firstBaseline ?? 0)).toBeCloseTo(20, 6);
+  });
+});
+
+// Stage #2089 (FM1): a library font with GSUB subtables `opentype.js` cannot apply measures like any
+// other font, with the supported substitutions still applied.
+describe('measurer with a library font that has unsupported GSUB', () => {
+  let dir: string;
+  let bytes: ArrayBuffer;
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'mapping-gsub-'));
+    execFileSync('node', ['scripts/testing/gsub-font.mjs', join(dir, 'gsub.ttf')]);
+    const file = new Uint8Array(readFileSync(join(dir, 'gsub.ttf')));
+    bytes = file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength);
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  const gsub = (): ReturnType<typeof createMeasurer> =>
+    createMeasurer([
+      { family: 'Gsub', weight: '400', style: 'normal', path: 'fonts/Gsub.ttf', bytes },
+    ]);
+  const inGsub = { ...font, family: 'Gsub, sans-serif' };
+
+  it('measures `fit` without throwing, as Mapping Sans does', () => {
+    const measure = gsub();
+    const fit = measure('fit', inGsub).width;
+    expect(fit).toBeCloseTo(sans.getAdvanceWidth('fit', 14, { kerning: true }), 6);
+  });
+
+  it('`ii` still measures as `m` (the supported ligature applies)', () => {
+    const measure = gsub();
+    const m = sans.getAdvanceWidth('m', 14, { kerning: true });
+    expect(measure('ii', inGsub).width).toBeCloseTo(m, 6);
+    expect(measure('ii', inGsub).width).toBeGreaterThan(
+      sans.getAdvanceWidth('ii', 14, { kerning: true }),
+    );
   });
 });

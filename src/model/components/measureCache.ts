@@ -49,12 +49,19 @@ const memoized = new WeakSet<TextMeasurer>();
  */
 export function cachedMeasurer(
   measure: TextMeasurer,
-  options: { readonly limit: number },
+  options: { readonly limit: number; readonly epoch?: () => number },
 ): TextMeasurer {
   const limit = Math.max(1, Math.floor(options.limit));
   // The insertion order of the `Map` is the order of use: the first key is the least recent.
   const entries = new Map<string, ReturnType<TextMeasurer>>();
+  // The memo belongs to one `epoch`: when it changes (a font lost its substitutions) what was measured is stale.
+  let seen = options.epoch?.();
   const cached: TextMeasurer = (text, font, maxWidth) => {
+    const epoch = options.epoch?.();
+    if (epoch !== seen) {
+      entries.clear();
+      seen = epoch;
+    }
     const key = measureKey(text, font, maxWidth);
     const hit = entries.get(key);
     if (hit !== undefined) {

@@ -1067,6 +1067,7 @@ describe('resources and instructions', () => {
       'list_projects',
       'list_proposals',
       'list_threads',
+      'measure_component',
       'open_thread',
       'plan_changes',
       'plan_library_update',

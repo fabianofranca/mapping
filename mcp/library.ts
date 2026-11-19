@@ -15,7 +15,10 @@ import {
 } from '../src/model/libraryPackage';
 import { docClonesChecker, externalDocWarnings } from './docFiles';
 import { ToolError } from './errors';
+import { type SkippedSubtable } from './image/fontSubstitutions';
+import { loadLibraryFont, type LibraryFont } from './image/textMeasurer';
 import { hasParentSegment, isWithin, type Roots } from './paths';
+import { MAX_FONT_BYTES } from './projects';
 
 // Library package (Library stage, B2): `validate_library` reads the package FOLDER and calls
 // `validateLibrary` (`src/model/library.ts`), the same function as the app and the skill. Here only
@@ -282,6 +285,97 @@ async function docWarningsOf(
   return externalDocWarnings(spec, specPath ?? '', check);
 }
 
+/** The font files the server reads (`loadFontBook` reads the same ones; `.woff2` it does not). */
+const isReadableFont = (path: string): boolean => /\.(ttf|otf|woff)$/i.test(path);
+
+/** The specialization file of a package: the one the request names, or the only `mapping-spec` JSON. */
+function specFileOf(pkg: ReadPackage): string {
+  if (pkg.specPath !== undefined) return pkg.specPath;
+  const found = pkg.files.filter((file) => {
+    if (!file.path.toLowerCase().endsWith('.json') || file.text === undefined)
+      return false;
+    try {
+      const json = JSON.parse(file.text) as { format?: unknown };
+      return json.format === 'mapping-spec' || json.format === 'mapeador-spec';
+    } catch {
+      return false;
+    }
+  });
+  return found.length === 1 ? found[0]!.path : '';
+}
+
+/** The bytes of a font file of the package, within the roots and up to `MAX_FONT_BYTES`; `null` otherwise. */
+async function readFontFile(
+  roots: Roots,
+  dir: string,
+  path: string,
+): Promise<ArrayBuffer | null> {
+  try {
+    const real = await realpath(join(dir, path));
+    const realDir = await realpath(dir).catch(() => dir);
+    if (!isWithin(realDir, real) || (await roots.locate(real)) === null) return null;
+    const info = await stat(real);
+    if (!info.isFile() || info.size > MAX_FONT_BYTES) return null;
+    const bytes = await readFile(real);
+    return bytes.buffer.slice(
+      bytes.byteOffset,
+      bytes.byteOffset + bytes.byteLength,
+    ) as ArrayBuffer;
+  } catch {
+    return null;
+  }
+}
+
+/** "lookup type 6 format 2 ×3, lookup type 3 format 1 ×1": what the server skipped, by kind. */
+const skippedList = (skipped: readonly SkippedSubtable[]): string =>
+  skipped
+    .map((s) => `lookup type ${s.lookupType} format ${s.substFormat} ×${s.count}`)
+    .join(', ');
+
+/** The warning text of a font the server could not use as it is (`null` when nothing was skipped). */
+export function fontWarningText(file: string, font: LibraryFont): string | null {
+  if (font.probe === 'unusable')
+    return `the MCP server cannot lay out \`${file}\`: it measures and draws with its embedded font; the app is not affected`;
+  const { skipped, probe } = font;
+  if (probe === 'gsub-off')
+    return `the MCP server measures and draws \`${file}\` without any glyph substitution${skipped.length > 0 ? ` (it also cannot apply ${skippedList(skipped)})` : ''}: a layout still failed after skipping the subtables it cannot apply; the app is not affected`;
+  if (skipped.length === 0) return null;
+  const count = skipped.reduce((sum, s) => sum + s.count, 0);
+  return `the MCP server measures and draws \`${file}\` without ${count} substitution subtable(s) it cannot apply (${skippedList(skipped)}): their alternates are not drawn by the server; the app is not affected`;
+}
+
+/**
+ * One warning per library font the MCP server cannot use as it is (decision 3 of #2089): it
+ * applies the server's pruning and probe to each `.ttf`/`.otf`/`.woff` the specialization
+ * declares. A missing, unreadable or larger font, and a `.woff2`, is not checked here.
+ */
+async function fontSubstitutionWarnings(
+  roots: Roots,
+  pkg: ReadPackage,
+  spec: Spec | undefined,
+): Promise<LibraryIssue[]> {
+  const fonts = spec?.fonts ?? [];
+  if (fonts.length === 0) return [];
+  const specFile = specFileOf(pkg);
+  const present = new Set(pkg.files.map((file) => file.path));
+  const issues: LibraryIssue[] = [];
+  for (const [index, entry] of fonts.entries()) {
+    const path = resolvePath(specFile, entry.file);
+    if (!isReadableFont(path) || !present.has(path)) continue;
+    const bytes = await readFontFile(roots, pkg.dir, path);
+    const font = bytes === null ? null : loadLibraryFont(bytes);
+    const message = font === null ? null : fontWarningText(entry.file, font);
+    if (message === null) continue;
+    issues.push({
+      file: specFile,
+      path: `fonts[${index}].file`,
+      message,
+      severity: 'warning',
+    });
+  }
+  return issues;
+}
+
 /** `validate_library`: the three levels over the folder, in the format of the other validation tools. */
 export async function validateLibraryTool(
   roots: Roots,
@@ -312,9 +406,11 @@ export async function validateLibraryTool(
     pkg.specPath,
     args.docClones,
   );
+  const fontWarnings = await fontSubstitutionWarnings(roots, pkg, report.spec);
   const warnings = [
     ...report.warnings,
     ...docWarnings,
+    ...fontWarnings,
     ...ignoredPathsIssues(pkg.ignoredPaths),
   ].map(issueView);
   const hint = report.ok

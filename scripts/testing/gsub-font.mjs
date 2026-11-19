@@ -1,0 +1,197 @@
+// gsub-font.mjs: node gsub-font.mjs <out.ttf>
+// Writes a test font: a copy of `mcp/fonts/MappingSans-Regular.ttf` whose GSUB table is replaced by
+// one the MCP server's `opentype.js` 2.0.0 cannot fully apply (stage #2089, "A library font never
+// makes the server fail"). No binary font is kept in the repository: tests and the tester build it.
+//
+// The new GSUB has the scripts `DFLT` and `latn`, each with the features `ccmp` and `liga` → lookups
+// 0, 1 and 2 (`opentype.js` applies the DFLT `ccmp` to any text of two or more characters, so that
+// is what makes the default calls fail):
+//   - lookup 0: type 6 format 2 (chaining context by class; coverage `f`, one empty rule set).
+//     `opentype.js` throws `substitutionType : 62 … is not yet supported` for it;
+//   - lookup 1: type 3 format 1 (alternate substitution, `a` → `a`). Also not supported;
+//   - lookup 2: type 4 format 1 (ligature, `ii` → the glyph of `m`). Supported: it must still apply.
+// Without the fix, measuring or drawing Latin text with this font throws. With it, the server skips
+// lookups 0 and 1 (skip list `{6,2,1}` and `{3,1,1}`) and `ii` measures as `m`.
+//
+// The table directory is rewritten: tables sorted by tag, offsets aligned to 4, checksums recomputed
+// (`head.checkSumAdjustment` too).
+import { readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const out = process.argv[2];
+if (out === undefined) {
+  process.stderr.write('usage: node gsub-font.mjs <out.ttf>\n');
+  process.exit(2);
+}
+
+const source = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../mcp/fonts/MappingSans-Regular.ttf',
+);
+
+/** The tables of a TrueType file, by tag. */
+function readTables(buf) {
+  const tables = new Map();
+  const count = buf.readUInt16BE(4);
+  for (let n = 0; n < count; n++) {
+    const entry = 12 + n * 16;
+    const offset = buf.readUInt32BE(entry + 8);
+    const length = buf.readUInt32BE(entry + 12);
+    tables.set(
+      buf.toString('latin1', entry, entry + 4),
+      Buffer.from(buf.subarray(offset, offset + length)),
+    );
+  }
+  return tables;
+}
+
+/** The glyph id of a character in the `cmap` (the format 4 subtable). */
+function glyphOf(cmap, char) {
+  const code = char.codePointAt(0);
+  const subtables = cmap.readUInt16BE(2);
+  for (let n = 0; n < subtables; n++) {
+    const base = cmap.readUInt32BE(4 + n * 8 + 4);
+    if (cmap.readUInt16BE(base) !== 4) continue;
+    const segments = cmap.readUInt16BE(base + 6) / 2;
+    const ends = base + 14;
+    const starts = ends + segments * 2 + 2;
+    const deltas = starts + segments * 2;
+    const ranges = deltas + segments * 2;
+    for (let s = 0; s < segments; s++) {
+      if (code > cmap.readUInt16BE(ends + s * 2)) continue;
+      const start = cmap.readUInt16BE(starts + s * 2);
+      if (code < start) break;
+      const delta = cmap.readUInt16BE(deltas + s * 2);
+      const range = cmap.readUInt16BE(ranges + s * 2);
+      if (range === 0) return (code + delta) & 0xffff;
+      const glyph = cmap.readUInt16BE(ranges + s * 2 + range + (code - start) * 2);
+      return glyph === 0 ? 0 : (glyph + delta) & 0xffff;
+    }
+  }
+  throw new Error(`no glyph for ${char} in ${source}`);
+}
+
+const u16 = (...values) => {
+  const buf = Buffer.alloc(values.length * 2);
+  values.forEach((v, n) => buf.writeUInt16BE(v, n * 2));
+  return buf;
+};
+
+/**
+ * A table whose first bytes are `head` (16-bit fields) followed by `children`; each `null` in `head`
+ * is replaced, in order, by the offset (from the table's start) of the next child.
+ */
+function table(head, children) {
+  const size = head.length * 2;
+  let at = size;
+  const offsets = children.map((child) => {
+    const here = at;
+    at += child.length;
+    return here;
+  });
+  let next = 0;
+  const fields = head.map((value) => (value === null ? offsets[next++] : value));
+  return Buffer.concat([u16(...fields), ...children]);
+}
+
+function buildGsub(f, a, i, m) {
+  const coverage = (glyph) => u16(1, 1, glyph);
+  const emptyClassDef = u16(2, 0);
+  const lookup = (type, subtable) => table([type, 0, 1, null], [subtable]);
+
+  const lookups = [
+    // Type 6 format 2: coverage `f`, three empty class definitions, one empty chain class set.
+    lookup(
+      6,
+      table(
+        [2, null, null, null, null, 1, null],
+        [coverage(f), emptyClassDef, emptyClassDef, emptyClassDef, u16(0)],
+      ),
+    ),
+    // Type 3 format 1: `a` has the alternates [`a`].
+    lookup(3, table([1, null, 1, null], [coverage(a), u16(1, a)])),
+    // Type 4 format 1: `i` `i` → `m`.
+    lookup(4, table([1, null, 1, null], [coverage(i), table([1, null], [u16(m, 2, i)])])),
+  ];
+  const lookupList = table([3, null, null, null], lookups);
+
+  // `opentype.js` applies `ccmp` of the DFLT script to any text of two or more characters, whatever
+  // features the caller asks for: it is what makes the unsupported subtables throw. `liga` is
+  // applied only when a call asks for it.
+  const feature = u16(0, 3, 0, 1, 2);
+  const featureList = table(
+    [2, ...tagWord('ccmp'), null, ...tagWord('liga'), null],
+    [feature, feature],
+  );
+
+  const langSys = u16(0, 0xffff, 2, 0, 1);
+  const script = table([null, 0], [langSys]);
+  const scriptList = table(
+    [2, ...tagWord('DFLT'), null, ...tagWord('latn'), null],
+    [script, script],
+  );
+
+  return table([1, 0, null, null, null], [scriptList, featureList, lookupList]);
+}
+
+/** A four-letter tag as two 16-bit words. */
+function tagWord(name) {
+  const bytes = Buffer.from(name, 'latin1');
+  return [bytes.readUInt16BE(0), bytes.readUInt16BE(2)];
+}
+
+const checksum = (buf) => {
+  let sum = 0;
+  for (let n = 0; n < buf.length; n += 4) {
+    const word = Buffer.alloc(4);
+    buf.copy(word, 0, n, Math.min(n + 4, buf.length));
+    sum = (sum + word.readUInt32BE(0)) >>> 0;
+  }
+  return sum;
+};
+
+const tables = readTables(readFileSync(source));
+const cmap = tables.get('cmap');
+tables.set(
+  'GSUB',
+  buildGsub(
+    glyphOf(cmap, 'f'),
+    glyphOf(cmap, 'a'),
+    glyphOf(cmap, 'i'),
+    glyphOf(cmap, 'm'),
+  ),
+);
+tables.get('head').writeUInt32BE(0, 8);
+
+const tags = [...tables.keys()].sort();
+const count = tags.length;
+const directory = 12 + count * 16;
+const header = Buffer.alloc(directory);
+header.writeUInt32BE(0x00010000, 0);
+header.writeUInt16BE(count, 4);
+const entrySelector = Math.floor(Math.log2(count));
+header.writeUInt16BE(2 ** entrySelector * 16, 6);
+header.writeUInt16BE(entrySelector, 8);
+header.writeUInt16BE(count * 16 - 2 ** entrySelector * 16, 10);
+
+const body = [];
+let offset = directory;
+tags.forEach((name, n) => {
+  const data = tables.get(name);
+  const padded = Buffer.alloc(Math.ceil(data.length / 4) * 4);
+  data.copy(padded);
+  const entry = 12 + n * 16;
+  header.write(name, entry, 'latin1');
+  header.writeUInt32BE(checksum(padded), entry + 4);
+  header.writeUInt32BE(offset, entry + 8);
+  header.writeUInt32BE(data.length, entry + 12);
+  body.push(padded);
+  offset += padded.length;
+});
+
+const file = Buffer.concat([header, ...body]);
+const headEntry = 12 + tags.indexOf('head') * 16;
+const headOffset = file.readUInt32BE(headEntry + 8);
+file.writeUInt32BE((0xb1b0afba - checksum(file)) >>> 0, headOffset + 8);
+writeFileSync(out, file);

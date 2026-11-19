@@ -3,6 +3,7 @@ import {
   addComponentMarking,
   approximateMeasurer,
   arrangeMarking,
+  createDrawingCache,
   componentMinSize,
   componentSize,
   fitMarking,
@@ -219,4 +220,49 @@ describe('arrangeMarking × density', () => {
     );
     expect(rectOf(moveMarking(p, 'T', 20, 20), 'T')).toMatchObject({ x: 30, y: 30 });
   });
+});
+
+describe('fit-scaled × density (FM2, #2086)', () => {
+  const labels = [
+    'Ok',
+    'Confirm',
+    'A reasonably long label',
+    'Wwwwwwwwwwwwwiiiiii',
+    'Save and continue',
+  ];
+  const densities = [1, 2, 2.625, 3];
+  const approx = approximateMeasurer;
+  // The drawing and the fit disagree by a fraction when a line gets a width limit.
+  const disagreeing: typeof approximateMeasurer = (text, font, maxWidth) => {
+    const base = approx(text, font, maxWidth);
+    return maxWidth === undefined ? base : { ...base, width: base.width + 0.2 };
+  };
+
+  for (const [name, measure] of [
+    ['approximate', approx],
+    ['disagreeing', disagreeing],
+  ] as const) {
+    it(`${name} measurer: fitMarking leaves no overflow at densities 1, 2, 2.625 and 3`, () => {
+      for (const density of densities)
+        for (const label of labels) {
+          const base = setContainerDensity(fitProject(), 'I1', density);
+          const born = setFieldValue(
+            add(
+              base,
+              'B',
+              'fit-scaled',
+              { rect: box(100, 100, 120 * density, 40 * density) },
+              fcat,
+              FIT_SPEC_ID,
+            ),
+            'A_B',
+            'label',
+            label,
+          );
+          const fitted = fitMarking(born, fcat, 'B', measure);
+          const drawn = createDrawingCache()(fitted, fcat, measure, 0).get('B');
+          expect(drawn?.overflow, `${label} at ${density}x`).toBe(false);
+        }
+    });
+  }
 });

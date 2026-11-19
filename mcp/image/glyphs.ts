@@ -1,6 +1,7 @@
 import type { Font, PathCommand } from 'opentype.js';
 import type { Point } from '../../src/model/components/scene';
 import { CAP_HEIGHT_RATIO } from '../../src/model/components/baseline';
+import { guardedLayout } from './fontSubstitutions';
 
 // Glyph outlines (opentype.js) as polygons, for the rasterizer to fill.
 
@@ -88,29 +89,42 @@ export interface GlyphStyle {
   readonly italic: boolean;
 }
 
-/** Outlines of the text with the baseline origin at (`x`, `baseline`). */
-export function textPolygons(
+/** The outlines of the text laid out by `face` (kerning, or character by character with letter spacing). */
+function laidOut(
   face: Font,
   text: string,
   x: number,
   baseline: number,
   style: GlyphStyle,
-): Polygon[] {
-  let polygons: Polygon[];
-  if (style.letterSpacing === 0) {
-    polygons = pathPolygons(
+) {
+  if (style.letterSpacing === 0)
+    return pathPolygons(
       face.getPath(text, x, baseline, style.size, { kerning: true }).commands,
     );
-  } else {
-    polygons = [];
-    let at = x;
-    for (const char of text) {
-      polygons.push(
-        ...pathPolygons(face.getPath(char, at, baseline, style.size).commands),
-      );
-      at += face.getAdvanceWidth(char, style.size) + style.letterSpacing;
-    }
+  const polygons: Polygon[] = [];
+  let at = x;
+  for (const char of text) {
+    polygons.push(...pathPolygons(face.getPath(char, at, baseline, style.size).commands));
+    at += face.getAdvanceWidth(char, style.size) + style.letterSpacing;
   }
+  return polygons;
+}
+
+/**
+ * Outlines of the text with the baseline origin at (`x`, `baseline`). A font that cannot lay the
+ * text out loses its glyph substitutions; if it still cannot, the embedded `fallback` draws it.
+ */
+export function textPolygons(
+  face: Font,
+  fallback: () => Font,
+  text: string,
+  x: number,
+  baseline: number,
+  style: GlyphStyle,
+): Polygon[] {
+  const polygons = guardedLayout(face, fallback, (f) =>
+    laidOut(f, text, x, baseline, style),
+  );
   return style.italic ? slant(polygons, baseline) : polygons;
 }
 
