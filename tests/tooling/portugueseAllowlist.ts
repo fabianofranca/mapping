@@ -890,6 +890,21 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'session-notices',
   },
+  {
+    term: 'Via rápida #<n> pronta',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Via rápida #<n> recusada',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Via rápida: na fila do painel',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'session-notices',
+  },
   { term: 'Aviso não entregue:', source: 'docs/FLOW.md', group: 'session-notices' },
   { term: 'CI preso na fila:', source: 'docs/FLOW.md', group: 'session-notices' },
   { term: 'CI travado', source: 'docs/FLOW.md', group: 'session-notices' },
