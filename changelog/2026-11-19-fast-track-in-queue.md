@@ -1,4 +1,4 @@
-# Released fast tracks run inside the queue — 2026-11-19 (épico `epic/fast-track-in-queue`, PR #2206, MCP unchanged, schema v20)
+# Released fast tracks run inside the queue — 2026-11-19 (épico `epic/fast-track-in-queue`, PR #2206, MCP unchanged, schema v21)
 
 ## Adicionado
 
