@@ -4,3 +4,4 @@
 
 - The bottom-window tabs have an 8 px gap at every width; in a narrow bottom window (up to 470 px), Notices and Diagnostics show only their icon, with the counter or the alert dot (AI1, #2078).
 - The bottom-window tabs' accessible names carry the count, separated by a space (`Incomplete 1`, `Notices 20`, `Comments 2`); the counter is `aria-hidden` (AI1, #2078).
+- The Incomplete list shows the layer on a second line under the marking in a narrow bottom window, with ellipsized headers and the layer name tooltip (AI2, #2079).

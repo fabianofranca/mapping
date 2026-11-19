@@ -125,6 +125,23 @@ describe('List: link by role (stage #559, PD4)', () => {
 });
 
 describe('Incomplete (B5)', () => {
+  it('has the layer line in the Marking cell, titled headers and a titled layer name', () => {
+    const harness = createHarness(cadastroProject());
+    withContext(harness, <IncompleteView onGoToAnnotation={vi.fn()} />);
+    const table = screen.getByRole('table', { name: t('incomplete.title') });
+    const markingCell = table.querySelector('.list-cell-marking');
+    const line = markingCell?.querySelector('.incomplete-layer-line');
+    expect(line).toBeTruthy();
+    const name = line?.querySelector('.list-layer-name');
+    expect(name?.getAttribute('title')).toBe(name?.textContent);
+    const heads = Array.from(table.querySelectorAll('thead th'));
+    expect(heads.length).toBe(4);
+    for (const th of heads) expect(th.getAttribute('title')).toBe(th.textContent);
+    expect(
+      table.querySelector('.list-cell-layer .list-layer-name')?.getAttribute('title'),
+    ).toBeTruthy();
+  });
+
   it('lists the pending items per image, with the reasons', () => {
     const harness = createHarness(cadastroProject());
     withContext(harness, <IncompleteView onGoToAnnotation={vi.fn()} />);
