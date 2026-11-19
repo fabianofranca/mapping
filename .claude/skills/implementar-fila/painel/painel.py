@@ -507,12 +507,12 @@ def ended_follows_status(pairs, row):
 
 
 def stamp_merge_ask(pairs, row):
-    """A merge asked by text has no `child`: the `childAt` says since when (the hours of `show`), once per ask."""
+    """A merge asked by text has no `child`: the `childAt` says since when (the hours of `show`), restarted on every new ask."""
     wait = pairs.get("wait") or ""
-    if not wait.startswith(MERGE_ASK_PREFIX) or "childAt" in pairs:
+    if not wait.startswith(MERGE_ASK_PREFIX) or pairs.get("childAt"):
         return
     child = pairs["child"] if "child" in pairs else (row or {}).get("child")
-    if not child and not ((row or {}).get("wait") or "").startswith(MERGE_ASK_PREFIX):
+    if not child and wait != (row or {}).get("wait"):
         pairs["childAt"] = "now"
 
 

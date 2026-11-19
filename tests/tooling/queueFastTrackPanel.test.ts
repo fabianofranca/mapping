@@ -378,6 +378,31 @@ describe('painel.py show: `merge pedido ao dono:` (FQ1, decision 3)', () => {
     expect(showLine('merge pedido ao dono:')).toBe('merge pedido ao dono: nenhum');
   });
 
+  it('(h) keeps the age when the same call clears `child`, and restarts it on a new ask', () => {
+    add(
+      '#5',
+      ficha('nenhuma', 'scripts/ci/a.mjs'),
+      'status=em andamento',
+      'child=sess-5',
+      'childAt=now',
+    );
+    run(
+      'row',
+      dir,
+      '#5',
+      'status=esperando dono',
+      'child=',
+      'wait=merge pedido ao dono: PR #9',
+    );
+    expect(showLine('merge pedido ao dono:', LATER)).toBe(
+      'merge pedido ao dono: #5 (PR #9, há 3 h)',
+    );
+    runAt(LATER, 'row', dir, '#5', 'wait=merge pedido ao dono: PR #12');
+    expect(showLine('merge pedido ao dono:', LATER)).toBe(
+      'merge pedido ao dono: #5 (PR #12, há 0 h)',
+    );
+  });
+
   it('(h) is not in `esperando o coordenador:` nor `atrasadas:`', () => {
     ask('#7', 'merge pedido ao dono: PR #42');
     expect(showLine('esperando o coordenador:', LATER)).toBe(
