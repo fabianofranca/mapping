@@ -106,6 +106,7 @@ import {
   setProjectDrawingMode,
   setImageMarkingsLocked,
   setContainerPlacement,
+  snapPlacement,
   setImageSource,
   setLayerColor,
   setMarkingLocked,
@@ -1978,8 +1979,8 @@ class Batch {
         scale: op.scale ?? placement.scale,
       };
       project = setContainerPlacement(project, id, next);
-      // The stored value, already free of floating-point noise.
-      const saved = projectIndex(project).containers.get(id)!.placement;
+      // The value `setContainerPlacement` stores: the same pure function, free of floating-point noise.
+      const saved = snapPlacement(next);
       changes.push(`position (${saved.x}, ${saved.y}) scale ${saved.scale}`);
     }
     if (op.markingColor !== undefined) {

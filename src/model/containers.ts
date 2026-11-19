@@ -624,7 +624,7 @@ export function setContainerPlacement(
 ): Project {
   checkPlacement(placement);
   requireUnlocked(canEditImagePlacement(p, containerId));
-  // Only write door of the `placement` by movement: floating-point noise vanishes here.
+  // The floating-point noise vanishes in `snapPlacement`, whose docblock lists the doors that write the `placement`.
   const copy = snapPlacement(placement);
   const overlap = overlappingContainer(p, containerId, copy);
   if (overlap) failOverlap(overlap);

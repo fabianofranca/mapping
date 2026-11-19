@@ -110,14 +110,6 @@ function packageSpecNameIn(spec: Spec, files?: SpecPackageFiles): string | undef
 }
 
 /**
- * Project actions: every mutation goes through here. Each action applies a pure model
- * operation and creates a history entry. Those that create items
- * return the generated id.
- *
- * Gestures (drag/resize) use `store.beginGesture/updateGesture/commitGesture`
- * with the same operations, to produce a single history entry.
- */
-/**
  * Joint drag in Main: `moveItems` with the offset reduced to the largest that does not overlap
  * a container that does not move (the edges touch; decision 4 of stage #764).
  */
@@ -162,6 +154,14 @@ function crossingArrowsOf(e: ModelError): readonly model.PageArrowCrossing[] {
   return Array.isArray(arrows) ? (arrows as readonly model.PageArrowCrossing[]) : [];
 }
 
+/**
+ * Project actions: every mutation goes through here. Each action applies a pure model
+ * operation and creates a history entry. Those that create items
+ * return the generated id.
+ *
+ * Gestures (drag/resize) use `store.beginGesture/updateGesture/commitGesture`
+ * with the same operations, to produce a single history entry.
+ */
 export function createProjectActions(store: ProjectStore, deps: ActionDeps = {}) {
   const newId = deps.newId ?? (() => crypto.randomUUID());
   const catalog = deps.components ?? (() => model.EMPTY_CATALOG);
