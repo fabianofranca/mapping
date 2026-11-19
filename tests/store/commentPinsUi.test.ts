@@ -139,6 +139,8 @@ describe('Comment button: arm, place and cancel', () => {
     placeComment(ui, project, point);
     expect(composingAnchor(ui)).toEqual(point);
     expect(ui.selection.value).toBeNull();
-    expect(localStorage.length).toBe(0);
+    // Only the Details window layout is stored (the request opens it); no draft or project.
+    const keys = Object.keys(localStorage);
+    expect(keys.filter((k) => !/window|tool/i.test(k))).toEqual([]);
   });
 });
