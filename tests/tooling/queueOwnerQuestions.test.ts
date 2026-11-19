@@ -55,13 +55,13 @@ afterEach(() => {
 
 describe('painel.py pergunta — open (decision 4)', () => {
   it('(a) writes meta.perguntas with issue, verbo, texto and at; the same row and verb again changes nothing', () => {
-    runAt(T0, 'pergunta', dir, '#7', 'segurar', 'texto=#7 começou apesar do recado');
+    runAt(T0, 'pergunta', dir, '#7', 'segurar', 'texto=#7 started despite the note');
     expect(questions()).toEqual([
-      { issue: '#7', verbo: 'segurar', texto: '#7 começou apesar do recado', at: T0 },
+      { issue: '#7', verbo: 'segurar', texto: '#7 started despite the note', at: T0 },
     ]);
     runAt(T3H, 'pergunta', dir, '#7', 'segurar', 'texto=outro texto');
     expect(questions()).toEqual([
-      { issue: '#7', verbo: 'segurar', texto: '#7 começou apesar do recado', at: T0 },
+      { issue: '#7', verbo: 'segurar', texto: '#7 started despite the note', at: T0 },
     ]);
     runAt(T3H, 'pergunta', dir, '#7', 'reabrir', 'texto=CI preso');
     expect(questions()).toHaveLength(2);
@@ -167,7 +167,7 @@ describe('painel.py show — perguntas ao dono (decision 5)', () => {
       dir,
       '#7',
       'segurar',
-      'texto=#7 começou apesar do recado. Responda `segurar #7`',
+      'texto=#7 started despite the note. Responda `segurar #7`',
     );
     runAt(
       T0,
@@ -175,7 +175,7 @@ describe('painel.py show — perguntas ao dono (decision 5)', () => {
       dir,
       'SUP-1',
       'tipo=B',
-      'pedido=trocar a ordem',
+      'pedido=swap the order',
       'estado=perguntado ao dono',
     );
     runAt(T0, 'sup', dir, 'SUP-2', 'tipo=A', 'pedido=hold #8', 'estado=enviado');
@@ -184,9 +184,9 @@ describe('painel.py show — perguntas ao dono (decision 5)', () => {
     const out = runAt(T3H, 'show', dir);
     expect(out).toContain('perguntas ao dono: 2');
     expect(out).toContain(
-      '  #7 segurar (há 3 h): #7 começou apesar do recado. Responda `segurar #7`',
+      '  #7 segurar (há 3 h): #7 started despite the note. Responda `segurar #7`',
     );
-    expect(out).toContain('  SUP-1 (há 3 h): trocar a ordem');
+    expect(out).toContain('  SUP-1 (há 3 h): swap the order');
     expect(out).not.toContain('SUP-2 (há');
     expect(out).not.toContain('SUP-3 (há');
     const lines = out.split('\n');

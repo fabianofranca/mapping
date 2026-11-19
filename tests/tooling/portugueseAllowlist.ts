@@ -3320,6 +3320,12 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
       'the `há <h> h` of the `merge pedido ao dono:` line of `show`, frozen script output that the queue text and tests/tooling/queueFastTrackPanel.test.ts match',
   },
   {
+    path: 'tests/tooling/queueOwnerQuestions.test.ts',
+    pattern: /\(há 3 h\)|\(há'/,
+    reason:
+      'the `há <h> h` of the `perguntas ao dono:` lines of `show`, frozen script output (decision 16 of #741)',
+  },
+  {
     path: '.claude/skills/implementar-fila/painel/painel.py',
     pattern: /f"há \{minutes_since\(at\)/,
     reason:
