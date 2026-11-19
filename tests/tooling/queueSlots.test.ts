@@ -356,8 +356,8 @@ describe('implementar-fila and detalhar-backlog: slots, context and scripts (VG2
 
   it('"Queue changes" has the state note, the Seguir/Segurar and the hold (decisions 9 and 3.4)', () => {
     const changes = section(queue, '## Queue changes during the run');
-    expect(changes).toContain('Seguir (Recomendado)');
-    expect(changes).toContain('Segurar');
+    expect(changes).toContain('`seguir #<n>`');
+    expect(changes).toContain('`segurar #<n>`');
     expect(changes).toContain('hold=');
     expect(changes).toContain('pausada pelo dono');
     expect(changes).toContain('ordem do dono (');
