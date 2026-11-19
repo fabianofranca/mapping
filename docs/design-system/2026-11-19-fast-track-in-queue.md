@@ -1,4 +1,4 @@
-# Released fast tracks run inside the queue — [Não lançado] (épico `epic/fast-track-in-queue`)
+# Released fast tracks run inside the queue — 2026-11-19 (épico `epic/fast-track-in-queue`)
 
 ## Pendências
 

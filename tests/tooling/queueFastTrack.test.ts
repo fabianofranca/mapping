@@ -11,7 +11,7 @@ const read = (path: string): string => readFileSync(path, 'utf8');
 const QUEUE = read('.claude/skills/implementar-fila/SKILL.md');
 const FAST = read('.claude/skills/via-rapida/SKILL.md');
 const FLOW = read('docs/FLOW.md');
-const CHANGELOG = read('changelog/fast-track-in-queue.md');
+const CHANGELOG = read('changelog/2026-11-19-fast-track-in-queue.md');
 
 const intro = (text: string): string => text.slice(0, text.indexOf('\n## '));
 const has = (label: string, text: string, parts: string[]): void => {
