@@ -18,6 +18,25 @@ export interface TabItem<T extends string> {
   readonly badgeTone?: 'muted' | 'info';
   /** Alert dot beside the label (e.g. new error). */
   readonly alert?: boolean;
+  /**
+   * Needs `icon`. The label sits in `.tab-label` and the icon in `.tab-icon`; CSS decides
+   * which one shows (e.g. icon only inside a narrow container).
+   */
+  readonly compact?: boolean;
+}
+
+/**
+ * Accessible name: set when the tab has a counter or is compact or icon-only (its text alone
+ * would not say it all); the counter follows the name after a space. Otherwise the content names it.
+ */
+function accessibleName<T extends string>(
+  tab: Pick<TabItem<T>, 'label' | 'ariaLabel' | 'badge' | 'compact' | 'icon'>,
+): string | undefined {
+  const { label, ariaLabel, badge, compact, icon } = tab;
+  const iconOnly = Boolean(icon) && !label;
+  if (!badge && !compact && !iconOnly) return ariaLabel;
+  const name = ariaLabel ?? label;
+  return badge ? `${name} ${badge}` : name;
 }
 
 interface TabsProps<T extends string> {
@@ -83,7 +102,18 @@ export function Tabs<T extends string>({
     <div ref={listRef} class="tabs" role="tablist" aria-label={label}>
       {tabs.map(
         (
-          { id, label: text, icon, title, ariaLabel, disabled, badge, badgeTone, alert },
+          {
+            id,
+            label: text,
+            icon,
+            title,
+            ariaLabel,
+            disabled,
+            badge,
+            badgeTone,
+            alert,
+            compact,
+          },
           i,
         ) => (
           <button
@@ -94,15 +124,23 @@ export function Tabs<T extends string>({
             aria-selected={value === id}
             tabIndex={value === id ? 0 : -1}
             title={title}
-            aria-label={ariaLabel}
+            aria-label={accessibleName({ label: text, ariaLabel, badge, compact, icon })}
             disabled={disabled}
             onKeyDown={(e) => move(e, i)}
             onClick={() => onChange(id)}
           >
-            {icon && <Icon name={icon} />}
-            {text}
+            {icon &&
+              (compact && text ? (
+                <span class="tab-icon">
+                  <Icon name={icon} />
+                </span>
+              ) : (
+                <Icon name={icon} />
+              ))}
+            {text && <span class="tab-label">{text}</span>}
             {badge && (
               <span
+                aria-hidden="true"
                 class={badgeTone === 'info' ? 'tab-badge tab-badge-info' : 'tab-badge'}
               >
                 {badge}
