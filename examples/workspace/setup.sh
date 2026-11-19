@@ -293,8 +293,11 @@ self_update() {
 
 install_server() {
   mkdir -p tools
-  cp "$TMP/mapping-mcp.js" tools/mapping-mcp.js
-  cp "$TMP/mapping-mcp.js.sha256" tools/mapping-mcp.js.sha256
+  # Copy to a temporary name and rename, so an interrupted run never leaves a half-written server.
+  cp "$TMP/mapping-mcp.js" tools/mapping-mcp.js.new
+  mv -f tools/mapping-mcp.js.new tools/mapping-mcp.js
+  cp "$TMP/mapping-mcp.js.sha256" tools/mapping-mcp.js.sha256.new
+  mv -f tools/mapping-mcp.js.sha256.new tools/mapping-mcp.js.sha256
 }
 
 # Copies $2 to .agents/skills/$1/SKILL.md and keeps .claude/skills/$1 pointing at it.

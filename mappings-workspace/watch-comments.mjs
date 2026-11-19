@@ -360,7 +360,10 @@ export async function main(argv) {
     const onSignal = () => quit(0);
     // The parent went away without a signal (a stopped `Monitor`): stdin (when it is a pipe) ends or
     // stdout breaks. Without this the watcher would stay alive, orphaned, with nobody to read it.
-    const onOrphaned = () => quit(0);
+    const onOrphaned = () => {
+      log('the parent went away (stdin or stdout closed); stopping');
+      quit(0);
+    };
     try {
       watcher = watch(config.root, { recursive: true }, (_event, filename) =>
         runner.onEvent(filename),
@@ -376,7 +379,8 @@ export async function main(argv) {
     process.on('SIGINT', onSignal);
     process.on('SIGTERM', onSignal);
     process.stdout.on('error', onOrphaned);
-    if (stdinIsPipe()) {
+    // Only `--emit` has a reader: in command mode the child inherits stdin, so it is left alone.
+    if (config.emit && stdinIsPipe()) {
       process.stdin.on('end', onOrphaned);
       process.stdin.on('close', onOrphaned);
       process.stdin.resume();

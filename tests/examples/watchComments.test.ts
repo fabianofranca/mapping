@@ -433,6 +433,48 @@ describe('examples/workspace/watch-comments.mjs', { timeout: 20000 }, () => {
         expect(await exitsWithin(e, 1000)).toBe(false);
         await stop(e);
       });
+
+      it('in command mode, ignores its stdin (a closed pipe does not stop it)', async () => {
+        h.stderr = '';
+        const child = spawn(
+          process.execPath,
+          [SCRIPT, '--root', h.root, '--quiet', QUIET, '--', process.execPath, '-e', ''],
+          { stdio: ['pipe', 'pipe', 'pipe'] },
+        );
+        h.child = child;
+        child.stderr?.on('data', (d: Buffer) => {
+          h.stderr += d.toString();
+        });
+        const code = new Promise<number | null>((r) => child.on('close', r));
+        await waitFor(
+          () => h.stderr.includes('watch-comments: observing'),
+          'the watcher',
+        );
+        child.stdin?.end();
+        const e = { child, out: () => '', err: () => h.stderr, code };
+        expect(await exitsWithin(e, 1000)).toBe(false);
+      });
+
+      it('logs why it stops when its stdin pipe closes', async () => {
+        h.stderr = '';
+        const child = spawn(
+          process.execPath,
+          [SCRIPT, '--emit', '--root', h.root, '--quiet', QUIET],
+          { stdio: ['pipe', 'pipe', 'pipe'] },
+        );
+        h.child = child;
+        child.stderr?.on('data', (d: Buffer) => {
+          h.stderr += d.toString();
+        });
+        const code = new Promise<number | null>((r) => child.on('close', r));
+        await waitFor(
+          () => h.stderr.includes('watch-comments: observing'),
+          'the watcher',
+        );
+        child.stdin?.end();
+        await code;
+        expect(h.stderr).toContain('the parent went away');
+      });
     });
 
     describe('--state', () => {
