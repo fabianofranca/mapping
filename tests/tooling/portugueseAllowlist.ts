@@ -459,6 +459,46 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'script-output',
   },
   {
+    term: 'pergunta',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'segurar',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'reabrir',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'refazer',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'ampliar',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'perguntas ao dono:',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: '#n <verbo> (há <h> h): <texto>',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'SUP-<k> (há <h> h): <pedido>',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
     term: 'CI esperando o coordenador:',
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'script-output',
@@ -3278,6 +3318,18 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
     pattern: /f", há \{minutes_since\(since\)/,
     reason:
       'the `há <h> h` of the `merge pedido ao dono:` line of `show`, frozen script output that the queue text and tests/tooling/queueFastTrackPanel.test.ts match',
+  },
+  {
+    path: 'tests/tooling/queueOwnerQuestions.test.ts',
+    pattern: /\(há 3 h\)|\(há'/,
+    reason:
+      'the `há <h> h` of the `perguntas ao dono:` lines of `show`, frozen script output (decision 16 of #741)',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/painel.py',
+    pattern: /f"há \{minutes_since\(at\)/,
+    reason:
+      'the `há <h> h` of the `perguntas ao dono:` lines of `show`, frozen script output that tests/tooling/queueOwnerQuestions.test.ts matches',
   },
   {
     path: '.claude/skills/implementar-fila/SKILL.md',
