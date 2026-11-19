@@ -1,4 +1,4 @@
-# Context hook for the queue coordinator — 2026-11-19 (épico `epic/coordinator-context-hook`, PR #0, MCP unchanged, schema v21)
+# Context hook for the queue coordinator — 2026-11-19 (épico `epic/coordinator-context-hook`, PR #2248, MCP unchanged, schema v21)
 
 ## Alterado
 
