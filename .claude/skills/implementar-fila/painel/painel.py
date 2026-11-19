@@ -84,6 +84,15 @@ open ones (`enviado`, `perguntado ao dono`, `aprovado`); with requests left out,
 da lista`; with nothing to show, `nenhum desde <ISO>` (and `nenhum` if the panel has no request). A `--desde` that is not ISO UTC gives code 2.
 Rules in force (decision 10): `rule DIR add "<text>" origem=<dono|SUP-n> [saida="…"]` gives `R<k>` in `meta.rules` and
 `rule DIR end R<k> [motivo="…"]` withdraws it; `show` prints `regras em vigor:` with the full text of each one.
+Owner questions (stage #2070, decisions 4 and 5): `pergunta DIR '#n' <verbo> texto="…"` opens a question in `meta.perguntas`
+(`{issue, verbo, texto, at}`; the verbs are `PERGUNTA_VERBOS`: `segurar`, `reabrir`, `refazer`, `ampliar`; an unknown verb, a missing
+`texto` or a row outside the queue gives code 2; the same row and verb already open changes nothing) and `pergunta DIR '#n' <verbo> --fim
+[resposta="…"]` closes it, writing the `log` line `pergunta #n <verbo> fechada: <resposta>` (a question that is not open: no-op, code 0).
+`row` with a final status closes the row's open questions (`fechada: etapa <status>`). An open question changes nothing in `vagas:`,
+`começar agora:`, `atrasadas:` or `esperando o coordenador:`. `show` prints `perguntas ao dono: <k>` (or `nenhuma`) after
+`pedidos do supervisor:`, with one indented line per question (`#n <verbo> (há <h> h): <texto>` and, for each supervisor request in
+`perguntado ao dono`, `SUP-<k> (há <h> h): <pedido>`); `show '#n'` also prints the row's. `import` brings the questions of the rows it imports.
+`pergunta` goes into `apply`.
 Hot switch and migration (decisions 17 and 25 of #1532): `upgrade DIR` swaps, idempotently, the hold exactly
 `ordem do dono (só com a fila vazia)` for `exclusive=sim` (without hold) and writes to the `log` what changed (nothing, if nothing changed).
 `import NEW-DIR OLD-DIR` (a new folder just created with `init`, empty queue; otherwise code 2) brings from the old panel the rows
@@ -229,6 +238,7 @@ REQUEST_NEEDS_EVIDENCE = ("aplicado", "recusado")
 REQUEST_LATE_STATES = ("enviado", "aprovado")  # `atrasado` is computed, never written
 REQUEST_OPEN_STATES = ("enviado", "perguntado ao dono", "aprovado")
 REQUEST_LATE_MINUTES = 90
+PERGUNTA_VERBOS = ["segurar", "reabrir", "refazer", "ampliar"]  # the first command of each pair the owner can answer (decision 4 of #2070)
 # Usage and quality per role x model x effort (stage #1889).
 CLEAN_STREAK = 10  # decided sessions in a row without rework that make a key a candidate for a test (decision 7)
 ESCAPE_CHECK_HOURS = 24  # `show` asks to check the escaped defects again after this many hours (decision 5)
@@ -569,6 +579,7 @@ def cmd_row(a):
     row.update(pairs)
     if "phases" in pairs:
         row["phasesTotal"], row["phasesDone"] = count_phases(row["phases"])
+    close_final_questions(s, issue, pairs)
     s.touch("queue")
     s.commit()
 
@@ -1775,6 +1786,65 @@ def check_request_id(v):
     return v
 
 
+def close_questions(s, issue, verbo, reason):
+    """Closes the open owner questions of `issue` (all of them, or only `verbo`), one `log` line each; returns whether any closed."""
+    meta = s.get("meta")[0]
+    keep, closed = [], []
+    for p in meta.get("perguntas") or []:
+        hit = p["issue"] == issue and verbo in (None, p["verbo"])
+        (closed if hit else keep).append(p)
+    if not closed:
+        return False
+    if keep:
+        meta["perguntas"] = keep
+    else:
+        meta.pop("perguntas")
+    for p in closed:
+        s.get("log").append({"at": now(), "text": f"pergunta {issue} {p['verbo']} fechada: {reason}"})
+    s.touch("meta")
+    s.touch("log")
+    return True
+
+
+def close_final_questions(s, issue, pairs):
+    """A row that reaches a final status closes its open questions (decision 4 of #2070)."""
+    if pairs.get("status") in FINAL_STATUS:
+        close_questions(s, issue, None, f"etapa {pairs['status']}")
+
+
+def open_question(s, issue, verbo, texto):
+    if find_row(s.get("queue"), issue) is None:
+        raise Erro(f"{issue} não está na fila")
+    if not texto.strip():
+        raise Erro("falta texto=")
+    meta = s.get("meta")[0]
+    opened = meta.setdefault("perguntas", [])
+    if any(p["issue"] == issue and p["verbo"] == verbo for p in opened):
+        print_no_change()  # the same row and verb: keeps `at` and `texto`
+        return
+    opened.append({"issue": issue, "verbo": verbo, "texto": texto, "at": now()})
+    s.touch("meta")
+    s.commit()
+
+
+def cmd_pergunta(a):
+    validate_choice("verbo", a.verbo, PERGUNTA_VERBOS)
+    issue = norm_issue(a.issue)
+    closing = a.fim is not None
+    pairs = parse_pairs(a.fim if closing else a.pairs)
+    allowed = "resposta" if closing else "texto"
+    for k in pairs:
+        if k != allowed:
+            raise Erro(f"campo desconhecido '{k}'; válidos: {allowed}")
+    s = open_session(a.dir)
+    if not closing:
+        open_question(s, issue, a.verbo, pairs.get("texto", ""))
+    elif close_questions(s, issue, a.verbo, pairs.get("resposta", "").strip() or "sem resposta"):
+        s.commit()
+    else:
+        print_no_change()
+
+
 def cmd_sup(a):
     pairs = parse_pairs(a.pairs)
     for k in pairs:
@@ -1965,6 +2035,14 @@ def carry_quality(old_meta, meta):
             meta[k] = old_meta[k]
 
 
+def carry_questions(old_meta, meta, rows):
+    """Brings the open owner questions of the rows `import` kept; those of the others are dropped."""
+    issues = {r["issue"] for r in rows}
+    kept = [p for p in old_meta.get("perguntas") or [] if p["issue"] in issues]
+    if kept:
+        meta["perguntas"] = kept
+
+
 def cmd_import(a):
     new = open_session(a.dir)
     if new.get("queue"):
@@ -1999,6 +2077,7 @@ def cmd_import(a):
     if rules:
         meta["rules"] = rules
     carry_quality(old_m, meta)
+    carry_questions(old_m, meta, rows)
     running = sum(1 for r in rows if carries_session(r))
     new.get("log").append({"at": now(), "text": (
         f"importado de {a.old}: {len(rows)} linhas ({running} em andamento); "
@@ -2680,6 +2759,29 @@ def ci_wait_text(r):
     return f"{r['issue']} {r['ciWait']}{mins}"
 
 
+def age_text(at):
+    return f"há {minutes_since(at) // 60} h" if at else "há ? h"  # same wording as `merge_ask_text`
+
+
+def question_lines(meta, issue=None):
+    """The indented lines of `perguntas ao dono:`: the row questions (`#n <verbo> (há <h> h): <texto>`) and, outside a row, the
+    supervisor requests in `perguntado ao dono` (`SUP-<k> (há <h> h): <pedido>`, age from the request's `at`)."""
+    lines = [f"  {p['issue']} {p['verbo']} ({age_text(p.get('at'))}): {p['texto']}"
+             for p in meta.get("perguntas") or [] if issue in (None, p["issue"])]
+    if issue is None:
+        lines += [f"  {r.get('id', '?')} ({age_text(r.get('at'))}): {r.get('pedido', '')}"
+                  for r in meta.get("requests") or [] if r.get("estado") == "perguntado ao dono"]
+    return lines
+
+
+def print_questions(meta, issue=None):
+    lines = question_lines(meta, issue)
+    if issue is None or lines:  # `show '#n'` says nothing for a row with no question
+        print("perguntas ao dono: " + (str(len(lines)) if lines else "nenhuma"))
+    for line in lines:
+        print(line)
+
+
 def show_row(r):
     print(f"{r['issue']} {r['title']}")
     for k, v in r.items():
@@ -2775,6 +2877,7 @@ def cmd_show(a):
         if row is None:
             raise Erro(f"{a.issue} não está na fila")
         show_row(row)
+        print_questions((m or [{}])[0], row["issue"])
         return
     print(f"fila: {len(q)} linhas")
     for st in STATUS:
@@ -2801,6 +2904,7 @@ def cmd_show(a):
     print(f"candidatos a teste: {candidates_text(compute_uso(q, meta))}")
     print(f"canários: {canary_text(meta)}")
     print(f"pedidos do supervisor: {requests_summary(meta)}")
+    print_questions(meta)
     print_rules(meta)
     ctx = meta.get("context")
     if ctx is None:
@@ -2903,6 +3007,11 @@ def build_parser():
     sp = add("sup", cmd_sup, "writes a supervisor request (SUP-n tipo= pedido= estado= [evidencia=]) to meta.requests")
     sp.add_argument("request")
     sp.add_argument("pairs", nargs="+")
+    sp = add("pergunta", cmd_pergunta, "owner question of a row: '#n' <segurar|reabrir|refazer|ampliar> texto=\"…\" opens it; --fim [resposta=\"…\"] closes it (meta.perguntas)")
+    sp.add_argument("issue")
+    sp.add_argument("verbo")
+    sp.add_argument("pairs", nargs="*", help="texto=\"…\" (to open)")
+    sp.add_argument("--fim", nargs="*", default=None, metavar="resposta=\"…\"", help="closes the question; the optional pair is resposta=\"…\" (it takes the pairs itself: the positionals of an older argparse come out empty)")
     sp = add("requests", cmd_requests, "prints the supervisor requests, with the atrasado (reads only the meta; --desde <ISO> shows only those after that time and the open ones)")
     sp.add_argument("--desde", help="only the requests with at from this time on (ISO UTC) and all the open ones")
     sp = add("rule", cmd_rule, "rules in force: add \"<text>\" origem=<dono|SUP-n> [saida=] | end R<k> [motivo=]")
