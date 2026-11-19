@@ -121,7 +121,7 @@ In the three cases, **do not ask for confirmation**: build the list and put it a
 
 ## Full round in blocks
 
-The full round (R0 to R30) runs in **simultaneous sessions, one per block of the table**, with the fixed split below. Each session sets up the environment, runs the whole R0 and the scripts of its block, and delivers its own report; a coordinator (the stage's orchestrator or a standalone chat of the owner, see [`docs/FLOW.md`](FLOW.md)) creates one per block and summarizes.
+The full round (R0 to R30) runs in **simultaneous sessions, one per block of the table**. Each sets up the environment, runs the whole R0 and its block's scripts and delivers its own report; a coordinator (the stage's orchestrator or the owner's standalone chat, see [`docs/FLOW.md`](FLOW.md)) creates them and summarizes.
 
 | Block | Scripts, in the order of the guide                                                      | Steps |
 | ----- | --------------------------------------------------------------------------------------- | ----- |
@@ -132,9 +132,9 @@ The full round (R0 to R30) runs in **simultaneous sessions, one per block of the
 | 5     | R0, section 6, R11, R17, R20, R21 and R23                                               | 142   |
 | 6     | R0, section 6 and R30                                                                   | 28    |
 
-There are 6 blocks: 5 by decision of the owner (2026-11-09) and the 6th by #2024 (2026-11-17). The visual pass stays in block 4 (decision 6 of stage #841). The limit of each block's generated guide (`MAX_BLOCK_GUIDE_CHARS`, in `tests/tooling/roundBlocks.test.ts`), the earlier sizes, the dependencies per block and the baselines: `cloud.mjs secao consulta.historico`.
+There are 6 blocks: 5 by decision of the owner (2026-11-09) and the 6th by #2024 (2026-11-17). The visual pass stays in block 4 (decision 6 of stage #841). The guide limit (`MAX_BLOCK_GUIDE_CHARS`), sizes, dependencies and baselines: `cloud.mjs secao consulta.historico`.
 
-**Mode `modo completo, bloco k de n`.** The message "run the `modo completo, bloco k de n`" (k from 1 to n, n being the rows of the table) tells you to:
+**Mode `modo completo, bloco k de n`.** The message "run the `modo completo, bloco k de n`" (k from 1 to n) tells you to:
 
 1. Build the round list with the scripts of block k and generate the round guide with them: `node scripts/testing/round-guide.mjs <scripts of the block> --out …/apoio/guia.md`; read `guia-base.md` whole and ask for the scripts through `passo` and the on-demand sections through `secao` (item 3). A script that the table splits between blocks comes in through the block's **step range** (`R6.3-R6.7`, `R6.8a-R6.11`); the guide already comes without the excerpts of section 8 and appendix A that only other blocks use. The environment, working folders and MCP are yours alone: blocks share no folder, Chrome profile nor port.
 2. Run the **whole R0 first** (it is in all the blocks) and then the scripts of the block, in the order of the table.
