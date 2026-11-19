@@ -1,4 +1,4 @@
-# The queue coordinator asks its in-run questions by text — [Não lançado] (épico `epic/queue-questions-by-text`, PR #0, MCP unchanged, schema v20)
+# The queue coordinator asks its in-run questions by text — 2026-11-19 (épico `epic/queue-questions-by-text`, PR #2227, MCP unchanged, schema v20)
 
 ## Adicionado
 
