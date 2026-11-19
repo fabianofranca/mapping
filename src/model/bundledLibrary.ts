@@ -85,3 +85,42 @@ export function bundledLibraryDiskFiles(
   files.set(applied.file, serializeSpec(applied.spec));
   return files;
 }
+
+/** What `bundledLibraryUpdate` decides about the project's copy of a bundled package. */
+export type BundledLibraryUpdate =
+  | { readonly decision: 'not-applied' }
+  | { readonly decision: 'not-newer'; readonly from: number }
+  | {
+      readonly decision: 'update';
+      readonly from: number;
+      readonly to: number;
+      readonly spec: Spec;
+      /** The package files **without** the specialization one, as in `AppliedBundledLibrary`. */
+      readonly packageFiles: ReadonlyMap<string, string>;
+    };
+
+/**
+ * Can the project's copy of the bundled package move to the built-in version? `not-applied`: the
+ * project does not have it (apply it instead); `not-newer`: it is already at the built-in version
+ * or a later one; `update`: the built-in version is newer, with what `updateSpecialization` needs.
+ */
+export function bundledLibraryUpdate(
+  p: Project,
+  library: BundledLibrary,
+): BundledLibraryUpdate {
+  const current = getSpecialization(p, library.id);
+  if (current === null) return { decision: 'not-applied' };
+  const spec = readSpec(library);
+  if (spec.version <= current.version) {
+    return { decision: 'not-newer', from: current.version };
+  }
+  const packageFiles = new Map(library.files);
+  packageFiles.delete(library.specFile);
+  return {
+    decision: 'update',
+    from: current.version,
+    to: spec.version,
+    spec,
+    packageFiles,
+  };
+}

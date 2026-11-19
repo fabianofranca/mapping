@@ -1,6 +1,7 @@
 import { useRef, useState } from 'preact/hooks';
 import { t, type TranslationKey } from '../i18n';
 import {
+  bundledLibraryUpdate,
   MAX_PACKAGE_BYTES,
   MAX_PACKAGE_FILES,
   REMOVED_FIELD_TYPE,
@@ -9,6 +10,7 @@ import {
   specializationRemovalImpact,
   specializationUpdateImpact,
   usesPackageFiles,
+  type BundledLibrary,
   type IgnoredSpecField,
   type Project,
   type ProjectSpecialization,
@@ -42,6 +44,8 @@ const MAX_ERRORS = 8;
 interface SpecsDialogProps {
   readonly project: Project;
   readonly readOnly: boolean;
+  /** Packages built into the app: a specialization with an older copy offers the update to them. */
+  readonly bundled?: readonly BundledLibrary[];
   readonly onClose: () => void;
 }
 
@@ -118,7 +122,12 @@ function ignoredText(ignored: readonly IgnoredSpecField[]): string | null {
  * Specializations menu: apply, update version and remove (docs/ARCHITECTURE.md,
  * "Specializations in the project and typed annotations").
  */
-export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
+export function SpecsDialog({
+  project,
+  readOnly,
+  bundled = [],
+  onClose,
+}: SpecsDialogProps) {
   const { actions } = useEditor();
   const [step, setStep] = useState<Step | null>(null);
   const [message, setMessage] = useState<Feedback | null>(null);
@@ -226,6 +235,15 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     } finally {
       setBusy(false);
     }
+  };
+
+  /** Opens the package review with the built-in version of `library` (the same flow as a zip). */
+  const reviewBundled = (library: BundledLibrary) => {
+    reset();
+    void reviewPackage(
+      () => Promise.resolve({ ok: true, files: library.files }),
+      library.id,
+    );
   };
 
   const pickFolder = async (specId: string | null) => {
@@ -344,6 +362,16 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
         t('spec.appliedMessage', { name: spec.name, layers: spec.layers.length }),
       ),
     );
+  };
+
+  /** The built-in package newer than the project's copy of `specId`, if any. */
+  const builtinUpdate = (specId: string) => {
+    for (const library of bundled) {
+      if (library.id !== specId) continue;
+      const result = bundledLibraryUpdate(project, library);
+      if (result.decision === 'update') return { library, to: result.to };
+    }
+    return null;
   };
 
   const confirmRemove = (entry: ProjectSpecialization, mode: SpecRemovalMode) => {
@@ -479,6 +507,16 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
                   <Button disabled={readOnly || busy} onClick={() => pick(entry.id)}>
                     {t('spec.update')}
                   </Button>
+                  {builtinUpdate(entry.id) && (
+                    <Button
+                      disabled={readOnly || busy}
+                      onClick={() => reviewBundled(builtinUpdate(entry.id)!.library)}
+                    >
+                      {t('spec.updateBundled', {
+                        version: builtinUpdate(entry.id)!.to,
+                      })}
+                    </Button>
+                  )}
                   {folders && (
                     <Button
                       disabled={readOnly || busy}

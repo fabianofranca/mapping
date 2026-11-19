@@ -1,6 +1,7 @@
 import { readFile, readdir, realpath, stat } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
-import { parseSpecText, type Spec } from '../src/model';
+import { NOTES_LIBRARY } from '../libraries/notas';
+import { parseSpecText, type BundledLibrary, type Spec } from '../src/model';
 import { resolvePath } from '../src/model/components/library';
 import {
   validateLibrary,
@@ -527,4 +528,60 @@ export async function readSpecInput(
     kind: 'package',
     pkg: await readPackage(roots, path, { raw, real: resolved }),
   };
+}
+
+/** Libraries built into the server, by id (what `builtin` accepts). */
+const BUILTIN_LIBRARIES: readonly BundledLibrary[] = [NOTES_LIBRARY];
+
+/**
+ * The package of a built-in library (`builtin`), built in memory from the bundled files: a
+ * `SpecInput` of kind `package`, like a folder read from the disk (`dir` is not a real path).
+ */
+export function builtinSpecInput(id: string): SpecInput {
+  const library = BUILTIN_LIBRARIES.find((l) => l.id === id);
+  if (library === undefined) throw unknownBuiltin(id);
+  const encoder = new TextEncoder();
+  const files: LibraryFile[] = [];
+  const bytes = new Map<string, Uint8Array>();
+  for (const [path, text] of library.files) {
+    files.push({ path, text });
+    bytes.set(path, encoder.encode(text));
+  }
+  return {
+    kind: 'package',
+    pkg: {
+      dir: `builtin:${id}`,
+      files,
+      ignoredPaths: [],
+      specPath: library.specFile,
+      bytes,
+    },
+  };
+}
+
+function unknownBuiltin(id: string): ToolError {
+  return new ToolError('invalid-arguments', `unknown built-in library: ${id}`, {
+    builtin: BUILTIN_LIBRARIES.map((l) => l.id),
+  });
+}
+
+/**
+ * `builtin` and the path argument (`file` or `path`) are exclusive and one of them is required:
+ * both or neither, or an unknown id, is `invalid-arguments` (`detail.builtin` lists the ids).
+ */
+export function checkBuiltinArgument(
+  path: string | undefined,
+  builtin: string | undefined,
+  pathName: 'file' | 'path',
+): void {
+  if ((path === undefined) === (builtin === undefined)) {
+    throw new ToolError(
+      'invalid-arguments',
+      `provide \`${pathName}\` or \`builtin\`, exactly one of them`,
+      { builtin: BUILTIN_LIBRARIES.map((l) => l.id) },
+    );
+  }
+  if (builtin !== undefined && !BUILTIN_LIBRARIES.some((l) => l.id === builtin)) {
+    throw unknownBuiltin(builtin);
+  }
 }

@@ -21,6 +21,7 @@ import { useEditor, type EditorContextValue } from '../ui/EditorContext';
 import { arrowText, imageLabel, markingLabel } from '../ui/labels';
 import { HELP_SHORTCUTS, HelpDialog } from '../ui/HelpDialog';
 import { SettingsDialog } from '../ui/SettingsDialog';
+import { NOTES_LIBRARY } from '../../libraries/notas';
 import { SpecsDialog } from '../ui/SpecsDialog';
 import { selectItems } from '../store/ui';
 import { closeProject } from './controller';
@@ -85,7 +86,14 @@ function renderDialog(
 
   switch (dialog.kind) {
     case 'specs':
-      return <SpecsDialog project={project} readOnly={readOnly} onClose={close} />;
+      return (
+        <SpecsDialog
+          project={project}
+          readOnly={readOnly}
+          bundled={[NOTES_LIBRARY]}
+          onClose={close}
+        />
+      );
     case 'container':
       return <ContainerDialog onClose={close} />;
     case 'settings':
