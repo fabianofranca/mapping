@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createPage, deletePage, type Project } from '../../src/model';
+import {
+  addContainer,
+  addPerspective,
+  createPage,
+  deletePage,
+  type Project,
+} from '../../src/model';
 import { openHarness, type Harness } from './proposalHarness';
 import { pagesProject } from './pageHarness';
 
@@ -279,5 +285,38 @@ describe("the open page with the review's proposed pages", () => {
     session.page.setProposed(pagesProject());
     expect(session.page.id.value).toBe('PG1');
     expect(session.page.notice.value).toBeNull();
+  });
+
+  it('a proposal that removes the open page leaves the first page of the preview open', async () => {
+    const { session } = await start();
+    session.page.open('PG2');
+    session.page.setProposed(deletePage(pagesProject(), 'PG2', { discard: true }));
+    expect(session.page.pages.value.map((g) => g.id)).not.toContain('PG2');
+    expect(session.page.id.value).toBe('PG1');
+    session.page.setProposed(null);
+    expect(session.page.id.value).toBe('PG2');
+    expect(session.page.notice.value).toBeNull();
+  });
+
+  it('the perspective counts follow the preview on a page only the proposal creates', async () => {
+    const { session } = await start();
+    let preview = addContainer(proposedWithD(), {
+      id: 'ID',
+      file: 'images/draft.png',
+      width: 500,
+      height: 500,
+      pageId: 'D',
+    });
+    preview = addPerspective(preview, {
+      id: 'N',
+      name: 'New one',
+      hiddenLayers: [],
+      items: [{ root: 'ID', x: 0, y: 0 }],
+    });
+    session.page.setProposed(preview);
+    session.page.open('D');
+    expect(session.page.rootCounts.value.get('D')).toBe(1);
+    expect(session.page.perspectiveCounts.value.get('N')).toBe(1);
+    expect(session.page.perspectiveCounts.value.get('V')).toBe(0);
   });
 });

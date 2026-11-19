@@ -123,6 +123,14 @@ describe('revealReviewItem: a page the proposal creates', () => {
     expect(shown?.containers.map((c) => c.id)).toEqual(['ID']);
   });
 
+  it('does not depend on the order of the effects: the reveal hands the preview over itself', async () => {
+    const h = await creatingPage();
+    h.review.setView('proposed');
+    h.session.page.setProposed(null);
+    revealReviewItem(h.session, h.review, item('ID'), 'ID');
+    expect(h.session.page.id.value).toBe('PGD');
+  });
+
   it('Current view: the same choice does not switch the page', async () => {
     const h = await creatingPage();
     h.review.setView('current');

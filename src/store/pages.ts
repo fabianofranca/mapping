@@ -147,6 +147,33 @@ function nameOf(p: Project | null, id: string): string | null {
   return p?.pages.find((g) => g.id === id)?.name ?? null;
 }
 
+/** Whether `p` has the page `id`. */
+const hasPage = (p: Project | null, id: string): boolean =>
+  p?.pages.some((g) => g.id === id) === true;
+
+/** The kept choice, or the first page of `committed` if it is gone. */
+function committedOpen(committed: Project | null, chosen: string): string {
+  if (committed === null || hasPage(committed, chosen)) return chosen;
+  return committed.pages[0]?.id ?? chosen;
+}
+
+/**
+ * The open page, never one the project in view lacks: the review's choice of a page only the preview
+ * has, else the kept choice; and when the preview (a proposal that removes the open page) lacks that
+ * one, the preview's first.
+ */
+function resolveOpenId(
+  committed: Project | null,
+  view: Project | null,
+  chosen: string,
+  extra: string | null,
+): string {
+  if (extra !== null && hasPage(view, extra)) return extra;
+  const open = committedOpen(committed, chosen);
+  if (view === null || hasPage(view, open)) return open;
+  return view.pages[0]?.id ?? open;
+}
+
 // ---------------------------------------------------------------------------
 // The state
 
@@ -183,14 +210,14 @@ export function createPageState(deps: PageStateDeps): PageStateHandle {
   }
 
   // Never a page the project does not have, not even for the instant before the effect moves it.
-  const id = computed((): string => {
-    const p = store.committed.value;
-    const extra = proposedChoice.value;
-    if (extra !== null && proposed.value?.pages.some((g) => g.id === extra)) return extra;
-    const wanted = chosen.value;
-    if (p === null || p.pages.some((g) => g.id === wanted)) return wanted;
-    return p.pages[0]?.id ?? wanted;
-  });
+  const id = computed((): string =>
+    resolveOpenId(
+      store.committed.value,
+      proposed.value,
+      chosen.value,
+      proposedChoice.value,
+    ),
+  );
 
   const stop = effect(() => {
     const p = store.committed.value;
@@ -235,14 +262,14 @@ export function createPageState(deps: PageStateDeps): PageStateHandle {
   });
 
   const perspectiveCounts = computed((): ReadonlyMap<string, number> => {
-    const p = store.committed.value;
+    const p = proposed.value ?? store.committed.value;
     if (p === null) return new Map();
     const page = id.value;
     return new Map(p.perspectives.map((x) => [x.id, perspectiveRootsOnPage(p, x, page)]));
   });
 
   const perspectiveEmpty = computed((): boolean => {
-    const p = store.committed.value;
+    const p = proposed.value ?? store.committed.value;
     const open =
       p === null ? null : openPerspectiveIn(p, deps.perspectiveId?.value ?? null);
     return p !== null && open !== null && perspectiveRootsOnPage(p, open, id.value) === 0;
