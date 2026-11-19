@@ -1,14 +1,23 @@
-// Claude Code `PostToolUse` hook (stage #1856, phase GC1): measures the main thread's context
-// after every tool call and, above the trigger, injects the session-switch notice.
-// Node only, no dependencies; the measure is that of `contextUsage.mjs` (`lastContext`).
+// Claude Code `PostToolUse` hook (stage #1856, phase GC1; coordinator role: stage #2228, phase CH1):
+// measures the main thread's context after every tool call and, above the role's trigger, injects
+// the session-switch notice. Node only, no dependencies; the measure is that of `contextUsage.mjs`
+// (`lastContext`).
 //   Wired in `.claude/settings.json`: node "$CLAUDE_PROJECT_DIR/scripts/ci/contextGuard.mjs"
-//     Reads the hook input (JSON) from stdin. Only acts in the cloud (`CLAUDE_CODE_REMOTE=true`), on
-//     the main thread (no `agent_id`) and in a phase or fix session (the transcript's initial prompt
-//     opens with `MARCADOR` or with the coordinator's short prompt). Otherwise it exits silently.
-//     With the context above `GATILHO`, and at every +10 thousand after the last notice, it writes to stdout
+//     Reads the hook input (JSON) from stdin. Only acts in the cloud (`CLAUDE_CODE_REMOTE=true`) and on
+//     the main thread (no `agent_id`), in one of two roles decided once from the transcript's initial
+//     prompt (`sessionRole`; a phase prompt is checked first):
+//       - `fase`: a phase or fix session (the prompt opens with `MARCADOR` or with the coordinator's
+//         short prompt), trigger `GATILHO` (270 thousand);
+//       - `coordenador`: the queue coordinator (the prompt is the `/implementar-fila` command,
+//         `MARCADOR_COORDENADOR`), trigger `GATILHO_COORDENADOR` (320 thousand).
+//     Any other session (tester, supervisor, fast track, owner's chat) is silent (`nenhum`).
+//     With the context above the role's trigger, and at every +`PASSO` after the last notice, it
+//     writes to stdout
 //     `{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"<notice>"}}`.
-//     The state lives in `<os.tmpdir()>/context-guard/<session_id>.json`: `fase`, `contexto`,
-//     `ferramenta`, `ultimoAviso`, `saltos` (the 3 largest) and `erro`.
+//     The state lives in `<os.tmpdir()>/context-guard/<session_id>.json`: `papel` (`fase`,
+//     `coordenador` or `nenhum`), `fase` (true only for a phase), `contexto`, `ferramenta`,
+//     `ultimoAviso`, `saltos` (the 3 largest) and `erro`. An old state without `papel` is a phase when
+//     `fase` is true, and otherwise decided again once.
 //     Always exit code 0: the hook never blocks or delays a call, and any failure only silences it.
 import {
   closeSync,
@@ -27,8 +36,13 @@ import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import { lastContext } from './contextUsage.mjs';
 
-/** Context, in tokens, above which the hook warns (single source; the phase ceiling is 300,000). */
+/** Context, in tokens, above which the hook warns a phase (single source; the phase ceiling is 300,000). */
 export const GATILHO = 270000;
+/**
+ * Context above which the hook warns the queue coordinator (single source): 35% of a 1M window is
+ * 350 thousand and the switch itself adds about 10 thousand.
+ */
+export const GATILHO_COORDENADOR = 320000;
 /** The notice repeats at every rise of this much context since the last one. */
 export const PASSO = 10000;
 /** First sentence of the "For the phase session" message of `docs/FLOW.md`. */
@@ -38,6 +52,13 @@ export const MARCADOR = 'Você é o agente da fase ';
  * `Fase <código> — <título> da etapa #<n> (sub-issue #<n>), …`.
  */
 export const MARCADOR_FILA = /^Fase \S+ — .* da etapa #\d+ \(sub-issue #\d+\)/;
+/**
+ * The coordinator's initial prompt: the text, after `trimStart`, starts with `/implementar-fila`
+ * followed by whitespace or the end (what `create_session` sends to the successor), or it contains
+ * the form Claude Code records for a typed slash command.
+ */
+export const MARCADOR_COORDENADOR =
+  /^\/implementar-fila(?:\s|$)|<command-name>\/implementar-fila<\/command-name>/;
 /** The hook reads only the end of the transcript, up to this many bytes. */
 export const TAIL_BYTES = 2 * 1024 * 1024;
 /** The initial prompt is searched for at the start of the transcript, up to this many bytes. */
@@ -86,6 +107,14 @@ export function isPhasePrompt(texts) {
   });
 }
 
+/** The role of the session by the initial prompt's texts: `fase`, `coordenador` or `null` (silent). */
+export function sessionRole(texts) {
+  if (isPhasePrompt(texts)) return 'fase';
+  return texts.some((raw) => MARCADOR_COORDENADOR.test(raw.trimStart()))
+    ? 'coordenador'
+    : null;
+}
+
 /** Call label to attribute the jumps: `Bash: <40 characters>`, `Read: <file>`, … */
 export function toolLabel(toolName, toolInput) {
   const name = typeof toolName === 'string' && toolName ? toolName : 'ferramenta';
@@ -109,8 +138,8 @@ export function addJump(jumps, rotulo, delta) {
 }
 
 /** Whether the context calls for a notice: above the trigger and, after a notice, at every +`PASSO`. */
-export function shouldWarn(contexto, ultimoAviso) {
-  if (contexto <= GATILHO) return false;
+export function shouldWarn(contexto, ultimoAviso, gatilho = GATILHO) {
+  if (contexto <= gatilho) return false;
   return (
     ultimoAviso === null || ultimoAviso === undefined || contexto >= ultimoAviso + PASSO
   );
@@ -134,12 +163,33 @@ export function warningText(contexto, jumps) {
   );
 }
 
+/** The coordinator's notice text (one line), with the context and the session's largest jumps. */
+export function coordinatorWarningText(contexto, jumps) {
+  const mil = Math.ceil(contexto / 1000);
+  const saltos =
+    jumps.length > 0
+      ? jumps.map((j) => `${j.rotulo} +${j.mil} thousand`).join('; ')
+      : 'none recorded';
+  return (
+    `Context hook: this coordinator session is at ${mil} thousand, above its trigger of ${GATILHO_COORDENADOR / 1000} thousand. ` +
+    `This counts as "above 35%" of "Session switch" in .claude/skills/implementar-fila/SKILL.md: ` +
+    `hand the coordination over now, in this turn, after the lineage check ("Lineage limit"), ` +
+    `without rereading a changed SKILL.md. ` +
+    `With no room in the lineage, the owner's path of "Lineage limit" applies once, and the later notices do not repeat it. ` +
+    `A session that already handed over (no longer the registered coordinator) ignores this notice. ` +
+    `Largest jumps (approximate): ${saltos}. Subagent: ignore this notice.`
+  );
+}
+
 /** The JSON that Claude Code reads from the hook's stdout. */
-export function warningOutput(contexto, jumps) {
+export function warningOutput(contexto, jumps, papel = 'fase') {
   return JSON.stringify({
     hookSpecificOutput: {
       hookEventName: 'PostToolUse',
-      additionalContext: warningText(contexto, jumps),
+      additionalContext:
+        papel === 'coordenador'
+          ? coordinatorWarningText(contexto, jumps)
+          : warningText(contexto, jumps),
     },
   });
 }
@@ -198,14 +248,23 @@ function readInput(raw) {
   return input;
 }
 
-/** Decides whether the session is a phase one by the initial prompt; `null` while the transcript does not have it yet. */
-function decidePhase(transcript) {
+/** Decides the session's role by the initial prompt (`nenhum` when silent); `null` while the transcript does not have it yet. */
+function decideRole(transcript) {
   const size = statSync(transcript).size;
   const texts = firstPrompt(
     readRange(transcript, 0, Math.min(size, HEAD_BYTES)),
     size > HEAD_BYTES,
   );
-  return texts === null ? null : isPhasePrompt(texts);
+  return texts === null ? null : (sessionRole(texts) ?? 'nenhum');
+}
+
+const PAPEIS = ['fase', 'coordenador', 'nenhum'];
+
+/** The role kept in the state, or decided from the transcript (`null`: not decidable yet). */
+function resolveRole(state, transcript) {
+  if (PAPEIS.includes(state?.papel)) return state.papel;
+  if (state?.fase === true) return 'fase'; // old state, from before the `papel` field
+  return decideRole(transcript);
 }
 
 /**
@@ -229,16 +288,14 @@ export function handle(input, env = process.env) {
     // Corrupted state: start over and keep the error, instead of silencing the session forever.
     erro = error instanceof Error ? error.message : String(error);
   }
-  let fase = state?.fase;
-  if (typeof fase !== 'boolean') {
-    fase = decidePhase(transcript);
-    if (fase === null) return null;
-  }
-  if (!fase) {
-    // Decided once: a session that is not a phase one neither writes again nor rereads the transcript.
-    if (state?.fase !== false || erro !== null)
+  const papel = resolveRole(state, transcript);
+  if (papel === null) return null;
+  if (papel === 'nenhum') {
+    // Decided once: a silent session neither writes again nor rereads the transcript.
+    if (state?.papel !== 'nenhum' || erro !== null)
       saveState(file, {
         fase: false,
+        papel,
         ultimoAviso: null,
         saltos: [],
         erro: erroEstado(erro),
@@ -259,19 +316,21 @@ export function handle(input, env = process.env) {
       : Array.isArray(state?.saltos)
         ? state.saltos
         : [];
-  // Context that returns to the trigger or below (compaction) resets the notice: the next crossing warns.
+  // Context that returns to the role's trigger or below (compaction) resets the notice: the next crossing warns.
+  const gatilho = papel === 'coordenador' ? GATILHO_COORDENADOR : GATILHO;
   const lastWarning =
-    contexto > GATILHO && Number.isFinite(state?.ultimoAviso) ? state.ultimoAviso : null;
-  const warn = shouldWarn(contexto, lastWarning);
+    contexto > gatilho && Number.isFinite(state?.ultimoAviso) ? state.ultimoAviso : null;
+  const warn = shouldWarn(contexto, lastWarning, gatilho);
   saveState(file, {
-    fase: true,
+    fase: papel === 'fase',
+    papel,
     contexto,
     ferramenta: toolLabel(input.tool_name, input.tool_input),
     ultimoAviso: warn ? contexto : lastWarning,
     saltos: jumps,
     erro: erroEstado(erro) ?? state?.erro ?? null,
   });
-  return warn ? warningOutput(contexto, jumps) : null;
+  return warn ? warningOutput(contexto, jumps, papel) : null;
 }
 
 function erroEstado(mensagem) {
