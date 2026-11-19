@@ -5,23 +5,24 @@ Skeleton of a folder that centralizes Mapping projects and comes ready for any A
 ## How to use
 
 1. Copy this folder wherever you like (e.g. `~/mappings`) and start a Git repository in it.
-2. Run `./setup.sh` (needs Node ≥ 20 and `curl`). It downloads from the latest Mapping `mcp-v*` release the server (`tools/mapping-mcp.js`), the `spec-author` skill, the `AGENTS.md` rules, `watch-comments.mjs` (the conversation watcher, in the root) and the signature extractor (`tools/mapping-signature.mjs`), checks the `sha256` of all of them and only then updates the folder. For a specific version: `./setup.sh mcp-v0.5.0`; to test a release candidate or a PR build: `./setup.sh mcp-v0.5.0-rc.1` or `./setup.sh mcp-snapshot-pr172`.
+2. Run `./setup.sh` (needs Node ≥ 20 and `curl`). It downloads from the latest Mapping `mcp-v*` release the server (`tools/mapping-mcp.js`), the `spec-author` and `watch-conversations` skills, the `AGENTS.md` rules, `watch-comments.mjs` (the conversation watcher, in the root) and the signature extractor (`tools/mapping-signature.mjs`), checks the `sha256` of all of them and only then updates the folder. For a specific version: `./setup.sh mcp-v0.5.0`; to test a release candidate or a PR build: `./setup.sh mcp-v0.5.0-rc.1` or `./setup.sh mcp-snapshot-pr172`.
 3. Fill in the "What these mappings are for" section of `AGENTS.md`: it is what the agent cannot discover on its own.
-4. Open the folder in the agent and approve the `mapping` server. Open the projects in the Mapping app as a **folder**, inside `projetos/`.
+4. Open the folder in the agent and approve the `mapping` server. Open the projects in the Mapping app as a **folder**, inside `projects/`.
 5. Version `tools/mapping-mcp.js` and its `.sha256` together: whoever clones has the server working without installing anything.
 
 ## Updating
 
 Run `./setup.sh` again (or `./setup.sh <tag>`). Each run, in this order:
 
-1. Downloads everything from the release (`mapping-mcp.js`, `mapping-signature.mjs`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md` and `watch-comments.mjs`, each with its `.sha256`) to a temporary folder and **checks the `sha256` of all of them before replacing any file**. If one does not match, the script stops with an error and nothing in the folder changes.
+1. Downloads everything from the release (`mapping-mcp.js`, `mapping-signature.mjs`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md`, `watch-comments.mjs` and `watch-conversations.SKILL.md`, each with its `.sha256`) to a temporary folder and **checks the `sha256` of all of them before replacing any file**. If one does not match, the script stops with an error and nothing in the folder changes.
 2. **Updates itself.** If the release's `setup.sh` differs from the local one, it replaces the file at once, warns "setup.sh updated" and runs again, once only. `./setup.sh --no-self-update` (or `./setup.sh <tag> --no-self-update`) turns that off and carries on with the script you have. A release without `setup.sh` (an old tag): carries on with the current one and warns.
 3. Replaces the server in `tools/`.
 4. Brings the `spec-author` skill **from the same release as the server** to `.agents/skills/spec-author/SKILL.md` (if the release does not have it, it uses the one from `main` and warns). In `.claude/skills/spec-author`: if it is already a link, nothing; if it is a folder (a copy), copies again; if it does not exist, creates the link (and a copy where links do not exist).
-5. Installs `watch-comments.mjs` in the workspace root, over whatever is there, with no backup (it is a managed file, like the server; do not edit it). A release without it (an old tag): warns and the local file, if any, stays.
-6. Installs the extractor `tools/mapping-signature.mjs` (and its `.sha256`) next to the server, also with no backup; a release without it: warns and the local one stays. Usage: `node tools/mapping-signature.mjs kotlin --file … --symbol … [--path] [--ref] [--also] [--overload] [--out]`; it extracts the signature sheet that the agent passes to `plan_signature_import`.
-7. Updates the rules block of `AGENTS.md`, described below.
-8. Prints a summary: the server version, where the skill came from, what happened to `AGENTS.md` and the `Watcher:` and `Extractor:` lines (`installed`, `updated`, `no change` or `not updated (release without the …)`). Running twice in a row changes nothing the second time (and creates no backup).
+5. Installs the `watch-conversations` skill (release file `watch-conversations.SKILL.md`) in `.agents/skills/watch-conversations/SKILL.md`, with the same rules as `spec-author` in `.claude/skills/watch-conversations` (a link stays a link, a copy is copied again, absent: link, or a copy where links do not exist). A release without it (an old tag): warns and whatever is there stays.
+6. Installs `watch-comments.mjs` in the workspace root, over whatever is there, with no backup (it is a managed file, like the server; do not edit it). A release without it (an old tag): warns and the local file, if any, stays.
+7. Installs the extractor `tools/mapping-signature.mjs` (and its `.sha256`) next to the server, also with no backup; a release without it: warns and the local one stays. Usage: `node tools/mapping-signature.mjs kotlin --file … --symbol … [--path] [--ref] [--also] [--overload] [--out]`; it extracts the signature sheet that the agent passes to `plan_signature_import`.
+8. Updates the rules block of `AGENTS.md`, described below.
+9. Prints a summary: the server version, where the `spec-author` skill came from, what happened to `AGENTS.md` and the `Watch skill:` (`installed`, `updated`, `no change` or `not updated (release without the skill)`), `Watcher:` and `Extractor:` lines (`installed`, `updated`, `no change` or `not updated (release without the …)`). Running twice in a row changes nothing the second time (and creates no backup).
 
 ### Workspace created before this
 
@@ -45,7 +46,7 @@ The rules for the agent live in a **managed block**, between the lines `<!-- map
 
 ### What `setup.sh` touches and what it does not
 
-Touches: `tools/mapping-mcp.js` and `tools/mapping-signature.mjs` (and the `.sha256` files), `.agents/skills/spec-author/`, `.claude/skills/spec-author`, `watch-comments.mjs` (in the root) and the `AGENTS.md` block (with the backup when the structure changes). **Never touches:** `projetos/`, `especializacoes/`, an existing `CLAUDE.md`, `.mcp.json` and the configurations of the other clients (you may have other servers registered in them).
+Touches: `tools/mapping-mcp.js` and `tools/mapping-signature.mjs` (and the `.sha256` files), `.agents/skills/spec-author/`, `.claude/skills/spec-author`, `.agents/skills/watch-conversations/`, `.claude/skills/watch-conversations`, `watch-comments.mjs` (in the root) and the `AGENTS.md` block (with the backup when the structure changes). **Never touches:** `projects/`, `specializations/`, an existing `CLAUDE.md`, `.mcp.json` and the configurations of the other clients (you may have other servers registered in them).
 
 ### Security
 
@@ -73,26 +74,59 @@ Last resort, if not even the API responds: download the release with `gh release
 1. Download `mapping-mcp.js` and `mapping-mcp.js.sha256` into `tools/`, and check the `sha256` (`certutil -hashfile tools\mapping-mcp.js SHA256`).
 2. Download `SKILL.md` into `.agents/skills/spec-author/` and copy that folder to `.claude/skills/spec-author/`.
 3. Download `AGENTS.mapping.md` and paste its content (the lines from `<!-- mapping:begin … -->` to `<!-- mapping:end -->`) into your `AGENTS.md`, in place of the block that is already there (or at the end of the file, if it is the first).
-4. Download `watch-comments.mjs` and `watch-comments.mjs.sha256` into the workspace root and check the `sha256` (`certutil -hashfile watch-comments.mjs SHA256`).
-5. Download `mapping-signature.mjs` and `mapping-signature.mjs.sha256` into `tools/` and check the `sha256`.
-6. The release's `setup.sh` is not needed; download it only if you will run it later in WSL.
+4. Download `watch-conversations.SKILL.md` into `.agents/skills/watch-conversations/` and rename it to `SKILL.md`, then copy that folder to `.claude/skills/watch-conversations/`; check the `sha256` against `watch-conversations.SKILL.md.sha256` (`certutil -hashfile watch-conversations.SKILL.md SHA256`).
+5. Download `watch-comments.mjs` and `watch-comments.mjs.sha256` into the workspace root and check the `sha256` (`certutil -hashfile watch-comments.mjs SHA256`).
+6. Download `mapping-signature.mjs` and `mapping-signature.mjs.sha256` into `tools/` and check the `sha256`.
+7. The release's `setup.sh` is not needed; download it only if you will run it later in WSL.
 
 ## Conversations: waking the agent (`watch-comments.mjs`)
 
-Anchored conversations live in `projetos/<project>/comments/` (format in Mapping's `docs/COMMENT-FORMAT.md`). The MCP server **never triggers an agent**: it only reads and writes conversations when the agent is already up. For the agent to wake up on its own when someone asks something, leave `watch-comments.mjs` (in the workspace root; `setup.sh` installs and updates it) running in a terminal (Node ≥ 20, no dependencies), passing the command that opens your agent after the `--`:
+Anchored conversations live in `projects/<project>/comments/` (format in Mapping's `docs/COMMENT-FORMAT.md`). The MCP server **never triggers an agent**: it only reads and writes conversations when the agent is already up. For the agent to wake up on its own when someone asks something, leave `watch-comments.mjs` (in the workspace root; `setup.sh` installs and updates it) running (Node ≥ 20, no dependencies). **Never edit `watch-comments.mjs`**: `setup.sh` undoes the edit on the next update; use its options. There are two modes.
+
+### Mode 1: a new agent per wake
+
+Pass the command that opens your agent after the `--`, in a terminal:
 
 ```bash
-node watch-comments.mjs -- claude -p "There are conversations awaiting you in projetos/. Follow the Conversations section of AGENTS.md."
+node watch-comments.mjs -- claude -p "There are conversations awaiting you in projects/. Follow the Conversations section of AGENTS.md."
 ```
 
-- Watches `projetos/*/comments/` and waits **5 s with no change** (`--quiet <seconds>` adjusts it) before acting.
-- Only runs the command if there is an **open** conversation whose last message is from a person (it awaits the agent). A resolved conversation, or one that awaits a person, triggers nothing.
-- Runs **one command at a time**: a change during the run waits for it to finish and is reevaluated. Each conversation and last-message pair is handled once, so a conversation the agent left unanswered does not become a loop.
-- The command receives `MAPPING_AWAITING`, a JSON with `[{ "project", "thread", "path" }]` of the conversations that triggered the run. `--root <folder>` changes the watched folder (default: `projetos/` next to the script). Ctrl+C stops it.
+The command receives `MAPPING_AWAITING`, a JSON with `[{ "project", "thread", "path" }]` of the conversations that triggered the run. Each wake starts an agent without the context of the chat you are in.
+
+### Mode 2: the same chat, with the `watch-conversations` skill
+
+With `--emit` the watcher runs no command: it prints **one** `MAPPING_WAKE <json>` line (the same JSON) per batch to stdout, and the logs stay on stderr. A background process of the client turns that line into a wake of the **current chat** (Claude Code's `Monitor`; Cursor's shell tool with `notify_on_output`). Nothing is spent while waiting.
+
+You do not have to type the command: open the agent in the workspace and say **"watch the conversations"**. The `watch-conversations` skill (`.agents/skills/watch-conversations/SKILL.md`, installed by `setup.sh` like `spec-author`) checks the preparation, answers what is already waiting, starts the watcher with the projects root of the client configuration, answers each wake and, on "stop watching the conversations", stops it. The command it runs is:
+
+```bash
+node watch-comments.mjs --emit --state .mapping-watch/state.json --quiet 1 --root <root>
+```
+
+- `--state <file>` keeps the handled conversation and message pairs between runs (temporary file + rename), so restarting the watcher does not repeat wakes, and a pair that arrived while it was stopped fires on the restart. A missing or invalid file starts empty.
+- `.mapping-watch/` (the state folder) is in this example's `.gitignore`. **Existing workspaces:** `setup.sh` never touches `.gitignore`; add the line `.mapping-watch/` yourself.
+- **Limits:** the client and the chat must stay open (Claude Code cloud sessions do not work: the container stops when idle). A long chat costs more with each answer: open a new chat and run the skill again. The latency is about 1 s from the watcher plus the time the agent takes to write. For a client without output notifications, the agent can loop on `wait_for_comment` (plan B, in the agent guide; it spends tokens on every round).
+
+### What both modes do
+
+- Watches `projects/*/comments/` and waits **5 s with no change** (`--quiet <seconds>` adjusts it) before acting.
+- Only wakes the agent if there is an **open** conversation whose last message is from a person (it awaits the agent). A resolved conversation, or one that awaits a person, triggers nothing.
+- Each conversation and last-message pair is handled once, so a conversation the agent left unanswered does not become a loop. In the command mode it runs **one command at a time**: a change during the run waits for it to finish and is reevaluated.
+- `--root <folder>` changes the watched folder (default: `projects/` next to the script, or `projetos/` if that is the only one). The start log names the root and how many project folders it found. Ctrl+C stops it.
+
+## Renaming the folders
+
+Workspaces created before the English names have `projetos/` and `especializacoes/`. They keep working: `setup.sh` never moves or renames anything, and the watcher and the skills read the root from the client configuration. `setup.sh` only warns once: it creates no `projects/` or `specializations/` next to an old folder. To rename, by hand:
+
+1. Close the agent and the Mapping app on the workspace.
+2. `mv projetos projects` and `mv especializacoes specializations` (each folder on its own; only the ones you have).
+3. In each client configuration (`.mcp.json`, `.cursor/mcp.json`, `.gemini/settings.json`, `.vscode/mcp.json`, `.codex/config.toml`), change `--root projetos` to `--root projects` and `--root especializacoes` to `--root specializations`.
+4. In `.gitignore`, change `projetos/**/backups/` to `projects/**/backups/`.
+5. Open the agent again and run `list_projects`: the roots must show the new paths. Reopen the projects in the app from `projects/`.
 
 ## Where each tool reads its configuration
 
-All of them point to the same command: `node tools/mapping-mcp.js --root projetos --root especializacoes`. The names change between versions; if a tool does not find the server, check its docs and adjust only the corresponding file.
+All of them point to the same command: `node tools/mapping-mcp.js --root projects --root specializations`. The names change between versions; if a tool does not find the server, check its docs and adjust only the corresponding file.
 
 | Tool              | MCP server              | Instructions                      | Skill                    |
 | ----------------- | ----------------------- | --------------------------------- | ------------------------ |
@@ -104,7 +138,7 @@ All of them point to the same command: `node tools/mapping-mcp.js --root projeto
 
 ## Two roots, not the whole folder
 
-`projetos/` is where the server looks for `mapping.json` (at any depth). `especializacoes/` holds the sources of the specializations, which must be inside a root for `validate_specialization({ path })` and `apply_specialization` to read them. `.git/` and `tools/` stay out.
+`projects/` is where the server looks for `mapping.json` (at any depth). `specializations/` holds the sources of the specializations, which must be inside a root for `validate_specialization({ path })` and `apply_specialization` to read them. `.git/` and `tools/` stay out.
 
 ## Writing the solution from the markings
 
@@ -115,7 +149,7 @@ Each type's `code` says how to create an instance of it on each platform; the fi
   "mcpServers": {
     "mapping": {
       "command": "node",
-      "args": ["/path/mappings/tools/mapping-mcp.js", "--root", "/path/mappings/projetos"]
+      "args": ["/path/mappings/tools/mapping-mcp.js", "--root", "/path/mappings/projects"]
     }
   }
 }

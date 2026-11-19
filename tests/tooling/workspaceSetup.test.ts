@@ -42,6 +42,9 @@ const RELEASE_SKILL = '# skill from the release\n';
 const RAW_SKILL = '# skill from raw (main)\n';
 const RELEASE_WATCHER = '// watcher from the release\n';
 const OLD_WATCHER = '// watcher copied by hand, old\n';
+const RELEASE_WATCH_SKILL = '# watch skill from the release\n';
+const OLD_WATCH_SKILL = '# old watch skill\n';
+const WATCH_DIR = '.agents/skills/watch-conversations';
 const RELEASE_EXTRACTOR = '// extractor from the release\n';
 const OLD_EXTRACTOR = '// old extractor\n';
 
@@ -87,6 +90,11 @@ function setup(options: Options = {}): Env {
   writeFileSync(join(root, 'examples/workspace/AGENTS.md'), REAL_AGENTS);
   writeFileSync(join(root, '.claude/skills/spec-author/SKILL.md'), RELEASE_SKILL);
   writeFileSync(join(root, 'examples/workspace/watch-comments.mjs'), RELEASE_WATCHER);
+  mkdirSync(join(root, 'examples/workspace', WATCH_DIR), { recursive: true });
+  writeFileSync(
+    join(root, 'examples/workspace', WATCH_DIR, 'SKILL.md'),
+    RELEASE_WATCH_SKILL,
+  );
   const release = join(tmp('release'), 'rel');
   buildWorkspaceAssets(release, root);
   const server = "if (process.argv.includes('--version')) console.log('0.0.0-test');\n";
@@ -109,6 +117,8 @@ function setup(options: Options = {}): Env {
   writeFileSync(join(raw, '.claude/skills/spec-author/SKILL.md'), RAW_SKILL);
   const ws = tmp('ws');
   cpSync(SKELETON, ws, { recursive: true, filter: (src) => !src.endsWith('setup.sh') });
+  // The skeleton carries the skill source; a workspace starts without its installed copy.
+  rmSync(join(ws, WATCH_DIR), { recursive: true, force: true });
   if (!options.noLocalSetup) {
     writeFileSync(join(ws, 'setup.sh'), LOCAL_SETUP);
     chmodSync(join(ws, 'setup.sh'), 0o755);
@@ -246,6 +256,111 @@ describe('watcher (watch-comments.mjs)', () => {
   });
 });
 
+describe('watch-conversations skill (stage #1879, decision 7)', () => {
+  const skillPath = (env: Env, root: string): string =>
+    join(env.ws, root, 'watch-conversations');
+
+  it('new workspace: installs it in .agents/skills/ and links .claude/skills/, with the line "Watch skill: installed"', () => {
+    const env = setup();
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(read(env, `${WATCH_DIR}/SKILL.md`)).toBe(RELEASE_WATCH_SKILL);
+    expect(lstatSync(skillPath(env, '.claude/skills')).isSymbolicLink()).toBe(true);
+    expect(readlinkSync(skillPath(env, '.claude/skills'))).toBe(
+      '../../.agents/skills/watch-conversations',
+    );
+    expect(read(env, '.claude/skills/watch-conversations/SKILL.md')).toBe(
+      RELEASE_WATCH_SKILL,
+    );
+    expect(result.out).toContain('Watch skill: installed');
+    // The spec-author skill is untouched by it.
+    expect(read(env, '.agents/skills/spec-author/SKILL.md')).toBe(RELEASE_SKILL);
+  });
+
+  it('an old copy is replaced by the release one: "Watch skill: updated"', () => {
+    const env = setup();
+    write(env, `${WATCH_DIR}/SKILL.md`, OLD_WATCH_SKILL);
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(read(env, `${WATCH_DIR}/SKILL.md`)).toBe(RELEASE_WATCH_SKILL);
+    expect(result.out).toContain('Watch skill: updated');
+  });
+
+  it('equal copy: "Watch skill: no change", and a second run changes nothing', () => {
+    const env = setup();
+    expect(run(env).status).toBe(0);
+    const before = snapshot(env.ws);
+    const second = run(env);
+    expect(second.status, second.all).toBe(0);
+    expect(second.out).toContain('Watch skill: no change');
+    expect(snapshot(env.ws)).toEqual(before);
+  });
+
+  it('.claude/skills/watch-conversations as a copy (real folder) is copied again', () => {
+    const env = setup();
+    write(env, '.claude/skills/watch-conversations/SKILL.md', 'old copy\n');
+    write(env, '.claude/skills/watch-conversations/extra.md', 'leftover\n');
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(lstatSync(skillPath(env, '.claude/skills')).isDirectory()).toBe(true);
+    expect(read(env, '.claude/skills/watch-conversations/SKILL.md')).toBe(
+      RELEASE_WATCH_SKILL,
+    );
+    expect(existsSync(join(skillPath(env, '.claude/skills'), 'extra.md'))).toBe(false);
+  });
+
+  it('.claude/skills/watch-conversations as a link stays a link', () => {
+    const env = setup();
+    mkdirSync(join(env.ws, '.claude/skills'), { recursive: true });
+    mkdirSync(join(env.ws, WATCH_DIR), { recursive: true });
+    symlinkSync(
+      '../../.agents/skills/watch-conversations',
+      skillPath(env, '.claude/skills'),
+    );
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(readlinkSync(skillPath(env, '.claude/skills'))).toBe(
+      '../../.agents/skills/watch-conversations',
+    );
+    expect(read(env, '.claude/skills/watch-conversations/SKILL.md')).toBe(
+      RELEASE_WATCH_SKILL,
+    );
+  });
+
+  it('release without the skill: warning, the local copy intact and the rest of the setup carries on', () => {
+    const env = setup({ omit: ['watch-conversations.SKILL.md'] });
+    write(env, `${WATCH_DIR}/SKILL.md`, OLD_WATCH_SKILL);
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(result.err).toContain('watch-conversations.SKILL.md');
+    expect(read(env, `${WATCH_DIR}/SKILL.md`)).toBe(OLD_WATCH_SKILL);
+    expect(result.out).toContain('Watch skill: not updated (release without the skill)');
+    expect(result.out).toContain('Server: 0.0.0-test');
+    expect(read(env, '.agents/skills/spec-author/SKILL.md')).toBe(RELEASE_SKILL);
+  });
+
+  it('release without the skill and without a local copy: nothing is created', () => {
+    const env = setup({ omit: ['watch-conversations.SKILL.md'] });
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(existsSync(join(env.ws, WATCH_DIR))).toBe(false);
+    expect(existsSync(skillPath(env, '.claude/skills'))).toBe(false);
+    expect(result.out).toContain('Watch skill: not updated (release without the skill)');
+  });
+
+  it('mismatching sha256 changes nothing (no skill installed)', () => {
+    const env = setup();
+    const file = join(env.release, 'watch-conversations.SKILL.md');
+    writeFileSync(file, `${readFileSync(file, 'utf8')}tampered\n`);
+    const before = snapshot(env.ws);
+    const result = run(env);
+    expect(result.status).not.toBe(0);
+    expect(snapshot(env.ws)).toEqual(before);
+    expect(existsSync(join(env.ws, WATCH_DIR))).toBe(false);
+    expect(leftovers(env)).toEqual([]);
+  });
+});
+
 describe('self-update', () => {
   it('replaces setup.sh, warns and runs again once only', () => {
     const env = setup();
@@ -300,6 +415,7 @@ describe('mismatching sha256', () => {
     'SKILL.md',
     'AGENTS.mapping.md',
     'watch-comments.mjs',
+    'watch-conversations.SKILL.md',
     'mapping-signature.mjs',
   ])('in %s: exits with an error and nothing changes', (name) => {
     const env = setup();
@@ -522,11 +638,69 @@ describe('idempotence', () => {
   });
 });
 
-describe('what is never touched', () => {
-  it('projetos/, especializacoes/, CLAUDE.md and the client configs stay the same', () => {
+describe('folder names (stage #1879, decision 9)', () => {
+  const bare = (env: Env): void => {
+    for (const name of ['projetos', 'especializacoes', 'projects', 'specializations'])
+      rmSync(join(env.ws, name), { recursive: true, force: true });
+  };
+  const WARNING = 'see "Renaming the folders" in README.md';
+
+  it('new workspace: creates projects/ and specializations/ and no Portuguese folder', () => {
     const env = setup();
+    bare(env);
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(lstatSync(join(env.ws, 'projects')).isDirectory()).toBe(true);
+    expect(lstatSync(join(env.ws, 'specializations')).isDirectory()).toBe(true);
+    expect(existsSync(join(env.ws, 'projetos'))).toBe(false);
+    expect(existsSync(join(env.ws, 'especializacoes'))).toBe(false);
+    expect(result.err).not.toContain(WARNING);
+  });
+
+  it('old workspace: creates nothing, moves nothing and warns once', () => {
+    const env = setup();
+    bare(env);
     write(env, 'projetos/a/mapping.json', '{"x":1}\n');
     write(env, 'especializacoes/s.json', '{"id":"s"}\n');
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(existsSync(join(env.ws, 'projects'))).toBe(false);
+    expect(existsSync(join(env.ws, 'specializations'))).toBe(false);
+    expect(read(env, 'projetos/a/mapping.json')).toBe('{"x":1}\n');
+    expect(read(env, 'especializacoes/s.json')).toBe('{"id":"s"}\n');
+    expect(result.err.split(WARNING).length - 1).toBe(1);
+  });
+
+  it('each pair on its own: old projetos/ with no specializations/ creates specializations/', () => {
+    const env = setup();
+    bare(env);
+    write(env, 'projetos/a/mapping.json', '{}\n');
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(existsSync(join(env.ws, 'projects'))).toBe(false);
+    expect(existsSync(join(env.ws, 'specializations'))).toBe(true);
+    expect(existsSync(join(env.ws, 'especializacoes'))).toBe(false);
+    expect(result.err).toContain(WARNING);
+  });
+
+  it('workspace with projects/ and no projetos/: no projetos/ is created', () => {
+    const env = setup();
+    bare(env);
+    mkdirSync(join(env.ws, 'projects'));
+    mkdirSync(join(env.ws, 'specializations'));
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(existsSync(join(env.ws, 'projetos'))).toBe(false);
+    expect(existsSync(join(env.ws, 'especializacoes'))).toBe(false);
+    expect(result.err).not.toContain(WARNING);
+  });
+});
+
+describe('what is never touched', () => {
+  it('projects/, specializations/, CLAUDE.md and the client configs stay the same', () => {
+    const env = setup();
+    write(env, 'projects/a/mapping.json', '{"x":1}\n');
+    write(env, 'specializations/s.json', '{"id":"s"}\n');
     write(env, 'CLAUDE.md', '# my claude\n');
     write(
       env,
@@ -535,8 +709,8 @@ describe('what is never touched', () => {
     );
     write(env, '.cursor/mcp.json', '{"mcpServers":{"outro":{"command":"y"}}}\n');
     const paths = [
-      'projetos/a/mapping.json',
-      'especializacoes/s.json',
+      'projects/a/mapping.json',
+      'specializations/s.json',
       'CLAUDE.md',
       '.mcp.json',
       '.cursor/mcp.json',
@@ -682,6 +856,23 @@ const releaseJsonCalls = (mock: Mock): string[] =>
   mock.calls.filter((c) => /\/releases\/(latest|tags\/[^/]+)$/.test(c));
 
 describe('release download (stage #877)', () => {
+  it('the download message names the local base (MAPPING_RELEASE_BASE) and, otherwise, the release', async () => {
+    const local = setup();
+    const withBase = run(local, ['--no-self-update']);
+    expect(withBase.status, withBase.all).toBe(0);
+    expect(withBase.out).toContain(`Downloading from file://${local.release}...`);
+    expect(withBase.out).not.toContain('Downloading from release');
+
+    const env = setup();
+    const mock = await startMock(env, {});
+    try {
+      const result = await runMock(env, mock.base, ['--no-self-update']);
+      expect(result.out).toContain('Downloading from release latest...');
+    } finally {
+      await mock.close();
+    }
+  });
+
   it(
     '504 on the direct download and 200 on the API: installs through the second path, with the warning and sha256 checked',
     async () => {

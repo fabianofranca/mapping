@@ -8,7 +8,7 @@ import { pathToFileURL } from 'node:url';
 
 const SCRATCH = PATHS.base;
 const SRC = `${SCRATCH}/app`;
-const PROJECT = `${PATHS.ws}/projetos/comentarios`;
+const PROJECT = `${PATHS.ws}/projects/comentarios`;
 const require = createRequire(`${SRC}/package.json`);
 const { chromium } = require('@playwright/test');
 const JSZip = require('jszip');

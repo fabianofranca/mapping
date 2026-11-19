@@ -50,4 +50,18 @@ describe('mappings-workspace equal to examples/workspace', () => {
       /\[\s*'\.\/setup\.sh'\s*,\s*'--no-self-update'\s*\]/,
     );
   });
+
+  // Stage #1879, WC5 (decisions 11 and 12 of #1916).
+  it('serve.mjs bounds setup.sh to 25 s and falls back to the installed server', () => {
+    const serve = read('mappings-workspace/serve.mjs');
+    expect(serve).toMatch(/timeout:\s*25000/);
+    expect(serve).toContain('setup.sh did not finish');
+    expect(serve).toContain('starting the installed server');
+  });
+
+  it('serve.mjs reports a failure to start the server without a stack', () => {
+    const serve = read('mappings-workspace/serve.mjs');
+    expect(serve).toMatch(/child\.on\(\s*'error'/);
+    expect(serve).toContain('could not start the MCP server');
+  });
 });

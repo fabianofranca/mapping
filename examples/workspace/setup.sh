@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Brings the mappings folder to the version of an MCP release (mcp-v*): the server, the spec-author
-# skill (in .agents/ and in the link under .claude/), the AGENTS.md rules block, the conversation
-# watcher (watch-comments.mjs) and this script.
+# and watch-conversations skills (in .agents/ and in the link under .claude/), the AGENTS.md rules
+# block, the conversation watcher (watch-comments.mjs) and this script.
 # Usage: ./setup.sh [tag] [--no-self-update]     (the flag may come before or after the tag)
 #        ./setup.sh                      latest stable release
 #        ./setup.sh mcp-v0.5.0           a specific release
@@ -27,9 +27,10 @@
 #   MAPPING_SETUP_UPDATED  =1 prevents a second self-update cycle (the script sets it)
 #
 # Touches: tools/mapping-mcp.js(.sha256), tools/mapping-signature.mjs(.sha256), .agents/skills/spec-author, .claude/skills/spec-author,
+# .agents/skills/watch-conversations, .claude/skills/watch-conversations,
 # watch-comments.mjs (in the root; overwritten by the release's version, no backup), setup.sh itself and the block between the mapping:begin/end markers of AGENTS.md (with a copy
-# AGENTS.md.bak-YYYYMMDD-HHMMSS when the file changes). Never changes projetos/ and especializacoes/
-# (it only creates the folders), an existing CLAUDE.md (and does not create one), .mcp.json or the
+# AGENTS.md.bak-YYYYMMDD-HHMMSS when the file changes). Never changes or moves projetos/, especializacoes/,
+# projects/ and specializations/ (it only creates the new-name folder of a pair when neither name exists), an existing CLAUDE.md (and does not create one), .mcp.json or the
 # configs of the other clients.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -68,10 +69,12 @@ TMP=""
 SKILL_FROM=""
 AGENTS_SUMMARY=""
 WATCHER_SUMMARY=""
+WATCH_SKILL_SUMMARY=""
 EXTRACTOR_SUMMARY=""
 HAVE_SETUP=0
 HAVE_BLOCK=0
 HAVE_WATCHER=0
+HAVE_WATCH_SKILL=0
 HAVE_EXTRACTOR=0
 # Download state (see `download` and `fetch_file`): HTTP code, curl stderr and failure class.
 DL_CODE=""
@@ -236,11 +239,16 @@ verify() {
 }
 
 download_all() {
-  echo "Downloading from release ${TAG:-latest}..."
+  if [ -n "${MAPPING_RELEASE_BASE:-}" ]; then
+    echo "Downloading from $RELEASE_BASE..."
+  else
+    echo "Downloading from release ${TAG:-latest}..."
+  fi
   fetch_with_hash mapping-mcp.js || die "$FETCH_MSG"
   if fetch_optional setup.sh; then HAVE_SETUP=1; fi
   if fetch_optional AGENTS.mapping.md; then HAVE_BLOCK=1; fi
   if fetch_optional watch-comments.mjs; then HAVE_WATCHER=1; fi
+  if fetch_optional watch-conversations.SKILL.md; then HAVE_WATCH_SKILL=1; fi
   if fetch_optional mapping-signature.mjs; then HAVE_EXTRACTOR=1; fi
   if fetch_optional SKILL.md; then
     SKILL_FROM="release ${TAG:-latest}"
@@ -257,6 +265,7 @@ verify_all() {
   [ "$HAVE_SETUP" = 0 ] || verify setup.sh
   [ "$HAVE_BLOCK" = 0 ] || verify AGENTS.mapping.md
   [ "$HAVE_WATCHER" = 0 ] || verify watch-comments.mjs
+  [ "$HAVE_WATCH_SKILL" = 0 ] || verify watch-conversations.SKILL.md
   [ "$HAVE_EXTRACTOR" = 0 ] || verify mapping-signature.mjs
   [ "$SKILL_FROM" = "main (old release)" ] || verify SKILL.md
 }
@@ -284,23 +293,46 @@ self_update() {
 
 install_server() {
   mkdir -p tools
-  cp "$TMP/mapping-mcp.js" tools/mapping-mcp.js
-  cp "$TMP/mapping-mcp.js.sha256" tools/mapping-mcp.js.sha256
+  # Copy to a temporary name and rename, so an interrupted run never leaves a half-written server.
+  cp "$TMP/mapping-mcp.js" tools/mapping-mcp.js.new
+  mv -f tools/mapping-mcp.js.new tools/mapping-mcp.js
+  cp "$TMP/mapping-mcp.js.sha256" tools/mapping-mcp.js.sha256.new
+  mv -f tools/mapping-mcp.js.sha256.new tools/mapping-mcp.js.sha256
 }
 
-install_skill() {
-  mkdir -p .agents/skills/spec-author .claude/skills
-  cp "$TMP/SKILL.md" .agents/skills/spec-author/SKILL.md
-  if [ -L .claude/skills/spec-author ]; then
+# Copies $2 to .agents/skills/$1/SKILL.md and keeps .claude/skills/$1 pointing at it.
+install_skill_copy() {
+  local name="$1" from="$2"
+  mkdir -p ".agents/skills/$name" .claude/skills
+  cp "$from" ".agents/skills/$name/SKILL.md"
+  if [ -L ".claude/skills/$name" ]; then
     return 0 # link (even a broken one): already points to the canonical copy
-  elif [ -d .claude/skills/spec-author ]; then
-    rm -rf .claude/skills/spec-author
-    cp -R .agents/skills/spec-author .claude/skills/spec-author
-  elif [ ! -e .claude/skills/spec-author ]; then
+  elif [ -d ".claude/skills/$name" ]; then
+    rm -rf ".claude/skills/$name"
+    cp -R ".agents/skills/$name" ".claude/skills/$name"
+  elif [ ! -e ".claude/skills/$name" ]; then
     # Link to the canonical copy; where links do not exist (some Windows), a copy.
-    ln -s ../../.agents/skills/spec-author .claude/skills/spec-author 2>/dev/null ||
-      cp -R .agents/skills/spec-author .claude/skills/spec-author
+    ln -s "../../.agents/skills/$name" ".claude/skills/$name" 2>/dev/null ||
+      cp -R ".agents/skills/$name" ".claude/skills/$name"
   fi
+}
+
+install_skill() { install_skill_copy spec-author "$TMP/SKILL.md"; }
+
+# Same rules as spec-author; a release without the file leaves whatever is there untouched.
+install_watch_skill() {
+  local canonical=.agents/skills/watch-conversations/SKILL.md
+  if [ "$HAVE_WATCH_SKILL" = 0 ]; then
+    WATCH_SKILL_SUMMARY="not updated (release without the skill)"
+    return 0
+  elif [ ! -f "$canonical" ]; then
+    WATCH_SKILL_SUMMARY="installed"
+  elif cmp -s "$TMP/watch-conversations.SKILL.md" "$canonical"; then
+    WATCH_SKILL_SUMMARY="no change"
+  else
+    WATCH_SKILL_SUMMARY="updated"
+  fi
+  install_skill_copy watch-conversations "$TMP/watch-conversations.SKILL.md"
 }
 
 # --- conversation watcher -----------------------------------------------------------------------
@@ -446,6 +478,20 @@ update_agents() {
   fi
 }
 
+# Each folder pair is checked on its own: neither name exists -> creates the English one; the old
+# Portuguese one exists -> creates nothing and moves nothing. One warning when an old name exists.
+ensure_folders() {
+  local old_found=0 pair old new
+  for pair in "projetos:projects" "especializacoes:specializations"; do
+    old="${pair%%:*}"; new="${pair##*:}"
+    if [ -e "$old" ]; then old_found=1
+    elif [ ! -e "$new" ]; then mkdir -p "$new"; fi
+  done
+  if [ "$old_found" = 1 ]; then
+    warn "this workspace uses projetos/ (or especializacoes/); to rename, see \"Renaming the folders\" in README.md"
+  fi
+}
+
 # --- main ----------------------------------------------------------------------------------
 
 main() {
@@ -454,14 +500,16 @@ main() {
   download_all
   verify_all
   self_update "$@"
-  mkdir -p projetos especializacoes
+  ensure_folders
   install_server
   install_skill
+  install_watch_skill
   install_watcher
   install_extractor
   update_agents
   echo "Server: $(node tools/mapping-mcp.js --version)"
   echo "Skill: $SKILL_FROM"
+  echo "Watch skill: $WATCH_SKILL_SUMMARY"
   echo "AGENTS.md: $AGENTS_SUMMARY"
   echo "Watcher: $WATCHER_SUMMARY"
   echo "Extractor: $EXTRACTOR_SUMMARY"

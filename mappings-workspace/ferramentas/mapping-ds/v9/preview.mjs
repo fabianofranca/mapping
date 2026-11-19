@@ -32,7 +32,7 @@ if (b.status !== 0) {
 console.log(b.stdout.trim());
 
 async function mcp(tool, args) {
-  const server = spawn('node', [`${WS}/tools/mapping-mcp.js`, '--root', OUT, '--root', `${WS}/projetos`], { cwd: WS, stdio: ['pipe', 'pipe', 'inherit'] });
+  const server = spawn('node', [`${WS}/tools/mapping-mcp.js`, '--root', OUT, '--root', `${WS}/projects`], { cwd: WS, stdio: ['pipe', 'pipe', 'inherit'] });
   let buf = '';
   const pending = new Map();
   server.stdout.on('data', (d) => {
@@ -62,8 +62,9 @@ async function mcp(tool, args) {
   server.kill();
   return JSON.parse(res.result?.content?.map((c) => c.text).join('\n') ?? '{}');
 }
-const v = await mcp('validate_library', { path: PKG, previous: `${WS}/projetos/comentarios/specs/mapping-ds/mapping-ds.spec.json` });
-writeFileSync(`${OUT}/validate.json`, JSON.stringify(v, null, 1));
+const v = await mcp('validate_library', { path: PKG, previous: `${WS}/projects/comentarios/specs/mapping-ds/mapping-ds.spec.json` });
+// `path` relative to ferramentas/mapping-ds, so the file carries no absolute path of the machine.
+writeFileSync(`${OUT}/validate.json`, JSON.stringify({ ...v, path: relative(BASE, PKG).split('\\').join('/') }, null, 1));
 console.log(`validate_library: valid=${v.valid} erros=${v.errors?.length} avisos=${v.warnings?.length}`);
 for (const i of [...(v.errors ?? []), ...(v.warnings ?? [])].slice(0, 30)) console.log(`  ${i.severity} ${i.file} ${i.path}: ${i.message}`);
 
@@ -127,7 +128,7 @@ const parents = (items) =>
     return best;
   });
 const LABELED = new Set(['text', 'badge', 'avatar', 'icon', 'tab']);
-const baseProject = JSON.parse(readFileSync(`${WS}/projetos/comentarios/mapping.json`, 'utf8'));
+const baseProject = JSON.parse(readFileSync(`${WS}/projects/comentarios/mapping.json`, 'utf8'));
 const layer = baseProject.layers.find((l) => l.spec?.specId === 'mapping-ds');
 const walk = (d) => readdirSync(d).flatMap((n) => (statSync(join(d, n)).isDirectory() ? walk(join(d, n)) : [join(d, n)]));
 const unknown = new Set();
@@ -147,7 +148,7 @@ for (const c of extracted.containers) {
   const zip = new JSZip();
   zip.file('mapping.json', JSON.stringify(p, null, 2));
   for (const f of walk(PKG)) zip.file(`specs/mapping-ds/${relative(PKG, f).split('\\').join('/')}`, readFileSync(f));
-  for (const f of walk(`${WS}/projetos/comentarios/specs/notas`)) zip.file(`specs/notas/${relative(`${WS}/projetos/comentarios/specs/notas`, f).split('\\').join('/')}`, readFileSync(f));
+  for (const f of walk(`${WS}/projects/comentarios/specs/notas`)) zip.file(`specs/notas/${relative(`${WS}/projects/comentarios/specs/notas`, f).split('\\').join('/')}`, readFileSync(f));
   const buffer = await zip.generateAsync({ type: 'nodebuffer' });
   writeFileSync(`${OUT}/preview-${safe(c.name)}.zip`, buffer);
 
