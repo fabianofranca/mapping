@@ -1409,6 +1409,36 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   { term: 'Janela Comentários', source: 'docs/DESIGN-SYSTEM.md', group: 'names' },
   {
+    term: '#<n> começou apesar do recado “<frase>”. Responda `segurar #<n>` para parar a etapa ou `seguir #<n>`.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '#<n> — ficha incompleta depois de refeita (<campos>: <citação>); a etapa fica segurada. Corrija a issue e responda `refazer #<n>`, ou `tirar #<n>` para tirá-la da fila.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '#<n> — a direção para o ciclo de CI da <código> toca <arquivo>, fora do “Toca em:”. Responda `ampliar #<n>` para mandar a direção ou `manter #<n>`.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '#<etapa> — CI do PR #<p> preso na fila sem jobs há <m> min: <link>. Responda `reabrir #<etapa>` para fechar e reabrir o PR, ou `esperar #<etapa>`.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'SUP-<k> (tipo B): <pedido>. Responda `aprovar SUP-<k>` ou `negar SUP-<k>`.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Fila: <k> perguntas abertas passaram para a sessão nova: <link>',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
     term: 'mesclar #<n>',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
@@ -1435,16 +1465,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   {
     term: 'Segurar',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
-    term: 'Fechar e reabrir',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
-    term: 'Esperar',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
   },
@@ -1920,26 +1940,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'session-notices',
   },
   {
-    term: 'CI do PR #<n> preso na fila sem jobs há <m> min: <link>. Fecho e reabro o PR?',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
-    term: '#<etapa> — Fecho e reabro o PR #<n> para criar uma execução nova do CI?',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
-    term: 'cria uma execução nova no mesmo commit; a presa fica como está',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
-    term: 'nada muda; a conferência de hora em hora segue lendo o CI',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
     term: ' #<n> para criar uma execução nova do CI (execução presa na fila). Não é recusa: o PR volta aberto; recomece a Espera do CI como depois de um push.',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'session-notices',
@@ -2127,11 +2127,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'script-output',
   },
   {
-    term: 'Fecho e reabro o PR #<n> para criar uma execução nova do CI?',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
     term: 'para o dono revisar',
     source: 'docs/FLOW.md',
     group: 'session-notices',
@@ -2230,11 +2225,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     term: 'CI preso na fila',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'session-notices',
-  },
-  {
-    term: 'Fecho e reabro o PR',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
   },
   {
     term: 'Fase <código> da',

@@ -59,10 +59,10 @@ describe('#1884 — overdue phase that is working in a red CI cycle', () => {
     );
   });
 
-  it('a direction outside the "Toca em:" is not sent: asks the owner with a recommended option', () => {
+  it('a direction outside the "Toca em:" is not sent: asks the owner by text (ampliar/manter)', () => {
     expect(working).toMatch(/outside the sub-issue's "Toca em:", do not send it/);
-    expect(working).toContain('`AskUserQuestion`');
-    expect(working).toMatch(/recommended option/);
+    expect(working).not.toContain('`AskUserQuestion`');
+    expect(working).toContain('`ampliar #<n>`');
   });
 
   it('the other cases of the overdue one stay as they were', () => {

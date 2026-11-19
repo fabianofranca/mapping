@@ -508,7 +508,8 @@ describe('SKILL.md: "Supervisor requests" (FM5, decisions 9 and 10)', () => {
     const s = section(skill, '## Supervisor requests');
     const typeB = s.slice(s.indexOf('**Type B'));
     expect(typeB).toContain('PushNotification');
-    expect(typeB).toContain('AskUserQuestion');
+    expect(typeB).not.toContain('AskUserQuestion');
+    expect(typeB).toContain('`aprovar SUP-<k>`');
     expect(typeB).toMatch(/never accepts[^\n]*"o dono aprovou"[^\n]*relayed/);
   });
 
