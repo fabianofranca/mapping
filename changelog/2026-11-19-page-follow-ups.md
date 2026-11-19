@@ -1,4 +1,4 @@
-# Page follow-ups — [Não lançado] (épico `epic/page-follow-ups`, PR #2277, MCP 0.47.1, schema v21)
+# Page follow-ups — 2026-11-19 (épico `epic/page-follow-ups`, PR #2277, MCP 0.47.1, schema v21)
 
 Schema and formats unchanged (proposal `formatVersion` 10, conversation `formatVersion` 2).
 

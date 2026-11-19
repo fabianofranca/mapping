@@ -1,4 +1,4 @@
-# Page follow-ups — [Não lançado] (épico `epic/page-follow-ups`)
+# Page follow-ups — 2026-11-19 (épico `epic/page-follow-ups`)
 
 ## Pendências
 
