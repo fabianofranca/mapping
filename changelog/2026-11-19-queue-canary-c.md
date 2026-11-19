@@ -1,4 +1,4 @@
-# Retest on Haiku and canary C for the tester — [Não lançado] (épico `epic/queue-canary-c`, PR #0, MCP unchanged, schema v20)
+# Retest on Haiku and canary C for the tester — 2026-11-19 (épico `epic/queue-canary-c`, PR #2174, MCP unchanged, schema v20)
 
 ## Alterado
 

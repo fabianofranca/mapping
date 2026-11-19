@@ -1,4 +1,4 @@
-# Retest on Haiku and canary C for the tester — [Não lançado] (épico `epic/queue-canary-c`)
+# Retest on Haiku and canary C for the tester — 2026-11-19 (épico `epic/queue-canary-c`)
 
 ## Pendências
 
