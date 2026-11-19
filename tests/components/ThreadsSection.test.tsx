@@ -226,6 +226,40 @@ describe('Threads › state D (no identity)', () => {
     );
     expect(onOpenSettings).toHaveBeenCalledTimes(1);
   });
+
+  const openButton = () =>
+    within(sectionEl()).getByRole('button', { name: t('thread.openSettings') });
+
+  it('requesting a thread focuses the notice button, described by the notice', async () => {
+    clearIdentity();
+    const harness = await setup();
+    startComposing(harness.ui, harness.project(), { kind: 'marking', id: 'M1' });
+    renderMarking(harness);
+    const button = openButton();
+    expect(document.activeElement).toBe(button);
+    const notice = document.getElementById(button.getAttribute('aria-describedby')!);
+    expect(notice?.textContent).toBe(t('thread.noIdentity'));
+  });
+
+  it('only selecting the marking, with no request, does not move the focus', async () => {
+    clearIdentity();
+    const harness = await setup();
+    renderMarking(harness);
+    expect(document.activeElement).not.toBe(openButton());
+  });
+
+  it('a second request on the same anchor focuses the button again', async () => {
+    clearIdentity();
+    const harness = await setup();
+    const anchor = { kind: 'marking', id: 'M1' } as const;
+    startComposing(harness.ui, harness.project(), anchor);
+    renderMarking(harness);
+    expect(document.activeElement).toBe(openButton());
+    (document.activeElement as HTMLElement).blur();
+    expect(document.activeElement).not.toBe(openButton());
+    startComposing(harness.ui, harness.project(), anchor);
+    await waitFor(() => expect(document.activeElement).toBe(openButton()));
+  });
 });
 
 describe('Threads › list and New', () => {
@@ -259,6 +293,19 @@ describe('Threads › list and New', () => {
     const list = await screen.findByRole('list', { name: t('thread.list') });
     expect(within(list).getAllByRole('button')).toHaveLength(2);
     expect(harness.ui.composing.value).toBeNull();
+  });
+
+  it('a second request on the same anchor focuses the field again', async () => {
+    const harness = await setup([humanThread('t1')]);
+    renderMarking(harness);
+    await userEvent.click(screen.getByRole('button', { name: t('thread.new') }));
+    const field = await screen.findByLabelText(
+      t('thread.composeAs', { name: 'Marina Alves' }),
+    );
+    expect(document.activeElement).toBe(field);
+    (document.activeElement as HTMLElement).blur();
+    startComposing(harness.ui, harness.project(), { kind: 'marking', id: 'M1' });
+    await waitFor(() => expect(document.activeElement).toBe(field));
   });
 
   it('the draft survives the selection change and comes back', async () => {
@@ -421,6 +468,21 @@ describe('Threads › no item (EditorPanel)', () => {
       expect(harness.context.session.threads.list.value).toHaveLength(1),
     );
     await screen.findByText('here');
+  });
+
+  it('the loose point with no identity focuses the notice button', async () => {
+    clearIdentity();
+    const harness = await setup();
+    startComposing(harness.ui, harness.project(), {
+      kind: 'point',
+      containerId: null,
+      x: 10,
+      y: 20,
+    });
+    renderPanel(harness);
+    expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: t('thread.openSettings') }),
+    );
   });
 
   it('the orphan shows what was deleted and the notice button opens Settings', async () => {

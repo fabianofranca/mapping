@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
+import type { RefObject } from 'preact';
+import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import { t } from '../../i18n';
 import type { ThreadAnchor } from '../../model';
 import {
@@ -21,7 +22,7 @@ interface ComposerProps {
   readonly target: ComposerTarget;
   /** Opens Settings (the notice with no identity leads there). */
   readonly onOpenSettings?: () => void;
-  /** Focuses the field on mount (the new thread requested by the New button). */
+  /** Focuses the field (or, with no identity, the notice button) on each new-thread request. */
   readonly autoFocus?: boolean;
   /** Discards the draft of a new thread not yet sent. */
   readonly onCancel?: () => void;
@@ -33,6 +34,24 @@ function useReplyAnchor(target: ComposerTarget): ThreadAnchor | null {
   const threads = session.threads.list.value;
   if (target.kind === 'new') return target.anchor;
   return threads.find((th) => th.id === target.threadId)?.anchor ?? null;
+}
+
+/**
+ * Focuses the field on each new-thread request or, with no identity (the notice replaces the
+ * field), its button. Each request creates a new `ui.composing` object, so asking again on the
+ * same anchor focuses again.
+ */
+function useRequestFocus(
+  autoFocus: boolean | undefined,
+  key: string,
+  field: RefObject<HTMLElement>,
+  button: RefObject<HTMLElement>,
+): void {
+  const { ui } = useEditor();
+  const request = autoFocus ? ui.composing.value : null;
+  useEffect(() => {
+    if (autoFocus) (field.current ?? button.current)?.focus();
+  }, [autoFocus, key, request, field, button]);
 }
 
 /**
@@ -50,19 +69,25 @@ export function Composer({ target, onOpenSettings, autoFocus, onCancel }: Compos
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const field = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const noticeId = useId();
+  useRequestFocus(autoFocus, key, field, buttonRef);
   // The anchor of the `@` ("here"): the draft's or that of the thread being replied to.
   const replyAnchor = useReplyAnchor(target);
-  useEffect(() => {
-    if (autoFocus) field.current?.focus();
-  }, [autoFocus, key]);
 
   if (!writable) return null;
   if (me === null) {
     return (
       <div class="thread-no-identity">
-        <p>{t('thread.noIdentity')}</p>
+        <p id={noticeId}>{t('thread.noIdentity')}</p>
         {onOpenSettings && (
-          <Button onClick={onOpenSettings}>{t('thread.openSettings')}</Button>
+          <Button
+            buttonRef={buttonRef}
+            aria-describedby={noticeId}
+            onClick={onOpenSettings}
+          >
+            {t('thread.openSettings')}
+          </Button>
         )}
       </div>
     );

@@ -726,17 +726,15 @@ describe('CI stuck in the queue (#1669)', () => {
     const ci = between(flow, 'CI runs only on PRs', '\n\n');
     expect(ci).toMatch(/no empty commits/);
     expect(ci).toMatch(/run is stuck in the queue/);
-    expect(ci).toMatch(/owner's "sim"/);
+    expect(ci).toMatch(/owner's `reabrir #<n>`/);
     expect(ci).toContain('item 6');
   });
 
   it('skill: CI stuck in the queue paragraph with the question, the options and the effects (decisions 3 to 7)', () => {
     const paragraph = stuckParagraph();
-    expect(paragraph).toContain(
-      'Fecho e reabro o PR #<n> para criar uma execução nova do CI?',
-    );
-    expect(paragraph).toContain('Fechar e reabrir (Recomendado)');
-    expect(paragraph).toContain('Esperar');
+    expect(paragraph).toContain('`reabrir #<etapa>`');
+    expect(paragraph).toContain('`esperar #<etapa>`');
+    expect(paragraph).not.toContain('Fechar e reabrir (Recomendado)');
     expect(paragraph).toContain('update_pull_request');
     expect(paragraph).toContain('reaberto=true');
     expect(paragraph).toContain('instabilidade do GitHub');
@@ -744,7 +742,7 @@ describe('CI stuck in the queue (#1669)', () => {
     expect(paragraph).toContain('PushNotification');
     expect(paragraph).toContain('node scripts/ci/ciRerun.mjs queued');
     expect(paragraph).toMatch(/16 min/);
-    expect(paragraph).toMatch(/[Oo]nly the owner's answer in the queue chat counts/);
+    expect(paragraph).toMatch(/[Oo]nly the owner's own message in the queue chat counts/);
   });
 
   it('skill: the paragraph comes after the red CI on the epic PR and before the item that refers to it', () => {

@@ -459,6 +459,46 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'script-output',
   },
   {
+    term: 'pergunta',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'segurar',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'reabrir',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'refazer',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'ampliar',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'perguntas ao dono:',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: '#n <verbo> (há <h> h): <texto>',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'SUP-<k> (há <h> h): <pedido>',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
     term: 'CI esperando o coordenador:',
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'script-output',
@@ -1369,6 +1409,41 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   { term: 'Janela Comentários', source: 'docs/DESIGN-SYSTEM.md', group: 'names' },
   {
+    term: '#<n> começou apesar do recado “<frase>”. Responda `segurar #<n>` para parar a etapa ou `seguir #<n>`.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '#<n> — ficha incompleta depois de refeita (<campos>: <citação>); a etapa fica segurada. Corrija a issue e responda `refazer #<n>`, ou `tirar #<n>` para tirá-la da fila.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '#<n> — a direção para o ciclo de CI da <código> toca <arquivo>, fora do “Toca em:”. Responda `ampliar #<n>` para mandar a direção ou `manter #<n>`.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '#<etapa> — CI do PR #<p> preso na fila sem jobs há <m> min: <link>. Responda `reabrir #<etapa>` para fechar e reabrir o PR, ou `esperar #<etapa>`.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'SUP-<k> (tipo B): <pedido>. Responda `aprovar SUP-<k>` ou `negar SUP-<k>`.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Fila: <k> perguntas abertas passaram para a sessão nova: <link>',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Fecho e reabro o PR #<n> para criar uma execução nova do CI?',
+    source: 'changelog/2026-11-11-ci-preso-na-fila.md',
+    group: 'owner-chat',
+  },
+  {
     term: 'mesclar #<n>',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
@@ -1391,21 +1466,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   {
     term: 'Ainda não',
     source: '.claude/skills/via-rapida/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
-    term: 'Segurar',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
-    term: 'Fechar e reabrir',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
-    term: 'Esperar',
-    source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
   },
   {
@@ -1880,26 +1940,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'session-notices',
   },
   {
-    term: 'CI do PR #<n> preso na fila sem jobs há <m> min: <link>. Fecho e reabro o PR?',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
-    term: '#<etapa> — Fecho e reabro o PR #<n> para criar uma execução nova do CI?',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
-    term: 'cria uma execução nova no mesmo commit; a presa fica como está',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
-    term: 'nada muda; a conferência de hora em hora segue lendo o CI',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
     term: ' #<n> para criar uma execução nova do CI (execução presa na fila). Não é recusa: o PR volta aberto; recomece a Espera do CI como depois de um push.',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'session-notices',
@@ -2087,11 +2127,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'script-output',
   },
   {
-    term: 'Fecho e reabro o PR #<n> para criar uma execução nova do CI?',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
     term: 'para o dono revisar',
     source: 'docs/FLOW.md',
     group: 'session-notices',
@@ -2190,11 +2225,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     term: 'CI preso na fila',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'session-notices',
-  },
-  {
-    term: 'Fecho e reabro o PR',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
   },
   {
     term: 'Fase <código> da',
@@ -3278,6 +3308,18 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
     pattern: /f", há \{minutes_since\(since\)/,
     reason:
       'the `há <h> h` of the `merge pedido ao dono:` line of `show`, frozen script output that the queue text and tests/tooling/queueFastTrackPanel.test.ts match',
+  },
+  {
+    path: 'tests/tooling/queueOwnerQuestions.test.ts',
+    pattern: /\(há 3 h\)|\(há'/,
+    reason:
+      'the `há <h> h` of the `perguntas ao dono:` lines of `show`, frozen script output (decision 16 of #741)',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/painel.py',
+    pattern: /f"há \{minutes_since\(at\)/,
+    reason:
+      'the `há <h> h` of the `perguntas ao dono:` lines of `show`, frozen script output that tests/tooling/queueOwnerQuestions.test.ts matches',
   },
   {
     path: '.claude/skills/implementar-fila/SKILL.md',
