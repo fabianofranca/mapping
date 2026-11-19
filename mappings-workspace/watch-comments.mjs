@@ -22,7 +22,7 @@
 //
 // Conversation format: Mapping's `docs/COMMENT-FORMAT.md`.
 import { spawn } from 'node:child_process';
-import { existsSync, realpathSync, watch } from 'node:fs';
+import { existsSync, fstatSync, realpathSync, watch } from 'node:fs';
 import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -202,6 +202,7 @@ function createRunner({ root, quietMs, command, args, emit, statePath, handled }
 
   /** `--emit`: one line per batch on stdout; the batch is done right away. */
   function emitWake(items) {
+    if (stopped) return;
     process.stdout.write(`${WAKE_PREFIX} ${JSON.stringify(toPayload(items))}\n`);
     log(`${items.length} conversation(s) awaiting the agent; MAPPING_WAKE emitted`);
     release();
@@ -310,6 +311,16 @@ function parseArgs(argv, defaultRoot) {
   return { ...config, command: command[0], args: command.slice(1) };
 }
 
+/** True when stdin is a pipe or socket (a live parent); a file, TTY or /dev/null is not watched. */
+function stdinIsPipe() {
+  try {
+    const st = fstatSync(0);
+    return st.isFIFO() || st.isSocket();
+  } catch {
+    return false;
+  }
+}
+
 /** Runs the watcher until SIGINT/SIGTERM. Returns the exit code (2 for incorrect usage). */
 export async function main(argv) {
   const base = dirname(SCRIPT_PATH);
@@ -339,11 +350,17 @@ export async function main(argv) {
     const quit = (code) => {
       process.off('SIGINT', onSignal);
       process.off('SIGTERM', onSignal);
+      process.stdin.off('end', onOrphaned);
+      process.stdin.off('close', onOrphaned);
+      process.stdout.off('error', onOrphaned);
       runner.stop();
       watcher?.close();
       done(code);
     };
     const onSignal = () => quit(0);
+    // The parent went away without a signal (a stopped `Monitor`): stdin (when it is a pipe) ends or
+    // stdout breaks. Without this the watcher would stay alive, orphaned, with nobody to read it.
+    const onOrphaned = () => quit(0);
     try {
       watcher = watch(config.root, { recursive: true }, (_event, filename) =>
         runner.onEvent(filename),
@@ -358,6 +375,12 @@ export async function main(argv) {
     });
     process.on('SIGINT', onSignal);
     process.on('SIGTERM', onSignal);
+    process.stdout.on('error', onOrphaned);
+    if (stdinIsPipe()) {
+      process.stdin.on('end', onOrphaned);
+      process.stdin.on('close', onOrphaned);
+      process.stdin.resume();
+    }
     const folders = `${projectCount} project folder${projectCount === 1 ? '' : 's'}`;
     log(
       `observing ${config.root} (${folders}, quiet period of ${config.quietSeconds}s); Ctrl+C stops`,

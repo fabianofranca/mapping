@@ -12,6 +12,9 @@
 ## Corrigido
 
 - `mappings-workspace/serve.mjs` no longer hangs the MCP client: `setup.sh` runs with a 25 s timeout (below the 30 s Claude Code waits); on a timeout or failure, an installed server still starts, with a warning on stderr, and only without one does it exit 1. A failure to start the server prints `could not start the MCP server: <message>` instead of a stack trace (#1916 items 2 and 3).
+- `watch-comments.mjs` no longer stays running after the chat's `Monitor` is stopped: it exits when its stdin pipe ends or its stdout breaks, and writes no wake line once stopping; the `watch-conversations` skill's `## Stop` says what is left (nothing) and how to check (round #2134, R40.5).
+- `setup.sh` says `Downloading from <base>...` when `MAPPING_RELEASE_BASE` is set, and `release <tag|latest>` otherwise.
+- `docs/TESTING.md`: R40.5 undoes the R40.3 message first and checks `pgrep` after `TaskStop`; R40.3 checks `^MAPPING_WAKE` on stderr; R0.2 lists the `texto` files; R21.1 lists the `Extractor:` line.
 
 ## Alterado
 

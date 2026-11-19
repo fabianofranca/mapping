@@ -46,9 +46,9 @@ Tell the person that the watching is on, and how to stop it.
 
 ## Stop
 
-- Claude Code: `TaskStop` on the monitor.
+- Claude Code: `TaskStop` on the monitor. The watcher also exits by itself when `Monitor` closes its pipes (stdin ends or stdout breaks), so nothing is left running.
 - Cursor: `pkill -f watch-comments.mjs`.
-- Or the person says "stop" in the chat: do the one for the client in use, then check with `pgrep -fl watch-comments`.
+- Or the person says "stop" in the chat: do the one for the client in use, then check with `pgrep -fl watch-comments`: it must print nothing. If a process is left (an older `watch-comments.mjs`), end it with `pkill -f watch-comments.mjs`.
 
 ## Limits
 
