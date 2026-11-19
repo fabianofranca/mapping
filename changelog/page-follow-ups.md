@@ -8,6 +8,8 @@ Schema and formats unchanged (proposal `formatVersion` 10, conversation `formatV
 - **Deleting a page with Move the content takes locked items along instead of failing** (`delete_page` with `move_to` in the MCP too): the locked roots go with the others, shifted like them, and stay locked. **Move to page** of a locked root still refuses.
 - **A v21 file without `pages` opens through Repair and open:** the key absent is read as an empty list (the first page is created and everything goes to it), instead of a schema error.
 - **The review opens a page that the proposal creates:** in the Proposed view, choosing the creation of a root on a page that the proposal itself adds opens that page (the status bar says its name), and the **Page** menu lists it with the tag "New in this proposal". The Current view and exiting the review go back to the page that was open before, with no "no longer exists" notice.
+- **Undo works with Manage pages open:** `Ctrl+Z` and `Ctrl+Shift+Z` reach the project from inside the dialog, so a page delete (discard or move, locked root included) is undone in one entry without closing it.
+- **Deleting a page and everything in it warns about references that will break:** the dialog counts the references from annotations that stay to annotations of the page ("N reference(s) from annotations that stay will break…"); undo restores them.
 
 ## Alterado
 

@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { pageContent, type Thread } from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { sampleThread } from '../model/threadFixtures';
+import { referenceAcrossPages } from '../model/refAnnotationFixtures';
+import { createLocalHarness } from './perspectiveUiHarness';
 import { openDialog, setupPages } from './pageUiHarness';
 
 // Delete page (stage #883, PG2, decision 10): simple for an empty page; with content, counts and
@@ -218,5 +220,43 @@ describe('DeletePageDialog: point conversations of the page', () => {
     await user.click(button('Move the content and delete the page'));
     expect(screen.queryByRole('alert')).toBeNull();
     expect(harness.project().pages.map((p) => p.id)).toEqual(ids);
+  });
+
+  it('undoing "Move the content and delete the page" brings the page back with the root still locked, in one entry (PF5 finding 4)', async () => {
+    const { harness } = await setupPages(['Second']);
+    const first = harness.project().pages[0]?.id as string;
+    const root = harness.project().containers[0]?.id as string;
+    expect(harness.actions.setImageLocked(root, true).ok).toBe(true);
+    const user = await openDialog(harness, { kind: 'deletePage', id: first });
+    await user.click(button('Move the content and delete the page'));
+    await harness.store.undo();
+    const undone = harness.project();
+    expect(undone.pages.map((p) => p.id)).toContain(first);
+    expect(undone.containers.find((c) => c.id === root)).toMatchObject({
+      pageId: first,
+      locked: true,
+    });
+  });
+});
+
+describe('DeletePageDialog: references from other pages (PF5, finding 3)', () => {
+  it('"Delete the page and everything in it" warns how many references break; undo restores them', async () => {
+    const harness = await createLocalHarness(referenceAcrossPages());
+    const user = await openDialog(harness, { kind: 'deletePage', id: 'PG2' });
+    const dialog = screen.getByRole('alertdialog', { name: 'Delete the page Flows?' });
+    expect(
+      within(dialog).getByText(/1 reference\(s\) from annotations that stay/),
+    ).toBeTruthy();
+    await user.click(button('Delete the page and everything in it'));
+    expect(harness.project().annotations.some((a) => a.id === 'AM')).toBe(false);
+    await harness.store.undo();
+    expect(harness.project().annotations.some((a) => a.id === 'AM')).toBe(true);
+  });
+
+  it('no warning when nothing points at the page', async () => {
+    const { harness } = await setupPages(['Second']);
+    const first = harness.project().pages[0]?.id as string;
+    await openDialog(harness, { kind: 'deletePage', id: first });
+    expect(screen.queryByText(/reference\(s\) from annotations that stay/)).toBeNull();
   });
 });

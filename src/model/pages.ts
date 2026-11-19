@@ -14,6 +14,7 @@ import { DEFAULT_PAGE_NAME } from './migrations';
 import { perspectiveView, rootFootprint } from './perspective';
 import { findById, moveItem, updateById } from './project';
 import { idInUse, projectIndex } from './projectIndex';
+import { refsBrokenBy } from './refs';
 import { firstPageId, requirePage } from './spaces';
 import type { Arrow, Page, Perspective, Project, Rect } from './types';
 
@@ -383,4 +384,17 @@ export function deletePage(
     return { ...moved, pages };
   }
   return settleFrom(p, { ...withoutPageContent(p, pageId), pages }, options);
+}
+
+/**
+ * References from annotations that stay (on any page) that deleting the page breaks: the ones that
+ * point at an annotation of the page. `moveTo` keeps every annotation, so it breaks none; 0 if the
+ * deletion fails. The count the delete dialog warns about before confirming.
+ */
+export function pageDeletionBrokenRefs(
+  p: Project,
+  pageId: string,
+  how: PageDeletion,
+): number {
+  return refsBrokenBy(p, (project) => deletePage(project, pageId, how));
 }

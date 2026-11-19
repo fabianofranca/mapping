@@ -760,6 +760,39 @@ describe('useEditorShortcuts: when the keys do not apply', () => {
     expect(s.dialogs.show).not.toHaveBeenCalled();
   });
 
+  it('Ctrl+Z and Ctrl+Shift+Z still undo and redo with Manage pages open (PF5 findings 2 and 4)', () => {
+    const s = setup();
+    s.harness.actions.renameLayer('L1', 'Pintura');
+    (s.dialogs as { current: unknown }).current = { kind: 'managePages' };
+    s.rerender(s.dialogs as unknown as EditorDialogs);
+    modalOpen.value += 1;
+    try {
+      s.press('z', { ctrl: true });
+      expect(s.harness.project().layers[0]?.name).not.toBe('Pintura');
+      s.press('z', { ctrl: true, shift: true });
+      expect(s.harness.project().layers[0]?.name).toBe('Pintura');
+      // Only undo and redo pass: F1 still waits for the dialog to close.
+      s.press('F1');
+      expect(s.dialogs.show).not.toHaveBeenCalled();
+    } finally {
+      modalOpen.value -= 1;
+    }
+  });
+
+  it('Ctrl+Z stays blocked with another dialog open (Settings)', () => {
+    const s = setup();
+    s.harness.actions.renameLayer('L1', 'Pintura');
+    (s.dialogs as { current: unknown }).current = { kind: 'settings' };
+    s.rerender(s.dialogs as unknown as EditorDialogs);
+    modalOpen.value += 1;
+    try {
+      s.press('z', { ctrl: true });
+    } finally {
+      modalOpen.value -= 1;
+    }
+    expect(s.harness.project().layers[0]?.name).toBe('Pintura');
+  });
+
   it('an already handled event (defaultPrevented) is ignored', () => {
     const s = setup();
     s.harness.actions.renameLayer('L1', 'Pintura');
