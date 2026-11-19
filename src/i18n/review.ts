@@ -444,6 +444,7 @@ export const reviewEnUS = {
     '{name} would join items of different pages. The page changes of the group go together: accept the rest of them or reject this one.',
   'review.issue.pageParent':
     '{name} would end up on a different page than {other}. The page changes of the group go together: accept the rest of them or reject this one.',
+  'review.issue.anchorCrossPage': '{name} would be anchored to {other} on another page.',
   'review.locked.title': 'Locked item',
   'review.locked.text':
     'Accepting position or removal changes is allowed in review. The lock stays on after applying.',
@@ -958,6 +959,7 @@ export const reviewPtBR: Record<keyof typeof reviewEnUS, string> = {
     '{name} ligaria itens de páginas diferentes. As mudanças de página do grupo andam juntas: aceite as outras ou rejeite esta.',
   'review.issue.pageParent':
     '{name} ficaria em uma página diferente de {other}. As mudanças de página do grupo andam juntas: aceite as outras ou rejeite esta.',
+  'review.issue.anchorCrossPage': '{name} ficaria ancorada em {other} em outra página.',
   'review.locked.title': 'Item trancado',
   'review.locked.text':
     'Aceitar mudanças de posição ou remoção é permitido na revisão. A trava continua ligada depois de aplicar.',

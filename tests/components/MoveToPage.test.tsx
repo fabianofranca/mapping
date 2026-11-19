@@ -4,7 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditorDialogs } from '../../src/app/EditorDialogs';
 import { useEditorDialogs } from '../../src/app/useEditorDialogs';
 import type { CanvasController } from '../../src/canvas/CanvasController';
-import { createArrow, projectIndex, type Project } from '../../src/model';
+import {
+  createArrow,
+  createMarking,
+  projectIndex,
+  setMarkingAnchor,
+  type Project,
+} from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { selectItems } from '../../src/store/ui';
 import { CanvasContextMenu } from '../../src/ui/CanvasContextMenu';
@@ -12,7 +18,7 @@ import { EditorContext } from '../../src/ui/EditorContext';
 import { MarkingPanel } from '../../src/ui/MarkingPanel';
 import { SelectionPanel } from '../../src/ui/SelectionPanel';
 import { sampleProject } from '../model/fixtures';
-import { pagesProject } from '../store/pageHarness';
+import { pagesProject, rectOf } from '../store/pageHarness';
 import { createHarness, type Harness } from './harness';
 
 // "Move to page" in the right-click menu and in the Details of a root (stage #883, PG2, decision
@@ -198,6 +204,43 @@ describe('refusal: an arrow in the way', () => {
     expect(harness.context.session.page.id.value).toBe('PG1');
     expect(harness.ui.selection.value).toEqual({ kind: 'arrow', id: 'R1' });
     expect(center).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+  });
+});
+
+describe('refusal: an anchor in the way', () => {
+  function withAnchor() {
+    let p = pagesProject();
+    p = createMarking(p, {
+      id: 'A',
+      containerId: null,
+      rect: rectOf(6000, 100, 300, 300),
+    });
+    p = createMarking(p, {
+      id: 'B',
+      containerId: null,
+      rect: rectOf(6500, 100, 300, 300),
+    });
+    return setup(setMarkingAnchor(p, 'B', { to: 'A', side: 'end' }));
+  }
+
+  it('nothing moves and the dialog lists the anchor, going to the end that stays', async () => {
+    const { harness } = withAnchor();
+    renderMenu(harness);
+    const before = harness.project();
+    openMenu(harness, 'm', 'A');
+    fireEvent.click(moveItem());
+    fireEvent.click(within(submenu()).getByRole('menuitem', { name: 'Page 2' }));
+    expect(harness.project()).toBe(before);
+    const dialog = screen.getByRole('alertdialog', {
+      name: 'The move would cut anchors',
+    });
+    expect(within(dialog).getAllByRole('listitem')).toHaveLength(1);
+    await userEvent
+      .setup()
+      .click(within(dialog).getByRole('button', { name: 'Go to the marking' }));
+    // A would leave: the end that stays is B.
+    expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: 'B' });
     expect(screen.queryByRole('alertdialog')).toBeNull();
   });
 });

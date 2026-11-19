@@ -11,7 +11,7 @@ import { ContainerDialog } from '../ui/ContainerDialog';
 import { DeletePerspectiveDialog } from '../ui/DeletePerspectiveDialog';
 import { DeletePageDialog } from '../ui/DeletePageDialog';
 import { ManagePagesDialog } from '../ui/ManagePagesDialog';
-import { goToArrow } from '../ui/movePage';
+import { goToAnchorEnd, goToArrow } from '../ui/movePage';
 import { MovePageRefusedDialog } from '../ui/MovePageRefusedDialog';
 import { ManagePerspectivesDialog } from '../ui/ManagePerspectivesDialog';
 import { NewPerspectiveDialog } from '../ui/NewPerspectiveDialog';
@@ -326,7 +326,9 @@ function renderDialog(
       return (
         <MovePageRefusedDialog
           arrows={dialog.arrows}
+          anchors={dialog.anchors}
           onGoToArrow={dialog.onGoToArrow}
+          onGoToMarking={dialog.onGoToMarking}
           onClose={close}
         />
       );
@@ -383,15 +385,17 @@ function ExternalChangeDialog() {
 export function EditorDialogs(props: EditorDialogsProps) {
   const ctx = useEditor();
   const { current, show } = props.dialogs;
-  // A "Move to page" that cut arrows (right-click menu, Details): the dialog lists them.
+  // A "Move to page" that cut arrows or anchors (right-click menu, Details): the dialog lists them.
   const refusal = ctx.moveRefusal.value;
   useEffect(() => {
     if (refusal === null) return;
     ctx.moveRefusal.value = null;
     show({
       kind: 'movePageRefused',
-      arrows: refusal,
+      arrows: refusal.arrows,
+      anchors: refusal.anchors,
       onGoToArrow: (arrowId) => goToArrow(ctx, arrowId),
+      onGoToMarking: (anchor) => goToAnchorEnd(ctx, anchor, refusal.roots),
     });
   }, [refusal, ctx, show]);
   return (

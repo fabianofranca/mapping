@@ -74,6 +74,16 @@ export const pagesEnUS = {
     'An arrow cannot join markings of different pages. Nothing was moved. These arrows cross between the group and the rest of the page:',
   'page.move.refusedArrow': '{from} → {to}',
   'page.move.goToArrow': 'Go to the arrow',
+  'page.move.refusedAnchorsTitle': 'The move would cut anchors',
+  'page.move.refusedBothTitle': 'The move would cut arrows and anchors',
+  'page.move.refusedAnchorsText':
+    'An anchor cannot join markings of different pages. Nothing was moved. These anchors cross between the group and the rest of the page:',
+  'page.move.refusedAnchor': '{marking} anchored to {to}',
+  'page.move.goToMarking': 'Go to the marking',
+  'page.delete.threadsOne':
+    '1 conversation on an empty spot of this page loses its place: it stays in Comments, without a place.',
+  'page.delete.threadsMany':
+    '{count} conversations on empty spots of this page lose their place: they stay in Comments, without a place.',
 
   // Notices
   'page.notice.removed': 'The page {name} no longer exists. The first page is open.',
@@ -160,6 +170,16 @@ export const pagesPtBR: Record<keyof typeof pagesEnUS, string> = {
     'Uma seta não pode ligar marcações de páginas diferentes. Nada foi movido. Estas setas cruzam entre o grupo e o resto da página:',
   'page.move.refusedArrow': '{from} → {to}',
   'page.move.goToArrow': 'Ir para a seta',
+  'page.move.refusedAnchorsTitle': 'A mudança cortaria âncoras',
+  'page.move.refusedBothTitle': 'A mudança cortaria setas e âncoras',
+  'page.move.refusedAnchorsText':
+    'Uma âncora não pode ligar marcações de páginas diferentes. Nada foi movido. Estas âncoras cruzam entre o grupo e o resto da página:',
+  'page.move.refusedAnchor': '{marking} ancorada em {to}',
+  'page.move.goToMarking': 'Ir para a marcação',
+  'page.delete.threadsOne':
+    '1 conversa em um ponto vazio desta página perde o lugar: ela fica em Comentários, sem lugar.',
+  'page.delete.threadsMany':
+    '{count} conversas em pontos vazios desta página perdem o lugar: elas ficam em Comentários, sem lugar.',
 
   'page.notice.removed': 'A página {name} não existe mais. A primeira página foi aberta.',
   'page.notice.undone': 'Desfeito em {name}',

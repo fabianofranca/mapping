@@ -1,8 +1,9 @@
 import 'fake-indexeddb/auto';
 import { cleanup, screen, within } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { pageContent } from '../../src/model';
+import { pageContent, type Thread } from '../../src/model';
 import { locale } from '../../src/store/settings';
+import { sampleThread } from '../model/threadFixtures';
 import { openDialog, setupPages } from './pageUiHarness';
 
 // Delete page (stage #883, PG2, decision 10): simple for an empty page; with content, counts and
@@ -155,5 +156,67 @@ describe('DeletePageDialog: the deliberate delete of the open page', () => {
     session.page.open(second);
     await harness.store.undo();
     expect(session.page.notice.value).toEqual({ kind: 'removed', name: 'Second' });
+  });
+});
+
+describe('DeletePageDialog: point conversations of the page', () => {
+  const point = (id: string, pageId: string): Thread =>
+    sampleThread({
+      id,
+      anchor: { kind: 'point', containerId: null, x: 5, y: 6, pageId },
+    });
+
+  async function withThreads(pageIndex: number) {
+    const s = await setupPages(['Second']);
+    const first = s.harness.project().pages[0]?.id as string;
+    const second = s.ids[0] as string;
+    for (const t of [point('t1', first), point('t2', first), point('t3', second)]) {
+      await s.session.threads.create(t);
+    }
+    const id = pageIndex === 0 ? first : second;
+    return { ...s, id };
+  }
+
+  it('the move and discard forms say how many conversations lose their place', async () => {
+    const { harness, id } = await withThreads(0);
+    await openDialog(harness, { kind: 'deletePage', id });
+    expect(
+      screen.getByText(
+        '2 conversations on empty spots of this page lose their place: they stay in Comments, without a place.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('the empty form says it too, in the singular for one', async () => {
+    const { harness, id } = await withThreads(1);
+    await openDialog(harness, { kind: 'deletePage', id });
+    expect(
+      screen.getByText(
+        '1 conversation on an empty spot of this page loses its place: it stays in Comments, without a place.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('no line when there is none', async () => {
+    const { harness, ids } = await setupPages(['Second']);
+    await openDialog(harness, { kind: 'deletePage', id: ids[0] as string });
+    expect(screen.queryByText(/loses? (its|their) place/)).toBeNull();
+  });
+
+  it('Cancel keeps the focus', async () => {
+    const { harness, id } = await withThreads(0);
+    await openDialog(harness, { kind: 'deletePage', id });
+    expect(document.activeElement).toBe(button('Cancel'));
+  });
+
+  it('deleting with "Move the content…" a page with a locked root succeeds', async () => {
+    const { harness, ids } = await setupPages(['Second']);
+    const first = harness.project().pages[0]?.id as string;
+    const root = harness.project().containers[0]?.id as string;
+    expect(harness.actions.setImageLocked(root, true).ok).toBe(true);
+    const user = await openDialog(harness, { kind: 'deletePage', id: first });
+    await user.click(button('Move the content and delete the page'));
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(harness.project().pages.map((p) => p.id)).toEqual(ids);
   });
 });
