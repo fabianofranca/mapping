@@ -82,6 +82,8 @@ const ALLOWLIST = [
   'src/ui/MovePageControl.tsx',
   'src/ui/MovePageMenuItems.tsx',
   'src/ui/MovePageRefusedDialog.tsx',
+  // "Go to the marking" of the refusal (stage #2177, PF2): which end of an anchor stays comes from the real project.
+  'src/ui/movePage.ts',
   'src/ui/PageMenu.tsx',
   'src/ui/StatusBar.tsx',
   'src/ui/pageNavigation.ts',
