@@ -48,7 +48,10 @@ interface OpenedPackage {
   readonly loaded: LoadedProject | null;
 }
 
-async function openPackage(roots: Roots, args: ComponentArgs): Promise<OpenedPackage> {
+export async function openPackage(
+  roots: Roots,
+  args: ComponentArgs,
+): Promise<OpenedPackage> {
   const byPath = args.path !== undefined;
   if (byPath === (args.project !== undefined)) {
     throw new ToolError(
@@ -120,9 +123,13 @@ async function loadComponent(
 const sizeView = (size: { width: number; height: number } | undefined) =>
   size === undefined ? null : { width: size.width, height: size.height };
 
-function typeEntries(
-  spec: Spec,
-): { layerId: string; layerName: string; type: SpecAnnotationType }[] {
+export interface TypeEntry {
+  readonly layerId: string;
+  readonly layerName: string;
+  readonly type: SpecAnnotationType;
+}
+
+function typeEntries(spec: Spec): TypeEntry[] {
   return spec.layers.flatMap((layer) =>
     layer.annotationTypes.map((type) => ({
       layerId: layer.id,
@@ -301,35 +308,40 @@ function accessibilityField(spec: Spec, type: SpecAnnotationType): Json {
   return accessibility === null ? {} : { accessibility };
 }
 
-/** `get_component`: everything about a library type. */
-export async function getComponent(
-  roots: Roots,
-  args: ComponentArgs & { type: string },
-): Promise<Json> {
-  const { source, loaded: project } = await openPackage(roots, args);
-  const entries = typeEntries(source.spec);
-  const wanted = args.type.trim();
+/** The type of the specialization by id (or, failing that, by name): `unknown-type` / `ambiguous-type`. */
+export function findTypeEntry(spec: Spec, wantedType: string): TypeEntry {
+  const entries = typeEntries(spec);
+  const wanted = wantedType.trim();
   let matches = entries.filter((e) => e.type.id === wanted);
   if (matches.length === 0) {
     const folded = wanted.toLowerCase();
     matches = entries.filter((e) => e.type.name.toLowerCase() === folded);
   }
   if (matches.length === 0) {
-    throw new ToolError('unknown-type', `type not found: ${args.type}`, {
-      type: args.type,
+    throw new ToolError('unknown-type', `type not found: ${wantedType}`, {
+      type: wantedType,
       available: entries.slice(0, 50).map((e) => e.type.id),
     });
   }
   if (matches.length > 1) {
     throw new ToolError(
       'ambiguous-type',
-      `more than one type named "${args.type}": use the id`,
+      `more than one type named "${wantedType}": use the id`,
       {
         candidates: matches.map((e) => e.type.id),
       },
     );
   }
-  const { layerId, layerName, type } = matches[0]!;
+  return matches[0]!;
+}
+
+/** `get_component`: everything about a library type. */
+export async function getComponent(
+  roots: Roots,
+  args: ComponentArgs & { type: string },
+): Promise<Json> {
+  const { source, loaded: project } = await openPackage(roots, args);
+  const { layerId, layerName, type } = findTypeEntry(source.spec, args.type);
   const loaded = await loadComponent(source, type);
   // `doc` object: the document lives in another repository, with no text in the package.
   const docPath = typeof type.doc === 'string' ? source.resolve(type.doc) : null;
