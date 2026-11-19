@@ -1,4 +1,4 @@
-# Identity notice when commenting — [Não lançado] (épico `epic/aviso-identidade-comentar`, MCP sem mudança, schema v21)
+# Identity notice when commenting — [Não lançado] (épico `epic/aviso-identidade-comentar`, PR #1878, MCP 0.45.0, schema v21)
 
 ## Corrigido
 

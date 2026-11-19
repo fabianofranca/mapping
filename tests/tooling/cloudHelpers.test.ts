@@ -2101,7 +2101,7 @@ describe('cloud.mjs passo (#1232, GL1)', () => {
     expect(bad.status).toBe(2);
     expect(bad.stdout).toBe('');
     expect(bad.stderr).toContain(
-      'R22.99 is not in the round guide; R22 has R22.1 to R22.22',
+      'R22.99 is not in the round guide; R22 has R22.1 to R22.23',
     );
     const none = runPasso([]);
     expect(none.status).toBe(2);
