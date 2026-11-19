@@ -2,3 +2,6 @@
 projects/**/backups/
 .DS_Store
 Thumbs.db
+
+# Watcher state (--state .mapping-watch/state.json).
+.mapping-watch/
