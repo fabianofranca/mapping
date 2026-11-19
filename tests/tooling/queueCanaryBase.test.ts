@@ -221,13 +221,13 @@ describe('decision 2: canario base', () => {
   );
 
   it(
-    'with 0 sessions prints `base: 0 sessões`, exits with code 1 and writes nothing',
+    'with 0 sessions prints `base: 0 sessões`, exits with code 3 and writes nothing',
     () => {
       seed(old, { at: D(5), id: 'o1', usd: 3, kind: 'fase', effort: 'high' });
       addC();
       const before = snapshot();
       const r = baseFrom();
-      expect(r.code).toBe(1);
+      expect(r.code).toBe(3);
       expect(r.out).toContain('base: 0 sessões');
       expect(snapshot()).toBe(before);
       expect(canary('C')).not.toHaveProperty('base');
@@ -798,6 +798,141 @@ describe('decision 9: show', () => {
       expect(canariesLine()).toBe(
         'canários: C testador Sonnet medium → Haiku medium 0/2 (retrabalhos 0/2, ativo; não promover)',
       );
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+});
+describe('final review fixes (stage #2260)', () => {
+  it(
+    'an imported base is not replaced by the partial sessions of another canary that the import carried',
+    () => {
+      for (const [id, at] of [
+        ['b1', 6],
+        ['b2', 6],
+        ['b3', 6],
+      ] as const) {
+        seed(old, { at: D(at), id, usd: 3, model: 'claude-haiku-5-5', sinais: ['ok=5'] });
+      }
+      runAt(
+        D(5),
+        'canario',
+        old,
+        'add',
+        'A',
+        'papel=testador',
+        'de=Sonnet medium',
+        'modelo=haiku',
+        'n=2',
+        'volta=2',
+      );
+      seed(old, {
+        at: D(7),
+        id: 'a1',
+        usd: 1,
+        model: 'claude-haiku-5-5',
+        sinais: ['ok=5'],
+        canario: 'A',
+      });
+      seed(old, {
+        at: D(7),
+        id: 'a2',
+        usd: 1,
+        model: 'claude-haiku-5-5',
+        sinais: ['ok=5'],
+        canario: 'A',
+      });
+      runAt(D(8), 'canario', old, 'end', 'A');
+      runAt(
+        D(9),
+        'canario',
+        old,
+        'add',
+        'D',
+        'papel=testador',
+        'de=Haiku medium',
+        'esforco=low',
+        'n=2',
+        'volta=2',
+      );
+      runAt(D(10), 'merged', old, '#10');
+      importPanel();
+      const base = canary('D').base as Entry;
+      expect(base.fonte).toBe('import');
+      expect(side('D', 'antes')).toMatchObject({
+        fonte: 'import',
+        sessoes: base.sessoes,
+      });
+      expect(side('D', 'antes').medianaSessao).toBe(base.medianaSessao);
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
+    'an unreadable old panel is an error (code 2), never the "0 sessions" code',
+    () => {
+      addC();
+      writeFileSync(path.join(old, 'meta.json'), '[{"sessions": ');
+      const before = snapshot();
+      const r = baseFrom();
+      expect(r.code).toBe(2);
+      expect(r.err).toContain('erro:');
+      expect(snapshot()).toBe(before);
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
+    'an old panel with a malformed session is an error (code 2) too',
+    () => {
+      addC();
+      writeFileSync(path.join(old, 'meta.json'), '[{"sessions": [7], "uso": []}]');
+      const r = baseFrom();
+      expect(r.code).toBe(2);
+      expect(r.err).toContain('erro:');
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
+    'asks for `canario base` only on an active or under-evaluation canary, not on a finished one',
+    () => {
+      addC();
+      const line = (): string =>
+        runAt(D(20), 'show', dir)
+          .split('\n')
+          .find((l) => l.startsWith('canários:'))!;
+      expect(line()).toContain('sem base — rodar canario base');
+      runAt(D(13), 'canario', dir, 'end', 'C');
+      expect(line()).toContain('terminado pelo dono; sem base)');
+      expect(line()).not.toContain('rodar canario base');
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
+    'refuses `--nenhuma` on every action but `base`',
+    () => {
+      addC();
+      const before = snapshot();
+      for (const args of [
+        ['end', 'C', '--nenhuma'],
+        [
+          'add',
+          'X',
+          'papel=fase',
+          'de=Sonnet high',
+          'esforco=medium',
+          'n=1',
+          'volta=2',
+          '--nenhuma',
+        ],
+        ['usar', 'testador', '#10', 'modelo=haiku', 'esforco=medium', '--nenhuma'],
+      ]) {
+        const r = tryRunAt(D(13), 'canario', dir, ...args);
+        expect(r.code).toBe(2);
+        expect(r.err).toContain('--nenhuma');
+      }
+      expect(snapshot()).toBe(before);
     },
     SUBPROCESS_TIMEOUT,
   );

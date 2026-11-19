@@ -33,8 +33,8 @@ describe('CB2 — implementar-fila, paragraph "Canaries B and C": the baseline r
     expect(canaries()).toContain('leaving out the current one');
   });
 
-  it('tries the next panel on code 1, up to 3, and falls back to `--nenhuma` with a log line', () => {
-    expect(canaries()).toContain('code 1');
+  it('tries the next panel on code 3, up to 3, and falls back to `--nenhuma` with a log line', () => {
+    expect(canaries()).toContain('code 3');
     expect(canaries()).toContain('up to 3');
     expect(canaries()).toContain('`canario base <id> --nenhuma`');
     expect(canaries()).toContain('`log`');
