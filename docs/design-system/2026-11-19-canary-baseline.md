@@ -1,4 +1,4 @@
-# Canary baseline — [Não lançado] (épico `epic/canary-baseline`)
+# Canary baseline — 2026-11-19 (épico `epic/canary-baseline`)
 
 ## Pendências
 
