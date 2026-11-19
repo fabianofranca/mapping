@@ -170,7 +170,7 @@ describe('implementar-fila: each question has its notification, line, two comman
     expect(typeB).toContain('`Aprovar SUP-<k>`');
     expect(typeB).toContain('`Negar SUP-<k>`');
     expect(typeB).toMatch(
-      /one question per pending type B request \(at most 4 per call\)/,
+      /one question per pending type B request \(at most 4 per call;/,
     );
     expect(typeB).toContain('SUP-<k> (tipo B): <pedido>.');
     expect(typeB).toMatch(/beyond 4[^.]*next call/);
