@@ -619,6 +619,39 @@ button.tree-toggle:hover {
   overflow-wrap: break-word;
 }
 
+/* A header never gets cut without an ellipsis (its full text is the `title`). */
+.incomplete-table thead th {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The layer line under the marking exists only in the narrow bottom window. */
+.incomplete-layer-line {
+  display: none;
+  min-width: 0;
+}
+
+@container bottom-window (max-width: 470px) {
+  .incomplete-table .list-col-layer,
+  .incomplete-table .list-cell-layer {
+    display: none;
+  }
+
+  .incomplete-layer-line {
+    display: block;
+    overflow: hidden;
+  }
+
+  .incomplete-table .list-col-marking {
+    width: 30%;
+  }
+
+  .incomplete-table .list-col-annotation {
+    width: 25%;
+  }
+}
+
 /* Diagnostics */
 .diagnostics-status {
   font: var(--t-text-small);
