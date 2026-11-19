@@ -1,5 +1,11 @@
 # Watch conversations in the same chat — [Não lançado] (épico `epic/watch-conversations`, PR #1879, MCP 0.46.0, schema v21)
 
+## Adicionado
+
+- `watch-comments.mjs --emit`: instead of running a command, the watcher prints one `MAPPING_WAKE <json>` line per batch to stdout (`[{ project, thread, path }]`), so a background process can wake the agent in the same chat; the logs stay on stderr. `--emit` with `-- <command>`, or neither, is a usage error (exit 2).
+- `watch-comments.mjs --state <file>`: keeps the handled conversation/message pairs between runs (temporary file + rename), so a restart does not repeat a wake and a pair that arrived while the watcher was stopped fires on start. The start log names the root and the number of project folders.
+- `.mapping-watch/` (the state folder) in the `.gitignore` of the example workspace and of `mappings-workspace/`.
+
 ## Alterado
 
 - The example workspace folders are in English: `projetos/` → `projects/` and `especializacoes/` → `specializations/` (the five client configurations, `.gitignore`, README, the `AGENTS.md` block, the folder READMEs and the stdio client's default).

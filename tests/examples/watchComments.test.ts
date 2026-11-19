@@ -306,6 +306,166 @@ describe('examples/workspace/watch-comments.mjs', { timeout: 20000 }, () => {
     });
   });
 
+  describe('--emit and --state (stage #1879, decisions 1 and 2)', () => {
+    interface Emitter {
+      child: ChildProcess;
+      out: () => string;
+      err: () => string;
+      code: Promise<number | null>;
+    }
+
+    /** Starts the watcher in `--emit` mode (or with the given arguments); stdout is captured. */
+    function spawnWatcher(args: string[]): Emitter {
+      const child = spawn(process.execPath, [SCRIPT, ...args], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      let out = '';
+      child.stdout?.on('data', (d: Buffer) => {
+        out += d.toString();
+      });
+      child.stderr?.on('data', (d: Buffer) => {
+        h.stderr += d.toString();
+      });
+      h.child = child;
+      const code = new Promise<number | null>((resolve) => child.on('close', resolve));
+      return { child, out: () => out, err: () => h.stderr, code };
+    }
+
+    async function startEmit(extra: string[] = []): Promise<Emitter> {
+      h.stderr = '';
+      const e = spawnWatcher(['--emit', '--root', h.root, '--quiet', QUIET, ...extra]);
+      await waitFor(() => h.stderr.includes('watch-comments: observing'), 'the watcher');
+      return e;
+    }
+
+    async function stop(e: Emitter): Promise<void> {
+      e.child.kill('SIGTERM');
+      await e.code;
+    }
+
+    const wakes = (e: Emitter): { project: string; thread: string; path: string }[][] =>
+      e
+        .out()
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => {
+          expect(line.startsWith('MAPPING_WAKE ')).toBe(true);
+          return JSON.parse(line.slice('MAPPING_WAKE '.length));
+        });
+
+    it('prints exactly one MAPPING_WAKE line per batch on stdout, with the logs on stderr', async () => {
+      const a = putThread('t1', ['human']);
+      const b = putThread('t2', ['human'], { project: 'p2' });
+      const e = await startEmit();
+      await waitFor(() => e.out().includes('\n'), 'the wake line');
+      await pause(500);
+      expect(e.out().split('\n').filter(Boolean)).toHaveLength(1);
+      expect(e.out()).toMatch(/^MAPPING_WAKE \[/);
+      expect(wakes(e)[0]).toEqual([
+        { project: 'p1', thread: 't1', path: a },
+        { project: 'p2', thread: 't2', path: b },
+      ]);
+      expect(e.err()).toContain('watch-comments:');
+      await stop(e);
+    });
+
+    it('a second batch carries only the new pairs', async () => {
+      putThread('t1', ['human']);
+      const e = await startEmit();
+      await waitFor(() => wakes(e).length === 1, 'the first wake');
+      const file = putThread('t2', ['human']);
+      await waitFor(() => wakes(e).length === 2, 'the second wake');
+      expect(wakes(e)[1]).toEqual([{ project: 'p1', thread: 't2', path: file }]);
+      await stop(e);
+    });
+
+    it('--emit together with a command, or without --emit and a command, exits with 2 and the usage', async () => {
+      for (const args of [
+        ['--emit', '--root', h.root, '--', process.execPath, '-e', ''],
+        ['--root', h.root],
+      ]) {
+        h.stderr = '';
+        const e = spawnWatcher(args);
+        expect(await e.code).toBe(2);
+        expect(e.err()).toContain('usage');
+        expect(e.out()).toBe('');
+      }
+    });
+
+    describe('--state', () => {
+      const statePath = (): string => join(h.dir, 'sub', 'state.json');
+
+      it('a restart with the same file does not repeat a pair, and a new message fires', async () => {
+        putThread('t1', ['human']);
+        const first = await startEmit(['--state', statePath()]);
+        await waitFor(() => wakes(first).length === 1, 'the first wake');
+        await stop(first);
+        expect(existsSync(statePath())).toBe(true);
+        const second = await startEmit(['--state', statePath()]);
+        await pause(800);
+        expect(wakes(second)).toHaveLength(0);
+        putThread('t2', ['human']);
+        await waitFor(() => wakes(second).length === 1, 'the wake of the new pair');
+        expect(wakes(second)[0]?.map((i) => i.thread)).toEqual(['t2']);
+        await stop(second);
+      });
+
+      it('a pair that appeared while the watcher was stopped fires on start', async () => {
+        putThread('t1', ['human']);
+        const first = await startEmit(['--state', statePath()]);
+        await waitFor(() => wakes(first).length === 1, 'the first wake');
+        await stop(first);
+        putThread('t2', ['human']);
+        const second = await startEmit(['--state', statePath()]);
+        await waitFor(() => wakes(second).length === 1, 'the wake on start');
+        expect(wakes(second)[0]?.map((i) => i.thread)).toEqual(['t2']);
+        await stop(second);
+      });
+
+      it('a pair that stopped awaiting leaves the file', async () => {
+        putThread('t1', ['human']);
+        const e = await startEmit(['--state', statePath()]);
+        await waitFor(() => wakes(e).length === 1, 'the first wake');
+        const saved = readFileSync(statePath(), 'utf8');
+        expect(saved).toContain('t1');
+        putThread('t1', ['human', 'agent']);
+        putThread('t2', ['human']);
+        await waitFor(() => wakes(e).length === 2, 'the second wake');
+        const after = readFileSync(statePath(), 'utf8');
+        expect(after).toContain('t2');
+        expect(after).not.toContain('mt1-0');
+        await stop(e);
+      });
+
+      it('a missing file starts empty without a warning', async () => {
+        putThread('t1', ['human']);
+        const e = await startEmit(['--state', statePath()]);
+        await waitFor(() => wakes(e).length === 1, 'the wake');
+        expect(e.err()).not.toContain('state file');
+        await stop(e);
+      });
+
+      it('an invalid file starts empty with a warning and is overwritten', async () => {
+        mkdirSync(join(h.dir, 'sub'), { recursive: true });
+        writeFileSync(statePath(), '{ not json');
+        putThread('t1', ['human']);
+        const e = await startEmit(['--state', statePath()]);
+        await waitFor(() => wakes(e).length === 1, 'the wake');
+        expect(e.err()).toContain('state file');
+        expect(() => JSON.parse(readFileSync(statePath(), 'utf8'))).not.toThrow();
+        expect(readFileSync(statePath(), 'utf8')).toContain('t1');
+        await stop(e);
+      });
+    });
+
+    it('the start log names the root and the number of project folders', async () => {
+      mkdirSync(join(h.root, 'p2'), { recursive: true });
+      const e = await startEmit();
+      expect(e.err()).toContain(`observing ${h.root} (2 project folders`);
+      await stop(e);
+    });
+  });
+
   it('exits cleanly on SIGTERM', async () => {
     await startWatcher();
     const child = h.child as ChildProcess;
