@@ -238,6 +238,29 @@ describe('painel.py outliers: --desde and read-only (decisions 3 and 4)', () => 
     );
   });
 
+  it('--desde leaves out of the without-ficha count the merged-only stages with no session since then', () => {
+    cheap(10, 4, { started: '2026-11-12T08:00:00Z' });
+    const metaFile = path.join(dir, 'meta.json');
+    const meta = JSON.parse(readFileSync(metaFile, 'utf8')) as Array<
+      Record<string, unknown>
+    >;
+    meta[0]!.merged = ['#99'];
+    writeFileSync(metaFile, JSON.stringify(meta));
+    const since = run('outliers', '--desde', '2026-11-11T00:00:00Z', dir);
+    expect(since.split('\n')[0]).toBe(
+      'outliers (since 2026-11-11T00:00:00Z): 4 stages in the base, without ficha: 0',
+    );
+  });
+
+  it('a stage with a session that has no cost does not break the report', () => {
+    cheap(10);
+    stage(20, [['fase', 20]]);
+    run('session', dir, '#20', 's_20_x', 'kind=testador');
+    const r = tryRun('outliers', dir);
+    expect(r.code).toBe(0);
+    expect(r.out).toContain('#20');
+  });
+
   it('a --desde that is not ISO UTC exits with code 2 and writes nothing', () => {
     cheap(10);
     const before = files();

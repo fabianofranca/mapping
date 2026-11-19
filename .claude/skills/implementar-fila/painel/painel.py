@@ -910,7 +910,7 @@ def stage_median(es, decided):
 
 
 def ctx_values(es):
-    return [e["cost"]["ctx"] for e in es if isinstance(e["cost"].get("ctx"), (int, float))]
+    return [e["cost"]["ctx"] for e in es if isinstance((e.get("cost") or {}).get("ctx"), (int, float))]
 
 
 def over_ceiling(papel, es):
@@ -1255,6 +1255,9 @@ def outlier_base(q, meta, since):
     base = [r for r in rows if plan_phase_codes(r.get("plan") or "") and toca_list(r.get("plan") or "") != ["?"]]
     queued = {r.get("issue") for r in q}
     merged_only = {i for i in meta.get("merged") or [] if i not in queued}
+    if since:  # a merged-only stage has no row: it counts only with a session created from `since` on
+        recent = {e.get("issue") for e in meta.get("sessions") or [] if (e.get("created") or "") >= since}
+        merged_only &= recent
     return base, len(rows) - len(base) + len(merged_only)
 
 
