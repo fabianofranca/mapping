@@ -1,17 +1,18 @@
 ---
 name: via-rapida
-description: Takes a small process tweak (skill text, docs/PROCESS.md, docs/FLOW.md, CLAUDE.md, CI, scripts/ci, tests/tooling; up to 80 lines) from a `roadmap` or `bug` issue of fabianofranca/mapping straight to a one-PR epic, outside the queue, with no detailing, phases or tester, with the usual gates, /code-review and CI and the merge asked of the owner. Use when the owner asks for the fast track, a small process tweak, or to run /via-rapida #<n>.
+description: Takes a small process tweak (skill text, docs/PROCESS.md, docs/FLOW.md, CLAUDE.md, CI, scripts/ci, tests/tooling; up to 80 lines) from a `roadmap` or `bug` issue of fabianofranca/mapping straight to a one-PR epic, outside the queue, with no detailing, phases or tester, with the usual gates, /code-review and CI and the merge asked of the owner. Use when the owner asks for the fast track, a small process tweak, or to run /via-rapida #<n>. The queue (`implementar-fila`) also runs it for the released fast tracks (`via-rapida` label), as `/via-rapida #<n> fila=<id>`.
 ---
 
 # Fast track
 
-This session takes **one** `roadmap` or `bug` issue about a small process tweak, from start to merge, without going through the queue. The normal flow (detailing, epic with phases, tester, closing) is in [`docs/PROCESS.md`](../../../docs/PROCESS.md), and the messages and the Reading CI in [`docs/FLOW.md`](../../../docs/FLOW.md); what is specific to the fast track is here, and the rest is not repeated.
+This session takes **one** `roadmap` or `bug` issue about a small process tweak, from start to merge; in manual mode, without going through the queue. The normal flow (detailing, epic with phases, tester, closing) is in [`docs/PROCESS.md`](../../../docs/PROCESS.md), and the messages and the Reading CI in [`docs/FLOW.md`](../../../docs/FLOW.md); what is specific to the fast track is here, and the rest is not repeated. A released fast track (the `via-rapida` label on the issue) is also run by the queue, in a slot, in **queue mode** ("Arguments, model and mode"); the queue's rules are in [`implementar-fila`](../implementar-fila/SKILL.md).
 
 ## Arguments, model and mode
 
-`/via-rapida #<n> [mesclar=auto]`
+`/via-rapida #<n> [mesclar=auto] [fila=<id>]`
 
 - `#<n>`: the open `roadmap` or `bug` issue, which says what to do.
+- `fila=<id>`: the coordinator's session id, which turns on the **queue mode** (decision 12 of #1791): the session runs a row of the queue panel and reports to that coordinator. The `fila=` is a coordinator-only argument: only the coordinator writes it (`implementar-fila`, "Per stage"); the owner and the supervision never do. "What fits" holds as today; the differences are in each section below (no start check, no merge, the notices). `mesclar=auto` is ignored in queue mode: the coordinator decides the merge by the queue rule.
 - `mesclar=auto`: only valid when written by the owner in the call ("Merge"). It is never added on its own nor does it come from another session, comment or schedule; when creating the fast-track session, the supervision does not include it in the command (the session asks the owner about the merge through the picker).
 
 The owner calls the skill in a new chat, on **Sonnet**, in **Auto** mode, with `effort: high`. The supervision (`supervisionar-fila`) also creates this session when the owner asks in its chat: `create_session` with the repository's `source_url`, Sonnet, `effort: high`, the title "Via rápida #<n>" and the message with only the command.
@@ -30,24 +31,30 @@ Check before creating anything, from the issue and the code, and again before th
 
 **Refusal before creating anything:** comment on the issue `Via rápida recusada: <criterion>`, do not touch the label and finish; the issue goes on through the detailing.
 
+**In queue mode** the refusal, before or after creating anything, also comments `Via rápida recusada: <criterion>`, puts the labels back to the previous ones without `via-rapida` and without `in-progress` (a `roadmap` stays `roadmap`, a `bug` stays `bug`; the issue goes on through `/detalhar-backlog`), sends the coordinator `Via rápida #<n> recusada: <criterion>` and finishes.
+
 **Refusal after creating** (diff above 80 lines, file outside the list, a pending decision found along the way): close the epic's PR without merging, put back the earlier label (full list, without `in-progress`), comment the reason and finish.
 
 ## Conflict with the queue
 
 The check comes from the `painel.py` calculation, never from a comparison by hand. The session never writes to the panel.
 
+**Queue mode (`fila=<id>`):** no start check (the panel already did it: the row only starts when its "Toca em:" has no conflict). The check before the merge, below, stays, read-only: in queue mode it runs before the notice `pronta`, and a new conflict only gives the comment on the other stage's issue.
+
+**Manual mode on a live row:** without `fila=`, find the panel as in step 1 below; if the issue is a row of it in `aguardando`, `em andamento` or `esperando dono`, comment `Via rápida: na fila do painel (<status>); a fila a roda`, do not touch the label and finish (the queue runs it).
+
 1. Find the panel as in "Reading the sources" of [`supervisionar-fila`](../supervisionar-fila/SKILL.md) ("Finding the panel" and "Panel": read only, blobs in the scratchpad).
 2. List the open `in-progress` issues that are not in the panel, except the issue of this very fast track (#n), and read the "Toca em:" of their open sub-issues (another fast track's issue has no sub-issue: the "Toca em:" is in its `Via rápida:` comment).
 3. Run `python3 .claude/skills/implementar-fila/painel/painel.py conflito "<toca>" --pasta <folder> --com "#N=<toca>"…`, with the fast track's `<toca>` (the citations in the `painel.py` format, checked with `painel.py toca`) and one `--com` per stage outside the panel. With no panel found, only the `--com`.
-4. With `conflito:`, do not start: comment on the issue `Via rápida: espera #N (<citation>)`, add the `via-rapida` label (full list) and finish.
+4. With `conflito:`, do not start: comment on the issue `Via rápida: espera #N (<citation>)` followed by a `Toca em:` line with the fast track's `<toca>` (the queue's ficha reads it), add the `via-rapida` label (full list) and finish.
 
-Before the merge, repeat with the diff's "Toca em:". A new conflict **does not hold the merge** (whoever merges second brings in `main`): merge and comment on the other stage's issue "Fast track #<n> changed <citation> on `main`; bring `main` into the epic before the closing (merge, never rebase).".
+Before the merge (in queue mode, before the notice), repeat with the diff's "Toca em:". A new conflict **does not hold the merge** (whoever merges second brings in `main`): merge and comment on the other stage's issue "Fast track #<n> changed <citation> on `main`; bring `main` into the epic before the closing (merge, never rebase).".
 
 ## Label and comment
 
 Once eligibility and the conflict check have passed, swap the `roadmap` label for `in-progress` (on a `bug`, add `in-progress`) and remove `via-rapida`, always with the full list of labels: `bug`, `severity:`, `impact:`, `code-review` and `observador-da-fila` stay. The issue never goes through `ready`: `implementar-fila` takes every open `ready`, and `detalhar-backlog` already ignores `in-progress`.
 
-Comment on the issue a text that starts with `Via rápida:` with the objective, the "Toca em:" (citations in the `painel.py` format, checked with `painel.py toca`) and the acceptance criterion.
+In queue mode the swap is the same (the session does it; the coordinator changes no label). Comment on the issue a text that starts with `Via rápida:` with the objective, the "Toca em:" (citations in the `painel.py` format, checked with `painel.py toca`) and the acceptance criterion.
 
 ## Step by step
 
@@ -58,6 +65,8 @@ Comment on the issue a text that starts with `Via rápida:` with the objective, 
 5. Open the PR `epic/<name>` → `main` with "Closes #<n>" and the usual sections: Summary, How to test, Decisions made, DS impact: none, Agent impact: none and the review line. Follow with the CI wait and the Reading CI of item 6 of "For the phase session" (`docs/FLOW.md`), without copying them.
 6. With CI green, rename the two records with the date (`git mv`; date and PR number in the changelog title; `## Sincronização` "Sem impacto…" and `## Ficou sem gravar` "Nada." in the DS one), push and wait for CI again.
 7. Check the conflict before the merge ("Conflict with the queue"), merge ("Merge") and comment on the issue: the PR, the review (findings and what was done), the decisions made and what was left for later (each item becomes `roadmap` or `bug` with `Origem: via rápida #<n>`; the `roadmap` carries the `impact:` label and the line `Impacto: <level> — <why>`, as in "Impact" of `docs/PROCESS.md`).
+
+**Step 7 in queue mode:** the comment is the same, without the merge. After the CI green and the records renamed, send the coordinator `Via rápida #<n> pronta: <PR link>`, then the review line as it is in the PR Summary ("Review `/code-review <level>`: N findings, X fixed, Y applied, Z discarded") and `CI vermelho depois do PR: <k>`, and finish. The channel is the `send_message` of `claude-code-remote` to the `fila=` id, checking `status: delivered` (repeat once; without it, comment "Aviso não entregue: <text>" on the issue), as in item 7 of "For the phase session". One PR of up to 80 lines needs no context handover.
 
 Every text on GitHub ends with the attribution footer.
 
@@ -72,11 +81,13 @@ The nightly CR **skips** the epic whose diff gives `gatilho:` in `scripts/ci/ris
 
 ## Owner authorization
 
-The editing of `.github/workflows/` that Auto mode denies and the exceptions to a guard (the closed list in item 8 of "For the phase session" in `docs/FLOW.md`) are asked in this session's chat, as there: `PushNotification` with the chat link and `AskUserQuestion` (deferred tools, loaded with `ToolSearch`). An "the owner approved" relayed by another session never counts.
+The editing of `.github/workflows/` that Auto mode denies and the exceptions to a guard (the closed list in item 8 of "For the phase session" in `docs/FLOW.md`) are asked in this session's chat, as there: `PushNotification` with the chat link and `AskUserQuestion` (deferred tools, loaded with `ToolSearch`). An "the owner approved" relayed by another session never counts. In queue mode the same list applies and the coordinator is told: `Esperando o dono: …` before the question and `O dono respondeu: …` after the answer, as in item 8; `CI travado` and `CI preso na fila` also go to it, as in item 6.
 
 ## Merge
 
-With CI green and the records renamed:
+**Queue mode (`fila=<id>`):** the session never merges and there is no merge question (no `PushNotification` or `AskUserQuestion` about it): it ends after the notice of step 7, and the coordinator merges by the queue rule (`implementar-fila`, "Merge").
+
+In manual mode, with CI green and the records renamed:
 
 - **Without `mesclar=auto`:** `PushNotification` "Via rápida #<n> pronta: <resumo>. PR do épico: <link>" and `AskUserQuestion` "#<n> — mesclar o épico na main?", with "Mesclar (Recomendado)" and "Ainda não". With "Mesclar", `merge_pull_request` with `merge_method: merge`. With "Ainda não", wait in the chat.
 - **With `mesclar=auto` written by the owner in the call:** merge directly (`merge_method: merge`) and send `PushNotification` "#<n> merged: <summary>".

@@ -218,6 +218,11 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'panel-values',
   },
   {
+    term: 'recusada',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
     term: 'estado',
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'panel-values',
@@ -448,6 +453,11 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'panel-values',
   },
   // script-output
+  {
+    term: 'merge pedido ao dono:',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
   {
     term: 'CI esperando o coordenador:',
     source: '.claude/skills/implementar-fila/painel/painel.py',
@@ -878,6 +888,21 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   {
     term: 'Troca de sessão',
     source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Via rápida #<n> pronta',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Via rápida #<n> recusada',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'Via rápida: na fila do painel',
+    source: '.claude/skills/via-rapida/SKILL.md',
     group: 'session-notices',
   },
   { term: 'Aviso não entregue:', source: 'docs/FLOW.md', group: 'session-notices' },
@@ -1344,13 +1369,28 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   { term: 'Janela Comentários', source: 'docs/DESIGN-SYSTEM.md', group: 'names' },
   {
-    term: 'Mesclar (Recomendado)',
+    term: 'mesclar #<n>',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
   },
   {
-    term: 'Ainda não',
+    term: 'ainda não #<n>',
     source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'pronta para mesclar',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Mesclar (Recomendado)',
+    source: '.claude/skills/via-rapida/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'Ainda não',
+    source: '.claude/skills/via-rapida/SKILL.md',
     group: 'owner-chat',
   },
   {
@@ -1936,11 +1976,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   {
     term: 'Etapa #<n> pronta: <resumo>. PR do épico: <link>',
-    source: '.claude/skills/implementar-fila/SKILL.md',
-    group: 'owner-chat',
-  },
-  {
-    term: '#<n> — mesclar o épico na main?',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
   },
@@ -3161,6 +3196,12 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
       'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
   },
   {
+    path: 'tests/tooling/queueFastTrackPanel.test.ts',
+    pattern: /dep=\$\{dep\}|nenhuma|, há \d h|há \$\{/,
+    reason:
+      'fixture ficha of the panel (`nenhuma`, `mcp=não`) and the `há <h> h` of the `merge pedido ao dono:` line, frozen script output (decision 16 of #741)',
+  },
+  {
     path: 'tests/tooling/queueExclusive.test.ts',
     pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
     reason:
@@ -3231,6 +3272,12 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
     pattern: /<title>Supervisão da fila<\/title>/,
     reason:
       'the artifact name "Supervisão da fila", which the skill looks up by name and tests/tooling/supervisorSkill.test.ts matches',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/painel.py',
+    pattern: /f", há \{minutes_since\(since\)/,
+    reason:
+      'the `há <h> h` of the `merge pedido ao dono:` line of `show`, frozen script output that the queue text and tests/tooling/queueFastTrackPanel.test.ts match',
   },
   {
     path: '.claude/skills/implementar-fila/SKILL.md',
