@@ -165,6 +165,21 @@ describe('painel.py outliers: cause and counts (decision 8)', () => {
     const out = run('outliers', dir);
     expect(out).toContain('switches 1; above 300k 4; testers 1; retests 1; fixes 1');
   });
+  it('a session whose cost has no numeric ctx does not break the report', () => {
+    cheap(10);
+    stage(20, [['fase', 20]]);
+    const metaFile = path.join(dir, 'meta.json');
+    const meta = JSON.parse(readFileSync(metaFile, 'utf8')) as Array<
+      Record<string, unknown>
+    >;
+    const list = meta[0]!.sessions as Array<{
+      id: string;
+      cost: Record<string, unknown>;
+    }>;
+    list.find((e) => e.id === 's_20_0')!.cost.ctx = null;
+    writeFileSync(metaFile, JSON.stringify(meta));
+    expect(run('outliers', dir)).toContain('#20 US$ 20.00');
+  });
 });
 
 describe('painel.py outliers: groups, small base and without ficha (decisions 4, 6 and 7)', () => {

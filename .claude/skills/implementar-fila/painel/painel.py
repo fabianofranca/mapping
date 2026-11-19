@@ -1284,7 +1284,7 @@ def outlier_counts(meta, issue):
     """Switches, sessions above the ceiling, testers, retests and fixes of a stage."""
     es = [e for e in meta.get("sessions") or [] if e.get("issue") == issue]
     switches = switch_successors(meta)
-    over = sum(1 for e in es if e.get("kind") in CEILING_KINDS and (e.get("cost") or {}).get("ctx", 0) > CONTEXT_CEILING)
+    over = sum(1 for e in es if e.get("kind") in CEILING_KINDS for c in ctx_values([e]) if c > CONTEXT_CEILING)
     kinds = [e.get("kind") for e in es]
     return (sum(1 for e in es if e["id"] in switches), over,
             kinds.count("testador"), kinds.count("reteste"), kinds.count("correção"))
