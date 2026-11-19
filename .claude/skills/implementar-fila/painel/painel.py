@@ -61,6 +61,11 @@ created}` to `meta.sessions` (without `kind`, only the row's `sessions`, as befo
 served=] [issue= kind=]` writes the session's cost (`kind` required with a new id); `costs [--desde <ISO>] DIR` reads only the `meta`
 and prints the total, one line per kind (sessions, US$, median) and one per stage (with `--desde`, only those with `created` from
 the date on); `show` brings the `custo:` line.
+`outliers [--desde <ISO>] DIR` (decisions 3 to 9 of #1937, read-only, outside `apply`) reads the queue and the meta: for the `concluída` stages
+with a valid `fases=` and a `toca=` other than `?` (with `--desde`, `started` from the date on) it divides the stage cost by the planned
+phases and lists, per group (`process` by `is_process_stage`, else `product`), those strictly above `OUTLIER_FACTOR` times the group
+median, with the cause: the session kind that went furthest above the group's median in that kind. A group under `OUTLIER_MIN_BASE` stages
+flags nothing; a stage without a usable ficha (and one only in `meta.merged`) enters `without ficha`.
 Tester ceiling (decision 9 of #1639): a `cost` of a `testador` or `reteste` session with `ctx` above TESTER_CONTEXT_LIMIT
 is written as always, exits with 0 and prints `acima do teto do testador (300 mil): <id> <ctx>`; `show` brings `testador acima do teto: <stage> <label> <ctx in thousands>k; …` (or `nenhum`), only for the stages not `concluída` and outside `meta.merged`.
 Current session of each role (decision 7 of #1532): `role DIR <coordenador|supervisor> <id> [link=<url>]` writes
@@ -218,6 +223,8 @@ ESCAPE_CHECK_HOURS = 24  # `show` asks to check the escaped defects again after 
 RULER_KINDS = ["fase", "correção", "testador", "reteste"]  # the roles that have a rework ruler (decision 6)
 PHASE_KINDS = ["fase", "correção"]  # the roles that can have a context switch (a successor session of the same stage and label)
 CEILING_KINDS = RULER_KINDS  # where the 300 thousand context ceiling applies (decision 3)
+OUTLIER_FACTOR = 2  # a stage is an outlier above this many times the median cost per planned phase of its group
+OUTLIER_MIN_BASE = 5  # fewer stages than this in a group: no median worth comparing
 CONTEXT_CEILING = 300000  # final-context ceiling of the phase and of the tester (docs/FLOW.md, item 3)
 EFFORT_LADDER = ["medium", "high", "xhigh", "max"]  # `low` is below `medium`: the step below of an effort above `medium` goes down this list
 MODEL_LADDER = ["Haiku", "Sonnet", "Opus", "Fable"]  # cheapest first; the family is read from the id in `cost.model`
@@ -1238,6 +1245,90 @@ def canary_end(a):
     s.commit()
 
 
+# --- cost outliers per planned phase (stage #1937, phase CC2) ---
+
+
+def outlier_base(q, meta, since):
+    """The `concluída` rows with a valid `fases=` and a `toca=` other than `?` (and `started` from `since` on), and the
+    count of the stages that stay out for lack of a ficha (rows without one, and those only in `meta.merged`)."""
+    rows = [r for r in q if r.get("status") == "concluída" and not (since and (r.get("started") or "") < since)]
+    base = [r for r in rows if plan_phase_codes(r.get("plan") or "") and toca_list(r.get("plan") or "") != ["?"]]
+    queued = {r.get("issue") for r in q}
+    merged_only = {i for i in meta.get("merged") or [] if i not in queued}
+    return base, len(rows) - len(base) + len(merged_only)
+
+
+def stage_kind_costs(meta, issues):
+    """US$ per stage and session kind, over the sessions with a cost."""
+    out = {i: {} for i in issues}
+    for e in costed(meta):
+        kinds = out.get(e.get("issue"))
+        if kinds is not None:
+            kinds[e.get("kind")] = kinds.get(e.get("kind"), 0) + usd_of(e)
+    return out
+
+
+def outlier_cause(kinds, group_kinds):
+    """The session kind with the largest positive difference against the group's median in that kind (a missing kind
+    is 0; a tie goes by the order of `SESSION_KINDS`): `(kind, usd, group median)`, or None with no positive difference."""
+    best = None
+    for k in SESSION_KINDS:
+        median = statistics.median([g.get(k, 0) for g in group_kinds])
+        diff = kinds.get(k, 0) - median
+        if diff > 0 and (best is None or diff > best[0]):
+            best = (diff, k, kinds.get(k, 0), median)
+    return best and best[1:]
+
+
+def outlier_counts(meta, issue):
+    """Switches, sessions above the ceiling, testers, retests and fixes of a stage."""
+    es = [e for e in meta.get("sessions") or [] if e.get("issue") == issue]
+    switches = switch_successors(meta)
+    over = sum(1 for e in es if e.get("kind") in CEILING_KINDS and (e.get("cost") or {}).get("ctx", 0) > CONTEXT_CEILING)
+    kinds = [e.get("kind") for e in es]
+    return (sum(1 for e in es if e["id"] in switches), over,
+            kinds.count("testador"), kinds.count("reteste"), kinds.count("correção"))
+
+
+def outlier_line(row, total, phases, cause, counts):
+    switches, over, testers, retests, fixes = counts
+    kind, usd, median = cause or ("—", 0, 0)
+    return (f"  {row['issue']} {money(total)} ({phases} phases, {money(total / phases)} per phase) — "
+            f"cause: {kind} {money(usd)} (group median {money(median)}); switches {switches}; above 300k {over}; "
+            f"testers {testers}; retests {retests}; fixes {fixes}")
+
+
+def outlier_group(name, rows, meta, costs):
+    """The lines of one group: its header and the stages above the ceiling, or `base too small`."""
+    if len(rows) < OUTLIER_MIN_BASE:
+        return [f"{name}: base too small ({len(rows)} stages)"]
+    per_phase = {}
+    for r in rows:
+        per_phase[r["issue"]] = sum(costs[r["issue"]].values()) / len(plan_phase_codes(r["plan"]))
+    median = statistics.median(per_phase.values())
+    ceiling = OUTLIER_FACTOR * median
+    lines = [f"{name}: {len(rows)} stages, median {money(median)} per phase, ceiling {money(ceiling)}"]
+    group_kinds = [costs[r["issue"]] for r in rows]
+    over = [r for r in rows if per_phase[r["issue"]] > ceiling]
+    for r in sorted(over, key=lambda r: -per_phase[r["issue"]]):
+        i, phases = r["issue"], len(plan_phase_codes(r["plan"]))
+        lines.append(outlier_line(r, sum(costs[i].values()), phases, outlier_cause(costs[i], group_kinds),
+                                  outlier_counts(meta, i)))
+    return lines + ([] if over else ["  none above the ceiling"])
+
+
+def cmd_outliers(a):
+    since = check_iso(a.desde) if a.desde else None
+    q, m = load(a.dir, "queue"), load(a.dir, "meta")
+    meta = m[0] if m else {}
+    base, without = outlier_base(q, meta, since)
+    costs = stage_kind_costs(meta, [r["issue"] for r in base])
+    print(f"outliers (since {since or 'all'}): {len(base)} stages in the base, without ficha: {without}")
+    for name, rows in (("product", [r for r in base if not is_process_stage(r)]),
+                       ("process", [r for r in base if is_process_stage(r)])):
+        print("\n".join(outlier_group(name, rows, meta, costs)))
+
+
 def process_cite(cite):
     """A citation of the `toca=` that belongs to a process stage: `#section` is not part of the path."""
     base = cite.split("#", 1)[0]
@@ -1888,7 +1979,7 @@ def cmd_published(a):
 
 
 BATCH_REJECTED = ("show", "apply", "init", "published", "slug", "toca", "conflito", "costs", "roles", "requests", "import",
-                  "uso")
+                  "uso", "outliers")
 
 
 def batch_lines(src):
@@ -2766,6 +2857,10 @@ def build_parser():
     sp.add_argument("--desde", help="only the sessions with created from this date on (ISO UTC)")
     sp.add_argument("dir", help="folder of the JSON files")
     sp.set_defaults(fn=cmd_uso)
+    sp = sub.add_parser("outliers", help="stages above 2x the median cost per planned phase of their group, with the cause (reads queue and meta; --desde <ISO> filters by started)")
+    sp.add_argument("--desde", help="only the stages with started from this date on (ISO UTC)")
+    sp.add_argument("dir", help="folder of the JSON files")
+    sp.set_defaults(fn=cmd_outliers)
     sp = add("show", cmd_show, "readable summary; with '#n', the whole row (with the ficha)")
     sp.add_argument("issue", nargs="?")
     return p
