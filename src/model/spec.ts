@@ -80,8 +80,8 @@ function onlyFormat(version: number): SpecMsg {
 // `booleans`; the tree comes from the MCP `import_measured` op); version 16 is 15 plus the
 // signature sheet (stage #1079): `fieldModels` at the root and, in the `code` (and in each
 // `variants` case), `signature`, `ignore`, `calls` and `formats`, with `params` by path
-// (`colors.containerColor`) or positional (`#0`), plus `signature` on the type's `sources`, which also lets `ignore` stand outside `origins` (see
-// `specSignature.ts`); version 17 is 16 plus the named slots (stage #1080): `slots` on the type
+// (`colors.containerColor`) or positional (`#0`), plus `signature` on the type's `sources`, which also lets `ignore` stand outside
+// `origins` (see `specSignature.ts`); version 17 is 16 plus the named slots (stage #1080): `slots` on the type
 // (`id`, `name`, `description`, `accepts`, `max`) and, in the `code` (and in each `variants` case),
 // `slots` (slot id → parameter name), outside the version contract (see `diffSpecs`); version 18 is
 // 17 plus `accessibility` (stage #1126): at the root (`touchTarget`) and on the type (`role`,
