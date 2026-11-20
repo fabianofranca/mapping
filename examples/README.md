@@ -115,7 +115,7 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 - The node's `provide`: the Icon button hands its content color to the Spinner, whose stroke reads `{ "$provided": "content-color", "default": { "$field": "color" } }`; while loading the ring has the button's color, not the Spinner's `color`.
 - The corner alignment: the Badge's root `anchor` is `{ "side": "top", "align": "corner-end" }`, and it stays on the button's top-end corner as `3` grows to `99+`.
 
-**Scripts.** None yet: the script for composed components and the corner anchor comes with the last phase of stage #2093.
+**Scripts.** R38.
 
 ### `examples/libraries/measured/`
 
