@@ -1,4 +1,4 @@
-# Preview, density and free space — [Não lançado] (épico `epic/density-free-space-preview`, PR pending, MCP 0.50.2, schema v22 unchanged)
+# Preview, density and free space — [Não lançado] (épico `epic/density-free-space-preview`, PR #0, MCP 0.50.2, schema v22)
 
 ## Corrigido
 
