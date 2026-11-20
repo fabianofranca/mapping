@@ -275,9 +275,9 @@ describe('review findings (FM3)', () => {
   it('the page lists every SESSION_KINDS entry of painel.py in KINDS', () => {
     const page = readFileSync(`${BASE}/painel/index.html`, 'utf8');
     const py = readFileSync(`${BASE}/painel/painel.py`, 'utf8');
-    const kinds = /SESSION_KINDS = \[([^\]]*)\]/.exec(py)?.[1].match(/"[^"]+"/g) ?? [];
+    const kinds = /SESSION_KINDS = \[([^\]]*)\]/.exec(py)?.[1]?.match(/"[^"]+"/g) ?? [];
     const pageKinds =
-      /const KINDS = \[([^\]]*)\]/.exec(page)?.[1].match(/'[^']+'/g) ?? [];
+      /const KINDS = \[([^\]]*)\]/.exec(page)?.[1]?.match(/'[^']+'/g) ?? [];
     expect(pageKinds.map((k) => k.slice(1, -1))).toEqual(
       kinds.map((k) => k.slice(1, -1)),
     );
