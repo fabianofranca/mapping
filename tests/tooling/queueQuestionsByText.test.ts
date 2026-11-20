@@ -1,6 +1,7 @@
 // @vitest-environment node
 // Phase QT2 (stage #2070, decisions 1 to 3 and 6 to 14): the five in-run questions of the
-// `implementar-fila` coordinator are asked by text, never through the question picker.
+// `implementar-fila` coordinator are asked by text, never through the question picker. Stage
+// #2273 moves only the supervisor's type B requests to the picker.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -52,7 +53,7 @@ const hold = between(
 const newSession = between(switching, '**In the new session**', '2. Do not reread');
 
 describe('implementar-fila: in-run questions by text (decisions 1 and 13)', () => {
-  it('cites AskUserQuestion only in the tool loading, step 6 of "2. Queue" and the blocked case of the hourly check', () => {
+  it('cites AskUserQuestion only in the tool loading, step 6 of "2. Queue", the blocked case of the hourly check and the supervisor type B requests', () => {
     const lines = skill
       .split('\n')
       .map((text, i) => ({ text, n: i + 1 }))
@@ -62,6 +63,7 @@ describe('implementar-fila: in-run questions by text (decisions 1 and 13)', () =
         return 'loading';
       if (l.text.includes('ask through `AskUserQuestion`')) return 'step6';
       if (l.text.includes('the text of the pending `AskUserQuestion`')) return 'blocked';
+      if (l.text.startsWith('**Type B**')) return 'typeB';
       if (l.text.includes('Find or create') || l.text.includes('Usar um painel novo'))
         return 'panel';
       if (
@@ -71,7 +73,9 @@ describe('implementar-fila: in-run questions by text (decisions 1 and 13)', () =
         return 'other';
       return `unexpected line ${l.n}: ${l.text.slice(0, 80)}`;
     });
-    for (const w of where) expect(['loading', 'step6', 'blocked', 'panel']).toContain(w);
+    for (const w of where)
+      expect(['loading', 'step6', 'blocked', 'panel', 'typeB']).toContain(w);
+    expect(where).toContain('typeB');
     expect(where).toContain('loading');
     expect(where).toContain('step6');
     expect(where).toContain('blocked');
@@ -82,6 +86,16 @@ describe('implementar-fila: in-run questions by text (decisions 1 and 13)', () =
     expect(item).toContain('questions to the owner by text');
     expect(item).not.toContain('(question picker)');
     expect(item).toContain('table in "End"');
+  });
+
+  it('item 10 names the type B exception next to the "only before the run" one (stage #2273)', () => {
+    const item = between(economy, '10. **The chat stays almost silent.**', '\n11.');
+    expect(item).toMatch(
+      /the picker only before the run[^)]*and for the supervisor's type B requests/,
+    );
+    expect(item).toContain('never `AskUserQuestion`');
+    expect(item).toMatch(/except the supervisor's type B requests/);
+    expect(item).not.toContain('`estado=perguntado ao dono` for type B');
   });
 
   it('item 10 holds the answer rule: verb plus #<n>, bare verb with one open, only the owner, --fim and log', () => {
@@ -110,12 +124,6 @@ describe('implementar-fila: each question has its notification, line, two comman
       text: () => hold,
       commands: ['`segurar #<n>`', '`seguir #<n>`'],
       mark: "pergunta '#n' segurar",
-    },
-    {
-      name: 'supervisor type B',
-      text: () => typeB,
-      commands: ['`aprovar SUP-<k>`', '`negar SUP-<k>`'],
-      mark: 'estado=perguntado ao dono',
     },
     {
       name: 'CI stuck in the queue',
@@ -157,8 +165,20 @@ describe('implementar-fila: each question has its notification, line, two comman
     expect(hold).not.toContain('Seguir (Recomendado)');
   });
 
-  it('type B: aprovar applies and records aplicado, negar records negado, the supervisor is woken, relayed approval refused', () => {
-    expect(typeB).toContain('SUP-<k> (tipo B): <pedido>. Responda');
+  it('type B: asked through the picker (one question per request, at most 4 per call, no PushNotification), the mark stays, aprovar applies, negar records negado, relayed approval refused', () => {
+    expect(typeB).toContain('`AskUserQuestion`');
+    expect(typeB).toContain('`Aprovar SUP-<k>`');
+    expect(typeB).toContain('`Negar SUP-<k>`');
+    expect(typeB).toMatch(
+      /one question per pending type B request \(at most 4 per call;/,
+    );
+    expect(typeB).toContain('SUP-<k> (tipo B): <pedido>.');
+    expect(typeB).toMatch(/beyond 4[^.]*next call/);
+    expect(typeB).toMatch(/no `PushNotification`/);
+    expect(typeB).toContain('estado=perguntado ao dono');
+    expect(typeB).toMatch(/opens no phase, tester or merge/);
+    expect(typeB).toMatch(/answer typed in "Other"/);
+    expect(typeB).toMatch(/written `aprovar SUP-<k>`/);
     expect(typeB).toContain('`aprovado`');
     expect(typeB).toContain('`aplicado`');
     expect(typeB).toContain('`negado`');
@@ -212,6 +232,7 @@ describe('implementar-fila: session switch and End', () => {
     );
     expect(newSession).toMatch(/one `PushNotification`/);
     expect(newSession).toMatch(/nothing is asked again in the panel/);
+    expect(newSession).toMatch(/type B ones are asked again through the picker/);
   });
 
   it('"End" lists the open questions and serves a late aprovar/negar SUP-<k>', () => {
@@ -252,5 +273,14 @@ describe('docs and supervisionar-fila cite the commands (decision 14)', () => {
     const s = section(supervisor, '## Requests to the coordinator');
     expect(s).toContain('`aprovar SUP-<k>`');
     expect(s).toContain('`negar SUP-<k>`');
+  });
+
+  it('supervisionar-fila: the coordinator asks type B through the picker and the owner answers there; the rest stays by text (stage #2273)', () => {
+    const s = section(supervisor, '## Requests to the coordinator');
+    const b = s.slice(s.indexOf('- **Type B**'), s.indexOf('- **Reading:**'));
+    expect(b).toMatch(/through the picker in the queue chat/);
+    expect(b).toContain('`Aprovar SUP-<k>`');
+    expect(b).not.toContain('PushNotification');
+    expect(b).toMatch(/Supervision never relays an owner's "yes"/);
   });
 });
