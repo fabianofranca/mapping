@@ -107,6 +107,110 @@ describe('implementar-fila: the queue runs the released fast tracks', () => {
   });
 });
 
+describe('implementar-fila: a refused fast track comes back (stage #2204, phase FR2)', () => {
+  it('decisions 1 and 2: "2. Queue" step 1 and "Queue changes during the run" name the `recusada` exception, the `labeled` event and `reentra`', () => {
+    const queue = section(QUEUE, '## 2. Queue');
+    const step1 = queue.slice(queue.indexOf('1. `list_issues`'), queue.indexOf('\n2. '));
+    has('queue step 1', step1, [
+      '`recusada` row',
+      '`labeled` event',
+      "row's `ended`",
+      "painel.py reentra <folder> '#n' kind=",
+      '`#n reentra kind=',
+      '`#n recusada: label anterior à recusa`',
+      'never the coordinator',
+    ]);
+    const changes = section(QUEUE, '## Queue changes during the run');
+    const fresh = changes.slice(
+      changes.indexOf('- **New `ready`.**'),
+      changes.indexOf('- **The owner asks'),
+    );
+    has('new ready', fresh, ['`recusada`', '`labeled` event', 'painel.py reentra']);
+    const last = changes.slice(
+      changes.indexOf('- **An issue that stopped being `ready`**'),
+    );
+    has('last item', last, [
+      'final until its issue is eligible again',
+      'painel.py reentra',
+    ]);
+    expect(last).not.toContain('`recusada` (final)');
+  });
+
+  it('decision 4: "3. Per stage" lists the re-entry and `dependem de recusada:` as actions of the hourly check', () => {
+    const s = section(QUEUE, '## 3. Per stage');
+    const hourly = s.split('**Fallback checks:**')[1]!;
+    has('hourly', hourly, [
+      '`recusada` rows',
+      '`painel.py reentra`',
+      '`dependem de recusada: #M (#N); …`',
+      '`soltar #<n>`',
+      '`esperar #<n>`',
+      "pergunta '#M' soltar",
+      'only by the answer',
+    ]);
+    has('notice', s, ['final until it comes back']);
+  });
+
+  it('hint of FR1: the bare answer `esperar` is disambiguated by always writing `esperar #<n>`', () => {
+    const rules = section(QUEUE, '## Context economy');
+    has('answers', rules, [
+      '`soltar`/`esperar`',
+      'two pairs',
+      'always write `esperar #<n>`',
+    ]);
+  });
+
+  it('decision 4: "End" does not hold the End for a row whose only open dependencies are `recusada`; "Panel" lists `reentra` and the `soltar` verb', () => {
+    has('end', section(QUEUE, '## End'), [
+      'only open dependencies are `recusada`',
+      'does not hold the End',
+      'o que espera o dono',
+    ]);
+    const panel = section(QUEUE, '## Panel');
+    has('panel', panel, [
+      'painel.py reentra <folder>',
+      '<segurar|reabrir|refazer|ampliar|soltar>',
+      'final until re-entry',
+      '`dependem de recusada: #M (#N); …`',
+    ]);
+  });
+
+  it('decision 9: "Merge" states the four figures, N = 0 included, and a missing or figureless line as an open finding', () => {
+    const s = section(QUEUE, '## Merge');
+    has('merge', s, [
+      'four figures',
+      'N = 0',
+      '`N = X + Y + Z`',
+      'no open finding',
+      'A missing line',
+      'without figures',
+      'X + Y + Z below N',
+      'is an open finding',
+    ]);
+  });
+
+  it('the `reentra` line of the queue and the owner chat line are frozen protocol terms of the skill', () => {
+    for (const term of [
+      'recusada: label anterior à recusa',
+      '#<n> depende de #<m>, recusada. Responda `soltar #<n>` para começar sem essa dependência ou `esperar #<n>`.',
+    ]) {
+      const e = PROTOCOL_TERMS.find((t) => t.term === term);
+      expect(e, term).toBeDefined();
+      expect(read(e!.source), term).toContain(term);
+    }
+  });
+
+  it('docs/FLOW.md: adding the label again (or detailing) brings a refused fast track back, and names `soltar #<n>`/`esperar #<n>`', () => {
+    const s = section(FLOW, '## For the owner, in the three chats');
+    has('flow', s, [
+      'adding the `via-rapida` label again to a refused issue',
+      'brings it back to the queue',
+      '`soltar #<n>`',
+      '`esperar #<n>`',
+    ]);
+  });
+});
+
 describe('via-rapida: queue mode', () => {
   it('decision 12: the `fila=<id>` argument and the queue mode (only the coordinator writes it)', () => {
     const s = section(FAST, '## Arguments, model and mode');

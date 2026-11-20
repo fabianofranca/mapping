@@ -46,6 +46,12 @@ describe('#1922 — the handover exemption holds only for the phase last PR', ()
 describe('#1922 — label `via-rapida` and spelling', () => {
   it('PROCESS.md, detalhar-backlog and via-rapida cite the label', () => {
     expect(read('docs/PROCESS.md')).toContain('`via-rapida` marks');
+    const label = read('docs/PROCESS.md');
+    expect(label).toContain('that the queue runs in a slot');
+    expect(label).toContain(
+      're-adding it after a refusal brings the issue back to the queue',
+    );
+    expect(label).not.toContain('planned for the fast track');
     expect(read('.claude/skills/detalhar-backlog/SKILL.md')).toContain(
       '**neither** `ready`, `in-progress`, `via-rapida` nor `step`',
     );

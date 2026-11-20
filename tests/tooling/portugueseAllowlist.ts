@@ -966,6 +966,11 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'session-notices',
   },
   { term: 'Aviso não entregue:', source: 'docs/FLOW.md', group: 'session-notices' },
+  {
+    term: 'recusada: label anterior à recusa',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
   { term: 'CI preso na fila:', source: 'docs/FLOW.md', group: 'session-notices' },
   { term: 'CI travado', source: 'docs/FLOW.md', group: 'session-notices' },
   { term: 'Contexto:', source: 'docs/FLOW.md', group: 'session-notices' },
@@ -1445,6 +1450,11 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   {
     term: '#<etapa> — CI do PR #<p> preso na fila sem jobs há <m> min: <link>. Responda `reabrir #<etapa>` para fechar e reabrir o PR, ou `esperar #<etapa>`.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '#<n> depende de #<m>, recusada. Responda `soltar #<n>` para começar sem essa dependência ou `esperar #<n>`.',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
   },
