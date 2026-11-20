@@ -4,7 +4,7 @@
   "id": "drawing-keys",
   "name": "Drawing keys",
   "version": 1,
-  "description": "Example of the drawing keys added after the faithful components: the icon set with the `fillRule` of each path (icons file formatVersion 3), and the component keys letter spacing in percent, padding items from tokens, a number token in `sizing`, `scale` and `filter.grayscale`. The Icon holes component draws an icon with holes cut out by `evenodd`; the Tag draws its tracking in percent and reads its padding and height from tokens; the Pressed button scales its drawing by 0.96 when pressed (with an embedded Flag that scales along) and the Flag draws gray when disabled.",
+  "description": "Example of the drawing keys added after the faithful components: the icon set with the `fillRule` of each path (icons file formatVersion 3), and the component keys letter spacing in percent, padding items from tokens, a number token in `sizing`, `scale`, `filter.grayscale` and the arc of an `ellipse` (`startAngle`/`sweepAngle`). The Icon holes component draws an icon with holes cut out by `evenodd`; the Tag draws its tracking in percent and reads its padding and height from tokens; the Pressed button scales its drawing by 0.96 when pressed (with an embedded Flag that scales along), the Flag draws gray when disabled and the Spinner draws an arc of 216 degrees with round caps.",
   "icons": "icons/icons.json",
   "tokens": {
     "modes": ["compact", "comfortable"],
@@ -178,6 +178,35 @@
               "values": {
                 "label": "OK",
                 "disabled": "true"
+              }
+            }
+          ]
+        },
+        {
+          "id": "spinner",
+          "name": "Spinner",
+          "component": "components/spinner.json",
+          "doc": "docs/spinner.md",
+          "fields": [
+            {
+              "key": "size",
+              "label": "Size",
+              "type": "enum",
+              "options": ["small", "medium", "large"],
+              "default": "medium"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Medium",
+              "values": {
+                "size": "medium"
+              }
+            },
+            {
+              "name": "Large",
+              "values": {
+                "size": "large"
               }
             }
           ]

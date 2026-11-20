@@ -1178,7 +1178,7 @@ function checkNode(
   const extra: Record<string, readonly string[]> = {
     frame: ['clip', 'layout', 'children'],
     rect: [],
-    ellipse: [],
+    ellipse: ['startAngle', 'sweepAngle'],
     text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
     path: ['d', 'viewBox', 'fillRule', 'mirror'],
     slot: ['label', 'layout', 'clip', 'provide', 'id', 'fallback'],
@@ -1257,6 +1257,10 @@ function checkNode(
       }
       return;
     }
+    case 'ellipse':
+      for (const key of ['startAngle', 'sweepAngle'])
+        if (key in value) checkExpr(value[key], join(path, key), checkNumber, out);
+      return;
     case 'text':
       checkTextNode(value, path, out);
       return;
@@ -1523,6 +1527,8 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['rotation'],
   ['scale'],
   ['filter'],
+  ['startAngle'],
+  ['sweepAngle'],
   ['provide'],
   ['mirror'],
   ['anchors', 'start'],

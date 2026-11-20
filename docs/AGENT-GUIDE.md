@@ -99,6 +99,7 @@ The two image tools return the **image** (`image` content) and, before it, a JSO
   - `background`: `image` (default) paints the container's file underneath (or the background color, in a container without a file); `none` returns a transparent background with only the components (png or webp).
   - `padding` (only in `render_marking`): margin around the marking; an `outside` stroke or a shadow go beyond its rectangle, so give a few pixels of `padding` to see them.
   - The PNG draws `scale` and `filter.grayscale` (component `formatVersion` 4), also inside a composed component; the remote-image placeholder stays as it is.
+  - The PNG draws the arc of an `ellipse` (`startAngle` and `sweepAngle`, component `formatVersion` 4) as the app does, with its round caps. For a spinner, write the arc with `sweepAngle` (216 for 60%) and `cap: "round"` instead of computing a `dash` from the circumference.
   - A **composed component** (a `component` node that draws another component of the library) is drawn whole: the inner component with the values the outer one gives it, and the colors the node's `provide` passes. Editing the inner component's file changes the next `render_*` of every outer one that draws it.
   - If the image file has different dimensions from the `mapping.json`'s, the background is adjusted proportionally and the response brings a `warning` (the same as `get_marking_image`'s); the components' drawing follows the project's coordinates.
 

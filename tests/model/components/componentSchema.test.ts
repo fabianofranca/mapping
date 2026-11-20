@@ -568,3 +568,27 @@ describe('component.schema.json — rotation (EX3)', () => {
     expect(checkSchema(schema, c)).not.toEqual([]);
   });
 });
+
+describe('component.schema.json — arcs on ellipse (FG6)', () => {
+  it('accepts startAngle and sweepAngle on ellipse only', () => {
+    const component = { ...clone(), formatVersion: 4 } as Record<string, unknown>;
+    const template = component.template as Record<string, unknown> & {
+      children?: Record<string, unknown>[];
+    };
+    template.children = [
+      { type: 'ellipse', width: 4, height: 4, startAngle: -90, sweepAngle: 216 },
+      {
+        type: 'ellipse',
+        width: 4,
+        height: 4,
+        sweepAngle: { $field: 'pct', default: 360 },
+        startAngle: { $token: 'start' },
+      },
+    ];
+    expect(checkSchema(schema, component)).toEqual([]);
+    template.children = [{ type: 'ellipse', width: 4, height: 4, sweepAngle: 'wide' }];
+    expect(checkSchema(schema, component)).not.toEqual([]);
+    template.children = [{ type: 'rect', width: 4, height: 4, sweepAngle: 90 }];
+    expect(checkSchema(schema, component)).not.toEqual([]);
+  });
+});

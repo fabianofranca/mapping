@@ -1,4 +1,5 @@
-// FG5 (#2115): Konva × MCP raster parity of `scale` and `filter.grayscale`, in a real Chromium. The
+// FG5 (#2115) and FG6 (#2116): Konva × MCP raster parity of `scale`, `filter.grayscale` and the arc of
+// an `ellipse` (the spinner), in a real Chromium. The
 // pressed button (`scale` 0.96 on the root, with the Flag embedded) and the gray Flag
 // (`filter: { grayscale: 1 }`) of `examples/libraries/drawing-keys/` are drawn by both renderers at 100%
 // and 400%, over white, and compared pixel by pixel. The text nodes are left out (the raster without fonts
@@ -217,7 +218,20 @@ function expectParity(drawn: Drawn): void {
   }
 }
 
+/** The spinner (an arc of 216 degrees, round caps, over a faint ring) at 48 × 48, to give the ring room. */
+const spinner = { ...read('spinner'), size: { width: 48, height: 48 } };
+
 for (const zoom of [1, 4]) {
+  test(`spinner at ${zoom * 100}%: the arc with round caps is the same on Konva and raster`, async ({
+    page,
+  }) => {
+    const drawn = await draw(page, spinner, { size: 'medium' }, zoom);
+    expectParity(drawn);
+    // the ring is blue (the arc) over the faint track: both renderers see colored ink
+    expect(drawn.konvaColored).toBeGreaterThan(0);
+    expect(drawn.rasterColored).toBeGreaterThan(0);
+  });
+
   test(`gray flag at ${zoom * 100}%: Konva and raster match and every ink pixel is gray`, async ({
     page,
   }) => {

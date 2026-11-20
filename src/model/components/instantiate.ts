@@ -74,6 +74,7 @@ import type {
   LayoutWrap,
   ImageTemplate,
   IntrinsicSize,
+  EllipseTemplate,
   PathTemplate,
   ResolvedComponent,
   ShadowSpec,
@@ -88,6 +89,7 @@ import type {
 import type { Box } from './box';
 import { STROKE_SIDES } from './componentFormat';
 import { clipBoxOf } from './clipBox';
+import { arcPath } from './arc';
 import { clampGrayscale, grayscaleNode } from './grayscale';
 import { DEFAULT_ICON_VIEWBOX, resolveIcon, type IconPath, type IconSet } from './icons';
 import {
@@ -3455,6 +3457,54 @@ function createEngine(
     };
   };
 
+  /** An angle in degrees (`startAngle`/`sweepAngle`); invalid is `undefined`, with a warning. */
+  const angleOf = (expr: Expr<number> | undefined, label: string): number | undefined => {
+    const value = ev<unknown>(expr as Expr<unknown> | undefined, undefined);
+    if (value === undefined || value === null || value === '') return undefined;
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n)) invalidValue(label, value);
+    return Number.isFinite(n) ? n : undefined;
+  };
+
+  /**
+   * `ellipse`: whole, or (with `sweepAngle`) an arc as a scene `path` with the stroke centered on
+   * the arc, which `arcPath` already moved by the ellipse's `align` and `offset`; `cap`, `join`
+   * and `dash` stay the ellipse's. The fill closes on the chord and the stroke does not.
+   */
+  const buildEllipse = (
+    node: EllipseTemplate,
+    id: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ): SceneNode => {
+    const stroke = strokeOf(node.stroke, 'inside', 1);
+    const sweep = angleOf(node.sweepAngle, 'sweepAngle');
+    const start = angleOf(node.startAngle, 'startAngle') ?? 0;
+    if (sweep === undefined)
+      return {
+        ...common(node, id, x, y, w, h),
+        ...(stroke ? { stroke } : {}),
+        type: 'ellipse',
+      };
+    const { offset, ...rest } = stroke ?? {};
+    const d = arcPath({
+      width: w,
+      height: h,
+      startAngle: start,
+      sweepAngle: sweep,
+      ...(stroke ? { stroke: { width: stroke.width, align: stroke.align, offset } } : {}),
+    });
+    return {
+      ...common(node, id, x, y, w, h),
+      ...(stroke ? { stroke: { ...rest, align: 'center' as const } as Stroke } : {}),
+      type: 'path',
+      d,
+      fillRule: 'nonzero',
+    };
+  };
+
   const buildNode = (
     node: TemplateNode,
     path: string,
@@ -3507,14 +3557,8 @@ function createEngine(
           cornerRadius: radiusOf(node),
         };
       }
-      case 'ellipse': {
-        const stroke = strokeOf(node.stroke, 'inside', 1);
-        return {
-          ...common(node, id, x, y, w, h),
-          ...(stroke ? { stroke } : {}),
-          type: 'ellipse',
-        };
-      }
+      case 'ellipse':
+        return buildEllipse(node, id, x, y, w, h);
       case 'image':
         return buildImage(node, id, x, y, w, h);
       case 'component':
