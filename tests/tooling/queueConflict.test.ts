@@ -3,11 +3,12 @@
 // a "Toca em:" against the folder's started and unmerged stages, the ones the `show` lists in `começar agora:`
 // and each `--com`, with the same calculation as the queue. Read-only: `livre` (0), `conflito: … com #N (…)` (1) or
 // `inválida: <citation> — <reason>` (2).
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { appendOnlyList } from '../support/appendOnly';
 
 const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
 const NOW = '2026-11-13T10:00:00Z';
@@ -37,15 +38,6 @@ function stage(issue: string, toca: string, ...extra: string[]) {
 
 function conflict(toca: string, ...extra: string[]) {
   return runRaw('conflito', toca, ...extra);
-}
-
-// The `APPEND_ONLY` list of painel.py (AO1, #2314), read by importing the module.
-function appendOnlyList(): string[] {
-  const code =
-    'import json, sys; sys.path.insert(0, ".claude/skills/implementar-fila/painel"); import painel; print(json.dumps(list(painel.APPEND_ONLY)))';
-  return JSON.parse(
-    execFileSync('python3', ['-I', '-c', code], { encoding: 'utf8' }),
-  ) as string[];
 }
 
 function files(): string[] {

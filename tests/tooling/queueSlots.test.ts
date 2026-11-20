@@ -6,6 +6,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { appendOnlyList } from '../support/appendOnly';
 import { between, section } from '../support/textSlice';
 
 const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
@@ -563,15 +564,6 @@ describe('painel.py — dependent of a refused row (FR1, #2204 decision 4)', () 
     expect(showLines()).toContain('dependem de recusada: #2 (#1)');
   });
 });
-
-// Phase AO1 (stage #2314): the append-only index citations (`APPEND_ONLY` in painel.py) leave the `toca` comparison.
-function appendOnlyList(): string[] {
-  const code =
-    'import json, sys; sys.path.insert(0, ".claude/skills/implementar-fila/painel"); import painel; print(json.dumps(list(painel.APPEND_ONLY)))';
-  return JSON.parse(
-    execFileSync('python3', ['-I', '-c', code], { encoding: 'utf8' }),
-  ) as string[];
-}
 
 describe('painel.py — append-only citations in the toca comparison (AO1, #2314)', () => {
   beforeEach(() => {
