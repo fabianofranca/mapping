@@ -15,3 +15,4 @@
 - `round2` is exported by `src/canvas/selectionBox.ts` and shared with `hostAttributes.ts`; new unit tests in `tests/canvas/selectionBox.test.ts`.
 - `tests/e2e/viewAttrs.spec.ts` waits for the frame that publishes `data-selection-box`; the appendix A recipe of `docs/TESTING.md` opens the Tree without toggling it and fails with a clear message when nothing is selected.
 - `scripts/testing/fiel.mjs` validates its arguments: without the folder, with a folder that has no `components/` or with a `formatVersion` other than `3` or `4` it prints the usage and exits with code 2, writing nothing (`tests/tooling/fielArgs.test.ts`).
+- `CONTAINER_BREAKPOINTS` in `src/theme/breakpoints.ts` names the `@container` thresholds (`170`, `470`/`471`, `640`, `1100`); `tests/theme/tokenLiterals.test.ts` fails on a threshold outside them or an entry no rule uses. The comments of `pwa/buildPlugins.ts` cite `tests/build/pluginOrder.test.ts`.
