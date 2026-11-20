@@ -487,7 +487,8 @@ The hands and handles of dials (which previously called for a table of positions
 
 - **It is drawing only**, like `scale`: layout, measurement and boxes do not change.
 - **It turns gray** the solid fills, the gradient stops, the stroke, the shadow colors, the text color, the color and the chip background of the rich-text runs and the icon paths. The alpha does not change. Nested filters compose (`1 - (1 - a)(1 - b)`).
-- **An image** carries the amount: the app applies the same matrix to that image alone, and the MCP PNG applies it to the decoded pixels when it has them (it draws the placeholder for a remote image, and the placeholder stays as it is). An image loaded without CORS draws in color (see "Known limits").
+- **An image** carries the amount: the app applies the same matrix to that image alone (an embedded image used as the fill of an `ellipse` or `path` too: its pixels are turned gray before they become the pattern). The MCP PNG never reads the amount: it has no image pixels and draws the placeholder of an image, which stays as it is. An image loaded without CORS draws in color (see "Known limits"). The gray image is cached at its box size and the device pixel ratio, so at a high zoom it looks softer than the same image in color.
+- **A `slot`** inside a filtered node is not filtered: the content that the instance places there is not part of the drawing of the component, like the slot content of a scaled node (see "Known limits").
 - **It reaches the drawing of a `component` node:** `filter.grayscale` on an ancestor, or on the `component` node itself, turns the embedded drawing gray too.
 - **The same filter in the app, in the viewer and in the MCP PNG.**
 - In a `formatVersion` lower than 4 the key is an error (`only allowed with formatVersion 4`).
