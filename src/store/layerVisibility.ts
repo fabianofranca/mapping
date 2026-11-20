@@ -1,4 +1,4 @@
-import type { ReadonlySignal } from '@preact/signals';
+import { computed, type ReadonlySignal } from '@preact/signals';
 import type { Perspective } from '../model';
 import type { PerspectiveActions } from './perspectiveActions';
 import { showAllLayers, showLayer, toggleLayerVisible, type EditorUi } from './ui';
@@ -28,10 +28,15 @@ export function createLayerVisibility(deps: LayerVisibilityDeps): LayerVisibilit
   const setHidden = (open: Perspective, next: Set<string>): void => {
     perspectiveActions.setPerspectiveHiddenLayers(open.id, [...next]);
   };
+  // Memoized: the same set while the open perspective's list does not change (a new `Set` on every
+  // call would invalidate whoever compares sets by identity).
+  const hiddenSet = computed<ReadonlySet<string>>(() => {
+    const open = perspective.value;
+    return open ? new Set(open.hiddenLayers) : ui.hiddenLayers.value;
+  });
   return {
     hidden() {
-      const open = perspective.value;
-      return open ? new Set(open.hiddenLayers) : ui.hiddenLayers.value;
+      return hiddenSet.value;
     },
     toggle(layerId) {
       const open = perspective.peek();
