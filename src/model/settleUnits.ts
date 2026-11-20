@@ -12,6 +12,16 @@ export interface SpaceUnits {
   readonly scale: number;
 }
 
+/**
+ * The density a space contributes: the container's, or 1 when it is missing, non-finite or not
+ * positive (the 0.5 to 8 range is only an invariant, so a bad value must not make `k` infinite).
+ */
+export function spaceDensity(density: number | null | undefined): number {
+  return typeof density === 'number' && Number.isFinite(density) && density > 0
+    ? density
+    : 1;
+}
+
 /** A point in canvas units. */
 export interface CanvasPoint {
   readonly x: number;

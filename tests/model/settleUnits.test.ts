@@ -20,6 +20,7 @@ import {
   isScaled,
   minInTarget,
   scaleAround,
+  spaceDensity,
   unitsFactor,
 } from '../../src/model/settleUnits';
 import { emptyProject } from './fixtures';
@@ -137,6 +138,16 @@ describe('settleUnits helpers', () => {
     expect(minInTarget({ width: 10, height: 5 }, 2)).toEqual({ width: 20, height: 10 });
     expect(minInTarget({ width: 5, height: 3 }, 0.5)).toEqual({ width: 3, height: 2 });
     expect(minInTarget({ width: 7, height: 7 }, 1)).toEqual({ width: 7, height: 7 });
+  });
+
+  it('a missing, non-finite or non-positive density counts as 1', () => {
+    expect(spaceDensity(undefined)).toBe(1);
+    expect(spaceDensity(null)).toBe(1);
+    expect(spaceDensity(0)).toBe(1);
+    expect(spaceDensity(-2)).toBe(1);
+    expect(spaceDensity(Number.NaN)).toBe(1);
+    expect(spaceDensity(Number.POSITIVE_INFINITY)).toBe(1);
+    expect(spaceDensity(2)).toBe(2);
   });
 });
 
@@ -342,6 +353,64 @@ describe('a component marking changes space', () => {
     expect(rectOf(next, 'A').width).toBe(150);
     expect(rectOf(next, 'T').width).toBe(60);
     expect(next.markings.find((m) => m.id === 'T')!.parentId).toBe('A');
+  });
+});
+
+describe('the minimum follows the density when density × scale is 1', () => {
+  // A density 2 container at scale 0.5: one pixel is half a canvas unit, k = 1 to the canvas,
+  // but a component of 20 x 20 units is 40 x 40 px there and 20 x 20 on the canvas.
+  const twentyUnits = (id: string): Size | null =>
+    id === 'T' ? { width: 40, height: 40 } : null;
+
+  it('container → canvas with k = 1: the component keeps 20 x 20 units', () => {
+    let p = base({ c1: { density: 2, scale: 0.5 } });
+    p = inContainer(p, 'T', 'C1', { x: 10, y: 10, width: 40, height: 40 });
+    p = setRect(p, 'T', { x: 390, y: 10, width: 40, height: 40 });
+    const next = settleHierarchy(p, { minSizeOf: twentyUnits });
+    expect(spaceOf(next, 'T')).toBeNull();
+    expect(rectOf(next, 'T')).toEqual({ x: 1195, y: 5, width: 20, height: 20 });
+    expect(settleHierarchy(next, { minSizeOf: twentyUnits })).toBe(next);
+  });
+
+  it('the taken-back-in fallback converts the minimum too', () => {
+    // Density 4 at scale 0.5: k = 0.5 and the minimum ratio is 0.25.
+    let p = base({ c1: { density: 4, scale: 0.5 } });
+    p = inContainer(p, 'T', 'C1', { x: 10, y: 10, width: 80, height: 40 });
+    p = setRect(p, 'T', { x: 340, y: 10, width: 80, height: 40 });
+    const minSizeOf = (id: string): Size | null =>
+      id === 'T' ? { width: 80, height: 40 } : null;
+    const next = settleHierarchy(p, { minSizeOf });
+    // Halved it would be 20 x 10 at x 1170, fully inside C1: today's 40 x 20 on screen, with the
+    // minimum 80 x 40 px · 0.25 = 20 x 10 (not 80 x 40 in canvas units).
+    expect(spaceOf(next, 'T')).toBeNull();
+    expect(rectOf(next, 'T')).toEqual({ x: 1170, y: 5, width: 40, height: 20 });
+    expect(settleHierarchy(next, { minSizeOf })).toBe(next);
+  });
+
+  it('turning Floating on with k = 1 keeps 20 x 20 units', () => {
+    let p = base({ c1: { density: 2, scale: 0.5 } });
+    p = inContainer(p, 'T', 'C1', { x: 10, y: 10, width: 40, height: 40 });
+    const next = setMarkingFloating(p, 'T', true, { minSizeOf: twentyUnits });
+    expect(spaceOf(next, 'T')).toBeNull();
+    expect(rectOf(next, 'T')).toEqual({ x: 1005, y: 5, width: 20, height: 20 });
+  });
+});
+
+describe('a density of 0 counts as 1', () => {
+  it('the settle keeps a finite rect leaving a density 0 container', () => {
+    let p = base({ c1: { density: 0 } });
+    p = inContainer(p, 'T', 'C1', { x: 10, y: 10, width: 100, height: 40 });
+    p = setRect(p, 'T', { x: 390, y: 10, width: 100, height: 40 });
+    const next = settleHierarchy(p, opts('T'));
+    expect(spaceOf(next, 'T')).toBeNull();
+    expect(rectOf(next, 'T')).toEqual({ x: 1390, y: 10, width: 100, height: 40 });
+  });
+
+  it('turning Floating on keeps a finite rect', () => {
+    let p = base({ c1: { density: 0 } });
+    p = inContainer(p, 'T', 'C1', { x: 10, y: 10, width: 100, height: 40 });
+    const next = setMarkingFloating(p, 'T', true, { minSizeOf: components('T') });
+    expect(rectOf(next, 'T')).toEqual({ x: 1010, y: 10, width: 100, height: 40 });
   });
 });
 

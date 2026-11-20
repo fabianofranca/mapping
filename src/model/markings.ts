@@ -34,6 +34,7 @@ import {
   isScaled,
   minInTarget,
   scaleAround,
+  spaceDensity,
   unitsFactor,
   type SpaceUnits,
 } from './settleUnits';
@@ -360,7 +361,8 @@ function floatedMarking(p: Project, marking: Marking, options?: RectOptions): Ma
       IDENTITY_PLACEMENT,
       scaled ? scaleAround(footprint, footprint, k) : footprint,
       null,
-      scaled ? minInTarget(min, 1 / from.density) : min,
+      // The minimum follows the canvas density whenever the source density differs (also at k = 1).
+      minInTarget(min, 1 / from.density),
     ),
   };
 }
@@ -372,7 +374,7 @@ function unitsOfMarking(p: Project, marking: Marking): SpaceUnits {
       ? undefined
       : projectIndex(p).containers.get(marking.containerId);
   return container
-    ? { density: container.density ?? 1, scale: container.placement.scale }
+    ? { density: spaceDensity(container.density), scale: container.placement.scale }
     : { density: 1, scale: 1 };
 }
 

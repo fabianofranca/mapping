@@ -305,8 +305,13 @@ function referenceLand(
   move: RefMove,
   options: SettleOptions | undefined,
 ): Marking {
-  const own = options?.minSizeOf?.(move.m.id) ?? null;
-  const plain = referencePlace(move, move.canvas, own);
+  // The minimum follows the target density whenever the densities differ, also on the plain
+  // path (k = 1 with different densities, or the taken-back-in fallback).
+  const plain = referencePlace(
+    move,
+    move.canvas,
+    referenceScaled(move, 1, move.canvas, options).min,
+  );
   const set = referenceSet(moves, move);
   const k = (move.toDensity * move.toScale) / (move.fromDensity * move.fromScale);
   const hasComponent = set.some((o) => (options?.minSizeOf?.(o.m.id) ?? null) !== null);

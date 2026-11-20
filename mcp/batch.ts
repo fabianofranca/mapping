@@ -2078,17 +2078,17 @@ class Batch {
     };
   }
 
+  /** The minimum of any marking of `p` that draws a component (`null` for a plain one), for the settle (stage #2210). */
+  private minSizeOf(p: Project): (markingId: string) => Size | null {
+    return (markingId) => componentMinSize(p, this.catalog, markingId);
+  }
+
   /**
    * Redoes the size of a new instance after the batch's table rows have been entered (the initial size
    * is measured before them, with the table empty): `fitMarking` and, if the marking was created anchored,
    * `snapToAnchor` with the component's defaults. A component that does not fit (slot, no `sizing`)
    * stays as it is.
    */
-  /** The minimum of any marking of `p` that draws a component (`null` for a plain one), for the settle (stage #2210). */
-  private minSizeOf(p: Project): (markingId: string) => Size | null {
-    return (markingId) => componentMinSize(p, this.catalog, markingId);
-  }
-
   private refitToRows(p: Project, markingId: string, anchored: boolean): Project {
     let next = p;
     try {

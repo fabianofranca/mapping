@@ -4,6 +4,7 @@
 
 - A Text (or any component marking) dropped from the canvas into a container, or out of one, no longer overflows right after the move: it keeps its size in component units, so its box and its font stay in the same unit without Arrange (#2210).
 - Floating on a component in a container with density or scale other than 1 keeps its units on the canvas (#2210).
+- A component that leaves a container whose density differs from the target's no longer grows when density × scale is 1 (for example density 2 at scale 0.5), when Floating is turned on, or when the scaled set would fall back inside a container: its minimum follows the target density; a container density of 0 or not finite counts as 1 (#2210).
 
 ## Alterado
 

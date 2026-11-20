@@ -28,6 +28,7 @@ import {
   isScaled,
   minInTarget,
   scaleAround,
+  spaceDensity,
   unitsFactor,
   type SpaceUnits,
 } from './settleUnits';
@@ -185,7 +186,7 @@ const CANVAS_UNITS: SpaceUnits = { density: 1, scale: 1 };
 
 /** Density and scale of a container's space. */
 function unitsOf(container: ProjectContainer): SpaceUnits {
-  return { density: container.density ?? 1, scale: container.placement.scale };
+  return { density: spaceDensity(container.density), scale: container.placement.scale };
 }
 
 /** One end of a space change: the space key (for the sets), its units and the space itself. */
@@ -287,19 +288,19 @@ function landSet(
   moves: readonly Move[],
   options: SettleOptions | undefined,
 ): Marking[] {
-  const mins = moves.map((move) => options?.minSizeOf?.(move.marking.id) ?? null);
-  const plain = () => moves.map((move, i) => landed(move, move.canvas, mins[i] ?? null));
   const { from, to } = moves[0] as Move;
+  // The minimum is in pixels of the source density: it follows the target density whenever the
+  // two differ, also when `k` is 1 (density × scale equal) and on the fallback to `plain`.
+  const ratio = to.units.density / from.units.density;
+  const mins = moves.map((move) =>
+    minInTarget(options?.minSizeOf?.(move.marking.id) ?? null, ratio),
+  );
+  const plain = () => moves.map((move, i) => landed(move, move.canvas, mins[i] ?? null));
   const k = unitsFactor(from.units, to.units);
   if (!isScaled(k) || mins.every((min) => min === null)) return plain();
   const origin = boundingOrigin(moves.map((move) => move.canvas));
-  const ratio = to.units.density / from.units.density;
   const scaled = moves.map((move, i) =>
-    landed(
-      move,
-      scaleAround(origin, move.canvas, k),
-      minInTarget(mins[i] ?? null, ratio),
-    ),
+    landed(move, scaleAround(origin, move.canvas, k), mins[i] ?? null),
   );
   return takenBackIn(p, scaled) ? plain() : scaled;
 }
