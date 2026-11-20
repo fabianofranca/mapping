@@ -188,7 +188,8 @@ describe('the server does not open code files (static)', () => {
     // and `.md` are read; the rest is listed) or the `.md` of a type's external document
     // (`docFiles.ts`, confined to the working directory by the same checker), the `.svg` files and the icons
     // `.json` of `import_icons` (`iconImport.ts`) or the `.json` of a batch
-    // (`operationsFile.ts`, inside the roots or the scratch folders), never code. A new module
+    // (`operationsFile.ts`, inside the roots or the scratch folders) or the images of an open proposal
+    // that a preview draws (`renderPreview.ts`, through the same confined path), never code. A new module
     // that needs the disk joins this list on purpose, after checking that it does not touch code.
     expect(importers).toEqual([
       'changes.ts',
@@ -202,6 +203,7 @@ describe('the server does not open code files (static)', () => {
       'paths.ts',
       'projects.ts',
       'proposalStore.ts',
+      'renderPreview.ts',
       'specValidation.ts',
       'threadStore.ts',
     ]);
