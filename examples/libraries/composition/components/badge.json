@@ -1,0 +1,55 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "badge",
+  "name": "Badge",
+  "description": "A count pill. It is at least 16 wide and grows with the text; it prefers the top-end corner of its anchor.",
+  "size": {
+    "width": 28,
+    "height": 16
+  },
+  "sizing": {
+    "width": "hug",
+    "height": 16
+  },
+  "minSize": {
+    "width": 16,
+    "height": 16
+  },
+  "anchor": {
+    "side": "top",
+    "align": "corner-end"
+  },
+  "preview": {
+    "count": "3"
+  },
+  "template": {
+    "type": "frame",
+    "name": "badge",
+    "layout": {
+      "type": "row",
+      "padding": [0, 4],
+      "align": "center",
+      "justify": "center"
+    },
+    "minWidth": 16,
+    "cornerRadius": 8,
+    "fill": "#DC2626",
+    "children": [
+      {
+        "type": "text",
+        "name": "count",
+        "text": {
+          "$field": "count"
+        },
+        "font": {
+          "size": 10,
+          "weight": 600,
+          "lineHeight": 12
+        },
+        "color": "#FFFFFF",
+        "width": "hug"
+      }
+    ]
+  }
+}
