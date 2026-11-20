@@ -1056,7 +1056,13 @@ class Painter {
     paint: { rule: 'nonzero' | 'evenodd'; color: Color; alpha: number; clip: PixelRect },
   ): void {
     const polygons = casting.map((sub) => this.toRaster(sub.points, matrix));
-    const sigma = (shadow.blur * this.scale) / 2;
+    // The shadow follows the node's own scale (and its ancestors'), like the Konva one: the matrix's
+    // pixels per unit over the painter's (the view and the density), which is 1 without a node `scale`.
+    const [a, b, c, d] = matrix;
+    const ratio = Math.sqrt(Math.abs(a * d - b * c)) / this.scale;
+    const nodeScale = Math.abs(ratio - 1) < 1e-9 || !Number.isFinite(ratio) ? 1 : ratio;
+    const scale = this.scale * nodeScale;
+    const sigma = (shadow.blur * scale) / 2;
     const margin = Math.ceil(sigma * 3) + 2;
     const edge = bounds(polygons.flat());
     const box: PixelRect = {
@@ -1081,7 +1087,7 @@ class Painter {
       mask,
       box,
       sigma,
-      { dx: shadow.offset.x * this.scale, dy: shadow.offset.y * this.scale },
+      { dx: shadow.offset.x * scale, dy: shadow.offset.y * scale },
       { rgb: paint.color.rgb, alpha: paint.color.alpha * paint.alpha },
       paint.clip,
     );
@@ -1387,7 +1393,7 @@ export function paintScene(
         { x: root.width, y: 0 },
         { x: root.width, y: root.height },
         { x: 0, y: root.height },
-      ].map((p) => apply(multiply(base, root.transform), p)),
+      ].map((p) => apply(multiply(base, nodeMatrix(root)), p)),
     );
     // Outside the region (touching counts: a box with no height may still have a stroke).
     if (

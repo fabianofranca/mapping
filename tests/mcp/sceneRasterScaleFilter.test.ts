@@ -148,3 +148,52 @@ describe('FG5: grayscale in the raster', () => {
     expect(Buffer.from(gray.data).equals(Buffer.from(plain.data))).toBe(true);
   });
 });
+
+describe('FG5: scale and the shadow and the culling in the raster', () => {
+  const blue = { color: '#0000ff', offset: { x: 10, y: 0 }, blur: 0 };
+
+  it('a node scale scales the shadow offset along with the node', () => {
+    const small = box(red, {
+      width: 10,
+      height: 10,
+      transform: translate(45, 45),
+      effects: [blue],
+    } as Partial<SceneNode>);
+    const plain = canvas(100, 100);
+    paint(plain, frame([small]));
+    // Offset 10: the shadow covers x 55..65, so x = 80 stays white.
+    expect(pixel(plain, 80, 50)).toEqual(WHITE);
+    const doubled = canvas(100, 100);
+    paint(doubled, frame([{ ...small, scale: 2 } as SceneNode]));
+    // Scale 2 about the center: the box covers 40..60 and the shadow, offset 20, covers 60..80.
+    expect(pixel(doubled, 70, 50)).toEqual([0, 0, 255, 255]);
+    expect(pixel(doubled, 85, 50)).toEqual(WHITE);
+  });
+
+  it('a root with scale > 1 is not culled when only its overhang reaches the region', () => {
+    const root = {
+      ...baseNode({
+        id: 'root',
+        name: 'root',
+        width: 40,
+        height: 40,
+        transform: translate(80, 0),
+      }),
+      type: 'frame',
+      clip: false,
+      cornerRadius: 0,
+      scale: 2,
+      fills: red,
+      children: [],
+    } as unknown as SceneNode;
+    const raster = canvas(160, 40);
+    // The box covers x 80..120; scaled by 2 about its center (100, 20) it covers 60..140.
+    paintScene(raster, [{ root }], approximateMeasurer, {
+      scaleX: 1,
+      scaleY: 1,
+      clip: { x: 130, y: 0, width: 20, height: 40 },
+    });
+    expect(pixel(raster, 135, 20)).toEqual(RED);
+    expect(pixel(raster, 145, 20)).toEqual(WHITE);
+  });
+});

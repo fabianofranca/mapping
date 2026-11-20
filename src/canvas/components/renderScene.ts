@@ -845,7 +845,7 @@ function grayscaleImage(
 function grayscaleSource(
   element: HTMLImageElement,
   amount: number | undefined,
-): CanvasImageSource {
+): HTMLImageElement | HTMLCanvasElement {
   if (amount === undefined || amount <= 0) return element;
   try {
     const canvas = document.createElement('canvas');
