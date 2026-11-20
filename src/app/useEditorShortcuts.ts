@@ -82,6 +82,8 @@ function focusedWindow(): FocusedWindow | null {
  */
 function fieldOwnsKey(shortcut: Shortcut, target: EventTarget | null): boolean {
   if (shortcut.kind === 'view-mode') return isTypingField(target);
+  // Ctrl+, has no native action in a field, so Settings opens from any text field (#2226).
+  if (shortcut.kind === 'settings') return false;
   if (!isTextInput(target)) return false;
   const property =
     shortcut.kind === 'copy-reference' &&

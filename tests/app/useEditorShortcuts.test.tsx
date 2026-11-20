@@ -599,6 +599,56 @@ describe('useEditorShortcuts: zoom, help, settings and project', () => {
     expect(s.dialogs.show).toHaveBeenNthCalledWith(2, { kind: 'settings' });
   });
 
+  it('Ctrl+, opens Settings from an input, a textarea and a contentEditable element (#2226)', () => {
+    const s = setup();
+    const input = document.createElement('input');
+    const textarea = document.createElement('textarea');
+    const editable = document.createElement('div');
+    editable.setAttribute('contenteditable', 'true');
+    // jsdom does not implement `isContentEditable`.
+    Object.defineProperty(editable, 'isContentEditable', { value: true });
+    document.body.append(input, textarea, editable);
+    let calls = 0;
+    for (const el of [input, textarea, editable]) {
+      const event = pressOn(el, ',', { ctrl: true });
+      calls += 1;
+      expect(event.defaultPrevented).toBe(true);
+      expect(s.dialogs.show).toHaveBeenCalledTimes(calls);
+      expect(s.dialogs.show).toHaveBeenLastCalledWith({ kind: 'settings' });
+    }
+  });
+
+  it('Shift+1 and F1 in an input still belong to the field (#2226)', () => {
+    const s = setup();
+    const input = document.createElement('input');
+    document.body.append(input);
+    const f1 = pressOn(input, 'F1');
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: '!',
+        code: 'Digit1',
+        shiftKey: true,
+        bubbles: true,
+      }),
+    );
+    expect(f1.defaultPrevented).toBe(false);
+    expect(s.dialogs.show).not.toHaveBeenCalled();
+    expect(s.canvas.fitAll).not.toHaveBeenCalled();
+  });
+
+  it('Ctrl+, in a text field does nothing with a dialog open (#2226)', () => {
+    const s = setup();
+    const input = document.createElement('input');
+    document.body.append(input);
+    modalOpen.value += 1;
+    try {
+      pressOn(input, ',', { ctrl: true });
+    } finally {
+      modalOpen.value -= 1;
+    }
+    expect(s.dialogs.show).not.toHaveBeenCalled();
+  });
+
   it('Ctrl+E exports the project', () => {
     const s = setup();
     s.press('e', { ctrl: true });
