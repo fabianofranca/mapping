@@ -105,6 +105,52 @@ describe('update a library through the session', () => {
     session?.store.project.value?.annotations.find((a) => a.id === id)?.values;
   const versionOf = () => session?.store.project.value?.specializations[0]?.version;
 
+  it('copy-field: an additive update copies the values and Undo gives them back in one entry', async () => {
+    const { annotationId } = await start();
+    const button = buttonType();
+    const next = libSpec(
+      2,
+      {
+        c: [
+          {
+            ...button,
+            fields: [...button.fields, { key: 'caption', type: 'string' as const }],
+          },
+          badgeType(),
+        ],
+        e: [chipType()],
+      },
+      {
+        migrations: [
+          {
+            from: 1,
+            to: 2,
+            steps: [
+              {
+                op: 'copy-field',
+                type: 'button',
+                from: 'label',
+                to: 'caption',
+                when: { label: 'OK' },
+              },
+            ],
+          },
+        ],
+      },
+    );
+    expect(
+      session?.actions.updateSpecialization(next, undefined, packageOf(next)).ok,
+    ).toBe(true);
+    await settle();
+    expect(valuesOf(annotationId)).toMatchObject({ label: 'OK', caption: 'OK' });
+    session?.store.undo();
+    await vi.advanceTimersByTimeAsync(300);
+    await settle();
+    expect(versionOf()).toBe(1);
+    expect(valuesOf(annotationId)).toMatchObject({ label: 'OK' });
+    expect(valuesOf(annotationId)).not.toHaveProperty('caption');
+  });
+
   it('migrates the values, rewrites the folder and undoes/redoes in a single entry', async () => {
     const { root, annotationId, storage } = await start();
     expect(valuesOf(annotationId)).toMatchObject({ label: 'OK' });

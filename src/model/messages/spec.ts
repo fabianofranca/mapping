@@ -143,8 +143,15 @@ export const specMessages = {
   'spec.migrationModeRemoveType': 'use "convert" or "delete"',
   'spec.migrationModeRemoveRole': 'use "clear" or "unlink"',
   'spec.migrationOpInvalid':
-    'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" or "set-role"',
+    'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role" or "copy-field"',
   'spec.notEmptyList': 'cannot be an empty list',
+  'spec.copyFieldWhenValue': 'must be text, a number or a non-empty list of them',
+  'spec.copyFieldWhenKind': 'a "table" or "ref" field cannot be tested in "when"',
+  'spec.copyFieldSame': '"from" and "to" cannot be the same field',
+  'spec.copyFieldMixed':
+    '"from" and "to" must both be fields, or both columns of the same table',
+  'spec.copyFieldTable':
+    'a "table" field cannot be copied; use a column ("table.column")',
   'spec.formatInvalid': 'must be "{format}"',
   'spec.formatVersionInvalid': 'must be {versions} or {last}',
   // Format version, external sources and fonts (typefaces)

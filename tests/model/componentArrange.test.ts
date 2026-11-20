@@ -827,6 +827,26 @@ describe('fitMarking (MC3, decision 14 of #898)', () => {
     expectValid(fitted);
   });
 
+  it('the menu item (#2164): the width follows the `fill` label, between 96 and 136, and Arrange takes the same path', () => {
+    const widthOf = (label: string) => {
+      const p = withLabel('menu-item', label, box(100, 100, 104, 40));
+      expect(arrangesByFit(p, fcat, 'B')).toBe(true);
+      const rect = rectOf(fit(p, 'B'), 'B');
+      expect(rect).toMatchObject({ x: 100, y: 100, height: 40 });
+      return rect.width;
+    };
+    expect(widthOf('Ok')).toBe(96);
+    expect(widthOf('Settings')).toBe(118);
+    expect(widthOf(LONG_LABEL)).toBe(136);
+    // A label that shrinks takes the width back, and fitting twice changes nothing.
+    const grown = fit(withLabel('menu-item', LONG_LABEL), 'B');
+    expect(rectOf(grown, 'B').width).toBe(136);
+    expect(fit(grown, 'B')).toBe(grown);
+    expect(rectOf(fit(setFieldValue(grown, 'A_B', 'label', 'Ok'), 'B'), 'B').width).toBe(
+      96,
+    );
+  });
+
   it('a label that fits (below the minSize): nothing changes, the same Project', () => {
     const p = withLabel('fit-button', 'Ok');
     expect(fit(p, 'B')).toBe(p);

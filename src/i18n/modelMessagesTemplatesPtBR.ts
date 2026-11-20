@@ -279,8 +279,16 @@ export const templatePtBR: {
   'model.spec.migrationModeRemoveType': 'use "convert" ou "delete"',
   'model.spec.migrationModeRemoveRole': 'use "clear" ou "unlink"',
   'model.spec.migrationOpInvalid':
-    '"op" inválido; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" ou "set-role"',
+    '"op" inválido; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role" ou "copy-field"',
   'model.spec.notEmptyList': 'não pode ser vazia',
+  'model.spec.copyFieldWhenValue': 'deve ser texto, número ou uma lista não vazia deles',
+  'model.spec.copyFieldWhenKind':
+    'um campo "table" ou "ref" não pode ser testado em "when"',
+  'model.spec.copyFieldSame': '"from" e "to" não podem ser o mesmo campo',
+  'model.spec.copyFieldMixed':
+    '"from" e "to" devem ser ambos campos, ou ambos colunas da mesma tabela',
+  'model.spec.copyFieldTable':
+    'um campo "table" não pode ser copiado; use uma coluna ("table.column")',
   'model.spec.formatInvalid': 'deve ser "{format}"',
   'model.spec.formatVersionInvalid': 'deve ser {versions} ou {last}',
   'model.spec.onlyFormat': 'só é permitido com formatVersion {version}',
@@ -670,7 +678,6 @@ export const templatePtBR: {
   'model.engine.fieldMissing': 'campo não informado: {key}',
   'model.engine.textZeroWidth': 'texto medido com largura 0: {name}',
   'model.engine.invalidValue': 'valor inválido em {label}: {value}',
-  'model.engine.fillInHug': 'fill dentro de hug vira 0',
   'model.engine.iconStretched': 'ícone esticado: escala diferente nos dois eixos',
   'model.engine.iconUnknown': 'ícone desconhecido: {name}',
   'model.engine.componentUnavailable': 'componente indisponível: {id}',

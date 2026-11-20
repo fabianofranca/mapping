@@ -366,6 +366,13 @@ function freedLayersSteps(impact: SpecUpdateImpact): string[] {
   ];
 }
 
+/** The hint of an additive update: with steps, they copy values and lose nothing. */
+function additiveHint(impact: SpecUpdateImpact, via: string): string {
+  return impact.steps.length > 0
+    ? `additive change with steps (\`steps\`): they copy values and lose nothing; propose update_specialization with ${via} (propose_changes) and say in the proposal which values are copied`
+    : `additive change: propose update_specialization with ${via} (propose_changes); the person applies it without an impact dialog`;
+}
+
 /** What the person and the agent do next, depending on the impact. */
 function updateHint(impact: SpecUpdateImpact, valid: boolean, via: string): string {
   const steps: string[] = [];
@@ -384,9 +391,7 @@ function updateHint(impact: SpecUpdateImpact, valid: boolean, via: string): stri
       `declare \`migrations\` for each break in \`missingMigrations\` (one step per break: rename-type, remove-type, rename-field, remove-field, map-values, fill-field, rename-role, remove-role or set-role) and run plan_library_update again; update_specialization is refused while any is missing`,
     );
   } else if (impact.additive) {
-    steps.push(
-      `additive change: propose update_specialization with ${via} (propose_changes); the person applies it without an impact dialog`,
-    );
+    steps.push(additiveHint(impact, via));
   } else {
     steps.push(
       `the declared migrations cover the breaks: propose update_specialization with ${via} (propose_changes) and describe what changes in the proposal`,

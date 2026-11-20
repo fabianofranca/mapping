@@ -225,6 +225,59 @@ describe('create_marking without rect: born with the measured size (decision 16)
   });
 });
 
+describe('the menu item: a hug width with a fill label (decision 6 of #2164)', () => {
+  const ITEM = `${FIT_SPEC_ID}/menu-item`;
+  const widthFor = async (label: string, extra: Record<string, unknown> = {}) => {
+    const result = await run([
+      {
+        op: 'create_marking',
+        as: '$item',
+        container: IMAGE,
+        annotation: { type: ITEM, values: { label } },
+        ...extra,
+      } as Operation,
+    ]);
+    expect(result.errors).toEqual([]);
+    return rectOf(result, (result.aliases.get('$item') as { id: string }).id);
+  };
+
+  it('creation without rect: short label 96, medium its content, long 136', async () => {
+    expect(await widthFor('Ok')).toMatchObject({ width: 96, height: 40 });
+    // The MCP measures with the project's font metrics (the default `sans-serif`): 107, not the model's 118.
+    expect(await widthFor('Settings')).toMatchObject({ width: 107, height: 40 });
+    expect(await widthFor(LONG_LABEL)).toMatchObject({ width: 136, height: 40 });
+  });
+
+  it('fit_marking takes a 104-wide item to the width of its label', async () => {
+    const rect = { x: 20, y: 100, width: 104, height: 40 };
+    const result = await run([
+      {
+        op: 'create_marking',
+        as: '$item',
+        container: IMAGE,
+        rect,
+        annotation: { type: ITEM, values: { label: LONG_LABEL } },
+      } as Operation,
+      { op: 'fit_marking', marking: '$item' } as Operation,
+    ]);
+    expect(result.errors).toEqual([]);
+    const id = (result.aliases.get('$item') as { id: string }).id;
+    expect(rectOf(result, id)).toMatchObject({ x: 20, y: 100, width: 136, height: 40 });
+  });
+
+  it('measure_component gives the same size as the creation and the fit', async () => {
+    const measured = ok(
+      await mcp.call<{ units: { width: number; height: number } }>('measure_component', {
+        project: 'telas',
+        specId: FIT_SPEC_ID,
+        type: 'menu-item',
+        values: { label: 'Settings' },
+      }),
+    );
+    expect(measured.units).toEqual({ width: 107, height: 40 });
+  });
+});
+
 describe('plan_changes: the direct preview of fit_marking', () => {
   it('validates, summarizes the rectangle before and after and writes nothing', async () => {
     const plan = await planChanges(

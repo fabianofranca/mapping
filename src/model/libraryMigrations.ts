@@ -1,6 +1,12 @@
 import { annotationWithLinked } from './links';
 import { isRecord, parseRefValue } from './refs';
-import type { Spec, SpecMigrationStep, SpecSimpleColumn } from './spec';
+import type {
+  CopyFieldWhen,
+  CopyFieldWhenValue,
+  Spec,
+  SpecMigrationStep,
+  SpecSimpleColumn,
+} from './spec';
 import { findTypeInSpec } from './specLookup';
 import { migrationChain } from './specVersions';
 import {
@@ -57,6 +63,11 @@ import type { Annotation, JsonValue, Project, TypedValues } from './types';
 //     one, free or of another specialization) receives the role. Whoever already has a role is not touched;
 //     it never generates a loss.
 //   - Invariant: a non-null `parentRole` requires a non-null `parentAnnotationId`.
+// - `copy-field` copies `from` into `to` (both top-level, or both columns of the same table, row by row) only
+//   where `to` is empty (`isEmptyValue`) and `from` is not, on the annotations of `type` that match `when`
+//   (every key a top-level field: text exactly, a number by value, a list matches any one). `from` keeps its
+//   value and a filled `to` stays. It never generates a loss; a copied value that is not valid in `to`
+//   becomes a pending item (as `map-values`). `values` counts the copies, `annotations` those with one.
 // - Immutable; ids untouched; the other `values` keys stay as they were.
 
 export type MigrationLossReason =
@@ -546,6 +557,73 @@ function fillField(
   );
 }
 
+function matchesWhenValue(
+  stored: JsonValue | undefined,
+  want: CopyFieldWhenValue,
+): boolean {
+  if (Array.isArray(want)) return want.some((w) => matchesWhenValue(stored, w));
+  if (typeof want === 'number') {
+    if (typeof stored === 'number') return stored === want;
+    return typeof stored === 'string' && stored.trim() !== '' && Number(stored) === want;
+  }
+  return stored === want;
+}
+
+function matchesWhen(values: TypedValues, when: CopyFieldWhen | undefined): boolean {
+  if (!when) return true;
+  return Object.entries(when).every(([key, want]) => {
+    const stored = values[key];
+    return !isEmptyValue(stored) && matchesWhenValue(stored, want);
+  });
+}
+
+/** Copies `from` into `to` inside `record` when `to` is empty and `from` is not; `null` if nothing changes. */
+function copyInto(
+  record: { readonly [key: string]: JsonValue },
+  from: string,
+  to: string,
+): { readonly [key: string]: JsonValue } | null {
+  const source = record[from];
+  if (isEmptyValue(source) || !isEmptyValue(record[to])) return null;
+  return { ...record, [to]: source as JsonValue };
+}
+
+function copyCells(values: TypedValues, from: Target, to: Target): CellsResult {
+  if (from.kind === 'field' && to.kind === 'field') {
+    const next = copyInto(values, from.key, to.key);
+    return next ? { values: next, changed: 1 } : { values, changed: 0 };
+  }
+  if (from.kind !== 'column' || to.kind !== 'column') return { values, changed: 0 };
+  const rows = values[from.table];
+  if (!Array.isArray(rows)) return { values, changed: 0 };
+  let changed = 0;
+  const list = rows.map((row): JsonValue => {
+    if (!isRecord(row)) return row;
+    const next = copyInto(row, from.column, to.column);
+    if (!next) return row;
+    changed++;
+    return next;
+  });
+  return changed === 0
+    ? { values, changed }
+    : { values: { ...values, [from.table]: list }, changed };
+}
+
+function copyField(
+  p: Project,
+  specId: string,
+  step: Extract<SpecMigrationStep, { op: 'copy-field' }>,
+): StepResult {
+  const from = parseTarget(step.from);
+  const to = parseTarget(step.to);
+  return mapAnnotations(p, specId, step.type, [], (a) => {
+    const values = a.values ?? {};
+    return matchesWhen(values, step.when)
+      ? copyCells(values, from, to)
+      : { values, changed: 0 };
+  });
+}
+
 /** Applies `change` to the annotations with `values` of the step's type and adds up what changed. */
 function mapAnnotations(
   p: Project,
@@ -651,12 +729,33 @@ function setRole(
   });
 }
 
+type RoleStep = Extract<
+  SpecMigrationStep,
+  { op: 'rename-role' | 'remove-role' | 'set-role' }
+>;
+
+const isRoleStep = (step: SpecMigrationStep): step is RoleStep =>
+  step.op === 'rename-role' || step.op === 'remove-role' || step.op === 'set-role';
+
+/** The role steps (`formatVersion` 12), which act on the owner's children. */
+function runRoleStep(p: Project, specId: string, step: RoleStep): StepResult {
+  switch (step.op) {
+    case 'rename-role':
+      return renameRole(p, specId, step);
+    case 'remove-role':
+      return removeRole(p, specId, step);
+    case 'set-role':
+      return setRole(p, specId, step);
+  }
+}
+
 function runStep(
   p: Project,
   next: Spec,
   step: SpecMigrationStep,
   options: ConvertOptions,
 ): StepResult {
+  if (isRoleStep(step)) return runRoleStep(p, next.id, step);
   switch (step.op) {
     case 'rename-type':
       return renameType(p, next.id, step);
@@ -670,12 +769,8 @@ function runStep(
       return mapValues(p, next.id, step);
     case 'fill-field':
       return fillField(p, next.id, next, step);
-    case 'rename-role':
-      return renameRole(p, next.id, step);
-    case 'remove-role':
-      return removeRole(p, next.id, step);
-    case 'set-role':
-      return setRole(p, next.id, step);
+    case 'copy-field':
+      return copyField(p, next.id, step);
   }
 }
 

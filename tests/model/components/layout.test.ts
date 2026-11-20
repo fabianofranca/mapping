@@ -123,6 +123,30 @@ const COMPONENTS: ComponentFile[] = [
   ),
   block('hug-min', { width: 80, height: 30 }, HUG_HUG, { width: 80, height: 30 }),
   label('label', 12),
+  // #2164: a `hug` width between 96 and 136 whose `fill` label is the content the root hugs.
+  component(
+    'menu-item',
+    {
+      layout: { type: 'row', align: 'center', gap: 8, padding: [8, 12] },
+      minWidth: 96,
+      maxWidth: 136,
+      children: [
+        { type: 'rect', width: 24, height: 24 },
+        {
+          type: 'text',
+          text: { $field: 'label', default: '' },
+          width: 'fill',
+          height: 'hug',
+          font: { size: 14, lineHeight: 20, wrap: 'none', ellipsis: true },
+        },
+      ],
+    },
+    {
+      formatVersion: 4,
+      size: { width: 104, height: 40 },
+      sizing: { width: 'hug', height: 40 },
+    },
+  ),
   label('label-frac', 12.5),
   container('col', 'column'),
   container('col-fill', 'column', { sizing: { width: 'fill', height: 'fill' } }),
@@ -358,6 +382,19 @@ describe('layoutScreen: row', () => {
     // row height = max(12, 40) = 40; the fill inherits 40
     expect(boxOf(result, 'r')).toEqual({ x: 0, y: 0, width: 300, height: 40 });
     expect(boxOf(result, 'f').height).toBe(40);
+  });
+
+  it('a menu item (hug width, fill label) measures its label: 96 to 136, with no warning (#2164)', () => {
+    const widthOf = (text: string) => {
+      const result = run([
+        root(node('r', 'row-hug', {}, [node('m', 'menu-item', { label: text })])),
+      ]);
+      expect(result.warnings).toEqual([]);
+      return boxOf(result, 'm').width;
+    };
+    expect(widthOf('Ok')).toBe(96);
+    expect(widthOf('Settings')).toBe(118);
+    expect(widthOf('a much longer label than the box allows')).toBe(136);
   });
 
   it('hug row with only fill: each child in hug', () => {

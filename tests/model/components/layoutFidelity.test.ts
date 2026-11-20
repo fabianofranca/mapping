@@ -99,7 +99,7 @@ describe.each([4, 1])('B1: hug frame with fill text (formatVersion %i)', (versio
 });
 
 describe('B1: regressions and warning', () => {
-  it('fill on the main axis of a hug frame is still 0, with the warning', () => {
+  it('fill on the main axis of a hug frame is worth what it would hug, with no warning', () => {
     const { root: scene, warnings } = root(
       frame({ layout: { type: 'column' } }, [
         frame({ layout: { type: 'row' }, width: 'hug', height: 'hug' }, [
@@ -107,8 +107,8 @@ describe('B1: regressions and warning', () => {
         ]),
       ]),
     );
-    expect(kid(scene, 0).width).toBe(0);
-    expect(warnings).toContain('fill inside hug becomes 0');
+    expect(kid(scene, 0).width).toBeCloseTo(20 * 14 * 0.55, 3);
+    expect(warnings).toEqual([]);
   });
 
   it('hug text is still measured without wrapping', () => {
@@ -127,7 +127,7 @@ describe('B1: regressions and warning', () => {
   it('text measured with width 0 warns with the node name', () => {
     const { warnings } = root(
       frame({ layout: { type: 'column' } }, [
-        frame({ layout: { type: 'row' }, width: 'hug', height: 'hug' }, [
+        frame({ layout: { type: 'none' }, width: 0, height: 'hug' }, [
           label({ name: 'label', width: 'fill' }),
         ]),
       ]),
@@ -175,10 +175,14 @@ describe('B2: repeat.distribute', () => {
     ]);
   });
 
-  it('without distribute, height fill in the template is 0 with the current warning', () => {
+  it('without distribute, height fill in the template is worth the content of each row, with no warning', () => {
     const { root: scene, warnings } = root(tree({}, { height: 'fill' }), rows);
-    expect((kid(scene, 0) as FrameNode).children.map((c) => c.height)).toEqual([0, 0, 0]);
-    expect(warnings).toContain('fill inside hug becomes 0');
+    expect((kid(scene, 0) as FrameNode).children.map((c) => c.height)).toEqual([
+      LINE,
+      LINE,
+      LINE,
+    ]);
+    expect(warnings).not.toContain('fill inside hug becomes 0');
   });
 });
 

@@ -3,6 +3,7 @@ import {
   projectIndex,
   type JsonValue,
   type MigrationLoss,
+  type CopyFieldWhen,
   type MigrationStepReport,
   type Project,
   type SpecMigrationStep,
@@ -51,6 +52,23 @@ function roleStepLabel(step: RoleStep): string {
   }
 }
 
+/** `key = value` pairs of a `copy-field` `when` (a list reads `a | b`). */
+function whenText(when: CopyFieldWhen): string {
+  return Object.entries(when)
+    .map(([key, v]) => `${key} = ${Array.isArray(v) ? v.join(' | ') : String(v)}`)
+    .join(', ');
+}
+
+function copyFieldLabel(step: Extract<SpecMigrationStep, { op: 'copy-field' }>): string {
+  const { type, from, to, when } = step;
+  return t(when ? 'spec.impact.op.copyFieldWhen' : 'spec.impact.op.copyField', {
+    type,
+    from,
+    to,
+    condition: when ? whenText(when) : '',
+  });
+}
+
 /** Readable label of a declared migration step. */
 export function stepLabel(step: SpecMigrationStep): string {
   if (isRoleStep(step)) return roleStepLabel(step);
@@ -86,6 +104,8 @@ export function stepLabel(step: SpecMigrationStep): string {
         field: step.field,
         value: String(step.default),
       });
+    case 'copy-field':
+      return copyFieldLabel(step);
   }
 }
 

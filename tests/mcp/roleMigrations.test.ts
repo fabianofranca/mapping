@@ -107,7 +107,7 @@ const plan = async (path: string) =>
   ok(await mcp.call<Plan>('plan_library_update', { project: ws.project, path }));
 
 describe('plan_library_update: role breaks without a step', () => {
-  it('removed role: refused with removed-role and the hint cites the nine steps', async () => {
+  it('removed role: refused with removed-role and the hint cites the ten steps', async () => {
     const result = await plan(files.removeNoStep!);
     expect(result.decision).toBe('update');
     expect(result.refused).toBe(true);

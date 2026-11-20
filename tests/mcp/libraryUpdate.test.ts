@@ -238,6 +238,30 @@ function makeRename(dir: string, migration: boolean): void {
   writeFileSync(file, readFileSync(file, 'utf8').replaceAll('"supporting"', '"helper"'));
 }
 
+/** v2: a new optional `helper` field on the text field, filled from `supporting` by a `copy-field` step (formatVersion 19). */
+function makeCopy(dir: string): void {
+  editSpec(dir, (spec) => {
+    spec.version = 2;
+    (spec as { formatVersion: number }).formatVersion = 19;
+    typeOf(spec, 'm3-text-field').fields.push({ key: 'helper', type: 'string' });
+    spec.migrations = [
+      {
+        from: 1,
+        to: 2,
+        steps: [
+          {
+            op: 'copy-field',
+            type: 'm3-text-field',
+            from: 'supporting',
+            to: 'helper',
+            when: { label: 'Name' },
+          },
+        ],
+      },
+    ];
+  });
+}
+
 /** v2 that changes the layer id (same types, no break): its typed annotations become free-form. */
 function makeLayerRename(dir: string): void {
   editSpec(dir, (spec) => {
@@ -307,6 +331,7 @@ beforeAll(async () => {
   makeAdditive(copyPackage('v2-additive'));
   makeRename(copyPackage('v2-rename'), true);
   makeRename(copyPackage('v2-no-migration'), false);
+  makeCopy(copyPackage('v2-copy'));
   makeRemoval(copyPackage('v2-remove'));
   makeRequiredLabel(copyPackage('v2-label'));
   makeLayerRename(copyPackage('v2-layer'));
@@ -427,6 +452,32 @@ describe('plan_library_update', () => {
     expect(result.hint).not.toMatch(/loses data/);
   });
 
+  it('copy-field: the step as declared, the values copied, no loss and the hint says it copies', async () => {
+    const result = await plan('v2-copy/material3');
+    expect(result).toMatchObject({
+      decision: 'update',
+      additive: true,
+      refused: false,
+      stepsTotal: 1,
+      lossesTotal: 0,
+    });
+    expect(result.validation.valid).toBe(true);
+    expect(result.steps?.[0]).toMatchObject({
+      step: {
+        op: 'copy-field',
+        type: 'm3-text-field',
+        from: 'supporting',
+        to: 'helper',
+        when: { label: 'Name' },
+      },
+      annotations: 1,
+      values: 1,
+      lossCount: 0,
+      losses: [],
+    });
+    expect(result.hint).toMatch(/copy values/);
+  });
+
   it('a break without a migration: refused with the list of what is missing', async () => {
     const result = await plan('v2-no-migration/material3');
     expect(result.decision).toBe('update');
@@ -441,6 +492,7 @@ describe('plan_library_update', () => {
     expect(result.validation.valid).toBe(false);
     expect(result.validation.errors.length).toBeGreaterThan(0);
     expect(result.hint).toMatch(/declare `migrations`/);
+    expect(result.hint).toMatch(/remove-role or set-role/);
   });
 
   it('remove-field loses the value: the loss comes with the annotation and the hint asks for confirmation', async () => {
@@ -600,6 +652,15 @@ describe('propose_changes with the package folder', () => {
         ),
       ),
     ).toBe(true);
+  });
+
+  it('update_specialization with a copy-field step goes in a proposal and copies the value', async () => {
+    const result = await propose(mcp, 'screens', [
+      { op: 'update_specialization', file: 'v2-copy/material3' },
+    ]);
+    expect(result.proposed).toBe(true);
+    expect(result.summary[0]).toMatch(/migration in 1 step, 1 value changed/);
+    expect(result.summary[0]).not.toMatch(/lost/);
   });
 
   it('the loss appears in the operation description', async () => {

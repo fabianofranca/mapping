@@ -32,26 +32,29 @@
  *   the root uses its `max`): a `fill` child on the cross axis (or in `none`) contributes the
  *   smaller of the limit and what it would hug inside itself (text wrapped at the limit, a frame
  *   measured with the limit, path = `viewBox`, the rest 0) and `"N%"` with the limit × N / 100;
- *   with no known limit they are 0. Then the result becomes the frame's size and `fill`/`%` are
- *   resolved against it (the text is measured at that width). Only `fill` on the main axis of a
- *   `hug` warns ("fill inside hug becomes 0"), because there the result really is 0. Text measured
- *   with maximum width 0 warns `text measured with width 0: <name>`. `hug` text does not wrap.
+ *   with no known limit they are 0. On the main axis (`row` width, `column` height, no `wrap`),
+ *   each `fill` child asks for its `hug` size clamped by its own limits, and the frame measures
+ *   the smallest size at which `distributeFill` gives each `fill` at least that (a single `fill`:
+ *   the sum), capped by what is left of the available limit after the fixed children, the gaps and
+ *   the padding (#2164). Then the result becomes the frame's size and `fill`/`%` are resolved
+ *   against it (the text is measured at that width). Text measured with maximum width 0 warns
+ *   `text measured with width 0: <name>`. `hug` text does not wrap.
  * - Anchors (`none` parent): `left`+`right` (or `top`+`bottom`) stretch the child between them,
  *   even if it has a fixed size (like Figma's constraints).
  * - `lineHeight` is handed to the `TextMeasurer` already in px.
  * - A `slot` node with `options.slotContent` (size of the already arranged children plus the
  *   slot's padding, coming from `layout.ts`): `hug` takes the axis's `slotContent`; `fill` (or
- *   anchors on both sides) with the parent being measured (`hug`) also does, without the "fill
- *   inside hug" warning. With the parent already measured, `fill` divides what is left, which is
- *   then the `slotContent` itself. Without `slotContent` nothing changes (the slot is 0 when
- *   measuring). `measureComponent` measures only the root's plan.
+ *   anchors on both sides) with the parent being measured (`hug`) also does. With the parent
+ *   already measured, `fill` divides what is left, which is then the `slotContent` itself.
+ *   Without `slotContent` nothing changes (the slot is 0 when measuring). `measureComponent`
+ *   measures only the root's plan.
  * - `slotContent` is either that size (the only slot, as before) or a map by slot id (`slotKey`,
  *   the empty key for a slot without `id`): the slots in the map, and those in `filledSlots`, hold
  *   child markings. A slot with a `fallback` (the default content, decision 3 of #1080) and no child
  *   draws it in its box, at the slot's position, as a sibling node right after the slot node (a
  *   `none` frame that holds the `fallback`, instantiated on its own), and its `hug` is the
- *   fallback's measure on that axis (`fill` and `hug` as the slot's box says, never "fill inside hug
- *   becomes 0"). With children (or in `filledSlots`) the fallback is neither measured nor drawn.
+ *   fallback's measure on that axis (`fill` and `hug` as the slot's box says). With children (or in
+ *   `filledSlots`) the fallback is neither measured nor drawn.
  */
 import type {
   Anchors,
@@ -451,6 +454,7 @@ function clipLines(
   font: MeasureFont,
   widthOf: (text: string) => number,
   maxWidth: number | undefined,
+  slack: number,
 ): string[] {
   const limit = font.maxLines;
   const cut = limit !== undefined && lines.length > limit;
@@ -458,7 +462,7 @@ function clipLines(
   if (font.ellipsis !== true) return kept;
   const last = kept.length - 1;
   return kept.map((line, i) => {
-    const tooWide = maxWidth !== undefined && widthOf(line) > maxWidth + WRAP_SLACK;
+    const tooWide = maxWidth !== undefined && widthOf(line) > maxWidth + slack;
     return (cut && i === last) || tooWide ? withEllipsis(line, widthOf, maxWidth) : line;
   });
 }
@@ -466,8 +470,9 @@ function clipLines(
 /**
  * Wraps, cuts and measures a text with any width function (`widthOf`): `maxWidth` wraps by
  * words (a word wider than the width stays alone on its line), `wrap: none` is one line per
- * paragraph, `maxLines` cuts and `ellipsis` adds the `…`. It is the basis of the approximate
- * measurer and of the MCP server's real-font measurer.
+ * paragraph, `maxLines` cuts and `ellipsis` adds the `…`, on a line that exceeds the width by more
+ * than `ellipsisSlack`. It is the basis of the approximate measurer and of the MCP server's real-font
+ * measurer.
  */
 export function measureLines(
   text: string,
@@ -475,6 +480,7 @@ export function measureLines(
   maxWidth: number | undefined,
   widthOf: (value: string) => number,
   extents: Pick<CapMetrics, 'ascent' | 'descent'> = approximateExtents(font.size),
+  ellipsisSlack: number = WRAP_SLACK,
 ): TextMetrics {
   const breaks = maxWidth !== undefined && font.wrap !== 'none';
   const raw = text
@@ -482,7 +488,7 @@ export function measureLines(
     .flatMap((paragraph) =>
       breaks ? wrapWords(paragraph, widthOf, maxWidth) : [paragraph],
     );
-  const lines = clipLines(raw, font, widthOf, maxWidth);
+  const lines = clipLines(raw, font, widthOf, maxWidth, ellipsisSlack);
   const widest = lines.reduce((max, line) => Math.max(max, widthOf(line)), 0);
   const count = Math.max(1, lines.length);
   return {
@@ -2036,12 +2042,9 @@ function createEngine(
     tolerance: number,
     weights: readonly number[] = [],
   ): number[] => {
-    const fills = sizes.filter((s) => s === 'fill').length;
     const fixed = sizes.reduce<number>((sum, s) => sum + (s === 'fill' ? 0 : s), 0);
     let free = 0;
-    if (content === null) {
-      if (fills > 0) warn('engine.fillInHug');
-    } else {
+    if (content !== null) {
       const remaining = content - fixed - layout.gap * Math.max(0, sizes.length - 1);
       if (remaining < -tolerance)
         warnShort('engine.contentTooBig', nodeName(frame), -remaining);
@@ -2103,6 +2106,85 @@ function createEngine(
     return sizes.map((s, i) => (shrinkable[i] === true ? (s as number) * (1 - cut) : s));
   };
 
+  /** Are the `fill` shares at `free` each at least what that `fill` asks for? */
+  const fillsFit = (
+    limits: readonly SizeLimit[],
+    weights: readonly number[],
+    asks: readonly number[],
+    free: number,
+  ): boolean =>
+    distributeFill(limits, free, weights).every(
+      (size, i) => size >= (asks[i] ?? 0) - FLEX_EPS,
+    );
+
+  /**
+   * The smallest main size of the `fill`s at which `distributeFill` gives each one at least what it
+   * asks for (the intrinsic main size of CSS Flexbox, §9.9.1; decision 3 of #2164). A single `fill`
+   * is its own ask; with several, the split is monotonic, so a search over it finds the size.
+   */
+  const fillContent = (
+    limits: readonly SizeLimit[],
+    weights: readonly number[],
+    asks: readonly number[],
+  ): number => {
+    const floor = asks.reduce((sum, ask) => sum + ask, 0);
+    if (asks.length < 2 || fillsFit(limits, weights, asks, floor)) return floor;
+    const total = weights.reduce((sum, w) => sum + w, 0);
+    let high = Math.max(
+      floor,
+      ...asks.map((ask, i) => (ask * total) / (weights[i] ?? 1)),
+    );
+    for (let n = 0; n < 32 && !fillsFit(limits, weights, asks, high); n++) high *= 2;
+    let low = floor;
+    for (let n = 0; n < 48; n++) {
+      const mid = (low + high) / 2;
+      if (fillsFit(limits, weights, asks, mid)) high = mid;
+      else low = mid;
+    }
+    const snapped = Math.round(high * 1e6) / 1e6;
+    return fillsFit(limits, weights, asks, snapped) ? snapped : high;
+  };
+
+  /**
+   * Measuring pass on the main axis of a `hug` frame (decisions 2 to 4 of #2164): each `fill` asks
+   * for what it would hug, clamped by its limits; the `fill`s together get the smallest size that
+   * gives each one its ask, capped by what is left of the available limit after the fixed
+   * children and the gaps. The second pass divides what is left, as always.
+   */
+  const measureMain = (
+    layout: FrameLayout,
+    kids: readonly Kid[],
+    axis: Axis,
+    space: AxisSpace,
+    others: readonly number[] | null,
+    sizes: readonly (number | 'fill')[],
+    limits: readonly SizeLimit[],
+  ): number[] => {
+    const fillAt = sizes.flatMap((s, i) => (s === 'fill' ? [i] : []));
+    if (fillAt.length === 0) return sizes.map((s) => s as number);
+    const fixed = sizes.reduce<number>((sum, s) => sum + (s === 'fill' ? 0 : s), 0);
+    const left =
+      space.bound === null
+        ? null
+        : Math.max(0, space.bound - fixed - layout.gap * Math.max(0, sizes.length - 1));
+    const fillLimits = fillAt.map((i) => limits[i] ?? NO_SIZE_LIMIT);
+    const weights = fillAt.map((i) => weightOf((kids[i] as Kid).node));
+    const asks = fillAt.map((i) =>
+      clampTo(
+        limits[i] ?? NO_SIZE_LIMIT,
+        Math.max(0, hugSize((kids[i] as Kid).node, axis, others?.[i], left)),
+      ),
+    );
+    const wanted = fillContent(fillLimits, weights, asks);
+    const shares = distributeFill(
+      fillLimits,
+      left === null ? wanted : Math.min(wanted, left),
+      weights,
+    );
+    let next = 0;
+    return sizes.map((s) => (s === 'fill' ? (shares[next++] ?? 0) : s));
+  };
+
   /** Children's sizes on an axis; null `space.content` = the parent is being measured (hug). */
   const resolveAxis = (
     frame: FrameTemplate,
@@ -2118,6 +2200,8 @@ function createEngine(
       return size === 'fill' ? size : clampTo(limits[i] ?? NO_SIZE_LIMIT, size);
     });
     const tolerance = kids.some((kid) => kid.node.type === 'text') ? TEXT_TOLERANCE : EPS;
+    if (layout.main === axis && space.content === null)
+      return measureMain(layout, kids, axis, space, others, sizes, limits);
     if (layout.main === axis) {
       const fitted =
         axis === 'w' && space.content !== null

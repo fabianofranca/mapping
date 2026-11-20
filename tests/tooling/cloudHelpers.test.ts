@@ -551,6 +551,7 @@ describe('scripts/testing/ listed in the repository', () => {
         'fx.mjs',
         'gsub-font.mjs',
         'herdada.mjs',
+        'hug-fill.mjs',
         'justificado.mjs',
         'large-project.mjs',
         'let.mjs',

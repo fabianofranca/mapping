@@ -10,6 +10,8 @@ import {
   instantiate,
   type TextMeasurer,
 } from '../../../src/model/components/instantiate';
+import { parseComponent } from '../../../src/model/components/parseComponent';
+import { FIT_COMPONENTS, LONG_LABEL } from '../fitFixtures';
 import {
   fitComponentSize,
   followedAxes,
@@ -255,5 +257,32 @@ describe('fitComponentSize checks the drawing (FM2, decision 5 of #2089)', () =>
       auto: { width: false },
     });
     expect(fitted?.width).toBe(100);
+  });
+});
+
+describe('the menu item: a hug width and a `fill` label (decision 6 of #2164)', () => {
+  const parsed = parseComponent(FIT_COMPONENTS['menu-item']);
+  if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+  const menuItem = parsed.component;
+  const options = { measure: approximateMeasurer };
+
+  it('resolveSizing: the width is hug and the height is the size', () => {
+    const r = resolveSizing(menuItem, {});
+    expect([r.width.spec, r.height.spec]).toEqual(['hug', 40]);
+  });
+
+  it('a short label gets the minimum, a medium one its content and a long one the maximum', () => {
+    const fitted = (label: string) => fitComponentSize(menuItem, { label }, options);
+    expect(fitted('Ok')).toMatchObject({ width: 96, height: 40, messages: [] });
+    expect(fitted('Settings')).toMatchObject({ width: 118, height: 40, messages: [] });
+    expect(fitted(LONG_LABEL)).toMatchObject({ width: 136, height: 40, messages: [] });
+  });
+
+  it('the fitted size draws without a "content larger than the box" message', () => {
+    for (const label of ['Ok', 'Settings', LONG_LABEL]) {
+      const size = fitComponentSize(menuItem, { label }, options)!;
+      const drawn = instantiate(menuItem, { label }, { x: 0, y: 0, ...size }, options);
+      expect(drawn.messages).toEqual([]);
+    }
   });
 });
