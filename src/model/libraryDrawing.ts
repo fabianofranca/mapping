@@ -1,4 +1,10 @@
-import type { ComponentFile, Direction, FieldValues } from './components/componentFormat';
+import type {
+  ComponentFile,
+  Direction,
+  FieldValues,
+  ResolvedComponentField,
+} from './components/componentFormat';
+import { attachResolvedComponents, resolvedFields } from './components/nesting';
 import { type Box, approximateMeasurer, instantiate } from './components/instantiate';
 import { isDirectionSensitive } from './components/direction';
 import { type Library, type TextFile, loadLibrary } from './components/library';
@@ -464,9 +470,34 @@ export function withoutNodePrefixMessage(message: ModelMessage): ModelMessage {
   return text === message.text ? message : rawMessage(text);
 }
 
+/**
+ * The valid components with the inner ones their `component` nodes draw (`resolvedComponents`,
+ * decision 8 of #2093), by resolved path: level 3 draws a composed component as the app does.
+ */
+function nestedComponents(ctx: DrawingContext): ReadonlyMap<string, ComponentFile> {
+  const byType = new Map<string, ComponentFile>();
+  const paths = new Map<string, string>();
+  const fields = new Map<string, ResolvedComponentField[]>();
+  for (const layer of ctx.spec.layers)
+    for (const type of layer.annotationTypes) {
+      if (type.component === undefined) continue;
+      const path = ctx.resolve(type.component);
+      const component = ctx.components.get(path);
+      if (component === undefined) continue;
+      byType.set(type.id, component);
+      paths.set(type.id, path);
+      fields.set(type.id, resolvedFields(type.fields));
+    }
+  const attached = attachResolvedComponents(byType, (id) => fields.get(id));
+  const out = new Map(ctx.components);
+  for (const [id, component] of attached) out.set(paths.get(id) as string, component);
+  return out;
+}
+
 export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
   const { spec, specPath } = ctx;
   const out: LibraryIssue[] = [];
+  const nested = nestedComponents(ctx);
   const modes = drawingModes(spec);
   let built: { library?: Library; reason?: string } | undefined;
   const library = (): { library?: Library; reason?: string } => {
@@ -492,7 +523,7 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
       const basePath = `layers[${li}].annotationTypes[${ti}]`;
       if (type.component === undefined) return;
       const componentPath = ctx.resolve(type.component);
-      const loaded = ctx.components.get(componentPath);
+      const loaded = nested.get(componentPath);
       if (loaded === undefined) return;
       const component =
         ctx.icons === undefined ? loaded : { ...loaded, resolvedIcons: ctx.icons };

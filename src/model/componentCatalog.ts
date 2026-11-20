@@ -2,6 +2,7 @@ import { componentSlots } from './components/slots';
 import type { ComponentFile } from './components/componentFormat';
 import { parseIconsText, type IconSet } from './components/icons';
 import { resolvePathChecked } from './components/library';
+import { attachResolvedComponents, resolvedFields } from './components/nesting';
 import { parseComponentText } from './components/parseComponent';
 import { resolveTokens, type HostFonts, type ResolvedTokens } from './components/tokens';
 import { effectiveDensity, unitsToPixels } from './density';
@@ -229,6 +230,7 @@ export function loadSpecComponents(
         ...(resolvedIcons === undefined ? {} : { resolvedIcons }),
       });
     }
+    nestComponents(spec, byType);
   }
   return {
     specId: spec.id,
@@ -237,6 +239,23 @@ export function loadSpecComponents(
     problems: problems.texts,
     problemMessages: problems.messages,
   };
+}
+
+/**
+ * Attaches to each component the inner components its `component` nodes draw (`resolvedComponents`,
+ * decision 8 of #2093), each with its tokens and icons. Every file of the specialization is read in
+ * one go, so a change in an inner file gives the outer component a new identity.
+ */
+function nestComponents(spec: Spec, byType: Map<string, ComponentFile>): void {
+  const fields = new Map(
+    spec.layers.flatMap((layer) =>
+      layer.annotationTypes.map(
+        (type) => [type.id, resolvedFields(type.fields)] as const,
+      ),
+    ),
+  );
+  for (const [id, component] of attachResolvedComponents(byType, (id) => fields.get(id)))
+    byType.set(id, component);
 }
 
 export interface MarkingComponent {

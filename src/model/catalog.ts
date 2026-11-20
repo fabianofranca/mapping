@@ -1,6 +1,11 @@
 import { hasSlotComponent } from './componentCatalog';
 import { issueParts, modelMessage, type ModelMessage } from './modelMessage';
-import type { ComponentFile, FieldValues } from './components/componentFormat';
+import type {
+  ComponentFile,
+  FieldValues,
+  ResolvedComponentField,
+} from './components/componentFormat';
+import { attachResolvedComponents, resolvedFields } from './components/nesting';
 import { type TextMeasurer, instantiate } from './components/instantiate';
 import { type Library, loadLibrary, resolvePath } from './components/library';
 import { screenFromSource } from './components/origin';
@@ -324,7 +329,7 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
     ...(resolvedIcons === undefined ? {} : { resolvedIcons }),
   });
 
-  const layers: CatalogLayer[] = spec.layers.map((layer) => ({
+  const built: CatalogLayer[] = spec.layers.map((layer) => ({
     id: layer.id,
     name: layer.name,
     color: layer.color,
@@ -388,7 +393,31 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
       };
     }),
   }));
-  return { spec, report, layers, library };
+  return { spec, report, layers: withResolvedComponents(built), library };
+}
+
+/**
+ * The layers with each component carrying the inner components its `component` nodes draw
+ * (`resolvedComponents`, decision 8 of #2093); the Gallery and the Playground draw composed components.
+ */
+function withResolvedComponents(layers: CatalogLayer[]): CatalogLayer[] {
+  const components = new Map<string, ComponentFile>();
+  const fields = new Map<string, ResolvedComponentField[]>();
+  for (const layer of layers)
+    for (const entry of layer.entries) {
+      if (entry.component === null) continue;
+      components.set(entry.type.id, entry.component);
+      fields.set(entry.type.id, resolvedFields(entry.type.fields));
+    }
+  const attached = attachResolvedComponents(components, (id) => fields.get(id));
+  return layers.map((layer) => ({
+    ...layer,
+    entries: layer.entries.map((entry) =>
+      entry.component === null
+        ? entry
+        : { ...entry, component: attached.get(entry.type.id) ?? entry.component },
+    ),
+  }));
 }
 
 /** The entry of type `typeId` (in any layer), or `undefined`. */

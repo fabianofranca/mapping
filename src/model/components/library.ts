@@ -7,6 +7,7 @@
  * `showDirectoryPicker`) become the same `{ path, text }` list before reaching here.
  */
 import type { ComponentFile, FieldValue } from './componentFormat';
+import { attachResolvedComponents, resolvedFields } from './nesting';
 import { componentSlots } from './slots';
 import {
   type FieldSource,
@@ -420,20 +421,32 @@ export function withHostTokens(
 ): Library {
   const resolvedTokens = resolveTokens(library.tokens, fonts, mode);
   const resolvedIcons = library.icons;
+  const themed = (type: TypeDef): TypeDef =>
+    type.component === undefined
+      ? type
+      : {
+          ...type,
+          component: {
+            ...type.component,
+            resolvedTokens,
+            ...(resolvedIcons === undefined ? {} : { resolvedIcons }),
+          },
+        };
+  const types = library.types.map(themed);
+  // The inner components of the `component` nodes carry the same tokens and icons (decision 8 of #2093).
+  const components = new Map(
+    types.flatMap((type) =>
+      type.component === undefined ? [] : [[type.id, type.component] as const],
+    ),
+  );
+  const fieldsOf = new Map(types.map((type) => [type.id, resolvedFields(type.fields)]));
+  const attached = attachResolvedComponents(components, (id) => fieldsOf.get(id));
   return {
     ...library,
-    types: library.types.map((type) =>
-      type.component === undefined
-        ? type
-        : {
-            ...type,
-            component: {
-              ...type.component,
-              resolvedTokens,
-              ...(resolvedIcons === undefined ? {} : { resolvedIcons }),
-            },
-          },
-    ),
+    types: types.map((type) => {
+      const component = attached.get(type.id);
+      return component === undefined ? type : { ...type, component };
+    }),
   };
 }
 

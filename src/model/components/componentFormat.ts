@@ -767,6 +767,27 @@ export interface ComponentFile {
   >;
   /** Icon set of the specialization (`icons`), set by the catalog; never comes from the file. */
   readonly resolvedIcons?: IconSet;
+  /**
+   * The components that its `component` nodes draw (type id → the inner component and its fields),
+   * set by the catalog like `resolvedIcons`; the parser refuses the key in the file. A type in a
+   * nesting cycle has no entry. See `nesting.ts` (`attachResolvedComponents`).
+   */
+  readonly resolvedComponents?: Readonly<Record<string, ResolvedComponent>>;
+}
+
+/** What a `component` node needs to know about a field of the inner type (`values` fills it). */
+export interface ResolvedComponentField {
+  readonly key: string;
+  readonly type: 'string' | 'number' | 'date' | 'enum' | 'table' | 'ref';
+  readonly required: boolean;
+  /** The field's `default`: what the inner drawing gets when the node's `values` does not give it. */
+  readonly default?: FieldValue;
+}
+
+/** The inner component of a `component` node (with its own `resolvedComponents`) and its type's fields. */
+export interface ResolvedComponent {
+  readonly component: ComponentFile;
+  readonly fields: readonly ResolvedComponentField[];
 }
 
 /** How the specialization's type references the component (new key, spec formatVersion 4). */
