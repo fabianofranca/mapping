@@ -1,4 +1,4 @@
-# Preview, density and free space — [Não lançado] (épico `epic/density-free-space-preview`, PR #2384, MCP 0.50.2, schema v22)
+# Preview, density and free space — 2026-11-20 (épico `epic/density-free-space-preview`, PR #2384, MCP 0.50.2, schema v22)
 
 ## Corrigido
 
