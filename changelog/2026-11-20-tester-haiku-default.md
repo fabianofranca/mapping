@@ -1,4 +1,4 @@
-# Tester runs on Haiku medium by default — [Não lançado] (épico `epic/tester-haiku-default`, PR #0, MCP unchanged, schema v21 unchanged)
+# Tester runs on Haiku medium by default — 2026-11-20 (épico `epic/tester-haiku-default`, PR #2360, MCP unchanged, schema v21 unchanged)
 
 ## Alterado
 

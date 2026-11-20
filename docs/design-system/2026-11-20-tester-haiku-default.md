@@ -1,4 +1,4 @@
-# Tester runs on Haiku medium by default — [Não lançado] (épico `epic/tester-haiku-default`)
+# Tester runs on Haiku medium by default — 2026-11-20 (épico `epic/tester-haiku-default`)
 
 ## Pendências
 
