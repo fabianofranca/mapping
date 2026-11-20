@@ -1,4 +1,4 @@
-# A variants case no longer inherits base params its signature sheet lacks — [Não lançado] (épico `epic/case-inherited-params`, PR #2341, MCP 0.48.2, schema v22)
+# A variants case no longer inherits base params its signature sheet lacks — [Não lançado] (épico `epic/case-inherited-params`, PR #2342, MCP 0.48.2, schema v22)
 
 ## Alterado
 
