@@ -3,9 +3,19 @@
  * by more than 0.5 px. The sum of the word widths and the width measured from the DOM differ
  * at the floating-point tip; without the slack the last word fell to the next line by a
  * fraction of a pixel. It is the only constant: the model (`measureLines`), the measurer and the
- * Konva drawing (app) and the MCP server drawing all read this one.
+ * Konva drawing (app) and the MCP server drawing all read this one (the server's `…` cut forgives
+ * more: `SERVER_ELLIPSIS_SLACK`, below).
  */
 export const WRAP_SLACK = 0.5;
+
+/**
+ * The overflow (px) that the MCP server's measurer forgives before it cuts an `ellipsis` text
+ * with the `…`. Its embedded font is not the app's system font: a line that the app draws whole in a
+ * box (a `fill` label of a `hug` chip, whose width the app measured a pixel or two narrower) comes out
+ * a pixel wider in the server, and cutting it to `…` shows a defect that the app does not have. The
+ * model and the app keep `WRAP_SLACK` alone.
+ */
+export const SERVER_ELLIPSIS_SLACK = 1.5;
 
 /** Vertical reach (px) of the horizontal clip of a cut text: well beyond any text. */
 export const CUT_REACH = 10000;
