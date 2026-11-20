@@ -452,9 +452,74 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'panel-values',
   },
+  {
+    term: 'esperando entrega',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'começa cedo',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'cedo',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'entrega',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'sincronização',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'formato=',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'mesclada',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'fora da fila',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
   // script-output
   {
     term: 'merge pedido ao dono:',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'esperando merge para testar:',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'pode sincronizar:',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'espera',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'para testar',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'espera merge de',
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'script-output',
   },
@@ -3336,9 +3401,9 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
   },
   {
     path: '.claude/skills/implementar-fila/painel/painel.py',
-    pattern: /v\.strip\(\) != "não"/,
+    pattern: /v\.strip\(\) != "não"|v == "não"|the set \(empty for `não`\)/,
     reason:
-      'the ficha value "não" of mcp= and schema= (no MCP or schema change), the frozen panel value the queue tests write',
+      'the ficha value "não" of mcp=, schema= and formato= (no MCP, schema or format change), the frozen panel value the queue tests write',
   },
   {
     path: '.claude/skills/implementar-fila/painel/painel.py',

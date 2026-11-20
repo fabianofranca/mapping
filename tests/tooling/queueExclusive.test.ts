@@ -34,7 +34,13 @@ function slots(): string {
 }
 
 function ficha(dep: string, toca: string, fases = 'FM1:#1:high'): string {
-  const parts = [`dep=${dep}`, 'nivel=impact: low', 'mcp=não', 'schema=não'];
+  const parts = [
+    `dep=${dep}`,
+    'nivel=impact: low',
+    'mcp=não',
+    'schema=não',
+    'formato=não',
+  ];
   if (fases) parts.push(`fases=${fases}`);
   if (toca) parts.push(`toca=${toca}`);
   return parts.join(' | ');
