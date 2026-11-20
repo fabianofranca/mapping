@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Stage #2165: canary A (retest on Haiku) was promoted and canary C (tester on Haiku) is tried.
+// Stage #2165: canary A (retest on Haiku) was promoted. #2354: canary C (tester on Haiku) was promoted too.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -13,10 +13,8 @@ const CANARIES = between(
   '**Child that waits for the coordinator**',
 );
 const PAINEL = '.claude/skills/implementar-fila/painel/painel.py';
-const ADD_C =
-  'canario <folder> add C papel=testador de="Sonnet medium" modelo=Haiku esforco=medium n=12 volta=2';
 
-describe('implementar-fila: retest on Haiku, canary C on the tester', () => {
+describe('implementar-fila: retest and tester on Haiku, canaries A and C promoted', () => {
   it('creates every retest on Haiku with no `usar`, checks the model and falls back to Sonnet', () => {
     expect(SKILL).not.toContain('usar reteste');
     expect(SKILL).not.toContain('canario add A');
@@ -28,25 +26,45 @@ describe('implementar-fila: retest on Haiku, canary C on the tester', () => {
     }
   });
 
-  it('adds C when missing, at the start of a queue and on a resume; B holds for the phase, C for the tester', () => {
-    expect(CANARIES).toContain(ADD_C);
-    expect(CANARIES).toContain('canary B holds for the phase, canary C for the tester');
-    expect(CANARIES).toContain('canario end C motivo="create_session recusou Haiku:');
-    for (const s of ['## 2. Queue', '## Session switch']) {
-      expect(section(SKILL, s), s).toContain('canary `C`');
+  it('creates every tester on Haiku with no `usar`; C is promoted, never added again (#2354)', () => {
+    expect(SKILL).not.toContain('canario <folder> add C');
+    expect(SKILL).not.toContain("usar testador '#n'");
+    expect(CANARIES).toContain('canary B holds for the phase');
+    expect(CANARIES).toContain('canary C (tester, #2354) were promoted');
+    for (const t of [
+      'the owner promoted C on 2026-11-20 (#2354)',
+      '`pode promover`',
+      'is not added again',
+      '`canario end C motivo="promoted"`',
+      'Every tester (step 3) is created with the Haiku id',
+      '`claude-haiku-5-5`',
+      "at the Tester column's effort, with no `canario usar`",
+      'creates the tester on Sonnet medium',
+    ]) {
+      expect(CANARIES, t).toContain(t);
     }
+    expect(CANARIES).not.toContain('canario=C');
   });
 
-  it('runs `usar testador` before the tester `create_session` that registers `kind=testador`', () => {
-    const block = between(STAGE, '3. **Tester.**', '4. **Fix**');
-    const usar = block.indexOf('canario <folder> usar testador');
-    expect(usar).toBeGreaterThan(-1);
-    expect(block.indexOf('kind=testador')).toBeGreaterThan(usar);
-    expect(block).toContain('canario=C');
-    const cmd = SKILL.split('\n').find((l) =>
-      l.startsWith('painel.py canario <folder> usar'),
+  it('the default tester model is Haiku medium in the queue skill, the argument rules and PROCESS.md', () => {
+    expect(section(SKILL, '## Arguments')).toContain(
+      "every tester and retest on Haiku at the Tester column's effort (medium; #2165 and #2354)",
     );
-    expect(cmd).toContain('testador');
+    expect(section(SKILL, '## 2. Queue')).toContain('canary `C`');
+    expect(section(SKILL, '## 2. Queue')).not.toContain('add canary `C`');
+    expect(section(SKILL, '## Session switch')).toContain(
+      'canary `C` was promoted (#2354) and is not written again',
+    );
+    const block = between(STAGE, '3. **Tester.**', '4. **Fix**');
+    expect(block).not.toContain('canario <folder> usar');
+    expect(block).toContain('Create each tester on `claude-haiku-5-5`');
+    expect(block).toContain('kind=testador');
+    expect(block).not.toContain('canario=C');
+    expect(STAGE).toContain('Tester Haiku medium, or "nenhum"');
+    expect(STAGE).not.toContain('Tester Sonnet medium');
+    expect(readFileSync('docs/PROCESS.md', 'utf8')).toContain(
+      'the Tester column (default Haiku, medium)',
+    );
   });
 
   it('the `canario` help and the painel.py docstring name canaries B and C and list `testador` in `usar`', () => {
