@@ -118,7 +118,7 @@ import {
   parseSizeSpec,
 } from './layoutValues';
 import { extendProvided, providingSlot } from './provided';
-import { resolveSizing } from './sizing';
+import { resolveSizing } from './sizingResolve';
 import { slotKey } from './slots';
 import { anchorFieldValues, type InstanceAnchor } from './anchor';
 import { ownDirection, resolveDirections } from './direction';

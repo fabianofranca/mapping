@@ -6,75 +6,18 @@
  * `invalid value in sizing.<axis>`.
  * Pure functions, no DOM.
  */
-import { templateMessage } from '../messages';
 import type { ModelMessage } from '../modelMessage';
-import type {
-  ComponentFile,
-  Expr,
-  FieldValues,
-  InstanceSizeSpec,
-  IntrinsicSize,
-} from './componentFormat';
+import type { ComponentFile, FieldValues, IntrinsicSize } from './componentFormat';
 import { MIN_STORED_MARKING_SIZE } from '../geometry';
 import { evaluate } from './expressions';
-import { type InstantiateOptions, instantiate, measureComponent } from './instantiate';
 import {
-  describeValue,
-  intrinsicModeOf,
-  isIntrinsicSize,
-  parseSizeSpec,
-} from './layoutValues';
-
-export type SizingAxis = 'width' | 'height';
-
-/** Where the axis value came from: the `size` (no `sizing`, or an invalid value), the literal or the expression. */
-export type SizingSource = 'size' | 'literal' | 'expression';
-
-export interface ResolvedAxis {
-  readonly spec: InstanceSizeSpec;
-  readonly source: SizingSource;
-}
-
-export interface ResolvedSizing {
-  readonly width: ResolvedAxis;
-  readonly height: ResolvedAxis;
-  /** One warning per axis with an invalid value, in the order `width`, `height`. */
-  readonly messages: readonly ModelMessage[];
-}
-
-function plainSpec(value: unknown): InstanceSizeSpec | undefined {
-  const spec = parseSizeSpec(value);
-  // `sizing` has no percentage (`"50%"`): it is an invalid value.
-  const known = spec === 'fill' || spec === 'hug' || isIntrinsicSize(spec);
-  return typeof spec === 'string' && !known ? undefined : spec;
-}
-
-/** The component's `sizing`, evaluated with `values`; an axis without `sizing` takes the `size`. */
-export function resolveSizing(
-  component: ComponentFile,
-  values: FieldValues,
-): ResolvedSizing {
-  const messages: ModelMessage[] = [];
-  const axis = (name: SizingAxis): ResolvedAxis => {
-    const raw: Expr<InstanceSizeSpec> | undefined = component.sizing?.[name];
-    const size: ResolvedAxis = { spec: component.size[name], source: 'size' };
-    if (raw === undefined) return size;
-    if (typeof raw !== 'object') return { spec: raw, source: 'literal' };
-    const value = evaluate<unknown>(raw as Expr<unknown>, values, undefined);
-    const spec = plainSpec(value);
-    if (spec !== undefined) return { spec, source: 'expression' };
-    messages.push(
-      templateMessage('engine.invalidValue', {
-        label: `sizing.${name}`,
-        value: describeValue(value),
-      }),
-    );
-    return size;
-  };
-  const width = axis('width');
-  const height = axis('height');
-  return { width, height, messages };
-}
+  type ResolvedAxis,
+  type ResolvedSizing,
+  type SizingAxis,
+  resolveSizing,
+} from './sizingResolve';
+import { type InstantiateOptions, instantiate, measureComponent } from './instantiate';
+import { intrinsicModeOf, isIntrinsicSize } from './layoutValues';
 
 export interface FitOptions {
   readonly base?: { readonly width: number; readonly height: number };
@@ -358,3 +301,11 @@ function grown(
   };
   return { width: axis('width'), height: axis('height') };
 }
+
+export { resolveSizing };
+export type {
+  ResolvedAxis,
+  ResolvedSizing,
+  SizingAxis,
+  SizingSource,
+} from './sizingResolve';
