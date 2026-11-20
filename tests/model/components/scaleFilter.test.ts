@@ -346,6 +346,30 @@ describe('FG5: scale in the scene', () => {
     expect(scaled!.width).toBeGreaterThanOrEqual(plain!.width);
   });
 
+  it('the scales of nested descendants compound in the parent clip box', () => {
+    const tree = (grandchildScale: number) =>
+      root(
+        [
+          root(
+            [
+              bar({
+                scale: grandchildScale,
+                shadow: { color: '#000000', blur: 6 },
+              }),
+            ],
+            { scale: 1.5, width: 'fill', height: 'fill' },
+          ),
+        ],
+        { clip: true },
+      );
+    const small = scene(tree(1)).clipBox;
+    const large = scene(tree(3)).clipBox;
+    expect(small).toBeDefined();
+    expect(large).toBeDefined();
+    // The shadow of the descendant grows by 3, so the clip reaches farther than with scale 1.
+    expect(large!.width).toBeGreaterThan(small!.width);
+  });
+
   it('slot content inside a scaled node is not scaled: the slot box is the unscaled one', () => {
     const tpl = root(
       [{ type: 'slot', id: 'content', width: 80, height: 30, name: 'slot' }],

@@ -132,9 +132,18 @@ function deepExtent(node: SceneNode): Extent {
     } else if (!(child.type === 'frame' && child.clip)) {
       own = maxExtent(own, deepExtent(child));
     }
-    out = maxExtent(out, own);
+    // An enlarging `scale` of the descendant grows all it reaches (its own and what is inside it).
+    out = maxExtent(out, scaledExtent(own, child.scale));
   }
   return out;
+}
+
+/** The extent after an enlarging `scale` (a shrinking one keeps it, which only over-covers). */
+function scaledExtent(e: Extent, scale = 1): Extent {
+  const k = Math.max(1, scale);
+  return k === 1
+    ? e
+    : { left: e.left * k, top: e.top * k, right: e.right * k, bottom: e.bottom * k };
 }
 
 /** Rectangle of the node in the space of the clipping frame; with `rotation`, the box of the rotated rectangle. */
