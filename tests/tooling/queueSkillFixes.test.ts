@@ -28,6 +28,13 @@ describe('implementar-fila: resume without reordering (decision 1)', () => {
     expect(step5).toMatch(/steps 4 to 7 of "2\. Queue"/);
     expect(step5).toContain('Queue changes during the run');
   });
+
+  it("step 5 does not say the `start` both runs and is not redone: the resume's `start` keeps the run's start time (stage #2204, decision 7)", () => {
+    expect(step5).not.toMatch(/`start` of the run are not redone/);
+    expect(step5).toContain("keeps the run's start time");
+    expect(step5).toContain('repeating does not change the start of the run');
+    expect(step5).toContain("the run's first `start`");
+  });
 });
 
 describe('implementar-fila: successor message (decision 2, finding 3 of #1789)', () => {
