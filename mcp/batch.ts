@@ -1578,12 +1578,10 @@ class Batch {
         }
         if (op.floating !== undefined) {
           const minSize = componentMinSize(project, this.catalog, id);
-          project = setMarkingFloating(
-            project,
-            id,
-            op.floating,
-            { ...(minSize ? { minSize } : {}), minSizeOf: this.minSizeOf(project) },
-          );
+          project = setMarkingFloating(project, id, op.floating, {
+            ...(minSize ? { minSize } : {}),
+            minSizeOf: this.minSizeOf(project),
+          });
           changes.push(op.floating ? 'floating' : 'stop being floating');
         }
         if (op.container !== undefined) {
