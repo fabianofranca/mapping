@@ -133,7 +133,7 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 - The Spinner (FG6): an `ellipse` with `startAngle: -90` and `sweepAngle: 216` (60% of the circle, clockwise from the top) with round caps, over a faint full ring; the `size` field picks the box and the stroke width (2, 3 or 5 px). The stroke follows only the arc and `align: "inside"` keeps it where the whole ellipse's would be, with no `dash` computed from the circumference.
 - The same drawing in the app, in the viewer and in the `render_marking` PNG.
 
-**Scripts.** R39 (written in the last phase of the stage).
+**Scripts.** R39 in `docs/TESTING.md` ("Icon fill rule, SVG import and drawing keys"): it copies the package and the SVGs, runs `import_icons` (`dryRun`, for real, `replace` and the refusals), applies the package in a folder project and checks the five components with pixel probes in the app and in the `render_marking` PNG.
 
 ### `examples/libraries/measured/`
 
