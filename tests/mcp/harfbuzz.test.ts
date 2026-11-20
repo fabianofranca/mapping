@@ -96,6 +96,18 @@ describe('HarfBuzz face (mcp/image/harfbuzz.ts)', () => {
     expect(loadFace(woff2)).toBeNull();
   });
 
+  it('gives null for a font without an hhea table', async () => {
+    await initShaper();
+    const broken = new Uint8Array(sansBytes);
+    const view = new DataView(broken.buffer);
+    for (let i = 0; i < view.getUint16(4); i++) {
+      const at = 12 + i * 16;
+      if (String.fromCharCode(...broken.subarray(at, at + 4)) === 'hhea')
+        broken[at + 3] = 0x62;
+    }
+    expect(loadFace(broken)).toBeNull();
+  });
+
   it('gives null for bytes that are not a usable font', async () => {
     await initShaper();
     const random = new Uint8Array(4096);

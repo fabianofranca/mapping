@@ -251,13 +251,21 @@ class HarfBuzzFace implements Face {
   }
 }
 
+/** Whether the sfnt's table directory lists every tag (read from the bytes: `Face.referenceTable` never releases the blob it references, which would keep the whole font in the WebAssembly heap). */
+function hasTables(sfnt: Uint8Array, tags: readonly string[]): boolean {
+  const view = new DataView(sfnt.buffer, sfnt.byteOffset, sfnt.byteLength);
+  const count = Math.min(view.getUint16(4), Math.floor((sfnt.length - 12) / 16));
+  const present = new Set<string>();
+  for (let i = 0; i < count; i++) {
+    const at = 12 + i * 16;
+    present.add(String.fromCharCode(...sfnt.subarray(at, at + 4)));
+  }
+  return tags.every((tag) => present.has(tag));
+}
+
 /** A face is usable with `head` and `hhea` tables and at least one code point in its cmap. */
-function usable(face: HbFace): boolean {
-  return (
-    face.referenceTable('head') !== undefined &&
-    face.referenceTable('hhea') !== undefined &&
-    face.collectUnicodes().length > 0
-  );
+function usable(face: HbFace, sfnt: Uint8Array): boolean {
+  return hasTables(sfnt, ['head', 'hhea']) && face.collectUnicodes().length > 0;
 }
 
 /**
@@ -269,5 +277,5 @@ export function loadFace(bytes: Uint8Array): Face | null {
   const sfnt = isWoff(bytes) ? woffToSfnt(bytes) : bytes;
   if (sfnt === null || sfnt.length < 12) return null;
   const face = new HbFace(new Blob(sfnt), 0);
-  return usable(face) ? new HarfBuzzFace(face) : null;
+  return usable(face, sfnt) ? new HarfBuzzFace(face) : null;
 }

@@ -45,6 +45,22 @@ describe('woffToSfnt (mcp/image/woff.ts)', () => {
     expect(woffToSfnt(makeWoff(ttf, { wrongOrigLength: 'cmap' }))).toBeNull();
   });
 
+  it('gives null for an unknown flavor, tags out of order and a table over the directory', () => {
+    const flavor = makeWoff(ttf);
+    new DataView(flavor.buffer).setUint32(4, 0x12345678);
+    expect(woffToSfnt(flavor)).toBeNull();
+
+    const unsorted = makeWoff(ttf);
+    const first = unsorted.slice(44, 48);
+    unsorted.copyWithin(44, 64, 68);
+    unsorted.set(first, 64);
+    expect(woffToSfnt(unsorted)).toBeNull();
+
+    const overlapping = makeWoff(ttf);
+    new DataView(overlapping.buffer).setUint32(44 + 4, 44);
+    expect(woffToSfnt(overlapping)).toBeNull();
+  });
+
   it('gives null for WOFF2, a plain sfnt and other bytes', () => {
     const woff2 = new Uint8Array(64);
     woff2.set([0x77, 0x4f, 0x46, 0x32]); // wOF2

@@ -19,13 +19,30 @@ interface WoffTable {
 
 const align4 = (n: number): number => (n + 3) & ~3;
 
-/** The bytes of one table, inflated when compressed; `null` when the entry does not fit the file or the size is wrong. */
-function readTable(bytes: Uint8Array, view: DataView, at: number): WoffTable | null {
+function compareTags(a: Uint8Array, b: Uint8Array): number {
+  for (let i = 0; i < 4; i++) if (a[i] !== b[i]) return (a[i] ?? 0) - (b[i] ?? 0);
+  return 0;
+}
+
+/** The `flavor` of a TrueType or CFF sfnt (`true` is the old Apple spelling). */
+const FLAVORS = new Set([0x00010000, 0x4f54544f, 0x74727565]);
+
+/**
+ * The bytes of one table, inflated when compressed; `null` when the entry does not fit the file (or lies over the
+ * directory) or the size is wrong. `room` is what the sfnt can still take: it is checked before inflating.
+ */
+function readTable(
+  bytes: Uint8Array,
+  view: DataView,
+  at: number,
+  dataStart: number,
+  room: number,
+): WoffTable | null {
   const offset = view.getUint32(at + 4);
   const compLength = view.getUint32(at + 8);
   const origLength = view.getUint32(at + 12);
-  if (compLength > origLength || origLength > MAX_SFNT_BYTES) return null;
-  if (offset + compLength > bytes.length) return null;
+  if (compLength > origLength || align4(origLength) > room) return null;
+  if (offset < dataStart || offset + compLength > bytes.length) return null;
   const stored = bytes.subarray(offset, offset + compLength);
   let data = stored;
   if (compLength < origLength) {
@@ -46,12 +63,15 @@ function readTables(
   count: number,
 ): WoffTable[] | null {
   const tables: WoffTable[] = [];
-  let total = SFNT_HEADER_BYTES + count * SFNT_ENTRY_BYTES;
+  const dataStart = HEADER_BYTES + count * ENTRY_BYTES;
+  let room = MAX_SFNT_BYTES - SFNT_HEADER_BYTES - count * SFNT_ENTRY_BYTES;
   for (let i = 0; i < count; i++) {
-    const table = readTable(bytes, view, HEADER_BYTES + i * ENTRY_BYTES);
+    const table = readTable(bytes, view, HEADER_BYTES + i * ENTRY_BYTES, dataStart, room);
     if (table === null) return null;
-    total += align4(table.data.length);
-    if (total > MAX_SFNT_BYTES) return null;
+    // The directory is sorted by tag, with no repeats: HarfBuzz searches it in binary.
+    const previous = tables[i - 1];
+    if (previous !== undefined && compareTags(previous.tag, table.tag) >= 0) return null;
+    room -= align4(table.data.length);
     tables.push(table);
   }
   return tables;
@@ -102,6 +122,8 @@ export function woffToSfnt(bytes: Uint8Array): Uint8Array | null {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const count = view.getUint16(12);
   if (count === 0 || HEADER_BYTES + count * ENTRY_BYTES > bytes.length) return null;
+  const flavor = view.getUint32(4);
+  if (!FLAVORS.has(flavor)) return null;
   const tables = readTables(bytes, view, count);
-  return tables === null ? null : buildSfnt(view.getUint32(4), tables);
+  return tables === null ? null : buildSfnt(flavor, tables);
 }
