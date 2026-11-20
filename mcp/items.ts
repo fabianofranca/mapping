@@ -158,7 +158,7 @@ export interface ResolvedItem {
 export const INVALID_REF_HINT =
   'use the reference mapping://<project>/<m|i|a|p>/<code>, the URL only, with the project encoded (e.g. mapping://My%20Project/m/3f2a9c1e); references with the path in parentheses are of the old format: copy again from the app';
 
-const ACCEPTED_FORMATS = [
+export const ACCEPTED_FORMATS = [
   'mapping://project/m/3f2a9c1e',
   'm/3f2a9c1e (with the project given separately)',
   'the full id of the item (with the project given separately)',

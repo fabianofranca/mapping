@@ -129,12 +129,40 @@ function backgroundImage(image: ProjectContainer): LoadedImage {
   };
 }
 
+/**
+ * Bytes of an image file that are not in the project folder (a render preview: the batch's new
+ * images, or the proposal's `images/`); `null` = not given by the preview, the project folder serves.
+ */
+export type ImageSource = (file: string) => Promise<Uint8Array | null>;
+
+/** The image decoded from bytes that the preview gave. */
+async function loadGiven(
+  bytes: Uint8Array,
+  image: ProjectContainer,
+  file: string,
+): Promise<LoadedImage> {
+  assertFileSize(bytes.length);
+  const { format, raster, orientation } = await decodeImage(bytes);
+  return {
+    raster,
+    bytes,
+    format,
+    orientation,
+    file: basename(file),
+    scaleX: raster.width / image.width,
+    scaleY: raster.height / image.height,
+  };
+}
+
 export async function loadImage(
   roots: Roots,
   refs: Refs,
   image: ProjectContainer,
+  source?: ImageSource,
 ): Promise<LoadedImage> {
   if (image.file === null) return backgroundImage(image);
+  const given = source === undefined ? null : await source(image.file);
+  if (given !== null) return loadGiven(given, image, image.file);
   const absolute = await resolveProjectFile(roots, refs.loaded.location.dir, image.file);
   if (absolute === null) {
     throw new ToolError(

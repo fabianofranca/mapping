@@ -34,6 +34,7 @@ export const MCP_ERROR_CODES = [
   'invalid-anchor',
   'invalid-arguments',
   'invalid-base64',
+  'invalid-batch',
   'invalid-image',
   'invalid-image-source',
   'invalid-library',
