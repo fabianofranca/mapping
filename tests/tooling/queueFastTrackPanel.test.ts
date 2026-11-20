@@ -391,6 +391,7 @@ describe('painel.py reentra: a refused row comes back (#2204, decision 3)', () =
     expect(r.phasesTotal).toBe(2);
     expect(r.phasesDone).toBe(0);
     expect(r.step).toBe('reentrou depois da recusa');
+    expect(r.stage).toBe(''); // the refused run's stage does not stay on a fresh row
     expect(r.order).toBe(order);
     expect(json('log').map((e) => e.text)).toContain(
       '#7 reentrou depois da recusa (etapa)',

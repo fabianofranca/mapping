@@ -185,7 +185,7 @@ text is a row `esperando dono` with a `wait` starting with `merge pedido ao dono
 `merge pedido ao dono: #n (PR #p, <hours since the ask>); …` (or `nenhum`), and the row is not in `esperando o coordenador:` nor `atrasadas:`.
 Refused row (stage #2204, decisions 3 to 6): `reentra DIR '#n' kind=<via-rapida|etapa|bug> plan="<ficha>"` (also in `apply`) brings a `recusada` row
 back as a fresh `aguardando` one (any other status is an Erro, code 2): it sets the `kind` and the `plan`, clears `started`, `ended`, `pr`, `child`,
-`childAt`, `wait`, `ciWait`, `ciWaitAt`, `hold` and `phases` (rebuilt from the new ficha, all `todo`), writes `step="reentrou depois da recusa"` and the
+`childAt`, `wait`, `ciWait`, `ciWaitAt`, `hold`, `stage` and `phases` (rebuilt from the new ficha, all `todo`), writes `step="reentrou depois da recusa"` and the
 `log` line `#n reentrou depois da recusa (<kind>)`; the row keeps its `order` and its sessions (the coordinator applies the order again, `reorder`).
 A row that depends on a `recusada` one shows `dep #N recusada` in `vagas:` (`dep #N recusada, #K` with another open dependency; the state stays `dep`), and
 `show` prints `dependem de recusada: #M (#N); …` (or `nenhum`) right after `perguntas ao dono:`: the `aguardando` rows not yet started with a `recusada`
@@ -613,7 +613,7 @@ def cmd_row(a):
 
 
 REENTRA_KINDS = ["via-rapida", "etapa", "bug"]
-REENTRA_CLEARED = ("started", "ended", "pr", "child", "childAt", "wait", "ciWait", "ciWaitAt", "hold", "phases")
+REENTRA_CLEARED = ("stage", "started", "ended", "pr", "child", "childAt", "wait", "ciWait", "ciWaitAt", "hold", "phases")
 
 
 def cmd_reentra(a):
