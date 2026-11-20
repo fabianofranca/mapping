@@ -1,6 +1,6 @@
-# Component composition — [Não lançado] (épico `epic/component-composition`, PR #2292, MCP 0.48.0, schema v22)
+# Component composition — 2026-11-20 (épico `epic/component-composition`, PR #2292, MCP 0.48.0, schema v22)
 
-Component format 4, specialization unchanged, project schema v22 (the number is rechecked against `origin/main` at the closing).
+Component format 4, specialization unchanged, project schema v22.
 
 ## Adicionado
 
