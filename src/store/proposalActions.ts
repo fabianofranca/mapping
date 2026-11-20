@@ -1,6 +1,7 @@
 import {
   addNote as addProposalNote,
   applyAccepted,
+  concludeProposal as concludeProposalOf,
   decide,
   editNote as editProposalNote,
   isTextPackageFile,
@@ -67,6 +68,21 @@ export type NoteResult =
 
 export type RestoreError = 'not-open' | 'stale' | ProposalErrorCode;
 
+/**
+ * "Conclude review": `not-open` (the proposal is already closed) and `incomplete` (something
+ * new to decide or to apply: the review is not complete, for instance after an agent revision).
+ */
+export type ConcludeError = 'not-open' | 'incomplete' | ProposalErrorCode;
+
+export type ConcludeActionResult =
+  | {
+      readonly ok: true;
+      readonly proposal: Proposal;
+      /** The final status written: `applied` (something was applied earlier) or `rejected`. */
+      readonly status: 'applied' | 'rejected';
+    }
+  | { readonly ok: false; readonly error: ConcludeError };
+
 export type ApplyError =
   | 'no-project'
   | 'read-only'
@@ -119,7 +135,7 @@ export type RemoveResult =
 
 /** All the reasons the review actions refuse (for the message to the user). */
 export type ProposalActionError =
-  DecisionError | NoteError | RestoreError | ApplyError | RemoveError;
+  DecisionError | NoteError | RestoreError | ApplyError | RemoveError | ConcludeError;
 
 export interface ProposalActions {
   /** Decides a level (accepts, rejects or clears) resolving the dependencies. */
@@ -163,7 +179,14 @@ export interface ProposalActions {
    */
   applyAccepted(proposalId: string): Promise<ApplyResult>;
   /**
-   * Deletes a closed proposal (withdrawn, superseded or applied) from storage, with the
+   * "Conclude review" (stage #2085): closes an open proposal whose review is complete, as
+   * `applied` (something was applied earlier) or `rejected`. It rereads the file and refuses with
+   * `incomplete` if an agent revision left something new to decide. It does not touch
+   * `mapping.json` and creates no undo entry.
+   */
+  concludeProposal(proposalId: string): Promise<ConcludeActionResult>;
+  /**
+   * Deletes a closed proposal (withdrawn, superseded, applied or rejected) from storage, with the
    * images that were waiting for acceptance. No undo. Its "Apply accepted" entry in the
    * history loses the link (`detachLinks`): the project's undo and redo remain
    * valid, without touching any proposal. The images the application copied to
@@ -668,6 +691,19 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
       ),
 
     applyAccepted: applyAcceptedChanges,
+
+    async concludeProposal(id) {
+      const result = await proposals.mutate<'applied' | 'rejected', ConcludeError>(
+        id,
+        (p) => {
+          const concluded = concludeProposalOf(p);
+          if (!concluded.ok) return { ok: false, error: concluded.reason };
+          return { ok: true, proposal: concluded.proposal, value: concluded.status };
+        },
+      );
+      if (!result.ok) return result;
+      return { ok: true, proposal: result.proposal, status: result.value };
+    },
 
     async removeProposal(id) {
       if (store.readOnly.peek()) return { ok: false, error: 'read-only' };

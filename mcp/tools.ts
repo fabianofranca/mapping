@@ -954,13 +954,15 @@ export function registerTools(
     'list_proposals',
     {
       description:
-        "Lists the project's proposals (open and closed): reference, title, origin, author, date, status, review progress (pending, accepted without being applied, rejected, applied), conflicts and the supersede relation.",
+        "Lists the project's proposals (open and closed): reference, title, origin, author, date, status (`open`, `applied`, `superseded`, `withdrawn` or `rejected`), review progress (pending, accepted without being applied, rejected, applied), conflicts and the supersede relation.",
       inputSchema: {
         project: projectArg,
         status: z
-          .enum(['open', 'applied', 'superseded', 'withdrawn'])
+          .enum(['open', 'applied', 'superseded', 'withdrawn', 'rejected'])
           .optional()
-          .describe('Only the proposals in this status.'),
+          .describe(
+            'Only the proposals in this status. `rejected`: the user rejected every change and concluded the review (closed, nothing applied; to propose again, send a new proposal with `supersedes`).',
+          ),
       },
       annotations: READ_ONLY,
     },
@@ -971,7 +973,7 @@ export function registerTools(
     'get_proposal',
     {
       description:
-        'A proposal: review progress (`progress.complete` = nothing pending or accepted without being applied), summary per level (Project and containers), the changes with the state of each one (pending, accepted, rejected, applied), conflicts (the project changed after the proposal), locked-item warning and the notes. Use it to know whether the review has finished.',
+        'A proposal: review progress (`progress.complete` = nothing pending or accepted without being applied), summary per level (Project and containers), the changes with the state of each one (pending, accepted, rejected, applied), conflicts (the project changed after the proposal), locked-item warning and the notes. Use it to know whether the review has finished. The status `rejected` means the user rejected every change and concluded the review: the proposal is closed and nothing of it was applied (revise_proposal and withdraw_proposal refuse it; send a new proposal with `supersedes`).',
       inputSchema: {
         ref: proposalRefArg,
         project: optionalProjectArg,

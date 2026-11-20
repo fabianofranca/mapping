@@ -167,7 +167,7 @@ export interface ProposalStore {
   /**
    * Checks the folder: proposals new, changed and deleted from outside. The full check
    * (default: focus, return to the page and "Check the folder now") looks at all the proposals; the
-   * cycle one (`full: false`) does not reread the final ones (`applied` and `withdrawn`) already read with a known
+   * cycle one (`full: false`) does not reread the final ones (`applied`, `withdrawn` and `rejected`) already read with a known
    * stamp, but a new folder in `proposals/` is still seen on every cycle.
    */
   scan(options?: ProposalScanOptions): Promise<ProposalScan>;
@@ -405,7 +405,7 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
   };
 
   /**
-   * The final proposals (`applied` and `withdrawn`) already read with a known stamp: the cycle
+   * The final proposals (`applied`, `withdrawn` and `rejected`) already read with a known stamp: the cycle
    * check does not reread them (the MCP does not rewrite an applied proposal). `open` and `superseded` (which still
    * has accepted ones to apply) are left out.
    */
@@ -413,7 +413,7 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
     const skip = new Set<string>();
     for (const [id, entry] of known) {
       const { status } = entry.proposal;
-      if (entry.stamp !== null && (status === 'applied' || status === 'withdrawn'))
+      if (entry.stamp !== null && (status === 'applied' || status === 'withdrawn' || status === 'rejected'))
         skip.add(id);
     }
     return skip;

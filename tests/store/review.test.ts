@@ -1901,3 +1901,119 @@ describe('resume: grouped write (item 35)', () => {
     writes.mockRestore();
   });
 });
+
+describe('conclude review (stage #2085)', () => {
+  const files = { [NEW_IMAGE_PATH]: 'WEBP' };
+
+  it('everything rejected: concludes as rejected, revision + 1, formatVersion kept, mapping.json and undo untouched', async () => {
+    const { proposal } = richScenario();
+    const h = await openHarness({ proposals: [proposal], files });
+    const { review, session, root } = h;
+    review.open('P1');
+    await review.decide({ level: 'proposal', id: null }, 'rejected');
+    expect(review.derived.canConclude.value).toBe(true);
+    const before = await diskProposal(root);
+    const projectText = await root.read('mapping.json');
+    const canUndo = session.store.canUndo.value;
+
+    const result = await review.conclude();
+    expect(result).toMatchObject({ ok: true, status: 'rejected' });
+
+    const after = await diskProposal(root);
+    expect(after.status).toBe('rejected');
+    expect(after.revision).toBe(before.revision + 1);
+    expect(after.formatVersion).toBe(before.formatVersion);
+    expect(after.decisions).toEqual(before.decisions);
+    expect(after.applied).toEqual({});
+    await session.flush();
+    expect(await root.read('mapping.json')).toBe(projectText);
+    expect(session.store.canUndo.value).toBe(canUndo);
+    // The review stays open, view only.
+    expect(review.proposalId.value).toBe('P1');
+    expect(review.derived.proposal.value?.status).toBe('rejected');
+    expect(review.derived.canConclude.value).toBe(false);
+    expect(await review.decide({ level: 'proposal', id: null }, 'accepted')).toEqual({
+      ok: false,
+      error: 'not-open',
+    });
+  });
+
+  it('something applied earlier: concludes as applied', async () => {
+    const { proposal, ids } = richScenario();
+    const h = await openHarness({ proposals: [proposal], files });
+    const { review, root } = h;
+    review.open('P1');
+    await review.decide({ level: 'change', id: ids.name }, 'accepted');
+    expect(await review.apply()).toMatchObject({ ok: true, applied: 1 });
+    // Applying with part of the changes undecided leaves the proposal open.
+    expect((await diskProposal(root)).status).toBe('open');
+    await review.decide({ level: 'proposal', id: null }, 'rejected');
+    expect(review.derived.canConclude.value).toBe(true);
+
+    expect(await review.conclude()).toMatchObject({ ok: true, status: 'applied' });
+    const after = await diskProposal(root);
+    expect(after.status).toBe('applied');
+    expect(Object.keys(after.applied)).toEqual([ids.name]);
+  });
+
+  it('refuses an incomplete review and writes nothing', async () => {
+    const { proposal } = richScenario();
+    const { review, root } = await openHarness({ proposals: [proposal], files });
+    review.open('P1');
+    expect(review.derived.canConclude.value).toBe(false);
+    const before = await diskProposal(root);
+    expect(await review.conclude()).toEqual({ ok: false, error: 'incomplete' });
+    expect(await diskProposal(root)).toEqual(before);
+  });
+
+  it('an agent revision that adds changes between the read and the click makes it refuse', async () => {
+    const { proposal } = richScenario();
+    const { review, root } = await openHarness({ proposals: [proposal], files });
+    review.open('P1');
+    await review.decide({ level: 'proposal', id: null }, 'rejected');
+    expect(review.derived.canConclude.value).toBe(true);
+    // The agent revises: a new change, not decided, in the file.
+    const [first] = proposal.changes;
+    if (!first) throw new Error('no change');
+    const revised: Proposal = {
+      ...proposal,
+      decisions: (await diskProposal(root)).decisions,
+      changes: [...proposal.changes, { ...first, id: 'c99' }],
+      revision: 9,
+    };
+    writeOutside(root, revised);
+
+    expect(await review.conclude()).toEqual({ ok: false, error: 'incomplete' });
+    const after = await diskProposal(root);
+    expect(after.status).toBe('open');
+    expect(after.revision).toBe(9);
+  });
+
+  it('concludes by id from the list, outside the review', async () => {
+    const { proposal } = richScenario();
+    const { review, root } = await openHarness({ proposals: [proposal], files });
+    review.open('P1');
+    await review.decide({ level: 'proposal', id: null }, 'rejected');
+    review.close();
+    expect(await review.concludeProposal('P1')).toMatchObject({
+      ok: true,
+      status: 'rejected',
+    });
+    expect((await diskProposal(root)).status).toBe('rejected');
+    expect(await review.concludeProposal('nope')).toEqual({
+      ok: false,
+      error: 'unknown-proposal',
+    });
+  });
+
+  it('a rejected proposal can be deleted from the list', async () => {
+    const { proposal } = richScenario();
+    const { review, root } = await openHarness({ proposals: [proposal], files });
+    review.open('P1');
+    await review.decide({ level: 'proposal', id: null }, 'rejected');
+    await review.conclude();
+    review.close();
+    expect(await review.removeProposal('P1')).toMatchObject({ ok: true });
+    expect(await root.read('proposals/P1/proposal.json')).toBeNull();
+  });
+});

@@ -12,6 +12,7 @@ import { dirname, join } from 'node:path';
 import { expect } from 'vitest';
 import {
   applyAccepted,
+  concludeProposal,
   decide,
   deserialize,
   parseProposalText,
@@ -131,6 +132,17 @@ export function reviewDecide(
   );
   if (!result.ok) throw new Error(`decision refused: ${result.reason}`);
   return writeProposal(dir, { ...proposal, decisions: result.decisions });
+}
+
+/**
+ * Imitates the app's "Conclude review" (stage #2085): `concludeProposal` over the proposal on disk,
+ * written with `revision + 1`. Returns the written proposal.
+ */
+export function concludeOnDisk(dir: string, id: string): Proposal {
+  const proposal = readProposal(dir, id);
+  const result = concludeProposal(proposal);
+  if (!result.ok) throw new Error(`conclusion refused: ${result.reason}`);
+  return writeProposal(dir, result.proposal);
 }
 
 /** Imitates a user note (the app writes `notes` in the proposal). */

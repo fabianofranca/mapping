@@ -1099,7 +1099,7 @@ export const enUS = {
   'proposal.error.readOnly': 'The project is read-only and cannot take changes.',
   'proposal.error.reviewing': 'Exit the review to delete a proposal.',
   'proposal.error.notRemovable':
-    'This proposal is open: only withdrawn, superseded or applied proposals can be deleted.',
+    'This proposal is open: only withdrawn, superseded, applied or rejected proposals can be deleted.',
   'proposal.error.removeFailed': 'The proposal could not be deleted.',
   'proposal.error.saveFailed':
     'mapping.json could not be saved: nothing was applied and the decisions are unchanged.',

@@ -236,14 +236,17 @@ export const PROPOSAL_FILE = 'proposal.json';
 /**
  * `open`: under review. `applied`: everything decided and the accepted ones applied.
  * `superseded`: replaced by another (the accepted ones can still be applied; the pending ones
- * cannot). `withdrawn`: withdrawn by the agent.
+ * cannot). `withdrawn`: withdrawn by the agent. `rejected`: the review finished with nothing
+ * applied (the person concluded it).
  */
-export type ProposalStatus = 'open' | 'applied' | 'superseded' | 'withdrawn';
+export type ProposalStatus =
+  'open' | 'applied' | 'superseded' | 'withdrawn' | 'rejected';
 export const PROPOSAL_STATUSES: readonly ProposalStatus[] = [
   'open',
   'applied',
   'superseded',
   'withdrawn',
+  'rejected',
 ];
 
 export type ChangeKind = 'create' | 'update' | 'remove';
@@ -965,8 +968,8 @@ export const proposalSchema = z
     createdAt: isoDate,
     baseRevision: z.number().int().min(0),
     supersedes: proposalId.nullable(),
-    status: z.enum(['open', 'applied', 'superseded', 'withdrawn'], {
-      error: 'must be "open", "applied", "superseded" or "withdrawn"',
+    status: z.enum(['open', 'applied', 'superseded', 'withdrawn', 'rejected'], {
+      error: 'must be "open", "applied", "superseded", "withdrawn" or "rejected"',
     }),
     revision: z.number().int().min(0),
     operations: z.array(jsonValue),

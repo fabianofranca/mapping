@@ -13,7 +13,12 @@ import { DecisionMark } from './DecisionMark';
 import { Flag } from './Flag';
 import { ProgressBar } from './ReviewLevels';
 import { reviewBarRef } from './reviewBarRef';
-import { useApplyAccepted, useDecideVisible, useShowProblem } from './useReview';
+import {
+  useApplyAccepted,
+  useConcludeReview,
+  useDecideVisible,
+  useShowProblem,
+} from './useReview';
 
 // Review mode strip (HANDOFF-PROPOSALS 5.2, ReviewBar): REVIEW badge, title,
 // source, progress, counts and the four actions (Reject all changes, Accept all changes, Apply
@@ -50,6 +55,17 @@ export function useApplyState() {
   const counts = d.counts.value;
   const validation = d.validation.value;
   const canApply = d.canApply.value;
+  // A decided review (stage #2085): the same button concludes the proposal instead of applying.
+  if (d.canConclude.value) {
+    return {
+      label: t('review.concludeLabel'),
+      disabled: false,
+      tooltip: t('review.concludeTip'),
+      blocked: false,
+      issues: 0,
+      conclude: true,
+    };
+  }
   const label = t('review.applyCount', { count: counts.acceptedPending });
   let reason: string | null = null;
   if (store.readOnly.value) reason = t('proposal.error.readOnly');
@@ -62,6 +78,7 @@ export function useApplyState() {
     tooltip: reason ?? t('review.applyTip'),
     blocked: validation !== null && !validation.ok,
     issues: validation?.issues.length ?? 0,
+    conclude: false,
   };
 }
 
@@ -74,6 +91,7 @@ export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
   const p = d.proposal.value;
   const decideVisible = useDecideVisible();
   const apply = useApplyAccepted();
+  const conclude = useConcludeReview();
   const showProblem = useShowProblem();
   const applyState = useApplyState();
   if (!p) return null;
@@ -200,7 +218,7 @@ export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
           disabled={applyState.disabled}
           title={`${applyState.tooltip}  ${REVIEW_KEYS.apply}`}
           aria-keyshortcuts={ariaKeys(REVIEW_KEYS.apply)}
-          onClick={() => void apply()}
+          onClick={() => void (applyState.conclude ? conclude() : apply())}
         >
           <Icon name="check" />
           {applyState.label}

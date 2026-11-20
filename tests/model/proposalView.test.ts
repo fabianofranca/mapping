@@ -3,6 +3,7 @@ import {
   NO_FILTERS,
   addAnnotation,
   addContainer,
+  canConcludeProposal,
   canRemoveProposal,
   changeImageFile,
   changeLayerId,
@@ -306,6 +307,7 @@ describe('level type, list status and exit reminder (phase 8.2)', () => {
       ['superseded', 'superseded'],
       ['applied', 'applied'],
       ['withdrawn', 'withdrawn'],
+      ['rejected', 'rejected'],
     ] as const) {
       // The derived state never marks a closed one as `fresh`; the rule does not depend on it.
       expect(proposalListStatus({ ...proposal, status }, progress, true)).toEqual({
@@ -322,16 +324,34 @@ describe('level type, list status and exit reminder (phase 8.2)', () => {
     expect(needsExitReminder('superseded', 1)).toBe(true);
     expect(needsExitReminder('applied', 2)).toBe(false);
     expect(needsExitReminder('withdrawn', 2)).toBe(false);
+    expect(needsExitReminder('rejected', 2)).toBe(false);
     expect(needsExitReminder(undefined, 2)).toBe(false);
   });
 });
 
 describe('canRemoveProposal (phase 9.2)', () => {
-  it('only withdrawn, superseded and applied can be deleted; open cannot', () => {
+  it('only withdrawn, superseded, applied and rejected can be deleted; open cannot', () => {
     const { proposal } = scenario();
     expect(canRemoveProposal({ ...proposal, status: 'open' })).toBe(false);
     expect(canRemoveProposal({ ...proposal, status: 'withdrawn' })).toBe(true);
     expect(canRemoveProposal({ ...proposal, status: 'superseded' })).toBe(true);
     expect(canRemoveProposal({ ...proposal, status: 'applied' })).toBe(true);
+    expect(canRemoveProposal({ ...proposal, status: 'rejected' })).toBe(true);
+  });
+});
+
+describe('canConcludeProposal (stage #2085)', () => {
+  it('only an open proposal with a complete review can be concluded', () => {
+    const { base, proposal } = scenario();
+    expect(canConcludeProposal(proposal, reviewProgress(proposal))).toBe(false);
+    const rejected = decided(proposal, base, { level: 'proposal', id: null }, 'rejected');
+    expect(canConcludeProposal(rejected, reviewProgress(rejected))).toBe(true);
+    const accepted = decided(proposal, base, { level: 'proposal', id: null }, 'accepted');
+    // Accepted but not applied: not complete.
+    expect(canConcludeProposal(accepted, reviewProgress(accepted))).toBe(false);
+    for (const status of ['applied', 'rejected', 'superseded', 'withdrawn'] as const) {
+      const closed = { ...rejected, status };
+      expect(canConcludeProposal(closed, reviewProgress(closed))).toBe(false);
+    }
   });
 });

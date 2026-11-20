@@ -261,6 +261,16 @@ node tools/mapping-signature.mjs --help
 - **Reading.** `get_project` returns `drawingMode` (`null` without a mode) and, in each container, the pinned one and the `effectiveDrawingMode`; `get_container` likewise; `list_markings` carries `effectiveDrawingMode` on each row. The effective one is the container's, else the project's, else the first mode declared in `tokens.modes` by the specializations, else `null`.
 - **Proposals.** The mode change becomes the `project` entity (and the container's `drawingMode` field) in the proposal, which is then written in `formatVersion` 6 (`docs/PROPOSAL-FORMAT.md`); proposals without the mode stay on 4 (creation) and 5 (revision).
 
+### Conclude a decided review (stage #2085, 0.52.0)
+
+The stage `epic/review-close-notices` adds the proposal status `rejected` (the review finished with nothing applied), written only by the app, which keeps the file's `formatVersion`. The proposal, project, component and specialization formats do not change. The later phases of the stage add their own items to this section.
+
+- **`list_proposals`** accepts `status: "rejected"`, and a proposal can now come back with that status.
+- **`revise_proposal` and `withdraw_proposal`** refuse a `rejected` proposal with the "only an open proposal" message.
+- **`propose_changes` with `supersedes`** of a `rejected` proposal leaves it `rejected`; the response carries the note "the previous proposal was rejected and stays `rejected`".
+- **`get_proposal_review`** returns a hint for `rejected`: the user rejected every change and concluded the review, so to propose again send a new proposal (`propose_changes` with `supersedes`) that takes the notes into account.
+- **Update the MCP first:** a version earlier than 0.52.0 lists a `rejected` proposal in `broken` (unknown `status`), never reads it wrong and never overwrites it.
+
 ### `fill` on the main axis of a `hug` frame (stage #2164, 0.50.0)
 
 The stage `epic/hug-fill-copy-field` changes how the component engine measures a `fill` child on the main axis of a `hug` frame, in every component `formatVersion` (no key). The component format stays at 4 and the schema, proposal, comment and signature formats do not change. The later phases of the stage add their own items to this section.
