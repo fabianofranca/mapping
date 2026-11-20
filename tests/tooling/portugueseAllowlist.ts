@@ -452,9 +452,74 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'panel-values',
   },
+  {
+    term: 'esperando entrega',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'começa cedo',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'cedo',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'entrega',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'sincronização',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'formato=',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'mesclada',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'fora da fila',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
   // script-output
   {
     term: 'merge pedido ao dono:',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'esperando merge para testar:',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'pode sincronizar:',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'começa cedo (espera #S para testar)',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'espera merge de #S, #T para testar',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'espera merge de',
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'script-output',
   },
@@ -3330,15 +3395,41 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
   },
   {
     path: '.claude/skills/implementar-fila/painel/painel.py',
+    pattern:
+      /right after `schema=`: `não` or families|\{de: #S, para: #E, tipo: entrega\}/,
+    reason:
+      'the formato= ficha value `não` and the de/para/tipo keys of the entrega arrow, in the docstring paragraph on the early start (frozen panel values)',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/painel.py',
+    pattern:
+      /\(espera \{', '\.join\(early\)\} para testar\)|"espera merge de " \+|"espera merge para testar"|rewrites its step to `espera merge de #S/,
+    reason:
+      'the reason and the step the early start writes (começa cedo (espera #S para testar), espera merge de #S para testar), frozen script output matched by tests/tooling/queueEarlyStart.test.ts',
+  },
+  {
+    path: 'tests/tooling/queueEarlyStart.test.ts',
+    pattern: /não|\bde: |tipo: string|concluída|para testar/,
+    reason:
+      'the frozen panel values of the early-start tests (ficha value não, arrow keys de/para/tipo, the status concluída) that painel.py writes and reads',
+  },
+  {
+    path: 'tests/tooling/queueExclusive.test.ts',
+    pattern: /'formato=não'/,
+    reason:
+      'the ficha field formato=não of the fixture, a frozen panel value (decision 8 of #2373)',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/painel.py',
     pattern: /\{de, para, tipo\}|"para": k/,
     reason:
       'the keys de/para/tipo of the arrows of meta.grafoSetas, written by painel.py and read by the panel page and the graph tests',
   },
   {
     path: '.claude/skills/implementar-fila/painel/painel.py',
-    pattern: /v\.strip\(\) != "não"/,
+    pattern: /v\.strip\(\) != "não"|v == "não"|the set \(empty for `não`\)/,
     reason:
-      'the ficha value "não" of mcp= and schema= (no MCP or schema change), the frozen panel value the queue tests write',
+      'the ficha value "não" of mcp=, schema= and formato= (no MCP, schema or format change), the frozen panel value the queue tests write',
   },
   {
     path: '.claude/skills/implementar-fila/painel/painel.py',
