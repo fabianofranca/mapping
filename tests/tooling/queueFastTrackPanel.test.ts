@@ -282,10 +282,10 @@ describe('painel.py recusada (FQ1, decision 7)', () => {
     expect(importedMeta[0]!.merged ?? []).not.toContain('#10');
   });
 
-  it('(e) a row that depends on it stays `dep`', () => {
+  it('(e) a row that depends on it stays `dep` and the reason says `recusada` (#2204, decision 4)', () => {
     refused('#10', 'scripts/ci/a.mjs');
     add('#11', ficha('#10:open', 'scripts/ci/b.mjs'));
-    expect(slots()).toEqual(['#11 dep #10']);
+    expect(slots()).toEqual(['#11 dep #10 recusada']);
   });
 });
 
@@ -339,6 +339,121 @@ describe('painel.py canario usar for via-rapida (FQ1, decision 7)', () => {
       run('canario', dir, 'usar', 'fase', issue, 'modelo=Sonnet', 'esforco=high').trim();
     expect(usar('#11')).toBe('canario=B modelo=Sonnet esforco=medium');
     expect(usar('#10')).toBe('atual');
+  });
+});
+
+describe('painel.py reentra: a refused row comes back (#2204, decision 3)', () => {
+  const NEW_PLAN = ficha('nenhuma', 'src/model/x.ts', 'A:#1:high,B:#2:high');
+
+  /** A fast-track row that ran, got a child, a PR, a wait and a hold, and was refused. */
+  function refused(issue = '#7') {
+    add(
+      issue,
+      ficha('nenhuma', 'scripts/ci/a.mjs', 'VR:#1:high'),
+      'kind=via-rapida',
+      'status=em andamento',
+      'started=now',
+      'pr=PR #5',
+      'child=sess-7',
+      'childAt=now',
+      'wait=pergunta',
+      'ciWait=PR #5',
+      'stage=Fases',
+      'step=fase VR',
+      'phases=VR:open',
+    );
+    run('session', dir, issue, 'sess-7', 'kind=via-rapida', 'label=VR');
+    run('cost', dir, 'sess-7', 'usd=2.5', 'ctx=1000');
+    run('row', dir, issue, 'status=recusada', 'step=recusada: grande demais');
+  }
+
+  it('(d) a `recusada` row becomes a fresh `aguardando` one with the new kind and plan', () => {
+    refused();
+    const order = row('#7').order;
+    runAt(LATER, 'reentra', dir, '#7', 'kind=etapa', `plan=${NEW_PLAN}`);
+    const r = row('#7');
+    expect(r.status).toBe('aguardando');
+    expect(r.kind).toBe('etapa');
+    expect(r.plan).toBe(NEW_PLAN);
+    for (const k of [
+      'started',
+      'ended',
+      'pr',
+      'child',
+      'childAt',
+      'wait',
+      'ciWait',
+      'ciWaitAt',
+      'hold',
+    ])
+      expect(r[k], k).toBe('');
+    expect(r.phases).toBe('A:todo|B:todo');
+    expect(r.phasesTotal).toBe(2);
+    expect(r.phasesDone).toBe(0);
+    expect(r.step).toBe('reentrou depois da recusa');
+    expect(r.stage).toBe(''); // the refused run's stage does not stay on a fresh row
+    expect(r.order).toBe(order);
+    expect(json('log').map((e) => e.text)).toContain(
+      '#7 reentrou depois da recusa (etapa)',
+    );
+  });
+
+  it('(d) keeps the sessions and their costs (history)', () => {
+    refused();
+    run('reentra', dir, '#7', 'kind=bug', `plan=${NEW_PLAN}`);
+    expect(row('#7').sessions).toContain('sess-7');
+    const kept = (meta().sessions as Entry[]).find((e) => e.id === 'sess-7');
+    expect((kept?.cost as Entry | undefined)?.usd).toBe(2.5);
+  });
+
+  it('(d) a fast track comes back as a fast track', () => {
+    refused();
+    run(
+      'reentra',
+      dir,
+      '#7',
+      'kind=via-rapida',
+      `plan=${ficha('nenhuma', 'scripts/ci/a.mjs', 'VR:#1:high')}`,
+    );
+    expect(row('#7').kind).toBe('via-rapida');
+    expect(row('#7').phases).toBe('VR:todo');
+  });
+
+  it.each(['aguardando', 'em andamento', 'esperando dono', 'concluída', 'falhou'])(
+    '(d) a row in `%s` is an Erro (code 2) and writes nothing',
+    (status) => {
+      add('#8', ficha('nenhuma', 'scripts/ci/a.mjs'), `status=${status}`);
+      const before = readFileSync(path.join(dir, 'queue.json'), 'utf8');
+      const r = tryRun('reentra', dir, '#8', 'kind=etapa', `plan=${NEW_PLAN}`);
+      expect(r.status).toBe(2);
+      expect(r.stderr).toContain('erro:');
+      expect(readFileSync(path.join(dir, 'queue.json'), 'utf8')).toBe(before);
+    },
+  );
+
+  it('(d) a row outside the queue, an invalid kind and a missing plan are Erro', () => {
+    refused();
+    for (const args of [
+      ['#99', 'kind=etapa', `plan=${NEW_PLAN}`],
+      ['#7', 'kind=patch', `plan=${NEW_PLAN}`],
+      ['#7', `plan=${NEW_PLAN}`],
+      ['#7', 'kind=etapa'],
+    ])
+      expect(tryRun('reentra', dir, ...args).status, args.join(' ')).toBe(2);
+    expect(row('#7').status).toBe('recusada');
+  });
+
+  it('(d) works inside `apply`', () => {
+    refused();
+    const file = path.join(dir, 'batch.txt');
+    writeFileSync(file, `reentra '#7' kind=etapa plan="${NEW_PLAN}"\nlog depois\n`);
+    run('apply', dir, file);
+    expect(row('#7').status).toBe('aguardando');
+    expect(row('#7').phases).toBe('A:todo|B:todo');
+  });
+
+  it('(d) is listed in --help', () => {
+    expect(run('--help')).toContain('reentra');
   });
 });
 
@@ -412,6 +527,25 @@ describe('painel.py show: `merge pedido ao dono:` (FQ1, decision 3)', () => {
     runAt(LATER, 'row', dir, '#5', 'wait=merge pedido ao dono: PR #12');
     expect(showLine('merge pedido ao dono:', LATER)).toBe(
       'merge pedido ao dono: #5 (PR #12, há 0 h)',
+    );
+  });
+
+  it('(h) the same merge ask again restarts its age (#2204, decision 6)', () => {
+    ask('#5', 'merge pedido ao dono: PR #9');
+    expect(showLine('merge pedido ao dono:', LATER)).toBe(
+      'merge pedido ao dono: #5 (PR #9, há 3 h)',
+    );
+    runAt(LATER, 'row', dir, '#5', 'wait=merge pedido ao dono: PR #9');
+    expect(showLine('merge pedido ao dono:', LATER)).toBe(
+      'merge pedido ao dono: #5 (PR #9, há 0 h)',
+    );
+  });
+
+  it('(h) the same ask with an explicit childAt= keeps that childAt', () => {
+    ask('#5', 'merge pedido ao dono: PR #9');
+    runAt(LATER, 'row', dir, '#5', 'wait=merge pedido ao dono: PR #9', `childAt=${NOW}`);
+    expect(showLine('merge pedido ao dono:', LATER)).toBe(
+      'merge pedido ao dono: #5 (PR #9, há 3 h)',
     );
   });
 
