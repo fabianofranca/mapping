@@ -54,6 +54,13 @@ interface IconsTarget {
   readonly existing?: Json;
 }
 
+/** `null` for a path that does not exist (ENOENT, ENOTDIR); any other failure (a link loop, no permission) is rethrown. */
+function notFoundAsNull(error: unknown): null {
+  const code = (error as NodeJS.ErrnoException | null)?.code;
+  if (code === 'ENOENT' || code === 'ENOTDIR') return null;
+  throw error;
+}
+
 const isSvgPath = (path: string): boolean => extname(path).toLowerCase() === '.svg';
 
 const invalidArguments = (message: string, details: Json = {}): ToolError =>
@@ -86,9 +93,8 @@ async function readSvgSources(
   if (!info.isFile() || !isSvgPath(svg) || !isSvgPath(real)) {
     throw invalidArguments(`\`svg\` must be a .svg file or a folder: ${svg}`, { svg });
   }
-  const read = await readSvg(basename(svg), real, info.size);
-  if (read.problem !== undefined) throw invalidArguments(read.problem, { svg });
-  return [read];
+  // A problem of the file (too large) goes into `errors`, as it does for a file of a folder.
+  return [await readSvg(basename(svg), real, info.size)];
 }
 
 async function readFolder(roots: Roots, dir: string): Promise<readonly SvgSource[]> {
@@ -212,7 +218,7 @@ async function readIconsTarget(
 ): Promise<IconsTarget> {
   const target = join(pkg.dir, file);
   const realDir = await realpath(pkg.dir);
-  const real = await realpath(target).catch(() => null);
+  const real = await realpath(target).catch(notFoundAsNull);
   if (real === null) {
     await roots.resolveNew(target);
     await assertNewFileInside(roots, realDir, target, file);
@@ -413,6 +419,21 @@ const libraryInProject = (path: string): ToolError =>
     },
   );
 
+/** The calls that are running, by icons file: two calls on the same file take turns (read, merge, write). */
+const running = new Map<string, Promise<unknown>>();
+
+async function exclusively<T>(key: string, run: () => Promise<T>): Promise<T> {
+  const before = running.get(key) ?? Promise.resolve();
+  const turn = before.catch(() => undefined).then(run);
+  const settled = turn.catch(() => undefined);
+  running.set(key, settled);
+  try {
+    return await turn;
+  } finally {
+    if (running.get(key) === settled) running.delete(key);
+  }
+}
+
 export async function importIcons(roots: Roots, args: ImportIconsArgs): Promise<Json> {
   const pkg = await packageByPath(roots, args.path);
   const iconsFile = iconsRelativePath(pkg);
@@ -420,8 +441,19 @@ export async function importIcons(roots: Roots, args: ImportIconsArgs): Promise<
     throw libraryInProject(args.path);
   }
   const sources = await readSvgSources(roots, args.svg, args.name);
-  // The icons file is read after the SVGs and written right after the merge: the window in which
-  // another writer could slip in is the shortest the order allows.
+  // The icons file is read after the SVGs, inside the turn of its file, and written right after the merge.
+  return exclusively(join(pkg.dir, iconsFile), () =>
+    mergeIntoFile(roots, pkg, iconsFile, sources, args),
+  );
+}
+
+async function mergeIntoFile(
+  roots: Roots,
+  pkg: PackageSource,
+  iconsFile: string,
+  sources: readonly SvgSource[],
+  args: ImportIconsArgs,
+): Promise<Json> {
   const { target, file, existing } = await readIconsTarget(roots, pkg, iconsFile);
   const conversion = convertAll(
     sources,
@@ -434,9 +466,11 @@ export async function importIcons(roots: Roots, args: ImportIconsArgs): Promise<
   );
   const { next, merge, formatVersion } = mergedFile(existing, conversion, args);
   // Never writes an invalid file: the merged result goes through the same validation as `validate_library`.
-  const checked = parseIconsFile(next);
-  if (!checked.ok) throw invalidIconsFile(file, checked.errors);
-  const written = merge.written.length > 0 && args.dryRun !== true;
+  // With nothing to write there is nothing to validate (a new file would have no icons yet).
+  const changes = merge.written.length > 0;
+  const checked = changes ? parseIconsFile(next) : undefined;
+  if (checked !== undefined && !checked.ok) throw invalidIconsFile(file, checked.errors);
+  const written = changes && args.dryRun !== true;
   if (written) {
     await writeFileAtomic(target, iconsFileText(next), { createFolder: true });
   }

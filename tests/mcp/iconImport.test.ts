@@ -3,6 +3,7 @@
 import {
   cpSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -506,5 +507,63 @@ describe('import_icons: where it refuses to write', () => {
       }),
     );
     expect(error.code).toBe('invalid-arguments');
+  });
+});
+
+describe('import_icons: review fixes', () => {
+  it('returns the errors, not invalid-library, when the file is missing and nothing converts', async () => {
+    const lib = library();
+    rmSync(join(root, lib, 'icons'), { recursive: true });
+    const result = ok(
+      await mcp.call<Imported>('import_icons', {
+        path: lib,
+        svg: svgFile('only-bad.svg', 'icon-transform'),
+      }),
+    );
+    expect(result).toMatchObject({ added: [], written: false });
+    expect(result.errors).toEqual([
+      { file: 'only-bad.svg', message: 'unsupported in SVG: path transform' },
+    ]);
+    expect(existsSync(join(root, lib, 'icons'))).toBe(false);
+  });
+
+  it('puts a single oversized svg in errors, like the same file in a folder', async () => {
+    const lib = library();
+    const big = join(root, 'huge.svg');
+    writeFileSync(big, `<svg viewBox="0 0 24 24">${' '.repeat(300 * 1024)}</svg>`);
+    const result = ok(
+      await mcp.call<Imported>('import_icons', { path: lib, svg: 'huge.svg' }),
+    );
+    expect(result).toMatchObject({ added: [], written: false });
+    expect(result.errors).toEqual([
+      { file: 'huge.svg', message: expect.stringContaining('256 KB') },
+    ]);
+  });
+
+  it('does not take an unreadable icons file for a missing one', async () => {
+    const lib = library();
+    const file = iconsPath(lib);
+    rmSync(file);
+    symlinkSync(file, file); // a symbolic link loop: realpath fails with ELOOP
+    const error = failed(
+      await mcp.call('import_icons', { path: lib, svg: svgFolder('svgs-loop') }),
+    );
+    expect(error.code).not.toBe(undefined);
+    expect(lstatSync(file).isSymbolicLink()).toBe(true);
+  });
+
+  it('keeps the icons of two calls that run at the same time on the same file', async () => {
+    const lib = library();
+    const a = svgFile('par-a.svg', 'icon-stroked');
+    const b = svgFile('par-b.svg', 'icon-flag');
+    const [first, second] = await Promise.all([
+      mcp.call<Imported>('import_icons', { path: lib, svg: a }),
+      mcp.call<Imported>('import_icons', { path: lib, svg: b }),
+    ]);
+    expect(ok(first).written).toBe(true);
+    expect(ok(second).written).toBe(true);
+    expect(Object.keys(readIcons(lib).icons)).toEqual(
+      expect.arrayContaining(['par-a', 'par-b']),
+    );
   });
 });
