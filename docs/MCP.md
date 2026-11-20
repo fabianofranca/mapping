@@ -261,6 +261,13 @@ node tools/mapping-signature.mjs --help
 - **Reading.** `get_project` returns `drawingMode` (`null` without a mode) and, in each container, the pinned one and the `effectiveDrawingMode`; `get_container` likewise; `list_markings` carries `effectiveDrawingMode` on each row. The effective one is the container's, else the project's, else the first mode declared in `tokens.modes` by the specializations, else `null`.
 - **Proposals.** The mode change becomes the `project` entity (and the container's `drawingMode` field) in the proposal, which is then written in `formatVersion` 6 (`docs/PROPOSAL-FORMAT.md`); proposals without the mode stay on 4 (creation) and 5 (revision).
 
+### Change in 0.50.2 — density follows an image replacement (stage #1891)
+
+A change in 0.50.2, patch: no new tool, operation or argument; schema and formats unchanged. The stage `epic/density-free-space-preview` adds its items to this section in its later phases.
+
+- **`replace_container` keeps the components' drawing.** With another resolution, the container's `density` is multiplied by the ratio of the widths (3 → 4 from 1080 to 1440 px; no density counts as 1), clamped to 0.5–8, and removed when it comes out as 1. The same width does not change it. The markings are rescaled as before, and a component keeps its size in units. The step description says ", density 3x → 4x" when it changes, and the proposal's container diff carries the `density` field next to `file` (proposal `formatVersion` 7).
+- **Minimum at the new density.** The rescale reads each component's minimum at the density the replacement stores, so replacing back (1440 → 1080) does not grow a button that was only rescaled, nor mark it "needs review".
+
 ### `fill` on the main axis of a `hug` frame (stage #2164, 0.50.0)
 
 The stage `epic/hug-fill-copy-field` changes how the component engine measures a `fill` child on the main axis of a `hug` frame, in every component `formatVersion` (no key). The component format stays at 4 and the schema, proposal, comment and signature formats do not change. The later phases of the stage add their own items to this section.

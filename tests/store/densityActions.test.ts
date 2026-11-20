@@ -89,6 +89,42 @@ describe('action setContainerDensity', () => {
   });
 });
 
+describe('action replaceContainer: the density follows the width (stage #1891)', () => {
+  it('replacing the file with another resolution changes the density, and one Ctrl+Z restores file, markings and density', () => {
+    const { store, actions, current } = setup();
+    const id = 'I2';
+    expect(actions.setContainerDensity(id, 3).ok).toBe(true);
+    const before = current();
+    const result = actions.replaceContainer(id, {
+      file: 'images/frente-2x.jpg',
+      width: 2000,
+      height: 2000,
+    });
+    expect(result.ok).toBe(true);
+    const after = current().containers.find((c) => c.id === id);
+    expect(after?.density).toBe(6);
+    expect(after?.file).toBe('images/frente-2x.jpg');
+    expect(current().markings.find((m) => m.id === 'M4')?.rect.width).toBe(200);
+    expect(store.undo()).toBe(true);
+    expect(current()).toEqual(before);
+    expect(current().containers.find((c) => c.id === id)?.density).toBe(3);
+    expect(current().containers.find((c) => c.id === id)?.file).toBe('images/frente.jpg');
+    expect(current().markings.find((m) => m.id === 'M4')?.rect.width).toBe(100);
+  });
+
+  it('a smaller resolution lowers the density and rescales a plain marking', () => {
+    const { actions, current } = setup();
+    expect(actions.setContainerDensity('I2', 4).ok).toBe(true);
+    expect(
+      actions.replaceContainer('I2', { file: 'images/f.jpg', width: 500, height: 500 })
+        .ok,
+    ).toBe(true);
+    const container = current().containers.find((c) => c.id === 'I2');
+    expect(container?.density).toBe(2);
+    expect(current().markings.find((m) => m.id === 'M4')?.rect.width).toBe(50);
+  });
+});
+
 describe('derived densitySuggestions', () => {
   function derivedOf(project: Project) {
     const { store, actions, current } = setup(project);
