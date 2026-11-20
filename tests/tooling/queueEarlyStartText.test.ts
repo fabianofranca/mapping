@@ -303,7 +303,9 @@ describe('early start text (EA2, #2373): the terms come from the real output of 
     const block = sub.match(/```text\n([\s\S]*?)\n```/)?.[1] ?? '';
     expect(block.length).toBeGreaterThan(0);
     for (const line of [
+      'Você é o agente da sincronização SM<k> — main com #S da etapa #<etapa>',
       'Branch `sync/<name>-sm<k>`',
+      'Already up to date',
       'git merge origin/main',
       'never rebase',
       'keeping both deliveries',
@@ -314,7 +316,7 @@ describe('early start text (EA2, #2373): the terms come from the real output of 
       'body starting with "Parte de #<etapa>"',
       'the conflicting files and how each was resolved',
       'items 3 (context), 5 to 7 and 9 of "For the phase session"',
-      'Notice: `Sincronização SM<k> pronta: <PR>; conflitos: <k> (<files>|nenhum)`.',
+      'Notice: `Sincronização SM<k> pronta: <PR>; conflitos: <k> (<files>|nenhum)`',
     ]) {
       expect(block).toContain(line);
     }

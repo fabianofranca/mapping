@@ -1041,7 +1041,7 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     source: 'docs/FLOW.md',
     group: 'session-notices',
   },
-  { term: 'conflitos:', source: 'docs/FLOW.md', group: 'session-notices' },
+  { term: 'conflitos: <k>', source: 'docs/FLOW.md', group: 'session-notices' },
   { term: 'SM<k> — main com #S', source: 'docs/FLOW.md', group: 'session-notices' },
   {
     term: 'recusada: label anterior à recusa',
@@ -3433,7 +3433,8 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
   },
   {
     path: 'tests/tooling/queueEarlyStartText.test.ts',
-    pattern: /não|nenhuma|\.para\b|começa cedo|espera merge/,
+    pattern:
+      /'não'|"não"|=não|=nenhuma|\.para\b|começa cedo|espera merge|Você é o agente da sincronização/,
     reason:
       'the frozen panel values of the early-start text tests (ficha value não, the arrow key para, the reason começa cedo and the step espera merge de #S para testar) that painel.py writes and the skill text quotes',
   },
