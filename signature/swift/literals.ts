@@ -32,9 +32,26 @@ const KIND_BY_TYPE: Readonly<Record<string, SignatureValueKind>> = {
 const INTEGER = /^-?\d[\d_]*$/;
 const DECIMAL = /^-?\d[\d_]*(?:\.\d[\d_]*)?(?:[eE][+-]?\d+)?$/;
 const SIMPLE_STRING = /^"([^"\\]*)"$/;
+const RAW_OPEN = /^(#+)"/;
 const NUMBER_CALL = /^(?:CGFloat|Double|Float)\((-?\d[\d_]*(?:\.\d[\d_]*)?)\)$/;
 const SHORT_CASE = /^\.(\w+)$/;
 const QUALIFIED_CASE = /^(?:\w+\.)*(\w+)\.(\w+)$/;
+
+/**
+ * The content of a raw string `#"…"#` (any number of `#`) written on a single line, as it is, with no
+ * escape or interpolation (`\#` followed by anything decodes to something else); `undefined` for any other
+ * text (multi-line, with an escape, an expression).
+ */
+export function rawStringContent(text: string): string | undefined {
+  const hashes = RAW_OPEN.exec(text)?.[1];
+  if (hashes === undefined || text.startsWith(`${hashes}"""`)) return undefined;
+  const close = `"${hashes}`;
+  if (text.length < hashes.length + 1 + close.length || !text.endsWith(close))
+    return undefined;
+  const content = text.slice(hashes.length + 1, text.length - close.length);
+  const opaque = content.includes('\n') || content.includes(close);
+  return opaque || content.includes(`\\${hashes}`) ? undefined : content;
+}
 
 const toNumber = (text: string): number | undefined => {
   const value = Number(text.replace(/_/g, ''));
@@ -51,7 +68,7 @@ type LiteralParser = (text: string) => SignatureLiteral | undefined;
 
 const PARSERS: Readonly<Partial<Record<SignatureValueKind, LiteralParser>>> = {
   boolean: (text) => (text === 'true' || text === 'false' ? text === 'true' : undefined),
-  text: (text) => SIMPLE_STRING.exec(text)?.[1],
+  text: (text) => SIMPLE_STRING.exec(text)?.[1] ?? rawStringContent(text),
   integer: (text) => (INTEGER.test(text) ? toNumber(text) : undefined),
   number: decimal,
   dimension: decimal,
@@ -100,6 +117,7 @@ export function inferType(defaultText: string | undefined): string {
   if (defaultText === 'true' || defaultText === 'false') return 'Bool';
   if (INTEGER.test(defaultText)) return 'Int';
   if (DECIMAL.test(defaultText)) return 'Double';
-  if (SIMPLE_STRING.test(defaultText)) return 'String';
+  if (SIMPLE_STRING.test(defaultText) || rawStringContent(defaultText) !== undefined)
+    return 'String';
   return /^([A-Z]\w*)\(/.exec(defaultText)?.[1] ?? '_';
 }

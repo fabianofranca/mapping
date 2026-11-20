@@ -46,13 +46,14 @@ describe('R9.22 of the script matches the Material 3 package validator', () => {
     expect(altered.warnings.length).toBe(base.warnings.length + 1);
   });
 
-  it('the script says "the usual warnings plus 1", with no fixed number, and the right path', () => {
+  it('the script says exactly 1 warning (the package has none of its own), and the right path', () => {
     expect(row).toBeDefined();
-    expect(row).not.toMatch(/1 warning/);
+    expect(row).toContain('exactly 1 warning');
+    expect(base.warnings).toEqual([]);
     expect(row).not.toMatch(/one item in `warnings`/);
     expect(row).toContain('template.children[4].children[2]');
     expect(row).not.toContain('`children[1]` of the frame');
-    expect(row).toContain('`parameter outside the signature`');
-    expect(row).toContain('plus 1');
+    expect(row).not.toContain('parameter outside the signature');
+    expect(row).not.toMatch(/usual warnings|plus 1/);
   });
 });

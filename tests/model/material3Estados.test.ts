@@ -9,7 +9,6 @@ import { missingMigrations } from '../../src/model/specVersions';
 import {
   ROOT,
   SPEC_FILE,
-  unknownWarnings,
   drawIn,
   files,
   spec,
@@ -240,10 +239,10 @@ describe('final test: the types with the interaction (ME1 to ME5)', () => {
     }
   });
 
-  it('the library validates with 0 errors and only the known warnings (provisional, #1774)', () => {
+  it('the library validates with 0 errors and 0 warnings', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
-    expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
+    expect(report.warnings).toEqual([]);
   }, 30_000);
 });
 

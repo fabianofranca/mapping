@@ -7,7 +7,7 @@ import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { isFontPath } from '../../src/model/components/library';
 import { validateLibrary } from '../../src/model/library';
-import { typeOf, unknownWarnings } from '../support/material3Library';
+import { typeOf } from '../support/material3Library';
 
 const REPO = join(__dirname, '../..');
 const PACKAGE = join(REPO, 'libraries/material3-compose');
@@ -76,10 +76,10 @@ describe('R25.22 and R25.23: the guide tokens.mjs merges the package tokens', ()
     s.formatVersion = 14;
   });
 
-  it('m3-tokens: valid, no error and only known warnings, 50 types and 50 components', () => {
+  it('m3-tokens: valid, no error or warning, 50 types and 50 components', () => {
     const report = validate(ok);
     expect(report.errors).toEqual([]);
-    expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
+    expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
     // Validates the whole package (229 examples): takes over 5 s with coverage on in CI.
   }, 30_000);
@@ -152,10 +152,10 @@ describe('R25.43 and R25.44: the screen folders of the guide', () => {
   cpSync(screen, st9, { recursive: true });
   structural(st9, 14, true);
 
-  it('m3-tela: valid, no error and only known warnings', () => {
+  it('m3-tela: valid, no error or warning', () => {
     const report = validate(screen);
     expect(report.errors).toEqual([]);
-    expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
+    expect(report.warnings).toEqual([]);
   }, 30_000);
 
   it('m3-tela-v3: "only allowed with formatVersion 4" errors, all in the divider', () => {
