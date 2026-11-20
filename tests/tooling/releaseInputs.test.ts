@@ -5,6 +5,7 @@
 import { readFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { build } from 'esbuild';
+import { harfbuzzSourceFilter, patchHarfBuzzSource } from '../../mcp/harfbuzzFiles.mjs';
 import { describe, expect, it } from 'vitest';
 import { fontFiles } from '../../mcp/fontFiles.mjs';
 import {
@@ -32,6 +33,13 @@ async function bundleInputs(): Promise<string[]> {
       {
         name: 'inputs-only',
         setup(b) {
+          // The same patch as `mcp/build.mjs`: without it esbuild refuses harfbuzzjs's top-level await in CommonJS.
+          b.onLoad({ filter: harfbuzzSourceFilter }, async (a) => ({
+            contents: patchHarfBuzzSource(a.path, await readFile(a.path, 'utf8'), {
+              cjs: true,
+            })!,
+            loader: 'js',
+          }));
           b.onResolve({ filter: /\?raw$/ }, (a) => ({
             path: resolve(a.resolveDir, a.path.slice(0, -'?raw'.length)),
             namespace: 'raw',

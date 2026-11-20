@@ -4,8 +4,9 @@
 import { appendFile, readFile, readdir, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
-import { build } from 'esbuild';
+import { build, transform } from 'esbuild';
 import { fontFiles } from './fontFiles.mjs';
+import { harfbuzzSourceFilter, patchHarfBuzzSource } from './harfbuzzFiles.mjs';
 import { wasmFiles } from './wasmFiles.mjs';
 
 // `import bytes from 'wasm:<codec>'` embeds the bytes of the image codec's WebAssembly module
@@ -46,6 +47,26 @@ const fontModules = {
   },
 };
 
+// `harfbuzzjs` (the text shaper, WebAssembly): its wrapper ends with a top-level await, which a CommonJS bundle cannot
+// hold, and its glue reads `import.meta.url`. `mcp/harfbuzzFiles.mjs` has the patch (and throws if the package no longer
+// matches it); the wrapper is minified here, like the minified `opentype.js` below, because the server's size is limited.
+const harfbuzzModule = {
+  name: 'harfbuzz-module',
+  setup(esbuild) {
+    esbuild.onLoad({ filter: harfbuzzSourceFilter }, async (args) => {
+      const patched = patchHarfBuzzSource(args.path, await readFile(args.path, 'utf8'), {
+        cjs: true,
+      });
+      if (patched === null) return null;
+      const isWrapper = /index\.mjs$/.test(args.path);
+      const contents = isWrapper
+        ? (await transform(patched, { loader: 'js', format: 'esm', minify: true })).code
+        : patched;
+      return { contents, loader: 'js', watchFiles: [args.path] };
+    });
+  },
+};
+
 // `import text from './file.md?raw'` embeds the file's text (the documentation served as a resource).
 const rawText = {
   name: 'raw-text',
@@ -73,7 +94,7 @@ if (suffix !== '' && !/^-(snapshot\.pr\d+\+[0-9a-f]{7,}|rc\.\d+)$/.test(suffix))
 
 const result = await build({
   entryPoints: ['mcp/main.ts'],
-  plugins: [rawText, wasmModules, fontModules],
+  plugins: [rawText, wasmModules, fontModules, harfbuzzModule],
   // The minified version of opentype.js (245 kB instead of 495 kB): the server's limit is +500 kB.
   alias: { 'opentype.js': 'opentype.js/dist/opentype.min.mjs' },
   outfile: 'dist-mcp/mapping-mcp.js',
@@ -127,6 +148,10 @@ for (const dir of bundledPackages(result.metafile.inputs)) {
   if (texts.length === 0) continue;
   notices.push(`== ${name} ==\n${texts.join('\n\n')}`);
 }
+// HarfBuzz itself (compiled to WebAssembly inside harfbuzzjs) has its own license, which the package does not carry.
+notices.push(
+  `== HarfBuzz (WebAssembly in harfbuzzjs) ==\n${(await readFile(resolve(import.meta.dirname, 'licenses/harfbuzz.txt'), 'utf8')).trim()}`,
+);
 if (notices.length > 0) {
   const body = `THIRD-PARTY NOTICES\n\n${notices.join('\n\n')}`.replaceAll('*/', '* /');
   await appendFile('dist-mcp/mapping-mcp.js', `\n/*!\n${body}\n*/\n`);

@@ -23,6 +23,22 @@ describe('dist-mcp/mapping-mcp.js (single file, over stdio)', () => {
     expect(notices).toContain('Permission is hereby granted, free of charge');
   });
 
+  it('carries the notices of harfbuzzjs and of HarfBuzz itself (Old MIT, from the version the wasm reports)', () => {
+    const text = readFileSync(bundle, 'utf8');
+    const notices = text.slice(text.indexOf('THIRD-PARTY NOTICES'));
+    expect(notices).toContain('== harfbuzzjs ==');
+    const copying = readFileSync('mcp/licenses/harfbuzz.txt', 'utf8').trim();
+    expect(copying).toContain('"Old MIT" license');
+    expect(notices).toContain('== HarfBuzz (WebAssembly in harfbuzzjs) ==');
+    expect(notices).toContain(copying);
+  });
+
+  it('patches the HarfBuzz glue for CommonJS: the bundle URL replaces import.meta.url', () => {
+    const text = readFileSync(bundle, 'utf8');
+    expect(text).toContain('harfbuzzBundleUrl');
+    expect(text).not.toMatch(/"harfbuzz\.wasm",\s*import\.meta\.url/);
+  });
+
   it('starts over stdio and answers list_projects', async () => {
     const transport = new StdioClientTransport({
       command: process.execPath,
