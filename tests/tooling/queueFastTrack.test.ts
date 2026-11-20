@@ -187,6 +187,11 @@ describe('implementar-fila: a refused fast track comes back (stage #2204, phase 
       'X + Y + Z below N',
       'is an open finding',
     ]);
+    expect(s).not.toContain('otherwise it asks by text as well');
+    has('reentra clears', section(QUEUE, '## Panel'), [
+      'child, childAt, wait, ciWait, ciWaitAt',
+      'hold, stage and phases',
+    ]);
   });
 
   it('the `reentra` line of the queue and the owner chat line are frozen protocol terms of the skill', () => {
@@ -198,6 +203,11 @@ describe('implementar-fila: a refused fast track comes back (stage #2204, phase 
       expect(e, term).toBeDefined();
       expect(read(e!.source), term).toContain(term);
     }
+  });
+
+  it('docs/FLOW.md: the list of text answers has the `soltar`/`esperar` pair and says `esperar` needs `#<n>`', () => {
+    const s = section(FLOW, '## For the owner, in the three chats');
+    has('flow', s, ['`soltar`/`esperar`', 'bare `esperar`']);
   });
 
   it('docs/FLOW.md: adding the label again (or detailing) brings a refused fast track back, and names `soltar #<n>`/`esperar #<n>`', () => {
