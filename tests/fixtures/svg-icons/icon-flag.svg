@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A flag: one rounded rect with three colors. -->
+<svg width="24" height="16" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<title>Flag</title>
+<rect width="24" height="16" rx="2" fill="#FFFFFF"/>
+<rect width="8" height="16" rx="2" fill="#0055A4"/>
+<rect x="16" width="8" height="16" ry="2" fill="#EF4135"/>
+</svg>
