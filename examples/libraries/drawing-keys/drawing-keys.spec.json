@@ -4,8 +4,23 @@
   "id": "drawing-keys",
   "name": "Drawing keys",
   "version": 1,
-  "description": "Example of the drawing keys added after the faithful components: the icon set with the `fillRule` of each path (icons file formatVersion 3). The Icon holes component draws an icon with holes cut out by `evenodd`.",
+  "description": "Example of the drawing keys added after the faithful components: the icon set with the `fillRule` of each path (icons file formatVersion 3), and the component keys letter spacing in percent, padding items from tokens and a number token in `sizing`. The Icon holes component draws an icon with holes cut out by `evenodd`; the Tag draws its tracking in percent and reads its padding and height from tokens.",
   "icons": "icons/icons.json",
+  "tokens": {
+    "modes": ["compact", "comfortable"],
+    "values": {
+      "tag-padding": {
+        "compact": 6,
+        "comfortable": 10
+      },
+      "tag-height": {
+        "compact": 20,
+        "comfortable": 28
+      },
+      "tag-info": "#2563EB",
+      "tag-success": "#15803D"
+    }
+  },
   "layers": [
     {
       "id": "ui",
@@ -33,8 +48,64 @@
             }
           ],
           "examples": [
-            { "name": "Ring", "values": { "icon": "ring" } },
-            { "name": "Self-intersecting star", "values": { "icon": "star-evenodd" } }
+            {
+              "name": "Ring",
+              "values": {
+                "icon": "ring"
+              }
+            },
+            {
+              "name": "Self-intersecting star",
+              "values": {
+                "icon": "star-evenodd"
+              }
+            }
+          ]
+        },
+        {
+          "id": "tag",
+          "name": "Tag",
+          "component": "components/tag.json",
+          "doc": "docs/tag.md",
+          "fields": [
+            {
+              "key": "label",
+              "label": "Label",
+              "type": "string",
+              "default": "NEW"
+            },
+            {
+              "key": "tone",
+              "label": "Tone",
+              "type": "enum",
+              "options": ["info", "success"],
+              "default": "info"
+            },
+            {
+              "key": "spacing",
+              "label": "Letter spacing",
+              "type": "enum",
+              "options": ["tight", "normal", "wide"],
+              "default": "normal"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Info",
+              "values": {
+                "label": "NEW",
+                "tone": "info",
+                "spacing": "normal"
+              }
+            },
+            {
+              "name": "Wide success",
+              "values": {
+                "label": "DONE",
+                "tone": "success",
+                "spacing": "wide"
+              }
+            }
           ]
         }
       ]

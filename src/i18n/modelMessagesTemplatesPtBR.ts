@@ -438,6 +438,8 @@ export const templatePtBR: {
   'model.component.unknownKey': 'chave desconhecida: {key}',
   'model.component.expectedBoolean': 'esperava booleano',
   'model.component.expectedNumber': 'esperava número',
+  'model.component.expectedNumberOrPercentage':
+    'esperava um número ou uma porcentagem ("2%")',
   'model.component.expectedNonNegative': 'esperava número maior ou igual a 0',
   'model.component.expectedUnit': 'esperava número entre 0 e 1',
   'model.component.expectedWeight': 'esperava peso entre 100 e 900',

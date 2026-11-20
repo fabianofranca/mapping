@@ -201,6 +201,15 @@ export function isPlainNone(layout: ResolvedSlotLayout): boolean {
   return layout.type === 'none' && layout.align === 'start' && layout.justify === 'start';
 }
 
+/** One item of a `padding` list: a number or (v4) an expression; numeric text becomes a number, anything else 0, floor at 0. */
+function paddingItem(item: unknown, values: FieldValues): number {
+  const value =
+    typeof item === 'object' && item !== null
+      ? evaluate<unknown>(item as Expr<unknown>, values, 0)
+      : item;
+  return Math.max(0, toNumber(value, 0));
+}
+
 /** Evaluates the slot's layout with the instance's values (`gap`/`padding` can be expressions). Without a layout → type 'none'. */
 export function resolveSlotLayout(
   slot: SlotTemplate,
@@ -218,7 +227,7 @@ export function resolveSlotLayout(
     ? evaluate<unknown>(layout.padding as Expr<unknown>, values, 0)
     : 0;
   const padding = Array.isArray(rawPadding)
-    ? normalizePadding(rawPadding.map((v) => toNumber(v, 0)))
+    ? normalizePadding(rawPadding.map((item) => paddingItem(item, values)))
     : normalizePadding(toNumber(rawPadding, 0));
   const reverse =
     layout.reverse !== undefined && evaluateBoolean(layout.reverse, values, false);

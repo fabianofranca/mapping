@@ -204,8 +204,12 @@ const sameBox = (a: Box, b: Box): boolean => a.width === b.width && a.height ===
  * `maxWidth`/`maxHeight` on a measured axis or the px that an expression gives the axis.
  * Without that, the case at `size` is already what matters, and the proof's cost does not double.
  */
-function fitCanOverflow(component: ComponentFile, values: FieldValues): boolean {
-  const sizing = resolveSizing(component, values);
+function fitCanOverflow(
+  component: ComponentFile,
+  values: FieldValues,
+  tokens?: ResolvedTokens,
+): boolean {
+  const sizing = resolveSizing(component, values, tokens);
   const root = component.template;
   const capped = {
     width: root.maxWidth !== undefined,
@@ -226,11 +230,11 @@ function fitCanOverflow(component: ComponentFile, values: FieldValues): boolean 
 function fittedBox(
   component: ComponentFile,
   values: FieldValues,
-  first: DrawingMode | undefined,
+  mode: DrawingMode | undefined,
 ): Box | undefined {
   try {
-    if (!fitCanOverflow(component, values)) return undefined;
-    const tokens = first?.tokens;
+    const tokens = mode?.tokens;
+    if (!fitCanOverflow(component, values, tokens)) return undefined;
     const fit = fitComponentSize(component, values, {
       measure: approximateMeasurer,
       ...(tokens === undefined ? {} : { tokens }),
@@ -299,7 +303,7 @@ function proveCase(
         const sizing =
           fitted || direction === 'rtl'
             ? []
-            : resolveSizing(component, drawCase.values).messages;
+            : resolveSizing(component, drawCase.values, tokens).messages;
         return {
           mode,
           box: boxes[i] as Box,
@@ -399,14 +403,15 @@ function typeDrawing(
       out,
     );
     // Component with an axis that depends on the content: the same case at the fitted size.
-    const fit = fittedBox(component, drawCase.values, modes[0]);
-    if (fit !== undefined)
+    // Each mode fits with its own tokens: a `padding` or a `sizing` from a token changes the size.
+    const fits = modes.map((mode) => fittedBox(component, drawCase.values, mode));
+    if (fits.some((fit) => fit !== undefined))
       proveCase(
         type,
         component,
         drawCase,
         modes,
-        modes.map(() => fit),
+        fits.map((fit) => fit ?? box),
         true,
         out,
       );

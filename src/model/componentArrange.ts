@@ -473,10 +473,10 @@ export function arrangeMarking(
       const mc = markingComponent(p, catalog, kid.id);
       if (mc === null || mc.component.sizing === undefined) continue;
       const values = drawingValues(p, mc.annotation, mc.type).values;
-      const sizing = resolveSizing(mc.component, values);
+      const drawn = componentForDrawing(p, mc.component, kid.containerId);
+      const sizing = resolveSizing(mc.component, values, drawn.tokens);
       sizing.messages.forEach(warn);
       const rect = rects.get(kid.id) as Rect;
-      const drawn = componentForDrawing(p, mc.component, kid.containerId);
       const fitted = applySizing(
         rect,
         sizing,
@@ -569,7 +569,7 @@ export function arrangeMarking(
     }
 
     let rect = rects.get(id) as Rect;
-    const sizing = resolveSizing(component, values);
+    const sizing = resolveSizing(component, values, info.tokens);
     sizing.messages.forEach(warn);
     const fitted = applySizing(
       rect,
@@ -720,9 +720,9 @@ function fitTargetOf(
   const hasKids = (projectIndex(p).children.get(marking.id)?.length ?? 0) > 0;
   if (hasKids && componentSlots(mc.component).length > 0) return null;
   const values = drawingValues(p, mc.annotation, mc.type).values;
-  const followed = followedAxes(resolveSizing(mc.component, values));
-  if (!followed.width && !followed.height) return null;
   const drawn = componentForDrawing(p, mc.component, marking.containerId);
+  const followed = followedAxes(resolveSizing(mc.component, values, drawn.tokens));
+  if (!followed.width && !followed.height) return null;
   return {
     marking,
     component: drawn.component,

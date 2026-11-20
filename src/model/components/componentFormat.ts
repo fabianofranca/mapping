@@ -222,7 +222,8 @@ export interface FontSpec {
   readonly italic?: BoolExpr;
   /** Multiple of the size (1.2) or px when > 3. */
   readonly lineHeight?: Expr<number>;
-  readonly letterSpacing?: Expr<number>;
+  /** px, or (v4) a percentage of the size as text (`"2%"`, `"-1.5%"`). */
+  readonly letterSpacing?: Expr<number | string>;
   /**
    * `justify` (v4): the text fills the box's width, and the last line of each paragraph stays on
    * the left. `start` (the default) and `end` (v4) follow the reading direction: `left`/`right` in
@@ -306,9 +307,14 @@ export type LayoutWrap = 'none' | 'wrap' | 'wrap-reverse';
 export interface LayoutSpec {
   readonly type: Expr<LayoutType>;
   readonly gap?: Expr<number>;
-  /** One value, [vertical, horizontal] or [top, right, bottom, left]. */
+  /**
+   * One value, [vertical, horizontal] or [top, right, bottom, left]; each item of a list is a
+   * number or (v4) a number expression.
+   */
   readonly padding?: Expr<
-    number | readonly [number, number] | readonly [number, number, number, number]
+    | number
+    | readonly [Expr<number>, Expr<number>]
+    | readonly [Expr<number>, Expr<number>, Expr<number>, Expr<number>]
   >;
   /**
    * On the cross axis. `baseline` (v4, only in `row`): the children align by the first baseline,
@@ -446,7 +452,7 @@ export interface TextRunTemplate {
   /** Background color of the inline box (`none` = no box). */
   readonly background?: Expr<Color>;
   readonly radius?: Expr<number>;
-  readonly padding?: Expr<number | readonly [number, number]>;
+  readonly padding?: Expr<number | readonly [Expr<number>, Expr<number>]>;
 }
 
 /**

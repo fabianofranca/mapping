@@ -791,6 +791,14 @@ const checkPositiveInteger = tokenCheck('number', (v, p, out) => {
     add(out, p, 'expected an integer greater than or equal to 1');
 });
 
+/** `font.letterSpacing`: px (a number) or a percentage of the size (`"2%"`, `"-1.5%"`, v4). */
+const SIGNED_PERCENT_PATTERN = /^-?\d+(\.\d+)?%$/;
+const checkLetterSpacing = tokenCheck('number', (v, p, out) => {
+  if (isFiniteNumber(v)) return;
+  if (typeof v === 'string' && SIGNED_PERCENT_PATTERN.test(v)) return;
+  add(out, p, 'expected a number or a percentage ("2%")');
+});
+
 function checkFont(value: unknown, path: string, out: Ctx): void {
   if (!isRecord(value)) return add(out, path, 'expected an object');
   const specs: Record<string, Check> = {
@@ -799,7 +807,7 @@ function checkFont(value: unknown, path: string, out: Ctx): void {
     weight: checkWeight,
     italic: checkBoolean,
     lineHeight: checkNumber,
-    letterSpacing: checkNumber,
+    letterSpacing: checkLetterSpacing,
     align: oneOf(['left', 'center', 'right', 'justify', 'start', 'end']),
     verticalAlign: oneOf(['top', 'middle', 'bottom', 'cap-middle']),
     decoration: oneOf(['none', 'underline', 'line-through']),
@@ -816,13 +824,25 @@ function checkFont(value: unknown, path: string, out: Ctx): void {
   }
 }
 
-const checkPadding = tokenCheck('number', (value, path, out) => {
+/**
+ * The items of a `padding` list: a number ≥ 0 or (v4) a number expression. The literal items
+ * are checked by the caller; an expression item is checked here, at the item's path.
+ */
+function checkPaddingItems(list: readonly unknown[], path: string, out: Ctx): boolean {
   const ok = (n: unknown): boolean => isFiniteNumber(n) && n >= 0;
-  if (ok(value)) return;
+  if (!list.every((n) => ok(n) || isExprObject(n))) return false;
+  list.forEach((item, i) => {
+    if (isExprObject(item)) checkExpr(item, `${path}[${i}]`, checkNonNegative, out);
+  });
+  return true;
+}
+
+const checkPadding = tokenCheck('number', (value, path, out) => {
+  if (isFiniteNumber(value) && value >= 0) return;
   if (
     Array.isArray(value) &&
     (value.length === 2 || value.length === 4) &&
-    value.every(ok)
+    checkPaddingItems(value, path, out)
   )
     return;
   add(
@@ -1015,9 +1035,8 @@ const RUN_KEYS = [
 
 /** `runs[i].padding`: a number (both axes) or `[vertical, horizontal]`, non-negative. */
 const checkRunPadding = tokenCheck('number', (v, p, out) => {
-  const ok = (n: unknown): boolean => isFiniteNumber(n) && n >= 0;
-  if (ok(v)) return;
-  if (Array.isArray(v) && v.length === 2 && v.every(ok)) return;
+  if (isFiniteNumber(v) && v >= 0) return;
+  if (Array.isArray(v) && v.length === 2 && checkPaddingItems(v, p, out)) return;
   add(
     out,
     p,
@@ -1660,6 +1679,49 @@ function tokenVersionIssues(version: unknown, template: unknown): ComponentIssue
   return out;
 }
 
+/** Does the item of a `padding` list need version 4 by itself? A `$token` or a numeric operation is flagged by its own rule. */
+function isPlainPaddingExpr(item: unknown): boolean {
+  if (!isExprObject(item)) return false;
+  return !Object.keys(item).some((k) => k === '$token' || isV4OnlyOp(k));
+}
+
+/** The `padding` of a frame, slot, `repeat` or run (a list of items) and `font.letterSpacing` (percent) before version 4. */
+function paddingSpacingVersionIssues(
+  version: unknown,
+  template: unknown,
+): ComponentIssue[] {
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return [];
+  const out: ComponentIssue[] = [];
+  const items = (list: unknown, at: string): void => {
+    if (Array.isArray(list))
+      list.forEach((item, i) => {
+        if (isPlainPaddingExpr(item)) addIssue(out, `${at}[${i}]`, V4_ONLY_MESSAGE);
+      });
+  };
+  const percents = (value: unknown, at: string): void => {
+    if (typeof value === 'string' && SIGNED_PERCENT_PATTERN.test(value))
+      addIssue(out, at, V4_ONLY_MESSAGE);
+    else if (isRecord(value))
+      for (const [key, v] of Object.entries(value)) percents(v, join(at, key));
+  };
+  const walk = (node: unknown, at: string): void => {
+    if (!isRecord(node)) return;
+    if (isRecord(node.layout)) items(node.layout.padding, join(at, 'layout.padding'));
+    if (Array.isArray(node.runs))
+      node.runs.forEach((run: unknown, i) => {
+        if (isRecord(run)) items(run.padding, `${join(at, 'runs')}[${i}].padding`);
+      });
+    if (isRecord(node.font) && 'letterSpacing' in node.font)
+      percents(node.font.letterSpacing, join(at, 'font.letterSpacing'));
+    if (Array.isArray(node.children))
+      node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'));
+  };
+  walk(template, 'template');
+  return out;
+}
+
 /** The new v4 expression keys (operations, comparisons, `$rows` and `$size`). */
 function isV4OnlyOp(key: string): boolean {
   return (
@@ -1969,7 +2031,7 @@ const ROOT_KEYS = [
 ];
 
 /** An axis of the already evaluated `sizing`: px (≥ 0), `"fill"`, `"hug"`, `"min-content"` or `"max-content"`. */
-const checkSizingAxis: Check = (value, path, out) => {
+const checkSizingAxis = tokenCheck('number', (value, path, out) => {
   if (isFiniteNumber(value) && value >= 0) return;
   if (value === 'fill' || value === 'hug' || isIntrinsicSize(value)) return;
   add(
@@ -1977,7 +2039,7 @@ const checkSizingAxis: Check = (value, path, out) => {
     path,
     'expected a number greater than or equal to 0, "fill", "hug", "min-content" or "max-content"',
   );
-};
+});
 
 /** The `sizing` is evaluated before measuring: `$size` and `$lines` do not exist yet. */
 const SIZING_FORBIDDEN: Readonly<Record<string, string>> = {
@@ -2216,6 +2278,7 @@ function collectIssues(
     issues.push(...shadowListVersionIssues(version, template));
     issues.push(...noneAlignVersionIssues(version, template));
     issues.push(...tokenVersionIssues(version, template));
+    issues.push(...paddingSpacingVersionIssues(version, template));
     issues.push(...numericVersionIssues(version, template));
     issues.push(...linesIssues(template));
     issues.push(...indexIssues(version, template));

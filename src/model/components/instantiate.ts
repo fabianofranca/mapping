@@ -225,6 +225,9 @@ export type TextMeasurer = (
   maxWidth?: number,
 ) => TextMetrics;
 
+/** `font.letterSpacing` as a percentage of the size (`"2%"`, `"-1.5%"`). */
+const PERCENT_TEXT = /^-?\d+(\.\d+)?%$/;
+
 /** The size of a slot's content: the arranged children plus the slot's padding. */
 export interface SlotSize {
   readonly width: number;
@@ -826,6 +829,21 @@ function createEngine(
     };
   };
 
+  /**
+   * `font.letterSpacing` in px: a number, numeric text or a percentage of the size (`"2%"` is
+   * `0.02 × size`). Another value is an invalid value: the warning and 0.
+   */
+  const letterSpacingOf = (expr: FontSpec['letterSpacing'], size: number): number => {
+    const value = ev<unknown>(expr as Expr<unknown> | undefined, 0);
+    if (value === undefined || value === null || value === '') return 0;
+    if (typeof value === 'string' && PERCENT_TEXT.test(value))
+      return (parseFloat(value) / 100) * size;
+    const n = typeof value === 'number' ? value : Number(value);
+    if (Number.isFinite(n)) return n;
+    invalidValue('font.letterSpacing', value);
+    return 0;
+  };
+
   const textFont = (node: TextTemplate): MeasureFont => {
     const font: FontSpec = node.font ?? {};
     const size = Math.max(0, num(font.size, 14));
@@ -837,7 +855,7 @@ function createEngine(
       weight: num(font.weight, 400),
       italic: bool(font.italic, false),
       lineHeight: lh <= 3 ? lh * size : lh,
-      letterSpacing: num(font.letterSpacing, 0),
+      letterSpacing: letterSpacingOf(font.letterSpacing, size),
       ...(dirOf(node) === 'rtl' ? { direction: 'rtl' as const } : {}),
     };
   };
@@ -1580,11 +1598,17 @@ function createEngine(
     const plan = componentPlan(node);
     if (plan === undefined) return 'fill';
     // The inner `sizing` reads what the inner drawing reads: the direction and `$provided` (node `provide` included).
-    const resolved = resolveSizing(plan.component, {
-      ...plan.values,
-      [DIRECTION_FIELD]: dirOf(node),
-      ...providedFields(extendProvided(options.provided ?? {}, componentProvides(node))),
-    });
+    const resolved = resolveSizing(
+      plan.component,
+      {
+        ...plan.values,
+        [DIRECTION_FIELD]: dirOf(node),
+        ...providedFields(
+          extendProvided(options.provided ?? {}, componentProvides(node)),
+        ),
+      },
+      tokens,
+    );
     for (const message of resolved.messages)
       warn(message.code as ModelMessageTemplateCode, message.params);
     return resolved[axis === 'w' ? 'width' : 'height'].spec;

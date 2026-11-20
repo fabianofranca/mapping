@@ -250,6 +250,14 @@ function resolveRef(ref: TokenRef, tokens: ResolvedTokens): TokenValue | undefin
   return base === undefined ? faded : compositeOver(faded, base);
 }
 
+/**
+ * A single value (an axis of `sizing`, or any piece of a component) with each `{ "$token": … }`
+ * replaced by the table's value; a token the table lacks vanishes from an object and stays in a list.
+ */
+export function substituteTokens(node: unknown, tokens: ResolvedTokens): unknown {
+  return isTokenRef(node) ? resolveRef(node, tokens) : substitute(node, tokens);
+}
+
 function substitute(node: unknown, tokens: ResolvedTokens): unknown {
   if (Array.isArray(node)) {
     // A list item (`cornerRadius`, `dash`) does not vanish: a `$token` with no value stays as it is.

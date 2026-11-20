@@ -184,8 +184,7 @@
           "minItems": 2,
           "maxItems": 2,
           "items": {
-            "type": "number",
-            "minimum": 0
+            "$ref": "#/$defs/expr_nonNegative"
           }
         },
         {
@@ -193,8 +192,7 @@
           "minItems": 4,
           "maxItems": 4,
           "items": {
-            "type": "number",
-            "minimum": 0
+            "$ref": "#/$defs/expr_nonNegative"
           }
         }
       ]
@@ -210,8 +208,7 @@
           "minItems": 2,
           "maxItems": 2,
           "items": {
-            "type": "number",
-            "minimum": 0
+            "$ref": "#/$defs/expr_nonNegative"
           }
         }
       ]
@@ -2273,7 +2270,7 @@
       }
     },
     "sizing": {
-      "description": "Sizing without a rectangle. Each axis: px (>= 0), \"fill\", \"hug\", \"min-content\", \"max-content\" (formatVersion 4) or, in formatVersion 4, an expression that yields one of them, evaluated with the instance's values ($size and $lines are not valid here; parseComponent refuses % and $token).",
+      "description": "Sizing without a rectangle. Each axis: px (>= 0), \"fill\", \"hug\", \"min-content\", \"max-content\" (formatVersion 4) or, in formatVersion 4, an expression that yields one of them, evaluated with the instance's values ($size and $lines are not valid here; parseComponent refuses % and a $token of another kind; a number $token is valid in formatVersion 4).",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -2465,7 +2462,7 @@
           "$ref": "#/$defs/expr_number"
         },
         "letterSpacing": {
-          "$ref": "#/$defs/expr_number"
+          "$ref": "#/$defs/expr_numberOrPercent"
         },
         "align": {
           "$ref": "#/$defs/expr_fontAlign"
@@ -4794,6 +4791,118 @@
           "$ref": "#/$defs/anchors"
         }
       }
+    },
+    "lit_numberOrPercent": {
+      "description": "A number (px) or a percentage of the font size as text (\"2%\", \"-1.5%\"; formatVersion 4).",
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "pattern": "^-?\\d+(\\.\\d+)?%$"
+        }
+      ]
+    },
+    "expr_numberOrPercent": {
+      "description": "Literal or expression ($field, $if, $switch, $concat, $token).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_numberOrPercent"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_numberOrPercent"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_numberOrPercent"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_numberOrPercent"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_numberOrPercent"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_numberOrPercent"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$provided"],
+          "properties": {
+            "$provided": {
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
+              "type": "string",
+              "minLength": 1
+            },
+            "default": {
+              "$ref": "#/$defs/expr_numberOrPercent"
+            }
+          }
+        },
+        {
+          "$ref": "#/$defs/varRef"
+        }
+      ]
     }
   }
 }

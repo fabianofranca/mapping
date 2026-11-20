@@ -99,6 +99,69 @@ describe('component.schema.json', () => {
     });
   });
 
+  describe('format gaps, FG4 (formatVersion 4)', () => {
+    const v4 = (
+      template: Record<string, unknown>,
+      extra: Record<string, unknown> = {},
+    ): Record<string, unknown> => ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'tag',
+      name: 'Tag',
+      size: { width: 80, height: 24 },
+      template: { type: 'frame', children: [], ...template },
+      ...extra,
+    });
+    const token = (name: string) => ({ $token: name });
+
+    it('accepts the letter spacing in percent, also by expression, and rejects other text', () => {
+      const text = (letterSpacing: unknown) =>
+        v4({ children: [{ type: 'text', text: 'x', font: { letterSpacing } }] });
+      for (const ok of [
+        '2%',
+        '-1.5%',
+        1,
+        token('tracking'),
+        { $switch: 's', cases: { a: '2%' }, default: 0 },
+      ]) {
+        const c = text(ok);
+        expect(checkSchema(schema, c), JSON.stringify(ok)).toEqual([]);
+        expect(parseComponent(c).ok).toBe(true);
+      }
+      for (const bad of ['2px', '%', 'abc'])
+        expect(checkSchema(schema, text(bad)).length, bad).toBeGreaterThan(0);
+    });
+
+    it('accepts expressions as padding items, in a frame and in a run', () => {
+      const frame = v4({
+        layout: {
+          type: 'row',
+          padding: [{ $field: 'pad' }, token('spacing-24'), { $mul: [2, 4] }, 4],
+        },
+      });
+      const run = v4({
+        children: [{ type: 'text', runs: [{ text: 'x', padding: [0, token('chip')] }] }],
+      });
+      for (const c of [frame, run]) {
+        expect(checkSchema(schema, c)).toEqual([]);
+        expect(parseComponent(c).ok).toBe(true);
+      }
+      const negative = v4({ layout: { type: 'row', padding: [0, -1] } });
+      expect(checkSchema(schema, negative).length).toBeGreaterThan(0);
+    });
+
+    it('accepts a number $token in sizing, alone and in a $switch', () => {
+      for (const width of [
+        token('size-48'),
+        { $switch: 'size', cases: { s: token('size-24') }, default: 'hug' },
+      ]) {
+        const c = v4({}, { sizing: { width } });
+        expect(checkSchema(schema, c)).toEqual([]);
+        expect(parseComponent(c).ok).toBe(true);
+      }
+    });
+  });
+
   describe('image node (formatVersion 3)', () => {
     const image = (extra: Record<string, unknown> = {}): Record<string, unknown> => ({
       type: 'image',

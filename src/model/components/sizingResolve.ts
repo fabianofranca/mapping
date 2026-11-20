@@ -13,6 +13,7 @@ import type {
   InstanceSizeSpec,
 } from './componentFormat';
 import { evaluate } from './expressions';
+import { type ResolvedTokens, substituteTokens } from './tokens';
 import { describeValue, isIntrinsicSize, parseSizeSpec } from './layoutValues';
 
 export type SizingAxis = 'width' | 'height';
@@ -39,10 +40,15 @@ function plainSpec(value: unknown): InstanceSizeSpec | undefined {
   return typeof spec === 'string' && !known ? undefined : spec;
 }
 
-/** The component's `sizing`, evaluated with `values`; an axis without `sizing` takes the `size`. */
+/**
+ * The component's `sizing`, evaluated with `values`; an axis without `sizing` takes the `size`.
+ * A `$token` of an axis becomes the value of `tokens` (the drawing mode's table; without it, the
+ * component's `resolvedTokens`) before evaluating: one without a value is an invalid value.
+ */
 export function resolveSizing(
   component: ComponentFile,
   values: FieldValues,
+  tokens: ResolvedTokens | undefined = component.resolvedTokens,
 ): ResolvedSizing {
   const messages: ModelMessage[] = [];
   const axis = (name: SizingAxis): ResolvedAxis => {
@@ -50,7 +56,9 @@ export function resolveSizing(
     const size: ResolvedAxis = { spec: component.size[name], source: 'size' };
     if (raw === undefined) return size;
     if (typeof raw !== 'object') return { spec: raw, source: 'literal' };
-    const value = evaluate<unknown>(raw as Expr<unknown>, values, undefined);
+    const resolved = substituteTokens(raw, tokens ?? {}) as Expr<unknown> | undefined;
+    const value =
+      resolved === undefined ? undefined : evaluate<unknown>(resolved, values, undefined);
     const spec = plainSpec(value);
     if (spec !== undefined) return { spec, source: 'expression' };
     messages.push(
