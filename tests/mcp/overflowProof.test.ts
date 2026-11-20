@@ -69,6 +69,12 @@ const spec = (withFonts: boolean) => ({
           fields: [{ key: 'label', type: 'string', default: 'Save' }],
         },
         {
+          id: 'nest',
+          name: 'Nest',
+          component: 'components/nest.json',
+          fields: [{ key: 'label', type: 'string', default: 'Confirm payment now' }],
+        },
+        {
           id: 'dir',
           name: 'Direction',
           component: 'components/dir.json',
@@ -150,6 +156,41 @@ const saveComponent = {
   },
 };
 
+/**
+ * From #2164: a `hug` frame whose `fill` label is now measured by its content (it was 0 with a warning), so
+ * the frame can go past its parent: `none` root of 120 with a 20-wide bar and the label.
+ */
+const nestComponent = {
+  format: 'mapping-component',
+  formatVersion: 4,
+  id: 'nest',
+  name: 'nest',
+  size: { width: 200, height: 40 },
+  template: {
+    type: 'frame',
+    name: 'nest',
+    layout: { type: 'none' },
+    children: [
+      {
+        type: 'frame',
+        name: 'core',
+        width: 'hug',
+        height: 'hug',
+        layout: { type: 'row' },
+        children: [
+          { type: 'rect', name: 'bar', width: 20, height: 20, fill: '#000000' },
+          {
+            ...textNode(),
+            name: 'nest-label',
+            height: 'hug',
+            text: { $field: 'label', default: 'Confirm payment now' },
+          },
+        ],
+      },
+    ],
+  },
+};
+
 /** Overflows only in `rtl`: a 300-wide bar, visible only in that direction, in a 120 frame. */
 const dirComponent = {
   format: 'mapping-component',
@@ -192,6 +233,7 @@ async function workspace(withFonts: boolean): Promise<Workspace> {
   writeFileSync(join(lib, 'components', 'chip.json'), JSON.stringify(chipComponent));
   writeFileSync(join(lib, 'components', 'save.json'), JSON.stringify(saveComponent));
   writeFileSync(join(lib, 'components', 'dir.json'), JSON.stringify(dirComponent));
+  writeFileSync(join(lib, 'components', 'nest.json'), JSON.stringify(nestComponent));
   writeFileSync(
     join(lib, 'components', 'face.json'),
     JSON.stringify(component('face', { $token: 'face' })),
@@ -427,6 +469,29 @@ describe('plan_changes: warning on the none parent (#1093)', () => {
       create({ x: 10, y: 10, width: 87, height: 40 }, 'lib/chip'),
     ]);
     expect(overflows(fits)).toEqual([]);
+  });
+});
+
+describe('plan_changes: a nested hug frame with a fill label (#2164)', () => {
+  it('the frame hugs its label and goes past the box: content component-overflow; wide enough, nothing', async () => {
+    const small = await plan(approx, [
+      SCREEN,
+      create({ x: 10, y: 10, width: 80, height: 40 }, 'lib/nest'),
+    ]);
+    expect(small.data.errors).toBeUndefined();
+    const items = overflows(small);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      code: 'component-overflow',
+      kind: 'content',
+      node: 'nest',
+    });
+    expect(items[0]!.message).toContain('content larger than the box');
+    const wide = await plan(approx, [
+      SCREEN,
+      create({ x: 10, y: 10, width: 200, height: 40 }, 'lib/nest'),
+    ]);
+    expect(overflows(wide)).toEqual([]);
   });
 });
 

@@ -174,7 +174,43 @@ function list(id: string): Json {
   };
 }
 
+/**
+ * A menu item (#2164): a `hug` width between 96 and 136, a fixed icon and a `fill` label that is the content
+ * the root hugs. The label is one line with an ellipsis, so the height stays at 40.
+ */
+function menuItem(): Json {
+  return {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'menu-item',
+    name: 'menu-item',
+    size: { width: 104, height: 40 },
+    minSize: { width: 96, height: 40 },
+    sizing: { width: 'hug' },
+    template: {
+      type: 'frame',
+      layout: { type: 'row', align: 'center', gap: 8, padding: [8, 12] },
+      fill: '#EEEEEE',
+      minWidth: 96,
+      maxWidth: 136,
+      children: [
+        { type: 'rect', width: 24, height: 24, fill: '#6750A4' },
+        {
+          type: 'text',
+          name: 'label',
+          text: { $field: 'label', default: '' },
+          width: 'fill',
+          height: 'hug',
+          font: { size: 14, lineHeight: 20, wrap: 'none', ellipsis: true },
+        },
+      ],
+    },
+  };
+}
+
 export const FIT_COMPONENTS: Record<string, Json> = {
+  // A `hug` root with a fixed icon and a `fill` label: the width is the label's, between 96 and 136 (#2164).
+  'menu-item': menuItem(),
   // A list with a `table` field and a `ref` field (the table's rows set the height).
   'fit-list': list('fit-list'),
   // The height follows the label; the width stays (no `sizing` on it).
