@@ -717,7 +717,7 @@ describe('findings of the `/code-review high` review (S4)', () => {
   });
 });
 
-describe('the inits of an extension and inside `#if`, and raw strings (stage #1774, CI2; decisions 13 to 15)', () => {
+describe('the inits of an extension and inside `#if`, and raw strings (CI2; decisions 13 to 15)', () => {
   const BANNER = rel('Banner.swift');
   const INITS = rel('BannerInits.swift');
   const files = {
