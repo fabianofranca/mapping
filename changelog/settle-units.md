@@ -1,5 +1,10 @@
-# Component keeps size in units across spaces — [Não lançado] (epic `epic/settle-units`, PR #2313, MCP 0.47.2, schema unchanged)
+# Component keeps size in units across spaces — [Não lançado] (épico `epic/settle-units`, PR #2313, MCP 0.47.2, schema v21 unchanged)
+
+## Corrigido
+
+- A Text (or any component marking) dropped from the canvas into a container, or out of one, no longer overflows right after the move: it keeps its size in component units, so its box and its font stay in the same unit without Arrange (#2210).
+- Floating on a component in a container with density or scale other than 1 keeps its units on the canvas (#2210).
 
 ## Alterado
 
-- Work in progress.
+- When the geometry moves a component marking to a space with another density × scale, its `rect` is scaled by the ratio; the set that moves together (with its descendants) scales as a whole around its top-left corner. A plain marking keeps its size on screen, as before. The MCP batch (`create_marking`, `update_marking`) converts the same way and `plan_changes` shows the converted `rect` (#2210).
