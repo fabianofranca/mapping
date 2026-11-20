@@ -67,6 +67,32 @@ describe('painel.py pergunta — open (decision 4)', () => {
     expect(questions()).toHaveLength(2);
   });
 
+  it('(a) `soltar` is a valid verb and shows under `perguntas ao dono:` (#2204, decision 4)', () => {
+    runAt(
+      T0,
+      'pergunta',
+      dir,
+      '#8',
+      'soltar',
+      'texto=#8 depende de #7, recusada. Responda `soltar #8`',
+    );
+    expect(questions()).toEqual([
+      {
+        issue: '#8',
+        verbo: 'soltar',
+        texto: '#8 depende de #7, recusada. Responda `soltar #8`',
+        at: T0,
+      },
+    ]);
+    expect(runAt(T3H, 'show', dir)).toContain(
+      '  #8 soltar (há 3 h): #8 depende de #7, recusada. Responda `soltar #8`',
+    );
+    runAt(T3H, 'pergunta', dir, '#8', 'soltar', 'texto=outro');
+    expect(questions()).toHaveLength(1); // an open question is not asked again
+    runAt(T3H, 'pergunta', dir, '#8', 'soltar', '--fim', 'resposta=esperar #8');
+    expect(questions()).toHaveLength(0);
+  });
+
   it('(a) an unknown verb, a missing texto or a row outside the queue give Erro (code 2) and write nothing', () => {
     const bad = [
       tryRun(T0, 'pergunta', dir, '#7', 'apagar', 'texto=x'),
