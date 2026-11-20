@@ -9,4 +9,4 @@
 ## Alterado
 
 - When the geometry moves a component marking to a space with another density × scale, its `rect` is scaled by the ratio; the set that moves together (with its descendants) scales as a whole around its top-left corner. A plain marking keeps its size on screen, as before. The MCP batch (`create_marking`, `update_marking`) converts the same way and `plan_changes` shows the converted `rect` (#2210).
-- The `dist/index.html` ceiling went up 16 KiB, from 2326528 to 2342912, by the budget rule; above the limits, `bug` for the owner to review.
+- The `dist/index.html` ceiling went up 16 KiB, from 2326528 to 2342912, by the budget rule; above the limits, `bug` #2337 for the owner to review.
