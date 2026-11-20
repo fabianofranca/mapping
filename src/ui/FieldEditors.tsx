@@ -91,6 +91,11 @@ interface MultilineProps {
  * Multi-line text: leaving the field saves. While the text has no break, Enter also
  * saves (as in the single-line field) and Shift+Enter breaks; with a break, Enter breaks.
  */
+/** Clears the draft while rendering (the pattern of derived state) as soon as it is stale. */
+function useDropStaleDraft(stale: boolean, setDraft: (draft: null) => void): void {
+  if (stale) setDraft(null);
+}
+
 function MultilineEditor({
   id,
   label,
@@ -116,6 +121,9 @@ function MultilineEditor({
     (draft.base === initial ||
       (startText !== undefined && draft.text === `${initial}\n`));
   const current = draftHolds && draft.text !== initial ? draft.text : initial;
+  // A draft that stopped holding is dropped right away: if the project value later returns to
+  // the draft's `base` (two undos), the old text must not come back.
+  useDropStaleDraft(draft !== null && !draftHolds, setDraft);
   const area = useRef<HTMLTextAreaElement>(null);
   // Focus and cursor at the end only on mount: rendering while typing does not move them.
   useLayoutEffect(() => {
