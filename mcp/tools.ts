@@ -17,7 +17,7 @@ import { listMarkings } from './markingList';
 import { modelToolError } from './modelErrors';
 import { findPerspective, perspectiveDetail } from './perspectives';
 import { operationSchema } from './operations';
-import { resolveOperations } from './operationsFile';
+import { resolveOperations, resolveOptionalOperations } from './operationsFile';
 import { Proposals } from './proposals';
 import { Threads, resolveExtended } from './threads';
 import { registerThreadTools } from './threadTools';
@@ -152,7 +152,7 @@ const operationsArg = z
 
 /**
  * Inline `operations` or `operationsFile` (decision 28): `plan_changes` and `propose_changes` accept
- * one of the two. Each is optional in the schema; `resolveOperations` refuses both together and neither.
+ * one of the two (`revise_proposal` too, with its own `operations`). Each is optional in the schema; `resolveOperations` refuses both together and neither.
  */
 const batchOperationsArgs = {
   operations: operationsArg
@@ -164,7 +164,7 @@ const batchOperationsArgs = {
     .string()
     .optional()
     .describe(
-      'Path of a `.json` inside the roots with the list of operations (the same as `operations`), for batches too large for the call (a measured screen has hundreds). Relative to a root or absolute inside one; outside the roots it is `outside-roots`, invalid JSON is `invalid-arguments` with the position. Both together, or neither, is `invalid-arguments`.',
+      'Path of a `.json` with the list of operations (the same as `operations`), for batches too large for the call (a measured screen has hundreds). Inside a root or the scratch folder (`--scratch`, read-only: the place for temporary batches): relative (roots first, then the scratch folder) or absolute inside one of them; anywhere else it is `outside-roots`, invalid JSON is `invalid-arguments` with the position. Both together, or neither, is `invalid-arguments`.',
     ),
 };
 
@@ -223,13 +223,14 @@ export function registerTools(
     'list_projects',
     {
       description:
-        'Lists the Mapping projects (folders with mapping.json) found in the configured roots: name, path, counts and applied specializations.',
+        'Lists the Mapping projects (folders with mapping.json) found in the configured roots: name, path, counts and applied specializations. Also shows the roots (and the ones that do not exist, `missingRoots`) and the read-only scratch folders (`scratch`, `missingScratch`): the place for the temporary `operationsFile` and image files of a batch, never scanned for projects.',
       annotations: READ_ONLY,
     },
     () =>
       respond(async () => {
         const locations = await discoverProjects(roots);
         const reals = await roots.realRoots();
+        const realScratch = await roots.realScratch();
         const projects = await Promise.all(
           locations.map(async (location) => {
             try {
@@ -252,6 +253,8 @@ export function registerTools(
         return {
           roots: roots.roots,
           missingRoots: roots.roots.filter((_, i) => reals[i] === null),
+          scratch: roots.scratch,
+          missingScratch: roots.scratch.filter((_, i) => realScratch[i] === null),
           projects,
         };
       }),
@@ -938,8 +941,9 @@ export function registerTools(
           .max(1000)
           .optional()
           .describe(
-            'Batch applied to the whole proposed state, with propose_changes validation (`$name` aliases work). A new or replaced library package does not fit here.',
+            'Batch applied to the whole proposed state, with propose_changes validation (`$name` aliases work). A new or replaced library package does not fit here. Use `operations` OR `operationsFile`, never both; neither is fine when `drop` is given.',
           ),
+        operationsFile: batchOperationsArgs.operationsFile,
         dryRun: z
           .boolean()
           .optional()
@@ -947,7 +951,16 @@ export function registerTools(
       },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
-    ({ ref, project, ...args }) => respond(() => proposals.revise(ref, project, args)),
+    ({ ref, project, operations, operationsFile, ...args }) =>
+      respond(async () =>
+        proposals.revise(ref, project, {
+          ...args,
+          operations: await resolveOptionalOperations(roots, {
+            operations,
+            operationsFile,
+          }),
+        }),
+      ),
   );
 
   server.registerTool(
