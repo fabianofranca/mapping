@@ -509,12 +509,12 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'script-output',
   },
   {
-    term: 'espera',
+    term: 'começa cedo (espera #S para testar)',
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'script-output',
   },
   {
-    term: 'para testar',
+    term: 'espera merge de #S, #T para testar',
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'script-output',
   },
@@ -3401,8 +3401,15 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
       'the formato= ficha value `não` and the de/para/tipo keys of the entrega arrow, in the docstring paragraph on the early start (frozen panel values)',
   },
   {
+    path: '.claude/skills/implementar-fila/painel/painel.py',
+    pattern:
+      /\(espera \{', '\.join\(early\)\} para testar\)|"espera merge de " \+|"espera merge para testar"|rewrites its step to `espera merge de #S/,
+    reason:
+      'the reason and the step the early start writes (começa cedo (espera #S para testar), espera merge de #S para testar), frozen script output matched by tests/tooling/queueEarlyStart.test.ts',
+  },
+  {
     path: 'tests/tooling/queueEarlyStart.test.ts',
-    pattern: /não|\bde: |tipo: string|concluída/,
+    pattern: /não|\bde: |tipo: string|concluída|para testar/,
     reason:
       'the frozen panel values of the early-start tests (ficha value não, arrow keys de/para/tipo, the status concluída) that painel.py writes and reads',
   },
