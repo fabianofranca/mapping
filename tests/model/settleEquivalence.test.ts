@@ -202,6 +202,8 @@ function genContainers(rng: Rng, count: number): ProjectContainer[] {
       y: rng.int(0, 200),
       scale: rng.pick([0.5, 1, 2]),
     },
+    // Stage #2210: a density other than 1 in about half of the containers.
+    ...(rng.chance(0.5) ? { density: rng.pick([0.5, 1.5, 2, 3]) } : {}),
     parentId: null,
     pageId: 'PG1',
     markingColor: null,
@@ -507,7 +509,8 @@ type Category =
   | 'missingContainer'
   | 'missingParent'
   | 'leavesContainer'
-  | 'enclosingAnswered';
+  | 'enclosingAnswered'
+  | 'unitsScaled';
 
 const rectsEqual = (a: Rect, b: Rect): boolean =>
   a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
@@ -597,6 +600,15 @@ function categoriesOf(c: Case): Category[] {
     (q) => enclosingAmong(p, q.containerId, q.candidates, q.current) !== null,
   );
   if (answered) out.push('enclosingAnswered');
+  // Stage #2210: the rule of the units really changed a converted `rect` (against the plain settle).
+  const withUnits = settleHierarchy(p, { minSizeOf: c.minSizeOf });
+  if (
+    withUnits.markings.some(
+      (m, i) => !rectsEqual(m.rect, (settled.markings[i] as Marking).rect),
+    )
+  ) {
+    out.push('unitsScaled');
+  }
   return out;
 }
 
@@ -625,6 +637,7 @@ const REQUIRED: readonly Category[] = [
   'missingParent',
   'leavesContainer',
   'enclosingAnswered',
+  'unitsScaled',
 ];
 
 describe('settle equivalence with the frozen reference', () => {
