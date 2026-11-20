@@ -60,7 +60,7 @@ describe('format version in the agent docs', () => {
     expect(start).toBeGreaterThanOrEqual(0);
     const section = SKILL.slice(start);
     const lists = [...section.matchAll(/`formatVersion` <([\d|]+)>/g)].map((m) =>
-      m[1].split('|').map(Number),
+      (m[1] ?? '').split('|').map(Number),
     );
     const expected = Array.from({ length: N }, (_, i) => i + 1);
     expect(lists.length).toBeGreaterThan(0);
@@ -109,7 +109,7 @@ describe('format version in the agent docs', () => {
       text.split('\n').forEach((line, i) => {
         const hits = [...line.matchAll(PACKAGE_PATH)];
         hits.forEach((hit, k) => {
-          const path = hit[1];
+          const path = hit[1] ?? '';
           const end = (hit.index ?? 0) + hit[0].length;
           const segment = line.slice(end, hits[k + 1]?.index ?? line.length);
           const given = /\(v(\d+)\b|\(`formatVersion` (\d+)\b/.exec(segment);
