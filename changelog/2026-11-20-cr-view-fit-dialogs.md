@@ -1,4 +1,4 @@
-# View fit and dialogs fixes — [Não lançado] (epic `epic/cr-view-fit-dialogs`, PR #2307, MCP unchanged, schema unchanged)
+# View fit and dialogs fixes — 2026-11-20 (epic `epic/cr-view-fit-dialogs`, PR #2307, MCP unchanged, schema unchanged)
 
 ## Corrigido
 
