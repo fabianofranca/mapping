@@ -358,6 +358,11 @@ export interface LayoutSpec {
 // Template nodes
 // ---------------------------------------------------------------------------------------
 
+/** The `filter` of a node: only `grayscale` (0 to 1, the CSS `grayscale()` amount). */
+export interface FilterSpec {
+  readonly grayscale?: Expr<number>;
+}
+
 interface TemplateNodeBase {
   /** Name of the node (appears in the tree and on hover); optional. */
   readonly name?: string;
@@ -370,6 +375,18 @@ interface TemplateNodeBase {
    * or 0, it does not rotate.
    */
   readonly rotation?: Expr<number>;
+  /**
+   * `formatVersion` 4: scales the node (and a frame's children, stroke, shadow and `clip`)
+   * uniformly around the center of the box, a number ≥ 0 (expression or number `$token`). Drawing
+   * only, like `rotation`: layout, measurement, `hug` and the node's box do not change. Valid on
+   * the root. Without a value, or 1, it does not scale; 0 draws nothing.
+   */
+  readonly scale?: Expr<number>;
+  /**
+   * `formatVersion` 4: filters the node's drawing and its children's (drawing only). Valid on
+   * the root.
+   */
+  readonly filter?: FilterSpec;
   /**
    * `formatVersion` 4: pins the reading direction of the subtree (literal `ltr` or `rtl`), instead
    * of following the container's: a phone number, a snippet of code. The node is placed by its

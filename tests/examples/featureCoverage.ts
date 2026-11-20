@@ -316,6 +316,8 @@ export const BASE_KEYS = [
   'visible',
   'opacity',
   'rotation',
+  'scale',
+  'filter',
   'width',
   'height',
   'anchors',
@@ -362,6 +364,8 @@ export const REPEAT_BASE_KEYS = [
   'visible',
   'opacity',
   'rotation',
+  'scale',
+  'filter',
   'width',
   'height',
   'anchors',
@@ -386,6 +390,7 @@ const ANCHOR_KEYS = [
 ] as const;
 const LAYOUT_KEYS = ['gap', 'padding', 'align', 'justify'] as const;
 const STROKE_KEYS = ['color', 'width', 'align', 'dash', 'scale'] as const;
+const FILTER_KEYS = ['grayscale'] as const;
 const SHADOW_KEYS = ['color', 'x', 'y', 'blur'] as const;
 const FONT_KEYS = [
   'family',
@@ -469,6 +474,7 @@ export function componentFeatureList(): string[] {
   for (const key of ANCHOR_KEYS) out.add(`anchors.${key}`);
   for (const key of LAYOUT_KEYS) out.add(`layout.${key}`);
   for (const key of STROKE_KEYS) out.add(`stroke.${key}`);
+  for (const key of FILTER_KEYS) out.add(`filter.${key}`);
   for (const key of SHADOW_KEYS) out.add(`shadow.${key}`);
   for (const key of FONT_KEYS) out.add(`font.${key}`);
   for (const key of RUN_KEYS) out.add(`run.${key}`);
@@ -600,6 +606,7 @@ function nodeFeatures(node: unknown, out: Set<string>): void {
   }
   recordKeys('anchors', node.anchors, ANCHOR_KEYS, out);
   recordKeys('stroke', node.stroke, STROKE_KEYS, out);
+  recordKeys('filter', node.filter, FILTER_KEYS, out);
   recordKeys('shadow', node.shadow, SHADOW_KEYS, out);
   recordKeys('font', node.font, FONT_KEYS, out);
   if (Array.isArray(node.runs))

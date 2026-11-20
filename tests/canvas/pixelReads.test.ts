@@ -18,6 +18,8 @@ const PIXEL_READ =
 const AUDITED: Readonly<Record<string, string>> = {
   'src/canvas/components/exampleImages.ts':
     'Catalog gallery: `renderScene` with `pixelSafe: true` (an `opaque` image becomes a placeholder) and crossOrigin on the others; proved in tests/canvas/exampleImages.test.ts',
+  'src/canvas/components/renderScene.ts':
+    '`getImageData` of an embedded `data:` image (never remote, so never `opaque`) in `grayscaleSource`, inside a try/catch that keeps the color; the remote image goes through the Konva filter, only when `loaded`; proved in tests/canvas/components/renderSceneScaleFilter.test.ts',
   'src/storage/imageCrop.ts':
     '`toBlob` of the crop of a project image (local `blob:`), with no component layer',
   'src/storage/imageImport.ts':

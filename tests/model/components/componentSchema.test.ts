@@ -467,6 +467,33 @@ describe('component.schema.json', () => {
   });
 });
 
+describe('component.schema.json — scale and filter (FG5)', () => {
+  it('accepts scale and filter.grayscale on any node, the root included, and rejects the rest', () => {
+    const component = { ...clone(), formatVersion: 4 } as Record<string, unknown>;
+    const template = component.template as Record<string, unknown> & {
+      children?: Record<string, unknown>[];
+    };
+    template.scale = 0.96;
+    template.filter = { grayscale: { $if: { $field: 'off' }, then: 1, else: 0 } };
+    template.children = [
+      { type: 'rect', width: 4, height: 4, scale: { $field: 'k', default: 1 } },
+      {
+        type: 'frame',
+        scale: { $token: 'press' },
+        filter: { grayscale: 0.5 },
+        children: [],
+      },
+    ];
+    expect(checkSchema(schema, component)).toEqual([]);
+    template.children = [{ type: 'rect', width: 4, height: 4, scale: 'big' }];
+    expect(checkSchema(schema, component)).not.toEqual([]);
+    template.children = [{ type: 'rect', width: 4, height: 4, filter: { blur: 2 } }];
+    expect(checkSchema(schema, component)).not.toEqual([]);
+    template.children = [{ type: 'rect', width: 4, height: 4, filter: 1 }];
+    expect(checkSchema(schema, component)).not.toEqual([]);
+  });
+});
+
 describe('component.schema.json — rotation (EX3)', () => {
   it('accepts rotation, literal or expression, on any node, and rejects what is not a number', () => {
     const component = clone();

@@ -88,6 +88,7 @@ import type {
 import type { Box } from './box';
 import { STROKE_SIDES } from './componentFormat';
 import { clipBoxOf } from './clipBox';
+import { clampGrayscale, grayscaleNode } from './grayscale';
 import { DEFAULT_ICON_VIEWBOX, resolveIcon, type IconPath, type IconSet } from './icons';
 import {
   evaluate,
@@ -2989,6 +2990,41 @@ function createEngine(
     return degrees === 0 ? {} : { rotation: degrees };
   };
 
+  /** The evaluated `scale`; with no value or 1 the node does not scale, an invalid one (negative, not a number) is 1 with a warning. */
+  const scaleOf = (node: TemplateNode): { scale?: number } => {
+    const value = ev<unknown>(node.scale as Expr<unknown> | undefined, undefined);
+    if (value === undefined || value === null || value === '') return {};
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n) || n < 0) {
+      invalidValue('scale', value);
+      return {};
+    }
+    return n === 1 ? {} : { scale: n };
+  };
+
+  /** The inner root's own `scale` times the `component` node's: they compose by multiplying. */
+  const composedScale = (own: number | undefined, node: TemplateNode): number =>
+    (own ?? 1) * (scaleOf(node).scale ?? 1);
+
+  /** The evaluated `filter.grayscale` (clamped to 0..1); an invalid value is 0 with a warning. */
+  const grayscaleOf = (node: TemplateNode): number => {
+    const value = ev<unknown>(
+      node.filter?.grayscale as Expr<unknown> | undefined,
+      undefined,
+    );
+    if (value === undefined || value === null || value === '') return 0;
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n)) {
+      invalidValue('filter.grayscale', value);
+      return 0;
+    }
+    return clampGrayscale(n);
+  };
+
+  /** The node's built subtree through its `filter` (the drawing of a `component` node included). */
+  const filtered = <T extends SceneNode>(node: TemplateNode, built: T): T =>
+    node.filter === undefined ? built : grayscaleNode(built, grayscaleOf(node));
+
   const common = (
     node: TemplateNode,
     id: string,
@@ -3001,6 +3037,7 @@ function createEngine(
     opacity: Math.min(1, Math.max(0, num(node.opacity, 1))),
     transform: translate(x, y),
     ...rotationOf(node),
+    ...scaleOf(node),
     width: w,
     height: h,
     fills: fillsOf(node.fill, w, h),
@@ -3378,7 +3415,7 @@ function createEngine(
   /**
    * The inner component drawn in the node's box: the node is the inner root frame (ids prefixed by
    * `<path>/component`), named after the node or, without a name, the inner component. The node's
-   * `opacity` and `rotation` apply to the whole drawing. Its warnings and "does not fit" shortfalls
+   * `opacity`, `rotation` and `scale` apply to the whole drawing. Its warnings and "does not fit" shortfalls
    * come to this instance. Unavailable: nothing.
    */
   const buildComponent = (
@@ -3403,8 +3440,10 @@ function createEngine(
       shortfalls.set(text, Math.max(shortfalls.get(text) ?? 0, missing));
     const { root } = drawn;
     // The node's rotation adds to the inner root's own.
-    const { rotation: own = 0, ...rest } = root;
+    const { rotation: own = 0, scale: ownScale, ...rest } = root;
     const rotation = own + num(node.rotation, 0);
+    // The node's scale composes with the inner root's own (and with the outer ones, by the nesting).
+    const scale = composedScale(ownScale, node);
     // The scene node is the inner root (`<path>/component/root`): a `stroke.gap` naming the node opens on it.
     builtIds.set(node, root.id);
     return {
@@ -3412,10 +3451,23 @@ function createEngine(
       name: node.name ?? plan.component.name,
       opacity: root.opacity * Math.min(1, Math.max(0, num(node.opacity, 1))),
       ...(rotation === 0 ? {} : { rotation }),
+      ...(scale === 1 ? {} : { scale }),
     };
   };
 
   const buildNode = (
+    node: TemplateNode,
+    path: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ): SceneNode | undefined => {
+    const built = buildPlainNode(node, path, x, y, w, h);
+    return built === undefined ? undefined : filtered(node, built);
+  };
+
+  const buildPlainNode = (
     node: TemplateNode,
     path: string,
     x: number,
@@ -3513,8 +3565,11 @@ function createEngine(
   };
 
   const buildRoot = (box: Box): FrameNode =>
-    withGaps(
-      buildFrame(component.template, 'root', box.x, box.y, box.width, box.height, true),
+    filtered(
+      component.template,
+      withGaps(
+        buildFrame(component.template, 'root', box.x, box.y, box.width, box.height, true),
+      ),
     );
 
   return {

@@ -90,7 +90,7 @@ function isTokenRef(value: unknown): value is TokenRef {
   );
 }
 
-interface Rgba {
+export interface Rgba {
   readonly r: number;
   readonly g: number;
   readonly b: number;
@@ -211,6 +211,18 @@ function withAlpha(color: string, alpha: number): string {
   const rgba = parseColor(text);
   if (!rgba) return color;
   return `#${toByte(rgba.r)}${toByte(rgba.g)}${toByte(rgba.b)}${toByte(rgba.a * alpha * 255)}`;
+}
+
+/**
+ * The literal color with each channel changed by `change` (`#rrggbb`, or `#rrggbbaa` when it is not
+ * opaque). `none`, `transparent` and anything that is not an understood color stay as they are.
+ */
+export function mapColor(color: string, change: (rgba: Rgba) => Rgba): string {
+  const rgba = parseColor(color.trim());
+  if (!rgba) return color;
+  const out = change(rgba);
+  const body = `#${toByte(out.r)}${toByte(out.g)}${toByte(out.b)}`;
+  return out.a >= 1 ? body : `${body}${toByte(out.a * 255)}`;
 }
 
 /** The `$token`'s `alpha` as a number from 0 to 1 (literal or number `$token`); none if missing or invalid. */

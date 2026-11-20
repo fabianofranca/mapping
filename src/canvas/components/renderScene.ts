@@ -50,6 +50,7 @@ import { textBoxLimits } from './textLimits';
 import { wordSafeText } from './wordWidth';
 import { capMiddleShift, lineBaseline } from '../../model/components/baseline';
 import { capMetricsOf } from './capMiddle';
+import { grayscalePixels } from '../../model/components/grayscale';
 import { cachedEmbeddedImage, loadEmbeddedImage } from './imageLoader';
 import { DEFAULT_PALETTE, type RenderPalette } from './palette';
 import type { RenderWarning, RenderWarningCode } from './renderWarnings';
@@ -130,9 +131,10 @@ class Renderer {
 
   render(node: SceneNode, pendingShadows: readonly Shadow[] = []): Konva.Group {
     const container = new Konva.Group({
-      ...decompose(nodeMatrix(node)),
+      // `scale` 0 draws nothing (the matrix would not decompose).
+      ...decompose(node.scale === 0 ? node.transform : nodeMatrix(node)),
       opacity: node.opacity,
-      visible: node.visible,
+      visible: node.visible && node.scale !== 0,
       name: node.name,
     });
     container.setAttr(SCENE_ID_ATTR, node.id);
@@ -508,6 +510,7 @@ class Renderer {
           image: element,
           ...(size.width > 0 && size.height > 0 ? imageFit(fit, box, size) : {}),
         });
+        grayscaleImage(image, paint.grayscale, 'loaded');
       };
       const ready = cachedEmbeddedImage(paint.src);
       if (ready) {
@@ -531,7 +534,7 @@ class Renderer {
     loadEmbeddedImage(paint.src, {
       onLoad: (element) => {
         shape.fillPriority('pattern');
-        shape.fillPatternImage(element);
+        shape.fillPatternImage(grayscaleSource(element, paint.grayscale));
         shape.fillPatternScale({
           x: box.width / Math.max(1, element.naturalWidth),
           y: box.height / Math.max(1, element.naturalHeight),
@@ -565,6 +568,8 @@ class Renderer {
       opacity: paint.opacity ?? 1,
       listening: true,
     });
+    // An `opaque` image (loaded without CORS) cannot be read back: it stays in color, uncached.
+    grayscaleImage(image, paint.grayscale, view.state);
     return [image];
   }
 
@@ -809,6 +814,53 @@ function runTextShape(
     fill: runFill(run.color),
     ...(node.style.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
   });
+}
+
+/**
+ * The `filter.grayscale` that reached an image: the CSS matrix as a Konva filter on that image only,
+ * cached at its size. Without an amount, nothing is added (no filter, no cache). An image that
+ * cannot be read back stays in color: the `opaque` one (loaded without CORS, a filter would throw
+ * a `SecurityError`) is never filtered nor cached.
+ */
+function grayscaleImage(
+  image: KonvaImage,
+  amount: number | undefined,
+  state: RemoteImageViewState,
+): void {
+  if (amount === undefined || amount <= 0 || state !== 'loaded') return;
+  try {
+    image.filters([(data: ImageData) => grayscalePixels(data.data, amount)]);
+    image.cache();
+  } catch {
+    image.clearCache();
+    image.filters([]);
+  }
+}
+
+/**
+ * The source of an embedded image used as a pattern fill (ellipse, path) with `filter.grayscale`: the
+ * pixels drawn into a canvas of the same size and turned gray there, since a pattern has no Konva
+ * filter. Without an amount, or when the pixels cannot be read, the source itself (in color).
+ */
+function grayscaleSource(
+  element: HTMLImageElement,
+  amount: number | undefined,
+): HTMLImageElement | HTMLCanvasElement {
+  if (amount === undefined || amount <= 0) return element;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = element.naturalWidth;
+    canvas.height = element.naturalHeight;
+    const context = canvas.getContext('2d');
+    if (context === null || canvas.width <= 0 || canvas.height <= 0) return element;
+    context.drawImage(element, 0, 0);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    grayscalePixels(pixels.data, amount);
+    context.putImageData(pixels, 0, 0);
+    return canvas;
+  } catch {
+    return element;
+  }
 }
 
 /** Width and height of the source of a ready image; `null` if there is no way to know. */
