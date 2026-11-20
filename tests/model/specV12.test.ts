@@ -317,6 +317,7 @@ describe('formatVersion 12: JSON schema', () => {
       'rename-role',
       'remove-role',
       'set-role',
+      'copy-field',
     ]);
   });
 });
