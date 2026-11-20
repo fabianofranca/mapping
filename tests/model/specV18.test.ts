@@ -103,10 +103,11 @@ const button = (s: Json): Json => s.layers[0].annotationTypes[0];
 const bar = (s: Json): Json => s.layers[0].annotationTypes[1];
 
 describe('formatVersion 18: version and shape', () => {
-  it('the current version is 18 and 17 is still accepted', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(18);
+  it('18 is accepted (and so is 17); the current version is 19', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(19);
     expect(SPEC_FORMAT_VERSIONS).toContain(17);
-    expect(SPEC_FORMAT_VERSIONS.at(-1)).toBe(18);
+    expect(SPEC_FORMAT_VERSIONS).toContain(18);
+    expect(SPEC_FORMAT_VERSIONS.at(-1)).toBe(19);
   });
 
   it('the role lists are the contract of the phase', () => {

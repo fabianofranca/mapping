@@ -39,10 +39,10 @@ function parsed(input: unknown): Spec {
 }
 
 describe('formatVersion 9: variants', () => {
-  it('the current version is 18 and v1 to v9 are still accepted, with or without code', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(18);
+  it('the current version is 19 and v1 to v9 are still accepted, with or without code', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(19);
     expect(SPEC_FORMAT_VERSIONS).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
     ]);
     const plain = (formatVersion: number): Json => ({
       format: 'mapping-spec',
@@ -61,7 +61,7 @@ describe('formatVersion 9: variants', () => {
         },
       ],
     });
-    for (const v of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]) {
+    for (const v of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]) {
       const input: Json = plain(v);
       if (v >= 2) {
         input.platforms = [{ id: 'compose', name: 'Compose' }];

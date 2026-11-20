@@ -636,6 +636,57 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
     'spec.columnStillExists',
     (s) => (tableOf(s), steps({ op: 'remove-field', type: 't', field: 'tb.c' })(s)),
   ],
+  // `copy-field` (formatVersion 19)
+  [
+    'spec.copyFieldWhenValue',
+    (s) => (
+      (s.formatVersion = 19),
+      steps({
+        op: 'copy-field',
+        type: 't',
+        from: 'k',
+        to: 'k2',
+        when: { k: true },
+      })(s)
+    ),
+  ],
+  [
+    'spec.copyFieldWhenKind',
+    (s) => (
+      (s.formatVersion = 19),
+      tableOf(s),
+      steps({
+        op: 'copy-field',
+        type: 't',
+        from: 'k',
+        to: 'tb.c',
+        when: { tb: 'x' },
+      })(s)
+    ),
+  ],
+  [
+    'spec.copyFieldSame',
+    (s) => (
+      (s.formatVersion = 19),
+      steps({ op: 'copy-field', type: 't', from: 'k', to: 'k' })(s)
+    ),
+  ],
+  [
+    'spec.copyFieldMixed',
+    (s) => (
+      (s.formatVersion = 19),
+      tableOf(s),
+      steps({ op: 'copy-field', type: 't', from: 'k', to: 'tb.c' })(s)
+    ),
+  ],
+  [
+    'spec.copyFieldTable',
+    (s) => (
+      (s.formatVersion = 19),
+      tableOf(s),
+      steps({ op: 'copy-field', type: 't', from: 'k', to: 'tb' })(s)
+    ),
+  ],
   // Allowed children, groups, document repositories and owner
   ['spec.layerNotFound', (s) => (type(s).allowedChildren = [{ layer: 'zz' }])],
   [

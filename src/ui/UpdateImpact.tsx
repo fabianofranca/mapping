@@ -86,6 +86,9 @@ export function stepLabel(step: SpecMigrationStep): string {
         field: step.field,
         value: String(step.default),
       });
+    case 'copy-field':
+      // The label (`spec.impact.op.copyField`) comes in CF2 (#2172).
+      return `${step.op} ${step.type}: ${step.from} → ${step.to}`;
   }
 }
 

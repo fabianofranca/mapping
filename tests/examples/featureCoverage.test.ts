@@ -74,6 +74,10 @@ const MISSING_TODAY: string[] = [
   // `formats` and the importer notices (S5); `sources[].signature` is covered by tests/model/specV16.test.ts and
   // tests/model/librarySignature.test.ts.
   'spec:layers[].annotationTypes[].sources[].signature',
+  // `copy-field` migration step and its `when` (formatVersion 19, stage #2164, CF1): the examples and libraries
+  // carry no migrations with it in this stage; covered by tests/model/specCopyField.test.ts.
+  'spec:migrations[].steps[].op=copy-field',
+  'spec:migrations[].steps[].when',
   // Component layout v4 (stage #747, CF2): the distributed libraries do not migrate to
   // format 4 in this stage ('Out' decision of #747); covered by
   // tests/model/components/layoutFidelity.test.ts, layoutV4Parse.test.ts and by script R25.

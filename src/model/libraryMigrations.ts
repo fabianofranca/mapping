@@ -651,12 +651,33 @@ function setRole(
   });
 }
 
+type RoleStep = Extract<
+  SpecMigrationStep,
+  { op: 'rename-role' | 'remove-role' | 'set-role' }
+>;
+
+const isRoleStep = (step: SpecMigrationStep): step is RoleStep =>
+  step.op === 'rename-role' || step.op === 'remove-role' || step.op === 'set-role';
+
+/** The role steps (`formatVersion` 12), which act on the owner's children. */
+function runRoleStep(p: Project, specId: string, step: RoleStep): StepResult {
+  switch (step.op) {
+    case 'rename-role':
+      return renameRole(p, specId, step);
+    case 'remove-role':
+      return removeRole(p, specId, step);
+    case 'set-role':
+      return setRole(p, specId, step);
+  }
+}
+
 function runStep(
   p: Project,
   next: Spec,
   step: SpecMigrationStep,
   options: ConvertOptions,
 ): StepResult {
+  if (isRoleStep(step)) return runRoleStep(p, next.id, step);
   switch (step.op) {
     case 'rename-type':
       return renameType(p, next.id, step);
@@ -670,12 +691,9 @@ function runStep(
       return mapValues(p, next.id, step);
     case 'fill-field':
       return fillField(p, next.id, next, step);
-    case 'rename-role':
-      return renameRole(p, next.id, step);
-    case 'remove-role':
-      return removeRole(p, next.id, step);
-    case 'set-role':
-      return setRole(p, next.id, step);
+    case 'copy-field':
+      // The format accepts the step since formatVersion 19 (CF1); the run comes in CF2 (#2172).
+      return { project: p, counts: NO_COUNTS };
   }
 }
 
