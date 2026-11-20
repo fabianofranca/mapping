@@ -484,6 +484,26 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'panel-values',
   },
   {
+    term: 'soltar',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'reentra',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'panel-values',
+  },
+  {
+    term: 'reentrou depois da recusa',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
+    term: 'dependem de recusada:',
+    source: '.claude/skills/implementar-fila/painel/painel.py',
+    group: 'script-output',
+  },
+  {
     term: 'perguntas ao dono:',
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'script-output',
