@@ -20,7 +20,12 @@ import {
   type BuildContext,
   type RawParam,
 } from './params';
-import { readStruct, type InitDecl, type StructMembers } from './struct';
+import {
+  readExtensionInits,
+  readStruct,
+  type InitDecl,
+  type StructMembers,
+} from './struct';
 
 // SwiftUI reader (`mapping-signature/swift@1`): the record of a `struct … : View` from the file
 // text. The explicit `init` (chosen by `--init` when there is more than one) or the memberwise.
@@ -67,49 +72,108 @@ function chooseStruct(stream: TokenStream, symbol: string): TypeDecl {
   );
 }
 
-/** The list, one line per `init`: `  <index>: line <n> [deprecated] [private] (_:badge:style:)`. */
-function listInits(stream: TokenStream, inits: readonly InitDecl[]): string {
-  return inits
-    .map((init, index) => {
-      const labels = readInitParams(stream, init.open, init.close).map(callLabel);
+/** One entry of the `--init` list: the memberwise one, or an `init` and the file it was read from. */
+type Candidate =
+  | { readonly kind: 'memberwise'; readonly labels: string }
+  | {
+      readonly kind: 'init';
+      readonly init: InitDecl;
+      readonly stream: TokenStream;
+      /** The name of the `--also` file the `init` is in; none for the main file. */
+      readonly file?: string;
+    };
+
+const fileName = (path: string): string => path.slice(path.search(/[^\\/]*$/));
+
+const labelsOf = (raws: readonly RawParam[]): string =>
+  raws.map((raw) => `${callLabel(raw)}:`).join('');
+
+/** The extensions of the struct in a file: the name is the struct's, qualified by the types that enclose it. */
+function extensionsOf(stream: TokenStream, decl: TypeDecl): TypeDecl[] {
+  const name = [...decl.enclosing, decl.name].join('.');
+  return findTypeDecls(stream).filter(
+    (d) => d.keyword === 'extension' && d.name === name,
+  );
+}
+
+/**
+ * The list of `--init` (decision 13): the `init`s of the struct body, in file order (or, with none and
+ * with some in an extension, the memberwise as 0); then those of the extensions, in the main file and in
+ * each `--also`, in the order given. Empty when the struct declares no `init` anywhere.
+ */
+function candidatesOf(
+  main: TokenStream,
+  alsos: readonly TokenStream[],
+  decl: TypeDecl,
+  members: StructMembers,
+): Candidate[] {
+  const own = members.inits.map((init): Candidate => ({
+    kind: 'init',
+    init,
+    stream: main,
+  }));
+  const fromExtensions = [main, ...alsos].flatMap((stream, index) => {
+    const file = index === 0 ? {} : { file: fileName(stream.src.name) };
+    return extensionsOf(stream, decl)
+      .flatMap((extension) => readExtensionInits(stream, extension))
+      .map((init): Candidate => ({ kind: 'init', init, stream, ...file }));
+  });
+  if (own.length > 0 || fromExtensions.length === 0) return [...own, ...fromExtensions];
+  const labels = labelsOf(members.props.map((p) => p.param));
+  return [{ kind: 'memberwise', labels }, ...fromExtensions];
+}
+
+/** The list, one line per candidate: `  <index>: [<file> ]line <n> [deprecated] [private] (_:badge:style:)`. */
+function listInits(candidates: readonly Candidate[]): string {
+  return candidates
+    .map((candidate, index) => {
+      if (candidate.kind === 'memberwise')
+        return `  ${index}: memberwise (${candidate.labels})`;
+      const { init, stream, file } = candidate;
+      const labels = labelsOf(readInitParams(stream, init.open, init.close));
       const mark = `${init.deprecated ? ' [deprecated]' : ''}${init.hidden ? ' [private]' : ''}`;
-      return `  ${index}: line ${init.line}${mark} (${labels.map((l) => `${l}:`).join('')})`;
+      return `  ${index}: ${file === undefined ? '' : `${file} `}line ${init.line}${mark} (${labels})`;
     })
     .join('\n');
 }
 
-type Chosen =
-  { readonly kind: 'init'; readonly init: InitDecl } | { readonly kind: 'memberwise' };
+const isCallable = (candidate: Candidate): boolean =>
+  candidate.kind === 'memberwise' ||
+  (!candidate.init.deprecated && !candidate.init.hidden);
+
+const isHidden = (candidate: Candidate): boolean =>
+  candidate.kind === 'init' && candidate.init.hidden;
 
 function chooseInit(
   stream: TokenStream,
   decl: TypeDecl,
-  inits: readonly InitDecl[],
+  candidates: readonly Candidate[],
   requested: number | undefined,
-): Chosen {
+): Candidate {
   const where = stream.src.name;
-  if (inits.length === 0) {
-    if (requested === undefined || requested === 0) return { kind: 'memberwise' };
+  if (candidates.length === 0) {
+    if (requested === undefined || requested === 0)
+      return { kind: 'memberwise', labels: '' };
     throw new CliError(
       `--init ${requested} is not in the list: ${decl.name} declares no init and only has the memberwise (index 0)`,
     );
   }
   if (requested !== undefined) {
-    const chosen = inits[requested];
-    if (chosen !== undefined) return { kind: 'init', init: chosen };
+    const chosen = candidates[requested];
+    if (chosen !== undefined) return chosen;
     throw new CliError(
-      `--init ${requested} is not in the list: ${decl.name} has ${inits.length} inits in ${where} (indexes 0 to ${inits.length - 1}):\n${listInits(stream, inits)}`,
+      `--init ${requested} is not in the list: ${decl.name} has ${candidates.length} inits in ${where} (indexes 0 to ${candidates.length - 1}):\n${listInits(candidates)}`,
     );
   }
-  const alive = inits.filter((init) => !init.deprecated && !init.hidden);
-  if (alive.length === 1) return { kind: 'init', init: alive[0]! };
-  const hidden = inits.some((init) => init.hidden);
+  const alive = candidates.filter(isCallable);
+  if (alive.length === 1) return alive[0]!;
+  const hidden = candidates.some(isHidden);
   const reason =
     alive.length === 0
       ? `${decl.name} only has deprecated inits${hidden ? ' or private' : ''} in ${where}`
       : `${decl.name} has ${alive.length} inits (not counting the deprecated${hidden ? ' and private' : ''} ones) in ${where}`;
   throw new CliError(
-    `ambiguous init: ${reason}; pick one with --init <n>:\n${listInits(stream, inits)}`,
+    `ambiguous init: ${reason}; pick one with --init <n>:\n${listInits(candidates)}`,
   );
 }
 
@@ -144,14 +208,16 @@ function buildDoc(
 
 export function extractSwift(request: CodeRequest): Signature {
   const main = load(request.file);
-  const enums = collectEnums([main, ...request.also.map(load)]);
+  const alsos = request.also.map(load);
+  const enums = collectEnums([main, ...alsos]);
   const decl = chooseStruct(main, request.symbol);
   const members = readStruct(main, decl);
-  const chosen = chooseInit(main, decl, members.inits, request.init);
+  const candidates = candidatesOf(main, alsos, decl, members);
+  const chosen = chooseInit(main, decl, candidates, request.init);
   const context: BuildContext = { enums, viewGenerics: decl.viewGenerics };
   const raws =
     chosen.kind === 'init'
-      ? readInitParams(main, chosen.init.open, chosen.init.close)
+      ? readInitParams(chosen.stream, chosen.init.open, chosen.init.close)
       : members.props.map((p) => p.param);
   const params: SignatureParam[] = raws.map((raw) => buildParam(raw, context));
   const markups = [

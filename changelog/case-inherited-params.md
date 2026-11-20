@@ -4,6 +4,8 @@
 
 - #1894 (the Catalog said "Valid package, no errors or warnings." while Diagnostics counted warnings) was reproduced in a real browser on the three paths and is not a count defect: the package window, the Catalog with the library chosen and Diagnostics give the same number, and the Catalog window opens on the first library of the project (Notes), whose own package is valid. A new end-to-end test keeps the three counts equal.
 
+- The Swift reader of `mapping-signature` reads the `init`s declared in an `extension` of the struct (in the file or in an `--also` file) and inside `#if` blocks, and tokenizes raw strings (`#"…"#`). The `--init` list now has the body `init`s, then the extension ones (the memberwise one is `0` when the body has none), so a struct with no `init` in the body and one in an extension is ambiguous. A raw string default comes out as its source text in `default` and as its content in `value.default` when it is a single line without interpolation. A duplicate struct stays documented (qualify `--symbol`). The sheet format and `source.extractor` do not change.
+
 ## Corrigido
 
 - The MCP no longer passes a parameter the case's composable does not take: a `variants` case with its own signature sheet leaves out the base parameters that sheet lacks (`get_code_hints` writes no argument for them, and `get_annotation` and `get_marking` have no `code.params` entry for them; the field's value stays in `values`). In Material 3, a `top-app-bar` with `style = center` and `subtitle` filled resolves to `CenterAlignedTopAppBar` without `subtitle`.

@@ -208,10 +208,20 @@ function readStored(
 ): void {
   const doc = stream.tokens[member.from]!.doc;
   const name = stream.tokens[at + 1]?.text.replace(/^`|`$/g, '');
-  if (doc !== undefined && name !== undefined) found.propDocs.set(name, doc);
+  if (doc !== undefined && name !== undefined && !found.propDocs.has(name))
+    found.propDocs.set(name, doc);
   const param = readProp(stream, member.to, at, prefix);
-  if (param !== undefined)
+  // the same name in another `#if` branch does not repeat: the first one counts
+  if (param !== undefined && !found.props.some((p) => p.param.name === param.name))
     found.props.push({ param, ...(doc === undefined ? {} : { doc }) });
+}
+
+/** The `init` that the member is, if it is one. */
+function initOf(stream: TokenStream, member: Range): InitDecl | undefined {
+  const prefix = readPrefix(stream, member.from, member.to);
+  const at = prefix.end;
+  if (at >= member.to || stream.tokens[at]!.text !== 'init') return undefined;
+  return readInit(stream, member.from, at, prefix);
 }
 
 function readMember(stream: TokenStream, member: Range, found: Found): void {
@@ -220,11 +230,21 @@ function readMember(stream: TokenStream, member: Range, found: Found): void {
   if (at >= member.to) return;
   const word = stream.tokens[at]!.text;
   if (word === 'init') {
-    const init = readInit(stream, member.from, at, prefix);
+    const init = initOf(stream, member);
     if (init !== undefined) found.inits.push(init);
   } else if (word === 'let' || word === 'var') {
     readStored(stream, member, at, prefix, found);
   }
+}
+
+/** The `init`s of the body of an `extension` of the struct, in source order (all `private` if the extension is). */
+export function readExtensionInits(stream: TokenStream, decl: TypeDecl): InitDecl[] {
+  const inits: InitDecl[] = [];
+  for (const member of splitMembers(stream, decl.open + 1, decl.close)) {
+    const init = initOf(stream, member);
+    if (init !== undefined) inits.push(decl.hidden ? { ...init, hidden: true } : init);
+  }
+  return inits;
 }
 
 /** The `init`s and the properties of the struct body. */

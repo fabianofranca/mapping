@@ -31,6 +31,8 @@ export interface TypeDecl {
   readonly doc?: string;
   /** The generics that are `View` (`<Content: View>` or `where Content: View`). */
   readonly viewGenerics: ReadonlySet<string>;
+  /** `private` or `fileprivate` on the declaration (an `extension` that hides its `init`s). */
+  readonly hidden: boolean;
 }
 
 /** The ranges of `[from, to)` separated by commas at the top level, counting `<>` (generics). */
@@ -107,6 +109,7 @@ function readDecl(
   const open = findBodyOpen(stream, genericsEnd);
   if (open === undefined || open >= member.to) return undefined;
   const doc = stream.tokens[member.from]!.doc;
+  const modifiers = readPrefix(stream, member.from, keywordAt).modifiers;
   return {
     keyword: stream.tokens[keywordAt]!.text,
     name,
@@ -116,6 +119,7 @@ function readDecl(
     line: positionOf(stream.src, stream.tokens[keywordAt]!.start).line,
     ...(doc === undefined ? {} : { doc }),
     viewGenerics: viewGenericsOf(stream, end, genericsEnd, open),
+    hidden: modifiers.some((m) => m === 'private' || m === 'fileprivate'),
   };
 }
 

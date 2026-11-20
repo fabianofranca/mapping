@@ -716,3 +716,249 @@ describe('findings of the `/code-review high` review (S4)', () => {
     expect(params.other?.role).toBe('slot');
   });
 });
+
+describe('the inits of an extension and inside `#if`, and raw strings (stage #1774, CI2; decisions 13 to 15)', () => {
+  const BANNER = rel('Banner.swift');
+  const INITS = rel('BannerInits.swift');
+  const files = {
+    [BANNER]: fixture('Banner.swift'),
+    [INITS]: fixture('BannerInits.swift'),
+  };
+
+  function banner(symbol: string, flags: readonly string[] = [], also = false) {
+    return run(
+      [
+        'swift',
+        '--file',
+        BANNER,
+        '--symbol',
+        symbol,
+        '--path',
+        'Banner.swift',
+        ...(also ? ['--also', INITS] : []),
+        ...flags,
+      ],
+      files,
+    );
+  }
+
+  function bannerJson(symbol: string, flags: readonly string[], also = false): Sig {
+    const result = banner(symbol, flags, also);
+    if (result.code !== 0) throw new Error(`exit ${result.code}: ${result.stderr}`);
+    const parsed = parseSignature(JSON.parse(result.stdout));
+    expect(parsed.ok, result.stdout).toBe(true);
+    return JSON.parse(result.stdout) as Sig;
+  }
+
+  const listed = (stderr: string): string[] =>
+    stderr.split('\n').filter((line) => /^ {2}\d+: /.test(line));
+
+  it('Banner without --init lists the body (inside #if), the extension and the --also inits, in this order', () => {
+    const result = banner('Banner', [], true);
+    expect(result.code).toBe(1);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toContain('ambiguous init:');
+    const lines = listed(result.stderr);
+    expect(lines).toHaveLength(4);
+    expect(lines[0]).toMatch(/^ {2}0: line \d+ \(_:tone:\)$/);
+    expect(lines[1]).toMatch(/^ {2}1: line \d+ \(title:\)$/);
+    expect(lines[2]).toMatch(/^ {2}2: line \d+ \(warning:prefix:\)$/);
+    expect(lines[3]).toMatch(/^ {2}3: BannerInits\.swift line \d+ \(message:note:\)$/);
+    // without the --also, only the first three
+    const alone = banner('Banner');
+    expect(alone.code).toBe(1);
+    expect(listed(alone.stderr)).toHaveLength(3);
+  });
+
+  it('--init 3 reads the init of the --also file: a raw string default in `default` and its content in `value.default`', () => {
+    const sig = bannerJson('Banner', ['--init', '3'], true);
+    expect(sig.source.init).toBe(3);
+    const by = byName(sig);
+    expect(by.message).toMatchObject({ role: 'value', required: true });
+    expect(by.message?.value?.kind).toBe('text');
+    expect(by.note?.default).toBe('#"say "hi""#');
+    expect(by.note?.value).toMatchObject({ kind: 'text', default: 'say "hi"' });
+  });
+
+  it('--init 2 reads the init of the extension: the backslash of the raw string is kept', () => {
+    const by = byName(bannerJson('Banner', ['--init', '2']));
+    expect(by.title?.label).toBe('warning');
+    expect(by.prefix?.default).toBe('#"\\u{26A0} "#');
+    expect(by.prefix?.value?.default).toBe('\\u{26A0} ');
+  });
+
+  it('--init 0 reads the init inside `#if`, with the nested enum still found', () => {
+    const by = byName(bannerJson('Banner', ['--init', '0']));
+    expect(by.title?.label).toBe('_');
+    expect(by.tone?.value).toMatchObject({
+      kind: 'enum',
+      default: 'info',
+      options: ['info', 'warning'],
+    });
+  });
+
+  it('a struct with no init in the body and an extension init lists the memberwise as 0', () => {
+    const result = banner('Pill');
+    expect(result.code).toBe(1);
+    const lines = listed(result.stderr);
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toBe('  0: memberwise (text:)');
+    expect(lines[1]).toMatch(/^ {2}1: line \d+ \(count:\)$/);
+    const memberwise = bannerJson('Pill', ['--init', '0']);
+    expect(memberwise.params.map((p) => p.name)).toEqual(['text']);
+    expect(memberwise.source.init).toBe(0);
+    expect(bannerJson('Pill', ['--init', '1']).params.map((p) => p.name)).toEqual([
+      'count',
+    ]);
+  });
+
+  it('only the extensions of the struct count: a qualified name, a constrained extension, a module prefix', () => {
+    const source = `import SwiftUI
+struct Outer {
+  struct Row: View {
+    let a: Int
+    var body: some View { EmptyView() }
+  }
+}
+extension Outer.Row {
+  init(b: Int) { self.init(a: b) }
+}
+extension Outer.Row where Self: Equatable {
+  init(c: Int) { self.init(a: c) }
+}
+extension Row {
+  init(d: Int) { self.init(a: d) }
+}
+extension Other {
+  init(e: Int) {}
+}
+`;
+    const result = extractSwift(source, 'Row');
+    expect(result.code).toBe(1);
+    expect(listed(result.stderr)).toEqual([
+      '  0: memberwise (a:)',
+      '  1: line 9 (b:)',
+      '  2: line 12 (c:)',
+    ]);
+  });
+
+  it('an init marked private (or in a private extension) is [private]; a deprecated one in an extension is [deprecated]', () => {
+    const source = `import SwiftUI
+struct Foo: View {
+  init(a: Int) {}
+  var body: some View { EmptyView() }
+}
+private extension Foo {
+  init(b: Int) {}
+}
+extension Foo {
+  fileprivate init(c: Int) {}
+  @available(*, deprecated) init(d: Int) {}
+  init(e: Int) {}
+}
+`;
+    const ambiguous = extractSwift(source, 'Foo');
+    expect(ambiguous.code).toBe(1);
+    expect(listed(ambiguous.stderr)).toEqual([
+      '  0: line 3 (a:)',
+      '  1: line 7 [private] (b:)',
+      '  2: line 10 [private] (c:)',
+      '  3: line 11 [deprecated] (d:)',
+      '  4: line 12 (e:)',
+    ]);
+    // the callable ones are 0 and 4 (two): still ambiguous; with only one it is chosen on its own
+    const single = source.replace('  init(e: Int) {}\n', '');
+    expect(swiftJson(single, 'Foo').params.map((p) => p.name)).toEqual(['a']);
+  });
+
+  it('a struct with an init in the body has no memberwise; an extension init alone keeps it', () => {
+    const body = `import SwiftUI\nstruct Foo: View {\n  let a: Int\n  init(b: Int) { a = b }\n  var body: some View { EmptyView() }\n}\nextension Foo { init(c: Int) { self.init(b: c) } }\n`;
+    expect(listed(extractSwift(body, 'Foo').stderr)).toEqual([
+      '  0: line 4 (b:)',
+      '  1: line 7 (c:)',
+    ]);
+  });
+
+  it('a stored property in two `#if` branches enters the memberwise once (the first branch)', () => {
+    const source = withProps(
+      '    #if os(iOS)\n    var tint: Color = .red\n    #else\n    var tint: Color = .blue\n    #endif\n    let title: String',
+    );
+    const sig = swiftJson(source, 'Foo');
+    expect(sig.params.map((p) => p.name)).toEqual(['tint', 'title']);
+    expect(byName(sig).tint?.default).toBe('.red');
+  });
+
+  it('a struct declared inside a top-level `#if` is found, and so is a nested `#if`', () => {
+    const source = `import SwiftUI
+#if canImport(UIKit)
+#if os(iOS) && !targetEnvironment(macCatalyst)
+struct Foo: View {
+    let title: String
+    var body: some View { EmptyView() }
+}
+#endif
+#endif
+`;
+    expect(swiftJson(source, 'Foo').params.map((p) => p.name)).toEqual(['title']);
+  });
+
+  it('a `#if` condition on two lines does not leak into the members', () => {
+    const source = withProps(
+      '    #if os(iOS) &&\n        !targetEnvironment(macCatalyst)\n    let title: String\n    #endif',
+    );
+    expect(swiftJson(source, 'Foo').params.map((p) => p.name)).toEqual(['title']);
+  });
+
+  it('a raw string with an interpolation keeps only the text `default`', () => {
+    const sig = swiftJson(
+      withInit('label: String = #"a\\#(x)b"#, other: String = #"plain"#'),
+      'Foo',
+    );
+    const by = byName(sig);
+    expect(by.label?.default).toBe('#"a\\#(x)b"#');
+    expect(by.label?.value).toEqual({ kind: 'text' });
+    expect(by.other?.value).toMatchObject({ kind: 'text', default: 'plain' });
+  });
+
+  it('a raw string of two `#` and an embedded `"#` stay in one token', () => {
+    const sig = swiftJson(withInit('label: String = ##"a"#b"##, n: Int = 2'), 'Foo');
+    const by = byName(sig);
+    expect(by.label?.default).toBe('##"a"#b"##');
+    expect(by.label?.value).toMatchObject({ default: 'a"#b' });
+    expect(by.n?.value).toMatchObject({ kind: 'integer', default: 2 });
+  });
+
+  it('`\\#"` inside a raw string is an escape, not the end of the string', () => {
+    const sig = swiftJson(withInit('label: String = #"a\\#"b"#, n: Int = 4'), 'Foo');
+    const by = byName(sig);
+    expect(by.label?.default).toBe('#"a\\#"b"#');
+    expect(by.n?.value).toMatchObject({ kind: 'integer', default: 4 });
+  });
+
+  it('a multi-line `#"""…"""#` is one token (text `default`; no `value.default`)', () => {
+    const sig = swiftJson(
+      withInit(
+        'label: String = #"""\n        one "quoted" line\n        """#, n: Int = 3',
+      ),
+      'Foo',
+    );
+    const by = byName(sig);
+    expect(by.label?.default).toContain('one "quoted" line');
+    expect(by.label?.value).toEqual({ kind: 'text' });
+    expect(by.n?.value).toMatchObject({ kind: 'integer', default: 3 });
+  });
+
+  it('a `#"` that never closes is `<file>:<line>:<column>: unterminated string`', () => {
+    const result = extractSwift(withInit('label: String = #"open'), 'Foo');
+    expect(result.code).toBe(1);
+    expect(result.stderr).toMatch(/A\.swift:5:\d+: unterminated string/);
+    const multi = extractSwift(withInit('label: String = #"""\n  never\n'), 'Foo');
+    expect(multi.code).toBe(1);
+    expect(multi.stderr).toMatch(/A\.swift:5:\d+: unterminated string/);
+  });
+
+  it('the type of a property with a raw string default is String', () => {
+    const sig = swiftJson(withProps('    var greeting = #"hi"#'), 'Foo');
+    expect(byName(sig).greeting).toMatchObject({ type: 'String', default: '#"hi"#' });
+  });
+});
