@@ -21,6 +21,7 @@ import {
   changeImageFile,
   packageDirOf,
   serializeProposal,
+  type Change,
   type Proposal,
   type ProposalStatus,
   type ProjectContainer,
@@ -178,18 +179,29 @@ export function reservedContainers(
   status: ProposalStatus = p.status,
 ): ProjectContainer[] {
   if (status !== 'open' && status !== 'superseded') return [];
-  const reserved: ProjectContainer[] = [];
-  for (const c of p.changes) {
-    if (c.entity !== 'image' || c.kind !== 'create') continue;
-    if (Object.hasOwn(p.applied, c.id)) continue;
-    const state = p.decisions[c.id]?.state;
-    if (status === 'open' ? state === 'rejected' : state !== 'accepted') continue;
-    const to = c.to as Partial<ProjectContainer> | null;
-    if (to?.placement === undefined) continue;
-    reserved.push({
-      ...(to as ProjectContainer),
+  return p.changes.flatMap((c) => {
+    const held =
+      c.entity === 'image' && c.kind === 'create' && stillApplicable(p, c, status);
+    return held ? placeHolder(c.to) : [];
+  });
+}
+
+/** Can the change still be applied, for a proposal in `status` (the rule of `reservedImages`)? */
+function stillApplicable(p: Proposal, c: Change, status: ProposalStatus): boolean {
+  if (Object.hasOwn(p.applied, c.id)) return false;
+  const state = p.decisions[c.id]?.state;
+  return status === 'open' ? state !== 'rejected' : state === 'accepted';
+}
+
+/** The created container as a plain background container (only its place matters), or none. */
+function placeHolder(to: unknown): ProjectContainer[] {
+  const c = to as Partial<ProjectContainer> | null;
+  if (c?.placement === undefined) return [];
+  return [
+    {
+      ...(c as ProjectContainer),
       // Without a `pageId` the container is on the first page (the batch fills it in).
-      pageId: to.pageId ?? '',
+      pageId: c.pageId ?? '',
       name: null,
       parentId: null,
       markingColor: null,
@@ -197,9 +209,8 @@ export function reservedContainers(
       source: null,
       file: null,
       background: '#FFFFFF',
-    });
-  }
-  return reserved;
+    },
+  ];
 }
 
 /**

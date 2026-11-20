@@ -187,12 +187,7 @@ export async function prepareBatch(
     now: () => new Date(options.now()),
   };
   const base = options.startFrom?.(loaded.project) ?? loaded.project;
-  const first = firstPageId(base);
-  const held = (options.reservedContainers ?? [])
-    .filter((c) => !base.containers.some((other) => other.id === c.id))
-    .map((c) => (c.pageId === '' ? { ...c, pageId: first } : c));
-  const start =
-    held.length === 0 ? base : { ...base, containers: [...base.containers, ...held] };
+  const { start, held } = withReserved(base, options.reservedContainers ?? []);
   const ran = await runBatch({ ...loaded, project: start }, operations, io);
   const result = held.length === 0 ? ran : withoutContainers(ran, held);
   let changes: readonly Change[] | undefined;
@@ -206,6 +201,20 @@ export async function prepareBatch(
     changes: () => (changes ??= computeChanges(result.before, result.project)),
     valid: result.errors.length === 0 && result.invariantIssues.length === 0,
   };
+}
+
+/** The project plus the reserved containers (the ones already in it are skipped), and the ones added. */
+function withReserved(
+  base: Project,
+  reserved: readonly ProjectContainer[],
+): { start: Project; held: ProjectContainer[] } {
+  const first = firstPageId(base);
+  const held = reserved
+    .filter((c) => !base.containers.some((other) => other.id === c.id))
+    .map((c) => (c.pageId === '' ? { ...c, pageId: first } : c));
+  const start =
+    held.length === 0 ? base : { ...base, containers: [...base.containers, ...held] };
+  return { start, held };
 }
 
 /** The batch result without the containers that only held space (`PrepareOptions.reservedContainers`). */
