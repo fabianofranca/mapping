@@ -4,6 +4,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseIconsText } from '../../src/model/components/icons';
+import { svgToIcon } from '../../src/model/components/svgIcon';
 import { validateLibrary } from '../../src/model/library';
 
 const ROOT = join(__dirname, '../../examples/libraries/drawing-keys');
@@ -41,18 +42,49 @@ describe('example library drawing-keys', () => {
     expect(report.summary).toMatchObject({ level: 3, types: 1, components: 1, docs: 1 });
   });
 
-  it('the icons file is formatVersion 3 and every icon has an evenodd path', () => {
+  it('the icons file is formatVersion 3 and the hand-written icons have an evenodd path', () => {
     const text = files.find((f) => f.path === 'icons/icons.json')?.text ?? '';
     const parsed = parseIconsText(text);
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(JSON.parse(text)).toMatchObject({ formatVersion: 3 });
-    expect(Object.keys(parsed.set.icons)).toEqual([
+    expect(Object.keys(parsed.set.icons).slice(0, 3)).toEqual([
       'ring',
       'square-hole',
       'star-evenodd',
     ]);
-    for (const def of Object.values(parsed.set.icons))
-      expect(def.paths.some((p) => p.fillRule === 'evenodd')).toBe(true);
+    for (const name of ['ring', 'square-hole', 'star-evenodd'])
+      expect(parsed.set.icons[name]!.paths.some((p) => p.fillRule === 'evenodd')).toBe(
+        true,
+      );
+  });
+
+  it('the imported icons are what import_icons writes for the SVG fixtures', () => {
+    // The file in the package is the tool's output over `tests/fixtures/svg-icons/` (the error
+    // fixture, `icon-transform.svg`, goes to `errors` and is not written).
+    const text = files.find((f) => f.path === 'icons/icons.json')?.text ?? '';
+    const parsed = parseIconsText(text);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const imported = Object.keys(parsed.set.icons).slice(3);
+    expect(imported).toEqual([
+      'icon-current-color',
+      'icon-figma-evenodd',
+      'icon-flag',
+      'icon-shapes',
+      'icon-stroked',
+    ]);
+    for (const name of imported) {
+      const source = readFileSync(
+        join(__dirname, '../fixtures/svg-icons', `${name}.svg`),
+        'utf8',
+      );
+      const result = svgToIcon(source, { file: `${name}.svg`, defaultViewBox: [24, 24] });
+      expect(result.ok, name).toBe(true);
+      if (result.ok) expect(parsed.set.icons[name], name).toEqual(result.icon);
+    }
+    expect(parsed.set.icons['icon-figma-evenodd']!.paths[0]!.fillRule).toBe('evenodd');
+    expect(parsed.set.icons['icon-flag']!.viewBox).toEqual([24, 16]);
+    expect(Object.keys(parsed.set.icons)).not.toContain('icon-transform');
   });
 });

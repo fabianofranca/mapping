@@ -24,6 +24,7 @@ import { registerThreadTools } from './threadTools';
 import { findBySourceResult, findTypesBySourceResult } from './sourceTools';
 import { getComponent, listComponents } from './componentTools';
 import { measureComponent } from './measureComponent';
+import { importIcons } from './iconImport';
 import { listPackageFiles, validateLibraryTool } from './library';
 import { planLibraryUpdate } from './libraryUpdate';
 import { planSignatureImportTool } from './signatureImport';
@@ -1105,6 +1106,52 @@ export function registerTools(
       annotations: READ_ONLY,
     },
     (args) => respond(() => validateLibraryTool(roots, args, specSummary)),
+  );
+
+  server.registerTool(
+    'import_icons',
+    {
+      description:
+        'Imports SVG files into the ICONS FILE of a library package (the `icons` file the specialization cites, `format: "mapping-icons"`): each file becomes an icon (path data kept as written; `rect`, `circle`, `ellipse`, `line`, `polyline` and `polygon` become path data; `fill-rule="evenodd"` becomes `fillRule`; colors per `colors`). `path` is the package folder or the specialization file inside it; `svg` is one `.svg` file or a folder (only its `.svg` files, not recursive, up to 500, in name order), inside the roots; any other extension is refused before it is read. The name comes from the file name (lowercase, other characters become `-`); `name` sets it for a single file. `colors`: `auto` (default: with ONE color in the file, every path with it follows the color of the `icon` node; with two or more, each path keeps its literal color) or `keep` (literal colors stay; `currentColor` still follows the node). `mirror: true` marks the imported icons to flip in `rtl`. A name that already exists is skipped (`skipped`, reason `icon-exists`) unless `replace: true`, which replaces it in place. A file with a conversion problem goes into `errors` (file and message) and does not stop the others; unsupported SVG (transform, gradients, masks, filters, use, text, image, opacity below 1, dash arrays, a viewBox origin other than 0 0, units other than px) is named, never dropped silently. The merged file is validated before writing; the tool never writes an invalid file, and writes atomically with 2-space indentation and a final newline. The file goes up to `formatVersion` 3 only when an imported path has `evenodd`, and to 2 when `mirror` meets a version 1 file; a declared file that does not exist is created (version 1, with the `viewBox` of the first imported icon). `dryRun: true` computes and returns everything and writes nothing. Returns `file` (relative to the package), `formatVersion`, `added`, `replaced`, `skipped`, `errors`, `written` (false in `dryRun` or with nothing to change) and a `hint`. Errors: `icons-not-declared` (the specialization has no `icons`: declare it, formatVersion 15; the tool never edits the specialization), `library-in-project` (the package is inside a project: only the app writes `specs/`), `outside-roots`, `invalid-library` (the existing icons file is invalid) and `invalid-arguments`. It writes ONLY the icons file: never the specialization, a project, `specs/` or code. Afterwards run validate_library.',
+      inputSchema: {
+        path: z
+          .string()
+          .describe(
+            'Package folder or specialization file inside it, relative to a root or absolute inside them.',
+          ),
+        svg: z
+          .string()
+          .describe('A `.svg` file or a folder of `.svg` files, inside the roots.'),
+        name: z
+          .string()
+          .optional()
+          .describe(
+            'The icon name, for a single `.svg` file (default: from the file name).',
+          ),
+        replace: z
+          .boolean()
+          .optional()
+          .describe(
+            'Replace, in place, an icon that already has the name (default: skip it).',
+          ),
+        colors: z
+          .enum(['auto', 'keep'])
+          .optional()
+          .describe(
+            '`auto` (default): one color follows the `icon` node. `keep`: literal colors stay.',
+          ),
+        mirror: z
+          .boolean()
+          .optional()
+          .describe('Mark the imported icons to flip horizontally in `rtl`.'),
+        dryRun: z
+          .boolean()
+          .optional()
+          .describe('Compute and return everything without writing.'),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
+    },
+    (args) => respond(() => importIcons(roots, args)),
   );
 
   server.registerTool(

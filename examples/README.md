@@ -119,13 +119,14 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 ### `examples/libraries/drawing-keys/`
 
-**What it is.** The example of the **drawing keys** that the format gained after the faithful components. Today it has one type, **Icon holes** (fields `icon` and `tint`), drawn with the icons file in `formatVersion` 3 (`icons/icons.json`: `ring`, `square-hole` and `star-evenodd`). The next phases of the stage add their own types here.
+**What it is.** The example of the **drawing keys** that the format gained after the faithful components. Today it has one type, **Icon holes** (fields `icon` and `tint`), drawn with the icons file in `formatVersion` 3 (`icons/icons.json`: `ring`, `square-hole` and `star-evenodd`, written by hand, plus five icons that the MCP tool `import_icons` imported from `tests/fixtures/svg-icons/`: `icon-current-color`, `icon-figma-evenodd`, `icon-flag`, `icon-shapes` and `icon-stroked`). The next phases of the stage add their own types here.
 
 **How to open.** **Specializations** › **Apply folder…** and pick the folder. Mark an Icon holes and change `icon` and `tint`.
 
 **What you can see.**
 
 - The `fillRule` of an icon path (icons file `formatVersion` 3): the three icons are `"fillRule": "evenodd"`, so the ring's inner circle, the square's hole and the middle of the self-intersecting star are cut out and the tile's gray shows through. The same icon with the default `nonzero` would be filled.
+- The icons that came in through `import_icons` (the SVG import, FG3): `icon-figma-evenodd` keeps its `evenodd` hole, `icon-current-color`, `icon-shapes` and `icon-stroked` follow the `tint` (one color), and `icon-flag` keeps its three literal colors and its own `viewBox`. Point the `icon` field at one of them in the file to see it.
 - The same drawing in the app, in the viewer and in the `render_marking` PNG.
 
 **Scripts.** R39 (written in the last phase of the stage).

@@ -1062,6 +1062,7 @@ describe('resources and instructions', () => {
       'get_proposal_review',
       'get_specialization',
       'get_thread',
+      'import_icons',
       'list_components',
       'list_markings',
       'list_projects',
@@ -1085,10 +1086,11 @@ describe('resources and instructions', () => {
     ]);
     const readOnly = tools.filter((t) => t.annotations?.readOnlyHint).map((t) => t.name);
     expect(readOnly).not.toContain('create_project');
-    // The only tools that write anything: the empty project, the proposals and the conversations (never mapping.json).
+    // The only tools that write anything: the empty project, the proposals, the conversations (never mapping.json) and the icons file of a library package.
     const writers = tools.filter((t) => !t.annotations?.readOnlyHint).map((t) => t.name);
     expect(writers.sort()).toEqual([
       'create_project',
+      'import_icons',
       'open_thread',
       'post_message',
       'propose_changes',
