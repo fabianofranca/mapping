@@ -80,7 +80,7 @@ function onlyFormat(version: number): SpecMsg {
 // `booleans`; the tree comes from the MCP `import_measured` op); version 16 is 15 plus the
 // signature sheet (stage #1079): `fieldModels` at the root and, in the `code` (and in each
 // `variants` case), `signature`, `ignore`, `calls` and `formats`, with `params` by path
-// (`colors.containerColor`) or positional (`#0`), plus `signature` on the type's `sources` (see
+// (`colors.containerColor`) or positional (`#0`), plus `signature` on the type's `sources`, which also lets `ignore` stand outside `origins` (see
 // `specSignature.ts`); version 17 is 16 plus the named slots (stage #1080): `slots` on the type
 // (`id`, `name`, `description`, `accepts`, `max`) and, in the `code` (and in each `variants` case),
 // `slots` (slot id → parameter name), outside the version contract (see `diffSpecs`); version 18 is
@@ -1877,7 +1877,27 @@ function checkFieldSources(
   });
 }
 
-/** `slot` and `ignore` of a type's `sources`: only in a system declared in `origins`. */
+/**
+ * Why `ignore` is refused in a type's `sources` entry (`undefined`: it is valid). It is valid in a
+ * system declared in `origins` and, from `formatVersion` 16, next to `signature` (the design sheet).
+ * Before 16 `signature` does not exist, so only `origins` counts.
+ */
+function ignoreProblem(
+  source: z.infer<typeof typeSourceShape>,
+  version: number,
+  executable: ReadonlySet<string>,
+): string | SpecMsg | undefined {
+  if (version < 4) return onlyFormat(4);
+  if (executable.has(source.system)) return undefined;
+  if (version < 16) return 'only allowed in a system declared in origins';
+  if (source.signature !== undefined) return undefined;
+  return specMsg('spec.sourceIgnoreOriginsOrSignature');
+}
+
+/**
+ * `slot` and `ignore` of a type's `sources`: `slot` only in a system declared in `origins`;
+ * `ignore` also next to `signature` (`ignoreProblem`).
+ */
 function checkTypeSources(
   sources: readonly z.infer<typeof typeSourceShape>[] | undefined,
   path: PathKeys,
@@ -1887,17 +1907,19 @@ function checkTypeSources(
 ): void {
   (sources ?? []).forEach((source, i) => {
     const at = [...path, 'sources', i];
-    for (const key of ['slot', 'ignore'] as const) {
-      if (source[key] === undefined) continue;
-      if (version < 4) {
-        addSpecIssue(ctx, [...at, key], onlyFormat(4));
-      } else if (!executable.has(source.system)) {
+    if (source.slot !== undefined) {
+      if (version < 4) addSpecIssue(ctx, [...at, 'slot'], onlyFormat(4));
+      else if (!executable.has(source.system)) {
         ctx.addIssue({
           code: 'custom',
-          path: [...at, key],
+          path: [...at, 'slot'],
           message: 'only allowed in a system declared in origins',
         });
       }
+    }
+    if (source.ignore !== undefined) {
+      const problem = ignoreProblem(source, version, executable);
+      if (problem !== undefined) addSpecIssue(ctx, [...at, 'ignore'], problem);
     }
     const seen = new Set<string>();
     (source.ignore ?? []).forEach((prop, pi) => {
