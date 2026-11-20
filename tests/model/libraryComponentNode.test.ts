@@ -90,8 +90,12 @@ function build(setup: Setup) {
   }
   const spec = {
     format: 'mapping-spec',
-    formatVersion: 7,
+    formatVersion: 15,
     id: 'lib',
+    tokens: {
+      modes: ['light', 'dark'],
+      values: { primary: { light: '#1a73e8', dark: '#8ab4f8' }, 'space-md': 8 },
+    },
     name: 'Lib',
     version: 1,
     layers: [{ id: 'l', name: 'L', color: '#112233', annotationTypes }],
@@ -231,6 +235,72 @@ describe('component node: level 2', () => {
         'the type "nope" does not exist in the specialization',
       ],
     ]);
+  });
+});
+
+describe('component node: review fixes', () => {
+  it('a required ref field is not demanded in values (and cannot be given)', () => {
+    const types = {
+      inner: {
+        fields: [
+          { key: 'label', type: 'string' },
+          { key: 'parent', type: 'ref', accepts: { free: true }, required: true },
+        ],
+        component: component('inner', [text('label'), text('parent')]),
+      },
+    };
+    expect(build({ outer: [node('inner')], types }).errors).toEqual([]);
+    expect(
+      errorsAt(build({ outer: [node('inner', { values: { parent: 'x' } })], types })),
+    ).toEqual([
+      [OUTER, `${AT}.values.parent`, 'the ref field "parent" cannot be given in values'],
+    ]);
+  });
+
+  it('a key such as constructor is not treated as given or as a field', () => {
+    const types = {
+      inner: {
+        fields: [{ key: 'constructor', type: 'string', required: true }],
+        component: component('inner', [text('constructor')]),
+      },
+    };
+    expect(errorsAt(build({ outer: [node('inner')], types }))).toEqual([
+      [OUTER, `${AT}.values`, 'required field missing in values: constructor'],
+    ]);
+    expect(
+      build({ outer: [node('inner', { values: { constructor: 'x' } })], types }).errors,
+    ).toEqual([]);
+  });
+
+  it('a token of any kind is accepted in values; an unknown token is not', () => {
+    const ok = build({
+      outer: [
+        node('inner', {
+          values: { label: { $token: 'space-md' }, tone: { $token: 'primary' } },
+        }),
+      ],
+    });
+    expect(errorsAt(ok).filter((e) => /token/.test(e[2] ?? ''))).toEqual([]);
+    const missing = build({
+      outer: [node('inner', { values: { label: { $token: 'ghost' } } })],
+    });
+    expect(errorsAt(missing)).toEqual([
+      [
+        OUTER,
+        `${AT}.values.label`,
+        'the token "ghost" does not exist in the specialization tokens',
+      ],
+    ]);
+  });
+
+  it('a root-cause type error is the only error, whatever the values say', () => {
+    const values = { a: 1, b: 2 };
+    expect(errorsAt(build({ outer: [node('bare', { values })] }))).toEqual([
+      [OUTER, `${AT}.id`, 'the type "bare" has no component'],
+    ]);
+    expect(errorsAt(build({ outer: [node('nope', { values })] }))).toHaveLength(1);
+    expect(errorsAt(build({ outer: [node('slotty', { values })] }))).toHaveLength(1);
+    expect(errorsAt(build({ outer: [node('screeny', { values })] }))).toHaveLength(1);
   });
 });
 

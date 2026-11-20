@@ -65,8 +65,10 @@ export function componentNodeIssues(
       );
       continue;
     }
-    out.push(...innerTypeIssues(env, inner, file, path));
-    out.push(...valuesIssues(type, inner, node, file, path));
+    const rootCause = innerTypeIssues(env, inner, file, path);
+    out.push(...rootCause);
+    // A type that cannot be drawn is the whole problem: its fields would only add noise.
+    if (rootCause.length === 0) out.push(...valuesIssues(type, inner, node, file, path));
   }
   out.push(...cycleIssues(env, type, file, nodes));
   return out;
@@ -120,7 +122,12 @@ function valuesIssues(
     if (problem !== undefined) out.push(problem);
   }
   for (const field of inner.fields) {
-    if (field.required === true && !(field.key in values))
+    // A `ref` field cannot be given, so its absence is not an error.
+    if (
+      field.required === true &&
+      field.type !== 'ref' &&
+      !Object.hasOwn(values, field.key)
+    )
       out.push(
         libraryIssue('error', file, `${path}.values`, 'library.componentNodeRequired', {
           key: field.key,

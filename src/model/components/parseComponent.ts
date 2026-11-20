@@ -68,7 +68,13 @@ export type ComponentParseResult =
   | { ok: false; issues: ComponentIssue[]; errors: string[] };
 
 /** A `{ "$token": … }` in the file: where it is, the name and the kind of value the position expects. */
-export type TokenRef = { path: string; name: string; kind: TokenKind };
+export type TokenRef = {
+  path: string;
+  name: string;
+  kind: TokenKind;
+  /** The position accepts a token of any kind (a `component` node's `values`): only the name is checked. */
+  anyKind?: true;
+};
 
 type Rec = Record<string, unknown>;
 
@@ -85,7 +91,11 @@ type LiteralCheck = (value: unknown, path: string, out: Ctx) => void;
  * `tokenKind` is the explicit discriminant of the kind of `$token` the position accepts; without
  * it, the position does not accept a token.
  */
-type Check = LiteralCheck & { readonly tokenKind?: TokenKind };
+type Check = LiteralCheck & {
+  readonly tokenKind?: TokenKind;
+  /** A `$token` of any kind is valid (the position's type is only known to the library). */
+  readonly anyTokenKind?: true;
+};
 
 /** Marks the `check` as accepting a `$token` of kind `kind`. */
 function tokenCheck(kind: TokenKind, check: LiteralCheck): Check {
@@ -435,7 +445,12 @@ function checkTokenExpr(value: Rec, path: string, check: Check, out: Ctx): void 
   const name = value.$token;
   if (typeof name !== 'string' || !TOKEN_NAME_PATTERN.test(name))
     add(out, at, 'expected a token name ([a-z0-9][a-z0-9-]*)');
-  else if (kind !== undefined) out.refs?.push({ path, name, kind });
+  else if (kind !== undefined)
+    out.refs?.push(
+      check.anyTokenKind === true
+        ? { path, name, kind, anyKind: true }
+        : { path, name, kind },
+    );
   if ('alpha' in value) checkTokenAlpha(value.alpha, path, kind, out);
   if ('over' in value) checkTokenOver(value.over, path, kind, out);
 }
@@ -484,13 +499,13 @@ function acceptsAnyValue(check: Check): boolean {
   );
 }
 
-/** The value of a `provide`: text or a number, or an expression (a color `$token` among them). */
+/** The value of a `provide`: text or a number, or an expression (a `$token` of any kind: the field type is only known to the library). */
 const checkProvided: Check = Object.assign(
   (v: unknown, p: string, out: Ctx) => checkTextOrNumber(v, p, out),
   { tokenKind: 'color' as TokenKind },
 );
 
-/** A value of a `component` node's `values` (v4): text, a number, a boolean or `null`, or an expression (a color `$token` among them). */
+/** A value of a `component` node's `values` (v4): text, a number, a boolean or `null`, or an expression (a `$token` of any kind: the field type is only known to the library). */
 const checkComponentValue: Check = Object.assign(
   (v: unknown, p: string, out: Ctx) => {
     if (
@@ -501,7 +516,7 @@ const checkComponentValue: Check = Object.assign(
     )
       add(out, p, 'expected text, a number, true/false or null');
   },
-  { tokenKind: 'color' as TokenKind },
+  { tokenKind: 'color' as TokenKind, anyTokenKind: true as const },
 );
 
 /** The slot's `provide` (v4): name → value, the name non-empty. */

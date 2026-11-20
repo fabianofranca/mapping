@@ -167,6 +167,21 @@ describe('component node: values', () => {
   });
 });
 
+describe('component node: tokens in values', () => {
+  it('accepts a $token of any kind (the inner field type is unknown at level 1)', () => {
+    expect(
+      validateComponent(
+        withChild(
+          node({ values: { a: { $token: 'space-md' }, b: { $token: 'primary' } } }),
+        ),
+      ),
+    ).toEqual([]);
+    expect(
+      parseComponent(withChild(node({ values: { a: { $token: 'space-md' } } }))).ok,
+    ).toBe(true);
+  });
+});
+
 describe('component node: provide', () => {
   it('accepts text, number and color expressions', () => {
     expect(

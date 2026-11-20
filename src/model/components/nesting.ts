@@ -31,28 +31,135 @@ export function componentNodes(
   return out;
 }
 
-/** Most cycles reported: a densely connected library does not blow up the search. */
+/** Most cycles listed by the enumeration, and steps it may take (a dense group must not blow up). */
 const MAX_CYCLES = 1000;
+const DEFAULT_BUDGET = 100_000;
+
+type Graph = ReadonlyMap<string, readonly string[]>;
+
+/** The distinct successors of `id` that are nodes of the graph, sorted. */
+function successors(graph: Graph, id: string): string[] {
+  return [...new Set(graph.get(id) ?? [])].sort();
+}
 
 /**
- * The cycles of the nesting graph (type id → ids of the types its `component` nodes draw), each
- * once: the simple cycle starts at its smallest id and closes on it (`['a', 'b', 'a']`; a type
- * that nests itself is `['a', 'a']`). Sorted by their ids, so the output is deterministic. Ids with
- * no entry have no outgoing edges.
+ * Strongly connected components (Tarjan, iterative): node id → component number. Only the nodes
+ * that are keys of the graph are visited; an id with no entry has no outgoing edges.
+ */
+function components(graph: Graph): Map<string, number> {
+  const index = new Map<string, number>();
+  const low = new Map<string, number>();
+  const onStack = new Set<string>();
+  const stack: string[] = [];
+  const result = new Map<string, number>();
+  let counter = 0;
+  let count = 0;
+  for (const root of [...graph.keys()].sort()) {
+    if (index.has(root)) continue;
+    const work: { id: string; next: string[]; at: number }[] = [];
+    const open = (id: string): void => {
+      index.set(id, counter);
+      low.set(id, counter++);
+      stack.push(id);
+      onStack.add(id);
+      work.push({ id, next: successors(graph, id), at: 0 });
+    };
+    open(root);
+    while (work.length > 0) {
+      const frame = work[work.length - 1] as (typeof work)[number];
+      const to = frame.next[frame.at++];
+      if (to !== undefined) {
+        if (!index.has(to)) open(to);
+        else if (onStack.has(to))
+          low.set(
+            frame.id,
+            Math.min(low.get(frame.id) as number, index.get(to) as number),
+          );
+        continue;
+      }
+      work.pop();
+      const parent = work[work.length - 1];
+      if (parent !== undefined)
+        low.set(
+          parent.id,
+          Math.min(low.get(parent.id) as number, low.get(frame.id) as number),
+        );
+      if (low.get(frame.id) !== index.get(frame.id)) continue;
+      let member: string | undefined;
+      do {
+        member = stack.pop() as string;
+        onStack.delete(member);
+        result.set(member, count);
+      } while (member !== frame.id);
+      count++;
+    }
+  }
+  return result;
+}
+
+/** The cycle written starting at its smallest id and closing on it. */
+function canonical(nodes: readonly string[]): string[] {
+  const first = nodes.reduce(
+    (best, id, i) => (id < (nodes[best] as string) ? i : best),
+    0,
+  );
+  const rotated = [...nodes.slice(first), ...nodes.slice(0, first)];
+  return [...rotated, rotated[0] as string];
+}
+
+/** The shortest cycle through `start` inside its component (breadth first), canonical. */
+function shortestCycle(
+  graph: Graph,
+  start: string,
+  inside: (id: string) => boolean,
+): string[] {
+  const before = new Map<string, string>();
+  const queue = [start];
+  for (let head = 0; head < queue.length; head++) {
+    const from = queue[head] as string;
+    for (const to of successors(graph, from)) {
+      if (!inside(to)) continue;
+      if (to === start) {
+        const path = [from];
+        while (path[0] !== start) path.unshift(before.get(path[0] as string) as string);
+        return canonical(path);
+      }
+      if (before.has(to)) continue;
+      before.set(to, from);
+      queue.push(to);
+    }
+  }
+  return [start, start];
+}
+
+/**
+ * The cycles of the nesting graph (type id → ids of the types its `component` nodes draw): the
+ * simple cycle starts at its smallest id and closes on it (`['a', 'b', 'a']`; a type that nests
+ * itself is `['a', 'a']`). Sorted, so the output is deterministic. Only the strongly connected
+ * groups with a cycle are searched, so an acyclic graph costs nothing however dense it is. The
+ * enumeration of simple cycles has a step `budget`; when it runs out, every node that lies on a
+ * cycle still gets one (its shortest), so no cyclic type goes unreported.
  */
 export function findComponentCycles(
-  graph: ReadonlyMap<string, readonly string[]>,
+  graph: Graph,
+  budget: number = DEFAULT_BUDGET,
 ): string[][] {
-  const cycles: string[][] = [];
-  const starts = [...graph.keys()].sort();
-  for (const start of starts) {
+  const group = components(graph);
+  const size = new Map<number, number>();
+  for (const g of group.values()) size.set(g, (size.get(g) ?? 0) + 1);
+  const cyclic = (id: string): boolean =>
+    (size.get(group.get(id) as number) as number) > 1 ||
+    successors(graph, id).includes(id);
+  const found = new Map<string, string[]>();
+  let steps = 0;
+  for (const start of [...graph.keys()].sort().filter(cyclic)) {
+    const here = group.get(start);
     const path = [start];
     const walk = (from: string): void => {
-      const next = [...new Set(graph.get(from) ?? [])].sort();
-      for (const to of next) {
-        if (cycles.length >= MAX_CYCLES) return;
-        if (to === start) cycles.push([...path, start]);
-        else if (to > start && !path.includes(to)) {
+      for (const to of successors(graph, from)) {
+        if (steps++ >= budget || found.size >= MAX_CYCLES) return;
+        if (to === start) found.set([...path, start].join('\u0000'), [...path, start]);
+        else if (to > start && group.get(to) === here && !path.includes(to)) {
           path.push(to);
           walk(to);
           path.pop();
@@ -61,7 +168,14 @@ export function findComponentCycles(
     };
     walk(start);
   }
-  return cycles.sort(compareCycles);
+  const covered = new Set([...found.values()].flat());
+  for (const id of [...graph.keys()].sort().filter(cyclic)) {
+    if (covered.has(id)) continue;
+    const cycle = shortestCycle(graph, id, (to) => group.get(to) === group.get(id));
+    found.set(cycle.join('\u0000'), cycle);
+    for (const member of cycle) covered.add(member);
+  }
+  return [...found.values()].sort(compareCycles);
 }
 
 function compareCycles(a: readonly string[], b: readonly string[]): number {

@@ -80,3 +80,40 @@ describe('findComponentCycles', () => {
     ]);
   });
 });
+
+describe('findComponentCycles: bounds', () => {
+  const nodes = (n: number) =>
+    Array.from({ length: n }, (_, i) => `t${String(i).padStart(2, '0')}`);
+
+  it('a dense acyclic graph returns no cycle, fast', () => {
+    const ids = nodes(30);
+    const graph = new Map(ids.map((id, i) => [id, ids.slice(i + 1)]));
+    const started = Date.now();
+    expect(findComponentCycles(graph)).toEqual([]);
+    expect(Date.now() - started).toBeLessThan(1000);
+  });
+
+  it('a dense strongly connected graph still covers every node when the budget runs out', () => {
+    const ids = nodes(8);
+    const graph = new Map(ids.map((id) => [id, ids.filter((o) => o !== id)]));
+    const cycles = findComponentCycles(graph, 5);
+    const covered = new Set(cycles.flatMap((c) => c));
+    for (const id of ids) expect(covered.has(id), id).toBe(true);
+    for (const c of cycles) expect(c[0]).toBe(c[c.length - 1]);
+    // Each cycle is canonical (starts at its smallest id) and appears once.
+    expect(new Set(cycles.map((c) => c.join('>'))).size).toBe(cycles.length);
+    for (const c of cycles)
+      expect(c.slice(0, -1).every((x) => x >= (c[0] as string))).toBe(true);
+  });
+
+  it('a self-loop in a bigger graph is found', () => {
+    expect(
+      findComponentCycles(
+        new Map([
+          ['a', ['b']],
+          ['b', ['b']],
+        ]),
+      ),
+    ).toEqual([['b', 'b']]);
+  });
+});
