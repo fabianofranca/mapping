@@ -201,6 +201,7 @@ type No = {
   fase: string;
   feitas: number;
   total: number;
+  cedo?: string;
 };
 const graphNode = (over: Partial<No> & Pick<No, 'issue' | 'onda'>): No => ({
   titulo: `Stage ${over.issue}`,
@@ -403,6 +404,8 @@ describe.each(FORMS)('queue panel page: "Progress" card (PA1), %s', (_forma, wra
       'not opened yet',
       'dependency',
       'shared file',
+      'waiting for a merge to test',
+      'delivery',
     ]) {
       expect(leg.some((l) => l?.includes(label))).toBe(true);
     }
@@ -1557,5 +1560,132 @@ describe('queue panel page: fast track in the queue (FQ2)', () => {
       mount({}, [ROWS[0] as Row]);
       expect(text('#mp-concluidas-resumo')).toBe('1 stage');
     });
+  });
+});
+
+// Phase EA2 (stage #2373): an early stage that finished its phases waits in the state `entrega`; the card of a node with `cedo`
+// carries the tag, the arrow kind `entrega` reads "delivery", the tile counts the wait; an old panel draws as before.
+describe.each(FORMS)('queue panel page: early start (EA2), %s', (_forma, wrap) => {
+  const EARLY_NODES = [
+    graphNode({ issue: '#1', onda: 0, estado: 'rodando', motivo: 'T1 testando' }),
+    graphNode({
+      issue: '#2',
+      onda: 0,
+      estado: 'rodando',
+      motivo: 'D1 implementando',
+      cedo: '#1',
+    }),
+    graphNode({
+      issue: '#3',
+      onda: 0,
+      estado: 'entrega',
+      motivo: 'espera merge de #1, #9 para testar',
+      cedo: '#1, #9',
+    }),
+  ];
+  const EARLY_ARROWS = [
+    { de: '#1', para: '#2', tipo: 'entrega' },
+    { de: '#1', para: '#3', tipo: 'entrega' },
+  ];
+  const mount = (over: Row = {}, queue: Row[] = []) => {
+    const panel = loadPanel(
+      {
+        sessions: wrap([]),
+        vagasItens: wrap(['Vagas 2/4']),
+        grafoNos: wrap(EARLY_NODES),
+        grafoSetas: wrap(EARLY_ARROWS),
+        ...over,
+      },
+      queue,
+    );
+    panel.render();
+    return panel;
+  };
+
+  it('the state `entrega` reads "waiting for a merge to test" and has its own card class', () => {
+    mount();
+    expect(card('#3')?.querySelector('.est')?.textContent).toBe(
+      'waiting for a merge to test',
+    );
+    expect(card('#3')?.className).toContain('e-entrega');
+    expect(card('#3')?.querySelector('.mot')?.textContent).toBe(
+      'espera merge de #1, #9 para testar',
+    );
+  });
+
+  it('the card of a node with `cedo` carries the tag with the holders, and only that card', () => {
+    mount({}, [
+      queueRow({ issue: '#2', kind: 'etapa', stage: 'Fases' }),
+      queueRow({ issue: '#3', kind: 'etapa', stage: 'Fases' }),
+    ]);
+    expect(card('#2')?.querySelector('.cedo')?.textContent).toBe(
+      'cedo · espera #1 para testar',
+    );
+    expect(card('#3')?.querySelector('.cedo')?.textContent).toBe(
+      'cedo · espera #1, #9 para testar',
+    );
+    expect(card('#1')?.querySelector('.cedo')).toBeNull();
+    expect(document.querySelectorAll('#mp-grafo .cedo')).toHaveLength(2);
+  });
+
+  it('the tag is drawn even without a queue row, and an empty or missing `cedo` draws none', () => {
+    mount({
+      grafoNos: wrap([
+        graphNode({ issue: '#4', onda: 0, estado: 'rodando', cedo: '' }),
+        graphNode({ issue: '#5', onda: 0, estado: 'rodando' }),
+      ]),
+      grafoSetas: wrap([]),
+    });
+    expect(document.querySelectorAll('#mp-grafo .cedo')).toHaveLength(0);
+    mount({ grafoNos: wrap([EARLY_NODES[1]]), grafoSetas: wrap([]) });
+    expect(card('#2')?.querySelector('.cedo')).not.toBeNull();
+  });
+
+  it('the `entrega` arrow reads "delivery" in the "waits for" of a node in a later wave and in the legend', () => {
+    mount({
+      grafoNos: wrap([
+        graphNode({ issue: '#1', onda: 0, estado: 'rodando' }),
+        graphNode({ issue: '#2', onda: 1, motivo: 'dep #1' }),
+      ]),
+      grafoSetas: wrap([{ de: '#1', para: '#2', tipo: 'entrega' }]),
+    });
+    const w = card('#2')?.querySelector('.espera .w');
+    expect(w?.className).toContain('entrega');
+    expect(w?.getAttribute('title')).toBe('delivery');
+    expect(w?.querySelector('.sr')?.textContent).toBe('delivery');
+    expect(
+      Array.from(document.querySelectorAll('#mp-grafo-legenda li')).some(
+        (l) => l.textContent === 'delivery',
+      ),
+    ).toBe(true);
+    expect(
+      Array.from(document.querySelectorAll('#mp-grafo-legenda li')).some(
+        (l) => l.textContent === 'waiting for a merge to test',
+      ),
+    ).toBe(true);
+  });
+
+  it('the waiting tile counts `esperando entrega` with `esperando dono`', () => {
+    const panel = mount({}, [
+      queueRow({ issue: '#1', status: 'em andamento' }),
+      queueRow({ issue: '#2', status: 'esperando dono' }),
+      queueRow({ issue: '#3', status: 'esperando entrega' }),
+      queueRow({ issue: '#4', status: 'aguardando' }),
+    ]);
+    const s = panel.data('summary');
+    expect(s.status === 'ok' && s.data[0]).toMatchObject({
+      total: 4,
+      running: 1,
+      waiting: 2,
+    });
+    expect(text('[data-field="waiting"]')).toBe('2');
+  });
+
+  it('an old panel (no `cedo`, no `entrega`) draws the same cards and no tag', () => {
+    mount({ grafoNos: wrap(NODES), grafoSetas: wrap(ARROWS) }, QUEUE_TRACK);
+    expect(document.querySelectorAll('#mp-grafo .cedo')).toHaveLength(0);
+    expect(document.querySelectorAll('#mp-grafo article')).toHaveLength(NODES.length);
+    expect(card('#3')?.querySelector('.est')?.textContent).toBe('waiting for file');
+    expect(card('#3')?.querySelector('.w.arquivo')).not.toBeNull();
   });
 });
