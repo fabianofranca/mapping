@@ -14,17 +14,21 @@ export interface Dialect {
   readonly interpolation: '${' | '\\(';
   /** `'x'` is a character (Kotlin); in Swift the apostrophe means nothing. */
   readonly chars: boolean;
+  /** `#"…"#`, `##"…"##` and `#"""…"""#` are one string (Swift); in Kotlin `#` is punctuation. */
+  readonly rawStrings: boolean;
 }
 
 export const KOTLIN_DIALECT: Dialect = {
   lineDocs: false,
   interpolation: '${',
   chars: true,
+  rawStrings: false,
 };
 export const SWIFT_DIALECT: Dialect = {
   lineDocs: true,
   interpolation: '\\(',
   chars: false,
+  rawStrings: true,
 };
 
 const IDENT = /[\p{L}_][\p{L}\p{N}_]*/uy;
@@ -43,6 +47,49 @@ function scanString(src: SourceFile, start: number, dialect: Dialect): number {
   return src.text.startsWith('"""', start)
     ? scanRaw(src, start, dialect)
     : scanPlain(src, start, dialect);
+}
+
+/** Does a string with `#` delimiters (`#"`, `##"`…) open at `i`? */
+function hashedAt(text: string, i: number): boolean {
+  let j = i;
+  while (text[j] === '#') j++;
+  return j > i && text[j] === '"';
+}
+
+/**
+ * End of the string with `#` delimiters that opens at `start` (`#"…"#`, `##"…"##`, `#"""…"""#`).
+ * Inside, `"` and `\` are literal; only `\#(` (with the same number of `#`) opens an interpolation, and
+ * `\#` followed by another character is an escape (`\#"` does not close the string).
+ */
+function scanHashed(src: SourceFile, start: number, dialect: Dialect): number {
+  const text = src.text;
+  let hashes = 0;
+  while (text[start + hashes] === '#') hashes++;
+  const fence = '#'.repeat(hashes);
+  const multiline = text.startsWith('"""', start + hashes);
+  const close = `${multiline ? '"""' : '"'}${fence}`;
+  const interpolation = `\\${fence}(`;
+  let i = start + hashes + (multiline ? 3 : 1);
+  while (i < text.length && (multiline || text[i] !== '\n')) {
+    if (text.startsWith(close, i)) return i + close.length;
+    if (text.startsWith(interpolation, i))
+      i = scanTemplate(src, i + interpolation.length, start, dialect);
+    else i += escapeLength(text, i, fence);
+  }
+  throw syntaxError(src, start, 'unterminated string');
+}
+
+/** The length of what is read at `i` in the body of a string with `#`: `\#x` (an escape) or one character. */
+function escapeLength(text: string, i: number, fence: string): number {
+  return text[i] === '\\' && text.startsWith(fence, i + 1) ? fence.length + 2 : 1;
+}
+
+/** End of the string (plain or with `#`) that opens at `i`, or `i` itself if none opens there. */
+function stringEndAt(src: SourceFile, i: number, dialect: Dialect): number {
+  const c = src.text[i];
+  if (c === '"') return scanString(src, i, dialect);
+  const hashed = c === '#' && dialect.rawStrings && hashedAt(src.text, i);
+  return hashed ? scanHashed(src, i, dialect) : i;
 }
 
 /** The length of what opens an interpolation at `i` (`${` or `\(`), or 0 if none opens. */
@@ -94,7 +141,8 @@ function scanTemplate(
   let i = from;
   while (i < text.length) {
     const c = text[i]!;
-    if (c === '"') i = scanString(src, i, dialect);
+    const nested = stringEndAt(src, i, dialect);
+    if (nested !== i) i = nested;
     else if (c === "'" && dialect.chars) i = scanChar(src, i);
     else {
       i++;
@@ -166,7 +214,11 @@ class Lexer {
     if (/\s/.test(c)) this.pos++;
     else if (this.at('//')) this.readLineComment();
     else if (this.at('/*')) this.readBlockComment();
-    else if (c === '"') this.push('string', scanString(this.src, this.pos, this.dialect));
+    else this.readToken(c);
+  }
+
+  private readToken(c: string): void {
+    if (c === '"' || c === '#') this.readStringOrPunct(c);
     else if (c === "'" && this.dialect.chars)
       this.push('char', scanChar(this.src, this.pos));
     else if (c === '`') this.push('ident', this.scanBacktick());
@@ -193,6 +245,13 @@ class Lexer {
     const raw = this.src.text.slice(this.pos, end);
     if (raw.startsWith('/**') && raw !== '/**/') this.pendingDoc = raw;
     this.pos = end;
+  }
+
+  /** A string (plain or with `#`) starting here, or else the punctuation `#`. */
+  private readStringOrPunct(c: string): void {
+    const end = stringEndAt(this.src, this.pos, this.dialect);
+    if (end !== this.pos) this.push('string', end);
+    else this.readPunct(c);
   }
 
   private scanBacktick(): number {
