@@ -143,13 +143,17 @@ function packageVersions(): Map<string, number> {
     if (!existsSync(root)) continue;
     for (const dir of readdirSync(root, { withFileTypes: true })) {
       if (!dir.isDirectory()) continue;
-      for (const f of readdirSync(`${root}/${dir.name}`).filter((n) =>
+      const specs = readdirSync(`${root}/${dir.name}`).filter((n) =>
         n.endsWith('.spec.json'),
-      ))
-        out.set(`${root}/${dir.name}`, read(`${root}/${dir.name}/${f}`));
+      );
+      if (specs.length > 1)
+        throw new Error(`${root}/${dir.name} has more than one *.spec.json`);
+      if (specs[0])
+        out.set(`${root}/${dir.name}`, read(`${root}/${dir.name}/${specs[0]}`));
     }
   }
-  for (const f of readdirSync('examples/specs').filter((n) => n.endsWith('.json')))
-    out.set(`examples/specs/${f}`, read(`examples/specs/${f}`));
+  if (existsSync('examples/specs'))
+    for (const f of readdirSync('examples/specs').filter((n) => n.endsWith('.json')))
+      out.set(`examples/specs/${f}`, read(`examples/specs/${f}`));
   return out;
 }
