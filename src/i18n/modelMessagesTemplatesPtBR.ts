@@ -599,8 +599,10 @@ export const templatePtBR: {
   'model.iconsFile.expectedIcons': 'esperava um objeto com ao menos um ícone',
   'model.iconsFile.nameInvalid': 'nome inválido; use [a-z0-9][a-z0-9-_]*',
   'model.svgIcon.xmlTooLarge': 'o SVG é maior que {max} KB',
-  'model.svgIcon.xmlTooDeep': 'o SVG tem mais de {max} níveis de aninhamento (linha {line})',
-  'model.svgIcon.xmlDoctype': 'declarações DOCTYPE e ENTITY não são suportadas (linha {line})',
+  'model.svgIcon.xmlTooDeep':
+    'o SVG tem mais de {max} níveis de aninhamento (linha {line})',
+  'model.svgIcon.xmlDoctype':
+    'declarações DOCTYPE e ENTITY não são suportadas (linha {line})',
   'model.svgIcon.xmlEntity': 'entidade desconhecida ou inválida {entity} (linha {line})',
   'model.svgIcon.xmlUnclosed': 'tag <{tag}> aberta na linha {line} não foi fechada',
   'model.svgIcon.xmlMismatch':
@@ -615,7 +617,8 @@ export const templatePtBR: {
   'model.svgIcon.invalidValue': 'valor inválido no SVG: {element} {attribute}="{value}"',
   'model.svgIcon.noSize': 'o SVG não tem viewBox nem width e height numéricos',
   'model.svgIcon.noShape': 'o SVG não tem nenhuma forma',
-  'model.svgIcon.nameInvalid': 'o nome de ícone "{name}" é inválido; use [a-z0-9][a-z0-9-_]*',
+  'model.svgIcon.nameInvalid':
+    'o nome de ícone "{name}" é inválido; use [a-z0-9][a-z0-9-_]*',
   'model.origins.expectedList': 'esperava uma lista',
   'model.origins.expectedObject': 'esperava um objeto',
   'model.origins.expectedPath': 'esperava um caminho (texto não vazio)',
