@@ -6,6 +6,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { appendOnlyList } from '../support/appendOnly';
 import { between, section } from '../support/textSlice';
 
 const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
@@ -207,9 +208,6 @@ describe('painel.py — vagas (VG1, #1440)', () => {
         '#2 arquivo src/a.ts com #1',
       );
       expect(reason('src/a.ts', '?')).toBe('#2 ficha incompleta (toca)');
-      expect(reason('src/i18n/pt-BR.ts', 'src/i18n/pt-BR.ts')).toBe(
-        '#2 arquivo src/i18n/pt-BR.ts com #1',
-      );
     },
     SUBPROCESS_TIMEOUT,
   );
@@ -428,11 +426,11 @@ describe('painel.py — final review fixes (VG3, #1440)', () => {
   it(
     'finding 2: glob (src/i18n/*, *.ts) and folder without a trailing slash match what is under them',
     () => {
-      expect(reason('src/i18n/*', 'src/i18n/pt-BR.ts')).toBe(
-        '#2 arquivo src/i18n/pt-BR.ts com #1',
+      expect(reason('src/i18n/*', 'src/i18n/review.ts')).toBe(
+        '#2 arquivo src/i18n/review.ts com #1',
       );
-      expect(reason('src/i18n/pt-BR.ts', 'src/i18n/pt*.ts')).toBe(
-        '#2 arquivo src/i18n/pt*.ts com #1',
+      expect(reason('src/i18n/review.ts', 'src/i18n/re*.ts')).toBe(
+        '#2 arquivo src/i18n/re*.ts com #1',
       );
       expect(reason('src/model/*.ts', 'src/model/a.ts')).toBe(
         '#2 arquivo src/model/a.ts com #1',
@@ -564,5 +562,107 @@ describe('painel.py — dependent of a refused row (FR1, #2204 decision 4)', () 
   it('a `:main` dependency or a merged one is not open, so it is not listed', () => {
     stage('#5', ficha('#1:main', 'e.ts'));
     expect(showLines()).toContain('dependem de recusada: #2 (#1)');
+  });
+});
+
+describe('painel.py — append-only citations in the toca comparison (AO1, #2314)', () => {
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'append-only-'));
+    run('init', dir);
+    run('start', dir, '--paralelo', '9');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const reason = (a: string, b: string): string => {
+    run('init', dir, '--force');
+    run('start', dir, '--paralelo', '9');
+    stage('#1', ficha('nenhuma', a), 'status=em andamento');
+    stage('#2', ficha('nenhuma', b));
+    return slots().split(' · ')[1] ?? '';
+  };
+
+  it('two stages that share only an append-only citation: #2 starts (one case per entry of APPEND_ONLY)', () => {
+    const list = appendOnlyList();
+    expect(list.length).toBeGreaterThan(0);
+    for (const cite of list) {
+      expect(reason(cite, cite), cite).toBe('#2 começa');
+    }
+    // the former case of src/i18n/pt-BR.ts
+    expect(reason('src/i18n/pt-BR.ts', 'src/i18n/pt-BR.ts')).toBe('#2 começa');
+  }, 60_000);
+
+  it(
+    'sharing an append-only citation and a real file: the real file holds, the append-only one never shows',
+    () => {
+      const both = 'src/i18n/pt-BR.ts, src/a.ts';
+      expect(reason(both, both)).toBe('#2 arquivo src/a.ts com #1');
+      expect(reason('src/a.ts, docs/MCP.md#tools', 'docs/MCP.md#tools, src/a.ts')).toBe(
+        '#2 arquivo src/a.ts com #1',
+      );
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
+    'a section of the same document that is not in the list keeps today result',
+    () => {
+      expect(reason('docs/MCP.md#roots', 'docs/MCP.md#roots')).toBe(
+        '#2 arquivo docs/MCP.md#roots com #1',
+      );
+      expect(reason('docs/MCP.md#roots', 'docs/MCP.md#tools')).toBe('#2 começa');
+      expect(reason('docs/MCP.md', 'docs/MCP.md#roots')).toBe(
+        '#2 arquivo docs/MCP.md#roots com #1',
+      );
+      expect(reason('docs/MCP.md', 'docs/MCP.md#tools')).toBe('#2 começa');
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
+    'a started toca=? still holds a candidate that cites only append-only or only ignored citations',
+    () => {
+      expect(reason('?', 'src/i18n/en-US.ts, docs/MCP.md#tools')).toBe(
+        '#2 arquivo ? com #1',
+      );
+      expect(reason('?', 'changelog/a.md, mcp/version.ts')).toBe('#2 arquivo ? com #1');
+      expect(reason('?', 'src/a.ts')).toBe('#2 arquivo ? com #1');
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+});
+
+// Phase AO1 (stage #2314, decision 9): the list in painel.py is the one the skills print.
+describe('implementar-fila and detalhar-backlog: append-only list in sync with painel.py (AO1, #2314)', () => {
+  const queue = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
+  const flow = readFileSync('docs/FLOW.md', 'utf8');
+
+  it(
+    'every entry of APPEND_ONLY passes painel.py toca and appears verbatim in "Parallel" and in step 4 of detalhar-backlog',
+    () => {
+      const list = appendOnlyList();
+      expect(list.length).toBeGreaterThan(0);
+      const parallel = section(queue, '## Parallel');
+      const step4 = between(detalhar, '4. Add to the body', '5. Product decision');
+      for (const cite of list) {
+        expect(run('toca', cite).trim(), cite).toBe('ok');
+        expect(parallel, cite).toContain(cite);
+        expect(step4, cite).toContain(cite);
+      }
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it('"Parallel" has the merge rule and docs/FLOW.md points to the list', () => {
+    expect(section(queue, '## Parallel')).toContain('append-only');
+    expect(section(flow, '## For the owner, in the three chats')).toContain(
+      'append-only index citations listed in the queue skill',
+    );
+    expect(between(detalhar, '4. Add to the body', '5. Product decision')).toContain(
+      'append-only',
+    );
   });
 });

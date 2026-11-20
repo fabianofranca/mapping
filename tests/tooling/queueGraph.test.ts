@@ -348,6 +348,27 @@ describe('painel.py — queue graph (GF1, #1761)', () => {
   );
 
   it(
+    'l. two stages that share only an append-only citation are both in wave 0 (AO1, #2314); a real file still holds the second',
+    () => {
+      run('start', dir, '--paralelo', '2');
+      stage('#1', ficha('nenhuma', 'src/i18n/en-US.ts'), 'status=em andamento');
+      stage('#2', ficha('nenhuma', 'src/i18n/en-US.ts'));
+      expect(node('#1')).toMatchObject({ onda: 0, estado: 'rodando' });
+      expect(node('#2')).toMatchObject({ onda: 0, estado: 'livre', motivo: 'começa' });
+      expect(arrows().filter((a) => a.tipo === 'arquivo')).toEqual([]);
+      stage('#1', ficha('nenhuma', 'src/i18n/en-US.ts, src/a.ts'));
+      stage('#2', ficha('nenhuma', 'src/i18n/en-US.ts, src/a.ts'));
+      expect(node('#2')).toMatchObject({
+        onda: 1,
+        estado: 'arquivo',
+        motivo: 'arquivo src/a.ts com #1',
+      });
+      expect(arrows()).toEqual([{ de: '#1', para: '#2', tipo: 'arquivo' }]);
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
     'k. a queue with the same issue on two rows finishes the flush (no infinite loop) and gives one node per issue',
     () => {
       stage('#1', ficha('nenhuma', 'a.ts'));
