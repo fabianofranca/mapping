@@ -10,3 +10,4 @@ Icons file formatVersion 3; component format 4, specialization and schema unchan
 ## Alterado
 
 - The icons file accepts `formatVersion` 1, 2 and 3 (`formatVersion: must be 1, 2 or 3` for any other). Versions 1 and 2 keep validating and drawing as before. An earlier app or MCP refuses a version 3 file at level 1 (`formatVersion: must be 1 or 2`), so it never draws the holes filled: update the MCP first (0.49.0).
+- Teto do `dist/index.html` subiu 16 KiB, de 2326528 para 2342912, pela regra do orçamento; acima dos limites, `bug` para o dono revisar
