@@ -261,6 +261,16 @@ node tools/mapping-signature.mjs --help
 - **Reading.** `get_project` returns `drawingMode` (`null` without a mode) and, in each container, the pinned one and the `effectiveDrawingMode`; `get_container` likewise; `list_markings` carries `effectiveDrawingMode` on each row. The effective one is the container's, else the project's, else the first mode declared in `tokens.modes` by the specializations, else `null`.
 - **Proposals.** The mode change becomes the `project` entity (and the container's `drawingMode` field) in the proposal, which is then written in `formatVersion` 6 (`docs/PROPOSAL-FORMAT.md`); proposals without the mode stay on 4 (creation) and 5 (revision).
 
+### Text shaped with HarfBuzz (stage #2121, 0.51.0)
+
+The stage `epic/mcp-harfbuzz` replaces `opentype.js` with HarfBuzz (`harfbuzzjs`, WebAssembly), the browser's shaping engine, as the server's text engine, so it measures and draws like the app in Chrome/Edge. The schema and the formats do not change. The phases add their own items to this section.
+
+- **Phase 1 (HarfBuzz enters the server).** The dependency, the build and the test plumbing, the face module and `.woff` reading are in; the measurer and the rasterizer still use `opentype.js`, so nothing measured or drawn changes yet.
+- **Dependency and size.** `harfbuzzjs` 1.6.4 (MIT; it carries HarfBuzz 15.0.0, Old MIT, whose `COPYING` is in `mcp/licenses/harfbuzz.txt` and goes in the bundle's notices) enters only the MCP server. Only `dist/harfbuzz.wasm` (444,394 bytes) is used: the build embeds it in base64 and passes it as `wasmBinary`, so nothing is read from disk or the network at runtime. With both libraries in the bundle, `dist-mcp/mapping-mcp.js` went from 6,400,924 to 7,027,157 bytes (+626,233); `opentype.js` leaves in phase 2, and the stage's limit over the epic's base is +500 kB.
+- **Startup.** `mcp/main.ts` awaits `initShaper()` after stdout is reserved for the protocol and before the server is created; `--help` and `--version` do not need it. `mcp/image/harfbuzz.ts` is the only module that reaches the HarfBuzz runtime.
+- **Fonts.** `.ttf` and `.otf` are read as they are; `.woff` is inflated to an sfnt (`mcp/image/woff.ts`, `node:zlib`). `.woff2` is not read: the embedded font applies (#2126). A font is usable when it has `head` and `hhea` tables and at least one code point in its cmap.
+- **Build patch.** `harfbuzzjs`'s wrapper ends with a top-level await, which a CommonJS bundle cannot hold, and its glue reads `import.meta.url`. `mcp/harfbuzzFiles.mjs` has the one patch the server build, the Vitest plugin and the release-inputs test share; it throws if a new version of the package no longer matches it.
+
 ### `fill` on the main axis of a `hug` frame (stage #2164, 0.50.0)
 
 The stage `epic/hug-fill-copy-field` changes how the component engine measures a `fill` child on the main axis of a `hug` frame, in every component `formatVersion` (no key). The component format stays at 4 and the schema, proposal, comment and signature formats do not change. The later phases of the stage add their own items to this section.

@@ -3,6 +3,7 @@ import { format } from 'node:util';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { USAGE, UsageError, parseArgs } from './args';
 import { MAX_MESSAGE_BYTES } from './image/formats';
+import { initShaper } from './image/harfbuzz';
 import { ImageServer } from './imageServer';
 import { createServer } from './server';
 import { BUILD_VERSION } from './version';
@@ -40,6 +41,8 @@ async function main(): Promise<void> {
     return;
   }
   keepStdoutForProtocol();
+  // HarfBuzz is instantiated once, before any tool runs: the measurer and the rasterizer are synchronous.
+  await initShaper();
   process.on('unhandledRejection', (reason) => {
     report(reason);
     process.exit(1);
