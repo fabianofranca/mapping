@@ -1,8 +1,14 @@
-import type { ComponentNodeTemplate, TemplateNode } from './componentFormat';
+import type {
+  ComponentFile,
+  ComponentNodeTemplate,
+  ResolvedComponent,
+  ResolvedComponentField,
+  TemplateNode,
+} from './componentFormat';
 
 // Nesting of `component` nodes (formatVersion 4): where they are in a template and which types
-// end up drawing themselves. Pure; no DOM. CC1 only provides the walk and the cycle detection that
-// the library validator uses; CC2 adds the resolution of the inner components here.
+// end up drawing themselves. Pure; no DOM. The walk and the cycle detection serve the library
+// validator (level 2); `attachResolvedComponents` serves the loaders (decision 8 of #2093).
 
 /** A `component` node of a template and its path (`template.children[0]`). */
 export interface ComponentNodeRef {
@@ -186,4 +192,62 @@ function compareCycles(a: readonly string[], b: readonly string[]): number {
     if (x !== y) return x < y ? -1 : 1;
   }
   return a.length - b.length;
+}
+
+/**
+ * The components of a specialization with `resolvedComponents` attached (decision 8 of #2093): for
+ * each type that has `component` nodes, the inner components they draw (type id → the inner
+ * component, itself resolved, with its type's fields). A type in a nesting cycle gets no entry in
+ * anyone's table, so the node that draws it is unavailable (`component not available`); the types
+ * outside the cycles resolve normally. A type without nodes keeps its own object; a type with
+ * them comes out as a new one, so the drawing caches (which compare components by identity)
+ * redraw it when an inner file changes. `fieldsOf` gives a type's fields (`undefined` = unknown type).
+ */
+export function attachResolvedComponents(
+  components: ReadonlyMap<string, ComponentFile>,
+  fieldsOf: (typeId: string) => readonly ResolvedComponentField[] | undefined,
+): Map<string, ComponentFile> {
+  const refs = new Map<string, string[]>();
+  for (const [id, component] of components)
+    refs.set(id, [
+      ...new Set(componentNodes(component.template).map((ref) => ref.node.id)),
+    ]);
+  const cyclic = new Set(findComponentCycles(refs).flat());
+  const resolved = new Map<string, ComponentFile>();
+  const resolve = (id: string): ComponentFile => {
+    const known = resolved.get(id);
+    if (known !== undefined) return known;
+    const own = components.get(id) as ComponentFile;
+    const table: Record<string, ResolvedComponent> = {};
+    for (const ref of refs.get(id) ?? []) {
+      const fields = fieldsOf(ref);
+      if (!components.has(ref) || cyclic.has(ref) || fields === undefined) continue;
+      table[ref] = { component: resolve(ref), fields };
+    }
+    const done: ComponentFile =
+      Object.keys(table).length === 0 ? own : { ...own, resolvedComponents: table };
+    resolved.set(id, done);
+    return done;
+  };
+  for (const id of components.keys()) resolve(id);
+  return resolved;
+}
+
+/** The fields of an annotation type as a `component` node needs them (`SpecField` and the library's `FieldDef` both fit). */
+export function resolvedFields(
+  fields: readonly {
+    readonly key: string;
+    readonly type: ResolvedComponentField['type'];
+    readonly required?: boolean;
+    readonly default?: unknown;
+  }[],
+): ResolvedComponentField[] {
+  return fields.map((field) => ({
+    key: field.key,
+    type: field.type,
+    required: field.required === true,
+    ...(typeof field.default === 'string' || typeof field.default === 'number'
+      ? { default: field.default }
+      : {}),
+  }));
 }

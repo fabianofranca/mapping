@@ -58,8 +58,10 @@ import type {
   BoolExpr,
   Color,
   ComponentFile,
+  ComponentNodeTemplate,
   Direction,
   Expr,
+  FieldValue,
   FieldValues,
   FillSpec,
   FontSpec,
@@ -73,6 +75,7 @@ import type {
   ImageTemplate,
   IntrinsicSize,
   PathTemplate,
+  ResolvedComponent,
   ShadowSpec,
   SizeSpec,
   SlotTemplate,
@@ -114,7 +117,8 @@ import {
   mirrorMain,
   parseSizeSpec,
 } from './layoutValues';
-import { providingSlot } from './provided';
+import { extendProvided, providingSlot } from './provided';
+import { resolveSizing } from './sizing';
 import { slotKey } from './slots';
 import { anchorFieldValues, type InstanceAnchor } from './anchor';
 import { ownDirection, resolveDirections } from './direction';
@@ -290,7 +294,17 @@ export interface InstantiateOptions {
    * scene is only read for the slots' boxes, never drawn.
    */
   readonly revealSlots?: boolean;
+  /**
+   * How many `component` nodes deep this instance is (0 = the marking's own): the engine sets it when it draws the
+   * inner component of a node, and a node at depth `MAX_COMPONENT_DEPTH` draws nothing (decision 9 of #2093).
+   */
+  readonly nestingDepth?: number;
 }
+
+const nestingDepthOf = (options: InstantiateOptions): number => options.nestingDepth ?? 0;
+
+/** The deepest `component` node nesting that draws (a cycle never gets that far: the loaders cut it). */
+export const MAX_COMPONENT_DEPTH = 8;
 
 export interface Instantiated {
   readonly root: FrameNode;
@@ -998,6 +1012,7 @@ function createEngine(
   /** A node's first baseline in the `w` × `h` box; `undefined` = no baseline. */
   const kidBaseline = (node: TemplateNode, w: number, h: number): number | undefined => {
     if (node.type === 'text') return textBaselineIn(node, w, h);
+    if (node.type === 'component') return componentBaseline(node, w, h);
     if (node.type !== 'frame') return undefined;
     for (const placed of planFrame(node, w, h).placements) {
       const inner = kidBaseline(placed.kid.node, placed.w, placed.h);
@@ -1060,7 +1075,12 @@ function createEngine(
   };
 
   const resolveSpec = (node: TemplateNode, axis: Axis): SizeSpec => {
-    const fallback: SizeSpec = node.type === 'text' ? 'hug' : 'fill';
+    const fallback: SizeSpec =
+      node.type === 'text'
+        ? 'hug'
+        : node.type === 'component'
+          ? componentAxisSpec(node, axis)
+          : 'fill';
     const expr = axis === 'w' ? node.width : node.height;
     const value =
       expr === undefined ? undefined : ev<unknown>(expr as Expr<unknown>, undefined);
@@ -1100,14 +1120,15 @@ function createEngine(
       perNode = {};
       limitMemo.set(node, perNode);
     }
+    const floor = node.type === 'component' ? componentFloor(node, axis) : 0;
     return (perNode[axis] ??=
       axis === 'w'
         ? {
-            min: limitValue(node.minWidth) ?? 0,
+            min: Math.max(floor, limitValue(node.minWidth) ?? 0),
             max: limitValue(node.maxWidth) ?? Infinity,
           }
         : {
-            min: limitValue(node.minHeight) ?? 0,
+            min: Math.max(floor, limitValue(node.minHeight) ?? 0),
             max: limitValue(node.maxHeight) ?? Infinity,
           });
   };
@@ -1295,6 +1316,8 @@ function createEngine(
         return iconBox(node)[axis === 'w' ? 0 : 1];
       case 'slot':
         return slotHug(node, axis, otherSize);
+      case 'component':
+        return componentHug(node, axis, otherSize);
       default:
         return 0;
     }
@@ -1407,6 +1430,177 @@ function createEngine(
     const size = measured[axis === 'w' ? 'width' : 'height'];
     perSlot.set(key, size);
     return size;
+  };
+
+  // --- `component` node (decisions 3 to 9 of #2093) ----------------------------------------
+
+  /** The inner component of a node with the values the node gives it, or `undefined` (unavailable). */
+  interface ComponentPlan {
+    readonly component: ComponentFile;
+    readonly values: FieldValues;
+  }
+
+  const componentDepth = nestingDepthOf(options);
+
+  /** The value of an inner field from what the node's expression evaluated to. */
+  const innerFieldValue = (value: unknown): FieldValue => {
+    if (typeof value === 'string' || typeof value === 'number') return value;
+    if (typeof value === 'boolean') return String(value);
+    return Array.isArray(value) ? (value as FieldValue) : null;
+  };
+
+  /** The inner type's fields: what the node's `values` gives (outer scope), else the type's `default`, else empty. */
+  const componentValues = (
+    node: ComponentNodeTemplate,
+    entry: ResolvedComponent,
+  ): FieldValues => {
+    const given = node.values ?? {};
+    const out: Record<string, FieldValue> = {};
+    for (const spec of entry.fields) {
+      out[spec.key] = Object.hasOwn(given, spec.key)
+        ? innerFieldValue(ev<unknown>(given[spec.key] as Expr<unknown>, null))
+        : (spec.default ?? (spec.type === 'table' ? [] : null));
+    }
+    return out;
+  };
+
+  const componentPlans = new Map<ComponentNodeTemplate, ComponentPlan | null>();
+
+  /** The node's inner component; one that is not available warns once and draws nothing. */
+  const componentPlan = (node: ComponentNodeTemplate): ComponentPlan | undefined => {
+    const known = componentPlans.get(node);
+    if (known !== undefined) return known ?? undefined;
+    const resolved = original.resolvedComponents;
+    const entry =
+      componentDepth >= MAX_COMPONENT_DEPTH || resolved === undefined
+        ? undefined
+        : Object.hasOwn(resolved, node.id)
+          ? resolved[node.id]
+          : undefined;
+    if (entry === undefined) warn('engine.componentUnavailable', { id: node.id });
+    const plan =
+      entry === undefined
+        ? null
+        : { component: entry.component, values: componentValues(node, entry) };
+    componentPlans.set(node, plan);
+    return plan ?? undefined;
+  };
+
+  /** What the node offers to the inner `$provided`: each `provide` evaluated in the outer scope (decision 7a). */
+  const componentProvides = (node: ComponentNodeTemplate): ProvidedValues | undefined => {
+    if (node.provide === undefined) return undefined;
+    const out: Record<string, string | number> = {};
+    for (const [name, expr] of Object.entries(node.provide)) {
+      const value = ev<unknown>(expr as Expr<unknown>, undefined);
+      if (typeof value === 'number' && Number.isFinite(value)) out[name] = value;
+      else if (typeof value === 'string' && value.trim() !== '') out[name] = value;
+    }
+    return Object.keys(out).length === 0 ? undefined : out;
+  };
+
+  /** The options the inner component is instantiated with: the outer's scope, one level deeper, in its own ids. */
+  const componentOptions = (
+    node: ComponentNodeTemplate,
+    idPath: string,
+  ): InstantiateOptions => {
+    const icons = options.icons ?? original.resolvedIcons;
+    return {
+      measure: options.measure,
+      idPrefix: `${prefix}/${idPath}/component`,
+      tokens,
+      ...(icons === undefined ? {} : { icons }),
+      provided: extendProvided(options.provided ?? {}, componentProvides(node)),
+      direction: dirOf(node),
+      nestingDepth: componentDepth + 1,
+    };
+  };
+
+  /** An absent axis of the node: the inner `sizing` on it (with the inner values), else the inner `size`. */
+  const componentAxisSpec = (node: ComponentNodeTemplate, axis: Axis): SizeSpec => {
+    const plan = componentPlan(node);
+    if (plan === undefined) return 'fill';
+    const resolved = resolveSizing(plan.component, plan.values);
+    for (const message of resolved.messages)
+      warn(message.code as ModelMessageTemplateCode, message.params);
+    return resolved[axis === 'w' ? 'width' : 'height'].spec;
+  };
+
+  /** The inner `minSize` on an axis: a floor for the node's size. */
+  const componentFloor = (node: ComponentNodeTemplate, axis: Axis): number => {
+    const min = componentPlan(node)?.component.minSize;
+    return min === undefined ? 0 : min[axis === 'w' ? 'width' : 'height'];
+  };
+
+  const componentMeasures = new Map<ComponentNodeTemplate, Map<string, number>>();
+
+  /** The inner drawing's size on `axis` (the other axis is `otherSize`, or hug). */
+  const componentHug = (
+    node: ComponentNodeTemplate,
+    axis: Axis,
+    otherSize: number | undefined,
+  ): number => {
+    const plan = componentPlan(node);
+    if (plan === undefined) return 0;
+    let perNode = componentMeasures.get(node);
+    if (perNode === undefined) {
+      perNode = new Map();
+      componentMeasures.set(node, perNode);
+    }
+    const key = `${axis}:${otherSize ?? ''}`;
+    const known = perNode.get(key);
+    if (known !== undefined) return known;
+    const other = otherSize ?? null;
+    const measured = measureComponent(
+      plan.component,
+      plan.values,
+      { width: axis === 'w' ? null : other, height: axis === 'h' ? null : other },
+      componentOptions(node, 'm'),
+    );
+    const size = measured[axis === 'w' ? 'width' : 'height'];
+    perNode.set(key, size);
+    return size;
+  };
+
+  const componentIntrinsicWidth = (
+    node: ComponentNodeTemplate,
+    mode: IntrinsicSize,
+  ): number => {
+    const plan = componentPlan(node);
+    if (plan === undefined) return 0;
+    return measureComponent(
+      plan.component,
+      plan.values,
+      { width: mode, height: null },
+      componentOptions(node, 'm'),
+    ).width;
+  };
+
+  const componentBaselines = new Map<ComponentNodeTemplate, Map<string, number | null>>();
+
+  /** The inner component's first baseline in a `w` × `h` box: the node's baseline. */
+  const componentBaseline = (
+    node: ComponentNodeTemplate,
+    w: number,
+    h: number,
+  ): number | undefined => {
+    const plan = componentPlan(node);
+    if (plan === undefined) return undefined;
+    let perNode = componentBaselines.get(node);
+    if (perNode === undefined) {
+      perNode = new Map();
+      componentBaselines.set(node, perNode);
+    }
+    const key = `${w}x${h}`;
+    if (!perNode.has(key)) {
+      const drawn = instantiate(
+        plan.component,
+        plan.values,
+        { x: 0, y: 0, width: w, height: h },
+        componentOptions(node, 'b'),
+      );
+      perNode.set(key, drawn.firstBaseline ?? null);
+    }
+    return perNode.get(key) ?? undefined;
   };
 
   /** A `slot` node's content size on an axis: its children's, or (empty) its default content's. */
@@ -1597,6 +1791,8 @@ function createEngine(
         return node.viewBox[0];
       case 'icon':
         return iconBox(node)[0];
+      case 'component':
+        return componentIntrinsicWidth(node, mode);
       default:
         return 0;
     }
@@ -2717,7 +2913,7 @@ function createEngine(
       const built = buildNode(p.kid.node, kidPath, p.x, p.y, p.w, p.h);
       const defaults =
         p.kid.node.type === 'slot' ? buildFallback(p.kid.node, kidPath, p) : undefined;
-      return defaults === undefined ? [built] : [built, defaults];
+      return [built, defaults].filter((n): n is SceneNode => n !== undefined);
     });
     const base = {
       ...common(frame, `${prefix}/${path}`, x, y, w, h),
@@ -3067,6 +3263,41 @@ function createEngine(
     };
   };
 
+  /**
+   * The inner component drawn in the node's box: the node is the inner root frame (ids prefixed by
+   * `<path>/component`), named after the node or, without a name, the inner component. The node's
+   * `opacity` and `rotation` apply to the whole drawing. Its warnings and "does not fit" shortfalls
+   * come to this instance. Unavailable: nothing.
+   */
+  const buildComponent = (
+    node: ComponentNodeTemplate,
+    path: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ): SceneNode | undefined => {
+    const plan = componentPlan(node);
+    if (plan === undefined) return undefined;
+    const drawn = instantiate(
+      plan.component,
+      plan.values,
+      { x, y, width: w, height: h },
+      componentOptions(node, path),
+    );
+    for (const message of drawn.messages)
+      warn(message.code as ModelMessageTemplateCode, message.params);
+    for (const [text, missing] of Object.entries(drawn.shortfalls ?? {}))
+      shortfalls.set(text, Math.max(shortfalls.get(text) ?? 0, missing));
+    const { root } = drawn;
+    return {
+      ...root,
+      name: node.name ?? plan.component.name,
+      opacity: root.opacity * Math.min(1, Math.max(0, num(node.opacity, 1))),
+      ...rotationOf(node),
+    };
+  };
+
   const buildNode = (
     node: TemplateNode,
     path: string,
@@ -3074,7 +3305,7 @@ function createEngine(
     y: number,
     w: number,
     h: number,
-  ): SceneNode => {
+  ): SceneNode | undefined => {
     const id = `${prefix}/${path}`;
     builtIds.set(node, id);
     switch (node.type) {
@@ -3118,12 +3349,7 @@ function createEngine(
       case 'image':
         return buildImage(node, id, x, y, w, h);
       case 'component':
-        // CC1: the node draws nothing yet (an empty rectangle keeps the box); CC2 draws the inner component.
-        return {
-          ...common(node, id, x, y, w, h),
-          type: 'rect',
-          cornerRadius: radiusOf(node),
-        };
+        return buildComponent(node, path, x, y, w, h);
       case 'repeat':
         // `expandRepeats` already replaced every `repeat` with a frame: it never gets here.
         throw new Error('repeat not expanded');

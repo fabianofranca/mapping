@@ -649,6 +649,7 @@ export const templatePtBR: {
   'model.engine.fillInHug': 'fill dentro de hug vira 0',
   'model.engine.iconStretched': 'ícone esticado: escala diferente nos dois eixos',
   'model.engine.iconUnknown': 'ícone desconhecido: {name}',
+  'model.engine.componentUnavailable': 'componente indisponível: {id}',
   'model.engine.contentTooBig': 'conteúdo maior que a caixa: {name}',
   'model.engine.textTooBig': 'texto maior que a caixa: {name}',
   'model.engine.repeatLimited': 'repeat limitado a {limit} linhas: {name}',
