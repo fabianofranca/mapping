@@ -444,7 +444,12 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       options?: model.ReplaceContainerOptions,
     ) =>
       store.apply((p) =>
-        model.replaceContainer(p, containerId, file, { ...options, ...settleOptions(p) }),
+        model.replaceContainer(p, containerId, file, {
+          ...options,
+          ...settleOptions(p),
+          // The replacement stores a density that follows the new width: the minimum is read at it.
+          minSizeAt: (id, density) => model.componentMinSize(p, catalog(), id, density),
+        }),
       ),
     /** In a perspective, deleting a root is refused (`principal-only`). */
     removeContainer: (containerId: string) =>

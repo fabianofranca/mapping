@@ -424,22 +424,23 @@ describe('canvas marking and parent by geometry (ME1)', () => {
 
 describe('replace_container respects the component minSize (#953)', () => {
   it('the button marking (48×40) does not shrink below the minimum when swapped for a smaller image', async () => {
-    const half = (await encodePng(quadrants(100, 50))).toString('base64');
+    // A third of the width: the density follows but stops at 0.5 (stage #1891), so the rescale
+    // (52×42 → about 16×13) still goes below the minimum at that density (24×20).
+    const small = (await encodePng(quadrants(60, 30))).toString('base64');
     const result = await run([
       {
         op: 'create_marking',
         container: PHOTO,
-        rect: { x: 40, y: 20, width: 100, height: 60 },
+        rect: { x: 40, y: 20, width: 52, height: 42 },
         annotation: { type: 'material3/m3-button' },
         as: '$btn',
       },
-      { op: 'replace_container', container: PHOTO, base64: half },
+      { op: 'replace_container', container: PHOTO, base64: small },
     ]);
     expect(result.errors).toEqual([]);
     const button = result.project.markings.find((m) => m.containerId === PHOTO);
-    // 100×60 at (40,20) would become 50×30: the button asks for 48×40, so it grows around the center.
-    expect(button?.rect.width).toBeGreaterThanOrEqual(48);
-    expect(button?.rect.height).toBeGreaterThanOrEqual(40);
+    expect(button?.rect.width).toBeGreaterThanOrEqual(24);
+    expect(button?.rect.height).toBeGreaterThanOrEqual(20);
     expect(button?.needsReview).toBe(true);
   });
 });

@@ -2065,15 +2065,20 @@ class Batch {
       {
         confirmAspectChange: op.confirmAspectChange === true,
         minSizeOf: (markingId) => componentMinSize(p, this.catalog, markingId),
+        minSizeAt: (markingId, density) =>
+          componentMinSize(p, this.catalog, markingId, density),
       },
     );
     if (op.source !== undefined) {
       project = setImageSource(project, id, toSource(op.source));
     }
     const old = projectIndex(p).containers.get(id)!;
+    const before = effectiveDensity(p, id);
+    const after = effectiveDensity(project, id);
+    const density = before === after ? '' : `, density ${before}x → ${after}x`;
     return {
       project,
-      description: `Replace the image of the container "${this.refs(p).imageLabel(id)}": ${old.file} → ${image.file} (${image.width}×${image.height} px, ${image.note})`,
+      description: `Replace the image of the container "${this.refs(p).imageLabel(id)}": ${old.file} → ${image.file} (${image.width}×${image.height} px, ${image.note}${density})`,
       imageFiles: [[image.file, image.data]],
     };
   }
