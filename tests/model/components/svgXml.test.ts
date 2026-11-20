@@ -191,7 +191,7 @@ describe('parseXml: limits', () => {
   });
 
   it('counts bytes, not characters', () => {
-    const text = `<svg a="${'é'.repeat(SVG_MAX_BYTES / 2)}"/>`;
+    const text = `<svg a="${'\u00e9'.repeat(SVG_MAX_BYTES / 2)}"/>`;
     expect(errorOf(text).code).toBe('svgIcon.xmlTooLarge');
   });
 

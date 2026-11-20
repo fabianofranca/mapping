@@ -670,7 +670,7 @@ describe('the icon name (decision 7)', () => {
     ['icons/ui/Arrow Left (2).svg', 'arrow-left-2'],
     ['C:\\icons\\Arrow--Right.svg', 'arrow-right'],
     ['  --home--  .svg', 'home'],
-    ['ícone.svg', 'cone'],
+    ['\u00edcone.svg', 'cone'],
     ['a.b.svg', 'a-b'],
     ['no-extension', 'no-extension'],
     ['___.svg', '___'],
