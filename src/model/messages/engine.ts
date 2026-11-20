@@ -7,7 +7,6 @@ export const engineMessages = {
   'engine.fieldMissing': 'field not provided: {key}',
   'engine.textZeroWidth': 'text measured with width 0: {name}',
   'engine.invalidValue': 'invalid value in {label}: {value}',
-  'engine.fillInHug': 'fill inside hug becomes 0',
   'engine.iconStretched': 'stretched icon: different scale on the two axes',
   'engine.iconUnknown': 'unknown icon: {name}',
   'engine.componentUnavailable': 'component not available: {id}',

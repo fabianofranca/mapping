@@ -439,7 +439,7 @@ describe('instantiate: sizes, style and ids', () => {
     expect(warnings).toEqual([]);
   });
 
-  it('hug in a row sums children and gaps, and fill inside hug becomes 0 with a warning', () => {
+  it('hug in a row sums children and gaps, and a fill child is worth what it would hug (0 for a rect), with no warning', () => {
     const tpl: FrameTemplate = {
       type: 'frame',
       layout: { type: 'none' },
@@ -461,7 +461,7 @@ describe('instantiate: sizes, style and ids', () => {
     const group = child(root, 0);
     expect([group.width, group.height]).toEqual([10 + 0 + 20 + 8, 14]);
     expect(child(group, 1).width).toBe(0);
-    expect(warnings.filter((w) => w === 'fill inside hug becomes 0')).toHaveLength(1);
+    expect(warnings).toEqual([]);
   });
 
   it('visible false removes the node and does not count in the layout', () => {
@@ -700,11 +700,11 @@ describe('instantiate: slotContent and measureComponent', () => {
       ...(slotContent ? { slotContent } : {}),
     });
 
-  it('without slotContent the slot is 0 when measuring and fill inside hug warns', () => {
+  it('without slotContent the empty slot is worth its fallback (none: 0) when measuring, with no warning', () => {
     const result = measure(columnWithSlot, { width: null, height: null });
     expect(result.height).toBeCloseTo(textHeight);
     expect(result.width).toBeCloseTo(textWidth);
-    expect(result.warnings).toContain('fill inside hug becomes 0');
+    expect(result.warnings).not.toContain('fill inside hug becomes 0');
   });
 
   it('with slotContent the fill slot is worth the content of the children, without a warning', () => {
