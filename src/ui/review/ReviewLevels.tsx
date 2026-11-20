@@ -283,6 +283,7 @@ export function ReviewFilters({ names }: { readonly names: ReviewNames }) {
  * keyboard and in Help › Shortcuts.
  */
 function ShortcutFooter() {
+  const { review } = useEditor();
   const compact = useMediaQuery(`(max-width: ${BREAKPOINTS.compact}px)`);
   const all: readonly [string, string][] = [
     [REVIEW_KEYS.accept, t('review.accept')],
@@ -290,7 +291,10 @@ function ShortcutFooter() {
     [REVIEW_KEYS.nextPending, t('review.nextPending')],
     [REVIEW_KEYS.nextConflict, t('review.nextConflict')],
     [REVIEW_KEYS.toggleView, t('review.view.toggle')],
-    [REVIEW_KEYS.apply, t('review.applyShort')],
+    [
+      REVIEW_KEYS.apply,
+      t(review.derived.canConclude.value ? 'review.concludeShort' : 'review.applyShort'),
+    ],
   ];
   const items = compact ? all.slice(0, 3) : all;
   return (

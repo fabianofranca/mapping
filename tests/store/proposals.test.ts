@@ -310,21 +310,21 @@ describe('ProposalStore: folder check', () => {
   });
 });
 
-// Stage #1777 (decision 8): the cycle check does not re-read the final proposals (`applied` and
-// `withdrawn`) already read with a known stamp; the full one (focus, return to the page, "Check the
+// Stage #1777 (decision 8): the cycle check does not re-read the final proposals (`applied`,
+// `withdrawn` and `rejected`) already read with a known stamp; the full one (focus, return to the page, "Check the
 // folder now") looks at all of them.
 describe('ProposalStore: cycle and full check (stage #1777)', () => {
   const cycle = { full: false } as const;
   const none = { added: [], changed: [], removed: [] };
 
-  async function withFinal(status: 'applied' | 'withdrawn' | 'superseded') {
+  async function withFinal(status: 'applied' | 'withdrawn' | 'rejected' | 'superseded') {
     const { proposal } = richScenario();
     const final: Proposal = { ...proposal, status };
     const harness = await openHarness({ proposals: [final] });
     return { ...harness, final };
   }
 
-  it.each(['applied', 'withdrawn'] as const)(
+  it.each(['applied', 'withdrawn', 'rejected'] as const)(
     'a %s rewritten outside is only re-read in the full check',
     async (status) => {
       const { session, root, final } = await withFinal(status);

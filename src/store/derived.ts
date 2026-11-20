@@ -33,6 +33,7 @@ import {
   suggestDensities,
   projectIssues,
   reviewKey,
+  canConcludeProposal,
   reviewProgress,
   reviewTree,
   sceneRemoteImageUrls,
@@ -1203,6 +1204,11 @@ export interface ReviewDerived {
    * read-only and no apply of this proposal is in progress.
    */
   readonly canApply: ReadonlySignal<boolean>;
+  /**
+   * The review can be concluded (stage #2085): the open proposal has nothing undecided and nothing
+   * accepted but unapplied. The button becomes **Conclude review**.
+   */
+  readonly canConclude: ReadonlySignal<boolean>;
   /** An apply of the open proposal is in progress (`hold`): the review does not reevaluate. */
   readonly applying: ReadonlySignal<boolean>;
   /**
@@ -1556,6 +1562,17 @@ export function createReviewDerived(
     return v !== null && v.ok && v.changeIds.length > 0 && !store.readOnly.value;
   });
 
+  const canConclude = computed(() => {
+    const p = proposal.value;
+    const progressNow = progress.value;
+    return (
+      p !== null &&
+      progressNow !== null &&
+      canConcludeProposal(p, progressNow) &&
+      !applying.value
+    );
+  });
+
   const preview = computed((): PatchResult | null => {
     const p = proposal.value;
     const current = project.value;
@@ -1661,6 +1678,7 @@ export function createReviewDerived(
     validation,
     invalid,
     canApply,
+    canConclude,
     applying,
     hold,
     preview,

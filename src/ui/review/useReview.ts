@@ -125,3 +125,31 @@ export function useApplyAccepted(): () => Promise<boolean> {
     return true;
   };
 }
+
+/** "Review concluded: proposal rejected." (or "…applied."), the toast of both Conclude review entry points. */
+export function concludedText(status: 'applied' | 'rejected'): string {
+  return t(
+    status === 'applied' ? 'review.concluded.applied' : 'review.concluded.rejected',
+  );
+}
+
+/**
+ * "Conclude review" of the open proposal (the bar button and its shortcut): closes it as `rejected`
+ * or `applied`, keeping the review open, view only. The refusals (an agent revision left something
+ * new to decide, `incomplete`) go to the toast.
+ */
+export function useConcludeReview(): () => Promise<boolean> {
+  const { review, ui } = useEditor();
+  const { report } = useReviewCommands();
+  return async () => {
+    if (!review.derived.canConclude.peek()) return false;
+    const result = await review.conclude();
+    if (!result) return false;
+    if (!result.ok) {
+      report(result.error);
+      return false;
+    }
+    showToast(ui, concludedText(result.status));
+    return true;
+  };
+}

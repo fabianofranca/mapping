@@ -13,7 +13,12 @@ import { DecisionMark } from './DecisionMark';
 import { Flag } from './Flag';
 import { ProgressBar } from './ReviewLevels';
 import { reviewBarRef } from './reviewBarRef';
-import { useApplyAccepted, useDecideVisible, useShowProblem } from './useReview';
+import {
+  useApplyAccepted,
+  useConcludeReview,
+  useDecideVisible,
+  useShowProblem,
+} from './useReview';
 
 // Review mode strip (HANDOFF-PROPOSALS 5.2, ReviewBar): REVIEW badge, title,
 // source, progress, counts and the four actions (Reject all changes, Accept all changes, Apply
@@ -43,25 +48,52 @@ function Stat({
   );
 }
 
-/** Label of "Apply accepted · N" and the reason it is disabled. */
+/** Why "Apply accepted" is disabled, in the order of precedence; `null` when nothing blocks it. */
+function applyBlockedReason(
+  readOnly: boolean,
+  applying: boolean,
+  acceptedPending: number,
+  invalid: boolean,
+): string | null {
+  if (readOnly) return t('proposal.error.readOnly');
+  if (applying) return t('review.applying');
+  if (acceptedPending === 0) return t('review.applyNone');
+  if (invalid) return t('review.applyBlocked');
+  return null;
+}
+
+/** Label of "Apply accepted · N" (or "Conclude review") and the reason it is disabled. */
 export function useApplyState() {
   const { review, store } = useEditor();
   const d = review.derived;
   const counts = d.counts.value;
   const validation = d.validation.value;
   const canApply = d.canApply.value;
+  // A decided review (stage #2085): the same button concludes the proposal instead of applying.
+  if (d.canConclude.value) {
+    return {
+      label: t('review.concludeLabel'),
+      disabled: false,
+      tooltip: t('review.concludeTip'),
+      blocked: false,
+      issues: 0,
+      conclude: true,
+    };
+  }
   const label = t('review.applyCount', { count: counts.acceptedPending });
-  let reason: string | null = null;
-  if (store.readOnly.value) reason = t('proposal.error.readOnly');
-  else if (d.applying.value) reason = t('review.applying');
-  else if (counts.acceptedPending === 0) reason = t('review.applyNone');
-  else if (validation && !validation.ok) reason = t('review.applyBlocked');
+  const reason = applyBlockedReason(
+    store.readOnly.value,
+    d.applying.value,
+    counts.acceptedPending,
+    validation !== null && !validation.ok,
+  );
   return {
     label,
     disabled: !canApply,
     tooltip: reason ?? t('review.applyTip'),
     blocked: validation !== null && !validation.ok,
     issues: validation?.issues.length ?? 0,
+    conclude: false,
   };
 }
 
@@ -74,6 +106,7 @@ export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
   const p = d.proposal.value;
   const decideVisible = useDecideVisible();
   const apply = useApplyAccepted();
+  const conclude = useConcludeReview();
   const showProblem = useShowProblem();
   const applyState = useApplyState();
   if (!p) return null;
@@ -143,6 +176,9 @@ export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
           <Flag tone="warn">{t('proposals.status.superseded')}</Flag>
         )}
         {p.status === 'applied' && <Flag tone="ok">{t('proposals.status.applied')}</Flag>}
+        {p.status === 'rejected' && (
+          <Flag tone="neutral">{t('proposals.status.rejected')}</Flag>
+        )}
         {!compact && p.origin && (
           <span class="review-bar-origin" title={p.origin}>
             {p.origin}
@@ -200,7 +236,7 @@ export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
           disabled={applyState.disabled}
           title={`${applyState.tooltip}  ${REVIEW_KEYS.apply}`}
           aria-keyshortcuts={ariaKeys(REVIEW_KEYS.apply)}
-          onClick={() => void apply()}
+          onClick={() => void (applyState.conclude ? conclude() : apply())}
         >
           <Icon name="check" />
           {applyState.label}

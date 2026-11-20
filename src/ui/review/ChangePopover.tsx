@@ -493,8 +493,9 @@ export function ChangePopover({
     : p.status === 'superseded' && decision === null
       ? t('review.pop.supersededPending')
       : t('review.closedReason');
-  // Applied or withdrawn: the popover only shows the decision and the dates, without buttons.
-  const closedForGood = p.status === 'applied' || p.status === 'withdrawn';
+  // Applied, rejected or withdrawn: the popover only shows the decision and the dates, without buttons.
+  const closedForGood =
+    p.status === 'applied' || p.status === 'withdrawn' || p.status === 'rejected';
   const appliedAt = p.applied[c.id]?.at;
   const when = (iso: string) => formatFullDate(iso, locale.value);
 

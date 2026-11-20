@@ -174,6 +174,7 @@ const PROPOSAL_ERRORS: Record<ProposalActionError, TranslationKey> = {
   'read-only': 'proposal.error.readOnly',
   blocked: 'proposal.error.blocked',
   stale: 'proposal.error.stale',
+  incomplete: 'proposal.error.incomplete',
   'image-missing': 'proposal.error.imageMissing',
   'image-exists': 'proposal.error.imageExists',
   'package-missing': 'proposal.error.packageMissing',

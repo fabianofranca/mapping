@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import {
   addContainer,
   compareProposals,
   createMarking,
   parseProposal,
   parseProposalText,
+  PROPOSAL_STATUSES,
   proposalFilePath,
   proposalImagePath,
   removeMarking,
@@ -56,6 +58,21 @@ describe('proposal format', () => {
       if (!result.ok) throw new Error(result.errors.join('\n'));
       expect(result.proposal.formatVersion).toBe(formatVersion);
     }
+  });
+
+  it('reads the rejected status (stage #2085) and keeps the file formatVersion', () => {
+    const result = parseProposal({ ...sample(), status: 'rejected', formatVersion: 4 });
+    if (!result.ok) throw new Error(result.errors.join('\n'));
+    expect(result.proposal.status).toBe('rejected');
+    expect(result.proposal.formatVersion).toBe(4);
+    expect(PROPOSAL_STATUSES).toContain('rejected');
+    expect(errorsOf({ ...sample(), status: 'draft' }).join('\n')).toContain('"rejected"');
+  });
+
+  it('an earlier reader (the enum before rejected) rejects the file instead of reading it', () => {
+    const before = z.enum(['open', 'applied', 'superseded', 'withdrawn']);
+    expect(before.safeParse('rejected').success).toBe(false);
+    expect(before.safeParse(sample().status).success).toBe(true);
   });
 
   it('the example is valid and comes back the same', () => {

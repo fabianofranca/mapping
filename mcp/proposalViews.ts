@@ -311,6 +311,8 @@ export function reviewHint(
   progress: { complete: boolean; undecided: number; acceptedPending: number },
   toFix: number,
 ): string {
+  if (p.status === 'rejected')
+    return 'the user rejected every change and concluded the review: to propose again, send a new proposal (propose_changes with supersedes) that takes the notes into account';
   const revisable = isRevisable(p);
   if (!progress.complete) {
     const wait = `the review has not finished yet (${progress.undecided} undecided, ${progress.acceptedPending} accepted without being applied)`;
