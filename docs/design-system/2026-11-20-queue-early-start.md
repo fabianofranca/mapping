@@ -1,4 +1,4 @@
-# Queue early start — [Não lançado] (épico `epic/queue-early-start`)
+# Queue early start — 2026-11-20 (épico `epic/queue-early-start`)
 
 ## Pendências
 

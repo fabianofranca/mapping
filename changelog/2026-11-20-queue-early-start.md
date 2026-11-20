@@ -1,4 +1,4 @@
-# Queue early start — [Não lançado]
+# Queue early start — 2026-11-20 (épico `epic/queue-early-start`, PR #2386, MCP unchanged, schema v22 unchanged)
 
 ## Alterado
 
