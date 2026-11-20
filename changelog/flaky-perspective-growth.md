@@ -1,4 +1,4 @@
-# Flaky perspectiveView growth case — [Não lançado] (épico `epic/flaky-perspective-growth`, PR #0, MCP 0.48.0 unchanged, schema v21)
+# Flaky perspectiveView growth case — [Não lançado] (épico `epic/flaky-perspective-growth`, PR #2294, MCP 0.48.0 unchanged, schema v21)
 
 ## Corrigido
 
