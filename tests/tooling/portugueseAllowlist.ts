@@ -3395,6 +3395,25 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
   },
   {
     path: '.claude/skills/implementar-fila/painel/painel.py',
+    pattern:
+      /right after `schema=`: `não` or families|\{de: #S, para: #E, tipo: entrega\}/,
+    reason:
+      'the formato= ficha value `não` and the de/para/tipo keys of the entrega arrow, in the docstring paragraph on the early start (frozen panel values)',
+  },
+  {
+    path: 'tests/tooling/queueEarlyStart.test.ts',
+    pattern: /não|\bde: |tipo: string|concluída/,
+    reason:
+      'the frozen panel values of the early-start tests (ficha value não, arrow keys de/para/tipo, the status concluída) that painel.py writes and reads',
+  },
+  {
+    path: 'tests/tooling/queueExclusive.test.ts',
+    pattern: /'formato=não'/,
+    reason:
+      'the ficha field formato=não of the fixture, a frozen panel value (decision 8 of #2373)',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/painel.py',
     pattern: /\{de, para, tipo\}|"para": k/,
     reason:
       'the keys de/para/tipo of the arrows of meta.grafoSetas, written by painel.py and read by the panel page and the graph tests',

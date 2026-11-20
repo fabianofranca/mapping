@@ -1,4 +1,4 @@
-# Queue early start — [Não lançado] (épico `epic/queue-early-start`, MCP unchanged, schema v21 unchanged)
+# Queue early start — [Não lançado]
 
 ## Alterado
 
