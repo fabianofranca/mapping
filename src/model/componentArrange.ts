@@ -40,6 +40,7 @@ import { typeSlots } from './specSlots';
 import {
   anchoredRect,
   clampedInto,
+  outsideWarning,
   resolveMarkingAnchor,
   type AnchorDefaultsUnits,
   type AnchorDefaultsSource,
@@ -659,13 +660,7 @@ export function arrangeMarking(
     if (sameRect(rect, fixed)) continue;
     rects.set(id, fixed);
     translate(id, fixed.x - rect.x, fixed.y - rect.y);
-    warn(
-      modelMessage(
-        'arrange.outside',
-        { label: labelOf(id), where },
-        `${labelOf(id)}: does not fit in ${where}`,
-      ),
-    );
+    warn(outsideWarning(labelOf(id), where));
   }
 
   const changed = topDownIds.filter(
@@ -915,11 +910,7 @@ function clampedWarning(p: Project, marking: Marking): ModelMessage {
       ? undefined
       : projectIndex(p).containers.get(marking.containerId);
   const where = container?.name ?? marking.containerId ?? '';
-  return modelMessage(
-    'arrange.outside',
-    { label, where },
-    `${label}: does not fit in ${where}`,
-  );
+  return outsideWarning(label, where);
 }
 
 /**

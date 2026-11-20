@@ -1,44 +1,44 @@
-import type {
-  AnchorAlign,
-  AnchorSide,
-  ComponentAnchor,
-  ComponentFile,
-  FieldValues,
-} from './componentFormat';
+import {
+  resolveMarkingAnchor,
+  type AnchorDefaultsUnits,
+  type ResolvedMarkingAnchor,
+} from '../anchorPlacement';
+import type { AnchorSide, ComponentFile, FieldValues } from './componentFormat';
 import { ANCHOR_FIELDS } from './expressions';
 
 // Anchor in the component engine (stage #1096, R3): the defaults of the `anchor` at the root of
 // the file and the `$anchor.*` pseudo-fields that the instance receives. Pure functions, no DOM.
 
 /**
- * The defaults for how the type snaps, complete and ALREADY in pixels (the file's `offset` is in
- * units). The optional pair in units (what the snap reads) is `AnchorDefaultsUnits`
- * (`anchorPlacement.ts`).
+ * The component root's `anchor` as `AnchorDefaultsUnits` (the `offset` in component UNITS, whoever
+ * uses it multiplies by the density); `undefined` when it declares none. The only reader of the
+ * root `anchor` (the catalog lookups of `anchorDefaults.ts` and `componentAnchorDefaults` go
+ * through it).
  */
-export interface AnchorDefaultsPx {
-  readonly side: AnchorSide;
-  readonly align: AnchorAlign;
-  readonly offset: { readonly main: number; readonly cross: number };
+export function fileAnchorDefaults(file: ComponentFile): AnchorDefaultsUnits | undefined {
+  const { anchor } = file;
+  if (anchor === undefined) return undefined;
+  return {
+    ...(anchor.side === undefined ? {} : { side: anchor.side }),
+    ...(anchor.align === undefined ? {} : { align: anchor.align }),
+    ...(anchor.offset === undefined
+      ? {}
+      : { offset: { main: anchor.offset.main ?? 0, cross: anchor.offset.cross ?? 0 } }),
+  };
 }
 
 /**
  * How the component prefers to snap: the `anchor` at the root of the file, with `side`, `align` and
- * `offset` absent defaulting to `top`, `center` and `{ 0, 0 }`. The `offset` (component units) is
- * multiplied by the container's `density`, and the result is in container pixels, like the `rect`.
- * It is what `snapToAnchor` uses when the marking does not state the side, the alignment or the
- * offset.
+ * `offset` absent defaulting to `top`, `center` and `{ 0, 0 }` (`resolveMarkingAnchor`). The
+ * `offset` (component units) is multiplied by the container's `density`, and the result is in
+ * container pixels, like the `rect`. It is what `snapToAnchor` uses when the marking does not state
+ * the side, the alignment or the offset.
  */
 export function componentAnchorDefaults(
   file: ComponentFile,
   density: number,
-): AnchorDefaultsPx {
-  const declared: ComponentAnchor = file.anchor ?? {};
-  const offset = declared.offset ?? {};
-  return {
-    side: declared.side ?? 'top',
-    align: declared.align ?? 'center',
-    offset: { main: (offset.main ?? 0) * density, cross: (offset.cross ?? 0) * density },
-  };
+): ResolvedMarkingAnchor {
+  return resolveMarkingAnchor({}, fileAnchorDefaults(file), density);
 }
 
 /**

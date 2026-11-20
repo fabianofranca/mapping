@@ -43,13 +43,12 @@ import {
   type ComponentCatalog,
   type MarkingComponent,
 } from './componentCatalog';
-import { anchorValues, drawingValues } from './componentValues';
-import { componentAnchorDefaults } from './components/anchor';
+import { drawingValues } from './componentValues';
 import type { ModelMessage } from './modelMessage';
 import { DEFAULT_LABEL_TEXTS } from './refs';
 import { effectiveDensity, unitSpaceOf, type UnitSpace } from './density';
 import { effectiveDirection } from './direction';
-import { effectiveDrawingMode } from './drawingMode';
+import { effectiveDrawingMode, instanceAnchorOf } from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
 import {
@@ -597,11 +596,11 @@ function instanceAnchor(
   density: number,
 ): InstantiateOptions['anchor'] {
   if (anchor === undefined) return undefined;
-  return anchorValues({
+  return instanceAnchorOf({
     rect,
     anchorRect: anchor.rect,
     side: anchor.side,
-    defaults: componentAnchorDefaults(component, density),
+    component,
     density,
   });
 }

@@ -1,4 +1,5 @@
 import { bottom, clamp, right } from './geometry';
+import { modelMessage, type ModelMessage } from './modelMessage';
 import type {
   AnchorAlign,
   AnchorSide,
@@ -13,7 +14,7 @@ import type {
 /**
  * Anchor defaults coming from the component, as the file declares them: the `offset` is in UNITS
  * (× density when used) and everything is optional. The complete pixel counterpart is
- * `AnchorDefaultsPx` (`components/anchor.ts`).
+ * `ResolvedMarkingAnchor`.
  */
 export interface AnchorDefaultsUnits {
   readonly side?: AnchorSide;
@@ -34,7 +35,7 @@ export interface ResolvedMarkingAnchor {
 
 /** What the anchor does not state comes from the defaults (offset in units × `density`), then from `top`/`center`/0. */
 export function resolveMarkingAnchor(
-  anchor: MarkingAnchor,
+  anchor: Pick<MarkingAnchor, 'side' | 'align' | 'offset'>,
   defaults: AnchorDefaultsUnits | undefined,
   density: number,
 ): ResolvedMarkingAnchor {
@@ -148,4 +149,16 @@ export function clampedInto(rect: Rect, bounds: Rect): { rect: Rect; clamped: bo
   const x = clamp(rect.x, bounds.x, Math.max(bounds.x, right(bounds) - rect.width));
   const y = clamp(rect.y, bounds.y, Math.max(bounds.y, bottom(bounds) - rect.height));
   return { rect: { ...rect, x, y }, clamped: x !== rect.x || y !== rect.y };
+}
+
+/**
+ * The `arrange.outside` warning: `label` does not fit in `where` (the container or parent that
+ * clamped it). The one place that builds it; the code, the params and the text are fixed.
+ */
+export function outsideWarning(label: string, where: string): ModelMessage {
+  return modelMessage(
+    'arrange.outside',
+    { label, where },
+    `${label}: does not fit in ${where}`,
+  );
 }
