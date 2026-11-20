@@ -347,6 +347,8 @@ export function ReviewLevels() {
   const decide = useDecide();
   const navigate = useReviewNavigate();
   const scroller = useRef<HTMLDivElement>(null);
+  // A mouse press on a row button leaves the focus on the tree (#2160).
+  const focusTree = () => scroller.current?.focus({ preventScroll: true });
 
   // Collapsed nodes: state of this window, new for each proposal.
   const [collapsedState, setCollapsed] = useState<{
@@ -548,6 +550,7 @@ export function ReviewLevels() {
           review.requestMark(c.id);
         }}
         onToggle={() => {}}
+        onPointerFocus={focusTree}
         onDecide={(state) => decide(target, state)}
       />
     );
@@ -618,6 +621,7 @@ export function ReviewLevels() {
         }
         onSelect={() => navigate(row.target)}
         onToggle={() => toggle(row.key)}
+        onPointerFocus={focusTree}
         onDecide={(state) => decide(row.target, state)}
       />
     );
@@ -628,8 +632,14 @@ export function ReviewLevels() {
     : rows.map((r) => r.key);
 
   const onKeyDown = (e: KeyboardEvent) => {
-    // Only with focus on the tree itself: on the row's buttons the keys belong to them.
-    if (e.target !== e.currentTarget || e.altKey || e.ctrlKey || e.metaKey) return;
+    // On the ✓/✕ the keys belong to the buttons (#961); from any other row child they are the
+    // tree's (#2160).
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (
+      e.target !== e.currentTarget &&
+      (e.target as Element).closest('[data-decision-control]')
+    )
+      return;
     const at = selectedKey ? keys.indexOf(selectedKey) : -1;
     const go = (index: number) => {
       const key = keys[index];

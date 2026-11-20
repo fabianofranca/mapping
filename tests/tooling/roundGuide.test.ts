@@ -586,7 +586,7 @@ describe('round-guide.mjs: base, index and excerpts (#1232, GL1)', () => {
       const out = guideExcerpt(guide, ['R22']);
       expect(out).toContain('**What it covers:**');
       expect(out).toContain('**Setup.**');
-      expect(out).toContain('Steps (24): R22.1, R22.2, …, R22.23');
+      expect(out).toContain('Steps (25): R22.1, R22.2, …, R22.24');
       expect(out).not.toMatch(/^\| R22\.\d/m);
       expect(out.split('\n').filter((l) => l.startsWith('Steps ('))).toHaveLength(1);
     });
@@ -680,7 +680,7 @@ describe('round-guide.mjs: base, index and excerpts (#1232, GL1)', () => {
       const { guideExcerpt } = await load();
       const guide = await guideOf(['R0', 'R12', 'R22']);
       expect(() => guideExcerpt(guide, ['R22.99'])).toThrow(
-        'R22.99 is not in the round guide; R22 has R22.1 to R22.23 (24 steps)',
+        'R22.99 is not in the round guide; R22 has R22.1 to R22.24 (25 steps)',
       );
       expect(() => guideExcerpt(guide, ['R22.1-R22.99'])).toThrow(/R22\.99 is not in/);
       expect(() => guideExcerpt(guide, ['R99'])).toThrow(
