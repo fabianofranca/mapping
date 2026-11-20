@@ -127,7 +127,10 @@ test('Anchor section: "On the corner" writes corner-end and Snap puts the center
   const section = page.getByRole('region', { name: 'Anchor' });
   const corner = section.getByRole('checkbox', { name: /On the corner/ });
   await expect(corner).toBeDisabled();
-  await section.getByRole('button', { name: 'End', exact: true }).click();
+  await section
+    .getByRole('group', { name: 'Alignment' })
+    .getByRole('button', { name: 'End', exact: true })
+    .click();
   await expect(corner).toBeEnabled();
   await corner.check();
   await section.getByRole('button', { name: 'Snap to anchor' }).click();
