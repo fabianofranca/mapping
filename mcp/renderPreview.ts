@@ -85,9 +85,33 @@ const PREVIEW_HINTS: Partial<Record<ReviseError['code'], string>> = {
 const projectOfRef = (ref: string): string | undefined =>
   parseRef(ref)?.project ?? undefined;
 
-/** The project of a preview without a proposal: `project`, or the one the reference carries. */
-async function locationOf(roots: Roots, args: PreviewArgs): Promise<ProjectLocation> {
-  const name = args.project ?? projectOfRef(args.ref);
+/** The project the preview names: `project`, or the one the reference carries; the two must agree. */
+async function projectNameOf(
+  roots: Roots,
+  args: PreviewArgs,
+): Promise<string | undefined> {
+  const fromRef = projectOfRef(args.ref);
+  if (fromRef !== undefined && args.project !== undefined) {
+    const [byRef, byArg] = [
+      await findProject(roots, fromRef),
+      await findProject(roots, args.project),
+    ];
+    if (byRef.dir !== byArg.dir) {
+      throw new ToolError(
+        'project-mismatch',
+        `the reference is from project "${byRef.name}", but \`project\` indicates "${byArg.name}"`,
+      );
+    }
+  }
+  return args.project ?? fromRef;
+}
+
+/** The project of a preview without a proposal. */
+async function locationOf(
+  roots: Roots,
+  args: PreviewArgs,
+  name: string | undefined,
+): Promise<ProjectLocation> {
   if (name === undefined) {
     throw new ToolError(
       'invalid-arguments',
@@ -243,18 +267,15 @@ async function openPreview(
   args: PreviewArgs,
 ): Promise<Previewed> {
   const batch = await resolveOptionalOperations(roots, args);
+  const name = await projectNameOf(roots, args);
   const resolved =
     args.proposal === undefined
       ? undefined
-      : await resolveProposal(
-          roots,
-          args.proposal,
-          args.project ?? projectOfRef(args.ref),
-        );
+      : await resolveProposal(roots, args.proposal, name);
   if (resolved !== undefined && batch === undefined) {
     return previewProposal(roots, resolved);
   }
-  const location = resolved?.location ?? (await locationOf(roots, args));
+  const location = resolved?.location ?? (await locationOf(roots, args, name));
   return previewBatch(roots, now, location, batch ?? [], resolved);
 }
 

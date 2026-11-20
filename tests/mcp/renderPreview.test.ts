@@ -541,6 +541,35 @@ describe('refusals', () => {
     expect(error.message).toContain('project');
   });
 
+  it('a project that disagrees with the reference is project-mismatch, with and without proposal', async () => {
+    const other = join(base, 'outros');
+    mkdirSync(other, { recursive: true });
+    writeFileSync(join(other, 'mapping.json'), readFileSync(mappingPath(), 'utf8'));
+    try {
+      const batch = await call('render_container', {
+        project: 'outros',
+        ref: 'mapping://telas/i/bbbbbbbb',
+        operations: BATCH,
+      });
+      expect(errorOf(batch).code).toBe('project-mismatch');
+      const marking = await call('render_marking', {
+        project: 'outros',
+        ref: 'mapping://telas/m/aaaaaaaa',
+        operations: BATCH,
+      });
+      expect(errorOf(marking).code).toBe('project-mismatch');
+      const { ref: proposal } = await propose(BATCH);
+      const withProposal = await call('render_container', {
+        project: 'outros',
+        ref: 'mapping://telas/i/bbbbbbbb',
+        proposal,
+      });
+      expect(errorOf(withProposal).code).toBe('project-mismatch');
+    } finally {
+      rmSync(other, { recursive: true, force: true });
+    }
+  });
+
   it('both operations and operationsFile is invalid-arguments', async () => {
     const reply = await call('render_container', {
       project: 'telas',
