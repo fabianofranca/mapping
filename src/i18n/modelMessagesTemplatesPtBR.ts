@@ -670,7 +670,6 @@ export const templatePtBR: {
   'model.engine.fieldMissing': 'campo não informado: {key}',
   'model.engine.textZeroWidth': 'texto medido com largura 0: {name}',
   'model.engine.invalidValue': 'valor inválido em {label}: {value}',
-  'model.engine.fillInHug': 'fill dentro de hug vira 0',
   'model.engine.iconStretched': 'ícone esticado: escala diferente nos dois eixos',
   'model.engine.iconUnknown': 'ícone desconhecido: {name}',
   'model.engine.componentUnavailable': 'componente indisponível: {id}',

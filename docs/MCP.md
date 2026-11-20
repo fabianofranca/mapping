@@ -261,6 +261,14 @@ node tools/mapping-signature.mjs --help
 - **Reading.** `get_project` returns `drawingMode` (`null` without a mode) and, in each container, the pinned one and the `effectiveDrawingMode`; `get_container` likewise; `list_markings` carries `effectiveDrawingMode` on each row. The effective one is the container's, else the project's, else the first mode declared in `tokens.modes` by the specializations, else `null`.
 - **Proposals.** The mode change becomes the `project` entity (and the container's `drawingMode` field) in the proposal, which is then written in `formatVersion` 6 (`docs/PROPOSAL-FORMAT.md`); proposals without the mode stay on 4 (creation) and 5 (revision).
 
+### `fill` on the main axis of a `hug` frame (stage #2164, 0.50.0)
+
+The stage `epic/hug-fill-copy-field` changes how the component engine measures a `fill` child on the main axis of a `hug` frame, in every component `formatVersion` (no key). The component format stays at 4 and the schema, proposal, comment and signature formats do not change. The later phases of the stage add their own items to this section.
+
+- **Measurement.** The `fill` child of a `hug` `row` (width) or `column` (height) is measured by its content: its `hug` size, clamped by its `minWidth`/`maxWidth` (`minHeight`/`maxHeight`). With several `fill`s the frame is the smallest size at which the weights and the limits give each one its own, and the part the `fill`s ask for never passes what is left of the available limit (the root's `maxWidth`, or the parent's content); the text then wraps, or `ellipsis` cuts it. It reaches `measure_component`, `fit_marking`, `create_marking` without `rect`, `render_marking`, `render_container` and the `validate_library` drawing proof (level 3).
+- **Warning removed.** `fill inside hug becomes 0` is gone: no component of any version raises it. `<id>: fill inside hug: using hug` (the screen layout without geometry) stays.
+- **Update the MCP first:** a version earlier than 0.50.0 still measures that `fill` as 0, so a library that relies on `hug` with a `fill` label gets a different size there. See `COMPONENT-FORMAT.md`, "Sizing".
+
 ### Icon `fillRule` and the format gaps (stage #2087, 0.49.0)
 
 The stage `epic/format-gaps` raises the **icons file** (`format: "mapping-icons"`) to `formatVersion` 3, which adds `fillRule` (`nonzero` or `evenodd`) to each path. The component format stays at 4, the specialization at 18 (the `icons` key still needs 15), and the project, proposal, comment and signature formats do not change. The later phases of the stage add their own items to this section.

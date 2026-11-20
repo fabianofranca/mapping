@@ -63,27 +63,13 @@ function engineCases() {
       },
     ],
   };
-  const hug = {
-    children: [
-      {
-        type: 'frame',
-        width: 'hug',
-        height: 'hug',
-        layout: { type: 'row', gap: 4 },
-        children: [
-          { type: 'rect', width: 10, height: 10 },
-          { type: 'rect', width: 'fill', height: 10 },
-        ],
-      },
-    ],
-  };
   const zeroWidth = {
     layout: { type: 'column' },
     children: [
       {
         type: 'frame',
-        layout: { type: 'row' },
-        width: 'hug',
+        layout: { type: 'none' },
+        width: 0,
         height: 'hug',
         children: [{ type: 'text', name: 'rótulo', text: 'abc', width: 'fill' }],
       },
@@ -103,7 +89,6 @@ function engineCases() {
   };
   const results = [
     draw(card, {}),
-    draw(hug, {}),
     draw(zeroWidth, {}),
     draw(blur, {}),
     draw(icon, {}),
@@ -448,7 +433,6 @@ describe('drawing engine warnings: messages next to warnings', () => {
   it.each([
     ['field not provided', 'engine.fieldMissing'],
     ['content larger than the box', 'engine.contentTooBig'],
-    ['fill inside hug', 'engine.fillInHug'],
     ['fill inside hug (layout)', 'engine.fillInHugUsing'],
     ['unknown icon', 'engine.iconUnknown'],
     ['type without component', 'engine.typeNoComponent'],
