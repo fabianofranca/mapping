@@ -1,6 +1,7 @@
 // FG6: `startAngle`/`sweepAngle` on `ellipse` — the validator (v4 only, `ellipse` only) and the
 // engine (a scene `path` with the arc, stroke `center`, the ellipse's cap, join and dash).
 import { describe, expect, it } from 'vitest';
+import { arcPath } from '../../../src/model/components/arc';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
 import {
   approximateMeasurer,
@@ -10,7 +11,7 @@ import {
   parseComponent,
   validateComponent,
 } from '../../../src/model/components/parseComponent';
-import type { FrameNode, PathNode } from '../../../src/model/components/scene';
+import type { FrameNode, GroupNode, PathNode } from '../../../src/model/components/scene';
 import { resolveTokens } from '../../../src/model/components/tokens';
 
 const V4 = 'only allowed with formatVersion 4';
@@ -149,5 +150,37 @@ describe('FG6 engine', () => {
     );
     expect(JSON.stringify(start.messages)).toContain('startAngle');
     expect((start.node as PathNode).d.startsWith('M40 20')).toBe(true);
+  });
+});
+
+describe('FG6 engine: the arc fill stays on the box', () => {
+  const stroked = {
+    type: 'ellipse',
+    fill: '#ff0000',
+    sweepAngle: 180,
+    stroke: { color: '#0000ff', width: 2, align: 'outside', offset: 4 },
+  };
+
+  it('a filled arc whose stroke is moved draws the fill at the box and the stroke apart', () => {
+    const { node } = draw(stroked);
+    expect(node.type).toBe('group');
+    const [fill, line] = (node as GroupNode).children as PathNode[];
+    expect(fill!.fills).toHaveLength(1);
+    expect(fill!.stroke).toBeUndefined();
+    expect(fill!.d).toBe(
+      arcPath({ width: 40, height: 40, startAngle: 0, sweepAngle: 180 }),
+    );
+    expect(line!.fills).toHaveLength(0);
+    expect(line!.stroke).toMatchObject({ align: 'center', width: 2 });
+    expect(line!.d).not.toBe(fill!.d);
+  });
+
+  it('without a fill, or with the stroke on the outline, it stays one path', () => {
+    expect(draw({ ...stroked, fill: 'none' }).node.type).toBe('path');
+    const centered = {
+      ...stroked,
+      stroke: { color: '#0000ff', width: 2, align: 'center' },
+    };
+    expect(draw(centered).node.type).toBe('path');
   });
 });

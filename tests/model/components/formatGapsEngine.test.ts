@@ -181,6 +181,23 @@ describe('FG4: padding items from a token and a field', () => {
   });
 });
 
+describe('FG4: a run padding item from a field', () => {
+  it('evaluates each item of the chip padding', () => {
+    const c = parse({
+      type: 'frame',
+      children: [
+        {
+          type: 'text',
+          runs: [
+            { text: 'tag', background: '#eeeeee', padding: [{ $field: 'padV' }, 6] },
+          ],
+        },
+      ],
+    });
+    expect(textOf(run(c, { padV: 4 }).root).runs?.[0]?.padding).toEqual([4, 6]);
+  });
+});
+
 describe('FG4: sizing from a number $token', () => {
   const sized = (sizing: Raw) => parse({ type: 'frame', children: [] }, { sizing });
 

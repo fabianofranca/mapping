@@ -868,7 +868,7 @@ function createEngine(
   /** `[vertical, horizontal]` padding of a chip (number = both axes). */
   const runPadding = (run: TextRunTemplate): readonly [number, number] => {
     const value = ev<unknown>(run.padding as Expr<unknown> | undefined, 0);
-    const clean = (n: unknown): number => (typeof n === 'number' && n > 0 ? n : 0);
+    const clean = (n: unknown): number => Math.max(0, num(n as Expr<number>, 0));
     if (Array.isArray(value)) return [clean(value[0]), clean(value[1])];
     return [clean(value), clean(value)];
   };
@@ -3489,20 +3489,46 @@ function createEngine(
         type: 'ellipse',
       };
     const { offset, ...rest } = stroke ?? {};
-    const d = arcPath({
-      width: w,
-      height: h,
-      startAngle: start,
-      sweepAngle: sweep,
-      ...(stroke ? { stroke: { width: stroke.width, align: stroke.align, offset } } : {}),
-    });
-    return {
-      ...common(node, id, x, y, w, h),
-      ...(stroke ? { stroke: { ...rest, align: 'center' as const } as Stroke } : {}),
+    const arc = (withStroke: boolean): string =>
+      arcPath({
+        width: w,
+        height: h,
+        startAngle: start,
+        sweepAngle: sweep,
+        ...(withStroke && stroke
+          ? { stroke: { width: stroke.width, align: stroke.align, offset } }
+          : {}),
+      });
+    const line = stroke
+      ? { stroke: { ...rest, align: 'center' as const } as Stroke }
+      : {};
+    const base = common(node, id, x, y, w, h);
+    const moved = arc(true) !== arc(false);
+    if (!moved || base.fills.length === 0)
+      return { ...base, ...line, type: 'path', d: arc(true), fillRule: 'nonzero' };
+    // The stroke sits apart from the box's outline (`align`, `offset`) but the fill stays on the
+    // box: two paths in a group, which carries the node's matrix and opacity.
+    const kid = { ...baseNode({ id: '', name: base.name }), width: w, height: h };
+    const fill: PathNode = {
+      ...kid,
+      id: `${id}/fill`,
+      fills: base.fills,
+      effects: base.effects,
       type: 'path',
-      d,
+      d: arc(false),
       fillRule: 'nonzero',
     };
+    const edge: PathNode = {
+      ...kid,
+      id: `${id}/stroke`,
+      fills: [],
+      effects: [],
+      ...line,
+      type: 'path',
+      d: arc(true),
+      fillRule: 'nonzero',
+    };
+    return { ...base, fills: [], effects: [], type: 'group', children: [fill, edge] };
   };
 
   const buildNode = (
