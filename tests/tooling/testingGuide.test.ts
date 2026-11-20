@@ -918,10 +918,11 @@ describe('TR3 — setups that do not overwrite and aligned messages', () => {
   });
 
   it('every directed, group and block message brings the release tag slot, and the prompt says what to do with "sem R21" (decision 14)', () => {
-    const tester = flow.slice(
-      flow.indexOf('## For the tester'),
-      flow.indexOf('### Standalone round'),
-    );
+    // The sync session's message (stage #2373, "Main before the tester (early start)") is not a tester message.
+    const sync = /### Main before the tester \(early start\)\n[\s\S]*?(?=\n## )/;
+    const tester = flow
+      .slice(flow.indexOf('## For the tester'), flow.indexOf('### Standalone round'))
+      .replace(sync, '');
     const messages = tester.match(/```text\n[\s\S]*?```/g) ?? [];
     expect(messages.length).toBe(4);
     for (const m of messages) {
