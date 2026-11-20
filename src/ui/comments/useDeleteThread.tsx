@@ -1,5 +1,5 @@
 import type { ComponentChildren } from 'preact';
-import { useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import { t } from '../../i18n';
 import { deleteImpact, type Thread } from '../../model';
 import { identity } from '../../store/identity';
@@ -25,11 +25,22 @@ export function useDeleteThread(): DeleteThread {
   const { session } = useEditor();
   const [pending, setPending] = useState<Thread | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // A removal in flight: a second click in the same tick (the ref, not the state) is ignored.
+  const running = useRef(false);
+  const [busy, setBusy] = useState(false);
   /** Deletes and returns whether it worked; the error, if any, stays in `error`. */
   const run = async (thread: Thread): Promise<boolean> => {
-    const result = await session.threadActions.remove(thread.id);
-    setError(result.ok ? null : actionErrorText(result.error));
-    return result.ok;
+    if (running.current) return false;
+    running.current = true;
+    setBusy(true);
+    try {
+      const result = await session.threadActions.remove(thread.id);
+      setError(result.ok ? null : actionErrorText(result.error));
+      return result.ok;
+    } finally {
+      running.current = false;
+      setBusy(false);
+    }
   };
   const request = (thread: Thread) => {
     setError(null);
@@ -55,6 +66,7 @@ export function useDeleteThread(): DeleteThread {
           <Button onClick={close}>{t('common.cancel')}</Button>
           <Button
             variant="danger"
+            disabled={busy}
             onClick={() => {
               void run(pending).then((ok) => {
                 if (ok) close();

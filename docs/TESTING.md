@@ -3282,12 +3282,13 @@ For the tester agent: the Claude Code session in the cloud ("Mapping - testes" e
 ```js
 // page: Playwright over CDP; the marking is in the Tree (Ctrl+Shift+1) as "Unnamed marking" or by its name
 const host = page.locator('.canvas-host');
-await page.getByText('Unnamed marking').first().click(); // 1. select through the Tree
-await settle(page); // 2. wait for the app to settle (no fixed time)
-const [l, t, w, h] = (await host.getAttribute('data-selection-box'))
-  .split(' ')
-  .map(Number);
-const o = await host.boundingBox(); // 3. host corner on the page
+await openWindow(page, 'tree'); // 1. open the Tree (idempotent: never toggles it closed)
+await page.getByText('Unnamed marking').first().click(); // 2. select through the Tree
+await settle(page); // 3. wait for the app to settle (no fixed time)
+const text = await host.getAttribute('data-selection-box');
+if (!text) throw new Error('no selection box: select an item first');
+const [l, t, w, h] = text.split(' ').map(Number);
+const o = await host.boundingBox(); // 4. host corner on the page
 const at = (fx, fy) => ({ x: o.x + l + w * fx, y: o.y + t + h * fy });
 const center = at(0.5, 0.5); // click/drag to move
 const handles = {

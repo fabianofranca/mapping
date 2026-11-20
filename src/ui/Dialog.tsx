@@ -86,9 +86,11 @@ export function Dialog({
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const bodyId = useId();
-  // Where the click started: only a whole click on the backdrop closes (a drag that starts on the
-  // content and is released on the backdrop also generates `click` on the `<dialog>`).
+  // Where the press started and where it was released: only a click that began and ended on the
+  // backdrop closes (a drag between the content and the backdrop, in either direction, also
+  // generates `click` on the `<dialog>`, their common ancestor).
   const pressedOnBackdrop = useRef(false);
+  const releasedOnBackdrop = useRef(false);
 
   // Who had focus on open (the button that opened it, the dialog below, or whoever opened the
   // first dialog of the host's slot): on close, focus goes back to it instead of falling on
@@ -126,11 +128,19 @@ export function Dialog({
       }}
       onPointerDown={(e) => {
         pressedOnBackdrop.current = e.target === ref.current;
+        releasedOnBackdrop.current = false;
+      }}
+      onPointerUp={(e) => {
+        releasedOnBackdrop.current = e.target === ref.current;
       }}
       onClick={(e) => {
-        // Click on the backdrop (outside the content) closes, if it also started on it.
-        const full = pressedOnBackdrop.current && e.target === ref.current;
+        // Click on the backdrop (outside the content) closes, if it also started and ended on it.
+        const full =
+          pressedOnBackdrop.current &&
+          releasedOnBackdrop.current &&
+          e.target === ref.current;
         pressedOnBackdrop.current = false;
+        releasedOnBackdrop.current = false;
         if (full) onCancel?.('backdrop');
       }}
     >

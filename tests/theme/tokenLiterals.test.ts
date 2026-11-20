@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
-import { BREAKPOINTS } from '../../src/theme/breakpoints';
+import { BREAKPOINTS, CONTAINER_BREAKPOINTS } from '../../src/theme/breakpoints';
 import { TOKENS, tokenValue } from '../../src/theme/tokens';
 
 // No color, spacing, radius, font,
@@ -141,6 +141,35 @@ describe('media queries', () => {
   it('the minimum width of the app is the size-app-min token one', () => {
     expect(TOKENS['size-app-min']).toBe(`${BREAKPOINTS.appMin}px`);
     expect(TOKENS['size-app-min-height']).toBe(`${BREAKPOINTS.appMinHeight}px`);
+  });
+});
+
+describe('container queries', () => {
+  const known = new Set<number>(Object.values(CONTAINER_BREAKPOINTS));
+  const queries: { file: string; text: string; kind: string; px: number }[] = [];
+  for (const file of files) {
+    const css = readFileSync(`${DIR}/${file}`, 'utf8');
+    for (const m of css.matchAll(/@container[^{]*\((min|max)-width:\s*(\d+)px\)/g)) {
+      queries.push({ file, text: m[0], kind: m[1]!, px: Number(m[2]) });
+    }
+  }
+  // `min-width` is the complement of a `max-width`: the threshold plus 1.
+  const threshold = (q: { kind: string; px: number }) =>
+    q.kind === 'min' ? q.px - 1 : q.px;
+
+  it('use only the thresholds of CONTAINER_BREAKPOINTS (min-width is one plus a threshold)', () => {
+    const bad = queries
+      .filter((q) => !known.has(threshold(q)))
+      .map((q) => `${q.file}: ${q.text}`);
+    expect(bad).toEqual([]);
+  });
+
+  it('every entry of CONTAINER_BREAKPOINTS is used by a rule', () => {
+    const used = new Set(queries.map(threshold));
+    const unused = Object.entries(CONTAINER_BREAKPOINTS)
+      .filter(([, px]) => !used.has(px))
+      .map(([name]) => name);
+    expect(unused).toEqual([]);
   });
 });
 

@@ -501,11 +501,11 @@ export class CanvasController {
   private drawnArrows = 0;
   private countedProject: Project | null = null;
   private canvasMarkingCount = 0;
-  private published = '';
-  /** `data-container-boxes`: stored text, the `containers` array it came from and the text version. */
+  /** What `publishHostAttributes` last wrote on the host, by attribute (`null`: absent); the DOM is never read back. */
+  private readonly published = new Map<string, string | null>();
+  /** `data-container-boxes`: stored text and the `containers` array it came from. */
   private boxesText: string | null = null;
   private boxesContainers: readonly ProjectContainer[] | null = null;
-  private boxesVersion = 0;
   private readonly cleanups: (() => void)[] = [];
 
   constructor(options: CanvasControllerOptions) {
@@ -1025,7 +1025,7 @@ export class CanvasController {
   /**
    * The text of `data-container-boxes` (drawn placements): only redone with another placement or
    * another `containers` array in the drawn project (a resized container changes the width without
-   * changing the placement); pan and zoom do not go through here. Each new text bumps the version.
+   * changing the placement); pan and zoom do not go through here.
    */
   private refreshContainerBoxes(frame: Frame, placementsChanged: boolean): void {
     const containers = frame.project?.containers ?? null;
@@ -1034,7 +1034,6 @@ export class CanvasController {
     const text = containers ? formatContainerBoxes(containers, this.placements) : null;
     if (text === this.boxesText) return;
     this.boxesText = text;
-    this.boxesVersion += 1;
   }
 
   /** The text of `data-arrow-handles`: only with a drawn arrow as the primary selection. */
@@ -1049,7 +1048,8 @@ export class CanvasController {
    * The host's `data-*` attributes (read-only, so e2e tests wait for the frame instead of a fixed
    * time): framing, images with a bitmap, drawn counts, view, selection box,
    * `data-selection`, `data-arrow-handles` and `data-container-boxes`. The DOM is only touched
-   * when the `drawn` key changes; `data-container-boxes` enters it only through the text's version.
+   * for the attributes whose text changed since the last write (a pan or zoom frame only rewrites
+   * `data-viewport` and `data-selection-box`); a `null` text removes the attribute.
    */
   private publishHostAttributes(frame: Frame, v: Viewport): void {
     const canvasMarkings = this.countCanvasMarkings(frame.project);
@@ -1057,30 +1057,31 @@ export class CanvasController {
       this.componentLayer.imageCount + this.floatingLayer.imageCount;
     const pins = this.pinLayer.size;
     const pinStates = this.pinLayer.states.join(',');
-    const viewportText = formatViewport(v);
-    const boxText = formatSelectionBox(
+    const host = this.stage.container();
+    const selectionBox = formatSelectionBox(
       selectionScreenBox(frame.project, frame.selection, this.placements, v),
     );
-    const selectionText = formatSelection(frame.project, frame.selection);
-    const handlesText = this.arrowHandlesText(frame);
-    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}:${this.markings.shown}:${componentImages}:${pins}:${pinStates}:${viewportText}:${boxText ?? ''}:${selectionText ?? ''}:${handlesText ?? ''}:${this.boxesVersion}`;
-    if (drawn === this.published) return;
-    this.published = drawn;
-    const host = this.stage.container();
-    host.dataset.viewport = viewportText;
-    setDataAttr(host, 'selectionBox', boxText);
-    setDataAttr(host, 'selection', selectionText);
-    setDataAttr(host, 'arrowHandles', handlesText);
-    setDataAttr(host, 'containerBoxes', this.boxesText);
-    host.dataset.fits = String(this.view.fits);
-    host.dataset.images = String(this.readyImages);
-    host.dataset.components = String(this.drawnComponents);
-    host.dataset.canvasMarkings = String(canvasMarkings);
-    host.dataset.arrows = String(this.drawnArrows);
-    host.dataset.drawnMarkings = String(this.markings.shown);
-    host.dataset.componentImages = String(componentImages);
-    host.dataset.pins = String(pins);
-    host.dataset.pinStates = pinStates;
+    const texts: [string, string | null][] = [
+      ['viewport', formatViewport(v)],
+      ['selectionBox', selectionBox],
+      ['selection', formatSelection(frame.project, frame.selection)],
+      ['arrowHandles', this.arrowHandlesText(frame)],
+      ['containerBoxes', this.boxesText],
+      ['fits', String(this.view.fits)],
+      ['images', String(this.readyImages)],
+      ['components', String(this.drawnComponents)],
+      ['canvasMarkings', String(canvasMarkings)],
+      ['arrows', String(this.drawnArrows)],
+      ['drawnMarkings', String(this.markings.shown)],
+      ['componentImages', String(componentImages)],
+      ['pins', String(pins)],
+      ['pinStates', pinStates],
+    ];
+    for (const [key, text] of texts) {
+      if (this.published.get(key) === text) continue;
+      this.published.set(key, text);
+      setDataAttr(host, key, text);
+    }
   }
 
   /**

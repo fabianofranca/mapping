@@ -554,6 +554,7 @@ describe('useEditorShortcuts: arrows move the selection', () => {
 describe('useEditorShortcuts: zoom, help, settings and project', () => {
   it('Shift+1 frames all and Shift+2 the selection, but in a text field the key belongs to the field', () => {
     const s = setup();
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M1' }]);
     s.press('!', { shift: true }, { code: 'Digit1' });
     s.press('@', { shift: true }, { code: 'Digit2' });
     expect(s.canvas.fitAll).toHaveBeenCalledTimes(1);
@@ -578,6 +579,21 @@ describe('useEditorShortcuts: zoom, help, settings and project', () => {
     );
     expect(typed.defaultPrevented).toBe(false);
     expect(s.canvas.fitAll).toHaveBeenCalledTimes(1);
+    expect(s.canvas.fitSelection).toHaveBeenCalledTimes(1);
+  });
+
+  it('Shift+2 with nothing to fit leaves the key to the browser (no selection, missing item, View mode)', () => {
+    const s = setup();
+    const shift2 = () => s.press('@', { shift: true }, { code: 'Digit2' });
+    expect(shift2().defaultPrevented).toBe(false);
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'gone' }]);
+    expect(shift2().defaultPrevented).toBe(false);
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M1' }]);
+    s.harness.ui.viewMode.value = true;
+    expect(shift2().defaultPrevented).toBe(false);
+    expect(s.canvas.fitSelection).not.toHaveBeenCalled();
+    s.harness.ui.viewMode.value = false;
+    expect(shift2().defaultPrevented).toBe(true);
     expect(s.canvas.fitSelection).toHaveBeenCalledTimes(1);
   });
 
