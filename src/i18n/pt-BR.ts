@@ -1260,6 +1260,9 @@ export const ptBR: Dictionary = {
   'anchor.alignStart': 'Início',
   'anchor.alignCenter': 'Centro',
   'anchor.alignEnd': 'Fim',
+  'anchor.corner': 'No canto',
+  'anchor.cornerHint':
+    'Põe o centro da marcação no canto da âncora, e ela fica ali ao crescer.',
   'anchor.alignHint': 'Como a marcação se alinha ao longo desse lado.',
   'anchor.offset': 'Deslocamento',
   'anchor.offsetHint':
