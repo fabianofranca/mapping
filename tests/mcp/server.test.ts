@@ -18,6 +18,8 @@ describe('MCP server (in memory)', () => {
     expect(JSON.parse(text)).toEqual({
       roots: ['/root/a', '/root/b'],
       missingRoots: ['/root/a', '/root/b'],
+      scratch: [],
+      missingScratch: [],
       projects: [],
     });
     await client.close();

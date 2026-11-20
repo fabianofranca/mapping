@@ -8,6 +8,8 @@ import { BUILD_VERSION, SERVER_NAME } from './version';
 export interface ServerConfig {
   /** Roots already resolved (absolute paths). */
   readonly roots: readonly string[];
+  /** Read-only scratch folders already resolved (absolute): the batch's `operationsFile` and images. */
+  readonly scratch?: readonly string[];
   /** Working directory of the client (default: the process's). Limits the check of code files. */
   readonly workDir?: string;
   /** Local HTTP server for images (`null`/absent: off). */
@@ -26,7 +28,11 @@ export function createServer(config: ServerConfig): McpServer {
     { name: SERVER_NAME, version: BUILD_VERSION },
     { instructions: INSTRUCTIONS },
   );
-  registerTools(server, new Roots(config.roots, config.workDir), config.images ?? null);
+  registerTools(
+    server,
+    new Roots(config.roots, config.workDir, config.scratch),
+    config.images ?? null,
+  );
   for (const doc of DOC_RESOURCES) {
     server.registerResource(
       doc.name,

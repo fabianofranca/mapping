@@ -48,7 +48,10 @@ export async function readMapping(roots: Roots, dir: string): Promise<string | n
   return readText(roots, dir, MAPPING_FILE);
 }
 
-/** Reads a file cited in an operation: relative to the project folder, to a root, or absolute. */
+/**
+ * Reads an image cited in an operation: relative to the project folder, to a root or to a scratch
+ * folder (roots first), or absolute inside a root or a scratch folder.
+ */
 async function readSource(
   roots: Roots,
   projectDir: string,
@@ -56,7 +59,7 @@ async function readSource(
 ): Promise<{ bytes: Uint8Array; name: string }> {
   let real: string | null = null;
   if (!isAbsolute(path)) real = await resolveProjectFile(roots, projectDir, path);
-  if (real === null) real = (await roots.resolveExisting(path)).real;
+  if (real === null) real = (await roots.resolveInputFile(path)).real;
   const info = await stat(real);
   if (!info.isFile()) {
     throw new ToolError('not-a-file', `not a file: ${path}`, { path });

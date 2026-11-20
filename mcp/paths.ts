@@ -10,8 +10,9 @@ import path, {
 } from 'node:path';
 import { ToolError } from './errors';
 
-// Path safety: the server only reads and writes inside the configured roots.
-// It rejects `..`, absolute paths outside the roots and symbolic links that lead outside.
+// Path safety: the server only reads and writes inside the configured roots. The scratch folders
+// (`--scratch`) are read-only and serve only the input files of a batch (`resolveInputFile`).
+// It rejects `..`, absolute paths outside them and symbolic links that lead outside.
 
 /** What `isWithin` uses from `node:path` (the test passes `path.win32`). */
 export type PathApi = Pick<PlatformPath, 'relative' | 'sep' | 'isAbsolute'>;
@@ -60,15 +61,52 @@ export interface InsideRoot {
   readonly realRoot: string;
 }
 
+/** An existing input file of a batch, found inside a root or inside a scratch folder. */
+export interface InputFile {
+  /** Real path (without symbolic links). */
+  readonly real: string;
+  /** Found in a scratch folder (read-only), not in a root. */
+  readonly scratch: boolean;
+}
+
+/** A group of folders (the roots, or the scratch folders) with their real paths. */
+interface Area {
+  readonly dirs: readonly string[];
+  readonly reals: readonly (string | null)[];
+  readonly scratch: boolean;
+}
+
+/** Is `value` (absolute) inside one of the area's folders, as configured or by real path? */
+function areaHolds(area: Area, value: string): boolean {
+  return [...area.dirs, ...area.reals].some(
+    (dir) => dir !== null && isWithin(dir, value),
+  );
+}
+
+/** Is the real path inside one of the area's folders (compared by real path)? */
+function areaHoldsReal(area: Area, real: string): boolean {
+  return area.reals.some((dir) => dir !== null && isWithin(dir, real));
+}
+
+function outsideRootsAndScratch(input: string): ToolError {
+  return new ToolError(
+    'outside-roots',
+    `the path points outside the configured roots and scratch folders: ${input}`,
+    { path: input },
+  );
+}
+
 export class Roots {
   /**
    * `roots` already resolved (absolute). `workDir` is the client's working directory (the
    * server process's): relative root paths are taken from it, and it is the limit
-   * of the code-file check (`codeFiles.ts`).
+   * of the code-file check (`codeFiles.ts`). `scratch` (absolute too) are the read-only
+   * folders for the batch's input files: only `resolveInputFile` looks at them.
    */
   constructor(
     readonly roots: readonly string[],
     readonly workDir: string = process.cwd(),
+    readonly scratch: readonly string[] = [],
   ) {}
 
   /** Within a tool call (`beginCall`), what has already been resolved is kept here. */
@@ -100,6 +138,13 @@ export class Roots {
   realRoots(): Promise<readonly (string | null)[]> {
     return this.perCall('realRoots', () =>
       Promise.all(this.roots.map((root) => realpath(root).catch(() => null))),
+    );
+  }
+
+  /** Real path of each scratch folder; `null` for one that does not exist (the agent creates it on demand). */
+  realScratch(): Promise<readonly (string | null)[]> {
+    return this.perCall('realScratch', () =>
+      Promise.all(this.scratch.map((folder) => realpath(folder).catch(() => null))),
     );
   }
 
@@ -167,6 +212,57 @@ export class Roots {
     throw new ToolError('path-not-found', `path not found: ${input}`, {
       path: input,
     });
+  }
+
+  /**
+   * Resolves an existing INPUT file of a batch (`operationsFile`, an image to add): a relative
+   * path is tried in the roots first and then in the scratch folders; an absolute path must be
+   * inside a root or a scratch folder. Refuses `..`, absolute paths outside both and symbolic
+   * links that leave them (`outside-roots`). Read-only: nothing is written with the result.
+   */
+  async resolveInputFile(input: string): Promise<InputFile> {
+    assertPlainPath(input);
+    const areas: Area[] = [
+      { dirs: this.roots, reals: await this.realRoots(), scratch: false },
+      { dirs: this.scratch, reals: await this.realScratch(), scratch: true },
+    ];
+    return isAbsolute(input)
+      ? this.absoluteInput(input, areas)
+      : this.relativeInput(input, areas);
+  }
+
+  private async absoluteInput(input: string, areas: readonly Area[]): Promise<InputFile> {
+    const area = areas.find((candidate) => areaHolds(candidate, input));
+    if (area === undefined) throw outsideRootsAndScratch(input);
+    const real = await realpath(input).catch((error: unknown) => {
+      if (isNotFound(error)) {
+        throw new ToolError('path-not-found', `path not found: ${input}`, {
+          path: input,
+        });
+      }
+      throw error;
+    });
+    if (!areaHoldsReal(area, real)) throw outsideRootsAndScratch(input);
+    return { real, scratch: area.scratch };
+  }
+
+  private async relativeInput(input: string, areas: readonly Area[]): Promise<InputFile> {
+    let left = false;
+    for (const area of areas) {
+      for (const dir of area.dirs) {
+        let real: string;
+        try {
+          real = await realpath(join(dir, input));
+        } catch (error) {
+          if (isNotFound(error)) continue;
+          throw error;
+        }
+        if (areaHoldsReal(area, real)) return { real, scratch: area.scratch };
+        left = true;
+      }
+    }
+    if (left) throw outsideRootsAndScratch(input);
+    throw new ToolError('path-not-found', `path not found: ${input}`, { path: input });
   }
 
   /**

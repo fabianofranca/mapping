@@ -5,9 +5,10 @@ import { ToolError } from './errors';
 import { operationSchema, type Operation } from './operations';
 import type { Roots } from './paths';
 
-// `operationsFile` (Faithful components stage, CF10, decision 28): the batch of `plan_changes` and
-// `propose_changes` can come from a `.json` inside the roots, in place of inline `operations`
-// (a measured screen has hundreds of operations, too large for the tool call).
+// `operationsFile` (Faithful components stage, CF10, decision 28): the batch of `plan_changes`,
+// `propose_changes` and `revise_proposal` can come from a `.json` inside the roots or the scratch
+// folders (`--scratch`, read-only), in place of inline `operations` (a measured screen has
+// hundreds of operations, too large for the tool call).
 
 /** Size limit of the operations file (the inline batch has at most 1000 operations). */
 const MAX_OPERATIONS_BYTES = 32 * 1024 * 1024;
@@ -59,12 +60,12 @@ export async function resolveOperations(
     if (operations === undefined) {
       throw new ToolError(
         'invalid-arguments',
-        'provide `operations` (the inline batch) or `operationsFile` (a .json inside the roots)',
+        'provide `operations` (the inline batch) or `operationsFile` (a .json inside the roots or the scratch folder)',
       );
     }
     return operations;
   }
-  const { real } = await roots.resolveExisting(operationsFile);
+  const { real } = await roots.resolveInputFile(operationsFile);
   const info = await stat(real);
   if (!info.isFile()) {
     throw new ToolError('not-a-file', `not a file: ${operationsFile}`, {
@@ -77,4 +78,17 @@ export async function resolveOperations(
     });
   }
   return parseOperations(await readFile(real, 'utf8'), real);
+}
+
+/**
+ * Like `resolveOperations`, but the batch may be absent (`revise_proposal`: `drop` alone is
+ * valid): with neither argument it returns `undefined`; both together is still an error.
+ */
+export async function resolveOptionalOperations(
+  roots: Roots,
+  args: OperationsArgs,
+): Promise<readonly Operation[] | undefined> {
+  if (args.operations === undefined && args.operationsFile === undefined)
+    return undefined;
+  return resolveOperations(roots, args);
 }

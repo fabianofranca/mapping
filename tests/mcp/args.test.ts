@@ -27,4 +27,24 @@ describe('parseArgs', () => {
     expect(() => parseArgs(['--root', '--root', 'a'])).toThrow(UsageError);
     expect(() => parseArgs(['--root='])).toThrow(UsageError);
   });
+
+  it('reads --scratch (optional, repeatable, both forms)', () => {
+    expect(parseArgs(['--root', 'a']).scratch).toEqual([]);
+    expect(parseArgs(['--root', 'a', '--scratch', 's']).scratch).toEqual(['s']);
+    expect(parseArgs(['--root', 'a', '--scratch=s', '--scratch', 't/u']).scratch).toEqual(
+      ['s', 't/u'],
+    );
+  });
+
+  it('--scratch alone is not a root', () => {
+    expect(() => parseArgs(['--scratch', 's'])).toThrow(UsageError);
+  });
+
+  it('refuses --scratch without a folder', () => {
+    expect(() => parseArgs(['--root', 'a', '--scratch'])).toThrow(UsageError);
+    expect(() => parseArgs(['--root', 'a', '--scratch', '--root', 'b'])).toThrow(
+      '--scratch needs a folder',
+    );
+    expect(() => parseArgs(['--root', 'a', '--scratch='])).toThrow(UsageError);
+  });
 });
