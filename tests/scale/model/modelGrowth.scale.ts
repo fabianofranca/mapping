@@ -74,10 +74,31 @@ describe('model growth (n = 1,250, 4n = 5,000 markings)', () => {
     });
   });
 
+  it('audits accessibility (labels, parts and touch targets)', GROWTH_OPTIONS, () => {
+    expectLinearGrowth('accessibilityAudit', {
+      build: (markings) => withAccessibility(build(markings)),
+      // The index of the new version is already measured in the index case: here only the audit.
+      prepare: projectIndex,
+      run: (p) => {
+        const audit = accessibilityAudit(p);
+        if (audit.size === 0) throw new Error('the audit must find something');
+        return audit;
+      },
+      runs: 41,
+    });
+  });
+});
+
+describe('perspective growth (n = 2,500, 4n = 10,000 markings)', () => {
+  // `perspectiveView` runs in ~0.3-0.5 ms at 1,250 markings: at that size the cache advantage of n over 4n weighs the most and
+  // a loaded runner pushed the ratio over 6× (6.2-6.3× in the CI run of PR #1967, with the code untouched; stage #1968). At 2,500
+  // and 10,000 both sizes are larger than the cache and the run at n takes ~1 ms, so the ratio measures 4 to 5× (idle) with the same
+  // limit. The other cases keep 1,250 and 5,000: they measure from 1.5 ms (accessibilityAudit) to tens of ms at 1,250.
   it.each([0, 1])('builds the perspective %i', GROWTH_OPTIONS, (which) => {
     expectLinearGrowth(`perspectiveView #${which + 1}`, {
       build,
-      // The index of the new version is already measured in the case above: here only the view.
+      n: 2500,
+      // The index of the new version is already measured in the index case: here only the view.
       prepare: projectIndex,
       run: (p) => {
         const view = perspectiveView(p, p.perspectives[which]!);
@@ -86,19 +107,7 @@ describe('model growth (n = 1,250, 4n = 5,000 markings)', () => {
           throw new Error('the perspective must not be empty');
         return view;
       },
-    });
-  });
-
-  it('audits accessibility (labels, parts and touch targets)', GROWTH_OPTIONS, () => {
-    expectLinearGrowth('accessibilityAudit', {
-      build: (markings) => withAccessibility(build(markings)),
-      // The index of the new version is already measured in the case above: here only the audit.
-      prepare: projectIndex,
-      run: (p) => {
-        const audit = accessibilityAudit(p);
-        if (audit.size === 0) throw new Error('the audit must find something');
-        return audit;
-      },
+      // Around a millisecond per round: more rounds so the median does not fluctuate.
       runs: 41,
     });
   });

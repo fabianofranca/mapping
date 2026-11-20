@@ -1429,7 +1429,7 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'owner-chat',
   },
   {
-    term: 'SUP-<k> (tipo B): <pedido>. Responda `aprovar SUP-<k>` ou `negar SUP-<k>`.',
+    term: 'SUP-<k> (tipo B): <pedido>.',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
   },

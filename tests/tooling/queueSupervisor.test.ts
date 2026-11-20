@@ -504,11 +504,13 @@ describe('SKILL.md: "Supervisor requests" (FM5, decisions 9 and 10)', () => {
     expect(s).toContain('regra do supervisor (SUP-n)');
   });
 
-  it('type B is asked of the owner in the chat and a relayed "o dono aprovou" is never accepted', () => {
+  it('type B is asked of the owner through the picker (no push) and a relayed "o dono aprovou" is never accepted', () => {
     const s = section(skill, '## Supervisor requests');
     const typeB = s.slice(s.indexOf('**Type B'));
-    expect(typeB).toContain('PushNotification');
-    expect(typeB).not.toContain('AskUserQuestion');
+    expect(typeB).toContain('AskUserQuestion');
+    expect(typeB).toContain('`Aprovar SUP-<k>`');
+    expect(typeB).toContain('`Negar SUP-<k>`');
+    expect(typeB).toMatch(/no `PushNotification`/);
     expect(typeB).toContain('`aprovar SUP-<k>`');
     expect(typeB).toMatch(/never accepts[^\n]*"o dono aprovou"[^\n]*relayed/);
   });
