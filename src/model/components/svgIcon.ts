@@ -451,14 +451,16 @@ function visitGroup(walk: Walk, group: XmlElement, inherited: Style): void {
   visitChildren(walk, group, styleOf(group, inherited, walk.problems));
 }
 
-/** The path data of a `path` or of a basic shape; `undefined` after reporting what is wrong. */
-function dataOf(walk: Walk, element: XmlElement): string | undefined {
-  if (element.name === 'path') {
-    const d = element.attributes.get('d');
-    if (d === undefined || d.trim() === '')
-      walk.problems.add(invalidValue('path', 'd', d ?? ''));
-    return d === undefined || d.trim() === '' ? undefined : d;
-  }
+/** The `d` of a `path`; `undefined` after reporting that it is missing or blank. */
+function pathData(walk: Walk, element: XmlElement): string | undefined {
+  const d = element.attributes.get('d');
+  if (d !== undefined && d.trim() !== '') return d;
+  walk.problems.add(invalidValue('path', 'd', d ?? ''));
+  return undefined;
+}
+
+/** The path data of a basic shape; `undefined` after reporting the attribute that is wrong. */
+function shapeData(walk: Walk, element: XmlElement): string | undefined {
   const result = shapePath(element.name, (name) => element.attributes.get(name));
   if (result === undefined || result.ok) return result?.d;
   const { attribute, unit } = result;
@@ -469,6 +471,9 @@ function dataOf(walk: Walk, element: XmlElement): string | undefined {
   );
   return undefined;
 }
+
+const dataOf = (walk: Walk, element: XmlElement): string | undefined =>
+  element.name === 'path' ? pathData(walk, element) : shapeData(walk, element);
 
 function visitShape(walk: Walk, element: XmlElement, inherited: Style): void {
   checkAttributes(
@@ -555,6 +560,31 @@ const failed = (problems: Problems): SvgIconResult => ({
   problems: problems.list(),
 });
 
+/** The icon entry of the shapes found: the color rule applied and the `viewBox` written or omitted. */
+function buildIcon(walk: Walk, options: SvgIconOptions): IconDef {
+  const paint = paintResolver(walk.shapes, options.colors ?? 'auto');
+  const { box } = walk;
+  const sameBox =
+    options.defaultViewBox?.[0] === box[0] && options.defaultViewBox[1] === box[1];
+  return {
+    ...(sameBox ? {} : { viewBox: box }),
+    ...(options.mirror === true ? { mirror: true } : {}),
+    paths: walk.shapes.map((shape) => iconPath(shape, paint)),
+  };
+}
+
+/** Reads the root: the box and the walk over its children; `undefined` with the problems reported. */
+function walkRoot(root: XmlElement, problems: Problems): Walk | undefined {
+  const box = boxOf(root, problems);
+  checkAttributes(root, ['width', 'height', 'viewBox'], problems);
+  if (box === undefined) return undefined;
+  const walk: Walk = { box, clips: fullClipIds(root, box), shapes: [], problems };
+  visitChildren(walk, root, styleOf(root, DEFAULT_STYLE, problems));
+  if (problems.size === 0 && walk.shapes.length === 0)
+    problems.add(templateMessage('svgIcon.noShape'));
+  return walk;
+}
+
 /** Converts the text of an SVG file into an icon entry; never throws. */
 export function svgToIcon(text: string, options: SvgIconOptions = {}): SvgIconResult {
   const parsed = parseXml(text);
@@ -562,25 +592,10 @@ export function svgToIcon(text: string, options: SvgIconOptions = {}): SvgIconRe
   const { root } = parsed;
   const problems = new Problems();
   const name = nameOf(options, problems);
-  if (root.name !== 'svg') {
+  if (root.name !== 'svg')
     problems.add(templateMessage('svgIcon.notSvg', { element: root.name }));
-    return failed(problems);
-  }
-  const box = boxOf(root, problems);
-  checkAttributes(root, ['width', 'height', 'viewBox'], problems);
-  if (box === undefined) return failed(problems);
-  const walk: Walk = { box, clips: fullClipIds(root, box), shapes: [], problems };
-  visitChildren(walk, root, styleOf(root, DEFAULT_STYLE, problems));
-  if (problems.size === 0 && walk.shapes.length === 0)
-    problems.add(templateMessage('svgIcon.noShape'));
-  if (problems.size > 0) return failed(problems);
-  const paint = paintResolver(walk.shapes, options.colors ?? 'auto');
-  const sameBox =
-    options.defaultViewBox?.[0] === box[0] && options.defaultViewBox[1] === box[1];
-  const icon: IconDef = {
-    ...(sameBox ? {} : { viewBox: box }),
-    ...(options.mirror === true ? { mirror: true } : {}),
-    paths: walk.shapes.map((shape) => iconPath(shape, paint)),
-  };
-  return { ok: true, ...(name === undefined ? {} : { name }), icon, viewBox: box };
+  const walk = root.name === 'svg' ? walkRoot(root, problems) : undefined;
+  if (walk === undefined || problems.size > 0) return failed(problems);
+  const icon = buildIcon(walk, options);
+  return { ok: true, ...(name === undefined ? {} : { name }), icon, viewBox: walk.box };
 }
