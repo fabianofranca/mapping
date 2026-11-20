@@ -181,6 +181,26 @@ describe('operationsFile from the scratch folder', () => {
     expect(errorOf(reply).code).toBe('invalid-arguments');
   });
 
+  it('revise_proposal: an empty inline `operations` does not clash with operationsFile', async () => {
+    const proposed = ok(
+      await mcp.call<Proposed>('propose_changes', {
+        project: 'loja',
+        title: 'Empty inline',
+        operationsFile: 'batch.json',
+      }),
+    );
+    const dry = ok(
+      await mcp.call<Revised>('revise_proposal', {
+        project: 'loja',
+        ref: proposed.proposal.ref,
+        operations: [],
+        operationsFile: 'revise.json',
+        dryRun: true,
+      }),
+    );
+    expect(dry.counts.added).toBeGreaterThan(0);
+  });
+
   it('revise_proposal: neither operations nor drop is still invalid-arguments, and drop alone is valid input', async () => {
     const proposed = ok(
       await mcp.call<Proposed>('propose_changes', {

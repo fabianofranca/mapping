@@ -131,6 +131,14 @@ describe('Roots with scratch folders (input files)', () => {
     );
   });
 
+  it('an absolute path through a root that links into the scratch folder is accepted', async () => {
+    mkdirSync(join(scratch, 'shots'));
+    writeFileSync(join(scratch, 'shots', 'a.png'), '1');
+    symlinkSync(join(scratch, 'shots'), join(root, 'shots'));
+    const found = await roots.resolveInputFile(join(root, 'shots', 'a.png'));
+    expect(found).toMatchObject({ real: join(scratch, 'shots', 'a.png'), scratch: true });
+  });
+
   it('a missing file is path-not-found, and a missing scratch folder is not an error', async () => {
     expect(await code(roots.resolveInputFile('nothing.json'))).toBe('path-not-found');
     const lonely = new Roots([root], base, [join(base, 'not-created')]);

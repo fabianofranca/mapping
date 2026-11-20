@@ -1,4 +1,4 @@
-# Batch preview and scratch folder — [Não lançado]
+# Batch preview and scratch folder — [Não lançado] (épico `epic/batch-preview`)
 
 ## Pendências
 

@@ -88,7 +88,8 @@ export async function resolveOptionalOperations(
   roots: Roots,
   args: OperationsArgs,
 ): Promise<readonly Operation[] | undefined> {
-  if (args.operations === undefined && args.operationsFile === undefined)
-    return undefined;
-  return resolveOperations(roots, args);
+  // An empty inline list counts as absent (some clients send `[]` for "unset").
+  const operations = args.operations?.length === 0 ? undefined : args.operations;
+  if (operations === undefined && args.operationsFile === undefined) return undefined;
+  return resolveOperations(roots, { ...args, operations });
 }

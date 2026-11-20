@@ -232,8 +232,8 @@ export class Roots {
   }
 
   private async absoluteInput(input: string, areas: readonly Area[]): Promise<InputFile> {
-    const area = areas.find((candidate) => areaHolds(candidate, input));
-    if (area === undefined) throw outsideRootsAndScratch(input);
+    const holding = areas.filter((candidate) => areaHolds(candidate, input));
+    if (holding.length === 0) throw outsideRootsAndScratch(input);
     const real = await realpath(input).catch((error: unknown) => {
       if (isNotFound(error)) {
         throw new ToolError('path-not-found', `path not found: ${input}`, {
@@ -242,7 +242,9 @@ export class Roots {
       }
       throw error;
     });
-    if (!areaHoldsReal(area, real)) throw outsideRootsAndScratch(input);
+    // A link in one area may lead into the other: the real path decides which holds it.
+    const area = areas.find((candidate) => areaHoldsReal(candidate, real));
+    if (area === undefined) throw outsideRootsAndScratch(input);
     return { real, scratch: area.scratch };
   }
 
