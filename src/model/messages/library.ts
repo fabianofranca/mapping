@@ -91,6 +91,21 @@ export const libraryMessages = {
     'the field "{key}" of the type "{typeId}" did not exist in version {version}',
   'library.optionNotInVersion':
     '"{value}" was not an option of the field "{field}" in version {version}',
+  // `component` node (`libraryComponentNodes.ts`)
+  'library.componentNodeTypeMissing':
+    'the type "{typeId}" does not exist in the specialization',
+  'library.componentNodeNoComponent': 'the type "{typeId}" has no component',
+  'library.componentNodeSlot':
+    'the component of the type "{typeId}" has a slot and cannot be drawn by a component node',
+  'library.componentNodeScreen':
+    'the component of the type "{typeId}" draws in screen pixels and cannot be drawn by a component node',
+  'library.componentNodeNoField': 'the type "{typeId}" has no field "{key}"',
+  'library.componentNodeRequired': 'required field missing in values: {key}',
+  'library.componentNodeNotOption': '"{value}" is not an option of the field "{key}"',
+  'library.componentNodeTable':
+    'the table field "{key}" only accepts { "$field": … } of a table field',
+  'library.componentNodeRef': 'the ref field "{key}" cannot be given in values',
+  'library.componentNodeCycle': 'component cycle: {cycle}',
   // Icons
   'library.iconMissing': 'the icon "{name}" does not exist in the icon set ({path})',
   'library.iconUnverifiable':

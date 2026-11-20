@@ -1,7 +1,6 @@
 import { useId, useMemo, useState } from 'preact/hooks';
 import { t, type TranslationKey } from '../i18n';
 import {
-  ANCHOR_ALIGNS,
   ANCHOR_SIDES,
   anchorCandidates,
   canEditMarkingGeometry,
@@ -19,7 +18,7 @@ import {
   type ResolvedMarkingAnchor,
 } from '../model';
 import type { ActionResult } from '../store/history';
-import { Button, Segmented, Select, TextField } from './controls';
+import { Button, Choice, Segmented, Select, TextField } from './controls';
 import { Section } from './DetailsSection';
 import { snapMarking } from './arrange';
 import { useEditor } from './EditorContext';
@@ -38,7 +37,9 @@ const SIDE_LABELS: Readonly<Record<AnchorSide, TranslationKey>> = {
   end: 'anchor.sideEnd',
 };
 
-const ALIGN_LABELS: Readonly<Record<AnchorAlign, TranslationKey>> = {
+/** The Alignment `Segmented` offers the three plain alignments; the corner ones come with the "On the corner" checkbox. */
+const SEGMENT_ALIGNS = ['start', 'center', 'end'] as const;
+const ALIGN_LABELS: Readonly<Record<(typeof SEGMENT_ALIGNS)[number], TranslationKey>> = {
   start: 'anchor.alignStart',
   center: 'anchor.alignCenter',
   end: 'anchor.alignEnd',
@@ -168,7 +169,22 @@ function TargetField({
   );
 }
 
+/** The plain alignment a (possibly corner) alignment stands for, and whether it is a corner one. */
+function splitAlign(align: AnchorAlign | undefined): {
+  readonly plain: (typeof SEGMENT_ALIGNS)[number] | null;
+  readonly corner: boolean;
+} {
+  if (align === undefined) return { plain: null, corner: false };
+  if (align === 'corner-start') return { plain: 'start', corner: true };
+  if (align === 'corner-end') return { plain: 'end', corner: true };
+  return { plain: align, corner: false };
+}
+
 function SideAndAlignFields({ form, disabled }: FieldsProps) {
+  const { plain, corner } = splitAlign(form.resolved?.align);
+  const select = (align: (typeof SEGMENT_ALIGNS)[number]): void => {
+    form.write({ align: corner && align !== 'center' ? `corner-${align}` : align });
+  };
   return (
     <>
       <Property label={t('anchor.side')} hint={t('anchor.sideHint')}>
@@ -184,12 +200,25 @@ function SideAndAlignFields({ form, disabled }: FieldsProps) {
         <Segmented
           label={t('anchor.align')}
           disabled={disabled}
-          value={form.resolved?.align ?? null}
-          items={ANCHOR_ALIGNS.map((align) => ({
+          value={plain}
+          items={SEGMENT_ALIGNS.map((align) => ({
             id: align,
             label: t(ALIGN_LABELS[align]),
           }))}
-          onSelect={(align) => form.write({ align })}
+          onSelect={select}
+        />
+        <Choice
+          label={t('anchor.corner')}
+          hint={t('anchor.cornerHint')}
+          checked={corner}
+          disabled={disabled || plain === null || plain === 'center'}
+          onChange={(e) => {
+            if (plain === 'start' || plain === 'end') {
+              form.write({
+                align: e.currentTarget.checked ? `corner-${plain}` : plain,
+              });
+            }
+          }}
         />
       </Property>
     </>

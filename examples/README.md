@@ -103,6 +103,20 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 **Scripts.** R10.10 and R10.11.
 
+### `examples/libraries/composition/`
+
+**What it is.** The example of **component composition**: an **Icon button** that draws other components of the library through `component` nodes. Four types: **Glyph** (a 24 × 24 `path`), **Spinner** (`size` and `color`), **Badge** (`count`, `hug` width) and **Icon button** (`state`, `showBadge` and `count`).
+
+**How to open.** **Specializations** › **Apply folder…** and pick the folder. Mark an Icon button and change `state` to `loading` or turn `showBadge` on.
+
+**What you can see.**
+
+- The `component` node (`id`, `values`, `provide`): the Icon button draws the Glyph, the Spinner and the Badge, and `values.count` copies its own `count` to the Badge.
+- The node's `provide`: the Icon button hands its content color to the Spinner, whose stroke reads `{ "$provided": "content-color", "default": { "$field": "color" } }`; while loading the ring has the button's color, not the Spinner's `color`.
+- The corner alignment: the Badge's root `anchor` is `{ "side": "top", "align": "corner-end" }`, and it stays on the button's top-end corner as `3` grows to `99+`.
+
+**Scripts.** R38.
+
 ### `examples/libraries/measured/`
 
 **What it is.** The example of the **measured** origin (`origins[].kind: "measured"`): the rectangle tree of a page (measured in a browser) becomes markings, matching each node to a type through the `sources`. Two types: **Card** and **Button** (fields `label` and `tone`). The example tree is `examples/page.measured.json`, next to the library folder.
@@ -299,6 +313,8 @@ When one exists, the example is from `libraries/`. The features of the executabl
 | Node size: px, `fill`, `hug` and `%`            | px, `fill` and `hug` in all; `%` in the Slider and the Short navigation bar (`material3-compose`)                                                 |
 | `size`, `minSize` and `sizing`                  | All components; official `minSize` only in the Button, FAB, Text field and others (`material3-compose`)                                           |
 | Anchors (`anchors`)                             | `left`, `right`, `top`, `bottom`, `centerX` and `centerY` (`material3-compose`: FAB, Pull to refresh)                                             |
+| `component` node, its `values` and `provide`    | Icon button, with `glyph`, `spinner` and `badge` (`composition`)                                                                                  |
+| Corner anchor (`anchor.align: "corner-end"`)    | Badge root (`composition`)                                                                                                                        |
 | Screen anchors and scrim                        | `sdui-scrim` and the roots with `anchor` and `margin` (`sdui-backend`)                                                                            |
 | Expressions `$field`, `$if`, `$switch`          | `kotlin` and `material3-compose`; `$field` with `default` in both                                                                                 |
 | `$concat`                                       | Class header (`kotlin`); Box, Column and Image (`material3-compose`)                                                                              |

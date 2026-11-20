@@ -53,7 +53,7 @@ describe('anchor on the component root', () => {
       'anchor.side: expected one of: top, bottom, start, end',
     ]);
     expect(validateComponent(file({ anchor: { align: 'top' } }))).toEqual([
-      'anchor.align: expected one of: start, center, end',
+      'anchor.align: expected one of: start, center, end, corner-start, corner-end',
     ]);
   });
 

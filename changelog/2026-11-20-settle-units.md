@@ -1,4 +1,4 @@
-# Component keeps size in units across spaces — 2026-11-20 (épico `epic/settle-units`, PR #2321, MCP 0.47.2, schema v21 unchanged)
+# Component keeps size in units across spaces — 2026-11-20 (épico `epic/settle-units`, PR #2321, MCP 0.48.1, schema v21 unchanged)
 
 ## Corrigido
 

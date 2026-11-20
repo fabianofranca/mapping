@@ -1,0 +1,72 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "spinner",
+  "name": "Spinner",
+  "description": "A ring that shows progress. The stroke is the content color an ancestor provides; without one it is the `color` field.",
+  "size": {
+    "width": 24,
+    "height": 24
+  },
+  "sizing": {
+    "width": {
+      "$switch": "size",
+      "cases": {
+        "small": 16
+      },
+      "default": 24
+    },
+    "height": {
+      "$switch": "size",
+      "cases": {
+        "small": 16
+      },
+      "default": 24
+    }
+  },
+  "preview": {
+    "size": "medium",
+    "color": "#2563EB"
+  },
+  "template": {
+    "type": "frame",
+    "name": "spinner",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "ellipse",
+        "name": "ring",
+        "stroke": {
+          "width": 3,
+          "color": {
+            "$provided": "content-color",
+            "default": {
+              "$field": "color"
+            }
+          },
+          "align": "inside"
+        },
+        "width": {
+          "$switch": "size",
+          "cases": {
+            "small": 16
+          },
+          "default": 24
+        },
+        "height": {
+          "$switch": "size",
+          "cases": {
+            "small": 16
+          },
+          "default": 24
+        },
+        "anchors": {
+          "left": 0,
+          "top": 0
+        }
+      }
+    ]
+  }
+}

@@ -81,7 +81,7 @@ describe('project zip', () => {
     expect(serialize(loaded.project)).toBe(mapping);
 
     const data = JSON.parse(read.files.mapping);
-    expect(data.schemaVersion).toBe(21);
+    expect(data.schemaVersion).toBe(22);
     // The project only keeps the local clone; the address is in the `repo` of the specialization.
     expect(data.platformRepos).toEqual({ android: { localPath: '../../..' } });
     // The project read from the zip answers the same: search by the type file, link and pending items.
