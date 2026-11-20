@@ -7,6 +7,7 @@ import {
   computeChanges,
   projectIndex,
   type Change,
+  type ComponentCatalog,
   type Project,
   type ProjectContainer,
   firstPageId,
@@ -152,6 +153,12 @@ export interface PrepareOptions {
    */
   readonly startFrom?: (project: Project) => Project;
   /**
+   * Component catalog the batch starts from, given the project it starts from (a render preview over a
+   * proposal that brings a library package reads that package's components from the proposal folder).
+   * Without it, the catalog read with the project.
+   */
+  readonly catalogFor?: (base: Project) => Promise<ComponentCatalog>;
+  /**
    * Containers that other open proposals still bring (`reservedContainers`): they take space on the
    * canvas during the batch, so a new container does not get their place, and leave the result.
    */
@@ -191,7 +198,8 @@ export async function prepareBatch(
   };
   const base = options.startFrom?.(loaded.project) ?? loaded.project;
   const { start, held } = withReserved(base, options.reservedContainers ?? []);
-  const ran = await runBatch({ ...loaded, project: start }, operations, io);
+  const startLoaded = await loadedAt(loaded, start, base, options.catalogFor);
+  const ran = await runBatch(startLoaded, operations, io);
   const result = held.length === 0 ? ran : withoutContainers(ran, held);
   let changes: readonly Change[] | undefined;
   return {
@@ -204,6 +212,17 @@ export async function prepareBatch(
     changes: () => (changes ??= computeChanges(result.before, result.project)),
     valid: result.errors.length === 0 && result.invariantIssues.length === 0,
   };
+}
+
+/** The project the batch starts from, with the catalog that `catalogFor` gives (or the one read with it). */
+async function loadedAt(
+  loaded: LoadedProject,
+  start: Project,
+  base: Project,
+  catalogFor: PrepareOptions['catalogFor'],
+): Promise<LoadedProject> {
+  const catalog = catalogFor === undefined ? loaded.catalog : await catalogFor(base);
+  return { ...loaded, project: start, catalog };
 }
 
 /** The project plus the reserved containers (the ones already in it are skipped), and the ones added. */

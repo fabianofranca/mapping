@@ -262,9 +262,12 @@ async function loadSpecCatalog(
   dir: string,
   applied: Project['specializations'][number],
   spec: Spec,
+  onDisk: (path: string) => string = (path) => path,
 ): Promise<SpecComponents> {
   const paths = componentPaths(spec, applied.file);
-  const stamps = await Promise.all(paths.map((path) => fileStamp(roots, dir, path)));
+  const stamps = await Promise.all(
+    paths.map((path) => fileStamp(roots, dir, onDisk(path))),
+  );
   const key = [
     digest(spec),
     applied.file,
@@ -276,7 +279,7 @@ async function loadSpecCatalog(
   const texts = new Map<string, string>();
   for (const path of paths) {
     try {
-      const text = await readText(roots, dir, path);
+      const text = await readText(roots, dir, onDisk(path));
       if (text !== null) texts.set(path, text);
     } catch {
       // Unreadable or too-large file: the type is left without a component (a catalog problem).
@@ -289,17 +292,22 @@ async function loadSpecCatalog(
   return loaded;
 }
 
-/** Reads the component files of each specialization in a folder and builds the catalog. */
-async function loadCatalog(
+/**
+ * Reads the component files of each specialization in a folder and builds the catalog. `onDisk` maps
+ * the path of a component file (`specs/<folder>/…`) to where it is read in the project folder: the
+ * identity by default; a render preview points the package a proposal brings to `proposals/<id>/…`.
+ */
+export async function loadCatalog(
   roots: Roots,
   dir: string,
   project: Project,
+  onDisk?: (path: string) => string,
 ): Promise<ComponentCatalog> {
   const catalog = new Map<string, SpecComponents>();
   for (const applied of project.specializations) {
     const { spec } = applied;
     if (!spec || spec.formatVersion < 4) continue;
-    catalog.set(applied.id, await loadSpecCatalog(roots, dir, applied, spec));
+    catalog.set(applied.id, await loadSpecCatalog(roots, dir, applied, spec, onDisk));
   }
   return catalog.size === 0 ? EMPTY_CATALOG : catalog;
 }

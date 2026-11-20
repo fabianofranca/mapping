@@ -12,7 +12,7 @@ import { declaredModes, paintContainerDrawings } from './image/containerDrawing'
 import { MAX_PIXELS, MIME, type ImageFormat } from './image/formats';
 import { clampRect, createRaster, crop, resize, type PixelRect } from './image/raster';
 import { loadImage, rectJson, scaleRect, sizeWarning, urlFields } from './imageTools';
-import type { ImageResult } from './imageTools';
+import type { ImageResult, ImageSource } from './imageTools';
 import type { ImageServer } from './imageServer';
 import type { Refs } from './items';
 import type { Roots } from './paths';
@@ -67,6 +67,7 @@ async function backdrop(
   region: PixelRect,
   size: { width: number; height: number },
   background: 'image' | 'none',
+  imageSource: ImageSource | undefined,
 ) {
   const out = createRaster(size.width, size.height);
   if (background === 'none') return { raster: out, warning: undefined };
@@ -80,7 +81,7 @@ async function backdrop(
     }
     return { raster: out, warning: undefined };
   }
-  const loaded = await loadImage(roots, refs, container);
+  const loaded = await loadImage(roots, refs, container, imageSource);
   const warning = sizeWarning(loaded, container).warning;
   const scaled = scaleRect(region, loaded);
   const source = clampRect(scaled, loaded.raster);
@@ -126,6 +127,7 @@ async function renderRegion(
   options: RenderOptions,
   markingIds: ReadonlySet<string> | undefined,
   images: ImageServer | null,
+  source: ImageSource | undefined,
 ): Promise<{ json: Record<string, unknown>; image: ImageResult['image'] }> {
   checkMode(refs, options.drawingMode);
   const zoom = options.zoom ?? 1;
@@ -141,6 +143,7 @@ async function renderRegion(
     region,
     { width, height },
     background,
+    source,
   );
   const scaleX = width / region.width;
   const scaleY = height / region.height;
@@ -189,6 +192,7 @@ export async function renderMarking(
   marking: Marking,
   options: RenderOptions,
   images: ImageServer | null = null,
+  source?: ImageSource,
 ): Promise<ImageResult> {
   const container =
     marking.containerId === null
@@ -224,6 +228,7 @@ export async function renderMarking(
     options,
     subtree(refs, marking),
     images,
+    source,
   );
   return {
     json: { ref: refs.ref('m', marking.id), ...result.json },
@@ -238,6 +243,7 @@ export async function renderContainer(
   container: ProjectContainer,
   options: RenderOptions,
   images: ImageServer | null = null,
+  source?: ImageSource,
 ): Promise<ImageResult> {
   const region = { x: 0, y: 0, width: container.width, height: container.height };
   const result = await renderRegion(
@@ -248,6 +254,7 @@ export async function renderContainer(
     options,
     undefined,
     images,
+    source,
   );
   return {
     json: { ref: refs.ref('i', container.id), ...result.json },
