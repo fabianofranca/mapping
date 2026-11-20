@@ -1298,7 +1298,7 @@ The format of the component file is in [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.
 
 ## Design tokens
 
-`tokens` (`formatVersion` 15, optional, at the root) holds the library's named **design values**: colors, radii, spacings, and font families. Format 4 components read each value with `{ "$token": "name" }` (see `docs/COMPONENT-FORMAT.md`), instead of repeating the literal in each node. Changing the value in a single place changes the whole design.
+`tokens` (`formatVersion` 15, optional, at the root) holds the library's named **design values**: colors, radii, spacings, and font families. Format 4 components read each value with `{ "$token": "name" }` (see `docs/COMPONENT-FORMAT.md`), instead of repeating the literal in each node. Changing the value in a single place changes the whole design. A number token is also valid in `sizing.width`/`sizing.height`, in each item of a `padding` list and in `font.letterSpacing` (px); a percent `letterSpacing` text is not a token kind.
 
 For color, `{ "$token": "scrim", "alpha": 0.32 }` multiplies the alpha of the token's color (the opacity without duplicating the token in the specialization; `alpha` is a number from 0 to 1 or a number `$token`). The token is also valid in `shadow.x`/`y`/`blur`, in each item of `cornerRadius` and `stroke.dash`, and in `stroke.offset` (see `docs/COMPONENT-FORMAT.md`).
 
