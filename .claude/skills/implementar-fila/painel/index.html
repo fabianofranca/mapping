@@ -121,7 +121,8 @@
       font-size: var(--cds-font-size-caption);
     }
     #mp .tipo,
-    #mp .fluxo {
+    #mp .fluxo,
+    #mp .cedo {
       font-size: var(--cds-font-size-caption);
       padding: 0 6px;
       border-radius: 4px;
@@ -129,6 +130,10 @@
       color: var(--color-fg-muted);
       overflow-wrap: anywhere;
       min-width: 0;
+    }
+    #mp .cedo {
+      border-style: dashed;
+      color: var(--color-warn);
     }
     #mp .tipo.tipo-via-rapida {
       border-style: dashed;
@@ -182,6 +187,10 @@
       border-color: var(--color-fg-muted);
     }
     #mp .amostra.w-dep {
+      border-color: var(--color-fg-muted);
+    }
+    #mp .amostra.w-entrega {
+      border-style: dotted;
       border-color: var(--color-fg-muted);
     }
     #mp .trilho {
@@ -340,6 +349,9 @@
     #mp .w.arquivo {
       border-style: dashed;
     }
+    #mp .w.entrega {
+      border-style: dotted;
+    }
     #mp .barra {
       height: 4px;
       border-radius: 2px;
@@ -372,6 +384,13 @@
     #mp .e-dono .est {
       color: var(--color-bad);
     }
+    #mp .e-entrega {
+      border-style: dashed;
+      border-color: var(--color-warn);
+    }
+    #mp .e-entrega .est {
+      color: var(--color-warn);
+    }
     #mp .e-livre {
       border-color: var(--color-ok);
     }
@@ -396,6 +415,10 @@
     }
     #mp .amostra.e-arquivo {
       border-style: dashed;
+    }
+    #mp .amostra.e-entrega {
+      border-style: dashed;
+      border-color: var(--color-warn);
     }
     #mp .amostra.e-segurada,
     #mp .amostra.e-ficha {
@@ -683,7 +706,7 @@
       <div class="big" data-source="summary" data-field="failed">—</div>
     </div>
     <div class="card">
-      <div class="lab">Waiting for the owner</div>
+      <div class="lab">Waiting for the owner or a delivery</div>
       <div class="big" data-source="summary" data-field="waiting">—</div>
     </div>
   </div>
@@ -848,7 +871,10 @@
               done: q.filter((r) => r.status === 'concluída').length,
               running: q.filter((r) => r.status === 'em andamento').length,
               failed: q.filter((r) => r.status === 'falhou').length,
-              waiting: q.filter((r) => r.status === 'esperando dono').length,
+              // `esperando entrega` (an early stage that waits for its holders' merge) counts with the waiting ones.
+              waiting: q.filter(
+                (r) => r.status === 'esperando dono' || r.status === 'esperando entrega',
+              ).length,
             },
           ];
         },
@@ -863,6 +889,7 @@
         'coordenador',
         'supervisor',
         'via-rapida',
+        'sincronização',
       ];
       const kindPos = (k) => KINDS.indexOf(k) + 1 || 99;
       // Queue cost: meta.sessions (with `cost`), per kind and per stage; without it the card shows "—".
@@ -1015,6 +1042,7 @@
       const ESTADOS = [
         ['rodando', 'rodando'],
         ['dono', 'esperando o dono'],
+        ['entrega', 'waiting for a merge to test'],
         ['arquivo', 'waiting for file'],
         ['dep', 'waiting for dependency'],
         ['exclusiva', 'exclusiva'],
@@ -1024,7 +1052,11 @@
       ];
       const ESTADO_ROTULO = Object.fromEntries(ESTADOS);
       const FASE_ESTADO = { ok: 'merged', open: 'open', todo: 'not opened yet' };
-      const ESPERA_TIPO = { dep: 'dependency', arquivo: 'shared file' };
+      const ESPERA_TIPO = {
+        dep: 'dependency',
+        arquivo: 'shared file',
+        entrega: 'delivery',
+      };
       const NENHUMA_ELEGIVEL = 'nenhuma ready elegível';
       const AJUDA = 'Tap a card to see what it waits for and who waits for it.';
       const TZ = 'America/Sao_Paulo';
@@ -1093,11 +1125,20 @@
       // The kind tag; a fast track has its own class (stage #1791, decision 8).
       const kindTag = (kind) =>
         el('span', kind === 'via-rapida' ? 'tipo tipo-via-rapida' : 'tipo', asText(kind));
-      function buildTags(r) {
+      // An early stage (stage #2373): the holders still open, from the node (`cedo`, `#S, #T`), or nothing.
+      const cedoTag = (n) => {
+        const holders = asText(n.cedo).trim();
+        return holders
+          ? el('span', 'cedo', 'cedo · espera ' + holders + ' para testar')
+          : null;
+      };
+      function buildTags(r, n) {
         const tags = el('div', 'tags');
         if (r.kind) tags.append(kindTag(r.kind));
         const fluxo = fluxoText(r);
         if (fluxo) tags.append(el('span', 'fluxo', fluxo));
+        const cedo = cedoTag(n);
+        if (cedo) tags.append(cedo);
         const pr = prLink(r.pr);
         if (pr) tags.append(pr);
         return tags.children.length ? tags : null;
@@ -1195,7 +1236,7 @@
         const a = el('article', 'etapa e-' + known);
         a.dataset.issue = n.issue;
         const p = progressOf(n, r);
-        const parts = [buildTop(n), buildButton(n), buildTags(r), buildFases(r)];
+        const parts = [buildTop(n), buildButton(n), buildTags(r, n), buildFases(r)];
         a.append(
           ...parts
             .concat([p ? buildBar(p) : null, buildWhy(n), buildFoot(p, r, usd)])

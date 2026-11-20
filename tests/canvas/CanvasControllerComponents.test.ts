@@ -271,26 +271,28 @@ describe('CanvasController: components', () => {
         center: { x: 3000, y: 400 },
       });
       if (!regular.ok || !note.ok) throw new Error('addComponent');
-      expect(actions.setMarkingFloating(note.value, true).ok).toBe(true);
+      const regularId = regular.value.markingId;
+      const noteId = note.value.markingId;
+      expect(actions.setMarkingFloating(noteId, true).ok).toBe(true);
       // The drawings and borders are born on demand: bring both into view.
       controller.centerOnPoint({ x: 3000, y: 250 });
       flush();
       // Images, components, arrows and markings (one layer, one group for each), floating, overlays.
-      expect(markingNodes(layers[1], regular.value)).toHaveLength(1);
-      expect(markingNodes(layers[1], note.value)).toHaveLength(0);
-      expect(markingNodes(layers[3], note.value)).toHaveLength(1);
-      expect(markingNodes(layers[3], regular.value)).toHaveLength(0);
+      expect(markingNodes(layers[1], regularId)).toHaveLength(1);
+      expect(markingNodes(layers[1], noteId)).toHaveLength(0);
+      expect(markingNodes(layers[3], noteId)).toHaveLength(1);
+      expect(markingNodes(layers[3], regularId)).toHaveLength(0);
       // T1, T2 and the two canvas ones (the canvas one always draws: there is no photo underneath).
       expect(container.dataset.components).toBe('4');
       // The floating one borders sit in the top group, after its drawing.
       const floatingLayer = layers[3] as Konva.Layer;
       expect(floatingLayer.getChildren()).toHaveLength(2);
-      expect(internals.markings.node(note.value)?.group.getParent()).toBe(
+      expect(internals.markings.node(noteId)?.group.getParent()).toBe(
         floatingLayer.getChildren()[1],
       );
       // The markings group is the second of the layer shared with the arrows.
       const arrowMarkingLayer = layers[2] as Konva.Layer;
-      expect(internals.markings.node(regular.value)?.group.getParent()).toBe(
+      expect(internals.markings.node(regularId)?.group.getParent()).toBe(
         arrowMarkingLayer.getChildren()[1],
       );
       controller.destroy();
@@ -306,9 +308,11 @@ describe('CanvasController: components', () => {
         center: { x: 500, y: 400 }, // over the photo I1
       });
       if (!note.ok) throw new Error('addComponent');
-      actions.setMarkingFloating(note.value, true);
+      actions.setMarkingFloating(note.value.markingId, true);
       flush();
-      expect(markingNodes(internals.stage.getLayers()[3], note.value)).toHaveLength(1);
+      expect(
+        markingNodes(internals.stage.getLayers()[3], note.value.markingId),
+      ).toHaveLength(1);
       // The components inside the photo (TP) remain hidden.
       expect(markingNodes(internals.stage.getLayers()[1], 'TP')).toHaveLength(0);
       controller.destroy();
@@ -327,10 +331,14 @@ describe('CanvasController: components', () => {
       // The drawing is born on demand: bring the marking into view.
       controller.centerOnPoint({ x: 3000, y: 400 });
       flush();
-      expect(markingNodes(internals.stage.getLayers()[1], note.value)).toHaveLength(1);
+      expect(
+        markingNodes(internals.stage.getLayers()[1], note.value.markingId),
+      ).toHaveLength(1);
       store.undo();
       flush();
-      expect(markingNodes(internals.stage.getLayers()[1], note.value)).toHaveLength(0);
+      expect(
+        markingNodes(internals.stage.getLayers()[1], note.value.markingId),
+      ).toHaveLength(0);
       controller.destroy();
     });
   });

@@ -158,7 +158,7 @@ describe('Diagnostics: Components', () => {
       typeId: 'm3-button',
     });
     if (!result.ok) throw new Error(result.error);
-    const id = result.value;
+    const id = result.value.markingId;
     harness.context.canvas.current = {
       centerSelection: vi.fn(),
     } as unknown as CanvasController;

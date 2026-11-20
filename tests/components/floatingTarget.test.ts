@@ -67,7 +67,7 @@ describe('componentTarget: floating type', () => {
       typeId: 'm3-column',
     });
     if (!column.ok) throw new Error('addComponent');
-    h.ui.selection.value = { kind: 'marking', id: column.value };
+    h.ui.selection.value = { kind: 'marking', id: column.value.markingId };
 
     const floating = componentTarget(h.context, { floating: true });
     expect(floating).toMatchObject({
@@ -77,7 +77,7 @@ describe('componentTarget: floating type', () => {
     });
     const common = componentTarget(h.context);
     expect(common).toMatchObject({
-      parentId: column.value,
+      parentId: column.value.markingId,
       destination: { kind: 'slot' },
     });
 

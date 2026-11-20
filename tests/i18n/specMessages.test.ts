@@ -526,6 +526,13 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
     'spec.sourceOnlyOrigins',
     (s) => (field(s).sources = [{ system: 'figma', name: 'n', path: 'a' }]),
   ],
+  [
+    'spec.sourceIgnoreOriginsOrSignature',
+    (s) => (
+      (s.formatVersion = 16),
+      (type(s).sources = [{ system: 'figma', name: 'n', ignore: ['a'] }])
+    ),
+  ],
   ['spec.sourcePathRequired', (s) => withOrigin(s, { system: 'sys' })],
   ['spec.sourceNameRequired', (s) => (field(s).sources = [{ system: 'figma' }])],
   ['spec.fieldPathEmptySegment', (s) => fieldPath(s, 'a.')],

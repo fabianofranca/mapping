@@ -48,7 +48,7 @@ function slots(): string[] {
 }
 
 function ficha(dep: string, toca: string, fases = 'FQ0:#1:high'): string {
-  return `dep=${dep} | nivel=impact: low | mcp=não | schema=não | epico=epic/x | fases=${fases} | toca=${toca} | testador=nenhum ; visual=nenhuma ; nenhum`;
+  return `dep=${dep} | nivel=impact: low | mcp=não | schema=não | formato=não | epico=epic/x | fases=${fases} | toca=${toca} | testador=nenhum ; visual=nenhuma ; nenhum`;
 }
 
 function add(issue: string, plan: string, ...extra: string[]) {

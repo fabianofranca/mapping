@@ -147,6 +147,8 @@ describe('images: replace', () => {
       width: 2000,
       height: 1500,
       placement: { x: 0, y: 0, scale: 0.5 },
+      // Half the width: the density follows (stage #1891), so a component keeps its size in units.
+      density: 0.5,
     });
     expect(marking(next, 'M1').rect).toEqual({ x: 500, y: 500, width: 500, height: 500 });
     expect(marking(next, 'M2').rect).toEqual({ x: 600, y: 600, width: 200, height: 100 });

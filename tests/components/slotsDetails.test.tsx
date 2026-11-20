@@ -25,7 +25,7 @@ function place(harness: SlotsHarness, typeId: string, parentId: string | null): 
     typeId,
   });
   if (!added.ok) throw new Error(`${typeId}: ${added.error}`);
-  return added.value;
+  return added.value.markingId;
 }
 
 function renderMarking(harness: SlotsHarness, markingId: string) {

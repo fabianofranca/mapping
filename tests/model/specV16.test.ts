@@ -317,6 +317,58 @@ describe('formatVersion 16: validation of what is new', () => {
   });
 });
 
+describe("formatVersion 16: ignore in the type's sources, outside origins", () => {
+  const SOURCE = 'layers[0].annotationTypes[0].sources[0]';
+  const NOT_ORIGINS = 'only allowed in a system declared in origins';
+  const withSources = (sources: Json[], formatVersion = 16) =>
+    v16((s) => {
+      s.layers[0].annotationTypes[0].sources = sources;
+    }, formatVersion);
+  const figma = (extra: Json): Json => ({
+    system: 'figma',
+    name: 'DS/Button',
+    ...extra,
+  });
+  const SHEET = { signature: 'signatures/button.figma.json' };
+
+  it('ignore next to signature is valid with the system outside origins', () => {
+    const spec = withSources([figma({ ...SHEET, ignore: ['Icon'] })]);
+    expect(issuesOf(spec)).toEqual([]);
+    expect(jsonValidator.safeParse(spec).success).toBe(true);
+  });
+
+  it('ignore without signature, outside origins, gives the message that names both ways out', () => {
+    expect(issuesOf(withSources([figma({ ignore: ['Icon'] })]))).toEqual([
+      {
+        path: `${SOURCE}.ignore`,
+        message: 'only allowed in a system declared in origins or next to signature',
+      },
+    ]);
+  });
+
+  it('slot next to signature, outside origins, is still refused with the old message', () => {
+    expect(issuesOf(withSources([figma({ ...SHEET, slot: 'content' })]))).toEqual([
+      { path: `${SOURCE}.slot`, message: NOT_ORIGINS },
+    ]);
+  });
+
+  it('a repeated name in ignore next to signature is an error', () => {
+    expect(
+      issuesOf(withSources([figma({ ...SHEET, ignore: ['Icon', 'Icon'] })])),
+    ).toEqual([{ path: `${SOURCE}.ignore[1]`, message: '"Icon" repeated' }]);
+  });
+
+  it('in a v15, ignore outside origins keeps the old message, with or without signature', () => {
+    const issues = issuesOf(withSources([figma({ ...SHEET, ignore: ['Icon'] })], 15));
+    expect(issues).toContainEqual({ path: `${SOURCE}.ignore`, message: NOT_ORIGINS });
+    expect(issues).toContainEqual({ path: `${SOURCE}.signature`, message: ONLY_V16 });
+    expect(issuesOf(withSources([figma({ ignore: ['Icon'] })], 15))).toContainEqual({
+      path: `${SOURCE}.ignore`,
+      message: NOT_ORIGINS,
+    });
+  });
+});
+
 describe('formatVersion 16: version contract', () => {
   it('diffSpecs sees no difference when adding or changing the new keys', () => {
     const base = v16((s) => {

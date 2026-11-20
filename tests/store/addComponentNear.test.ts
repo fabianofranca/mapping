@@ -58,7 +58,7 @@ describe('addComponent with near (floating type)', () => {
     const p = current(store);
     const container = p.containers[0]!;
     const canvas = imageCanvasRect(container, container.placement);
-    const note = marking(p, result.value);
+    const note = marking(p, result.value.markingId);
     expect(note).toMatchObject({ containerId: null, floating: true });
     expect(note.rect.x).toBe(right(canvas) + 24);
     expect(note.rect.y).toBe(Math.round(canvas.y + 200 * container.placement.scale));
@@ -78,8 +78,8 @@ describe('addComponent with near (floating type)', () => {
     const first = actions.addComponent(args);
     const second = actions.addComponent(args);
     if (!first.ok || !second.ok) throw new Error('addComponent');
-    const a = marking(current(store), first.value).rect;
-    const b = marking(current(store), second.value).rect;
+    const a = marking(current(store), first.value.markingId).rect;
+    const b = marking(current(store), second.value.markingId).rect;
     expect(b.x).toBe(a.x);
     expect(b.y).toBe(a.y + a.height + 24);
   });

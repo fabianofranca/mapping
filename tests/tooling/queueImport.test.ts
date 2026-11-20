@@ -79,7 +79,7 @@ function writeQueue(dir: string, queue: Row[], meta: Row, log: Row[]) {
 }
 
 const FICHA = (dep: string, toca: string) =>
-  `dep=${dep} | nivel=impact: low | mcp=não | schema=não | epico=epic/x | fases=A1:#9:high | toca=${toca}`;
+  `dep=${dep} | nivel=impact: low | mcp=não | schema=não | formato=não | epico=epic/x | fases=A1:#9:high | toca=${toca}`;
 
 /** The phase's acceptance example queue, in the old format. */
 function oldQueue(): Row[] {

@@ -1081,6 +1081,9 @@ for 360 dp) the density is 3.
   marking's `minSize` (`minSize` × density, rounded up), the instance's initial size (`size` × density), Arrange and the
   fit to content (they measure in units and write in pixels) and the drawing proof. No marking pixel
   changes when the density changes; the specialization and the component do not change.
+  Replacing the container's image with another resolution does change it: the density is multiplied by the ratio
+  of the widths (`snapScale(density × new width ÷ old width)`, clamped to 0.5–8; 1 is not written), so a
+  component keeps its size in units.
 - **Proposal:** the container's `density` field goes in the proposal's `formatVersion` 7 (see
   [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md)).
 

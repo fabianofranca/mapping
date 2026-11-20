@@ -157,6 +157,8 @@ export const specMessages = {
   // Format version, external sources and fonts (typefaces)
   'spec.onlyFormat': 'only allowed with formatVersion {version}',
   'spec.sourceOnlyOrigins': 'only allowed in a system declared in origins',
+  'spec.sourceIgnoreOriginsOrSignature':
+    'only allowed in a system declared in origins or next to signature',
   'spec.sourcePathRequired': 'required in a system declared in origins',
   'spec.sourceNameRequired': 'required in a system that is not in origins',
   'spec.fieldPathEmptySegment': 'invalid path "{path}" (empty segment)',

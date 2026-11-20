@@ -181,6 +181,45 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     return pageId === undefined ? {} : { pageId };
   };
   const measure = deps.measure ?? (() => textMeasurer.peek());
+  /**
+   * Did the new component land in free space (decision 5 of #1891)? Only automatic placement counts:
+   * a floating type, `near` and `anchorTo` do not look for a spot, so they are always free. The check
+   * is `placementIsFree` on the project from before, with the rectangle that was stored.
+   */
+  const bornInFreeSpace = (
+    before: Project,
+    after: Project,
+    markingId: string,
+    anchorTo: string | undefined,
+    args: {
+      readonly containerId: string | null;
+      readonly parentId: string | null;
+      readonly specId: string;
+      readonly typeId: string;
+      readonly near?: model.FloatingNearTarget;
+      readonly drawings?: ComponentDrawings;
+    },
+  ): boolean => {
+    const created = after.markings.find((m) => m.id === markingId);
+    if (created === undefined || created.floating) return true;
+    if (anchorTo !== undefined || args.near !== undefined) return true;
+    return model.placementIsFree(
+      before,
+      catalog(),
+      {
+        containerId: args.containerId,
+        parentId: args.parentId,
+        specId: args.specId,
+        typeId: args.typeId,
+        rect: created.rect,
+        ...(args.containerId === null && created.pageId !== null
+          ? { pageId: created.pageId }
+          : {}),
+        ...(args.drawings === undefined ? {} : { drawings: args.drawings }),
+      },
+      measure(),
+    );
+  };
   /** A perspectiva aberta em `p` (`null` = a Principal). */
   const viewFor = (p: Project): Perspective | null =>
     openPerspectiveIn(p, deps.perspective?.() ?? null);
@@ -444,7 +483,12 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       options?: model.ReplaceContainerOptions,
     ) =>
       store.apply((p) =>
-        model.replaceContainer(p, containerId, file, { ...options, ...settleOptions(p) }),
+        model.replaceContainer(p, containerId, file, {
+          ...options,
+          ...settleOptions(p),
+          // The replacement stores a density that follows the new width: the minimum is read at it.
+          minSizeAt: (id, density) => model.componentMinSize(p, catalog(), id, density),
+        }),
       ),
     /** In a perspective, deleting a root is refused (`principal-only`). */
     removeContainer: (containerId: string) =>
@@ -847,7 +891,11 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       create((id) => (p) => model.wrapItems(p, { id, items }, settleOptions(p))),
 
     // Components (Library stage, B3): each action is one undo entry.
-    /** Creates the marking and the typed annotation that draws it; returns the marking id. */
+    /**
+     * Creates the marking and the typed annotation that draws it; returns the marking id and
+     * whether it was born in free space (`free`, decision 5 of #1891): `false` only with automatic
+     * placement (no `near`, `anchorTo` or floating type) that found no spot, so the app warns.
+     */
     addComponent: (args: {
       /** Instance container; `null` = the canvas (`center` in canvas units). */
       readonly containerId: string | null;
@@ -868,16 +916,17 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
        * cache (decision 7 of #1080); without them the placement instantiates the probe (the same result).
        */
       readonly drawings?: ComponentDrawings;
-    }): ActionResult<string> => {
+    }): ActionResult<{ readonly markingId: string; readonly free: boolean }> => {
       const markingId = newId();
       const annotationId = newId();
       const { anchorTo, ...rest } = args;
+      let free = true;
       const defaults =
         anchorTo === undefined
           ? undefined
           : model.typeAnchorDefaults(catalog(), args.specId, args.typeId);
-      const result = applyCreating((p) =>
-        model.addComponentMarking(
+      const result = applyCreating((p) => {
+        const next = model.addComponentMarking(
           p,
           catalog(),
           {
@@ -895,9 +944,11 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
             ...(defaults === undefined ? {} : { anchorDefaults: defaults }),
           },
           measure(),
-        ),
-      );
-      return result.ok ? { ok: true, value: markingId } : result;
+        );
+        free = bornInFreeSpace(p, next, markingId, anchorTo, args);
+        return next;
+      });
+      return result.ok ? { ok: true, value: { markingId, free } } : result;
     },
     /**
      * Arranges the container's children by the slot layout (returns the warnings) or, on the
