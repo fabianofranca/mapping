@@ -29,7 +29,9 @@ describe('example library drawing-keys', () => {
         SPEC_FILE,
         'icons/icons.json',
         'components/icon-holes.json',
+        'components/tag.json',
         'docs/icon-holes.md',
+        'docs/tag.md',
       ].sort(),
     );
   });
@@ -39,7 +41,16 @@ describe('example library drawing-keys', () => {
     expect(report.errors).toEqual([]);
     expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
-    expect(report.summary).toMatchObject({ level: 3, types: 1, components: 1, docs: 1 });
+    expect(report.summary).toMatchObject({ level: 3, types: 2, components: 2, docs: 2 });
+  });
+
+  it('the Tag reads its padding and height from tokens and draws its tracking in percent', () => {
+    const tag = JSON.parse(
+      files.find((f) => f.path === 'components/tag.json')?.text ?? '{}',
+    );
+    expect(tag.sizing.height).toEqual({ $token: 'tag-height' });
+    expect(tag.template.layout.padding).toEqual([0, { $token: 'tag-padding' }]);
+    expect(JSON.stringify(tag.template.children[0].font.letterSpacing)).toContain('"4%"');
   });
 
   it('the icons file is formatVersion 3 and the hand-written icons have an evenodd path', () => {

@@ -435,9 +435,12 @@ const SHAPE_FEATURES = [
   'sizing=px',
   'sizing=fill',
   'sizing=hug',
+  'sizing=token',
   'layout.padding=number',
   'layout.padding=pair',
   'layout.padding=quad',
+  'layout.padding=item-expression',
+  'font.letterSpacing=percent',
   'fill=color',
   'fill=none',
   'fill=gradient',
@@ -573,6 +576,7 @@ function layoutFeatures(layout: unknown, out: Set<string>): void {
     if (typeof leaf === 'number') out.add('layout.padding=number');
     else if (Array.isArray(leaf)) {
       out.add(leaf.length === 2 ? 'layout.padding=pair' : 'layout.padding=quad');
+      if (leaf.some(isRec)) out.add('layout.padding=item-expression');
     }
   }
 }
@@ -604,6 +608,9 @@ function nodeFeatures(node: unknown, out: Set<string>): void {
     for (const leaf of leaves(node.stroke.align)) out.add(`stroke.align=${String(leaf)}`);
   }
   if (isRec(node.font)) {
+    for (const leaf of leaves(node.font.letterSpacing))
+      if (typeof leaf === 'string' && leaf.endsWith('%'))
+        out.add('font.letterSpacing=percent');
     for (const key of ['align', 'verticalAlign', 'decoration'] as const) {
       for (const leaf of leaves(node.font[key])) out.add(`font.${key}=${String(leaf)}`);
     }
@@ -649,6 +656,8 @@ export function componentFeaturesUsed(data: unknown): Set<string> {
     for (const axis of ['width', 'height']) {
       const feature = sizeFeature(data.sizing[axis], 'sizing');
       if (feature) out.add(feature);
+      if (JSON.stringify(data.sizing[axis] ?? null).includes('"$token"'))
+        out.add('sizing=token');
     }
   }
   if (isRec(data.preview) && Object.values(data.preview).some(Array.isArray)) {

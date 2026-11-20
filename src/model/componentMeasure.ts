@@ -154,7 +154,7 @@ export function measureComponentSize(
       height: unitsToPixels(units.height, density),
     },
     density,
-    follows: followedAxes(resolveSizing(component, values)),
+    follows: followedAxes(resolveSizing(component, values, drawn.tokens)),
     messages: [...warnings, ...(fitted?.messages ?? [])],
   };
 }
