@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { Font } from 'opentype.js';
+import { readFileSync } from 'node:fs';
 import { capHeightOf } from '../../mcp/image/glyphs';
+import { loadFace } from '../../mcp/image/harfbuzz';
 import { createRaster, type Raster } from '../../mcp/image/raster';
 import { paintScene } from '../../mcp/image/sceneRaster';
 import { textBars } from '../../mcp/image/textBars';
@@ -188,29 +189,64 @@ describe('cap-middle with text taller than the box (MC0, decision 31)', () => {
   }
 });
 
+/** The offset and length of a table of an sfnt. */
+function tableOf(bytes: Uint8Array, tag: string): { offset: number; length: number } {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  for (let i = 0; i < view.getUint16(4); i++) {
+    const at = 12 + i * 16;
+    if (String.fromCharCode(...bytes.subarray(at, at + 4)) === tag)
+      return { offset: view.getUint32(at + 8), length: view.getUint32(at + 12) };
+  }
+  throw new Error(`no ${tag} table`);
+}
+
+/** Mapping Sans with `OS/2.sCapHeight` zeroed and, optionally, `H` unmapped (the cmap format 4 segment of `H` points to glyph 0). */
+function patchedSans(options: { withoutH: boolean }): Uint8Array {
+  const bytes = new Uint8Array(readFileSync('mcp/fonts/MappingSans-Regular.ttf'));
+  const view = new DataView(bytes.buffer);
+  const os2 = tableOf(bytes, 'OS/2');
+  view.setInt16(os2.offset + 88, 0);
+  if (!options.withoutH) return bytes;
+  const cmap = tableOf(bytes, 'cmap');
+  const tables = view.getUint16(cmap.offset + 2);
+  for (let t = 0; t < tables; t++) {
+    const sub = cmap.offset + view.getUint32(cmap.offset + 4 + t * 8 + 4);
+    if (view.getUint16(sub) !== 4) continue;
+    const segments = view.getUint16(sub + 6) / 2;
+    const ends = sub + 14;
+    const deltas = ends + segments * 2 + 2 + segments * 2;
+    for (let i = 0; i < segments; i++) {
+      const end = view.getUint16(ends + i * 2);
+      const start = view.getUint16(ends + segments * 2 + 2 + i * 2);
+      if (start <= 0x48 && 0x48 <= end) view.setUint16(deltas + i * 2, -0x48 & 0xffff);
+    }
+  }
+  return bytes;
+}
+
 describe('capHeightOf (decision 4)', () => {
   const face = book.fontFor('sans-serif', 400, false);
+  const sansBytes = new Uint8Array(readFileSync('mcp/fonts/MappingSans-Regular.ttf'));
 
   it('uses the font sCapHeight, at the given size', () => {
-    const cap = face.tables?.os2?.sCapHeight as number | undefined;
+    const os2 = tableOf(sansBytes, 'OS/2');
+    const cap = new DataView(sansBytes.buffer).getInt16(os2.offset + 88);
     expect(cap).toBeGreaterThan(0);
-    expect(capHeightOf(face, 14)).toBeCloseTo((cap! / face.unitsPerEm) * 14, 6);
+    expect(capHeightOf(face, 14)).toBeCloseTo((cap / face.unitsPerEm) * 14, 6);
   });
 
   it('without sCapHeight, falls back to the box of the H glyph', () => {
-    const without = Object.create(face, {
-      tables: { value: { ...face.tables, os2: { ...face.tables?.os2, sCapHeight: 0 } } },
-    }) as Font;
-    const box = face.charToGlyph('H').getBoundingBox();
-    expect(capHeightOf(without, 14)).toBeCloseTo((box.y2 / face.unitsPerEm) * 14, 6);
+    const without = loadFace(patchedSans({ withoutH: false }))!;
+    const reference = loadFace(sansBytes)!;
+    const top = -Math.min(
+      ...reference.path('H', 0, 0, 1000).flatMap((c) => (c.y === undefined ? [] : [c.y])),
+    );
+    expect(top).toBeGreaterThan(0);
+    expect(capHeightOf(without, 14)).toBeCloseTo((top / 1000) * 14, 2);
   });
 
   it('without sCapHeight or H, it is 0.7 of the body', () => {
-    const bare = {
-      unitsPerEm: face.unitsPerEm,
-      tables: {},
-      charToGlyph: () => ({ index: 0, getBoundingBox: () => ({ y2: 0 }) }),
-    } as unknown as Font;
+    const bare = loadFace(patchedSans({ withoutH: true }))!;
     expect(capHeightOf(bare, 20)).toBeCloseTo(14, 6);
   });
 });

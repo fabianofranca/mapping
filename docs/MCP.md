@@ -311,6 +311,8 @@ The component format 4 gains the `component` node (another component of the same
 
 ### Fonts with GSUB the server cannot apply (stage #2089, 0.47.0)
 
+> History: 0.51.0 replaces `opentype.js` with HarfBuzz ("Text shaped with HarfBuzz", above), which applies every lookup; the pruning, the probe and the two "skipped substitution" warnings described here are gone. The guard and the "cannot lay out" warning stay.
+
 A library font never makes the server fail. `opentype.js` 2.0.0 applies only some glyph-substitution (GSUB) subtables (single 1.1 and 1.2, multiple 2.1, ligature 4.1, context 5.1 and 5.3, chaining 6.3) and threw `internal-error` (`substitutionType : 62 lookupType: 6 - substFormat: 2 is not yet supported`) on the rest (Inter and Citrina have them). The schema and the formats do not change.
 
 - **Load** (`mcp/image/fontSubstitutions.ts`, called by `createFontBook`): each library font is parsed, the subtables the module cannot apply are dropped from the font **in memory** (a 6.3 that cites a lookup with a subtable other than 1.2 or 2.1 too), keeping the lookups and their indexes, and a sample text (`Hamburgefonstiv ffi fl 0123456789`) is laid out. If that throws, the font's substitutions are turned off and the probe repeats; if it throws again, the font is left out and the embedded one applies, like an unreadable font. The file on disk is never changed.

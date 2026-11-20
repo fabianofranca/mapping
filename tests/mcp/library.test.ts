@@ -19,7 +19,6 @@ import {
   serialize,
   type Spec,
 } from '../../src/model';
-import type { Font } from 'opentype.js';
 import { fontWarningText } from '../../mcp/library';
 import { NOW } from '../model/fixtures';
 import { errorOf, ok } from './proposalSupport';
@@ -138,7 +137,7 @@ beforeAll(async () => {
   }
   writeFileSync(tableSpec, JSON.stringify(tableJson));
 
-  // Libraries with one font each (#2089): the test font with unsupported GSUB and Mapping Sans.
+  // Libraries with one font each (#2089): the test font with chaining GSUB, Mapping Sans and a corrupt file.
   const fontSpec = JSON.stringify({
     format: 'mapping-spec',
     formatVersion: 15,
@@ -155,7 +154,7 @@ beforeAll(async () => {
       },
     ],
   });
-  for (const folder of ['font-gsub', 'font-clean']) {
+  for (const folder of ['font-gsub', 'font-clean', 'font-corrupt']) {
     mkdirSync(join(root, folder, 'fonts'), { recursive: true });
     writeFileSync(join(root, folder, 'fonts.spec.json'), fontSpec);
   }
@@ -167,6 +166,8 @@ beforeAll(async () => {
     'mcp/fonts/MappingSans-Regular.ttf',
     join(root, 'font-clean', 'fonts', 'Acme.ttf'),
   );
+
+  writeFileSync(join(root, 'font-corrupt', 'fonts', 'Acme.ttf'), Buffer.alloc(4096, 7));
 
   mkdirSync(join(root, 'empty'));
   writeFileSync(join(root, 'empty', 'LEIA-ME.md'), 'nothing here');
@@ -669,10 +670,19 @@ describe('apply_specialization with a v4 package', () => {
   });
 });
 
-describe('validate_library: the font warning (#2089)', () => {
-  it('warns about a font with subtables the server cannot apply, and stays valid', async () => {
+describe('validate_library: the font warning (#2089, #2121)', () => {
+  it('the test font of #2089 gets no font warning (HarfBuzz applies every lookup)', async () => {
     const result = ok(
       await mcp.call<Validated>('validate_library', { path: 'font-gsub' }),
+    );
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('a corrupt .ttf warns that the server cannot lay it out, and stays valid', async () => {
+    const result = ok(
+      await mcp.call<Validated>('validate_library', { path: 'font-corrupt' }),
     );
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
@@ -684,14 +694,14 @@ describe('validate_library: the font warning (#2089)', () => {
       severity: 'warning',
     });
     expect(warning!.message).toBe(
-      'the MCP server measures and draws `fonts/Acme.ttf` without 2 substitution subtable(s) it cannot apply (lookup type 3 format 1 ×1, lookup type 6 format 2 ×1): their alternates are not drawn by the server; the app is not affected',
+      'the MCP server cannot lay out `fonts/Acme.ttf`: it measures and draws with its embedded font; the app is not affected',
     );
   });
 
   it('names the spec file when the request points to it, and shows the warning after the others', async () => {
     const result = ok(
       await mcp.call<Validated>('validate_library', {
-        path: 'font-gsub/fonts.spec.json',
+        path: 'font-corrupt/fonts.spec.json',
       }),
     );
     expect(result.valid).toBe(true);
@@ -707,31 +717,14 @@ describe('validate_library: the font warning (#2089)', () => {
   });
 });
 
-describe('font warning texts (#2089)', () => {
-  const font = (probe: 'ok' | 'gsub-off' | 'unusable', skipped = [] as never[]) =>
-    ({ font: {} as Font, probe, skipped }) as Parameters<typeof fontWarningText>[1];
-
-  it('GSUB turned off: says the font has no glyph substitution at all', () => {
-    expect(
-      fontWarningText(
-        'fonts/A.ttf',
-        font('gsub-off', [{ lookupType: 6, substFormat: 2, count: 2 }] as never[]),
-      ),
-    ).toBe(
-      'the MCP server measures and draws `fonts/A.ttf` without any glyph substitution (it also cannot apply lookup type 6 format 2 ×2): a layout still failed after skipping the subtables it cannot apply; the app is not affected',
-    );
-    expect(fontWarningText('fonts/A.ttf', font('gsub-off'))).toContain(
-      'without any glyph substitution: a layout',
-    );
-  });
-
-  it('not usable: says the embedded font applies', () => {
-    expect(fontWarningText('fonts/A.ttf', font('unusable'))).toBe(
+describe('font warning texts (#2089, #2121)', () => {
+  it('a font the server cannot lay out: says the embedded font applies', () => {
+    expect(fontWarningText('fonts/A.ttf', false)).toBe(
       'the MCP server cannot lay out `fonts/A.ttf`: it measures and draws with its embedded font; the app is not affected',
     );
   });
 
-  it('nothing skipped: no warning', () => {
-    expect(fontWarningText('fonts/A.ttf', font('ok'))).toBeNull();
+  it('a usable font: no warning', () => {
+    expect(fontWarningText('fonts/A.ttf', true)).toBeNull();
   });
 });

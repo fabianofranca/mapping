@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -15,12 +15,13 @@ import { runBatch } from '../../mcp/batch';
 import { Roots } from '../../mcp/paths';
 import { findProject, loadProject } from '../../mcp/projects';
 import { createServer } from '../../mcp/server';
+import { createMeasurer } from '../../mcp/image/textMeasurer';
 import { NOW } from '../model/fixtures';
 
-// Stage #2089 (FM1): a project whose library cites a font with GSUB subtables `opentype.js` cannot
-// apply is read, planned and drawn through the MCP without `internal-error`. The font is the one
-// `scripts/testing/gsub-font.mjs` writes (a copy of Mapping Sans with a type 6 format 2 and a type 3
-// format 1 subtable that make `getAdvanceWidth` throw, and a ligature `ii` → `m` that still applies).
+// Stage #2089 (FM1), stage #2121 (HB2): a project whose library cites a font with chaining and contextual GSUB
+// subtables (which `opentype.js` could not apply) is read, planned and drawn through the MCP without
+// `internal-error`, shaped by HarfBuzz. The font is the one `scripts/testing/gsub-font.mjs` writes (a copy of Mapping
+// Sans with a type 6 format 2 and a type 3 format 1 subtable, and a ligature `ii` → `m`).
 
 const LAYER = 'cccccccc-0000-4000-8000-000000000001';
 
@@ -161,7 +162,7 @@ async function call(name: string, args: Record<string, unknown>): Promise<Reply>
   };
 }
 
-describe('a library font with GSUB subtables the server cannot apply', () => {
+describe('a library font with chaining and contextual GSUB subtables', () => {
   it('get_project reads the project', async () => {
     const reply = await call('get_project', { project: 'screens' });
     expect(reply.text).not.toContain('internal-error');
@@ -194,5 +195,31 @@ describe('a library font with GSUB subtables the server cannot apply', () => {
     expect(reply.text).not.toContain('internal-error');
     expect(reply.isError).toBe(false);
     expect(reply.image).toBe(true);
+  });
+});
+
+describe('the server shapes with the library font', () => {
+  it('`ii` measures as `m` (the ligature applies) and nothing is skipped', () => {
+    const file = new Uint8Array(
+      readFileSync(join(base, 'screens/specs/lib/fonts/Gsub.ttf')),
+    );
+    const measure = createMeasurer([
+      {
+        family: 'Gsub',
+        weight: '400',
+        style: 'normal',
+        path: 'fonts/Gsub.ttf',
+        bytes: file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength),
+      },
+    ]);
+    const font = {
+      family: 'Gsub',
+      size: 14,
+      weight: 400,
+      italic: false,
+      lineHeight: 20,
+      letterSpacing: 0,
+    };
+    expect(measure('ii', font).width).toBeCloseTo(measure('m', font).width, 6);
   });
 });

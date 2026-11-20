@@ -2,28 +2,21 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parse, type Font, type GsubLookup, type GsubSubtable } from 'opentype.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import {
-  guardedLayout,
-  inspectFont,
-  probeFont,
-  pruneSubstitutions,
-  turnOffSubstitutions,
-} from '../../mcp/image/fontSubstitutions';
+import { textWidth } from '../../mcp/image/glyphs';
+import { guardedLayout } from '../../mcp/image/fontSubstitutions';
+import type { Face } from '../../mcp/image/harfbuzz';
 import {
   createFontBook,
   loadLibraryFont,
   measurerFor,
-  textWidth,
 } from '../../mcp/image/textMeasurer';
 
-// Stage #2089 (FM1, decisions 1 and 2): the server skips the GSUB subtables `opentype.js` cannot
-// apply, probes each library font when it loads and guards every layout.
+// Stage #2089 (FM1), stage #2121 (HB2, decision 9): HarfBuzz applies every lookup, so nothing is pruned or probed; what
+// stays is the last-resort guard: a shaping that throws is laid out with the embedded font.
 
 let dir: string;
 let bytes: ArrayBuffer;
-const fresh = (): Font => parse(bytes.slice(0));
 beforeAll(() => {
   dir = mkdtempSync(join(tmpdir(), 'mapping-subst-'));
   execFileSync('node', ['scripts/testing/gsub-font.mjs', join(dir, 'gsub.ttf')]);
@@ -32,183 +25,31 @@ beforeAll(() => {
 });
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
-const sub = (substFormat: number, extra: Partial<GsubSubtable> = {}): GsubSubtable => ({
-  substFormat,
-  ...extra,
-});
-const lookup = (lookupType: number, subtables: GsubSubtable[]): GsubLookup => ({
-  lookupType,
-  subtables,
-});
-/** A font object with only a GSUB table: what `pruneSubstitutions` reads. */
-const withLookups = (lookups: GsubLookup[]): Font =>
-  ({ tables: { gsub: { lookups } } }) as unknown as Font;
-const kinds = (font: Font) =>
-  font.tables!.gsub!.lookups.map((l) => l.subtables.map((s) => s.substFormat));
-
-describe('pruneSubstitutions', () => {
-  it('the test font skips 6.2 and 3.1 and keeps the ligature (the lookups and their indexes stay)', () => {
-    const font = fresh();
-    expect(pruneSubstitutions(font)).toEqual([
-      { lookupType: 3, substFormat: 1, count: 1 },
-      { lookupType: 6, substFormat: 2, count: 1 },
-    ]);
-    expect(font.tables!.gsub!.lookups.map((l) => l.lookupType)).toEqual([6, 3, 4]);
-    expect(kinds(font)).toEqual([[], [], [1]]);
-  });
-
-  it('the skip list is sorted by type and format, with a count per kind', () => {
-    const font = withLookups([
-      lookup(6, [sub(2), sub(1), sub(2)]),
-      lookup(3, [sub(1)]),
-      lookup(1, [sub(1), sub(2)]),
-    ]);
-    expect(pruneSubstitutions(font)).toEqual([
-      { lookupType: 3, substFormat: 1, count: 1 },
-      { lookupType: 6, substFormat: 1, count: 1 },
-      { lookupType: 6, substFormat: 2, count: 2 },
-    ]);
-    expect(kinds(font)).toEqual([[], [], [1, 2]]);
-  });
-
-  it('keeps 1.1, 1.2, 2.1, 4.1, 5.1, 5.3 and 6.3 and skips the other formats of those types', () => {
-    const font = withLookups([
-      lookup(1, [sub(1), sub(2)]),
-      lookup(2, [sub(1)]),
-      lookup(4, [sub(1)]),
-      lookup(5, [sub(1), sub(2), sub(3)]),
-      lookup(6, [sub(3)]),
-      lookup(8, [sub(1)]),
-    ]);
-    expect(pruneSubstitutions(font)).toEqual([
-      { lookupType: 5, substFormat: 2, count: 1 },
-      { lookupType: 8, substFormat: 1, count: 1 },
-    ]);
-  });
-
-  it('type 7 is classified by the inner type and format, and a kept one stays wrapped', () => {
-    const wrapped = (lookupType: number, substFormat: number) =>
-      sub(1, { lookupType, extension: sub(substFormat) });
-    const font = withLookups([lookup(7, [wrapped(4, 1), wrapped(6, 2), wrapped(3, 1)])]);
-    expect(pruneSubstitutions(font)).toEqual([
-      { lookupType: 3, substFormat: 1, count: 1 },
-      { lookupType: 6, substFormat: 2, count: 1 },
-    ]);
-    expect(font.tables!.gsub!.lookups[0]!.subtables).toHaveLength(1);
-    expect(font.tables!.gsub!.lookups[0]!.subtables[0]!.extension!.substFormat).toBe(1);
-  });
-
-  const chain = (...indexes: number[]) =>
-    sub(3, {
-      lookupRecords: indexes.map((lookupListIndex) => ({
-        sequenceIndex: 0,
-        lookupListIndex,
-      })),
-    });
-
-  it('a 6.3 that cites only 1.2 or 2.1 lookups stays', () => {
-    const font = withLookups([
-      lookup(6, [chain(1, 2)]),
-      lookup(1, [sub(2)]),
-      lookup(2, [sub(1)]),
-    ]);
-    expect(pruneSubstitutions(font)).toEqual([]);
-    expect(kinds(font)).toEqual([[3], [2], [1]]);
-  });
-
-  it('a 6.3 that cites a lookup with another kind (1.1 here) is skipped, with its count', () => {
-    const font = withLookups([
-      lookup(6, [chain(1), chain(2)]),
-      lookup(1, [sub(1)]),
-      lookup(1, [sub(2)]),
-    ]);
-    expect(pruneSubstitutions(font)).toEqual([
-      { lookupType: 6, substFormat: 3, count: 1 },
-    ]);
-    expect(font.tables!.gsub!.lookups[0]!.subtables).toHaveLength(1);
-  });
-
-  it('a 6.3 that cites a missing lookup is skipped; one that cites a lookup emptied by pruning stays', () => {
-    const font = withLookups([lookup(6, [chain(9), chain(1)]), lookup(3, [sub(1)])]);
-    expect(pruneSubstitutions(font)).toEqual([
-      { lookupType: 3, substFormat: 1, count: 1 },
-      { lookupType: 6, substFormat: 3, count: 1 },
-    ]);
-    expect(font.tables!.gsub!.lookups[0]!.subtables).toHaveLength(1);
-  });
-
-  it('a font without GSUB skips nothing', () => {
-    expect(pruneSubstitutions({ tables: {} } as unknown as Font)).toEqual([]);
-    expect(pruneSubstitutions({} as unknown as Font)).toEqual([]);
-  });
+const gsubEntry = () => ({
+  family: 'Gsub',
+  weight: '400',
+  style: 'normal' as const,
+  path: 'fonts/Gsub.ttf',
+  bytes,
 });
 
-describe('probe at load', () => {
-  it('the raw test font throws; pruned, it lays out (probe ok)', () => {
-    const raw = fresh();
-    expect(() => raw.getAdvanceWidth('fit', 14, { kerning: true })).toThrow(
-      /substitutionType : 62/,
-    );
-    const font = fresh();
-    expect(inspectFont(font)).toEqual({
-      skipped: [
-        { lookupType: 3, substFormat: 1, count: 1 },
-        { lookupType: 6, substFormat: 2, count: 1 },
-      ],
-      probe: 'ok',
-    });
-    expect(font.getAdvanceWidth('fit', 14, { kerning: true })).toBeGreaterThan(0);
-  });
-
-  it('a font that still throws has its GSUB turned off and then lays out (gsub-off)', () => {
-    const tables: { gsub?: { lookups: GsubLookup[] } } = { gsub: { lookups: [] } };
-    const font = {
-      tables,
-      getAdvanceWidth: () => {
-        if (tables.gsub !== undefined) throw new Error('boom');
-        return 10;
-      },
-      getPath: () => ({ commands: [] }),
-    } as unknown as Font;
-    expect(probeFont(font)).toBe('gsub-off');
-    expect(tables.gsub).toBeUndefined();
-  });
-
-  it('a font that throws even without GSUB is unusable, and the book leaves it out', () => {
-    const font = {
-      tables: { gsub: { lookups: [] } },
-      getAdvanceWidth: () => {
-        throw new Error('boom');
-      },
-      getPath: () => ({ commands: [] }),
-    } as unknown as Font;
-    expect(probeFont(font)).toBe('unusable');
-    // An unreadable file: `loadLibraryFont` has no font to give, and the embedded one applies.
-    expect(loadLibraryFont(new ArrayBuffer(8))).toBeNull();
-    const book = createFontBook([
-      {
-        family: 'Broken',
-        weight: '400',
-        style: 'normal',
-        path: 'fonts/Broken.ttf',
-        bytes: new ArrayBuffer(8),
-      },
-    ]);
-    expect(book.hasLibraryFonts).toBe(false);
-  });
-
-  it('the book keeps a library font whose GSUB had to be pruned', () => {
-    const book = createFontBook([
-      { family: 'Gsub', weight: '400', style: 'normal', path: 'fonts/Gsub.ttf', bytes },
-    ]);
+describe('the library font book', () => {
+  it('loads the test font of #2089 (nothing is skipped) and keeps it', () => {
+    expect(loadLibraryFont(bytes)).not.toBeNull();
+    const book = createFontBook([gsubEntry()]);
     expect(book.hasLibraryFonts).toBe(true);
     expect(book.fontFor('Gsub', 400, false)).not.toBe(book.embeddedFor('Gsub', 400));
   });
 
+  it('bytes that are not a font load as null, and the book leaves them out', () => {
+    expect(loadLibraryFont(new ArrayBuffer(8))).toBeNull();
+    expect(
+      createFontBook([{ ...gsubEntry(), bytes: new ArrayBuffer(8) }]).hasLibraryFonts,
+    ).toBe(false);
+  });
+
   it('the embedded stand-in follows the same first-match rule as `fontFor`', () => {
-    const book = createFontBook([
-      { family: 'Gsub', weight: '400', style: 'normal', path: 'fonts/Gsub.ttf', bytes },
-    ]);
+    const book = createFontBook([gsubEntry()]);
     const mono = book.embeddedFor('monospace', 400);
     const sans = book.embeddedFor('sans-serif', 400);
     expect(mono).not.toBe(sans);
@@ -220,129 +61,83 @@ describe('probe at load', () => {
 });
 
 describe('guardedLayout', () => {
-  const makeFont = (throws: number) => {
-    let left = throws;
-    const font = {
-      tables: { gsub: { lookups: [] as GsubLookup[] } },
-      layout() {
-        if (left-- > 0) throw new Error('boom');
-        return 'own';
-      },
-    };
-    return font;
-  };
+  const face = (name: string) => ({ name }) as unknown as Face;
 
   it('a layout that works is not touched', () => {
-    const font = makeFont(0);
+    const own = face('own');
     const result = guardedLayout(
-      font as unknown as Font,
+      own,
       () => {
         throw new Error('no fallback needed');
       },
-      () => font.layout(),
+      (f) => (f as unknown as { name: string }).name,
     );
     expect(result).toBe('own');
-    expect(font.tables.gsub).toBeDefined();
   });
 
-  it('a layout that throws once turns the GSUB off and repeats', () => {
-    const font = makeFont(1);
+  it('a layout that throws is laid out with the embedded font', () => {
+    const own = face('own');
+    const embedded = face('embedded');
     const result = guardedLayout(
-      font as unknown as Font,
-      () => {
-        throw new Error('no fallback needed');
-      },
-      () => font.layout(),
-    );
-    expect(result).toBe('own');
-    expect((font as { tables: { gsub?: unknown } }).tables.gsub).toBeUndefined();
-  });
-
-  it('a layout that always throws goes to the embedded font', () => {
-    const font = makeFont(Infinity);
-    const embedded = { name: 'embedded' } as unknown as Font;
-    const result = guardedLayout(
-      font as unknown as Font,
+      own,
       () => embedded,
-      (face) => (face === embedded ? 'embedded' : font.layout()),
+      (f) => {
+        if (f === own) throw new Error('boom');
+        return 'embedded';
+      },
     );
     expect(result).toBe('embedded');
-    expect((font as { tables: { gsub?: unknown } }).tables.gsub).toBeUndefined();
   });
 
-  it('turnOffSubstitutions leaves the other tables', () => {
-    const font = {
-      tables: { gsub: { lookups: [] }, os2: { sCapHeight: 700 } },
-    } as unknown as Font;
-    turnOffSubstitutions(font);
-    expect(font.tables).toEqual({ os2: { sCapHeight: 700 } });
+  it('a throw of the embedded font itself reaches the caller (a programming error)', () => {
+    expect(() =>
+      guardedLayout(
+        face('own'),
+        () => face('embedded'),
+        () => {
+          throw new Error('always');
+        },
+      ),
+    ).toThrow('always');
   });
 });
 
 describe('the book guards the text it measures', () => {
-  it('a font that starts to throw after loading still measures (GSUB off), and then falls back to the embedded font', () => {
-    const book = createFontBook([
-      { family: 'Gsub', weight: '400', style: 'normal', path: 'fonts/Gsub.ttf', bytes },
-    ]);
-    const face = book.fontFor('Gsub', 400, false);
-    const real = face.getAdvanceWidth.bind(face);
-    let throws = 1;
-    face.getAdvanceWidth = (text, size, options) => {
-      if (throws-- > 0) throw new Error('boom');
-      return real(text, size, options);
-    };
-    const style = {
-      family: 'Gsub',
-      size: 14,
-      weight: 400,
-      italic: false,
-      letterSpacing: 0,
-    };
-    expect(textWidth(book, 'fit', style)).toBeCloseTo(
-      real('fit', 14, { kerning: true }),
-      6,
-    );
+  const style = {
+    family: 'Gsub',
+    size: 14,
+    weight: 400,
+    italic: false,
+    letterSpacing: 0,
+  };
 
-    face.getAdvanceWidth = () => {
+  it('a face that starts to throw falls back to the embedded font, and the book keeps measuring', () => {
+    const book = createFontBook([gsubEntry()]);
+    const face = book.fontFor('Gsub', 400, false) as { advance: Face['advance'] };
+    const real = face.advance.bind(face);
+    expect(textWidth(book, 'fit', style)).toBeCloseTo(real('fit', 14), 6);
+
+    face.advance = () => {
       throw new Error('always');
     };
     const embedded = book.embeddedFor('Gsub', 400);
-    expect(textWidth(book, 'fit', style)).toBeCloseTo(
-      embedded.getAdvanceWidth('fit', 14, { kerning: true }),
-      6,
-    );
+    expect(textWidth(book, 'fit', style)).toBeCloseTo(embedded.advance('fit', 14), 6);
   });
-});
 
-describe('the measurer forgets the widths measured with the substitutions it later turns off (CL2)', () => {
-  it('a width measured with a ligature is measured again once the font lays out without GSUB', () => {
-    const book = createFontBook([
-      { family: 'Gsub', weight: '400', style: 'normal', path: 'fonts/Gsub.ttf', bytes },
-    ]);
+  it('the measurer measures with the embedded font while the face throws, and with it again after', () => {
+    const book = createFontBook([gsubEntry()]);
     const measure = measurerFor(book);
-    const font = {
-      family: 'Gsub',
-      size: 20,
-      weight: 400,
-      italic: false,
-      lineHeight: 24,
-      letterSpacing: 0,
+    const face = book.fontFor('Gsub', 400, false) as { advance: Face['advance'] };
+    const real = face.advance.bind(face);
+    const font = { ...style, lineHeight: 20 };
+    const whole = measure('ii', font).width;
+    expect(whole).toBeCloseTo(real('ii', 14), 6);
+    face.advance = () => {
+      throw new Error('boom');
     };
-    const plain = fresh();
-    turnOffSubstitutions(plain);
-    const without = plain.getAdvanceWidth('iii', 20, { kerning: true });
-    const withLigature = measure('iii', font).width;
-    expect(withLigature).not.toBeCloseTo(without, 3);
-
-    // A later text makes the layout throw: the face's GSUB goes off for good.
-    const face = book.fontFor('Gsub', 400, false);
-    const real = face.getAdvanceWidth.bind(face);
-    let throws = 1;
-    face.getAdvanceWidth = (text, size, options) => {
-      if (throws-- > 0) throw new Error('boom');
-      return real(text, size, options);
-    };
-    measure('zzz', font);
-    expect(measure('iii', font).width).toBeCloseTo(without, 3);
+    const embedded = book.embeddedFor('Gsub', 400);
+    expect(measure('zzz', font).width).toBeCloseTo(embedded.advance('zzz', 14), 6);
+    face.advance = real;
+    expect(measure('iii', font).width).toBeCloseTo(real('iii', 14), 6);
   });
 });

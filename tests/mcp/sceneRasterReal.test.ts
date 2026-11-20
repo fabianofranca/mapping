@@ -10,7 +10,7 @@ import {
 } from '../../src/model/components/scene';
 import { layoutRuns } from '../../src/model/components/richText';
 
-// CF9 (decision 31): the server's full rasterizer: real text (opentype.js), shadow,
+// CF9 (decision 31): the server's full rasterizer: real text (HarfBuzz), shadow,
 // dashes, stroke `align`, `cap`/`join`, `sides` and runs. Text without `fonts` stays as bars.
 
 const book = createFontBook();

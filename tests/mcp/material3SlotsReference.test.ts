@@ -1,6 +1,10 @@
 // SL7 of #1080 (decision 17): without child markings the six types that gain named slots draw exactly as
 // before. The reference was recorded from the library of the previous version (see
 // `tests/support/material3SlotsReference.ts`) and is not updated: the `fallback` is today's drawing.
+// One exception (stage #2121, HB2): the two hashes of `top-app-bar/small-empty` (the default title "Title") moved when the
+// server began to shape with HarfBuzz, which applies the font's `Ti` pair kerning (-0.82 px at 22 px) that `opentype.js`
+// 2.0.0 did not. The advance and the outline of every glyph are the same; only the position of what follows `T` changed,
+// towards what Chromium draws.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
