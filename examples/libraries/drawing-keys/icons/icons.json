@@ -1,0 +1,31 @@
+{
+  "format": "mapping-icons",
+  "formatVersion": 3,
+  "viewBox": [24, 24],
+  "icons": {
+    "ring": {
+      "paths": [
+        {
+          "d": "M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20z M12 6a6 6 0 1 0 0 12a6 6 0 1 0 0-12z",
+          "fillRule": "evenodd"
+        }
+      ]
+    },
+    "square-hole": {
+      "paths": [
+        {
+          "d": "M3 3h18v18H3z M9 9h6v6H9z",
+          "fillRule": "evenodd"
+        }
+      ]
+    },
+    "star-evenodd": {
+      "paths": [
+        {
+          "d": "M12 2L19 22L2 9H22L5 22Z",
+          "fillRule": "evenodd"
+        }
+      ]
+    }
+  }
+}

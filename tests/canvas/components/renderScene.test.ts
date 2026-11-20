@@ -11,6 +11,11 @@ import {
   renderScene,
   sceneIdOf,
 } from '../../../src/canvas/components/renderScene';
+import { approximateMeasurer } from '../../../src/model';
+import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
+import type { ComponentFile } from '../../../src/model/components/componentFormat';
+import { parseIconsFile } from '../../../src/model/components/icons';
+import { instantiate } from '../../../src/model/components/instantiate';
 import {
   type FrameNode,
   type Scene,
@@ -215,6 +220,42 @@ describe('renderScene', () => {
     expect((photo[0] as Konva.Rect).cornerRadius()).toEqual([4, 4, 0, 0]);
     expect(warnings).toContainEqual({ code: 'image-without-pixels' });
     expect(warnings).toContainEqual({ code: 'unknown-node', params: { type: 'STICKY' } });
+  });
+
+  it('the Konva path of an icon takes the fill rule of the icon path (evenodd, else nonzero)', () => {
+    const set = parseIconsFile({
+      format: 'mapping-icons',
+      formatVersion: 3,
+      viewBox: [24, 24],
+      icons: {
+        ring: { paths: [{ d: 'M0 0h24v24H0zM6 6h12v12H6z', fillRule: 'evenodd' }] },
+        plain: { paths: [{ d: 'M0 0h24v24H0z' }] },
+      },
+    });
+    if (!set.ok) throw new Error(set.errors.join('; '));
+    const rule = (name: string): string | undefined => {
+      const file = {
+        format: COMPONENT_FORMAT,
+        formatVersion: 4,
+        id: 'c',
+        name: 'C',
+        size: { width: 24, height: 24 },
+        template: { type: 'frame', children: [{ type: 'icon', name, color: '#000000' }] },
+      } as unknown as ComponentFile;
+      const { root, warnings } = instantiate(
+        file,
+        {},
+        { x: 0, y: 0, width: 24, height: 24 },
+        { measure: approximateMeasurer, icons: set.set },
+      );
+      const { byId } = renderScene({ root, warnings });
+      const rules = [...byId.values()].flatMap((node) =>
+        node.find('Path').map((p) => (p as Konva.Path).fillRule()),
+      );
+      return rules[0];
+    };
+    expect(rule('ring')).toBe('evenodd');
+    expect(rule('plain')).toBe('nonzero');
   });
 
   it('a group with a shadow passes the shadow to the first descendant shape', () => {

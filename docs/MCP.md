@@ -260,6 +260,14 @@ node tools/mapping-signature.mjs --help
 - **Reading.** `get_project` returns `drawingMode` (`null` without a mode) and, in each container, the pinned one and the `effectiveDrawingMode`; `get_container` likewise; `list_markings` carries `effectiveDrawingMode` on each row. The effective one is the container's, else the project's, else the first mode declared in `tokens.modes` by the specializations, else `null`.
 - **Proposals.** The mode change becomes the `project` entity (and the container's `drawingMode` field) in the proposal, which is then written in `formatVersion` 6 (`docs/PROPOSAL-FORMAT.md`); proposals without the mode stay on 4 (creation) and 5 (revision).
 
+### Icon `fillRule` and the format gaps (stage #2087, 0.49.0)
+
+The stage `epic/format-gaps` raises the **icons file** (`format: "mapping-icons"`) to `formatVersion` 3, which adds `fillRule` (`nonzero` or `evenodd`) to each path. The component format stays at 4, the specialization at 18 (the `icons` key still needs 15), and the project, proposal, comment and signature formats do not change. The later phases of the stage add their own items to this section.
+
+- **`validate_library`** reads the icons file in versions 1, 2 and 3. `fillRule` in a version 1 or 2 file is `only allowed with formatVersion 3`, at `icons.<name>.paths[i].fillRule` (the message carries the code `iconsFile.v3Only`); a value other than `nonzero` or `evenodd` is `expected one of: nonzero, evenodd`; and `formatVersion: 4` is `must be 1, 2 or 3`.
+- **Drawing.** An icon path with `"fillRule": "evenodd"` is drawn with its holes in the `render_marking` and `render_container` PNG, as in the app and in the viewer (`mapping-viewer` 0.6.0). Without the key the rule is `nonzero`, as before.
+- **Update the MCP first:** a version earlier than 0.49.0 refuses a `formatVersion` 3 icons file (`formatVersion: must be 1 or 2`), so it never draws the holes filled. See `COMPONENT-FORMAT.md`, "Known limits".
+
 ### Component node (stage #2093, 0.48.0)
 
 The component format 4 gains the `component` node (another component of the same library, with `values` and `provide`; no new `formatVersion`). The tools do not change.

@@ -64,17 +64,18 @@ describe('parseIconsFile', () => {
       expect(result.errors.join('\n')).toContain('icons.check.paths: expected');
   });
 
-  it('rejects formatVersion 3 with a version message (1 and 2 apply)', () => {
-    const result = parseIconsFile({ ...FILE, formatVersion: 3 });
+  it('rejects formatVersion 4 with a version message (1, 2 and 3 apply)', () => {
+    const result = parseIconsFile({ ...FILE, formatVersion: 4 });
     expect(result.ok).toBe(false);
     if (!result.ok)
-      expect(result.errors.join('\n')).toContain('formatVersion: must be 1 or 2');
+      expect(result.errors.join('\n')).toContain('formatVersion: must be 1, 2 or 3');
     expect(parseIconsFile({ ...FILE, formatVersion: 1 }).ok).toBe(true);
     expect(parseIconsFile({ ...FILE, formatVersion: 2 }).ok).toBe(true);
+    expect(parseIconsFile({ ...FILE, formatVersion: 3 }).ok).toBe(true);
   });
 
   it('the invalid formatVersion message: model text in English and the whole pt-BR rendering', () => {
-    const result = parseIconsFile({ ...FILE, formatVersion: 3 });
+    const result = parseIconsFile({ ...FILE, formatVersion: 4 });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     const issue = result.issues.find((i) => i.path === 'formatVersion');
@@ -84,10 +85,10 @@ describe('parseIconsFile', () => {
       issue?.params ?? {},
       issue?.message ?? '',
     );
-    expect(issue?.message).toBe('must be 1 or 2');
-    expect(message.text).toBe('must be 1 or 2');
+    expect(issue?.message).toBe('must be 1, 2 or 3');
+    expect(message.text).toBe('must be 1, 2 or 3');
     // pt-BR kept: the object of the test is the pt-BR rendering of the model message
-    expect(ptBRText(message)).toBe('deve ser 1 ou 2');
+    expect(ptBRText(message)).toBe('deve ser 1, 2 ou 3');
   });
 
   it('mapping-icons 2 accepts mirror per icon (boolean); 1 is still accepted without it', () => {
@@ -117,6 +118,61 @@ describe('parseIconsFile', () => {
       expect(result.errors).toContain(
         'icons.back.mirror: only allowed with formatVersion 2',
       );
+  });
+
+  describe('fillRule (formatVersion 3)', () => {
+    const withRule = (formatVersion: number, fillRule: unknown) => ({
+      ...FILE,
+      formatVersion,
+      icons: { ring: { paths: [{ d: 'M0 0h10v10H0z', fillRule }] } },
+    });
+
+    it('a version 3 file accepts evenodd and nonzero and keeps the rule', () => {
+      for (const rule of ['evenodd', 'nonzero']) {
+        const result = parseIconsFile(withRule(3, rule));
+        expect(result.ok).toBe(true);
+        if (result.ok) expect(result.set.icons.ring?.paths[0]?.fillRule).toBe(rule);
+      }
+    });
+
+    it('fillRule in a version 1 or 2 file is only allowed with formatVersion 3, at the key path', () => {
+      for (const version of [1, 2]) {
+        const result = parseIconsFile(withRule(version, 'evenodd'));
+        expect(result.ok).toBe(false);
+        if (!result.ok)
+          expect(result.errors).toEqual([
+            'icons.ring.paths[0].fillRule: only allowed with formatVersion 3',
+          ]);
+      }
+    });
+
+    it('a value outside the set is refused at the key path', () => {
+      const result = parseIconsFile(withRule(3, 'oddeven'));
+      expect(result.ok).toBe(false);
+      if (!result.ok)
+        expect(result.errors).toEqual([
+          'icons.ring.paths[0].fillRule: expected one of: nonzero, evenodd',
+        ]);
+    });
+
+    it('the messages carry their code and the pt-BR text', () => {
+      const old = parseIconsFile(withRule(2, 'evenodd'));
+      const bad = parseIconsFile(withRule(3, 'oddeven'));
+      expect(old.ok || bad.ok).toBe(false);
+      if (old.ok || bad.ok) return;
+      const oldIssue = old.issues[0];
+      expect(oldIssue?.code).toBe('iconsFile.v3Only');
+      const oldMessage = modelMessage(
+        'iconsFile.v3Only',
+        oldIssue?.params ?? {},
+        oldIssue?.message ?? '',
+      );
+      // pt-BR kept: the object of the test is the pt-BR rendering of the model message
+      expect(ptBRText(oldMessage)).toBe('só é permitido com formatVersion 3');
+      const badIssue = bad.issues[0];
+      expect(badIssue?.code).toBe('iconsFile.expectedOneOf');
+      expect(badIssue?.params).toEqual({ options: 'nonzero, evenodd' });
+    });
   });
 
   it('rejects an unknown key, invalid cap/join and a set without viewBox', () => {
@@ -206,6 +262,25 @@ describe('icon node: scene', () => {
     expect(path?.stroke?.cap).toBe('round');
     expect(path?.stroke?.width).toBe(2);
     expect(path?.fills).toEqual([]);
+  });
+
+  it('an icon path with evenodd reaches the scene path with fillRule evenodd; without the key it is nonzero', () => {
+    const icons = setOf({
+      ...FILE,
+      formatVersion: 3,
+      icons: {
+        ring: {
+          paths: [
+            { d: 'M0 0h24v24H0zM6 6h12v12H6z', fillRule: 'evenodd' },
+            { d: 'M2 2h4v4H2z', fillRule: 'nonzero' },
+            { d: 'M8 8h4v4H8z' },
+          ],
+        },
+      },
+    });
+    const { root, warnings } = iconRoot({ name: 'ring', color: '#0a7' }, {}, icons);
+    expect(warnings).toEqual([]);
+    expect(paths(root).map((p) => p.fillRule)).toEqual(['evenodd', 'nonzero', 'nonzero']);
   });
 
   it('hug gives the viewBox of the set, and the icon viewBox wins over the default', () => {

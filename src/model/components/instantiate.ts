@@ -3104,7 +3104,7 @@ function createEngine(
       ...(stroke ? { stroke } : {}),
       type: 'path',
       d: iconPath.d,
-      fillRule: 'nonzero',
+      fillRule: iconPath.fillRule ?? 'nonzero',
     };
   };
 
