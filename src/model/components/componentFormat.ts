@@ -447,6 +447,14 @@ export interface RectTemplate extends TemplateNodeBase {
 
 export interface EllipseTemplate extends TemplateNodeBase {
   readonly type: 'ellipse';
+  /**
+   * v4: an arc, like `drawArc` without the center. `startAngle` (degrees, default 0: points right,
+   * grows clockwise, parametric) and `sweepAngle` (degrees; negative goes counterclockwise,
+   * `|sweepAngle| ≥ 360` is the whole ellipse, 0 draws nothing). Without `sweepAngle` the ellipse
+   * is whole. With it the engine emits a scene `path` (`arc.ts`).
+   */
+  readonly startAngle?: Expr<number>;
+  readonly sweepAngle?: Expr<number>;
 }
 
 /**

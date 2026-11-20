@@ -2848,6 +2848,14 @@
             }
           }
         },
+        "startAngle": {
+          "description": "formatVersion 4: the start of an arc, in degrees (0 points right, the angle grows clockwise, parametric: on the circle before it is stretched to the box). Default 0. Only matters with sweepAngle.",
+          "$ref": "#/$defs/expr_number"
+        },
+        "sweepAngle": {
+          "description": "formatVersion 4: the arc, in degrees, like drawArc without the center. Negative goes counterclockwise, |sweepAngle| of 360 or more is the whole ellipse and 0 draws nothing. Without sweepAngle the ellipse is whole. The arc is drawn as a path: the stroke follows only the arc (with cap, join and dash) and the fill closes on the chord.",
+          "$ref": "#/$defs/expr_number"
+        },
         "direction": {
           "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]

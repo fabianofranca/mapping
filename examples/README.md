@@ -119,7 +119,7 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 ### `examples/libraries/drawing-keys/`
 
-**What it is.** The example of the **drawing keys** that the format gained after the faithful components. Today it has four types, **Icon holes** (fields `icon` and `tint`), **Tag** (fields `label`, `tone` and `spacing`), **Pressed button** (fields `label` and `state`) and **Flag** (fields `label` and `disabled`), drawn with the icons file in `formatVersion` 3 (`icons/icons.json`: `ring`, `square-hole` and `star-evenodd`, written by hand, plus five icons that the MCP tool `import_icons` imported from `tests/fixtures/svg-icons/`: `icon-current-color`, `icon-figma-evenodd`, `icon-flag`, `icon-shapes` and `icon-stroked`). The next phases of the stage add their own types here.
+**What it is.** The example of the **drawing keys** that the format gained after the faithful components. Today it has five types, **Icon holes** (fields `icon` and `tint`), **Tag** (fields `label`, `tone` and `spacing`), **Pressed button** (fields `label` and `state`), **Flag** (fields `label` and `disabled`) and **Spinner** (field `size`), drawn with the icons file in `formatVersion` 3 (`icons/icons.json`: `ring`, `square-hole` and `star-evenodd`, written by hand, plus five icons that the MCP tool `import_icons` imported from `tests/fixtures/svg-icons/`: `icon-current-color`, `icon-figma-evenodd`, `icon-flag`, `icon-shapes` and `icon-stroked`).
 
 **How to open.** **Specializations** › **Apply folder…** and pick the folder. Mark an Icon holes and change `icon` and `tint`.
 
@@ -130,6 +130,7 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 - The Tag (FG4): the letter spacing in percent (`"-1%"`, `"4%"`, `"8%"` from the `spacing` field), the `padding` items from a token (`tag-padding`) and the `sizing` height from a token (`tag-height`); change the drawing mode (`compact`/`comfortable`) and the tag changes size.
 - The Pressed button (FG5): `scale` 0.96 on the template root when `state` is `pressed`, an expression on the field. The drawing shrinks around the box center and the layout does not change; the embedded Flag (a `component` node) scales along with the root.
 - The Flag (FG5): `filter: { "grayscale": 1 }` on the root when `disabled` is `true`, so the whole flag draws gray (CSS `grayscale()`; drawing only).
+- The Spinner (FG6): an `ellipse` with `startAngle: -90` and `sweepAngle: 216` (60% of the circle, clockwise from the top) with round caps, over a faint full ring; the `size` field picks the box and the stroke width (2, 3 or 5 px). The stroke follows only the arc and `align: "inside"` keeps it where the whole ellipse's would be, with no `dash` computed from the circumference.
 - The same drawing in the app, in the viewer and in the `render_marking` PNG.
 
 **Scripts.** R39 (written in the last phase of the stage).
@@ -336,6 +337,7 @@ When one exists, the example is from `libraries/`. The features of the executabl
 | Letter spacing in percent, `padding` items and `$token` in `sizing` | Tag (`drawing-keys`)                                                                                                                              |
 | `scale` (drawing only, composes with an embedded `component`)       | Pressed button (`drawing-keys`)                                                                                                                   |
 | `filter.grayscale`                                                  | Flag (`drawing-keys`)                                                                                                                             |
+| Arc on `ellipse` (`startAngle`, `sweepAngle`)                       | Spinner (`drawing-keys`)                                                                                                                          |
 | Screen anchors and scrim                                            | `sdui-scrim` and the roots with `anchor` and `margin` (`sdui-backend`)                                                                            |
 | Expressions `$field`, `$if`, `$switch`                              | `kotlin` and `material3-compose`; `$field` with `default` in both                                                                                 |
 | `$concat`                                                           | Class header (`kotlin`); Box, Column and Image (`material3-compose`)                                                                              |

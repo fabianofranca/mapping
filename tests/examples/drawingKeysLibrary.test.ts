@@ -34,10 +34,12 @@ describe('example library drawing-keys', () => {
         'components/flag.json',
         'components/icon-holes.json',
         'components/pressed-button.json',
+        'components/spinner.json',
         'components/tag.json',
         'docs/flag.md',
         'docs/icon-holes.md',
         'docs/pressed-button.md',
+        'docs/spinner.md',
         'docs/tag.md',
       ].sort(),
     );
@@ -48,7 +50,7 @@ describe('example library drawing-keys', () => {
     expect(report.errors).toEqual([]);
     expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
-    expect(report.summary).toMatchObject({ level: 3, types: 4, components: 4, docs: 4 });
+    expect(report.summary).toMatchObject({ level: 3, types: 5, components: 5, docs: 5 });
   });
 
   it('the Tag reads its padding and height from tokens and draws its tracking in percent', () => {
@@ -111,6 +113,25 @@ describe('example library drawing-keys', () => {
       expect(Math.abs(g! - b!), color).toBeLessThanOrEqual(1);
     }
     expect(fillsOf(false).some((c) => new Set(channels(c)).size > 1)).toBe(true);
+  });
+
+  it('the Spinner draws an arc of 216 degrees with round caps, with the stroke width of each size', () => {
+    const entry = findEntry(buildCatalog(files), 'spinner')!;
+    expect(entry).toBeDefined();
+    const widths: Record<string, number> = { small: 2, medium: 3, large: 5 };
+    for (const [size, width] of Object.entries(widths)) {
+      const drawing = drawEntry(entry, { size }, approximateMeasurer)!;
+      expect(drawing.warnings).toEqual([]);
+      const arc = drawing.root.children.find((c) => c.name === 'arc');
+      expect(arc?.type).toBe('path');
+      if (arc?.type !== 'path') continue;
+      expect(arc.stroke).toMatchObject({ align: 'center', cap: 'round', width });
+      // 216 degrees clockwise from the top: three cubic segments (90 + 90 + 36), open.
+      expect(arc.d.match(/C/g)).toHaveLength(3);
+      expect(arc.d).not.toMatch(/z/i);
+      const track = drawing.root.children.find((c) => c.name === 'track');
+      expect(track?.type).toBe('ellipse');
+    }
   });
 
   it('the icons file is formatVersion 3 and the hand-written icons have an evenodd path', () => {
