@@ -4,3 +4,4 @@
 
 - The review tree keeps its keys (arrows, Home, End, Enter) after a click on the chevron or on the ✓/✕ of a row (#2160).
 - Ctrl+, opens Settings from the Comments composer and the other text fields (#2226).
+- The first `Tab` leaves the "Note for the agent" field after typing a note; saving no longer pulls the focus back (#2160).
