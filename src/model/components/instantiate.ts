@@ -1075,7 +1075,8 @@ function createEngine(
   };
 
   const resolveSpec = (node: TemplateNode, axis: Axis): SizeSpec => {
-    const fallback: SizeSpec =
+    // The fallback is asked only when the axis needs it (the `component` node reads the inner `sizing`).
+    const fallback = (): SizeSpec =>
       node.type === 'text'
         ? 'hug'
         : node.type === 'component'
@@ -1084,10 +1085,10 @@ function createEngine(
     const expr = axis === 'w' ? node.width : node.height;
     const value =
       expr === undefined ? undefined : ev<unknown>(expr as Expr<unknown>, undefined);
-    if (value === undefined || value === null) return fallback;
+    if (value === undefined || value === null) return fallback();
     const spec = parseVersionedSize(value);
     if (spec === undefined) invalidValue(axis === 'w' ? 'width' : 'height', value);
-    return spec ?? fallback;
+    return spec ?? fallback();
   };
 
   const specOf = (node: TemplateNode, axis: Axis): SizeSpec => {
@@ -1519,7 +1520,12 @@ function createEngine(
   const componentAxisSpec = (node: ComponentNodeTemplate, axis: Axis): SizeSpec => {
     const plan = componentPlan(node);
     if (plan === undefined) return 'fill';
-    const resolved = resolveSizing(plan.component, plan.values);
+    // The inner `sizing` reads what the inner drawing reads: the direction and `$provided` (node `provide` included).
+    const resolved = resolveSizing(plan.component, {
+      ...plan.values,
+      [DIRECTION_FIELD]: dirOf(node),
+      ...providedFields(extendProvided(options.provided ?? {}, componentProvides(node))),
+    });
     for (const message of resolved.messages)
       warn(message.code as ModelMessageTemplateCode, message.params);
     return resolved[axis === 'w' ? 'width' : 'height'].spec;
@@ -1561,18 +1567,32 @@ function createEngine(
     return size;
   };
 
+  const componentIntrinsics = new Map<
+    ComponentNodeTemplate,
+    Map<IntrinsicSize, number>
+  >();
+
   const componentIntrinsicWidth = (
     node: ComponentNodeTemplate,
     mode: IntrinsicSize,
   ): number => {
     const plan = componentPlan(node);
     if (plan === undefined) return 0;
-    return measureComponent(
+    let perNode = componentIntrinsics.get(node);
+    if (perNode === undefined) {
+      perNode = new Map();
+      componentIntrinsics.set(node, perNode);
+    }
+    const known = perNode.get(mode);
+    if (known !== undefined) return known;
+    const width = measureComponent(
       plan.component,
       plan.values,
       { width: mode, height: null },
       componentOptions(node, 'm'),
     ).width;
+    perNode.set(mode, width);
+    return width;
   };
 
   const componentBaselines = new Map<ComponentNodeTemplate, Map<string, number | null>>();
@@ -3290,11 +3310,14 @@ function createEngine(
     for (const [text, missing] of Object.entries(drawn.shortfalls ?? {}))
       shortfalls.set(text, Math.max(shortfalls.get(text) ?? 0, missing));
     const { root } = drawn;
+    // The node's rotation adds to the inner root's own.
+    const { rotation: own = 0, ...rest } = root;
+    const rotation = own + num(node.rotation, 0);
     return {
-      ...root,
+      ...rest,
       name: node.name ?? plan.component.name,
       opacity: root.opacity * Math.min(1, Math.max(0, num(node.opacity, 1))),
-      ...rotationOf(node),
+      ...(rotation === 0 ? {} : { rotation }),
     };
   };
 

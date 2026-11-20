@@ -679,3 +679,30 @@ describe('component node: the value types of a table field', () => {
     expect(texts(run(holder, { mine }).root)).toEqual(['x', 'y']);
   });
 });
+
+describe('component node: review findings of CC2', () => {
+  it('an inner sizing that reads $provided sees the node `provide` and the outer scope', () => {
+    const sized = chip({ sizing: { width: { $provided: 'w' }, height: 24 } });
+    const viaNode = run(outer({ provide: { w: 70 } }, sized));
+    expect(inner(viaNode.root).width).toBe(70);
+    expect(viaNode.messages).toEqual([]);
+    const viaOuter = run(outer({}, sized), {}, { provided: { w: 80 } });
+    expect(inner(viaOuter.root).width).toBe(80);
+  });
+
+  it('the node rotation adds to the inner root rotation', () => {
+    const turned = chip(undefined, { rotation: 10 });
+    const drawn = run(outer({ width: 60, height: 24, rotation: 20 }, turned));
+    expect(inner(drawn.root).rotation).toBe(30);
+    const alone = run(outer({ width: 60, height: 24 }, turned));
+    expect(inner(alone.root).rotation).toBe(10);
+  });
+
+  it('an inner sizing warning is not reported for an axis the node sets itself', () => {
+    const broken = chip({ sizing: { width: { $field: 'nothing', default: 'bogus' } } });
+    const explicit = run(outer({ width: 50, height: 24 }, broken));
+    expect(explicit.messages).toEqual([]);
+    const absent = run(outer({ height: 24 }, broken));
+    expect(absent.messages.length).toBeGreaterThan(0);
+  });
+});
