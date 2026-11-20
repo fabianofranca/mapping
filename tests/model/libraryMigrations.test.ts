@@ -1185,3 +1185,145 @@ describe('impact and update with role steps', () => {
     expect(JSON.stringify(p)).toBe(before);
   });
 });
+
+describe('copy-field', () => {
+  const copyChip = () =>
+    chipType({
+      requiresOwner: false,
+      fields: [
+        { key: 'variant', type: 'enum', options: ['default', 'avatar', 'icon'] },
+        { key: 'count', type: 'number' },
+        { key: 'leadingIcon', type: 'enum', options: ['star', 'heart'] },
+        { key: 'avatarIcon', type: 'enum', options: ['star', 'heart'] },
+        {
+          key: 'items',
+          type: 'table',
+          columns: [
+            { key: 'a', type: 'string' },
+            { key: 'b', type: 'string' },
+          ],
+        },
+      ],
+    });
+  const spec = (version: number, over: Partial<Spec> = {}) =>
+    libSpec(version, { c: [buttonType()], e: [copyChip()] }, over);
+  const next = (...steps: SpecMigrationStep[]) =>
+    spec(2, { migrations: [{ from: 1, to: 2, steps }] });
+  const chipCopy = (when?: Record<string, string | number | (string | number)[]>) =>
+    ({
+      op: 'copy-field',
+      type: 'chip',
+      from: 'leadingIcon',
+      to: 'avatarIcon',
+      ...(when ? { when } : {}),
+    }) as SpecMigrationStep;
+
+  it('the Chip case: copies only where `when` matches, and `from` keeps its value', () => {
+    const p = libProject(spec(1), [
+      { id: 'C1', type: 'chip', values: { variant: 'avatar', leadingIcon: 'star' } },
+      { id: 'C2', type: 'chip', values: { variant: 'default', leadingIcon: 'heart' } },
+    ]);
+    const out = run(p, next(chipCopy({ variant: 'avatar' })));
+    expect(valuesOf(out.project, 'C1')).toMatchObject({
+      leadingIcon: 'star',
+      avatarIcon: 'star',
+    });
+    expect(valuesOf(out.project, 'C2').avatarIcon).toBeFalsy();
+    expect(valuesOf(out.project, 'C2').leadingIcon).toBe('heart');
+    expect(out.steps[0]).toMatchObject({ annotations: 1, values: 1, losses: [] });
+    expect(out.losses).toEqual([]);
+  });
+
+  it('a `to` already filled stays', () => {
+    const p = libProject(spec(1), [
+      {
+        id: 'C1',
+        type: 'chip',
+        values: { variant: 'avatar', leadingIcon: 'star', avatarIcon: 'heart' },
+      },
+    ]);
+    const out = run(p, next(chipCopy()));
+    expect(valuesOf(out.project, 'C1').avatarIcon).toBe('heart');
+    expect(out.steps[0]).toMatchObject({ annotations: 0, values: 0, losses: [] });
+  });
+
+  it('copies a column row by row, only into empty cells', () => {
+    const p = libProject(spec(1), [
+      {
+        id: 'C1',
+        type: 'chip',
+        values: {
+          items: [
+            row('r1', { a: 'x', b: '' }),
+            row('r2', { a: 'y', b: 'keep' }),
+            row('r3', { a: '', b: '' }),
+          ],
+        },
+      },
+    ]);
+    const out = run(
+      p,
+      next({ op: 'copy-field', type: 'chip', from: 'items.a', to: 'items.b' }),
+    );
+    expect(valuesOf(out.project, 'C1').items).toEqual([
+      row('r1', { a: 'x', b: 'x' }),
+      row('r2', { a: 'y', b: 'keep' }),
+      row('r3', { a: '', b: '' }),
+    ]);
+    expect(out.steps[0]).toMatchObject({ annotations: 1, values: 1, losses: [] });
+  });
+
+  it('an invalid value is copied and becomes a pending item, with no loss', () => {
+    const p = libProject(spec(1), [
+      { id: 'C1', type: 'chip', values: { variant: 'avatar' } },
+    ]);
+    const raw = setRaw(p, 'C1', { variant: 'avatar', leadingIcon: 'moon' });
+    const out = run(raw, next(chipCopy()));
+    expect(valuesOf(out.project, 'C1').avatarIcon).toBe('moon');
+    expect(out.losses).toEqual([]);
+    const impact = specializationUpdateImpact(raw, next(chipCopy()));
+    expect(impact.pending.length).toBeGreaterThan(0);
+  });
+
+  it('`when` with a list of values matches any one, and a number by value', () => {
+    const p = libProject(spec(1), [
+      { id: 'C1', type: 'chip', values: { variant: 'icon', leadingIcon: 'star' } },
+      { id: 'C2', type: 'chip', values: { variant: 'avatar', leadingIcon: 'heart' } },
+      { id: 'C3', type: 'chip', values: { variant: 'default', leadingIcon: 'heart' } },
+      { id: 'C4', type: 'chip', values: { count: 3, leadingIcon: 'star' } },
+    ]);
+    const list = run(p, next(chipCopy({ variant: ['avatar', 'icon'] })));
+    expect(list.steps[0]).toMatchObject({ annotations: 2, values: 2 });
+    expect(valuesOf(list.project, 'C3').avatarIcon).toBeFalsy();
+    const num = run(p, next(chipCopy({ count: 3 })));
+    expect(num.steps[0]).toMatchObject({ annotations: 1, values: 1 });
+    expect(valuesOf(num.project, 'C4').avatarIcon).toBe('star');
+  });
+
+  it('every key of `when` must match', () => {
+    const p = libProject(spec(1), [
+      {
+        id: 'C1',
+        type: 'chip',
+        values: { variant: 'avatar', count: 1, leadingIcon: 'star' },
+      },
+    ]);
+    const out = run(p, next(chipCopy({ variant: 'avatar', count: 2 })));
+    expect(out.steps[0]).toMatchObject({ annotations: 0, values: 0 });
+  });
+
+  it('runs after a rename-type, with the new type id', () => {
+    const p = libProject(spec(1), [
+      { id: 'C1', type: 'chip', values: { variant: 'avatar', leadingIcon: 'star' } },
+    ]);
+    const out = run(
+      p,
+      next({ op: 'rename-type', from: 'chip', to: 'pill' }, {
+        ...(chipCopy() as object),
+        type: 'pill',
+      } as SpecMigrationStep),
+    );
+    expect(out.steps[1]).toMatchObject({ annotations: 1, values: 1, losses: [] });
+    expect(valuesOf(out.project, 'C1').avatarIcon).toBe('star');
+  });
+});
