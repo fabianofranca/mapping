@@ -52,7 +52,6 @@ function roleStepLabel(step: RoleStep): string {
   }
 }
 
-/** Readable label of a declared migration step. */
 /** `key = value` pairs of a `copy-field` `when` (a list reads `a | b`). */
 function whenText(when: CopyFieldWhen): string {
   return Object.entries(when)
@@ -70,6 +69,7 @@ function copyFieldLabel(step: Extract<SpecMigrationStep, { op: 'copy-field' }>):
   });
 }
 
+/** Readable label of a declared migration step. */
 export function stepLabel(step: SpecMigrationStep): string {
   if (isRoleStep(step)) return roleStepLabel(step);
   switch (step.op) {

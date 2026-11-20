@@ -388,7 +388,7 @@ function updateHint(impact: SpecUpdateImpact, valid: boolean, via: string): stri
   }
   if (impact.refused) {
     steps.push(
-      `declare \`migrations\` for each break in \`missingMigrations\` (one step per break: rename-type, remove-type, rename-field, remove-field, map-values, fill-field, rename-role, remove-role, set-role or copy-field) and run plan_library_update again; update_specialization is refused while any is missing`,
+      `declare \`migrations\` for each break in \`missingMigrations\` (one step per break: rename-type, remove-type, rename-field, remove-field, map-values, fill-field, rename-role, remove-role or set-role) and run plan_library_update again; update_specialization is refused while any is missing`,
     );
   } else if (impact.additive) {
     steps.push(additiveHint(impact, via));

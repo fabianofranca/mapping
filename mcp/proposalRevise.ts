@@ -20,6 +20,7 @@ import {
   reviseStored,
   type RevisionPlan,
   type RevisionStop,
+  type StoredProposal,
 } from './proposalStore';
 import { ProposalLabels } from './proposalViews';
 import { storedOperations } from './proposalOperations';
@@ -102,10 +103,11 @@ async function reservedFor(
   roots: Roots,
   location: ProjectLocation,
   proposalId: string,
+  stored: readonly StoredProposal[],
 ): Promise<Set<string>> {
   const reserved = new Set<string>();
-  for (const stored of (await listStored(roots, location)).proposals) {
-    for (const file of reservedImages(stored.proposal)) reserved.add(file);
+  for (const { proposal } of stored) {
+    for (const file of reservedImages(proposal)) reserved.add(file);
   }
   const prefix = `proposals/${proposalId}/`;
   for (const file of await proposalFiles(roots, location, proposalId)) {
@@ -115,14 +117,13 @@ async function reservedFor(
 }
 
 /** The containers of the other open proposals: space that the revision's new containers do not take. */
-async function reservedSpaceFor(
-  roots: Roots,
-  location: ProjectLocation,
+function reservedSpaceFor(
   proposalId: string,
-): Promise<ProjectContainer[]> {
-  return (await listStored(roots, location)).proposals
-    .filter((stored) => stored.id !== proposalId)
-    .flatMap((stored) => reservedContainers(stored.proposal));
+  stored: readonly StoredProposal[],
+): ProjectContainer[] {
+  return stored
+    .filter((s) => s.id !== proposalId)
+    .flatMap((s) => reservedContainers(s.proposal));
 }
 
 interface Computed {
@@ -143,10 +144,11 @@ async function compute(
 ): Promise<RevisionPlan<Computed> | RevisionStop<Computed>> {
   const drop = args.drop ?? [];
   const operations = args.operations ?? [];
+  const { proposals } = await listStored(roots, location);
   const prepared = await prepareBatch(roots, location, operations, {
     now,
-    reservedImages: await reservedFor(roots, location, current.id),
-    reservedContainers: await reservedSpaceFor(roots, location, current.id),
+    reservedImages: await reservedFor(roots, location, current.id, proposals),
+    reservedContainers: reservedSpaceFor(current.id, proposals),
     startFrom: (project) => {
       const prep = prepareRevision(project, current, drop);
       if (!prep.ok) throw toToolError(prep.error);

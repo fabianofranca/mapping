@@ -115,7 +115,7 @@ describe('plan_library_update: role breaks without a step', () => {
     expect(result.missingMigrations[0]!.message).toContain('"click"');
     expect(result.missingMigrations[0]!.path).toContain('childRoles');
     expect(result.hint).toMatch(
-      /rename-type, remove-type, rename-field, remove-field, map-values, fill-field, rename-role, remove-role, set-role or copy-field/,
+      /rename-type, remove-type, rename-field, remove-field, map-values, fill-field, rename-role, remove-role or set-role/,
     );
   });
 

@@ -492,7 +492,7 @@ describe('plan_library_update', () => {
     expect(result.validation.valid).toBe(false);
     expect(result.validation.errors.length).toBeGreaterThan(0);
     expect(result.hint).toMatch(/declare `migrations`/);
-    expect(result.hint).toMatch(/set-role or copy-field/);
+    expect(result.hint).toMatch(/remove-role or set-role/);
   });
 
   it('remove-field loses the value: the loss comes with the annotation and the hint asks for confirmation', async () => {
