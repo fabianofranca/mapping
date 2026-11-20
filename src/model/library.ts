@@ -1046,10 +1046,14 @@ function migrationReferences(
       if (!before.has(step.from)) missingType(step.from, `${at}.from`);
     } else if (step.op === 'remove-type') {
       if (!before.has(step.type)) missingType(step.type, `${at}.type`);
-    } else if (step.op === 'rename-field' || step.op === 'remove-field') {
+    } else if (
+      step.op === 'rename-field' ||
+      step.op === 'remove-field' ||
+      step.op === 'copy-field'
+    ) {
       const fields = oldType(step, at);
-      const key = step.op === 'rename-field' ? step.from : step.field;
-      const keyPath = step.op === 'rename-field' ? `${at}.from` : `${at}.field`;
+      const key = step.op === 'remove-field' ? step.field : step.from;
+      const keyPath = step.op === 'remove-field' ? `${at}.field` : `${at}.from`;
       if (fields !== undefined && !fields.has(key)) {
         out.warning(specPath, keyPath, 'library.fieldNotInVersion', {
           key,

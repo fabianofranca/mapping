@@ -676,6 +676,9 @@ function runStep(
       return removeRole(p, next.id, step);
     case 'set-role':
       return setRole(p, next.id, step);
+    case 'copy-field':
+      // The format accepts the step since formatVersion 19 (CF1); the run comes in CF2 (#2172).
+      return { project: p, counts: NO_COUNTS };
   }
 }
 
