@@ -1,0 +1,105 @@
+// FG5: `scale` and `filter.grayscale` in the Konva drawing. The scale reaches the group (around the
+// box center), scale 0 hides it, and a grayscale image gets a Konva filter plus a cache, only when
+// the pixels can be read back.
+import Konva from 'konva';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { installFakeCanvas } from '../harness';
+import { renderScene } from '../../../src/canvas/components/renderScene';
+import type { RemoteImageView } from '../../../src/canvas/components/imageLoader';
+import {
+  baseNode,
+  translate,
+  type Scene,
+  type SceneNode,
+} from '../../../src/model/components/scene';
+
+beforeAll(() => installFakeCanvas());
+
+const URL = 'https://cdn.example.com/a.png';
+
+function scene(root: SceneNode): Scene {
+  return { root, warnings: [] };
+}
+
+function rect(extra: Partial<SceneNode> = {}, fills: object[] = []): SceneNode {
+  return {
+    ...baseNode({
+      id: 'box',
+      name: 'box',
+      width: 40,
+      height: 40,
+      transform: translate(30, 30),
+    }),
+    type: 'rect',
+    cornerRadius: 0,
+    fills: fills as never,
+    ...extra,
+  } as SceneNode;
+}
+
+const view = (state: 'loaded' | 'opaque'): RemoteImageView => ({
+  state,
+  image: { width: 200, height: 100 } as unknown as CanvasImageSource,
+  width: 200,
+  height: 100,
+});
+
+function imageOf(result: ReturnType<typeof renderScene>): Konva.Image {
+  return result.byId.get('box')?.getChildren()[0] as Konva.Image;
+}
+
+describe('FG5: scale in the Konva group', () => {
+  it('the node scale reaches scaleX/scaleY and the box center stays put', () => {
+    const plain = renderScene(scene(rect())).byId.get('box')!;
+    const scaled = renderScene(scene(rect({ scale: 0.5 }))).byId.get('box')!;
+    expect(plain.scaleX()).toBe(1);
+    expect(scaled.scaleX()).toBeCloseTo(0.5, 10);
+    expect(scaled.scaleY()).toBeCloseTo(0.5, 10);
+    expect(scaled.rotation()).toBeCloseTo(0, 10);
+    // Center (20, 20) of the box: position moves by (1 - scale) * center.
+    expect(scaled.x()).toBeCloseTo(plain.x() + (1 - 0.5) * 20, 10);
+    expect(scaled.y()).toBeCloseTo(plain.y() + (1 - 0.5) * 20, 10);
+    expect(scaled.visible()).toBe(true);
+  });
+
+  it('scale 0 makes the group invisible', () => {
+    const group = renderScene(scene(rect({ scale: 0 }))).byId.get('box')!;
+    expect(group.visible()).toBe(false);
+    const shown = renderScene(scene(rect({ scale: 0.5 }))).byId.get('box')!;
+    expect(shown.visible()).toBe(true);
+  });
+});
+
+describe('FG5: grayscale on a remote image fill', () => {
+  const image = (extra: object = {}) => [{ type: 'image', url: URL, ...extra }];
+
+  it('a loaded image with grayscale gets one filter and is cached; without it, neither', () => {
+    const gray = renderScene(scene(rect({}, image({ grayscale: 1 }))), {
+      remoteImage: () => view('loaded'),
+    });
+    expect(imageOf(gray)).toBeInstanceOf(Konva.Image);
+    expect(imageOf(gray).filters()).toHaveLength(1);
+    expect(imageOf(gray).isCached()).toBe(true);
+
+    const color = renderScene(scene(rect({}, image())), {
+      remoteImage: () => view('loaded'),
+    });
+    expect(imageOf(color)).toBeInstanceOf(Konva.Image);
+    expect(imageOf(color).filters() ?? []).toHaveLength(0);
+    expect(imageOf(color).isCached()).toBe(false);
+  });
+
+  it('an opaque image with grayscale is drawn in color: no filter, no cache, no throw', () => {
+    let result: ReturnType<typeof renderScene> | undefined;
+    expect(() => {
+      result = renderScene(scene(rect({}, image({ grayscale: 1 }))), {
+        remoteImage: () => view('opaque'),
+        pixelSafe: false,
+      });
+    }).not.toThrow();
+    const drawn = imageOf(result!);
+    expect(drawn).toBeInstanceOf(Konva.Image);
+    expect(drawn.filters() ?? []).toHaveLength(0);
+    expect(drawn.isCached()).toBe(false);
+  });
+});

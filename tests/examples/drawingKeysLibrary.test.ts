@@ -3,6 +3,9 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { buildCatalog, drawEntry, findEntry } from '../../src/model/catalog';
+import { approximateMeasurer } from '../../src/model/components/instantiate';
+import type { SceneNode } from '../../src/model/components/scene';
 import { parseIconsText } from '../../src/model/components/icons';
 import { svgToIcon } from '../../src/model/components/svgIcon';
 import { validateLibrary } from '../../src/model/library';
@@ -28,9 +31,13 @@ describe('example library drawing-keys', () => {
       [
         SPEC_FILE,
         'icons/icons.json',
+        'components/flag.json',
         'components/icon-holes.json',
+        'components/pressed-button.json',
         'components/tag.json',
+        'docs/flag.md',
         'docs/icon-holes.md',
+        'docs/pressed-button.md',
         'docs/tag.md',
       ].sort(),
     );
@@ -41,7 +48,7 @@ describe('example library drawing-keys', () => {
     expect(report.errors).toEqual([]);
     expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
-    expect(report.summary).toMatchObject({ level: 3, types: 2, components: 2, docs: 2 });
+    expect(report.summary).toMatchObject({ level: 3, types: 4, components: 4, docs: 4 });
   });
 
   it('the Tag reads its padding and height from tokens and draws its tracking in percent', () => {
@@ -51,6 +58,55 @@ describe('example library drawing-keys', () => {
     expect(tag.sizing.height).toEqual({ $token: 'tag-height' });
     expect(tag.template.layout.padding).toEqual([0, { $token: 'tag-padding' }]);
     expect(JSON.stringify(tag.template.children[0].font.letterSpacing)).toContain('"4%"');
+  });
+
+  it('the Pressed button scales its root by 0.96 when pressed, and the Flag inside scales along', () => {
+    const entry = findEntry(buildCatalog(files), 'pressed-button')!;
+    expect(entry).toBeDefined();
+    const pressed = drawEntry(entry, { state: 'pressed' }, approximateMeasurer)!;
+    expect(pressed.warnings).toEqual([]);
+    expect(pressed.root.scale).toBe(0.96);
+    const inner = pressed.root.children.find((c) => c.name === 'flag');
+    expect(inner?.type).toBe('frame');
+    // The inner drawing has no scale of its own: it scales through the root's.
+    expect(inner?.scale).toBeUndefined();
+    const rest = drawEntry(entry, { state: 'default' }, approximateMeasurer)!;
+    expect(rest.root.scale).toBeUndefined();
+    const spec = JSON.parse(
+      files.find((f) => f.path === 'components/pressed-button.json')!.text,
+    );
+    expect(JSON.stringify(spec.template.children)).toContain('"type":"component"');
+  });
+
+  it('the disabled Flag draws gray (R = G = B) and the enabled one keeps its color', () => {
+    const entry = findEntry(buildCatalog(files), 'flag')!;
+    expect(entry).toBeDefined();
+    const fillsOf = (disabled: boolean): string[] => {
+      const drawing = drawEntry(entry, { disabled }, approximateMeasurer)!;
+      expect(drawing.warnings).toEqual([]);
+      const out: string[] = [];
+      const visit = (node: SceneNode): void => {
+        if ('fills' in node)
+          for (const paint of node.fills)
+            if (paint.type === 'solid') out.push(paint.color);
+        if ('children' in node) node.children.forEach(visit);
+      };
+      visit(drawing.root);
+      return out;
+    };
+    const channels = (color: string): number[] => {
+      const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i.exec(color);
+      expect(m, color).not.toBeNull();
+      return [1, 2, 3].map((i) => parseInt(m![i]!, 16));
+    };
+    const gray = fillsOf(true);
+    expect(gray.length).toBeGreaterThan(0);
+    for (const color of gray) {
+      const [r, g, b] = channels(color);
+      expect(Math.abs(r! - g!), color).toBeLessThanOrEqual(1);
+      expect(Math.abs(g! - b!), color).toBeLessThanOrEqual(1);
+    }
+    expect(fillsOf(false).some((c) => new Set(channels(c)).size > 1)).toBe(true);
   });
 
   it('the icons file is formatVersion 3 and the hand-written icons have an evenodd path', () => {

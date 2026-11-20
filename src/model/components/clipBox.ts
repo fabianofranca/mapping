@@ -9,6 +9,7 @@ import {
   type FrameNode,
   type SceneNode,
   type Stroke,
+  isTransformed,
   nodeMatrix,
 } from './scene';
 
@@ -82,7 +83,7 @@ function isNone(e: Extent): boolean {
   return e.left <= 0 && e.top <= 0 && e.right <= 0 && e.bottom <= 0;
 }
 
-/** The box that contains the node's `local` rectangle after the `rotation` (and the scale and translation). */
+/** The box that contains the node's `local` rectangle after the `rotation` and `scale` (and the translation). */
 function boxOfLocal(node: SceneNode, local: ClipBox, ox: number, oy: number): ClipBox {
   const [a, b, c, d, e, f] = nodeMatrix(node);
   const xs: number[] = [];
@@ -101,9 +102,12 @@ function boxOfLocal(node: SceneNode, local: ClipBox, ox: number, oy: number): Cl
   return { x: x0, y: y0, width: Math.max(...xs) - x0, height: Math.max(...ys) - y0 };
 }
 
-/** The same offset on the four sides (the largest): the extent of a rotated node, with no right side. */
-function isotropic(e: Extent): Extent {
-  const all = Math.max(e.left, e.top, e.right, e.bottom);
+/**
+ * The same offset on the four sides (the largest): the extent of a rotated node, with no right
+ * side. An enlarging `scale` grows it along (a shrinking one keeps it, which only over-covers).
+ */
+function isotropic(e: Extent, scale = 1): Extent {
+  const all = Math.max(e.left, e.top, e.right, e.bottom) * Math.max(1, scale);
   return { left: all, top: all, right: all, bottom: all };
 }
 
@@ -135,7 +139,7 @@ function deepExtent(node: SceneNode): Extent {
 
 /** Rectangle of the node in the space of the clipping frame; with `rotation`, the box of the rotated rectangle. */
 function rectOf(node: SceneNode, ox: number, oy: number): ClipBox {
-  if (node.rotation)
+  if (isTransformed(node))
     return boxOfLocal(
       node,
       { x: 0, y: 0, width: node.width, height: node.height },
@@ -192,8 +196,11 @@ function reach(
       bottom: Math.max(0, c.y + c.height - child.height),
     };
     // Rotated, the extended clip (in the frame's local space) becomes its box after the rotation.
-    if (child.rotation)
-      return { region: boxOfLocal(child, c, ox, oy), limit: isotropic(overhang) };
+    if (isTransformed(child))
+      return {
+        region: boxOfLocal(child, c, ox, oy),
+        limit: isotropic(overhang, child.scale),
+      };
     return {
       region: { x: rect.x + c.x, y: rect.y + c.y, width: c.width, height: c.height },
       limit: overhang,
@@ -201,7 +208,9 @@ function reach(
   }
   const own = extentOf(child);
   // Rotated, the sides of the stroke and shadow rotate: the largest around counts, with what is inside it.
-  const e = child.rotation ? isotropic(maxExtent(own, rotatedInside(child))) : own;
+  const e = isTransformed(child)
+    ? isotropic(maxExtent(own, rotatedInside(child)), child.scale)
+    : own;
   return isNone(e) ? null : { region: grow(rect, e), limit: e };
 }
 
@@ -226,7 +235,7 @@ function addDescendants(
   for (const child of node.children) {
     if (!child.visible) continue;
     // Rotated frame without a clip: what is inside it rotates and is not followed (only its box counts).
-    if (child.type === 'frame' && !child.clip && !child.rotation) {
+    if (child.type === 'frame' && !child.clip && !isTransformed(child)) {
       const at = rectOf(child, ox, oy);
       out = addDescendants(child, box, at.x, at.y, out);
     }

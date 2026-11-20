@@ -4,7 +4,7 @@
   "id": "drawing-keys",
   "name": "Drawing keys",
   "version": 1,
-  "description": "Example of the drawing keys added after the faithful components: the icon set with the `fillRule` of each path (icons file formatVersion 3), and the component keys letter spacing in percent, padding items from tokens and a number token in `sizing`. The Icon holes component draws an icon with holes cut out by `evenodd`; the Tag draws its tracking in percent and reads its padding and height from tokens.",
+  "description": "Example of the drawing keys added after the faithful components: the icon set with the `fillRule` of each path (icons file formatVersion 3), and the component keys letter spacing in percent, padding items from tokens, a number token in `sizing`, `scale` and `filter.grayscale`. The Icon holes component draws an icon with holes cut out by `evenodd`; the Tag draws its tracking in percent and reads its padding and height from tokens; the Pressed button scales its drawing by 0.96 when pressed (with an embedded Flag that scales along) and the Flag draws gray when disabled.",
   "icons": "icons/icons.json",
   "tokens": {
     "modes": ["compact", "comfortable"],
@@ -104,6 +104,80 @@
                 "label": "DONE",
                 "tone": "success",
                 "spacing": "wide"
+              }
+            }
+          ]
+        },
+        {
+          "id": "pressed-button",
+          "name": "Pressed button",
+          "component": "components/pressed-button.json",
+          "doc": "docs/pressed-button.md",
+          "fields": [
+            {
+              "key": "label",
+              "label": "Label",
+              "type": "string",
+              "default": "Save"
+            },
+            {
+              "key": "state",
+              "label": "State",
+              "type": "enum",
+              "options": ["default", "pressed"],
+              "default": "default"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Default",
+              "values": {
+                "label": "Save",
+                "state": "default"
+              }
+            },
+            {
+              "name": "Pressed",
+              "values": {
+                "label": "Save",
+                "state": "pressed"
+              }
+            }
+          ]
+        },
+        {
+          "id": "flag",
+          "name": "Flag",
+          "component": "components/flag.json",
+          "doc": "docs/flag.md",
+          "fields": [
+            {
+              "key": "label",
+              "label": "Label",
+              "type": "string",
+              "default": "OK"
+            },
+            {
+              "key": "disabled",
+              "label": "Disabled",
+              "type": "enum",
+              "options": ["false", "true"],
+              "default": "false"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Enabled",
+              "values": {
+                "label": "OK",
+                "disabled": "false"
+              }
+            },
+            {
+              "name": "Disabled",
+              "values": {
+                "label": "OK",
+                "disabled": "true"
               }
             }
           ]

@@ -871,7 +871,8 @@ class Painter {
   ) {}
 
   paint(node: SceneNode, parent: Matrix, opacity: number, clip: PixelRect): void {
-    if (!node.visible) return;
+    // `scale` 0 draws nothing.
+    if (!node.visible || node.scale === 0) return;
     const matrix = multiply(parent, nodeMatrix(node));
     const alpha = opacity * node.opacity;
     if (alpha <= 0) return;

@@ -166,6 +166,8 @@ const BASE_KEYS = [
   'visible',
   'opacity',
   'rotation',
+  'scale',
+  'filter',
   'width',
   'height',
   'minWidth',
@@ -1230,6 +1232,7 @@ function checkNode(
     oneOf(DIRECTIONS)(value.direction, join(path, 'direction'), out);
   if ('rotation' in value)
     checkExpr(value.rotation, join(path, 'rotation'), checkNumber, out);
+  checkScaleFilter(value, path, out);
   checkNodeSizes(value, path, type, out);
   checkSpanWeight(value, path, type, parent, out);
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
@@ -1319,6 +1322,19 @@ function checkComponentNode(
   if ('provide' in value) checkProvide(value.provide, join(path, 'provide'), out);
 }
 
+/** `scale` (a number ≥ 0) and `filter` (`{ grayscale }`) of any node (v4): drawing only. */
+function checkScaleFilter(value: Rec, path: string, out: Ctx): void {
+  if ('scale' in value)
+    checkExpr(value.scale, join(path, 'scale'), checkNonNegative, out);
+  if (!('filter' in value)) return;
+  const at = join(path, 'filter');
+  const filter = value.filter;
+  if (!isRecord(filter)) return add(out, at, 'expected an object');
+  checkKeys(filter, ['grayscale'], at, out);
+  if ('grayscale' in filter)
+    checkExpr(filter.grayscale, join(at, 'grayscale'), checkNumber, out);
+}
+
 /** The base keys a `component` node keeps (name, visibility, opacity, rotation, direction, sizes, `span`/`weight`, `anchors`). */
 function checkComponentBase(
   value: Rec,
@@ -1333,6 +1349,7 @@ function checkComponentBase(
     oneOf(DIRECTIONS)(value.direction, join(path, 'direction'), out);
   if ('rotation' in value)
     checkExpr(value.rotation, join(path, 'rotation'), checkNumber, out);
+  checkScaleFilter(value, path, out);
   checkNodeSizes(value, path, 'component', out);
   checkSpanWeight(value, path, 'component', parent, out);
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
@@ -1504,6 +1521,8 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ...WRAP_KEYS.map((key): readonly string[] => [key]),
   ['runs'],
   ['rotation'],
+  ['scale'],
+  ['filter'],
   ['provide'],
   ['mirror'],
   ['anchors', 'start'],
