@@ -287,12 +287,12 @@ describe('formatVersion 12: errors on the right step and invalid op', () => {
     ]);
   });
 
-  it('invalid op lists the nine steps', () => {
+  it('invalid op lists the ten steps', () => {
     const spec = withSteps([{ op: 'drop-role', type: 'button' }]);
     expectIssue(
       spec,
       `${M0}.steps[0].op`,
-      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" or "set-role"',
+      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role" or "copy-field"',
     );
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
@@ -302,7 +302,7 @@ describe('formatVersion 12: JSON schema', () => {
   it('declares version 12 and the three steps', () => {
     const schema = jsonSchema as Json;
     expect(schema.properties.formatVersion.enum).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
     ]);
     const ops = (schema.$defs.migrationStep.oneOf as Json[]).map(
       (s) => s.properties.op.const as string,
@@ -317,6 +317,7 @@ describe('formatVersion 12: JSON schema', () => {
       'rename-role',
       'remove-role',
       'set-role',
+      'copy-field',
     ]);
   });
 });

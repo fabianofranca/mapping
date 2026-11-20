@@ -85,7 +85,10 @@ function onlyFormat(version: number): SpecMsg {
 // (`id`, `name`, `description`, `accepts`, `max`) and, in the `code` (and in each `variants` case),
 // `slots` (slot id → parameter name), outside the version contract (see `diffSpecs`); version 18 is
 // 17 plus `accessibility` (stage #1126): at the root (`touchTarget`) and on the type (`role`,
-// `label`, `touchTarget`, `parts`), outside the version contract too (see `specAccessibility.ts`).
+// `label`, `touchTarget`, `parts`), outside the version contract too (see `specAccessibility.ts`);
+// version 19 is 18 plus the `copy-field` migration step in `migrations` (`{ type, from, to, when? }`:
+// it copies a field into another on the annotations that match `when`; it covers no break, see
+// `specVersions.ts`).
 // The zod here is the source of truth; `docs/spec.schema.json` mirrors it for those who do not
 // use TypeScript. No browser APIs: reusable by the MCP server.
 //
@@ -98,10 +101,10 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Value used before the product rename: import still accepts it. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Current format version (the one that the documentation and new examples use). */
-export const SPEC_FORMAT_VERSION = 18;
+export const SPEC_FORMAT_VERSION = 19;
 /** Versions accepted on import. */
 export const SPEC_FORMAT_VERSIONS = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
 ] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
@@ -283,7 +286,15 @@ export type SpecMigrationStep =
   // Role steps of the link (`formatVersion` 12 only); `type` is the owner's type.
   | { op: 'rename-role'; type: string; from: string; to: string }
   | { op: 'remove-role'; type: string; role: string; mode: 'clear' | 'unlink' }
-  | { op: 'set-role'; type: string; role: string; childType?: string };
+  | { op: 'set-role'; type: string; role: string; childType?: string }
+  // `formatVersion` 19 only: copies `from` into an empty `to` (field or `table.column`), on the
+  // annotations of `type` whose values match every key of `when`; `from` keeps its value.
+  | { op: 'copy-field'; type: string; from: string; to: string; when?: CopyFieldWhen };
+
+/** A value of `when` in a `copy-field` step: text, a number or a non-empty list of them (any one matches). */
+export type CopyFieldWhenValue = string | number | readonly (string | number)[];
+/** `when` of `copy-field`: top-level field key → value; every key must match. */
+export type CopyFieldWhen = Readonly<Record<string, CopyFieldWhenValue>>;
 
 /** How to go from the package's version `from` to `to` (v4). */
 export interface SpecMigration {
@@ -1667,6 +1678,17 @@ const migrationVersion = z
   .number({ error: 'must be a number' })
   .int('must be an integer');
 
+const COPY_WHEN_VALUE = 'must be text, a number or a non-empty list of them';
+const whenScalar = z.union([z.string(), z.number()]);
+const copyFieldWhenShape = z
+  .record(
+    z.string(),
+    z.union([whenScalar, z.array(whenScalar).min(1, COPY_WHEN_VALUE)], {
+      error: COPY_WHEN_VALUE,
+    }),
+  )
+  .refine((when) => Object.keys(when).length > 0, { error: 'cannot be empty' });
+
 const migrationStepShape = z.discriminatedUnion(
   'op',
   [
@@ -1728,10 +1750,20 @@ const migrationStepShape = z.discriminatedUnion(
         childType: nonEmpty.optional(),
       })
       .strict(),
+    // `formatVersion` 19 only (the gate is in `checkCopyFieldStep`).
+    z
+      .object({
+        op: z.literal('copy-field'),
+        type: nonEmpty,
+        from: nonEmpty,
+        to: nonEmpty,
+        when: copyFieldWhenShape.optional(),
+      })
+      .strict(),
   ],
   {
     error:
-      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" or "set-role"',
+      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role" or "copy-field"',
   },
 );
 
@@ -2056,6 +2088,78 @@ function checkRoleStep(step: RoleStep, env: RoleStepEnv): void {
   roleGone(roles, step.type, step.from, 'from', env);
 }
 
+type CopyFieldStep = Extract<SpecMigrationStep, { op: 'copy-field' }>;
+
+/** The keys of `when` are top-level fields of the type and, in an `enum`, each value is an option. */
+function checkCopyWhen(step: CopyFieldStep, fields: FieldsByKey, stepAdd: StepAdd): void {
+  for (const [key, value] of Object.entries(step.when ?? {})) {
+    const field = fields.get(key);
+    if (!field) {
+      stepAdd(['when', key], specMsg('spec.notFieldOfType', { key, typeId: step.type }));
+    } else if (field.type === 'table' || field.type === 'ref') {
+      stepAdd(['when', key], specMsg('spec.copyFieldWhenKind'));
+    } else if (field.type === 'enum') {
+      const list = typeof value === 'object' ? value : [value];
+      list.forEach((item, index) => {
+        if ((field.options ?? []).includes(String(item))) return;
+        const path = typeof value === 'object' ? ['when', key, index] : ['when', key];
+        stepAdd(path, specMsg('spec.notInOptions', { value: String(item) }));
+      });
+    }
+  }
+}
+
+/** The shape of `from` and `to` (decision 10 of #2164); `toField` is the field that `to` names. */
+function copyShapeProblem(
+  step: CopyFieldStep,
+  fields: FieldsByKey,
+  toField: RawField,
+): { key: 'from' | 'to'; message: SpecMsg } | undefined {
+  const from = parseFieldRef(step.from);
+  const to = parseFieldRef(step.to);
+  if (step.from === step.to) {
+    return { key: 'to', message: specMsg('spec.copyFieldSame') };
+  }
+  if (from.kind === 'field' && fields.get(step.from)?.type === 'table') {
+    return { key: 'from', message: specMsg('spec.copyFieldTable') };
+  }
+  if (toField.type === 'table') {
+    return { key: 'to', message: specMsg('spec.copyFieldTable') };
+  }
+  const sameShape =
+    from.kind === to.kind &&
+    (from.kind !== 'column' || from.table === (to as typeof from).table);
+  return sameShape ? undefined : { key: 'to', message: specMsg('spec.copyFieldMixed') };
+}
+
+/**
+ * The `copy-field` step (formatVersion 19): `type` and `to` exist in this version; `from` may not
+ * (copy, then `remove-field`); both are fields or both are columns of the same table, never a
+ * `table` field, never the same; `when` keys are fields of the type.
+ */
+function checkCopyFieldStep(
+  step: CopyFieldStep,
+  env: {
+    readonly formatVersion: number;
+    readonly types: ReadonlyMap<string, FieldsByKey>;
+    readonly add: StepAdd;
+  },
+): void {
+  if (env.formatVersion < 19) {
+    env.add('op', onlyFormat(19));
+    return;
+  }
+  const fields = typeHere(env.types, step.type, env.add);
+  if (!fields) return;
+  checkCopyWhen(step, fields, env.add);
+  const toField = fieldHere(fields, step.type, step.to, 'to', env.add);
+  const from = parseFieldRef(step.from);
+  if (from.kind === 'invalid') env.add('from', from.message);
+  if (!toField || from.kind === 'invalid') return;
+  const problem = copyShapeProblem(step, fields, toField);
+  if (problem) env.add(problem.key, problem.message);
+}
+
 /** type id → role ids (`childRoles`); a type without `childRoles` is left out. */
 function rolesByType(
   layers: readonly {
@@ -2284,6 +2388,13 @@ function checkMigrations(
             formatVersion: spec.formatVersion,
             roles,
             hasType: (id) => types.has(id),
+            add: stepAdd,
+          });
+          break;
+        case 'copy-field':
+          checkCopyFieldStep(step, {
+            formatVersion: spec.formatVersion,
+            types,
             add: stepAdd,
           });
           break;

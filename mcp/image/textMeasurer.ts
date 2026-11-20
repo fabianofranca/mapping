@@ -16,6 +16,7 @@ import {
   type TextMeasurer,
 } from '../../src/model/components/instantiate';
 import type { LoadedFont } from '../../src/model/components/library';
+import { SERVER_ELLIPSIS_SLACK } from '../../src/model/components/textWrap';
 import {
   cachedMeasurer,
   MEASURE_CACHE_LIMIT,
@@ -215,6 +216,7 @@ export function measurerFor(book: FontBook): TextMeasurer {
           maxWidth,
           (value) => textWidth(book, value, font),
           fontExtents(book.fontFor(font.family, font.weight, font.italic), font.size),
+          SERVER_ELLIPSIS_SLACK,
         ),
       { limit: MEASURE_CACHE_LIMIT, epoch: substitutionsEpoch },
     );
