@@ -534,7 +534,7 @@ class Renderer {
     loadEmbeddedImage(paint.src, {
       onLoad: (element) => {
         shape.fillPriority('pattern');
-        shape.fillPatternImage(element);
+        shape.fillPatternImage(grayscaleSource(element, paint.grayscale));
         shape.fillPatternScale({
           x: box.width / Math.max(1, element.naturalWidth),
           y: box.height / Math.max(1, element.naturalHeight),
@@ -834,6 +834,32 @@ function grayscaleImage(
   } catch {
     image.clearCache();
     image.filters([]);
+  }
+}
+
+/**
+ * The source of an embedded image used as a pattern fill (ellipse, path) with `filter.grayscale`: the
+ * pixels drawn into a canvas of the same size and turned gray there, since a pattern has no Konva
+ * filter. Without an amount, or when the pixels cannot be read, the source itself (in color).
+ */
+function grayscaleSource(
+  element: HTMLImageElement,
+  amount: number | undefined,
+): CanvasImageSource {
+  if (amount === undefined || amount <= 0) return element;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = element.naturalWidth;
+    canvas.height = element.naturalHeight;
+    const context = canvas.getContext('2d');
+    if (context === null || canvas.width <= 0 || canvas.height <= 0) return element;
+    context.drawImage(element, 0, 0);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    grayscalePixels(pixels.data, amount);
+    context.putImageData(pixels, 0, 0);
+    return canvas;
+  } catch {
+    return element;
   }
 }
 

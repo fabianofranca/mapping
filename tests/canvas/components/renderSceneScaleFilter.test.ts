@@ -2,7 +2,7 @@
 // box center), scale 0 hides it, and a grayscale image gets a Konva filter plus a cache, only when
 // the pixels can be read back.
 import Konva from 'konva';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { installFakeCanvas } from '../harness';
 import { renderScene } from '../../../src/canvas/components/renderScene';
 import type { RemoteImageView } from '../../../src/canvas/components/imageLoader';
@@ -101,5 +101,72 @@ describe('FG5: grayscale on a remote image fill', () => {
     expect(drawn).toBeInstanceOf(Konva.Image);
     expect(drawn.filters() ?? []).toHaveLength(0);
     expect(drawn.isCached()).toBe(false);
+  });
+});
+
+describe('FG5: grayscale on an embedded image used as the fill of an ellipse', () => {
+  const DATA = 'data:image/png;base64,AAAA';
+  const element = { naturalWidth: 2, naturalHeight: 1 } as unknown as HTMLImageElement;
+
+  function ellipse(grayscale?: number): SceneNode {
+    return {
+      ...rect(),
+      type: 'ellipse',
+      fills: [
+        { type: 'image', src: DATA, ...(grayscale === undefined ? {} : { grayscale }) },
+      ],
+    } as unknown as SceneNode;
+  }
+
+  /** A canvas whose pixels are one saturated red; records what was put back. */
+  function fakeBitmap() {
+    const pixels = new Uint8ClampedArray([255, 0, 0, 255, 0, 0, 255, 255]);
+    const put: Uint8ClampedArray[] = [];
+    const bitmap = {
+      width: 0,
+      height: 0,
+      getContext: () => ({
+        drawImage: () => undefined,
+        getImageData: () => ({ data: pixels }),
+        putImageData: (image: { data: Uint8ClampedArray }) => put.push(image.data),
+      }),
+    };
+    return { bitmap, put };
+  }
+
+  async function render(grayscale?: number) {
+    const loader = await import('../../../src/canvas/components/imageLoader');
+    const { bitmap, put } = fakeBitmap();
+    const create = vi.spyOn(document, 'createElement');
+    create.mockImplementation(((tag: string) =>
+      tag === 'canvas'
+        ? bitmap
+        : Document.prototype.createElement.call(document, tag)) as never);
+    vi.spyOn(loader, 'loadEmbeddedImage').mockImplementation((_src, handlers) => {
+      handlers.onLoad(element);
+      return element;
+    });
+    try {
+      const result = renderScene(scene(ellipse(grayscale)));
+      const shape = result.byId.get('box')!.getChildren()[0] as Konva.Shape;
+      return { image: shape.fillPatternImage(), put, bitmap };
+    } finally {
+      vi.restoreAllMocks();
+    }
+  }
+
+  it('with grayscale, the pattern is the source drawn into a canvas and turned gray', async () => {
+    const { image, put, bitmap } = await render(1);
+    expect(image).toBe(bitmap);
+    expect(put).toHaveLength(1);
+    const [r, g, b] = put[0]!;
+    expect(r).toBe(g);
+    expect(g).toBe(b);
+  });
+
+  it('without grayscale, the pattern is the source itself', async () => {
+    const { image, put } = await render();
+    expect(image).toBe(element);
+    expect(put).toHaveLength(0);
   });
 });
