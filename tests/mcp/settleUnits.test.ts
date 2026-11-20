@@ -139,3 +139,82 @@ describe('a Text over a density-2 container', () => {
     expect((await read(label.id)).rect).toMatchObject({ width: 160, height: 40 });
   });
 });
+
+describe('`update_marking` with `move` converts by units too', () => {
+  const loose = (): unknown[] => [
+    {
+      op: 'create_marking',
+      rect: { x: 500, y: 20, width: 80, height: 20 },
+      annotation: { type: 'notas/texto', values: { texto: 'Loose' } },
+      name: 'Loose',
+    },
+  ];
+
+  it('a canvas Text moved over the container enters it with twice the size', async () => {
+    const seeded = await propose(mcp, project, loose());
+    expect(seeded.valid, JSON.stringify(seeded.errors)).toBe(true);
+    const before = acceptAllAndApply(dir, seeded.proposal.id);
+    expect(byName(before, 'Loose')).toMatchObject({
+      containerId: null,
+      rect: { x: 500, y: 20, width: 80, height: 20 },
+    });
+    const operations = [
+      {
+        op: 'update_marking',
+        marking: byName(before, 'Loose').id,
+        move: { dx: -480, dy: 0 },
+      },
+    ];
+    const result = await plan(operations);
+    expect(result.valid, JSON.stringify(result.errors)).toBe(true);
+    const proposed = await propose(mcp, project, operations);
+    expect(proposed.valid, JSON.stringify(proposed.errors)).toBe(true);
+    const after = acceptAllAndApply(dir, proposed.proposal.id);
+    expect(byName(after, 'Loose')).toMatchObject({
+      containerId: before.containers[0]!.id,
+      rect: { x: 20, y: 20, width: 160, height: 40 },
+    });
+  });
+});
+
+describe('a plain area carries its Text and the set scales as a whole', () => {
+  it('moved out of the density-2 container, the area halves with its Text, which stays its child', async () => {
+    const seed = await propose(mcp, project, [
+      {
+        op: 'create_marking',
+        container: 'Screen',
+        rect: { x: 20, y: 100, width: 300, height: 150 },
+        name: 'Area2',
+      },
+      {
+        op: 'create_marking',
+        container: 'Screen',
+        rect: { x: 40, y: 120, width: 160, height: 40 },
+        annotation: { type: 'notas/texto', values: { texto: 'Kid2' } },
+        name: 'Kid2',
+      },
+    ]);
+    expect(seed.valid, JSON.stringify(seed.errors)).toBe(true);
+    const before = acceptAllAndApply(dir, seed.proposal.id);
+    expect(byName(before, 'Kid2').parentId).toBe(byName(before, 'Area2').id);
+    const proposed = await propose(mcp, project, [
+      {
+        op: 'update_marking',
+        marking: byName(before, 'Area2').id,
+        move: { dx: 500, dy: 0 },
+      },
+    ]);
+    expect(proposed.valid, JSON.stringify(proposed.errors)).toBe(true);
+    const after = acceptAllAndApply(dir, proposed.proposal.id);
+    const area = byName(after, 'Area2');
+    expect(area).toMatchObject({
+      containerId: null,
+      rect: { x: 520, y: 100, width: 150, height: 75 },
+    });
+    expect(byName(after, 'Kid2')).toMatchObject({
+      containerId: null,
+      parentId: area.id,
+      rect: { x: 530, y: 110, width: 80, height: 20 },
+    });
+  });
+});
