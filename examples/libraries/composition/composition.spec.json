@@ -1,0 +1,99 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 15,
+  "id": "composition",
+  "name": "Component composition",
+  "version": 1,
+  "description": "Example of component composition: the icon button draws a glyph, a spinner and a badge, each one a component of the library, through `component` nodes. The button hands its content color to the spinner with `provide`, and the badge sits on the button's top-end corner.",
+  "layers": [
+    {
+      "id": "ui",
+      "name": "Interface",
+      "color": "#2563EB",
+      "annotationTypes": [
+        {
+          "id": "glyph",
+          "name": "Glyph",
+          "component": "components/glyph.json",
+          "doc": "docs/glyph.md",
+          "fields": [],
+          "examples": [{ "name": "Default", "values": {} }]
+        },
+        {
+          "id": "spinner",
+          "name": "Spinner",
+          "component": "components/spinner.json",
+          "doc": "docs/spinner.md",
+          "fields": [
+            {
+              "key": "size",
+              "label": "Size",
+              "type": "enum",
+              "options": ["small", "medium"],
+              "default": "medium"
+            },
+            {
+              "key": "color",
+              "label": "Color",
+              "type": "string",
+              "default": "#2563EB"
+            }
+          ],
+          "examples": [{ "name": "Small", "values": { "size": "small" } }]
+        },
+        {
+          "id": "badge",
+          "name": "Badge",
+          "labelField": "count",
+          "component": "components/badge.json",
+          "doc": "docs/badge.md",
+          "fields": [
+            {
+              "key": "count",
+              "label": "Count",
+              "type": "string",
+              "default": "3"
+            }
+          ],
+          "examples": [{ "name": "Overflow", "values": { "count": "99+" } }]
+        },
+        {
+          "id": "icon-button",
+          "name": "Icon button",
+          "labelField": "count",
+          "component": "components/icon-button.json",
+          "doc": "docs/icon-button.md",
+          "fields": [
+            {
+              "key": "state",
+              "label": "State",
+              "type": "enum",
+              "options": ["default", "loading"],
+              "default": "default"
+            },
+            {
+              "key": "showBadge",
+              "label": "Show badge",
+              "type": "enum",
+              "options": ["no", "yes"],
+              "default": "no"
+            },
+            {
+              "key": "count",
+              "label": "Count",
+              "type": "string",
+              "default": "3"
+            }
+          ],
+          "examples": [
+            { "name": "Loading", "values": { "state": "loading" } },
+            {
+              "name": "With badge 99+",
+              "values": { "showBadge": "yes", "count": "99+" }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

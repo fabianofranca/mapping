@@ -89,6 +89,20 @@ export const templatePtBR: {
     'o campo "{key}" do tipo "{typeId}" não existia na versão {version}',
   'model.library.optionNotInVersion':
     '"{value}" não era opção do campo "{field}" na versão {version}',
+  'model.library.componentNodeTypeMissing':
+    'o tipo "{typeId}" não existe na especialização',
+  'model.library.componentNodeNoComponent': 'o tipo "{typeId}" não tem componente',
+  'model.library.componentNodeSlot':
+    'o componente do tipo "{typeId}" tem slot e não pode ser desenhado por um nó component',
+  'model.library.componentNodeScreen':
+    'o componente do tipo "{typeId}" desenha em pixels de tela e não pode ser desenhado por um nó component',
+  'model.library.componentNodeNoField': 'o tipo "{typeId}" não tem o campo "{key}"',
+  'model.library.componentNodeRequired': 'campo obrigatório ausente em values: {key}',
+  'model.library.componentNodeNotOption': '"{value}" não é opção do campo "{key}"',
+  'model.library.componentNodeTable':
+    'o campo table "{key}" só aceita { "$field": … } de um campo table',
+  'model.library.componentNodeRef': 'o campo ref "{key}" não pode ser dado em values',
+  'model.library.componentNodeCycle': 'ciclo de componentes: {cycle}',
   'model.library.iconMissing':
     'o ícone "{name}" não existe no conjunto de ícones ({path})',
   'model.library.iconUnverifiable':
@@ -635,6 +649,7 @@ export const templatePtBR: {
   'model.engine.fillInHug': 'fill dentro de hug vira 0',
   'model.engine.iconStretched': 'ícone esticado: escala diferente nos dois eixos',
   'model.engine.iconUnknown': 'ícone desconhecido: {name}',
+  'model.engine.componentUnavailable': 'componente indisponível: {id}',
   'model.engine.contentTooBig': 'conteúdo maior que a caixa: {name}',
   'model.engine.textTooBig': 'texto maior que a caixa: {name}',
   'model.engine.repeatLimited': 'repeat limitado a {limit} linhas: {name}',

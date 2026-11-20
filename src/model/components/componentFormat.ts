@@ -631,6 +631,22 @@ export interface IconTemplate extends Omit<TemplateNodeBase, 'name'> {
   readonly mirror?: BoolExpr;
 }
 
+/**
+ * A component of the same specialization drawn inside this one (`formatVersion` 4). `id` is the id
+ * of an annotation type of the specialization (its `component` draws the node); `values` gives the
+ * inner type's fields, each an expression evaluated in the OUTER component's scope (a `table`
+ * field only accepts `{ "$field": "<outer table field>" }`, a `ref` field cannot be given);
+ * `provide` offers inherited values (`$provided`) to the inner drawing, like a slot's. The node has
+ * no drawing of its own: no `fill`, `stroke`, `shadow`, `cornerRadius`, `children` or `layout`.
+ * The library rejects types without a component, with a slot or with `screen` drawing, and cycles.
+ */
+export interface ComponentNodeTemplate extends TemplateNodeBase {
+  readonly type: 'component';
+  readonly id: string;
+  readonly values?: Readonly<Record<string, Expr<string | number | boolean | null>>>;
+  readonly provide?: Readonly<Record<string, Expr<string | number>>>;
+}
+
 export type TemplateNode =
   | FrameTemplate
   | RectTemplate
@@ -640,7 +656,8 @@ export type TemplateNode =
   | SlotTemplate
   | RepeatTemplate
   | ImageTemplate
-  | IconTemplate;
+  | IconTemplate
+  | ComponentNodeTemplate;
 
 // ---------------------------------------------------------------------------------------
 // File
@@ -750,6 +767,27 @@ export interface ComponentFile {
   >;
   /** Icon set of the specialization (`icons`), set by the catalog; never comes from the file. */
   readonly resolvedIcons?: IconSet;
+  /**
+   * The components that its `component` nodes draw (type id → the inner component and its fields),
+   * set by the catalog like `resolvedIcons`; the parser refuses the key in the file. A type in a
+   * nesting cycle has no entry. See `nesting.ts` (`attachResolvedComponents`).
+   */
+  readonly resolvedComponents?: Readonly<Record<string, ResolvedComponent>>;
+}
+
+/** What a `component` node needs to know about a field of the inner type (`values` fills it). */
+export interface ResolvedComponentField {
+  readonly key: string;
+  readonly type: 'string' | 'number' | 'date' | 'enum' | 'table' | 'ref';
+  readonly required: boolean;
+  /** The field's `default`: what the inner drawing gets when the node's `values` does not give it. */
+  readonly default?: FieldValue;
+}
+
+/** The inner component of a `component` node (with its own `resolvedComponents`) and its type's fields. */
+export interface ResolvedComponent {
+  readonly component: ComponentFile;
+  readonly fields: readonly ResolvedComponentField[];
 }
 
 /** How the specialization's type references the component (new key, spec formatVersion 4). */

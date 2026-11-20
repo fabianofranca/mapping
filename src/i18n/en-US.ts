@@ -1265,6 +1265,9 @@ export const enUS = {
   'anchor.alignStart': 'Start',
   'anchor.alignCenter': 'Center',
   'anchor.alignEnd': 'End',
+  'anchor.corner': 'On the corner',
+  'anchor.cornerHint':
+    "Puts the marking's center on the anchor's corner, so it stays there as it grows.",
   'anchor.alignHint': 'How the marking lines up along that side.',
   'anchor.offset': 'Offset',
   'anchor.offsetHint':

@@ -303,6 +303,19 @@ describe('changeTitle and changeSummary: the marking anchor (R3 of stage #1096)'
     );
   });
 
+  it('a corner alignment reads "end corner" (and pt-BR "canto do fim")', () => {
+    const anchored = setMarkingAnchor(base, 'B', {
+      to: 'T',
+      side: 'top',
+      align: 'corner-end',
+    });
+    expect(summaryOf(base, anchored)).toBe(
+      `Anchor: ${t('review.value.empty')} → top/end corner of Button`,
+    );
+    locale.value = 'pt-BR';
+    expect(summaryOf(base, anchored)).toContain('canto do fim');
+  });
+
   it('what the anchor does not say appears as "default" and removing the anchor goes back to empty', () => {
     const anchored = setMarkingAnchor(base, 'B', { to: 'T' });
     expect(summaryOf(base, anchored)).toBe(

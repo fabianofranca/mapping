@@ -119,3 +119,26 @@ test('Anchor section at 900 px: both Offset fields fit whole', async ({ page }) 
   await expect(main).toHaveValue('-1234');
   await expect(cross).toHaveValue('5678');
 });
+
+test('Anchor section: "On the corner" writes corner-end and Snap puts the center on the corner', async ({
+  page,
+}) => {
+  await openAnchored(page);
+  const section = page.getByRole('region', { name: 'Anchor' });
+  const corner = section.getByRole('checkbox', { name: /On the corner/ });
+  await expect(corner).toBeDisabled();
+  await section
+    .getByRole('group', { name: 'Alignment' })
+    .getByRole('button', { name: 'End', exact: true })
+    .click();
+  await expect(corner).toBeEnabled();
+  await corner.check();
+  await section.getByRole('button', { name: 'Snap to anchor' }).click();
+  // Above the anchor (400..600, top 300), center on the top-right corner (600, 300): 100x40 marking.
+  await expect(page.getByRole('spinbutton', { name: 'X', exact: true })).toHaveValue(
+    '550',
+  );
+  await expect(page.getByRole('spinbutton', { name: 'Y', exact: true })).toHaveValue(
+    '280',
+  );
+});

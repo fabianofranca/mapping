@@ -41,8 +41,8 @@ function withCanvasMarking(): Project {
 }
 
 describe('migration v20 → v21 (pages)', () => {
-  it('the schema is v21', () => {
-    expect(SCHEMA_VERSION).toBe(21);
+  it('the schema is v21 or later', () => {
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(21);
   });
 
   it('creates one page with the given name and puts it on every container and canvas marking', () => {

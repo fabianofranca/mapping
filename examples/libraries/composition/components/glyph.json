@@ -1,0 +1,25 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "glyph",
+  "name": "Glyph",
+  "description": "A 24 × 24 star drawn as a path; it takes the content color.",
+  "size": { "width": 24, "height": 24 },
+  "template": {
+    "type": "frame",
+    "name": "glyph",
+    "layout": { "type": "none" },
+    "children": [
+      {
+        "type": "path",
+        "name": "star",
+        "d": "M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z",
+        "viewBox": [24, 24],
+        "width": 24,
+        "height": 24,
+        "anchors": { "left": 0, "top": 0 },
+        "fill": { "$provided": "content-color", "default": "#111827" }
+      }
+    ]
+  }
+}

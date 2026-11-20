@@ -68,7 +68,13 @@ export type ComponentParseResult =
   | { ok: false; issues: ComponentIssue[]; errors: string[] };
 
 /** A `{ "$token": … }` in the file: where it is, the name and the kind of value the position expects. */
-export type TokenRef = { path: string; name: string; kind: TokenKind };
+export type TokenRef = {
+  path: string;
+  name: string;
+  kind: TokenKind;
+  /** The position accepts a token of any kind (a `component` node's `values`): only the name is checked. */
+  anyKind?: true;
+};
 
 type Rec = Record<string, unknown>;
 
@@ -85,7 +91,11 @@ type LiteralCheck = (value: unknown, path: string, out: Ctx) => void;
  * `tokenKind` is the explicit discriminant of the kind of `$token` the position accepts; without
  * it, the position does not accept a token.
  */
-type Check = LiteralCheck & { readonly tokenKind?: TokenKind };
+type Check = LiteralCheck & {
+  readonly tokenKind?: TokenKind;
+  /** A `$token` of any kind is valid (the position's type is only known to the library). */
+  readonly anyTokenKind?: true;
+};
 
 /** Marks the `check` as accepting a `$token` of kind `kind`. */
 function tokenCheck(kind: TokenKind, check: LiteralCheck): Check {
@@ -104,6 +114,7 @@ const NODE_TYPES = [
   'repeat',
   'image',
   'icon',
+  'component',
 ] as const;
 const NUMERIC_OP_NAMES = Object.keys(NUMERIC_OPS);
 const EXPR_OPS: readonly string[] = [
@@ -434,7 +445,12 @@ function checkTokenExpr(value: Rec, path: string, check: Check, out: Ctx): void 
   const name = value.$token;
   if (typeof name !== 'string' || !TOKEN_NAME_PATTERN.test(name))
     add(out, at, 'expected a token name ([a-z0-9][a-z0-9-]*)');
-  else if (kind !== undefined) out.refs?.push({ path, name, kind });
+  else if (kind !== undefined)
+    out.refs?.push(
+      check.anyTokenKind === true
+        ? { path, name, kind, anyKind: true }
+        : { path, name, kind },
+    );
   if ('alpha' in value) checkTokenAlpha(value.alpha, path, kind, out);
   if ('over' in value) checkTokenOver(value.over, path, kind, out);
 }
@@ -476,14 +492,31 @@ function checkTokenAlpha(
 /** A position that accepts text or a number (a node's text, a `provide`'s value): numeric operations are valid in it. */
 function acceptsAnyValue(check: Check): boolean {
   return (
-    check === checkTextOrNumber || check === checkProvided || check === checkSizingAxis
+    check === checkTextOrNumber ||
+    check === checkProvided ||
+    check === checkComponentValue ||
+    check === checkSizingAxis
   );
 }
 
-/** The value of a `provide`: text or a number, or an expression (a color `$token` among them). */
+/** The value of a `provide`: text or a number, or an expression (a `$token` of any kind: the field type is only known to the library). */
 const checkProvided: Check = Object.assign(
   (v: unknown, p: string, out: Ctx) => checkTextOrNumber(v, p, out),
   { tokenKind: 'color' as TokenKind },
+);
+
+/** A value of a `component` node's `values` (v4): text, a number, a boolean or `null`, or an expression (a `$token` of any kind: the field type is only known to the library). */
+const checkComponentValue: Check = Object.assign(
+  (v: unknown, p: string, out: Ctx) => {
+    if (
+      v !== null &&
+      typeof v !== 'string' &&
+      typeof v !== 'boolean' &&
+      !isFiniteNumber(v)
+    )
+      add(out, p, 'expected text, a number, true/false or null');
+  },
+  { tokenKind: 'color' as TokenKind, anyTokenKind: true as const },
 );
 
 /** The slot's `provide` (v4): name → value, the name non-empty. */
@@ -1119,6 +1152,8 @@ function checkNode(
     return;
   }
 
+  if (type === 'component') return checkComponentNode(value, path, out, parent);
+
   const extra: Record<string, readonly string[]> = {
     frame: ['clip', 'layout', 'children'],
     rect: [],
@@ -1141,6 +1176,7 @@ function checkNode(
     ],
     image: ['src', 'fit'],
     icon: ['name', 'color', 'strokeWidth', 'mirror'],
+    component: ['id', 'values', 'provide'],
   };
   // children/layout on a node that is not a frame have their own message, instead of "unknown key"
   for (const key of ['children', 'layout']) {
@@ -1235,6 +1271,59 @@ function checkNode(
       checkIconNode(value, path, out);
       return;
   }
+}
+
+/** Keys of the base node that a `component` node does not have: the drawing is the inner component's. */
+const COMPONENT_NODE_BASE_KEYS = BASE_KEYS.filter(
+  (key) => !['fill', 'stroke', 'shadow', 'cornerRadius'].includes(key),
+);
+
+/**
+ * `component` (formatVersion 4): a component of the same specialization drawn here. `id` (the
+ * annotation type's id) required; `values` (inner field → expression of the OUTER scope) and
+ * `provide` (like the slot's). It has no drawing of its own, so `fill`, `stroke`, `shadow`,
+ * `cornerRadius`, `children`, `layout` and `clip` are unknown keys. What needs the inner type
+ * (existence, fields, `table` and `ref`) is checked by the library.
+ */
+function checkComponentNode(
+  value: Rec,
+  path: string,
+  out: Ctx,
+  parent: ParentKind,
+): void {
+  checkKeys(value, [...COMPONENT_NODE_BASE_KEYS, 'id', 'values', 'provide'], path, out);
+  checkComponentBase(value, path, out, parent);
+  if (!('id' in value)) add(out, join(path, 'id'), 'required field');
+  else if (typeof value.id !== 'string' || !ID_PATTERN.test(value.id))
+    add(out, join(path, 'id'), `expected text matching ${ID_PATTERN.source}`);
+  if ('values' in value) checkComponentValues(value.values, join(path, 'values'), out);
+  if ('provide' in value) checkProvide(value.provide, join(path, 'provide'), out);
+}
+
+/** The base keys a `component` node keeps (name, visibility, opacity, rotation, direction, sizes, `span`/`weight`, `anchors`). */
+function checkComponentBase(
+  value: Rec,
+  path: string,
+  out: Ctx,
+  parent: ParentKind,
+): void {
+  if ('name' in value) checkString(value.name, join(path, 'name'), out);
+  if ('visible' in value) checkBoolExpr(value.visible, join(path, 'visible'), out);
+  if ('opacity' in value) checkExpr(value.opacity, join(path, 'opacity'), checkUnit, out);
+  if ('direction' in value)
+    oneOf(DIRECTIONS)(value.direction, join(path, 'direction'), out);
+  if ('rotation' in value)
+    checkExpr(value.rotation, join(path, 'rotation'), checkNumber, out);
+  checkNodeSizes(value, path, 'component', out);
+  checkSpanWeight(value, path, 'component', parent, out);
+  if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
+}
+
+/** `values` of a `component` node: inner field key → expression. */
+function checkComponentValues(value: unknown, path: string, out: Ctx): void {
+  if (!isRecord(value)) return add(out, path, 'expected an object');
+  for (const [key, expr] of Object.entries(value))
+    checkExpr(expr, join(path, key), checkComponentValue, out);
 }
 
 /** `slot.id` (v4): text in the slot id pattern. */
@@ -1751,6 +1840,18 @@ function anchorFieldIssues(version: unknown, template: unknown): ComponentIssue[
   return out;
 }
 
+/** The `component` node in a version before 4: `only allowed with formatVersion 4`, at the `type`'s path. */
+function componentNodeVersionIssues(
+  version: unknown,
+  template: unknown,
+): ComponentIssue[] {
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return [];
+  return nodesOfTypes(template, 'template', ['component']).map((node) =>
+    issueOf(node.path, V4_ONLY_MESSAGE),
+  );
+}
+
 /** The `icon` node in a version before 4: `only allowed with formatVersion 4`, at the `type`'s path. */
 function iconVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
   if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
@@ -2125,6 +2226,7 @@ function collectIssues(
       }
     }
     issues.push(...iconVersionIssues(version, template));
+    issues.push(...componentNodeVersionIssues(version, template));
     issues.push(...slotVersionIssues(version, template));
     issues.push(...slotNameIssues(version, template));
   }

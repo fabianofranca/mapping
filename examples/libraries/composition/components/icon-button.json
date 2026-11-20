@@ -1,0 +1,46 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "icon-button",
+  "name": "Icon button",
+  "description": "A 40 × 40 icon button made of other components: a glyph, a spinner while loading and a badge on the top-end corner.",
+  "size": { "width": 40, "height": 40 },
+  "preview": { "state": "default", "showBadge": "no", "count": "3" },
+  "template": {
+    "type": "frame",
+    "name": "icon-button",
+    "layout": { "type": "none" },
+    "clip": false,
+    "cornerRadius": 20,
+    "fill": "#E5E7EB",
+    "children": [
+      {
+        "type": "component",
+        "id": "glyph",
+        "name": "glyph",
+        "visible": { "$not": { "$eq": ["state", "loading"] } },
+        "width": 24,
+        "height": 24,
+        "anchors": { "centerX": true, "centerY": true },
+        "provide": { "content-color": "#111827" }
+      },
+      {
+        "type": "component",
+        "id": "spinner",
+        "name": "spinner",
+        "visible": { "$eq": ["state", "loading"] },
+        "values": { "size": "medium" },
+        "provide": { "content-color": "#111827" },
+        "anchors": { "centerX": true, "centerY": true }
+      },
+      {
+        "type": "component",
+        "id": "badge",
+        "name": "badge",
+        "visible": { "$eq": ["showBadge", "yes"] },
+        "values": { "count": { "$field": "count" } },
+        "anchors": { "top": 0, "end": 0 }
+      }
+    ]
+  }
+}

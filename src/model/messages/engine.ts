@@ -10,6 +10,7 @@ export const engineMessages = {
   'engine.fillInHug': 'fill inside hug becomes 0',
   'engine.iconStretched': 'stretched icon: different scale on the two axes',
   'engine.iconUnknown': 'unknown icon: {name}',
+  'engine.componentUnavailable': 'component not available: {id}',
   'engine.contentTooBig': 'content larger than the box: {name}',
   'engine.textTooBig': 'text larger than the box: {name}',
   'engine.repeatLimited': 'repeat limited to {limit} rows: {name}',
