@@ -1,4 +1,4 @@
-# Format gaps — [Não lançado] (épico `epic/format-gaps`, PR #0, MCP 0.49.0, schema v22)
+# Format gaps — [Não lançado] (épico `epic/format-gaps`, PR #2340, MCP 0.49.0, schema v22)
 
 Icons file formatVersion 3; component format 4, specialization and schema unchanged.
 
