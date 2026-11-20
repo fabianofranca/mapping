@@ -44,7 +44,7 @@ async function scene(options: { readOnly?: boolean } = {}): Promise<Scene> {
       typeId,
     });
     if (!result.ok) throw new Error(result.error);
-    return result.value;
+    return result.value.markingId;
   };
   const column = add('m3-column', null);
   const first = add('m3-button', column);

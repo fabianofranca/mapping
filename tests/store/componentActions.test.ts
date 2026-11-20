@@ -172,18 +172,20 @@ describe('addComponent', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const p = current(store);
-    const created = marking(p, result.value);
+    const created = marking(p, result.value.markingId);
     expect(created.rect.width).toBeGreaterThan(0);
-    const annotation = p.annotations.find((a) => a.markingId === result.value);
+    const annotation = p.annotations.find((a) => a.markingId === result.value.markingId);
     expect(annotation?.type).toEqual({ specId: SPEC_ID, typeId: 'text' });
     // The annotation has its own id, different from the marking's.
-    expect(annotation?.id).not.toBe(result.value);
+    expect(annotation?.id).not.toBe(result.value.markingId);
     expect(undoDepth(store)).toBe(1);
     store.undo();
-    expect(current(store).markings.some((m) => m.id === result.value)).toBe(false);
-    expect(current(store).annotations.some((a) => a.markingId === result.value)).toBe(
+    expect(current(store).markings.some((m) => m.id === result.value.markingId)).toBe(
       false,
     );
+    expect(
+      current(store).annotations.some((a) => a.markingId === result.value.markingId),
+    ).toBe(false);
   });
 
   it('inside a container, the new one enters as a child', () => {
@@ -196,7 +198,8 @@ describe('addComponent', () => {
       typeId: 'text',
     });
     expect(result.ok).toBe(true);
-    if (result.ok) expect(marking(current(store), result.value).parentId).toBe('C');
+    if (result.ok)
+      expect(marking(current(store), result.value.markingId).parentId).toBe('C');
   });
 
   it('refuses a type without a component or a nonexistent image, without changing anything', () => {
@@ -237,6 +240,71 @@ describe('addComponent', () => {
   });
 });
 
+describe('addComponent: free (decision 5 of #1891)', () => {
+  const text = {
+    containerId: 'I1',
+    parentId: null,
+    specId: SPEC_ID,
+    typeId: 'text',
+  } as const;
+
+  it('is true with room, and the marking id comes with it', () => {
+    const { store, actions } = setup();
+    const result = actions.addComponent(text);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.free).toBe(true);
+    expect(current(store).markings.some((m) => m.id === result.value.markingId)).toBe(
+      true,
+    );
+  });
+
+  it('is false in a full slot (the piece stays over its siblings, in the component)', () => {
+    let p = add(componentProject(), 'B', 'box', box(100, 100, 100, 80));
+    p = add(p, 'T1', 'text', box(100, 100, 100, 40), 'B');
+    p = add(p, 'T2', 'text', box(100, 140, 100, 40), 'B');
+    const { store, actions } = setup(p);
+    const result = actions.addComponent({ ...text, parentId: 'B' });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.free).toBe(false);
+    expect(marking(current(store), result.value.markingId).parentId).toBe('B');
+  });
+
+  it('is false with everything full (P and the image)', () => {
+    let p = createMarking(componentProject(), {
+      id: 'P',
+      containerId: 'I1',
+      rect: box(0, 0, 1000, 800),
+    });
+    p = createMarking(p, { id: 'A', containerId: 'I1', rect: box(0, 0, 500, 800) });
+    p = createMarking(p, { id: 'B', containerId: 'I1', rect: box(500, 0, 500, 800) });
+    const { store, actions } = setup(p);
+    const result = actions.addComponent(text);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.free).toBe(false);
+    expect(marking(current(store), result.value.markingId).parentId).toBe('P');
+  });
+
+  it('is true when the search goes up a level and finds a spot', () => {
+    let p = createMarking(componentProject(), {
+      id: 'Q',
+      containerId: 'I1',
+      rect: box(300, 250, 400, 300),
+    });
+    p = createMarking(p, { id: 'P', containerId: 'I1', rect: box(440, 370, 120, 60) });
+    p = createMarking(p, { id: 'X1', containerId: 'I1', rect: box(440, 370, 60, 60) });
+    p = createMarking(p, { id: 'X2', containerId: 'I1', rect: box(500, 370, 60, 60) });
+    const { store, actions } = setup(p);
+    const result = actions.addComponent(text);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.free).toBe(true);
+    expect(marking(current(store), result.value.markingId).parentId).toBe('Q');
+  });
+});
+
 describe('addComponent: Material 3 top-app-bar (TB1, decision 1 of #1335)', () => {
   const m3setup = () => {
     let n = 0;
@@ -268,9 +336,14 @@ describe('addComponent: Material 3 top-app-bar (TB1, decision 1 of #1335)', () =
     expect(bar.ok).toBe(true);
     if (!bar.ok) return;
     // The bar is born at the place the Palette asks for (center 180, 400): the height is what matters here.
-    expect(marking(current(store), bar.value).rect.height).toBe(64);
+    expect(marking(current(store), bar.value.markingId).rect.height).toBe(64);
     store.load(
-      setMarkingRect(current(store), bar.value, { x: 0, y: 0, width: 360, height: 64 }),
+      setMarkingRect(current(store), bar.value.markingId, {
+        x: 0,
+        y: 0,
+        width: 360,
+        height: 64,
+      }),
     );
     const row = actions.addComponent({
       containerId: 'I1',
@@ -282,12 +355,12 @@ describe('addComponent: Material 3 top-app-bar (TB1, decision 1 of #1335)', () =
     expect(row.ok).toBe(true);
     if (!row.ok) return;
     // As in R9.4: the Palette creates and the Y is typed in the Details (here 100, below the 64 of the bar).
-    const made = marking(current(store), row.value).rect;
-    store.load(setMarkingRect(current(store), row.value, { ...made, y: 100 }));
+    const made = marking(current(store), row.value.markingId).rect;
+    store.load(setMarkingRect(current(store), row.value.markingId, { ...made, y: 100 }));
     const p = current(store);
-    expect(marking(p, row.value).rect.y).toBe(100);
-    expect(marking(p, row.value).parentId).toBeNull();
-    expect(marking(p, bar.value).parentId).toBeNull();
+    expect(marking(p, row.value.markingId).rect.y).toBe(100);
+    expect(marking(p, row.value.markingId).parentId).toBeNull();
+    expect(marking(p, bar.value.markingId).parentId).toBeNull();
   });
 });
 
@@ -303,13 +376,13 @@ describe('components on the canvas and between spaces (ME1)', () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const created = marking(current(store), result.value);
+    const created = marking(current(store), result.value.markingId);
     expect(created).toMatchObject({ containerId: null, parentId: null, floating: false });
     // In canvas units, no limit, and centered on the requested point.
     expect(created.rect.x + created.rect.width / 2).toBeCloseTo(-2000, -1);
     expect(created.rect.y + created.rect.height / 2).toBeCloseTo(-1500, -1);
     const annotation = current(store).annotations.find(
-      (a) => a.markingId === result.value,
+      (a) => a.markingId === result.value.markingId,
     );
     expect(annotation?.type).toEqual({ specId: SPEC_ID, typeId: 'text' });
     expect(undoDepth(store)).toBe(1);
@@ -325,11 +398,11 @@ describe('components on the canvas and between spaces (ME1)', () => {
       center: { x: -2000, y: -1500 },
     });
     if (!result.ok) throw new Error('addComponent');
-    expect(actions.setMarkingFloating(result.value, true).ok).toBe(true);
-    expect(marking(current(store), result.value).floating).toBe(true);
+    expect(actions.setMarkingFloating(result.value.markingId, true).ok).toBe(true);
+    expect(marking(current(store), result.value.markingId).floating).toBe(true);
     expect(undoDepth(store)).toBe(2);
     store.undo();
-    expect(marking(current(store), result.value).floating).toBe(false);
+    expect(marking(current(store), result.value.markingId).floating).toBe(false);
   });
 
   /** I1 reduced to a quarter: a 100×40 pixel text measures 25×10 on the canvas but keeps its 100×40 units there (stage #2210). */

@@ -51,7 +51,7 @@ async function scene(
       typeId,
     });
     if (!result.ok) throw new Error(result.error);
-    return result.value;
+    return result.value.markingId;
   };
   const button = add('m3-button', 'I1');
   const fab = add('m3-fab', 'I1');

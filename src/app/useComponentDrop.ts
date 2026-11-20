@@ -1,3 +1,5 @@
+import { t } from '../i18n';
+import { showToast } from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
 import { componentDropTarget } from '../ui/componentTarget';
 import { libraryErrorMessage } from '../ui/labels';
@@ -86,7 +88,8 @@ export function useComponentDrop({
       return;
     }
     setMessage(null);
-    ui.selection.value = { kind: 'marking', id: result.value };
+    ui.selection.value = { kind: 'marking', id: result.value.markingId };
+    if (!result.value.free) showToast(ui, t('library.noFreeSpace'));
   };
 
   return { onDragOver, onDragLeave, onDrop };
