@@ -7,6 +7,7 @@ import {
   applySpecialization,
   codeBlueprint,
   createMarking,
+  parseSpec,
   removePlatformRepo,
   removeSpecialization,
   setFieldValue,
@@ -14,11 +15,17 @@ import {
   type BlueprintAnnotation,
   type BlueprintNode,
   type Project,
+  type Signature,
 } from '../../src/model';
 import { ANDROID_REPO, codeProject, idGen, layerOf, withSpecRepo } from './specFixtures';
 import { a11yMcpLibrary, a11yMcpProject, withAndroid } from '../mcp/a11yProject';
 import { slotsLibrary, slotsProject } from '../mcp/slotsProject';
-import { BUTTON_PATH, TEXT_BUTTON_PATH, variantsProject } from './variantsFixtures';
+import {
+  BUTTON_PATH,
+  TEXT_BUTTON_PATH,
+  variantsProject,
+  variantsSpecJson,
+} from './variantsFixtures';
 
 function codeOf(fn: () => unknown): string | null {
   try {
@@ -440,6 +447,56 @@ describe('codeBlueprint with variants (formatVersion 9)', () => {
     ]);
     // The mapping value stays the mapping one.
     expect(tonal.values).toMatchObject({ style: 'tonal', size: 'large' });
+  });
+
+  describe('with the case sheets (a case no longer inherits base params its sheet lacks)', () => {
+    // The tonal case gets its own sheet, which has `sizeHint` but not the base's `text`.
+    const json = JSON.parse(JSON.stringify(variantsSpecJson(16))) as Doc;
+    json.layers[0].annotationTypes[0].code.compose.variants.cases.tonal.signature =
+      'tonal.json';
+    const parsed = parseSpec(json);
+    if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+    const project = variantsProject(parsed.spec);
+    const sheet: Signature = {
+      format: 'mapping-signature',
+      formatVersion: 1,
+      source: {
+        kind: 'code',
+        platform: 'compose',
+        language: 'kotlin',
+        symbol: 'androidx.compose.material3.FilledTonalButton',
+        path: BUTTON_PATH,
+        extractor: 'agent',
+      },
+      params: [{ name: 'sizeHint', role: 'value', type: 'String' }],
+    };
+    const signatures = (specId: string, ref: string): Signature | null =>
+      specId === 'm3' && ref === 'tonal.json' ? sheet : null;
+
+    it('the case annotation, with the field filled, has no arg for the inherited param', () => {
+      const tonal = annotationOf(
+        codeBlueprint(project, 'MBN', 'compose', { signatures }),
+        'BN',
+      );
+      expect(tonal.params).toEqual([{ key: 'size', name: 'sizeHint', value: 'XL' }]);
+      expect(tonal.values).toMatchObject({ label: 'Tonal' });
+    });
+
+    it('without the option, the arg is there', () => {
+      const tonal = annotationOf(codeBlueprint(project, 'MBN', 'compose'), 'BN');
+      expect(tonal.params).toEqual([
+        { key: 'label', name: 'text', value: 'Tonal' },
+        { key: 'size', name: 'sizeHint', value: 'XL' },
+      ]);
+    });
+
+    it('an annotation of the base (no case) still has the arg', () => {
+      const filled = annotationOf(
+        codeBlueprint(project, 'MBF', 'compose', { signatures }),
+        'BF',
+      );
+      expect(filled.params).toEqual([{ key: 'label', name: 'text', value: 'Filled' }]);
+    });
   });
 
   it('a type without variants does not change', () => {

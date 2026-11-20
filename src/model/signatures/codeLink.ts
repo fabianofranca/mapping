@@ -120,3 +120,23 @@ function targetExists(
   if (expansion !== null) return expansion.members.some((m) => m.name === target.name);
   return owner.factory === undefined;
 }
+
+/**
+ * The `params` that a `variants` case inherits from the base and that its own sheet lacks: the base's
+ * entries whose key the case does not redeclare and that `paramsOutsideSignature` flags against the
+ * case's sheet (a name, a factory argument its factory or field model does not expand, a positional beyond
+ * the sheet). The same test as the validator's, so the validator and the generated code never disagree: a case
+ * with its own sheet leaves these out of the resolved `code` (`resolveCode`), and its own `params` stay.
+ */
+export function inheritedOutsideCase(
+  base: Pick<CodeLinks, 'params'>,
+  kase: Pick<CodeLinks, 'params'>,
+  sheet: Signature,
+  models?: ExpandModels,
+): OutsideParam[] {
+  const own = kase.params ?? {};
+  const inherited = Object.entries(base.params ?? {}).filter(
+    ([field]) => !Object.hasOwn(own, field),
+  );
+  return paramsOutsideSignature(sheet, { params: Object.fromEntries(inherited) }, models);
+}

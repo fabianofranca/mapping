@@ -214,12 +214,23 @@ describe('the variants case and the signature (review findings)', () => {
     ]);
   });
 
-  it('a case with its own signature also checks the params inherited from the base', () => {
+  it('a case with its own signature does not warn about an inherited param its sheet lacks (it is left out of the code)', () => {
     const outlined = buttonSignature((s) => {
       s.params = s.params.filter((p: Json) => p.name !== 'enabled');
     });
     const list = [
       ...files(withCase({ signature: OUT })),
+      { path: OUT, text: JSON.stringify(outlined) },
+    ];
+    expect(found(list)).toEqual([]);
+  });
+
+  it('a case with its own signature still warns about a param the case itself declares and its sheet lacks', () => {
+    const outlined = buttonSignature((s) => {
+      s.params = s.params.filter((p: Json) => p.name !== 'enabled');
+    });
+    const list = [
+      ...files(withCase({ signature: OUT, params: { label: 'enabled' } })),
       { path: OUT, text: JSON.stringify(outlined) },
     ];
     expect(found(list)).toEqual([

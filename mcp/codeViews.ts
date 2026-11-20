@@ -1,6 +1,7 @@
 import {
   codeBlueprint,
   codeLocalPath,
+  type CaseSheets,
   effectiveDirection,
   markingAnchorDefaults,
   findPlatform,
@@ -134,6 +135,48 @@ async function signatureOf(
   return ctx.signatures(specId, entry.signature);
 }
 
+const sheetKey = (specId: string, ref: string): string => `${specId}\n${ref}`;
+
+/**
+ * The signature sheets of the `variants` cases of the given `code` entries (a case with its own `signature`), read once
+ * each (the reader caches per call), by `specId` and `ref`. What it cannot read is left out: the case then behaves as before.
+ */
+async function readCaseSheets(
+  ctx: CodeContext,
+  wanted: Iterable<{ specId: string; entry: SpecCode }>,
+): Promise<Map<string, Signature>> {
+  const reads = new Map<string, Promise<Signature | null>>();
+  const reader = ctx.signatures;
+  if (reader !== undefined) {
+    for (const { specId, entry } of wanted) {
+      for (const kase of Object.values(entry.variants?.cases ?? {})) {
+        if (kase.signature === undefined) continue;
+        const key = sheetKey(specId, kase.signature);
+        if (!reads.has(key)) reads.set(key, reader(specId, kase.signature));
+      }
+    }
+  }
+  const read = await Promise.all(
+    [...reads].map(async ([key, job]) => [key, await job] as const),
+  );
+  const found = new Map<string, Signature>();
+  for (const [key, sheet] of read) if (sheet !== null) found.set(key, sheet);
+  return found;
+}
+
+/** What `resolveCode` takes to leave out the inherited `params` that a case's own sheet lacks; none without sheets. */
+function caseSheetsOf(
+  found: ReadonlyMap<string, Signature>,
+  spec: Spec,
+  platformId: string,
+): CaseSheets | undefined {
+  if (found.size === 0) return undefined;
+  return {
+    read: (ref) => found.get(sheetKey(spec.id, ref)) ?? null,
+    models: spec.fieldModels?.[platformId],
+  };
+}
+
 /**
  * `code` of the annotation's type per platform (`symbol`, `definition`, `params`, `values`,
  * `notes`), already resolved by the annotation's values (the `variants` case applied; the output
@@ -149,8 +192,19 @@ export async function annotationCode(
   const code = resolved?.type.code;
   if (!resolved || !code) return null;
   const { fields } = resolved.type;
-  return typeCodeView(ctx, resolved.spec.id, code, platform, (entry) =>
-    resolveCode(entry, annotation.values, fields),
+  const { spec } = resolved;
+  const entries = Object.entries(code)
+    .filter(([id]) => platform === undefined || id === platform)
+    .map(([id, entry]) => ({ id, specId: spec.id, entry }));
+  const found = await readCaseSheets(ctx, entries);
+  const platformOf = new Map(entries.map((e) => [e.entry, e.id]));
+  return typeCodeView(ctx, spec.id, code, platform, (entry) =>
+    resolveCode(
+      entry,
+      annotation.values,
+      fields,
+      caseSheetsOf(found, spec, platformOf.get(entry) ?? ''),
+    ),
   );
 }
 
@@ -421,9 +475,23 @@ export async function codeHintsView(
 ): Promise<Json> {
   const { refs } = ctx;
   assertPlatform(refs, platformId);
-  const blueprint = codeBlueprint(refs.project, markingId, platformId, {
-    drawings: projectDrawings(refs.loaded),
-  });
+  const drawings = projectDrawings(refs.loaded);
+  let blueprint = codeBlueprint(refs.project, markingId, platformId, { drawings });
+  // The sheets of the `variants` cases of the types this tree uses: the blueprint, which is pure, reads them
+  // through a lookup, so they are read before and it is built again only if there is one.
+  const used = new Map<string, { specId: string; entry: SpecCode }>();
+  for (const a of allAnnotations(blueprint.root)) {
+    const entry = findSpecType(refs.project, a)?.type.code?.[platformId];
+    if (entry?.variants !== undefined)
+      used.set(`${a.specId}/${a.typeId}`, { specId: a.specId, entry });
+  }
+  const sheets = await readCaseSheets(ctx, used.values());
+  if (sheets.size > 0) {
+    blueprint = codeBlueprint(refs.project, markingId, platformId, {
+      drawings,
+      signatures: (specId, ref) => sheets.get(sheetKey(specId, ref)) ?? null,
+    });
+  }
   const annotations = allAnnotations(blueprint.root);
   const unmapped = [
     ...new Set(
@@ -439,9 +507,14 @@ export async function codeHintsView(
   for (const a of annotations) {
     if (a.symbol === null) continue;
     const key = `${a.specId}/${a.typeId}`;
-    const type = findSpecType(refs.project, { specId: a.specId, typeId: a.typeId })?.type;
+    const resolvedType = findSpecType(refs.project, {
+      specId: a.specId,
+      typeId: a.typeId,
+    });
+    const type = resolvedType?.type;
     const entry = type?.code?.[platformId];
-    if (!type || !entry) continue;
+    if (!resolvedType || !type || !entry) continue;
+    const caseSheets = caseSheetsOf(sheets, resolvedType.spec, platformId);
     if (!Object.hasOwn(types, key)) {
       types[key] = {
         name: a.type,
@@ -455,12 +528,16 @@ export async function codeHintsView(
     }
     if ((a.slotArgs ?? []).length > 0) {
       const last = lastSlotParam(
-        await signatureOf(ctx, a.specId, resolveCode(entry, a.values, type.fields)),
+        await signatureOf(
+          ctx,
+          a.specId,
+          resolveCode(entry, a.values, type.fields, caseSheets),
+        ),
       );
       if (last !== undefined) lastParam.set(a.annotationId, last);
     }
     if (entry.variants !== undefined) {
-      const resolved = resolveCode(entry, a.values, type.fields);
+      const resolved = resolveCode(entry, a.values, type.fields, caseSheets);
       codes.set(
         a.annotationId,
         codeEntryJson(

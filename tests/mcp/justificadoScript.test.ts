@@ -46,13 +46,7 @@ describe('justificado.mjs (R25.87 a R25.90)', () => {
     const result = ok(await mcp.call<Validated>('validate_library', { path: 'm3-just' }));
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
-    // Provisional (owner decision pending in bug #1774; curation in #1134): only the
-    // `parameter outside the signature` warnings of the known Material 3 set; any other warning fails.
-    expect(
-      result.warnings.filter(
-        (w) => !JSON.stringify(w).includes('parameter outside the signature'),
-      ),
-    ).toEqual([]);
+    expect(result.warnings).toEqual([]);
   });
 
   it('writes a format 4 component, 300 × 120, and version 3 refuses justify and over', () => {

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { resolveCode, type SpecCode, type SpecField } from '../../src/model';
+import {
+  resolveCode,
+  type CaseSheets,
+  type Signature,
+  type SpecCode,
+  type SpecField,
+} from '../../src/model';
 import { variantsSpec } from './variantsFixtures';
 
 const type = variantsSpec().layers[0]!.annotationTypes[0]!;
@@ -115,5 +121,97 @@ describe('resolveCode', () => {
     }
     expect(JSON.stringify(base)).toBe(snapshot);
     expect(base.variants).toBeDefined();
+  });
+
+  describe('with the case sheets (a case no longer inherits base params its sheet lacks)', () => {
+    const sheet = (names: readonly string[]): Signature => ({
+      format: 'mapping-signature',
+      formatVersion: 1,
+      source: {
+        kind: 'code',
+        platform: 'compose',
+        language: 'kotlin',
+        symbol: 'B',
+        path: 'a/B.kt',
+        extractor: 'agent',
+      },
+      params: names.map((name) => ({ name, role: 'value' as const, type: 'String' })),
+    });
+    const sheets = (known: Record<string, Signature>): CaseSheets => ({
+      read: (ref) => known[ref] ?? null,
+    });
+    const entry: SpecCode = {
+      symbol: 'A',
+      params: { title: 'title', subtitle: 'subtitle' },
+      calls: { colors: 'A.colors' },
+      variants: {
+        field: 'style',
+        cases: {
+          center: { symbol: 'C', signature: 'c.json', params: { size: 'size' } },
+          plain: { symbol: 'P' },
+        },
+      },
+    };
+
+    it('a case with its own sheet resolves without the base param its sheet lacks', () => {
+      const code = resolveCode(
+        entry,
+        { style: 'center' },
+        fields,
+        sheets({ 'c.json': sheet(['title', 'size']) }),
+      );
+      expect(code.params).toEqual({ title: 'title', size: 'size' });
+      expect(code.calls).toEqual({ colors: 'A.colors' });
+    });
+
+    it("the case's own entry stays even if its sheet lacks it", () => {
+      const code = resolveCode(
+        entry,
+        { style: 'center' },
+        fields,
+        sheets({ 'c.json': sheet(['title']) }),
+      );
+      expect(code.params).toEqual({ title: 'title', size: 'size' });
+    });
+
+    it('a case that redeclares a base key keeps it even if its sheet lacks it', () => {
+      const redeclared: SpecCode = {
+        ...entry,
+        variants: {
+          field: 'style',
+          cases: { center: { signature: 'c.json', params: { subtitle: 'subtitle' } } },
+        },
+      };
+      const code = resolveCode(
+        redeclared,
+        { style: 'center' },
+        fields,
+        sheets({ 'c.json': sheet(['title']) }),
+      );
+      expect(code.params).toEqual({ title: 'title', subtitle: 'subtitle' });
+    });
+
+    it('a case without params also loses the inherited param its sheet lacks', () => {
+      const bare: SpecCode = {
+        ...entry,
+        variants: { field: 'style', cases: { center: { signature: 'c.json' } } },
+      };
+      const code = resolveCode(
+        bare,
+        { style: 'center' },
+        fields,
+        sheets({ 'c.json': sheet(['title']) }),
+      );
+      expect(code.params).toEqual({ title: 'title' });
+    });
+
+    it('without sheets, with a case without its own sheet or with an unreadable one, the result equals the old one', () => {
+      const old = resolveCode(entry, { style: 'center' }, fields);
+      expect(old.params).toEqual({ title: 'title', subtitle: 'subtitle', size: 'size' });
+      expect(resolveCode(entry, { style: 'center' }, fields, sheets({}))).toEqual(old);
+      expect(
+        resolveCode(entry, { style: 'plain' }, fields, sheets({ 'c.json': sheet([]) })),
+      ).toEqual(resolveCode(entry, { style: 'plain' }, fields));
+    });
   });
 });
