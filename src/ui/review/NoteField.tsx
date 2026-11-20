@@ -114,7 +114,9 @@ export function NoteField({ target, show, focusSeq, onHide }: NoteFieldProps) {
             target={target}
             note={note}
             readOnly={!open}
-            focusSeq={i === 0 ? focusSeq : 0}
+            // Only the empty new field takes the focus: saving it swaps it for the saved
+            // note (new key, remount), and that remount must not pull the focus back after Tab.
+            focusSeq={i === 0 && !note ? focusSeq : 0}
             onSettled={(empty) => {
               if (empty) onHide();
             }}
