@@ -143,7 +143,7 @@ const anchorShape = z
       .enum(ANCHOR_ALIGNS)
       .optional()
       .describe(
-        "Alignment along that side: `start`, `center` or `end`. Absent: the component's `anchor.align`, otherwise `center`.",
+        "Alignment along that side: `start`, `center` or `end` (the marking's edge along the side), or `corner-start` / `corner-end` (the marking's CENTER on the anchor's corner, kept there when the marking grows: a Badge on a bare icon; `top` + `corner-end` is the top-end corner, the right one in `ltr` and the left one in `rtl`; `offset.main` then moves outward from the corner). Absent: the component's `anchor.align`, otherwise `center`.",
       ),
     offset: z
       .object({ main: z.number().finite(), cross: z.number().finite() })

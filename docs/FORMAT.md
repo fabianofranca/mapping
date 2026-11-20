@@ -1,4 +1,4 @@
-# Format of `mapping.json` (schema v21)
+# Format of `mapping.json` (schema v22)
 
 The project is a folder (or a zip with the same content) with `mapping.json`, `images/` (the containers' image files) and,
 if any specializations are applied, `specs/` (and, if there are change proposals, `proposals/`). All the markings' coordinates are
@@ -34,7 +34,7 @@ per project). The `backups/` folder is not part of the project: the exported zip
 
 ```json
 {
-  "schemaVersion": 21,
+  "schemaVersion": 22,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -134,7 +134,7 @@ computed by the app since v13); `pageId` (v21: the page of a canvas marking; `nu
 `rect` (`{ x, y, width, height }`, **whole pixels of the container's original image**, `x`/`y` ≥ 0; in the canvas marking,
 **whole canvas units**, `x`/`y` may be negative);
 `needsReview` (boolean, for the interface only); `locked` (boolean, v5: see below); `floating` (boolean, v13: see below);
-`source` (`null` or source, v8: see below); `anchor` (v20, optional: the anchor; see "Fields of v20").
+`source` (`null` or source, v8: see below); `anchor` (v20, optional: the anchor; `align` has the corner values since v22; see "Fields of v20" and "Fields of v22").
 
 **`arrows[]`** (v13): `id` (in the same space as the markings' ids); `from` and `to` (marking ids, different); `fromSide` and `toSide`
 (`top`, `right`, `bottom`, `left` or `null`); `points` (waypoints of the route); `style` (`straight`, `curve` or `elbow`);
@@ -1109,7 +1109,7 @@ links a marking to another one in the same space (tooltip, badge, menu) and come
 
 - **`anchor`** (object, optional): the marking declares **another marking in the same space** as its anchor. The keys:
   `to` (required: the id of the anchor marking); `side` (`top`, `bottom`, `start` or `end`: on which side of the anchor the
-  marking sits, outside it); `align` (`start`, `center` or `end`: the alignment along that side); `offset`
+  marking sits, outside it); `align` (`start`, `center` or `end`: the alignment along that side; `corner-start` or `corner-end` since v22: the marking's **center** on the anchor's corner, see "Fields of v22"); `offset`
   (`{ main, cross }`, numbers). `main` is the distance from the anchor's edge (negative overlaps); `cross` is the
   offset **along** the side and is **logical**: with `side` `top` or `bottom`, positive goes in the reading
   direction (to the right in `ltr`, to the left in `rtl`); with `start` or `end`, positive goes down. Both
@@ -1189,6 +1189,25 @@ An earlier app rejects the v21 file as a "newer version", instead of discarding 
 every canvas marking gets `pageId` of that page; markings inside a container get `pageId: null`. A `pages`/`pageId` already in the file is kept. As in
 every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
 
+## Fields of v22 (corner alignment)
+
+v22 adds two values to the anchor's `align` (`markings[].anchor.align`), **`corner-start`** and **`corner-end`**, so that a marking such as a Badge on a bare icon keeps its **center on the anchor's corner** while it grows (`3`, `12`, `99+`). Nothing else in the file changes.
+
+- **Where the center goes** (`side` is the anchor's side, `start` and `end` follow the effective direction; in `rtl` the start edge is the right one):
+  - `top` or `bottom`: the center x is the anchor's start edge (`corner-start`) or end edge (`corner-end`); the center y is the anchor's top edge (`top`) or bottom edge (`bottom`).
+  - `start` or `end`: the center x is that side's edge of the anchor; the center y is the anchor's top edge (`corner-start`) or bottom edge (`corner-end`).
+  - So `top` + `corner-end` and `end` + `corner-start` name the same corner (the top end one).
+- **`offset`** still adjusts from the corner: `main` moves the marking outward (positive away from the anchor) and `cross` moves it along the side (in the reading direction on `top`/`bottom`, downward on `start`/`end`). The rectangle is rounded to integers like the other alignments.
+- **Kept while growing:** the center is computed from the marking's current size, so **Snap to anchor** (and **Arrange**, which fits the marking and then snaps) keeps the center on the corner at any width. Resizing the marking by hand does not move it until the next snap, like with the other alignments.
+- **The component root** accepts the same two values in `anchor.align` (component `formatVersion` 4; see [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Anchor"): the type's default applies when the marking does not say.
+- **The proposal does not change version:** it stays at `formatVersion` 9 when it uses the anchor (see [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md)); an older reader that meets a corner value gives a read error on the project, never a partial application.
+
+An earlier app rejects the v22 file as a "newer version" (read-only), instead of failing to read or discarding a corner value when writing.
+
+### Migration v21 → v22
+
+Only `schemaVersion` changes to 22; no data is altered (no corner value is created). As in every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
+
 ## Migration
 
 v1 files are migrated on opening: every image gets `name: null` and every annotation gets
@@ -1199,7 +1218,7 @@ image and each marking. v5 files get `revision: 0`. v6 files get `platformRepos:
 v7 files get `source: null` on each image and each marking. v8 files lose the values of the
 `codeRef` fields, by the type declared in the specialization copy (see "Fields of v9"). v9 files
 get `background: null` on each image (see "Fields of v10"). v10 files lose the `urlTemplate` of
-each `platformRepos` entry, and an entry that only had it goes away (see "Fields of v11"). v11 files swap `images` for `containers` and `imageId` for `containerId` (see "Fields of v12"). v12 files lose `inherit` from each annotation and gain `floating: false` on each marking, `parentId: null` on each container and `arrows: []` at the root (see "Fields of v13"). v13 files gain `parentRole: null` on each annotation and `docRepos: {}` at the root (see "Fields of v14"). v14 files only get the number bumped (see "Fields of v15"). v15 files gain `project.id` (a new UUID), `perspectives: []` and `arrivals: []` (see "Fields of v16"). v16 files only get the number bumped (see "Fields of v17"). v17 files only get the number bumped (see "Fields of v18"). v18 files only get the number bumped (see "Fields of v19"). v19 files only get the number bumped (see "Fields of v20"). v20 files gain `pages` (one page) and the `pageId` of each container and canvas marking (see "Fields of v21"). On save, the
-file becomes v21 (and, in folder mode, the original goes first to `backups/`, as in any
+each `platformRepos` entry, and an entry that only had it goes away (see "Fields of v11"). v11 files swap `images` for `containers` and `imageId` for `containerId` (see "Fields of v12"). v12 files lose `inherit` from each annotation and gain `floating: false` on each marking, `parentId: null` on each container and `arrows: []` at the root (see "Fields of v13"). v13 files gain `parentRole: null` on each annotation and `docRepos: {}` at the root (see "Fields of v14"). v14 files only get the number bumped (see "Fields of v15"). v15 files gain `project.id` (a new UUID), `perspectives: []` and `arrivals: []` (see "Fields of v16"). v16 files only get the number bumped (see "Fields of v17"). v17 files only get the number bumped (see "Fields of v18"). v18 files only get the number bumped (see "Fields of v19"). v19 files only get the number bumped (see "Fields of v20"). v20 files gain `pages` (one page) and the `pageId` of each container and canvas marking (see "Fields of v21"). v21 files only get the number bumped (see "Fields of v22"). On save, the
+file becomes v22 (and, in folder mode, the original goes first to `backups/`, as in any
 migration).
 Files of a newer version open read-only.

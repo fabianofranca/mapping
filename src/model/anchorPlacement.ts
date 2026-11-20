@@ -50,9 +50,16 @@ export function resolveMarkingAnchor(
   };
 }
 
+/** The two corner alignments (the marking's center sits on the anchor's corner). */
+type CornerAlign = Extract<AnchorAlign, 'corner-start' | 'corner-end'>;
+
+function isCorner(align: AnchorAlign): align is CornerAlign {
+  return align === 'corner-start' || align === 'corner-end';
+}
+
 /** The position along the side (the anchor's `start`/`center`/`end`) with the marking of `size` on that axis. */
 function along(
-  align: AnchorAlign,
+  align: Exclude<AnchorAlign, CornerAlign>,
   from: number,
   extent: number,
   size: number,
@@ -66,12 +73,41 @@ function along(
 }
 
 /**
+ * The corner of `target` that a `corner-*` alignment names, as the marking's CENTER, with the offset
+ * applied (decision 12 of #2093). On `top`/`bottom`, `corner-start`/`corner-end` is the reading start
+ * or end edge (the right one is the start in `rtl`) at the top (or bottom) edge; on `start`/`end` the
+ * x is that side's edge and `corner-start`/`corner-end` is the top/bottom edge. `offset.main` moves
+ * outward and `offset.cross` along the side, as in the other alignments.
+ */
+function cornerCenter(
+  target: Rect,
+  side: AnchorSide,
+  align: CornerAlign,
+  offset: ResolvedMarkingAnchor['offset'],
+  rtl: boolean,
+): { readonly x: number; readonly y: number } {
+  if (side === 'top' || side === 'bottom') {
+    const atStart = (align === 'corner-start') !== rtl;
+    return {
+      x: (atStart ? target.x : right(target)) + (rtl ? -offset.cross : offset.cross),
+      y: side === 'top' ? target.y - offset.main : bottom(target) + offset.main,
+    };
+  }
+  const left = (side === 'start') !== rtl;
+  return {
+    x: left ? target.x - offset.main : right(target) + offset.main,
+    y: (align === 'corner-start' ? target.y : bottom(target)) + offset.cross,
+  };
+}
+
+/**
  * The rectangle of the marking of size `width`×`height` snapped to `target` (same space), with no
  * bounds. The marking sits OUTSIDE the anchor, on side `side` (`start`/`end` follow `direction`: in
  * `rtl`, `start` is the right side); `align` positions along that side (on `top`/`bottom` the
  * `start` is the reading one; on the sides, `start` is the top); `offset.main` is the distance from
  * the edge (negative overlaps) and `offset.cross` moves along the side: in the reading direction on
- * `top`/`bottom` and downward on the sides. Integer (rounded).
+ * `top`/`bottom` and downward on the sides. With `corner-start`/`corner-end` the marking's CENTER sits
+ * on the anchor's corner (`cornerCenter`) and `offset.main` moves it outward from there. Integer (rounded).
  */
 export function anchoredRect(
   target: Rect,
@@ -82,6 +118,15 @@ export function anchoredRect(
   const { side, align, offset } = anchor;
   const rtl = direction === 'rtl';
   const { width, height } = size;
+  if (isCorner(align)) {
+    const center = cornerCenter(target, side, align, offset, rtl);
+    return {
+      x: Math.round(center.x - width / 2),
+      y: Math.round(center.y - height / 2),
+      width,
+      height,
+    };
+  }
   let x: number;
   let y: number;
   if (side === 'top' || side === 'bottom') {

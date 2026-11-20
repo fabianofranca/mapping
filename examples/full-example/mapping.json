@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 21,
+  "schemaVersion": 22,
   "revision": 1,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",

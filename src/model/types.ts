@@ -1,9 +1,9 @@
 import type { Spec } from './spec';
 
-// Types of the `mapping.json` (schema v21). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
+// Types of the `mapping.json` (schema v22). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
 // the operations always return a new project.
 
-export const SCHEMA_VERSION = 21;
+export const SCHEMA_VERSION = 22;
 /** The reading directions the file accepts (v20): single source of the type and the schemas (zod, MCP). */
 export const READING_DIRECTIONS = ['ltr', 'rtl'] as const;
 /** Reading direction (v20): left to right or right to left. */

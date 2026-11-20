@@ -246,7 +246,7 @@ test('R25.3 to R25.12: no marking moves without a request', async ({ page }) => 
 
   let raw = await settled(page);
   let mapping = expectRects(raw, {}, 'R25.3');
-  expect(mapping.schemaVersion).toBe(21);
+  expect(mapping.schemaVersion).toBe(22);
   expect(mapping.containers).toMatchObject([{ name: 'Screens', background: '#DDEEFF' }]);
 
   // R25.4: Card, Text field and Divider.
