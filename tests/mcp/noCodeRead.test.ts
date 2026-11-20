@@ -186,7 +186,8 @@ describe('the server does not open code files (static)', () => {
     // Whoever is listed here reads/writes `mapping.json`, `specs/`, images, `proposals/` or
     // specialization files (`validate_specialization`) and library packages (`library.ts`: only `.json`
     // and `.md` are read; the rest is listed) or the `.md` of a type's external document
-    // (`docFiles.ts`, confined to the working directory by the same checker) or the `.json` of a batch
+    // (`docFiles.ts`, confined to the working directory by the same checker), the `.svg` files and the icons
+    // `.json` of `import_icons` (`iconImport.ts`) or the `.json` of a batch
     // (`operationsFile.ts`, inside the roots), never code. A new module
     // that needs the disk joins this list on purpose, after checking that it does not touch code.
     expect(importers).toEqual([
@@ -194,6 +195,7 @@ describe('the server does not open code files (static)', () => {
       'codeFiles.ts',
       'createProject.ts',
       'docFiles.ts',
+      'iconImport.ts',
       'imageTools.ts',
       'library.ts',
       'operationsFile.ts',

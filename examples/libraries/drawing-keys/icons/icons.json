@@ -26,6 +26,88 @@
           "fillRule": "evenodd"
         }
       ]
+    },
+    "icon-current-color": {
+      "paths": [
+        {
+          "d": "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z",
+          "fill": true
+        }
+      ]
+    },
+    "icon-figma-evenodd": {
+      "paths": [
+        {
+          "d": "M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z",
+          "fill": true,
+          "fillRule": "evenodd"
+        }
+      ]
+    },
+    "icon-flag": {
+      "viewBox": [24, 16],
+      "paths": [
+        {
+          "d": "M2 0H22A2 2 0 0 1 24 2V14A2 2 0 0 1 22 16H2A2 2 0 0 1 0 14V2A2 2 0 0 1 2 0Z",
+          "fill": "#ffffff"
+        },
+        {
+          "d": "M2 0H6A2 2 0 0 1 8 2V14A2 2 0 0 1 6 16H2A2 2 0 0 1 0 14V2A2 2 0 0 1 2 0Z",
+          "fill": "#0055a4"
+        },
+        {
+          "d": "M18 0H22A2 2 0 0 1 24 2V14A2 2 0 0 1 22 16H18A2 2 0 0 1 16 14V2A2 2 0 0 1 18 0Z",
+          "fill": "#ef4135"
+        }
+      ]
+    },
+    "icon-shapes": {
+      "paths": [
+        {
+          "d": "M10 6A4 4 0 0 1 6 10A4 4 0 0 1 2 6A4 4 0 0 1 6 2A4 4 0 0 1 10 6Z",
+          "fill": true
+        },
+        {
+          "d": "M22 6A4 3 0 0 1 18 9A4 3 0 0 1 14 6A4 3 0 0 1 18 3A4 3 0 0 1 22 6Z",
+          "fill": true
+        },
+        {
+          "d": "M2 12L22 12",
+          "fill": false,
+          "stroke": true,
+          "width": 2
+        },
+        {
+          "d": "M2 22L8 16L14 22",
+          "fill": false,
+          "stroke": true,
+          "width": 1
+        },
+        {
+          "d": "M16 22L20 14L24 22Z",
+          "fill": true
+        }
+      ]
+    },
+    "icon-stroked": {
+      "paths": [
+        {
+          "d": "M5 12l5 5L20 7",
+          "fill": false,
+          "stroke": true,
+          "width": 2,
+          "cap": "round",
+          "join": "round"
+        },
+        {
+          "d": "M4 20h16",
+          "fill": false,
+          "stroke": true,
+          "width": 1.5,
+          "cap": "square",
+          "join": "bevel"
+        }
+      ]
     }
   }
 }

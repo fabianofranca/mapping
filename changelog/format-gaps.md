@@ -5,7 +5,8 @@ Icons file formatVersion 3; component format 4, specialization and schema unchan
 ## Adicionado
 
 - The `fillRule` of an icon path (icons file `formatVersion` 3): each item of `paths` accepts `"fillRule": "evenodd"` (or `"nonzero"`, the default). With `evenodd` the inner shapes of a path are holes, so an icon exported from Figma or Android no longer needs its subpaths rewritten. It draws the same in the app, in the `render_marking` and `render_container` PNG of the MCP and in the viewer (`mapping-viewer` 0.6.0). `fillRule` in a version 1 or 2 file is `only allowed with formatVersion 3`, at `icons.<name>.paths[i].fillRule`; a value other than `nonzero` or `evenodd` is `expected one of: nonzero, evenodd`.
-- The example package `examples/libraries/drawing-keys/`, with the Icon holes component and an icons file in version 3 (`ring`, `square-hole`, `star-evenodd`).
+- The example package `examples/libraries/drawing-keys/`, with the Icon holes component and an icons file in version 3 (`ring`, `square-hole`, `star-evenodd`, plus the icons of `tests/fixtures/svg-icons/` imported through `import_icons`).
+- MCP `import_icons({ path, svg, name?, replace?, colors?, mirror?, dryRun? })`: turns `.svg` files (one file or a folder, inside the roots) into icons of the icons file the package declares, with `fillRule`, automatic color and the basic shapes as path data; `dryRun` previews, an existing name is skipped (`icon-exists`) unless `replace: true`, and a file with a problem goes into `errors` without stopping the others. It writes only that `.json`, atomically and after validating it, and refuses a package inside a project's `specs/` (`library-in-project`) and a specialization without `icons` (`icons-not-declared`). See `docs/MCP.md`, "Importing icons (`import_icons`)".
 
 ## Alterado
 

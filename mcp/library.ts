@@ -33,7 +33,7 @@ export const MAX_PACKAGE_FILES = 2000;
 /** Sum of the texts read (`.json` and `.md`). */
 export const MAX_PACKAGE_TEXT_BYTES = 32 * 1024 * 1024;
 /** A text larger than this does not belong to a reasonable package. */
-const MAX_TEXT_FILE_BYTES = 8 * 1024 * 1024;
+export const MAX_TEXT_FILE_BYTES = 8 * 1024 * 1024;
 /** Maximum depth of package subfolders. */
 const MAX_DEPTH = 8;
 /** Errors and warnings returned at once. */
@@ -438,6 +438,8 @@ export async function validateLibraryTool(
 /** Lazy access to the files of a package (from the request by `path` or from the copy in the project). */
 export interface PackageSource {
   readonly spec: Spec;
+  /** Real path of the package folder. */
+  readonly dir: string;
   /** Specialization file relative to the package folder. */
   readonly specPath: string;
   /** Text of the file (path relative to the folder); `null` if it does not exist. */
@@ -525,6 +527,7 @@ export async function packageByPath(roots: Roots, path: string): Promise<Package
   const base = specPath;
   return {
     spec,
+    dir,
     specPath: base,
     read: (file) => readPackageFile(roots, dir, file),
     resolve: (ref) => resolvePath(base, ref),
@@ -567,6 +570,7 @@ export function packageOfProject(
   const base = basename(specFile);
   return {
     spec,
+    dir,
     specPath: base,
     read: (file) => readPackageFile(roots, dir, file),
     resolve: (ref) => resolvePath(base, ref),

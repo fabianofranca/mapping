@@ -27,13 +27,20 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
-/** Is some folder above `dir`, up to the root, already a project? Projects do not nest. */
-async function enclosingProject(dir: string, roots: Roots): Promise<string | null> {
+/**
+ * Is some folder above `dir`, up to the root, already a project? Projects do not nest.
+ * `includeSelf` also looks at `dir` itself (`import_icons`: a library inside a project).
+ */
+export async function enclosingProject(
+  dir: string,
+  roots: Roots,
+  includeSelf = false,
+): Promise<string | null> {
   const boundaries = new Set([
     ...roots.roots,
     ...(await roots.realRoots()).filter((r): r is string => r !== null),
   ]);
-  for (let current = dirname(dir); ; current = dirname(current)) {
+  for (let current = includeSelf ? dir : dirname(dir); ; current = dirname(current)) {
     if (await exists(join(current, MAPPING_FILE))) return current;
     if (boundaries.has(current) || dirname(current) === current) return null;
   }
