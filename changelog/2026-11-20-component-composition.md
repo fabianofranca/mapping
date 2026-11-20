@@ -11,3 +11,8 @@ Component format 4, specialization unchanged, project schema v22.
 
 - Project schema v22 (only the number changes in the migration): an earlier app opens a file with a corner value read-only. The example projects and the invalid-file fixtures were rewritten to v22.
 - Test script R38, "Composed components and the corner anchor" (in block 6 of the full round), covers the node, the example package `examples/libraries/composition/` and the corner anchor in the app and in the MCP; the scripts that quoted schema 21 now quote 22.
+
+## Corrigido
+
+- Nested `component` nodes no longer measure the same inner component again at every level: one drawing shares the inner sizes and baselines across all its levels, so the work grows with the drawn instances (a chain 8 levels deep with two nodes each, in a `hug` row aligned by baseline, went from about 90 s to a few milliseconds).
+- A `stroke.gap` that names a `component` node opens on the inner component's drawing, as it does for any other node; before, the gap was silently dropped.

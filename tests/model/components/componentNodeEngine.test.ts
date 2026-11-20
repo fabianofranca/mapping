@@ -706,3 +706,114 @@ describe('component node: review findings of CC2', () => {
     expect(absent.messages.length).toBeGreaterThan(0);
   });
 });
+
+describe('component node: pre-merge review findings of #2292', () => {
+  /** A chain `depth` levels deep: each level is a hug row aligned by baseline with two nodes of the next. */
+  function chain(depth: number): ComponentFile {
+    const level = (i: number): ComponentFile => {
+      if (i === depth) return chip();
+      const id = `l${i + 1}`;
+      return {
+        ...file(
+          `l${i}`,
+          { size: { width: 60, height: 24 } },
+          {
+            type: 'frame',
+            width: 'hug',
+            height: 'hug',
+            layout: { type: 'row', align: 'baseline', gap: 2 },
+            children: [
+              { type: 'component', id, width: 'hug', height: 'hug' },
+              { type: 'component', id, width: 'hug', height: 'hug' },
+            ],
+          },
+        ),
+        resolvedComponents: {
+          [id]:
+            i + 1 === depth ? entry(level(i + 1), ...chipFields) : entry(level(i + 1)),
+        },
+      };
+    };
+    return level(0);
+  }
+
+  /** How many times the engines look an inner component up to draw `component` (once per node per engine). */
+  function lookups(component: ComponentFile): number {
+    let count = 0;
+    const counted = (c: ComponentFile): ComponentFile => {
+      if (c.resolvedComponents === undefined) return c;
+      const resolved: Record<string, ResolvedComponent> = {};
+      for (const [id, found] of Object.entries(c.resolvedComponents)) {
+        const next = { ...found, component: counted(found.component) };
+        Object.defineProperty(resolved, id, {
+          enumerable: true,
+          get: () => {
+            count++;
+            return next;
+          },
+        });
+      }
+      return { ...c, resolvedComponents: resolved };
+    };
+    run(counted(component));
+    return count;
+  }
+
+  it('the measuring work of nested components grows with the drawn instances, not per level', () => {
+    // The drawing doubles per level (two nodes each): the engines may double too, never 4-5x.
+    const four = lookups(chain(4));
+    const five = lookups(chain(5));
+    const six = lookups(chain(6));
+    expect(five / four).toBeLessThan(2.6);
+    expect(six / five).toBeLessThan(2.6);
+  });
+
+  it('a nested drawing is the same with the shared measures', () => {
+    const drawn = instantiate(chain(3), {}, { ...box, width: 600 }, base);
+    const leaves = [...walk(drawn.root)].filter((n) => n.type === 'text');
+    expect(leaves).toHaveLength(8);
+    expect(drawn.messages).toEqual([]);
+  });
+
+  /** A frame with a stroke gap that names `badge`, and a `badge` node across its top. */
+  function gapped(badge: Json): ComponentFile {
+    return {
+      ...file(
+        'gapped',
+        { size: { width: 200, height: 80 } },
+        {
+          type: 'frame',
+          layout: { type: 'none' },
+          clip: false,
+          children: [
+            {
+              type: 'rect',
+              name: 'outline',
+              anchors: { left: 0, top: 20, right: 0, bottom: 0 },
+              stroke: { color: '#000000', width: 1, gap: { node: 'badge' } },
+            },
+            {
+              name: 'badge',
+              anchors: { left: 8, top: 10 },
+              width: 64,
+              height: 20,
+              ...badge,
+            },
+          ],
+        },
+      ),
+      resolvedComponents: { chip: entry(chip(), ...chipFields) },
+    };
+  }
+
+  const gapsOf = (component: ComponentFile): unknown => {
+    const outline = [...walk(run(component).root)].find((n) => n.name === 'outline');
+    return outline?.stroke?.gaps;
+  };
+
+  it('a stroke gap that names a component node opens on the inner root', () => {
+    const withRect = gapsOf(gapped({ type: 'rect' }));
+    expect(withRect).toEqual([{ side: 'top', from: 8, to: 72 }]);
+    expect(gapsOf(gapped({ type: 'component', id: 'chip' }))).toEqual(withRect);
+  });
+});

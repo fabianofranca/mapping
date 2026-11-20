@@ -299,9 +299,65 @@ export interface InstantiateOptions {
    * inner component of a node, and a node at depth `MAX_COMPONENT_DEPTH` draws nothing (decision 9 of #2093).
    */
   readonly nestingDepth?: number;
+  /**
+   * The sizes and baselines of inner components (`component` nodes) already measured in this
+   * top-level call, shared by all its nested engines: `instantiate` and `measureComponent` set it,
+   * the caller does not.
+   */
+  readonly nestedMemo?: NestedMemo;
 }
 
 const nestingDepthOf = (options: InstantiateOptions): number => options.nestingDepth ?? 0;
+
+/**
+ * What one top-level call already measured of its inner components (review of #2292): without it every
+ * nested engine measured its inner nodes again and the work grew 4-7x per nesting level.
+ */
+export interface NestedMemo {
+  readonly results: Map<string, number | null>;
+  /** A number per object (component, tokens, icons) for the keys. */
+  readonly ids: Map<object, number>;
+}
+
+const newNestedMemo = (): NestedMemo => ({ results: new Map(), ids: new Map() });
+
+const withNestedMemo = (
+  options: InstantiateOptions,
+): InstantiateOptions & { readonly nestedMemo: NestedMemo } =>
+  options.nestedMemo === undefined
+    ? { ...options, nestedMemo: newNestedMemo() }
+    : { ...options, nestedMemo: options.nestedMemo };
+
+const memoId = (memo: NestedMemo, object: object | undefined): number => {
+  if (object === undefined) return -1;
+  const known = memo.ids.get(object);
+  if (known !== undefined) return known;
+  const id = memo.ids.size;
+  memo.ids.set(object, id);
+  return id;
+};
+
+/**
+ * The key of a measure of `component` with `values` in the scope of `options` (the measurer is the
+ * call's own, the same for all its engines); `what` is the measure and its box.
+ */
+const nestedKey = (
+  memo: NestedMemo,
+  component: ComponentFile,
+  values: FieldValues,
+  options: InstantiateOptions,
+  what: string,
+): string =>
+  [
+    memoId(memo, component),
+    memoId(memo, options.tokens),
+    memoId(memo, options.icons),
+    nestingDepthOf(options),
+    options.direction ?? 'ltr',
+    JSON.stringify(options.provided ?? null),
+    JSON.stringify(values),
+    what,
+  ].join('|');
 
 /** The deepest `component` node nesting that draws (a cycle never gets that far: the loaders cut it). */
 export const MAX_COMPONENT_DEPTH = 8;
@@ -1499,6 +1555,8 @@ function createEngine(
     return Object.keys(out).length === 0 ? undefined : out;
   };
 
+  const { nestedMemo } = withNestedMemo(options);
+
   /** The options the inner component is instantiated with: the outer's scope, one level deeper, in its own ids. */
   const componentOptions = (
     node: ComponentNodeTemplate,
@@ -1513,6 +1571,7 @@ function createEngine(
       provided: extendProvided(options.provided ?? {}, componentProvides(node)),
       direction: dirOf(node),
       nestingDepth: componentDepth + 1,
+      nestedMemo,
     };
   };
 
@@ -1537,7 +1596,30 @@ function createEngine(
     return min === undefined ? 0 : min[axis === 'w' ? 'width' : 'height'];
   };
 
-  const componentMeasures = new Map<ComponentNodeTemplate, Map<string, number>>();
+  const measureOptions = new Map<ComponentNodeTemplate, InstantiateOptions>();
+
+  /**
+   * A measure of the node's inner component (`what`, with its box), computed once per top-level call:
+   * every nested engine reads the same `nestedMemo`.
+   */
+  const rememberedMeasure = (
+    node: ComponentNodeTemplate,
+    plan: ComponentPlan,
+    what: string,
+    compute: (inner: InstantiateOptions) => number | null,
+  ): number | null => {
+    let inner = measureOptions.get(node);
+    if (inner === undefined) {
+      inner = componentOptions(node, 'm');
+      measureOptions.set(node, inner);
+    }
+    const key = nestedKey(nestedMemo, plan.component, plan.values, inner, what);
+    const known = nestedMemo.results.get(key);
+    if (known !== undefined || nestedMemo.results.has(key)) return known ?? null;
+    const result = compute(inner);
+    nestedMemo.results.set(key, result);
+    return result;
+  };
 
   /** The inner drawing's size on `axis` (the other axis is `otherSize`, or hug). */
   const componentHug = (
@@ -1547,30 +1629,23 @@ function createEngine(
   ): number => {
     const plan = componentPlan(node);
     if (plan === undefined) return 0;
-    let perNode = componentMeasures.get(node);
-    if (perNode === undefined) {
-      perNode = new Map();
-      componentMeasures.set(node, perNode);
-    }
-    const key = `${axis}:${otherSize ?? ''}`;
-    const known = perNode.get(key);
-    if (known !== undefined) return known;
     const other = otherSize ?? null;
-    const measured = measureComponent(
-      plan.component,
-      plan.values,
-      { width: axis === 'w' ? null : other, height: axis === 'h' ? null : other },
-      componentOptions(node, 'm'),
+    const size = rememberedMeasure(
+      node,
+      plan,
+      `hug:${axis}:${otherSize ?? ''}`,
+      (inner) => {
+        const measured = measureComponent(
+          plan.component,
+          plan.values,
+          { width: axis === 'w' ? null : other, height: axis === 'h' ? null : other },
+          inner,
+        );
+        return measured[axis === 'w' ? 'width' : 'height'];
+      },
     );
-    const size = measured[axis === 'w' ? 'width' : 'height'];
-    perNode.set(key, size);
-    return size;
+    return size ?? 0;
   };
-
-  const componentIntrinsics = new Map<
-    ComponentNodeTemplate,
-    Map<IntrinsicSize, number>
-  >();
 
   const componentIntrinsicWidth = (
     node: ComponentNodeTemplate,
@@ -1578,24 +1653,20 @@ function createEngine(
   ): number => {
     const plan = componentPlan(node);
     if (plan === undefined) return 0;
-    let perNode = componentIntrinsics.get(node);
-    if (perNode === undefined) {
-      perNode = new Map();
-      componentIntrinsics.set(node, perNode);
-    }
-    const known = perNode.get(mode);
-    if (known !== undefined) return known;
-    const width = measureComponent(
-      plan.component,
-      plan.values,
-      { width: mode, height: null },
-      componentOptions(node, 'm'),
-    ).width;
-    perNode.set(mode, width);
-    return width;
+    const width = rememberedMeasure(
+      node,
+      plan,
+      `intrinsic:${mode}`,
+      (inner) =>
+        measureComponent(
+          plan.component,
+          plan.values,
+          { width: mode, height: null },
+          inner,
+        ).width,
+    );
+    return width ?? 0;
   };
-
-  const componentBaselines = new Map<ComponentNodeTemplate, Map<string, number | null>>();
 
   /** The inner component's first baseline in a `w` × `h` box: the node's baseline. */
   const componentBaseline = (
@@ -1605,22 +1676,19 @@ function createEngine(
   ): number | undefined => {
     const plan = componentPlan(node);
     if (plan === undefined) return undefined;
-    let perNode = componentBaselines.get(node);
-    if (perNode === undefined) {
-      perNode = new Map();
-      componentBaselines.set(node, perNode);
-    }
-    const key = `${w}x${h}`;
-    if (!perNode.has(key)) {
-      const drawn = instantiate(
-        plan.component,
-        plan.values,
-        { x: 0, y: 0, width: w, height: h },
-        componentOptions(node, 'b'),
-      );
-      perNode.set(key, drawn.firstBaseline ?? null);
-    }
-    return perNode.get(key) ?? undefined;
+    const baseline = rememberedMeasure(
+      node,
+      plan,
+      `baseline:${w}x${h}`,
+      (inner) =>
+        firstBaselineOf(
+          plan.component,
+          plan.values,
+          { x: 0, y: 0, width: w, height: h },
+          inner,
+        ) ?? null,
+    );
+    return baseline ?? undefined;
   };
 
   /** A `slot` node's content size on an axis: its children's, or (empty) its default content's. */
@@ -3313,6 +3381,8 @@ function createEngine(
     // The node's rotation adds to the inner root's own.
     const { rotation: own = 0, ...rest } = root;
     const rotation = own + num(node.rotation, 0);
+    // The scene node is the inner root (`<path>/component/root`): a `stroke.gap` naming the node opens on it.
+    builtIds.set(node, root.id);
     return {
       ...rest,
       name: node.name ?? plan.component.name,
@@ -3480,8 +3550,12 @@ export function instantiate(
   box: Box,
   options: InstantiateOptions,
 ): Instantiated {
-  const { engine, result: root } = withLinesPasses(component, values, options, box, (e) =>
-    e.buildRoot(box),
+  const { engine, result: root } = withLinesPasses(
+    component,
+    values,
+    withNestedMemo(options),
+    box,
+    (e) => e.buildRoot(box),
   );
   const provides = engine.provides();
   const messages = engine.messages();
@@ -3495,6 +3569,22 @@ export function instantiate(
     shortfalls: Object.fromEntries(engine.shortfalls),
     overflowWarnings: [...engine.shortfalls.keys()],
   };
+}
+
+/**
+ * The component's first baseline in `box`, what `instantiate` gives as `firstBaseline`, without
+ * building the nodes (only a template with `$lines` builds them, to measure the lines).
+ */
+function firstBaselineOf(
+  component: ComponentFile,
+  values: FieldValues,
+  box: Box,
+  options: InstantiateOptions,
+): number | undefined {
+  return withLinesPasses(component, values, withNestedMemo(options), box, (e) => {
+    if (e.citedLines.size > 0) e.buildRoot(box);
+    return e.rootBaseline(box);
+  }).result;
 }
 
 /**
@@ -3552,7 +3642,7 @@ export function measureComponent(
   const { engine, result } = withLinesPasses(
     component,
     values,
-    options,
+    withNestedMemo(options),
     start,
     (e) => {
       const measured = plan(e);
