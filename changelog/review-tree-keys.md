@@ -1,4 +1,4 @@
-# Review tree keys and Ctrl+, in text fields — [Não lançado] (épico `epic/review-tree-keys`, PR #0, MCP 0.48.0 unchanged, schema v21)
+# Review tree keys and Ctrl+, in text fields — [Não lançado] (épico `epic/review-tree-keys`, PR #2295, MCP 0.48.0 unchanged, schema v21)
 
 ## Corrigido
 
