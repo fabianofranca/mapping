@@ -5,7 +5,6 @@ import { validateLibrary } from '../../src/model/library';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import {
   SPEC_FILE,
-  unknownWarnings,
   drawIn,
   files,
   text,
@@ -90,9 +89,9 @@ describe('M3 — selection and input in format 4', () => {
     },
   );
 
-  it('the library validates with 0 errors and only the known warnings (provisional, #1774)', () => {
+  it('the library validates with 0 errors and 0 warnings', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
-    expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
+    expect(report.warnings).toEqual([]);
   }, 30_000);
 });

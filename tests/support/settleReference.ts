@@ -23,10 +23,14 @@ import type { Size } from '../../src/model/geometry';
 /**
  * FROZEN EQUIVALENCE REFERENCE (#882, decision 1). Literal copy of the settle of
  * `src/model/hierarchySettle.ts` as it was before the spatial index (commit c0365b0): it scans the whole
- * space for each marking (O(k²)). DO NOT EDIT: the equivalence test
- * (`tests/model/settleEquivalence.test.ts`) compares the new implementation with it, and that is what
- * proves the optimization changed no result, ties included. Only `settleIf`/`settleFrom`
+ * space for each marking (O(k²)). DO NOT EDIT, except for a new rule of the settle (the equivalence
+ * test, `tests/model/settleEquivalence.test.ts`, compares the new implementation with it, and that is what
+ * proves an optimization changed no result, ties included). Only `settleIf`/`settleFrom`
  * and the public query functions are left out; `clearArrowRoutes` is imported because it did not change.
+ *
+ * Stage #2210 (decision 9) added the "keep the size in units" rule, in this file's own
+ * straightforward form: the moves are collected first, and each one finds its set (the same
+ * space S and the same space T) by filtering the whole list, with no helper of `settleUnits.ts`.
  */
 
 interface SettleOptions {
@@ -197,34 +201,138 @@ export function referenceEnclosingAmong(
   return pickParent(inside, current, (id) => ranks.get(id) ?? -1);
 }
 
-/** The space and the `rect` that geometry gives to the marking; itself if nothing changes. */
-function settleSpace(
-  p: Project,
-  m: Marking,
-  options: SettleOptions | undefined,
-): Marking {
+/** A marking that changes space: what the first pass of the settle finds. */
+interface RefMove {
+  readonly m: Marking;
+  /** Footprint on the canvas before the change (canvas units). */
+  readonly canvas: Rect;
+  readonly pageId: string | null;
+  readonly fromKey: string;
+  /** density × scale of the space the marking leaves. */
+  readonly fromDensity: number;
+  readonly fromScale: number;
+  readonly toKey: string;
+  readonly toDensity: number;
+  readonly toScale: number;
+  readonly space: Space;
+}
+
+/** The change of space that geometry gives the marking; `null` if nothing changes. */
+function referenceMove(p: Project, m: Marking): RefMove | null {
   let canvas: Rect;
   let pageId: string | null = m.pageId;
+  let fromKey = `\0page:${m.pageId ?? ''}`;
+  let fromDensity = 1;
+  let fromScale = 1;
   if (m.containerId === null) {
     canvas = m.rect;
   } else {
     const own = projectIndex(p).containers.get(m.containerId);
     // Nonexistent container: invalid project; the repair fixes it, the settle does not invent.
-    if (!own) return m;
-    if (!m.floating && containsRect(imagePixelRect(own), m.rect)) return m;
+    if (!own) return null;
+    if (!m.floating && containsRect(imagePixelRect(own), m.rect)) return null;
     canvas = toCanvasRect(own.placement, m.rect);
     pageId = own.pageId;
+    fromKey = own.id;
+    fromDensity = own.density ?? 1;
+    fromScale = own.placement.scale;
   }
   const target = m.floating ? null : containerContaining(p, canvas, pageId);
-  if (target === null && m.containerId === null) return m;
-  const min = options?.minSizeOf?.(m.id) ?? null;
-  const space = target ? containerSpace(target) : CANVAS_SPACE;
+  if (target === null && m.containerId === null) return null;
+  return {
+    m,
+    canvas,
+    pageId,
+    fromKey,
+    fromDensity,
+    fromScale,
+    toKey: target ? target.id : `\0page:${pageId ?? ''}`,
+    toDensity: target ? (target.density ?? 1) : 1,
+    toScale: target ? target.placement.scale : 1,
+    space: target ? containerSpace(target) : CANVAS_SPACE,
+  };
+}
+
+/**
+ * Stage #2210: the markings that go from the same space to the same space as `move`, itself
+ * included, in the order of the array.
+ */
+function referenceSet(moves: readonly RefMove[], move: RefMove): RefMove[] {
+  return moves.filter((o) => o.fromKey === move.fromKey && o.toKey === move.toKey);
+}
+
+/** The footprint and the minimum a move gets when its set scales by `k` around `origin` (canvas units). */
+function referenceScaled(
+  move: RefMove,
+  k: number,
+  origin: { x: number; y: number },
+  options: SettleOptions | undefined,
+): { canvas: Rect; min: Size | null } {
+  const min = options?.minSizeOf?.(move.m.id) ?? null;
+  const ratio = move.toDensity / move.fromDensity;
+  const up = (v: number) => (ratio === 1 ? v : Math.ceil(v * ratio - 1e-9));
+  return {
+    canvas: {
+      x: origin.x + (move.canvas.x - origin.x) * k,
+      y: origin.y + (move.canvas.y - origin.y) * k,
+      width: move.canvas.width * k,
+      height: move.canvas.height * k,
+    },
+    min: min === null ? null : { width: up(min.width), height: up(min.height) },
+  };
+}
+
+/** The marking in `move.space` with the `rect` converted from `canvas`. */
+function referencePlace(move: RefMove, canvas: Rect, min: Size | null): Marking {
+  const { m, space } = move;
   return {
     ...m,
     containerId: space.containerId,
-    pageId: space.containerId === null ? pageId : null,
+    pageId: space.containerId === null ? move.pageId : null,
     rect: fromCanvasRect(space.placement, canvas, space.bounds, min),
   };
+}
+
+/**
+ * The marking in the space the geometry gave it, with the `rect` converted. If the set it belongs to
+ * (the same space S to the same space T) holds a component and the units differ, the whole set scales around the
+ * top-left corner of its bounding box; it does not when that would leave a non-floating marking that
+ * lands on the canvas fully inside a container (the next settle would take it in).
+ */
+function referenceLand(
+  p: Project,
+  moves: readonly RefMove[],
+  move: RefMove,
+  options: SettleOptions | undefined,
+): Marking {
+  // The minimum follows the target density whenever the densities differ, also on the plain
+  // path (k = 1 with different densities, or the taken-back-in fallback).
+  const plain = referencePlace(
+    move,
+    move.canvas,
+    referenceScaled(move, 1, move.canvas, options).min,
+  );
+  const set = referenceSet(moves, move);
+  const k = (move.toDensity * move.toScale) / (move.fromDensity * move.fromScale);
+  const hasComponent = set.some((o) => (options?.minSizeOf?.(o.m.id) ?? null) !== null);
+  if (!hasComponent || Math.abs(k - 1) <= 1e-6) return plain;
+  const origin = {
+    x: Math.min(...set.map((o) => o.canvas.x)),
+    y: Math.min(...set.map((o) => o.canvas.y)),
+  };
+  const placed = set.map((o) => {
+    const s = referenceScaled(o, k, origin, options);
+    return referencePlace(o, s.canvas, s.min);
+  });
+  const takenBackIn = placed.some(
+    (m) =>
+      m.containerId === null &&
+      !m.floating &&
+      containerContaining(p, m.rect, m.pageId) !== null,
+  );
+  if (takenBackIn) return plain;
+  const mine = referenceScaled(move, k, origin, options);
+  return referencePlace(move, mine.canvas, mine.min);
 }
 
 /** The settle of geometry and membership, without the perspectives. */
@@ -232,8 +340,11 @@ function referenceSettleGeometry(p: Project, options?: SettleOptions): Project {
   let changed = false;
   // Markings that changed space: the arrow attached to them loses its waypoints.
   const movedSpace = new Set<string>();
-  const placed = p.markings.map((m) => {
-    const next = settleSpace(p, m, options);
+  const moves = p.markings.map((m) => referenceMove(p, m));
+  const all = moves.filter((move): move is RefMove => move !== null);
+  const placed = p.markings.map((m, i) => {
+    const move = moves[i];
+    const next = move ? referenceLand(p, all, move, options) : m;
     if (next !== m) {
       changed = true;
       if (next.containerId !== m.containerId) movedSpace.add(m.id);

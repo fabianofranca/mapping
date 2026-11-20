@@ -103,8 +103,28 @@ function continuesBefore(stream: TokenStream, index: number): boolean {
   return next.kind === 'ident' && next.text === 'where';
 }
 
-/** The token ranges of each member of the span `[from, to)`. */
-export function splitMembers(stream: TokenStream, from: number, to: number): Range[] {
+const DIRECTIVES = new Set(['if', 'elseif', 'else', 'endif']);
+
+/** Is the token `index` the `#` of a conditional compilation directive (`#if`, `#elseif`, `#else`, `#endif`) at the start of a line? */
+function startsDirective(stream: TokenStream, index: number): boolean {
+  if (!isPunct(stream, index, '#') || !firstOnLine(stream, index)) return false;
+  const word = stream.tokens[index + 1];
+  return (
+    word?.kind === 'ident' &&
+    DIRECTIVES.has(word.text) &&
+    word.start === stream.tokens[index]!.end
+  );
+}
+
+/** The index after the directive that starts at `index`: its line, and the next ones while a line ends in `&&`, `||` or `,`. */
+function directiveEnd(stream: TokenStream, index: number, to: number): number {
+  let i = index + 1;
+  while (i < to && !(firstOnLine(stream, i) && !continuesBefore(stream, i))) i++;
+  return i;
+}
+
+/** The token ranges of each member of a span with no directive in it. */
+function splitSegment(stream: TokenStream, from: number, to: number): Range[] {
   const members: Range[] = [];
   let start = from;
   for (const i of topLevel(stream, from, to)) {
@@ -122,5 +142,22 @@ export function splitMembers(stream: TokenStream, from: number, to: number): Ran
     }
   }
   if (to > start) members.push({ from: start, to });
+  return members;
+}
+
+/**
+ * The token ranges of each member of the span `[from, to)`. The conditional compilation directives
+ * (`#if`, `#elseif`, `#else`, `#endif`) separate members and are not members: what is inside every branch is
+ * read as if they were not there.
+ */
+export function splitMembers(stream: TokenStream, from: number, to: number): Range[] {
+  const members: Range[] = [];
+  let start = from;
+  for (const i of topLevel(stream, from, to)) {
+    if (i < start || !startsDirective(stream, i)) continue;
+    members.push(...splitSegment(stream, start, i));
+    start = directiveEnd(stream, i, to);
+  }
+  members.push(...splitSegment(stream, start, to));
   return members;
 }

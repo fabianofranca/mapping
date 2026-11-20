@@ -8,6 +8,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { appendOnlyList } from '../support/appendOnly';
 
 const SCRIPT = '.claude/skills/implementar-fila/painel/painel.py';
 const NOW = '2026-11-13T10:00:00Z';
@@ -175,6 +176,49 @@ describe('painel.py conflito (VR1, #1864)', () => {
     expect(r.stdout).toBe('livre\n');
     expect(r.status).toBe(0);
   });
+
+  it(
+    'an append-only citation shared with an em andamento stage gives livre, the same through --com (AO1, #2314)',
+    () => {
+      stage(
+        '#7',
+        'docs/MCP.md#tools, src/i18n/en-US.ts',
+        'status=em andamento',
+        'started=2026-11-13T09:00:00Z',
+      );
+      const folder = conflict('docs/MCP.md#tools, src/i18n/en-US.ts', '--pasta', dir);
+      expect(folder.stdout).toBe('livre\n');
+      expect(folder.status).toBe(0);
+      const all = appendOnlyList();
+      const com = conflict(all.join(', '), '--com', `#9=${all.join(', ')}`);
+      expect(com.stdout).toBe('livre\n');
+      expect(com.status).toBe(0);
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
+    'a real citation shared in the same call still gives conflito: <real> com #N (AO1, #2314)',
+    () => {
+      stage(
+        '#7',
+        'docs/MCP.md#tools, src/a.ts',
+        'status=em andamento',
+        'started=2026-11-13T09:00:00Z',
+      );
+      const folder = conflict('docs/MCP.md#tools, src/a.ts', '--pasta', dir);
+      expect(folder.stdout).toBe('conflito: src/a.ts com #7 (em andamento)\n');
+      expect(folder.status).toBe(1);
+      const com = conflict(
+        'src/i18n/pt-BR.ts, src/b.ts',
+        '--com',
+        '#9=src/i18n/pt-BR.ts, src/b.ts',
+      );
+      expect(com.stdout).toBe('conflito: src/b.ts com #9 (fora do painel)\n');
+      expect(com.status).toBe(1);
+    },
+    SUBPROCESS_TIMEOUT,
+  );
 
   it('an invalid citation gives inválida: <citation> — <reason> and 2, without checking conflict', () => {
     const folder = conflict('src/model/', '--com', '#9=src/model/a.ts');

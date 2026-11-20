@@ -31,6 +31,6 @@
     "Raised to 2,293,760 (2,240 KiB) by the budget rule (2026-11-16, epic `paginas`): excess of 6897 bytes, growth of 54504 bytes over `main`. Above the limits: growth above 32 KiB over `main`; raises since the owner review above 64 KiB.",
     "Raised to 2,310,144 (2,256 KiB) by the budget rule (2026-11-19, epic `abas-inferiores`): excess of 29 bytes, growth of 2042 bytes over `main`. Above the limits: raises since the owner review above 64 KiB.",
     "Raised to 2,326,528 (2,272 KiB) by the budget rule (2026-11-19, epic `page-follow-ups`): excess of 907 bytes, growth of 5190 bytes over `main`. Above the limits: raises since the owner review above 64 KiB.",
-    "Raised to 2,342,912 (2,288 KiB) by the budget rule (2026-11-20, epic `format-gaps`): excess of 1001 bytes, growth of 1318 bytes over `main`. Above the limits: raises since the owner review above 64 KiB."
+    "Raised to 2,342,912 (2,288 KiB) by the budget rule (2026-11-20, epic `settle-units`): excess of 1616 bytes, growth of 1933 bytes over `main`. Above the limits: raises since the owner review above 64 KiB."
   ]
 }

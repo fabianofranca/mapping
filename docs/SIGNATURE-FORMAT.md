@@ -9,7 +9,7 @@ The schema is in [`signature.schema.json`](signature.schema.json). Mapping's val
 The specialization (`formatVersion` 16, see [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Signatures and field templates") cites the sheet in the type's `code` (`signature`). With it:
 
 - MCP returns, in the `code`, the `unmapped`: the parameters that no field binds and that `ignore` does not dismiss, in source order (including the required ones, such as `onClick`);
-- `validate_library` checks that the `code`'s `params` point to parameters that exist (warning `parameter outside the signature: "<name>"`) and that the sheet is the one for the same symbol and file.
+- `validate_library` checks that the `code`'s `params` point to parameters that exist (warning `parameter outside the signature: "<name>"`) and that the sheet is the one for the same symbol and file. In a `variants` case with its own sheet, only the case's own `params` are checked against it: a base parameter that the case's sheet lacks is not inherited (the resolved code leaves it out), so it does not warn.
 
 The sheet stores nothing about the solution or the project; it only records what the source declares.
 

@@ -192,7 +192,7 @@ node tools/mapping-signature.mjs --help
 - `--symbol` is the name of the `@Composable` function (simple or with the `package`); `--path` is the file's path relative to the repository root and `--ref` the commit pinned in `platforms[].repo` (they go in `source.path` and `source.ref`). `--also` points to other `.kt` files where the `enum class`es and `XDefaults.f()` factories that the main file uses live.
 - **Ambiguous overload:** with more than one candidate, the command exits with an error (code 1), lists the candidates with their index and asks for `--overload <n>`.
 - Deterministic output (same input, same bytes), no dependency and no network; it only writes to `--out`, and only after validating the sheet. Exit codes: 0 ok, 1 extraction error, 2 usage error.
-- **Swift:** `--symbol` is the `struct` (`ProfileCard` or `DS.ProfileCard`); the written `init` comes from `--init <n>` (saved in `source.init`) and, without a written `init`, the memberwise one applies (the stored properties without `@State`, `@Environment` and the like). With more than one `init`, the command exits with an error, lists the `init`s with their index and asks for `--init <n>`. The external label goes in `label` (`_` is the positional, the `#0` of `get_code_hints`).
+- **Swift:** `--symbol` is the `struct` (`ProfileCard` or `DS.ProfileCard`); the written `init` comes from `--init <n>` (saved in `source.init`) and, without a written `init`, the memberwise one applies (the stored properties without `@State`, `@Environment` and the like). The `init`s of an `extension` of the struct (in the file or in an `--also` file) and the ones inside `#if` branches are in the list too, after those of the struct body (a struct with no `init` in the body has the memberwise one as `0`, and an `extension` `init` makes it ambiguous). With more than one `init`, the command exits with an error, lists the `init`s with their index and asks for `--init <n>`. The external label goes in `label` (`_` is the positional, the `#0` of `get_code_hints`).
 - **Figma:** `--file` is the saved JSON in which the node carries `id`, `type` and `componentPropertyDefinitions` (the response of `GET /v1/files/:key/nodes`, the whole file's or the loose node; the format that Figma's MCP returns has not been checked) and `--node` the id of the `COMPONENT_SET` or `COMPONENT` (`12:34` or `12-34`). The sheet is a design one (`source.kind: "design"`): `plan_signature_import` links it to the type's `sources` (pass `system: "figma"`), not to `code`.
 - The three readers give sheets of the same format (`source.extractor: "mapping-signature/<reader>@1"`); a source without an extractor (React, Storybook, Flutter) remains by hand (`source.extractor: "agent"`).
 
@@ -328,6 +328,13 @@ The project has pages (`pages`; each container and each canvas marking is on one
 - **Conversations.** `open_thread` of a canvas point takes `page` (`page-required` with several pages); the thread is written with `formatVersion` 2 and read back with the page.
 - **Proposals** with page changes are written with `formatVersion` 10 (`docs/PROPOSAL-FORMAT.md`).
 
+### A component keeps its units across spaces (stage #2210, 0.48.1)
+
+A change in 0.48.1, patch: no new tool, operation or argument; schema and formats unchanged.
+
+- **The batch converts a component by its units.** When `create_marking` (a canvas `rect` that fits a container), `update_marking` (`rect`, `container`, `move`, `floating`) or any operation that moves the geometry makes the settle change the space of a marking that draws a component, the `rect` is scaled by the density × scale of the new space over the old one, so a `notas/texto` over a density-2 container at scale 1 is created with twice the size, and `floating: true` halves it on the canvas. The set that moves together scales as a whole around its top-left corner (a plain area keeps its text as a child). A plain marking keeps its size on screen, as before. `plan_changes` and `propose_changes` show the converted `rect` in what they write and in `membership`; `get_marking` reads it back.
+- **Minimum in the new space.** The component's minimum is converted by the density ratio, rounded up, as the set lands.
+
 ### Pages follow-ups (stage #2177, 0.47.1)
 
 A change in 0.47.1, patch: no new tool, operation or argument; schema and formats unchanged.
@@ -346,6 +353,11 @@ A change in 0.47.1, patch: no new tool, operation or argument; schema and format
 - **`get_marking_image`** refuses the arrow with the `arrow` error (and a `hint`) and the canvas marking with `canvas-marking`.
 - **`near`** in `create_marking` (reference, id or alias of a container or a marking): only for a floating annotation type (without `container`); the marking is born in a free spot on the target's margin (to the right, stacked from top to bottom with a 24-canvas-unit gap, without overlapping containers or other floating markings; if it does not fit, left, below, above). The `rect`, if given, supplies only the size (x and y are ignored). On a non-floating type or marking, `near` is ignored with an `ignored-argument` warning.
 - `changes` of `plan_changes`/`propose_changes` gains `arrows` (created, changed, deleted) and `created` carries `kind: "arrow"`.
+
+### Change in 0.48.2 — a case no longer inherits parameters its sheet lacks
+
+- **`get_code_hints`, `get_annotation` and `get_marking`** (stage #1774): for a `variants` case with its own `signature` sheet, the resolved `code` leaves out the base `params` that the sheet lacks (a parameter it does not have, a factory argument it does not expand, a position beyond it). `get_code_hints` writes no argument for them and `code.params` has no entry for them; the field's value stays in the tree annotation's `values`. In Material 3, `top-app-bar` with `style = center` and `subtitle` filled resolves to `CenterAlignedTopAppBar` without `subtitle`; the `small` one keeps it. No output key is added, and a case without its own sheet behaves as before.
+- **`validate_library`**: the `parameter outside the signature` warning in such a case is only for the case's own `params`. The Material 3 package validates with no warnings.
 
 ### Change in 0.38.1 — the word wider than the box warns
 

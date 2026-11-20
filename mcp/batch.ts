@@ -134,6 +134,7 @@ import {
   type Marking,
   type Project,
   type Rect,
+  type Size,
   type RefValue,
   type Spec,
   type SpecField,
@@ -1570,17 +1571,17 @@ class Batch {
           changes.push(sourceLabel(projectIndex(project).markings.get(id)!.source));
         }
         if (op.move !== undefined) {
-          project = moveMarking(project, id, op.move.dx, op.move.dy);
+          project = moveMarking(project, id, op.move.dx, op.move.dy, {
+            minSizeOf: this.minSizeOf(project),
+          });
           changes.push(`move (${op.move.dx}, ${op.move.dy}) with the children`);
         }
         if (op.floating !== undefined) {
           const minSize = componentMinSize(project, this.catalog, id);
-          project = setMarkingFloating(
-            project,
-            id,
-            op.floating,
-            minSize ? { minSize } : undefined,
-          );
+          project = setMarkingFloating(project, id, op.floating, {
+            ...(minSize ? { minSize } : {}),
+            minSizeOf: this.minSizeOf(project),
+          });
           changes.push(op.floating ? 'floating' : 'stop being floating');
         }
         if (op.container !== undefined) {
@@ -1595,7 +1596,10 @@ class Batch {
           const { rect } = op;
           const minSize = componentMinSize(project, this.catalog, id);
           project = this.checkMinSize(minSize, `"${label}"`, () =>
-            setMarkingSpace(project, id, target, rect, minSize ? { minSize } : undefined),
+            setMarkingSpace(project, id, target, rect, {
+              ...(minSize ? { minSize } : {}),
+              minSizeOf: this.minSizeOf(project),
+            }),
           );
           changes.push(
             `${target === null ? 'go to the canvas' : `go to the container "${this.refs(project).imageLabel(target)}"`}, rectangle x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}`,
@@ -1604,7 +1608,10 @@ class Batch {
           const { rect } = op;
           const minSize = componentMinSize(project, this.catalog, id);
           project = this.checkMinSize(minSize, `"${label}"`, () =>
-            setMarkingRect(project, id, rect, minSize ? { minSize } : undefined),
+            setMarkingRect(project, id, rect, {
+              ...(minSize ? { minSize } : {}),
+              minSizeOf: this.minSizeOf(project),
+            }),
           );
           const r = op.rect;
           changes.push(`rectangle x ${r.x}, y ${r.y}, ${r.width}×${r.height}`);
@@ -2069,6 +2076,11 @@ class Batch {
       description: `Replace the image of the container "${this.refs(p).imageLabel(id)}": ${old.file} → ${image.file} (${image.width}×${image.height} px, ${image.note})`,
       imageFiles: [[image.file, image.data]],
     };
+  }
+
+  /** The minimum of any marking of `p` that draws a component (`null` for a plain one), for the settle (stage #2210). */
+  private minSizeOf(p: Project): (markingId: string) => Size | null {
+    return (markingId) => componentMinSize(p, this.catalog, markingId);
   }
 
   /**

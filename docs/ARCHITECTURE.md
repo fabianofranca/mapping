@@ -130,6 +130,20 @@ a cycle is broken by the one that comes first), and among candidates of equal ar
 only the innermost counts), otherwise the one that comes last wins. Reordering siblings never changes parents, not even in the next settle; the settle
 remains deterministic, idempotent and does not change the order of the arrays, but the result depends on the current `parentId` in ties. **The canvas is one space per page (v21):** `settleHierarchy` only compares items of the same page (`sameSpace`, `src/model/spaces.ts`), so a canvas marking never wraps or enters something of another page, the marking that leaves a container lands on its container's page, and arrows and anchors never cross pages (`arrow-cross-page`, `anchor-other-space`). `projectIndex(p).pageOf` gives the page of any container, marking or arrow and `rootsByPage` the roots of each page; `pageView(p, pageId)` (memoized) is the project cut by a page, and `perspectiveView(p, perspective, pageId)` is a perspective over it. `src/model/pages.ts` holds the page operations (`createPage`, `renamePage`, `movePage`, `moveRootsToPage`, `deletePage`, `pageContent`). Members (`membersOf`, `projectIndex.members`/`canvasRoots`) come from `parentId` and are never stored. **Containment belongs to Full only**: a perspective (v16) does not decide who contains whom, only which roots appear and where (see "Perspectives", below).
 
+**Size in units (stage #2210).** `moveToSpaces` works in two passes: the first collects the markings that change space, grouped
+by the pair (source S, target T) with their descendants; the second lands each set. For a set that holds a marking that draws a component
+(the caller passes `minSizeOf`: a non-null minimum, in pixels of the current space, means "this marking draws a component"), the whole
+set is scaled around the top-left corner of its bounding box (canvas units) by `k = (d_T × s_T) ÷ (d_S × s_S)` (`unitsFactor`,
+`src/model/settleUnits.ts`), with density `d` and placement scale `s` (1 and 1 on the canvas), and then converted to T as before
+(`fromCanvasRect`: shift and crop at the limit). The component keeps its box and its content in the same unit; a plain area that
+travels with a Text scales with it and the Text stays its child. Each member's minimum in T is its minimum in S × `d_T ÷ d_S`,
+rounded up (`minInTarget`). A set with no component, or with `|k − 1|` within `EPSILON`, takes exactly the previous path. Floating on
+(`floatedMarking`) is the same rule toward the canvas, around the marking's own corner. **Idempotence guard:** when a scaled set lands on
+the **canvas** and the scaling would leave a non-floating member fully inside a container (a marking that leaves a density-2 container
+and is halved can fit in it again), the whole set keeps the previous conversion; otherwise the next settle would take it back in. A
+container target is always idempotent. The frozen reference of the tests (`tests/support/settleReference.ts`) carries the same rule
+and `settleEquivalence`/`settleSequences` compare against it.
+
 **When it settles.** At the end of **every** model operation that touches geometry (draw, move, resize marking,
 move/resize/replace/delete container, apply proposal: `applyAccepted` settles after the patch). It does **not** settle on
 read, on migration or on open (reading never writes and never changes data), and the operation accepts `settle: false`, used **only**
@@ -183,7 +197,9 @@ never fails (if it fails, it settles the last valid preview).
   it is an **interaction** rule, never the model's, and so it is never stored nor applied by a proposal or by MCP.
 - Moving a marking **inside a container** carries the descendants; on the **canvas** it moves only it (the members stay where they are and
   containment is redone). Nothing ties the marking to the container: it can leave it and become a canvas marking, or enter
-  another container with the `rect` converted.
+  another container with the `rect` converted. A marking that draws a component keeps its size in units when it changes space
+  (`src/model/settleUnits.ts`, the paragraph above): a Text dropped from the canvas into a container at density 2 is drawn twice as
+  big in pixels and has no overflow right after the move, before Arrange.
 
 **Multiple selection and joint drag.** `ui.selection` remains the **primary** item (handles, Details); `ui.selectionGroup`
 holds the **other** items attached to the primary's object, so any direct write to `ui.selection` undoes the group

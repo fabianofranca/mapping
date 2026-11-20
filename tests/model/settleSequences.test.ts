@@ -20,6 +20,7 @@ import {
   removePerspective,
   reorderMarking,
   resizeContainer,
+  setContainerDensity,
   sendRootsToPerspective,
   setMarkingFloating,
   setMarkingRect,
@@ -47,17 +48,36 @@ const check = vi.hoisted(() => ({
   context: '',
   calls: 0,
   partial: 0,
+  /** Stage #2210 variant: containers with density and scale, and `minSizeOf` injected into every settle. */
+  units: false,
+  /** Settles of the variant whose `rect`s differ from the settle without `minSizeOf` (the rule really ran). */
+  scaled: 0,
   /** How many times each operation changed the project (and was not refused). */
   changed: {} as Record<string, number>,
 }));
+
+/** Which markings draw a component in the units variant: two out of three, by a hash of the id (stable). */
+function componentOf(id: string): { width: number; height: number } | null {
+  let h = 0;
+  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return h % 3 === 0 ? null : { width: 1 + (h % 5), height: 1 + (h % 7) };
+}
 
 vi.mock('../../src/model/hierarchySettle', async (importOriginal) => {
   const real = await importOriginal<typeof import('../../src/model/hierarchySettle')>();
   return {
     ...real,
-    settleFrom: (before: Project, next: Project, options?: SettleOptions): Project => {
+    settleFrom: (before: Project, next: Project, given?: SettleOptions): Project => {
+      // The public operations pass no `minSizeOf`: the variant injects it, as the store does.
+      const options = check.units ? { minSizeOf: componentOf, ...given } : given;
       const got = real.settleFrom(before, next, options);
       if (options?.settle === false) return got;
+      if (check.units) {
+        const plain = real.settleFrom(before, next, { ...given, minSizeOf: undefined });
+        if (got.markings.some((m, i) => m.rect !== (plain.markings[i] as Marking).rect)) {
+          check.scaled++;
+        }
+      }
       const full = real.settleHierarchy(next, { before, ...options });
       check.calls++;
       if (got !== next) check.partial++;
@@ -426,6 +446,29 @@ const WEIGHTED = OP_NAMES.flatMap((name) =>
 // Sequence
 // ---------------------------------------------------------------------------------------------
 
+/** Stage #2210 variant: the container gets a density and a scale other than 1, around the same center. */
+function withUnits(rng: Rng, p: Project, id: string): Project {
+  const density = rng.pick([0.5, 1.5, 2, 3]);
+  const scale = rng.pick([0.5, 1, 2, 3]);
+  const dense = setContainerDensity(p, id, density);
+  return {
+    ...dense,
+    containers: dense.containers.map((c) => {
+      if (c.id !== id) return c;
+      const cx = c.placement.x + c.width / 2;
+      const cy = c.placement.y + c.height / 2;
+      return {
+        ...c,
+        placement: {
+          x: Math.round(cx - (c.width * scale) / 2),
+          y: Math.round(cy - (c.height * scale) / 2),
+          scale,
+        },
+      };
+    }),
+  };
+}
+
 /** Initial project: 3 containers, scattered markings (created by `createMarking`) and two perspectives. */
 function startProject(rng: Rng, seed: number): { p: Project; counter: { n: number } } {
   const counter = { n: 0 };
@@ -443,6 +486,7 @@ function startProject(rng: Rng, seed: number): { p: Project; counter: { n: numbe
       height: rng.int(120, 240),
       center: { x: 400 + k * 1000, y: 150 },
     });
+    if (check.units) p = withUnits(rng, p, `C${k}`);
   }
   const ctx: Ctx = { rng, p, next };
   for (let i = 0; i < 10; i++) {
@@ -488,6 +532,23 @@ function runSequence(seed: number): void {
 }
 
 describe('clipped settle: equivalence by sequences of public operations (#882)', () => {
+  it(`the units variant (#2210): ${SEQUENCES} sequences with density, scale and minSizeOf`, () => {
+    check.units = true;
+    check.calls = 0;
+    check.partial = 0;
+    check.scaled = 0;
+    check.changed = {};
+    try {
+      for (let i = 0; i < SEQUENCES; i++) runSequence(SEED + i * SEED_STEP);
+    } finally {
+      check.units = false;
+    }
+    expect(check.calls).toBeGreaterThan(SEQUENCES * STEPS * 0.4);
+    expect(check.partial).toBeGreaterThan(check.calls * 0.1);
+    // The rule of the units really ran (otherwise the variant proves nothing).
+    expect(check.scaled).toBeGreaterThan(20);
+  });
+
   it(`${SEQUENCES} sequences of ${STEPS} operations: each settle equals the whole one`, () => {
     check.calls = 0;
     check.partial = 0;

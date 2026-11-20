@@ -1,9 +1,20 @@
 import type { SpecCode, SpecField } from './spec';
+import { inheritedOutsideCase, type ExpandModels } from './signatures/codeLink';
+import type { Signature } from './signatures/types';
 import type { JsonValue } from './types';
 
 // `resolveCode` (formatVersion 9): the only place that applies the `variants` case to the `code` of
 // a platform. Every per-annotation `code` reader (get_code_hints, find_by_code, the
 // "Definition" in Details, get_marking) goes through it. Pure function, no browser.
+
+/**
+ * What `resolveCode` needs to read the case's own signature sheet: `read` gives the sheet cited by a `signature`
+ * (or `null` if it is not available) and `models` is the platform's `fieldModels`. Without it, nothing is left out.
+ */
+export interface CaseSheets {
+  readonly read: (ref: string) => Signature | null;
+  readonly models?: ExpandModels | undefined;
+}
 
 /** Case chosen by `variants` for these values, or `undefined` (uses the base). */
 function chosenValue(
@@ -25,12 +36,15 @@ function chosenValue(
  * replace the base's, and in `formatVersion` 16 so do `signature` and `ignore`; `params`,
  * `values`, `calls` and `formats` are added to them, key by key (the case's `calls` replaces the base's
  * for the same parameter: `ButtonDefaults.outlinedButtonColors`). Without `variants` returns the
- * `code` itself; never returns `variants`.
+ * `code` itself; never returns `variants`. With `sheets`, a case with its own readable `signature` does not inherit the
+ * base `params` its sheet lacks (`inheritedOutsideCase`); without it, or with a case without its own sheet, the result is
+ * the one above.
  */
 export function resolveCode(
   code: SpecCode,
   values: Readonly<Record<string, JsonValue>> | null | undefined,
   fields: readonly SpecField[],
+  sheets?: CaseSheets,
 ): SpecCode {
   const { variants, ...base } = code;
   if (variants === undefined) return code;
@@ -40,15 +54,17 @@ export function resolveCode(
       ? variants.cases[value]
       : undefined;
   if (kase === undefined) return base;
-  return applyCase(base, kase);
+  return applyCase(base, kase, sheets);
 }
 
 /** The case's `symbol`, `path`, `notes`, `signature` and `ignore` replace; the rest is added, key by key. */
 function applyCase(
-  base: SpecCode,
+  from: SpecCode,
   kase: NonNullable<SpecCode['variants']>['cases'][string],
+  sheets: CaseSheets | undefined,
 ): SpecCode {
   const { symbol, path, notes, signature, ignore } = kase;
+  const base = withoutInherited(from, kase, sheets);
   return {
     ...base,
     ...(symbol === undefined ? {} : { symbol }),
@@ -73,4 +89,23 @@ function merged<K extends 'params' | 'calls' | 'formats'>(
   return own === undefined
     ? {}
     : ({ [key]: { ...base[key], ...own } } as { [P in K]?: Record<string, string> });
+}
+
+/** The base without the `params` the case's own sheet lacks (`inheritedOutsideCase`); the base itself without a sheet. */
+function withoutInherited(
+  base: SpecCode,
+  kase: NonNullable<SpecCode['variants']>['cases'][string],
+  sheets: CaseSheets | undefined,
+): SpecCode {
+  const sheet =
+    kase.signature === undefined ? null : (sheets?.read(kase.signature) ?? null);
+  if (sheet === null || base.params === undefined) return base;
+  const left = new Set(
+    inheritedOutsideCase(base, kase, sheet, sheets?.models).map((o) => o.field),
+  );
+  if (left.size === 0) return base;
+  const params = Object.fromEntries(
+    Object.entries(base.params).filter(([field]) => !left.has(field)),
+  );
+  return { ...base, params };
 }

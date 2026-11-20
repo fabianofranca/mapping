@@ -166,3 +166,41 @@ describe('implementar-fila: the merge recipe produces a row that `show` lists', 
     }
   });
 });
+
+describe('implementar-fila: a `painel/` change reaches a running coordinator (#2353)', () => {
+  const newSkill = between(skill, '**New skill on `main`.**', '**Lineage limit.**');
+  const supervisor = read('.claude/skills/supervisionar-fila/SKILL.md');
+  const sources = section(supervisor, '## Reading the sources');
+
+  it('the check covers the whole skill folder, not only `SKILL.md`', () => {
+    expect(newSkill).toContain(
+      'git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/`',
+    );
+    expect(newSkill).not.toContain(
+      'origin/main -- .claude/skills/implementar-fila/SKILL.md',
+    );
+  });
+
+  it('no longer says that a change only in `painel/` triggers nothing', () => {
+    expect(newSkill).not.toContain('triggers nothing');
+  });
+
+  it('classifies a `painel/`-only change as small, with the pull and the proof in the `log`', () => {
+    expect(newSkill).toContain('**Only `painel/`');
+    expect(newSkill).toMatch(/small by definition/);
+    expect(newSkill).toContain('painel.py <commit>: atualizado');
+  });
+
+  it('the resume records the `painel.py` commit in the `log`', () => {
+    const resume = section(skill, '## Session switch').split(
+      '**In the new session**',
+    )[1]!;
+    expect(resume).toContain('painel.py <commit>: <data>');
+  });
+
+  it('the supervisor runs `painel.py` from `main`, not from its own checkout', () => {
+    expect(sources).toContain(
+      'git show origin/main:.claude/skills/implementar-fila/painel/painel.py',
+    );
+  });
+});

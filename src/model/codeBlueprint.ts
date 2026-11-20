@@ -7,11 +7,12 @@ import {
 import { annotationAccessibility, type AnnotationAccessibility } from './accessibility';
 import { blueprintParams, type BlueprintParam } from './codeArgs';
 import type { ComponentDrawings } from './componentDrawings';
-import { resolveCode } from './codeVariants';
+import { resolveCode, type CaseSheets } from './codeVariants';
 import { fail } from './errors';
 import { projectIndex } from './projectIndex';
 import { instanceLabel, parseRefValue, refLabel, resolveRef, tableRows } from './refs';
 import type { SpecCode, SpecField } from './spec';
+import type { Signature } from './signatures/types';
 import { typeOfAnnotation, type ResolvedType } from './specLookup';
 import { isEmptyValue } from './typed';
 import type { Annotation, JsonValue, Marking, Project, Rect, WholeRef } from './types';
@@ -93,6 +94,12 @@ export interface BlueprintOptions {
    * children stay in `children` and every field is an argument, as before the named slots.
    */
   readonly drawings?: ComponentDrawings;
+  /**
+   * The signature sheet that a specialization cites (`signature` of a `code` or of a `variants` case), already read: `null`
+   * if it is not available. With it, a `variants` case with its own sheet does not inherit the base `params` that sheet
+   * lacks (`resolveCode`); without it, as before.
+   */
+  readonly signatures?: (specId: string, ref: string) => Signature | null;
 }
 
 /** A `ref` to the whole annotation, with the target expanded. */
@@ -190,10 +197,19 @@ function codeFor(
   resolved: ResolvedType,
   platformId: string,
   values: Readonly<Record<string, JsonValue>>,
+  signatures: BlueprintOptions['signatures'],
 ): SpecCode | null {
   const code = resolved.type.code;
   const own = code && Object.hasOwn(code, platformId) ? code[platformId] : undefined;
-  return own === undefined ? null : resolveCode(own, values, resolved.type.fields);
+  if (own === undefined) return null;
+  const sheets: CaseSheets | undefined =
+    signatures === undefined
+      ? undefined
+      : {
+          read: (ref) => signatures(resolved.spec.id, ref),
+          models: resolved.spec.fieldModels?.[platformId],
+        };
+  return resolveCode(own, values, resolved.type.fields, sheets);
 }
 
 /** A `ref` to the whole annotation in a field or in a cell. */
@@ -329,7 +345,7 @@ export function codeBlueprint(
     seen.add(a.id);
     const here = new Set(path).add(a.id);
     const values = a.values ?? {};
-    const code = codeFor(resolved, platformId, values);
+    const code = codeFor(resolved, platformId, values, options.signatures);
     const fields = resolved.type.fields;
     const mine = slotted?.annotationId === a.id ? slotted : null;
     // The default-content fields of a filled slot are no arguments: the child is the content.
@@ -429,7 +445,9 @@ export function codeBlueprint(
       return null;
     }
     const resolved = typeOfAnnotation(p, drawn);
-    const code = resolved ? codeFor(resolved, platformId, drawn.values) : null;
+    const code = resolved
+      ? codeFor(resolved, platformId, drawn.values, options.signatures)
+      : null;
     if (code === null) return null;
     const args: BlueprintSlotArg[] = [];
     const claimed = new Set<string>();

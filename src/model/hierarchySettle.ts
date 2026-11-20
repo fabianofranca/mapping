@@ -23,6 +23,15 @@ import {
   type PositionTable,
   type SpaceEntry,
 } from './settlePositions';
+import {
+  boundingOrigin,
+  isScaled,
+  minInTarget,
+  scaleAround,
+  spaceDensity,
+  unitsFactor,
+  type SpaceUnits,
+} from './settleUnits';
 import { buildRectIndex, type RectIndex } from './spaceIndex';
 import type { Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
@@ -36,9 +45,19 @@ import type { Marking, Placement, Project, ProjectContainer, Rect } from './type
  * Options of the operations that touch geometry. `settle: false` only in gesture previews
  * (containment frozen while the pointer moves); every other call settles. `minSizeOf` gives the
  * minimum size of the component that draws the marking (the model knows no components): it applies
- * when converting the `rect` to another space. `before` is the project from before the
- * operation: the perspectives and the arrival marks are reconciled by comparing the two
- * (`reconcilePerspectives`); without it, the project that enters the settle applies.
+ * when converting the `rect` to another space.
+ *
+ * Contract of `minSizeOf` (stage #2210): it returns `null` **only** for a marking that draws no
+ * component, and the size it returns is in pixels of the marking's current space. That is how the
+ * settle knows who draws a component: a set of markings that changes space with another
+ * `density × scale` and holds one of them keeps its size in component units (`settleUnits.ts`),
+ * and the minimum of each member that has one is multiplied by the target density over the source
+ * one. Without `minSizeOf` no marking counts as a component, and the conversion keeps the size
+ * the person sees on screen.
+ *
+ * `before` is the project from before the operation: the perspectives and the arrival marks are
+ * reconciled by comparing the two (`reconcilePerspectives`); without it, the project that enters
+ * the settle applies.
  */
 export interface SettleOptions {
   readonly settle?: boolean;
@@ -162,38 +181,150 @@ function rememberTable(
   rememberPositions(settled.markings, new Map([...(advanced || []), ...table.built]));
 }
 
-/**
- * The space and `rect` that the geometry gives the marking; the marking itself if nothing changes.
- */
-function settleSpace(
-  p: Project,
+/** Units of the canvas space: density 1 and scale 1. */
+const CANVAS_UNITS: SpaceUnits = { density: 1, scale: 1 };
+
+/** Density and scale of a container's space. */
+function unitsOf(container: ProjectContainer): SpaceUnits {
+  return { density: spaceDensity(container.density), scale: container.placement.scale };
+}
+
+/** One end of a space change: the space key (for the sets), its units and the space itself. */
+interface Landing {
+  readonly key: string;
+  readonly units: SpaceUnits;
+  readonly space: Space;
+}
+
+/** A marking that the geometry takes to another space (the first pass of `moveToSpaces`). */
+interface Move {
+  readonly index: number;
+  readonly marking: Marking;
+  /** The marking's footprint on the canvas before the change (canvas units, decimal). */
+  readonly canvas: Rect;
+  /** The page of the canvas the marking is on, or lands on when it leaves its container. */
+  readonly pageId: string | null;
+  readonly from: Landing;
+  readonly to: Landing;
+}
+
+/** Where the marking is: its footprint on the canvas, its page and its space; `null` = it stays as it is. */
+function sourceOf(
   m: Marking,
   containerOf: ContainerLookup,
-  options: SettleOptions | undefined,
-): Marking {
-  let canvas: Rect;
-  // The page of the canvas the marking is on, or lands on when it leaves its container.
-  let pageId: string | null = m.pageId;
+): { canvas: Rect; pageId: string | null; from: Landing } | null {
   if (m.containerId === null) {
-    canvas = m.rect;
-  } else {
-    const own = containerOf(m.containerId);
-    // Nonexistent container: invalid project; the repair resolves it, the settle does not invent.
-    if (!own) return m;
-    if (!m.floating && containsRect(imagePixelRect(own), m.rect)) return m;
-    canvas = toCanvasRect(own.placement, m.rect);
-    pageId = own.pageId;
+    return {
+      canvas: m.rect,
+      pageId: m.pageId,
+      from: { key: canvasKey(m.pageId), units: CANVAS_UNITS, space: CANVAS_SPACE },
+    };
   }
-  const target = m.floating ? null : containerContaining(p, canvas, pageId);
-  if (target === null && m.containerId === null) return m;
-  const min = options?.minSizeOf?.(m.id) ?? null;
-  const space = target ? containerSpace(target) : CANVAS_SPACE;
+  const own = containerOf(m.containerId);
+  // Nonexistent container: invalid project; the repair resolves it, the settle does not invent.
+  if (!own) return null;
+  if (!m.floating && containsRect(imagePixelRect(own), m.rect)) return null;
   return {
-    ...m,
+    canvas: toCanvasRect(own.placement, m.rect),
+    pageId: own.pageId,
+    from: { key: own.id, units: unitsOf(own), space: containerSpace(own) },
+  };
+}
+
+/** The space the geometry gives a footprint: the container that fully contains it, otherwise the canvas. */
+function targetOf(
+  p: Project,
+  m: Marking,
+  canvas: Rect,
+  pageId: string | null,
+): Landing | null {
+  const target = m.floating ? null : containerContaining(p, canvas, pageId);
+  if (target !== null) {
+    return { key: target.id, units: unitsOf(target), space: containerSpace(target) };
+  }
+  if (m.containerId === null) return null;
+  return { key: canvasKey(pageId), units: CANVAS_UNITS, space: CANVAS_SPACE };
+}
+
+/** The change of space the geometry gives the marking; `null` if nothing changes. */
+function moveOf(
+  p: Project,
+  m: Marking,
+  index: number,
+  containerOf: ContainerLookup,
+): Move | null {
+  const source = sourceOf(m, containerOf);
+  if (source === null) return null;
+  const to = targetOf(p, m, source.canvas, source.pageId);
+  if (to === null) return null;
+  return { index, marking: m, ...source, to };
+}
+
+/** The marking in its new space, with the `rect` converted from `canvas` (canvas units). */
+function landed(move: Move, canvas: Rect, min: Size | null): Marking {
+  const { space } = move.to;
+  return {
+    ...move.marking,
     containerId: space.containerId,
-    pageId: space.containerId === null ? pageId : null,
+    pageId: space.containerId === null ? move.pageId : null,
     rect: fromCanvasRect(space.placement, canvas, space.bounds, min),
   };
+}
+
+/**
+ * The markings of one set (the same space S to the same space T) in their new space, in the
+ * order of `moves`. If at least one draws a component (`minSizeOf` not `null`) and the spaces do
+ * not have the same units, the whole set keeps its size in units: each footprint is scaled by
+ * `k` around the top-left corner of the set's bounding box (`settleUnits.ts`) and the minimum of
+ * the members that have one follows the target density. Otherwise, today's conversion: the same
+ * size on screen.
+ *
+ * A set that lands on the canvas keeps today's conversion if the scaling would leave one of its
+ * markings fully inside a container: the next settle would take it in (the canvas has no limit
+ * that keeps the scaled `rect` where the geometry put it), and the settle has to be idempotent.
+ */
+function landSet(
+  p: Project,
+  moves: readonly Move[],
+  options: SettleOptions | undefined,
+): Marking[] {
+  const { from, to } = moves[0] as Move;
+  // The minimum is in pixels of the source density: it follows the target density whenever the
+  // two differ, also when `k` is 1 (density × scale equal) and on the fallback to `plain`.
+  const ratio = to.units.density / from.units.density;
+  const mins = moves.map((move) =>
+    minInTarget(options?.minSizeOf?.(move.marking.id) ?? null, ratio),
+  );
+  const plain = () => moves.map((move, i) => landed(move, move.canvas, mins[i] ?? null));
+  const k = unitsFactor(from.units, to.units);
+  if (!isScaled(k) || mins.every((min) => min === null)) return plain();
+  const origin = boundingOrigin(moves.map((move) => move.canvas));
+  const scaled = moves.map((move, i) =>
+    landed(move, scaleAround(origin, move.canvas, k), mins[i] ?? null),
+  );
+  return takenBackIn(p, scaled) ? plain() : scaled;
+}
+
+/** Would the settle take one of these canvas markings into a container? */
+function takenBackIn(p: Project, set: readonly Marking[]): boolean {
+  return set.some(
+    (m) =>
+      m.containerId === null &&
+      !m.floating &&
+      containerContaining(p, m.rect, m.pageId) !== null,
+  );
+}
+
+/** Groups the moves by the pair (S, T), keeping the order of the first of each pair. */
+function setsOf(moves: readonly Move[]): Move[][] {
+  const sets = new Map<string, Move[]>();
+  for (const move of moves) {
+    const key = JSON.stringify([move.from.key, move.to.key]);
+    const set = sets.get(key);
+    if (set) set.push(move);
+    else sets.set(key, [move]);
+  }
+  return [...sets.values()];
 }
 
 /**
@@ -344,18 +475,28 @@ function spaceCandidates(w: Work, delta: SettleDelta | null): Iterable<number> {
 
 /**
  * Takes each marking to the space the geometry gives it (the container that contains it, otherwise
- * the canvas).
+ * the canvas), in two passes over the same candidates: the target of each one, and then the
+ * conversion, set by set (`landSet`), so the clipped settle and the whole one give the same result.
  */
 function moveToSpaces(w: Work, delta: SettleDelta | null): void {
   const lookup = containerLookup(w.p.containers, delta === null);
+  const moves: Move[] = [];
   for (const i of spaceCandidates(w, delta)) {
-    const m = w.list.at(i);
-    const next = settleSpace(w.p, m, lookup, w.options);
-    if (next === m) continue;
-    w.list.set(i, next);
-    if (next.containerId === m.containerId) continue;
-    w.moved.add(m.id);
-    w.landed.push(i);
+    const move = moveOf(w.p, w.list.at(i), i, lookup);
+    if (move !== null) moves.push(move);
+  }
+  const lands = new Map<number, Marking>();
+  for (const set of setsOf(moves)) {
+    landSet(w.p, set, w.options).forEach((next, k) =>
+      lands.set((set[k] as Move).index, next),
+    );
+  }
+  for (const move of moves) {
+    const next = lands.get(move.index) as Marking;
+    w.list.set(move.index, next);
+    if (next.containerId === move.marking.containerId) continue;
+    w.moved.add(move.marking.id);
+    w.landed.push(move.index);
     w.table.moved = true;
     // Those on the canvas live in the space that is settled in full because of the containers'
     // parents.

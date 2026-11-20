@@ -14,15 +14,7 @@ import type { FrameNode, SceneNode } from '../../src/model/components/scene';
 import { validateLibrary } from '../../src/model/library';
 import type { Spec } from '../../src/model/spec';
 import { missingMigrations } from '../../src/model/specVersions';
-import {
-  SPEC_FILE,
-  drawIn,
-  files,
-  spec,
-  text,
-  types,
-  unknownWarnings,
-} from '../support/material3Library';
+import { SPEC_FILE, drawIn, files, spec, text, types } from '../support/material3Library';
 
 type Json = unknown;
 type Mode = 'light' | 'dark';
@@ -118,10 +110,10 @@ describe('Material 3 stopgaps replaced by the new keys (decision 24)', () => {
     expect(badge).not.toMatch(/"height":\s*16/);
   });
 
-  it('validates without errors and only with the known warnings at the three levels, in all modes', () => {
+  it('validates without errors or warnings at the three levels, in all modes', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
-    expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
+    expect(report.warnings).toEqual([]);
   }, 30_000);
 });
 

@@ -1,5 +1,4 @@
-// R25.1: the m3-fiel library (copy of the package with eight components swapped by fiel.mjs) validates without error and only with the
-// known `parameter outside the signature` warnings of the package (S5, #1079; provisional: bug #1774, curation in #1134).
+// R25.1: the m3-fiel library (copy of the package with eight components swapped by fiel.mjs) validates without error or warning.
 import { execFileSync } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -10,7 +9,6 @@ import { isFontPath } from '../../src/model/components/library';
 import { parseComponentText } from '../../src/model/components/parseComponent';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
 import { validateLibrary } from '../../src/model/library';
-import { unknownWarnings } from '../support/material3Library';
 
 const REPO = join(__dirname, '../..');
 
@@ -21,7 +19,7 @@ function list(dir: string, base = dir): string[] {
 }
 
 describe('fiel.mjs (R25.1)', () => {
-  it('m3-fiel: no error and only known warnings (the interaction of the swapped types is not left unused)', () => {
+  it('m3-fiel: no error or warning (the interaction of the swapped types is not left unused)', () => {
     const dir = join(mkdtempSync(join(tmpdir(), 'fiel-')), 'm3-fiel');
     cpSync(join(REPO, 'libraries/material3-compose'), dir, { recursive: true });
     execFileSync('node', [join(REPO, 'scripts/testing/fiel.mjs'), dir, '4']);
@@ -35,10 +33,10 @@ describe('fiel.mjs (R25.1)', () => {
       );
     const report = validateLibrary({ files });
     expect(report.errors).toEqual([]);
-    expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
+    expect(report.warnings).toEqual([]);
   }, 30_000);
 
-  it('m3-fx (R25.71): the format 4 card validates without error and only with the known warnings, without "text larger than the box" (CL1, finding 1.1)', () => {
+  it('m3-fx (R25.71): the format 4 card validates without error or warning, without "text larger than the box" (CL1, finding 1.1)', () => {
     const dir = join(mkdtempSync(join(tmpdir(), 'fx-')), 'm3-fx');
     cpSync(join(REPO, 'libraries/material3-compose'), dir, { recursive: true });
     execFileSync('node', [join(REPO, 'scripts/testing/tokens.mjs'), dir]);
@@ -55,7 +53,7 @@ describe('fiel.mjs (R25.1)', () => {
         .map((w) => w.message)
         .filter((m) => m.includes('larger than the box')),
     ).toEqual([]);
-    expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
+    expect(report.warnings).toEqual([]);
   }, 30_000);
 
   it('top-app-bar: the red box measures 48, 68 and 88 with 1, 2 and 3 lines (R25.95)', () => {

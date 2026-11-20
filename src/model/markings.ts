@@ -30,6 +30,14 @@ import { canDeleteMarking, canEditMarkingGeometry, requireUnlocked } from './loc
 import { findById, normalizeOptionalName, updateById } from './project';
 import { projectIndex, idInUse } from './projectIndex';
 import { countBrokenRefs } from './refs';
+import {
+  isScaled,
+  minInTarget,
+  scaleAround,
+  spaceDensity,
+  unitsFactor,
+  type SpaceUnits,
+} from './settleUnits';
 import { containersOfPage, firstPageId, requirePage } from './spaces';
 import type { Marking, Project, Rect } from './types';
 
@@ -39,7 +47,10 @@ import type { Marking, Project, Rect } from './types';
  * passes it here; the model does not know components. Without the option nothing changes.
  * `settle` and `minSizeOf` belong to the settle (`SettleOptions`): `settle: false` only in
  * gesture previews; `minSizeOf` gives the minimum of any marking (the descendants that change
- * space along) and, when missing, the operation's own marking uses `minSize`.
+ * space along) and, when missing, the operation's own marking uses `minSize`. Both are in pixels
+ * of the marking's current space and are non-null only for a marking that draws a component: that
+ * marking keeps its size in component units when the operation changes its space (the settle, and
+ * Floating on, `floatedMarking`).
  */
 export interface RectOptions extends SettleOptions {
   readonly minSize?: Size;
@@ -334,14 +345,37 @@ export function adjustMarkingRect(
 /** The marking taken out of its container onto the canvas of the container's page, as a floating one. */
 function floatedMarking(p: Project, marking: Marking, options?: RectOptions): Marking {
   const min = options?.minSize ?? options?.minSizeOf?.(marking.id) ?? null;
+  // A marking that draws a component keeps its size in units on the canvas (stage #2210): its
+  // footprint scales by 1 ÷ (density × scale) of the space it leaves, around its own top-left corner.
+  const from = unitsOfMarking(p, marking);
+  const k = unitsFactor(from, { density: 1, scale: 1 });
+  const footprint = markingCanvasRectOf(p, marking);
+  const scaled = min !== null && isScaled(k);
   return {
     ...marking,
     containerId: null,
     pageId: projectIndex(p).pageOf.get(marking.id) ?? marking.pageId,
     parentId: null,
     floating: true,
-    rect: fromCanvasRect(IDENTITY_PLACEMENT, markingCanvasRectOf(p, marking), null, min),
+    rect: fromCanvasRect(
+      IDENTITY_PLACEMENT,
+      scaled ? scaleAround(footprint, footprint, k) : footprint,
+      null,
+      // The minimum follows the canvas density whenever the source density differs (also at k = 1).
+      minInTarget(min, 1 / from.density),
+    ),
   };
+}
+
+/** Density and scale of the space the marking lives in (1 and 1 on the canvas). */
+function unitsOfMarking(p: Project, marking: Marking): SpaceUnits {
+  const container =
+    marking.containerId === null
+      ? undefined
+      : projectIndex(p).containers.get(marking.containerId);
+  return container
+    ? { density: spaceDensity(container.density), scale: container.placement.scale }
+    : { density: 1, scale: 1 };
 }
 
 /**

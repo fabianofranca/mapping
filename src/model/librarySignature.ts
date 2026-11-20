@@ -212,7 +212,8 @@ class Checker {
 
 /**
  * The `variants` case: with its own sheet, it holds for the case's symbol and file and for the
- * base's `params` added to the case's (what `resolveCode` returns); without one, the base's holds,
+ * case's own `params`: the base's it lacks are not inherited (`resolveCode`, `inheritedOutsideCase`) and
+ * do not warn; without one, the base's holds,
  * and only the case's `params` are checked (the base's already were, in the `code`).
  */
 function checkCase(
@@ -246,7 +247,9 @@ function checkCase(
     platform,
     kase.symbol ?? entry.symbol,
     kase.path ?? entry.path,
-    { ...entry.params, ...kase.params },
+    // Only the case's own `params`: the base's were checked in the `code`, and `resolveCode` leaves
+    // out the ones this sheet lacks.
+    kase.params,
     models,
   );
   checker.slots(signature, at, { ...entry.slots, ...kase.slots });

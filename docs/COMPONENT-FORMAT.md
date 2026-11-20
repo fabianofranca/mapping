@@ -542,6 +542,9 @@ stays in image pixels (`rect` = units × `density`).
   `stroke.scale: false` keeps the width in output pixels; both ignore the density, as they ignore the zoom.
 - **Marking sizes:** `minSize` is worth `minSize` × density (rounded up) as the marking's minimum size; the
   new instance is born at `size` × density; Arrange and fit-to-content measure in units and write in pixels.
+  When the geometry moves the marking to another space (drag, `create_marking` or `update_marking` over a container,
+  Floating), it keeps its size **in units**: the `rect` is scaled by the density × scale of the new space over the old one, so a Text
+  dropped into a density-2 container is drawn twice as big in pixels, with no overflow before Arrange.
 - **Warnings:** the `missing` of `component-overflow` is in **image pixels** (the shortfall in units × density), because
   it is the `rect` that gets adjusted. The library check (`validate_library`) is in units and does not change.
 
