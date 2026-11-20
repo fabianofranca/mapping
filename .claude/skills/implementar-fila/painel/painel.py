@@ -23,6 +23,11 @@ redone; the `exclusive=sim` line does not go through this validation (only the `
 the started and not merged stages of the folder, the ones `show` lists in `começar agora:` and each `--com`, with the same calculation as the queue:
 `livre` (code 0, also without `--pasta` and without `--com`), one `conflito: <citation> com #N (<status>|começa agora|fora do painel)` line
 per conflicting stage (code 1) or `inválida: <citation> — <reason>` (code 2).
+Append-only citations (decisions 1 to 5 of #2314): `APPEND_ONLY` is the fixed list of index sections and key files that every stage appends to
+(`docs/MCP.md#tools`, `src/i18n/en-US.ts`, …); `first_conflict` drops them from **both** sides before comparing, so two stages that share only
+those start together (`vagas:`, `começar agora:`, `conflito` and the graph's waves all read `first_conflict`). Only the comparison changes:
+`toca` still validates them, the ficha keeps them, and `toca=?` still conflicts with every started stage, including a candidate whose
+citations are all append-only or ignored. An old whole-document citation (`docs/MCP.md`) is not append-only.
 `exclusive=sim` on the row (`exclusive=` clears it) makes the stage start only with the queue
 free of any started and not merged stage (`exclusiva (espera a fila esvaziar)`). Once started and not yet merged, it holds all
 the others in any state (`em andamento`, `aguardando` with `started`, `esperando dono`, `falhou`), and the reason says the
@@ -2388,6 +2393,19 @@ def cmd_apply(a):
 
 IGNORED_PREFIXES = ("changelog/", "docs/design-system/")
 IGNORED_EXACT = ("mcp/version.ts", "docs/TESTING-NUVEM.md#blocos", "docs/TESTING-NUVEM.md#full-round-in-blocks")
+# Index sections and key files that every stage appends to (decisions 1 to 3 of #2314): git merges the two additions, so they leave the
+# comparison of `first_conflict`. Unlike IGNORED_*, `norm_toca`/`toca_list` keep them: `toca` still validates them and the ficha cites them.
+APPEND_ONLY = (
+    "docs/MCP.md#tools",
+    "docs/AGENT-GUIDE.md#changing-a-project-proposals-for-review",
+    ".claude/skills/spec-author/SKILL.md#method",
+    "docs/ARCHITECTURE.md#where-everything-lives",
+    "docs/TESTING.md#start-here",
+    "docs/TESTING.md#8-test-scripts",
+    "tests/tooling/roundBlocks.test.ts",
+    "src/i18n/en-US.ts",
+    "src/i18n/pt-BR.ts",
+)
 SECTION_GLOB = ".claude/skills/*/SKILL.md"  # besides every `.md` of docs/ and of the root: compared by anchor (`##` section)
 TESTING_DOC = "docs/TESTING.md"  # its anchors are also scripts (`R<n>`, `RP`, `RF`, `RA`, `RB`)
 STARTED_STATUS = ("em andamento", "esperando dono", "falhou")
@@ -2593,11 +2611,26 @@ def same_target(a, b):
     return not anc_a or not anc_b or anc_a.lower() == anc_b.lower()
 
 
+def is_append_only(cite):
+    """Is the citation (as `norm_toca` leaves it) an entry of APPEND_ONLY? The anchor is compared case-insensitively, as in `same_target`; `?` never."""
+    if cite == "?":
+        return False
+    path, _, anchor = cite.partition("#")
+    for entry in APPEND_ONLY:
+        entry_path, _, entry_anchor = entry.partition("#")
+        if path == entry_path and anchor.lower() == entry_anchor.lower():
+            return True
+    return False
+
+
 def first_conflict(mine, other):
-    for x in mine:
-        for y in other:
+    """The citation of `mine` (or `?`) that touches the same place as one of `other`; the append-only ones of both sides do not count."""
+    if "?" in mine or "?" in other:  # before the filter: an empty list (only ignored or append-only citations) does not escape a started `?`
+        return "?"
+    for x in (c for c in mine if not is_append_only(c)):
+        for y in (c for c in other if not is_append_only(c)):
             if same_target(x, y):
-                return "?" if y == "?" else x
+                return x
     return None
 
 
