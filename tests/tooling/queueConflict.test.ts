@@ -3,7 +3,7 @@
 // a "Toca em:" against the folder's started and unmerged stages, the ones the `show` lists in `começar agora:`
 // and each `--com`, with the same calculation as the queue. Read-only: `livre` (0), `conflito: … com #N (…)` (1) or
 // `inválida: <citation> — <reason>` (2).
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -37,6 +37,15 @@ function stage(issue: string, toca: string, ...extra: string[]) {
 
 function conflict(toca: string, ...extra: string[]) {
   return runRaw('conflito', toca, ...extra);
+}
+
+// The `APPEND_ONLY` list of painel.py (AO1, #2314), read by importing the module.
+function appendOnlyList(): string[] {
+  const code =
+    'import json, sys; sys.path.insert(0, ".claude/skills/implementar-fila/painel"); import painel; print(json.dumps(list(painel.APPEND_ONLY)))';
+  return JSON.parse(
+    execFileSync('python3', ['-I', '-c', code], { encoding: 'utf8' }),
+  ) as string[];
 }
 
 function files(): string[] {
@@ -175,6 +184,49 @@ describe('painel.py conflito (VR1, #1864)', () => {
     expect(r.stdout).toBe('livre\n');
     expect(r.status).toBe(0);
   });
+
+  it(
+    'an append-only citation shared with an em andamento stage gives livre, the same through --com (AO1, #2314)',
+    () => {
+      stage(
+        '#7',
+        'docs/MCP.md#tools, src/i18n/en-US.ts',
+        'status=em andamento',
+        'started=2026-11-13T09:00:00Z',
+      );
+      const folder = conflict('docs/MCP.md#tools, src/i18n/en-US.ts', '--pasta', dir);
+      expect(folder.stdout).toBe('livre\n');
+      expect(folder.status).toBe(0);
+      const all = appendOnlyList();
+      const com = conflict(all.join(', '), '--com', `#9=${all.join(', ')}`);
+      expect(com.stdout).toBe('livre\n');
+      expect(com.status).toBe(0);
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
+    'a real citation shared in the same call still gives conflito: <real> com #N (AO1, #2314)',
+    () => {
+      stage(
+        '#7',
+        'docs/MCP.md#tools, src/a.ts',
+        'status=em andamento',
+        'started=2026-11-13T09:00:00Z',
+      );
+      const folder = conflict('docs/MCP.md#tools, src/a.ts', '--pasta', dir);
+      expect(folder.stdout).toBe('conflito: src/a.ts com #7 (em andamento)\n');
+      expect(folder.status).toBe(1);
+      const com = conflict(
+        'src/i18n/pt-BR.ts, src/b.ts',
+        '--com',
+        '#9=src/i18n/pt-BR.ts, src/b.ts',
+      );
+      expect(com.stdout).toBe('conflito: src/b.ts com #9 (fora do painel)\n');
+      expect(com.status).toBe(1);
+    },
+    SUBPROCESS_TIMEOUT,
+  );
 
   it('an invalid citation gives inválida: <citation> — <reason> and 2, without checking conflict', () => {
     const folder = conflict('src/model/', '--com', '#9=src/model/a.ts');
