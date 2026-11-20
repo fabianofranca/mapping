@@ -2,7 +2,7 @@
 
 ## Pendências
 
-nenhuma (só processo)
+None (process only)
 
 ## Sincronização
 

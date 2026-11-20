@@ -1,4 +1,4 @@
-# Coordinator pulls on any skill-folder change — [Não lançado] (épico `epic/coordinator-pulls-painel`, MCP unchanged, schema v21 unchanged)
+# Coordinator pulls on any skill-folder change — [Não lançado] (épico `epic/coordinator-pulls-painel`, PR #2355, MCP unchanged, schema v21 unchanged)
 
 ## Corrigido
 
