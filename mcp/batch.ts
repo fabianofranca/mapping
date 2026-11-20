@@ -36,6 +36,7 @@ import {
   effectiveDensity,
   componentMinSize,
   componentPlacement,
+  placementIsFree,
   markingComponent,
   typeSlots,
   componentSize,
@@ -2587,6 +2588,11 @@ class Batch {
           this.measurer,
         ),
       );
+      // Automatic placement only (no rect, near, inside or anchor; not a floating type): with no free spot at any
+      // level the marking was born over others (decision 5 of #1891). `inside` has its own full-slot warning.
+      if (rectFromComponent && anchor === null && component.floating !== true) {
+        this.noteNoFreeSpace(notes, p, { containerId, pageId, typeRef, rect });
+      }
       if (inside) {
         this.noteInsideFit(notes, p, project, inside.id, {
           id: markingId,
@@ -2795,6 +2801,39 @@ class Batch {
         ...initialValuesArg(op.annotation?.values),
       },
       this.measurer,
+    );
+  }
+
+  /**
+   * The warning of a marking created without `rect`, `inside`, `near` or `anchor` that was born over others:
+   * `placementIsFree` (on the project from before, with the rectangle that was stored) says it did not find a
+   * free spot at any level. The note becomes the usual `ignored-argument` warning.
+   */
+  private noteNoFreeSpace(
+    notes: string[],
+    before: Project,
+    created: {
+      containerId: string | null;
+      pageId: string | undefined;
+      typeRef: AnnotationTypeRef;
+      rect: Rect;
+    },
+  ): void {
+    const free = placementIsFree(
+      before,
+      this.catalog,
+      {
+        containerId: created.containerId,
+        parentId: null,
+        ...(created.pageId === undefined ? {} : { pageId: created.pageId }),
+        ...created.typeRef,
+        rect: created.rect,
+      },
+      this.measurer,
+    );
+    if (free) return;
+    notes.push(
+      'no free space: the marking was born over other markings (give `rect` or make room in the container)',
     );
   }
 

@@ -3,9 +3,11 @@ import {
   addComponentMarking,
   approximateMeasurer,
   componentPlacement,
+  containsRect,
   createMarking,
   imageCanvasRect,
   rectsOverlap,
+  sameRect,
   type NewComponentArgs,
   type Project,
   type Rect,
@@ -110,17 +112,75 @@ describe('placement in free space (EL1)', () => {
     expectValid(p);
   });
 
-  it("(e) full area: today's position, without an error", () => {
+  it('(e) full area (P and its children): the piece goes up a level, outside P, free, on the image', () => {
     let p = plain(componentProject(), 'P', rect(440, 370, 120, 60));
     p = plain(p, 'X1', rect(440, 370, 60, 60));
     p = plain(p, 'X2', rect(500, 370, 60, 60));
+    const pRect = rectOf(p, 'P');
     const placed = componentPlacement(
       p,
       catalog,
       { containerId: 'I1', parentId: null, specId: SPEC_ID, typeId: 'text' },
       approximateMeasurer,
     );
-    expect(placed).toEqual(R0);
+    expect(overlaps(placed, pRect)).toBe(false);
+    expect(placed.width).toBe(R0.width);
+    expect(placed.height).toBe(R0.height);
+    const q = add(p, 'T', 'text');
+    expect(rectOf(q, 'T')).toEqual(placed);
+    expect(marking(q, 'T').parentId).toBeNull();
+    expectValid(q);
+  });
+
+  it('(e1) P full inside Q with room: the piece is born in Q, outside P, and the parent is Q', () => {
+    let p = plain(componentProject(), 'Q', rect(300, 250, 400, 300));
+    p = plain(p, 'P', rect(440, 370, 120, 60));
+    p = plain(p, 'X1', rect(440, 370, 60, 60));
+    p = plain(p, 'X2', rect(500, 370, 60, 60));
+    p = add(p, 'T', 'text');
+    const placed = rectOf(p, 'T');
+    expect(overlaps(placed, rectOf(p, 'P'))).toBe(false);
+    expect(placed.x).toBeGreaterThanOrEqual(300);
+    expect(placed.x + placed.width).toBeLessThanOrEqual(700);
+    expect(placed.y).toBeGreaterThanOrEqual(250);
+    expect(placed.y + placed.height).toBeLessThanOrEqual(550);
+    expect(marking(p, 'T').parentId).toBe('Q');
+    expect(marking(p, 'P').parentId).toBe('Q');
+    expectValid(p);
+  });
+
+  it('(e2) everything full (P and the image): the piece stays at the level of P, inside none of its children, parent P', () => {
+    // P covers the whole image; two children tile it (R0 straddles them) and a sibling S equals R0.
+    let p = plain(componentProject(), 'P', rect(0, 0, 1000, 800));
+    p = plain(p, 'A', rect(0, 0, 500, 800));
+    p = plain(p, 'B', rect(500, 0, 500, 800));
+    p = plain(p, 'S', R0);
+    const placed = componentPlacement(
+      p,
+      catalog,
+      { containerId: 'I1', parentId: null, specId: SPEC_ID, typeId: 'text' },
+      approximateMeasurer,
+    );
+    for (const id of ['A', 'B', 'S']) {
+      const o = rectOf(p, id);
+      expect(containsRect(o, placed)).toBe(false);
+      expect(sameRect(o, placed)).toBe(false);
+    }
+    p = add(p, 'T', 'text');
+    expect(rectOf(p, 'T')).toEqual(placed);
+    expect(marking(p, 'T').parentId).toBe('P');
+    expectValid(p);
+  });
+
+  it('(e3) full slot: the piece stays in the component, over its siblings (fix 3.1 of #1533)', () => {
+    let p = add(componentProject(), 'B', 'box', { rect: rect(100, 100, 100, 80) });
+    p = add(p, 'T1', 'text', { parentId: 'B' });
+    p = add(p, 'T2', 'text', { parentId: 'B' });
+    p = add(p, 'T3', 'text', { parentId: 'B' });
+    expect(marking(p, 'T3').parentId).toBe('B');
+    expect(sameRect(rectOf(p, 'T3'), rectOf(p, 'T1'))).toBe(false);
+    expect(containsRect(rectOf(p, 'B'), rectOf(p, 'T3'))).toBe(true);
+    expectValid(p);
   });
 
   it('(f) canvas: a container and a canvas marking are obstacles', () => {

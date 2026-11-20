@@ -53,6 +53,7 @@ import {
 } from './geometry';
 import {
   crowdedRectIn,
+  freeRectGoingUp,
   freeRectIn,
   isFreeInLevel,
   placementLevel,
@@ -1007,9 +1008,12 @@ export function componentPlacement(
   if (parent === null || slot === null) {
     const r0 = centeredRect(space, size, args.center);
     if (space.floating) return r0;
+    // No spot at the level where it would be born: it goes up level by level; with none at any, it
+    // stays at the origin level, never contained in or equal to a sibling (decision 4 of #1891).
+    const level = placementLevel(p, args.containerId, r0, undefined, args.pageId);
     return (
-      freeRectIn(placementLevel(p, args.containerId, r0, undefined, args.pageId), r0) ??
-      r0
+      freeRectGoingUp(p, args.containerId, level, r0, args.pageId) ??
+      crowdedRectIn(level, r0)
     );
   }
   const placed = slotRect(p, parent, slot, size);

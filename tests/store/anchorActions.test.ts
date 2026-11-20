@@ -271,7 +271,7 @@ describe('anchored addComponent (Palette)', () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const created = marking(current(store), result.value);
+    const created = marking(current(store), result.value.markingId);
     expect(created.anchor).toMatchObject({ to: 'B' });
     expect(created.rect).toMatchObject({ ...SNAPPED, width: 100, height: 48 });
     expect(undoDepth(store)).toBe(1);
@@ -289,7 +289,7 @@ describe('anchored addComponent (Palette)', () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const created = marking(current(store), result.value);
+    const created = marking(current(store), result.value.markingId);
     expect(created.anchor ?? null).toBeNull();
     expect(created.rect).toMatchObject({ x: 450, y: 476 });
   });

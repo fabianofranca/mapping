@@ -23,7 +23,7 @@ describe('Arrange notice on a component that does not fit', () => {
       typeId: 'm3-button',
     });
     if (!added.ok) throw new Error(added.error);
-    const markingId = added.value;
+    const markingId = added.value.markingId;
     const annotation = harness
       .project()
       .annotations.find((a) => a.markingId === markingId)!;

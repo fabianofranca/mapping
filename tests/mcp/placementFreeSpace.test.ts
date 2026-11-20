@@ -17,6 +17,7 @@ import {
   parseSpecText,
   serialize,
   type Project,
+  type Rect,
 } from '../../src/model';
 import { NOTES_FILES, NOTES_LIBRARY } from '../../libraries/notas';
 import { runBatch, type BatchResult } from '../../mcp/batch';
@@ -215,5 +216,71 @@ describe('create_marking without rect: free space', () => {
         height: screen.height * screen.placement.scale,
       }),
     ).toBe(false);
+  });
+
+  describe('no free spot in the marking where it would be born (decision 4 and 5 of #1891)', () => {
+    const plain = (as: string, rect: Rect): Operation =>
+      ({ op: 'create_marking', as, container: '$screen', rect }) as Operation;
+    // P (100, 300, 190 × 200) is tiled by two halves: the button (83 × 40, at the container center
+    // (154, 402)) falls inside P and finds no spot there.
+    const fullP = [
+      plain('$p', { x: 100, y: 300, width: 190, height: 200 }),
+      plain('$a', { x: 100, y: 300, width: 95, height: 200 }),
+      plain('$b', { x: 195, y: 300, width: 95, height: 200 }),
+    ];
+    const warningOf = (result: BatchResult, index: number) =>
+      result.deprecations.find(
+        (d) => d.index === index && /no free space/.test(d.message),
+      );
+
+    it('the search goes up to the container: the button is born outside P, with no parent and no warning', async () => {
+      const result = await run([SCREEN, ...fullP, button('$btn')]);
+      expect(result.errors).toEqual([]);
+      const btn = marking(result, '$btn');
+      expect(overlap(btn.rect, marking(result, '$p').rect)).toBe(false);
+      expect(btn.parentId).toBeNull();
+      expect(warningOf(result, 4)).toBeUndefined();
+      expect(result.invariantIssues).toEqual([]);
+    });
+
+    it('P inside Q: the button goes up one level only, the parent stored is Q', async () => {
+      const result = await run([
+        SCREEN,
+        plain('$q', { x: 50, y: 200, width: 290, height: 400 }),
+        ...fullP,
+        button('$btn'),
+      ]);
+      expect(result.errors).toEqual([]);
+      const btn = marking(result, '$btn');
+      expect(overlap(btn.rect, marking(result, '$p').rect)).toBe(false);
+      expect(btn.parentId).toBe(idOf(result, '$q'));
+      expect(warningOf(result, 5)).toBeUndefined();
+    });
+
+    it('everything full: it stays over the others, never inside a sibling, with the ignored-argument warning', async () => {
+      const result = await run([
+        SCREEN,
+        plain('$p', { x: 0, y: 0, width: 390, height: 844 }),
+        plain('$a', { x: 0, y: 0, width: 195, height: 844 }),
+        plain('$b', { x: 195, y: 0, width: 195, height: 844 }),
+        button('$btn'),
+      ]);
+      expect(result.errors).toEqual([]);
+      const btn = marking(result, '$btn');
+      expect(btn.parentId).toBe(idOf(result, '$p'));
+      const warning = warningOf(result, 4);
+      expect(warning).toMatchObject({ code: 'ignored-argument', op: 'create_marking' });
+      expect(warning?.message).toMatch(/give `rect` or make room in the container/);
+    });
+
+    it('an explicit rect over others: no search and no warning', async () => {
+      const result = await run([
+        SCREEN,
+        ...fullP,
+        button('$btn', { rect: { x: 120, y: 320, width: 83, height: 40 } }),
+      ]);
+      expect(result.errors).toEqual([]);
+      expect(warningOf(result, 4)).toBeUndefined();
+    });
   });
 });

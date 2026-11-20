@@ -91,7 +91,7 @@ describe('what is created lands on the open page', () => {
       typeId: 'text',
       center: { x: 100, y: 100 },
     });
-    expect(result.ok && pageOf(project(), result.value)).toBe('PG2');
+    expect(result.ok && pageOf(project(), result.value.markingId)).toBe('PG2');
     const created = new Set([
       ...project()
         .markings.filter((m) => !before.markings.includes(m))
