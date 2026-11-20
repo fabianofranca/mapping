@@ -146,21 +146,21 @@ async function readCaseSheets(
   wanted: Iterable<{ specId: string; entry: SpecCode }>,
 ): Promise<Map<string, Signature>> {
   const reads = new Map<string, Promise<Signature | null>>();
-  const read = ctx.signatures;
-  if (read !== undefined) {
+  const reader = ctx.signatures;
+  if (reader !== undefined) {
     for (const { specId, entry } of wanted) {
       for (const kase of Object.values(entry.variants?.cases ?? {})) {
         if (kase.signature === undefined) continue;
         const key = sheetKey(specId, kase.signature);
-        if (!reads.has(key)) reads.set(key, read(specId, kase.signature));
+        if (!reads.has(key)) reads.set(key, reader(specId, kase.signature));
       }
     }
   }
+  const read = await Promise.all(
+    [...reads].map(async ([key, job]) => [key, await job] as const),
+  );
   const found = new Map<string, Signature>();
-  for (const [key, job] of reads) {
-    const sheet = await job;
-    if (sheet !== null) found.set(key, sheet);
-  }
+  for (const [key, sheet] of read) if (sheet !== null) found.set(key, sheet);
   return found;
 }
 
