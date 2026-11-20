@@ -316,6 +316,8 @@ export const BASE_KEYS = [
   'visible',
   'opacity',
   'rotation',
+  'scale',
+  'filter',
   'width',
   'height',
   'anchors',
@@ -335,7 +337,7 @@ export const BASE_KEYS = [
 export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> = {
   frame: ['clip', 'layout', 'children'],
   rect: [],
-  ellipse: [],
+  ellipse: ['startAngle', 'sweepAngle'],
   text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
   path: ['d', 'viewBox', 'fillRule', 'mirror'],
   slot: ['label', 'layout', 'provide', 'clip', 'id', 'fallback'],
@@ -362,6 +364,8 @@ export const REPEAT_BASE_KEYS = [
   'visible',
   'opacity',
   'rotation',
+  'scale',
+  'filter',
   'width',
   'height',
   'anchors',
@@ -386,6 +390,7 @@ const ANCHOR_KEYS = [
 ] as const;
 const LAYOUT_KEYS = ['gap', 'padding', 'align', 'justify'] as const;
 const STROKE_KEYS = ['color', 'width', 'align', 'dash', 'scale'] as const;
+const FILTER_KEYS = ['grayscale'] as const;
 const SHADOW_KEYS = ['color', 'x', 'y', 'blur'] as const;
 const FONT_KEYS = [
   'family',
@@ -435,9 +440,12 @@ const SHAPE_FEATURES = [
   'sizing=px',
   'sizing=fill',
   'sizing=hug',
+  'sizing=token',
   'layout.padding=number',
   'layout.padding=pair',
   'layout.padding=quad',
+  'layout.padding=item-expression',
+  'font.letterSpacing=percent',
   'fill=color',
   'fill=none',
   'fill=gradient',
@@ -466,6 +474,7 @@ export function componentFeatureList(): string[] {
   for (const key of ANCHOR_KEYS) out.add(`anchors.${key}`);
   for (const key of LAYOUT_KEYS) out.add(`layout.${key}`);
   for (const key of STROKE_KEYS) out.add(`stroke.${key}`);
+  for (const key of FILTER_KEYS) out.add(`filter.${key}`);
   for (const key of SHADOW_KEYS) out.add(`shadow.${key}`);
   for (const key of FONT_KEYS) out.add(`font.${key}`);
   for (const key of RUN_KEYS) out.add(`run.${key}`);
@@ -573,6 +582,7 @@ function layoutFeatures(layout: unknown, out: Set<string>): void {
     if (typeof leaf === 'number') out.add('layout.padding=number');
     else if (Array.isArray(leaf)) {
       out.add(leaf.length === 2 ? 'layout.padding=pair' : 'layout.padding=quad');
+      if (leaf.some(isRec)) out.add('layout.padding=item-expression');
     }
   }
 }
@@ -596,6 +606,7 @@ function nodeFeatures(node: unknown, out: Set<string>): void {
   }
   recordKeys('anchors', node.anchors, ANCHOR_KEYS, out);
   recordKeys('stroke', node.stroke, STROKE_KEYS, out);
+  recordKeys('filter', node.filter, FILTER_KEYS, out);
   recordKeys('shadow', node.shadow, SHADOW_KEYS, out);
   recordKeys('font', node.font, FONT_KEYS, out);
   if (Array.isArray(node.runs))
@@ -604,6 +615,9 @@ function nodeFeatures(node: unknown, out: Set<string>): void {
     for (const leaf of leaves(node.stroke.align)) out.add(`stroke.align=${String(leaf)}`);
   }
   if (isRec(node.font)) {
+    for (const leaf of leaves(node.font.letterSpacing))
+      if (typeof leaf === 'string' && leaf.endsWith('%'))
+        out.add('font.letterSpacing=percent');
     for (const key of ['align', 'verticalAlign', 'decoration'] as const) {
       for (const leaf of leaves(node.font[key])) out.add(`font.${key}=${String(leaf)}`);
     }
@@ -649,6 +663,8 @@ export function componentFeaturesUsed(data: unknown): Set<string> {
     for (const axis of ['width', 'height']) {
       const feature = sizeFeature(data.sizing[axis], 'sizing');
       if (feature) out.add(feature);
+      if (JSON.stringify(data.sizing[axis] ?? null).includes('"$token"'))
+        out.add('sizing=token');
     }
   }
   if (isRec(data.preview) && Object.values(data.preview).some(Array.isArray)) {

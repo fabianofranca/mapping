@@ -514,7 +514,7 @@ const TOKENS_EXCERPT = `{
 
 const ICONS_EXCERPT = `{
   "format": "mapping-icons",
-  "formatVersion": 2,
+  "formatVersion": 3,
   "viewBox": [24, 24],
   "icons": {
     "check": {
@@ -535,6 +535,14 @@ const ICONS_EXCERPT = `{
     "dot": {
       "viewBox": [10, 10],
       "paths": [{ "d": "M5 1a4 4 0 1 0 0 8a4 4 0 1 0 0-8z", "fill": true }]
+    },
+    "ring": {
+      "paths": [
+        {
+          "d": "M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20z M12 6a6 6 0 1 0 0 12a6 6 0 1 0 0-12z",
+          "fillRule": "evenodd"
+        }
+      ]
     }
   }
 }`;
@@ -1419,9 +1427,10 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format is mapping-icons and formatVersion is 1 or 2 (2 is 1 plus mirror per icon; 1 is still accepted). viewBox (positive [width, height]) is required and applies to every icon that does not bring its own.',
+          'format is mapping-icons and formatVersion is 1, 2 or 3 (2 is 1 plus mirror per icon; 3 is 2 plus fillRule per path; 1 and 2 are still accepted). viewBox (positive [width, height]) is required and applies to every icon that does not bring its own.',
           'mirror (formatVersion 2 of the file, per icon, default false): the icon flips horizontally when the reading direction is rtl (an arrow, a chevron; a clock, no). The icon node can override it with its own mirror. mirror in a formatVersion 1 file is the error only allowed with formatVersion 2.',
-          'icons: the icon name (^[a-z0-9][a-z0-9-_]*$) points to { viewBox?, mirror?, paths }. paths is a non-empty list of { d, fill?, stroke?, width?, cap?, join? }: d is the SVG data; fill and stroke are true (the color of the icon node), false (nothing) or a color of their own; width is the stroke width in viewBox units (default 1); cap (butt, round, square) and join (miter, round, bevel) as in the component stroke.',
+          'icons: the icon name (^[a-z0-9][a-z0-9-_]*$) points to { viewBox?, mirror?, paths }. paths is a non-empty list of { d, fill?, stroke?, width?, cap?, join?, fillRule? }: d is the SVG data; fill and stroke are true (the color of the icon node), false (nothing) or a color of their own; width is the stroke width in viewBox units (default 1); cap (butt, round, square) and join (miter, round, bevel) as in the component stroke.',
+          'fillRule (formatVersion 3 of the file, per path, nonzero by default or evenodd): with evenodd the inner shapes of a path (the hole of a ring, the middle of a self-intersecting star) are cut out, as in SVG. It applies to the fill only. fillRule in a formatVersion 1 or 2 file is the error only allowed with formatVersion 3.',
           'The file is part of the package: the app copies it with the folder, and a specialization that declares icons is not valid as an isolated file.',
           'Library validation: level 1, the file exists and is a valid mapping-icons; level 2, every literal name of an icon node exists in the set; level 3, an option of an enum field read by the name of an icon node that is not in the set raises a warning.',
         ],
@@ -2277,9 +2286,10 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format é mapping-icons e formatVersion é 1 ou 2 (a 2 é a 1 mais o mirror por ícone; a 1 continua aceita). viewBox ([largura, altura] positivos) é obrigatório e vale para todos os ícones que não trazem o seu.',
+          'format é mapping-icons e formatVersion é 1, 2 ou 3 (a 2 é a 1 mais o mirror por ícone; a 3 é a 2 mais o fillRule por caminho; a 1 e a 2 continuam aceitas). viewBox ([largura, altura] positivos) é obrigatório e vale para todos os ícones que não trazem o seu.',
           'mirror (formatVersion 2 do arquivo, por ícone, padrão false): o ícone vira na horizontal quando a direção de leitura é rtl (uma seta, um chevron; um relógio, não). O nó icon pode vencê-lo com o mirror dele. mirror num arquivo formatVersion 1 é o erro só é permitido com formatVersion 2.',
-          'icons: o nome do ícone (^[a-z0-9][a-z0-9-_]*$) aponta para { viewBox?, mirror?, paths }. paths é uma lista não vazia de { d, fill?, stroke?, width?, cap?, join? }: d são os dados SVG; fill e stroke são true (a cor do nó icon), false (nada) ou uma cor própria; width é a largura do traço em unidades do viewBox (padrão 1); cap (butt, round, square) e join (miter, round, bevel) como em stroke do componente.',
+          'icons: o nome do ícone (^[a-z0-9][a-z0-9-_]*$) aponta para { viewBox?, mirror?, paths }. paths é uma lista não vazia de { d, fill?, stroke?, width?, cap?, join?, fillRule? }: d são os dados SVG; fill e stroke são true (a cor do nó icon), false (nada) ou uma cor própria; width é a largura do traço em unidades do viewBox (padrão 1); cap (butt, round, square) e join (miter, round, bevel) como em stroke do componente.',
+          'fillRule (formatVersion 3 do arquivo, por caminho, nonzero por padrão ou evenodd): com evenodd as formas internas de um caminho (o furo de um anel, o meio de uma estrela que se cruza) são recortadas, como no SVG. Vale só para o preenchimento. fillRule num arquivo formatVersion 1 ou 2 é o erro só é permitido com formatVersion 3.',
           'O arquivo faz parte do pacote: a app o copia com a pasta, e a especialização que declara icons não vale como arquivo isolado.',
           'Validação da biblioteca: nível 1, o arquivo existe e é um mapping-icons válido; nível 2, todo nome literal de um nó icon existe no conjunto; nível 3, a opção de um campo enum lido pelo name de um nó icon que não está no conjunto gera aviso.',
         ],

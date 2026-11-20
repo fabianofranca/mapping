@@ -1,0 +1,76 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "tag",
+  "name": "Tag",
+  "description": "A small label: the tracking is a percentage of the font size (by the `spacing` field), the horizontal padding comes from a token, and the height comes from a token (`sizing`), so the tag follows the drawing mode.",
+  "size": {
+    "width": 96,
+    "height": 24
+  },
+  "sizing": {
+    "width": "hug",
+    "height": {
+      "$token": "tag-height"
+    }
+  },
+  "preview": {
+    "label": "NEW",
+    "tone": "info",
+    "spacing": "normal"
+  },
+  "template": {
+    "type": "frame",
+    "name": "tag",
+    "layout": {
+      "type": "row",
+      "align": "center",
+      "justify": "center",
+      "padding": [
+        0,
+        {
+          "$token": "tag-padding"
+        }
+      ]
+    },
+    "cornerRadius": 4,
+    "fill": {
+      "$switch": "tone",
+      "cases": {
+        "info": {
+          "$token": "tag-info"
+        },
+        "success": {
+          "$token": "tag-success"
+        }
+      },
+      "default": {
+        "$token": "tag-info"
+      }
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "label",
+        "text": {
+          "$field": "label",
+          "default": "TAG"
+        },
+        "color": "#FFFFFF",
+        "font": {
+          "size": 12,
+          "weight": 600,
+          "letterSpacing": {
+            "$switch": "spacing",
+            "cases": {
+              "tight": "-1%",
+              "normal": "4%",
+              "wide": "8%"
+            },
+            "default": "4%"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -13,9 +13,9 @@ import { iconsFileCodeForText } from '../messages/textLookup';
  */
 
 export const ICONS_FORMAT = 'mapping-icons';
-/** The file's current version; version 1 (without `mirror`) is still accepted. */
-export const ICONS_FORMAT_VERSION = 2;
-export const ICONS_FORMAT_VERSIONS: readonly number[] = [1, 2];
+/** The file's current version; versions 1 (without `mirror`) and 2 (without `fillRule`) are still accepted. */
+export const ICONS_FORMAT_VERSION = 3;
+export const ICONS_FORMAT_VERSIONS: readonly number[] = [1, 2, 3];
 /** Pattern of an icon's name. */
 export const ICON_NAME_PATTERN = /^[a-z0-9][a-z0-9-_]*$/;
 /** Box used when there is no set to supply the `viewBox` (unknown icon). */
@@ -23,6 +23,7 @@ export const DEFAULT_ICON_VIEWBOX: readonly [number, number] = [24, 24];
 
 export type IconCap = 'butt' | 'round' | 'square';
 export type IconJoin = 'miter' | 'round' | 'bevel';
+export type IconFillRule = 'nonzero' | 'evenodd';
 
 /** A path of an icon, in the `viewBox` space. */
 export interface IconPath {
@@ -34,6 +35,8 @@ export interface IconPath {
   readonly width?: number;
   readonly cap?: IconCap;
   readonly join?: IconJoin;
+  /** The fill rule (file formatVersion 3; default `nonzero`). The stroke does not change. */
+  readonly fillRule?: IconFillRule;
 }
 
 export interface IconDef {
@@ -100,7 +103,7 @@ function checkOneOf(
     out.push(issue(path, `expected one of: ${allowed.join(', ')}`));
 }
 
-const PATH_KEYS = ['d', 'fill', 'stroke', 'width', 'cap', 'join'];
+const PATH_KEYS = ['d', 'fill', 'stroke', 'width', 'cap', 'join', 'fillRule'];
 
 function checkWidth(value: unknown, path: string, out: IconsIssue[]): void {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0)
@@ -132,12 +135,31 @@ function checkPathStyle(
     checkOneOf(value.join, ['miter', 'round', 'bevel'], join(path, 'join'), out);
 }
 
-function checkIconPath(value: unknown, path: string, out: IconsIssue[]): void {
+function checkFillRule(
+  value: Record<string, unknown>,
+  path: string,
+  version: unknown,
+  out: IconsIssue[],
+): void {
+  if (!('fillRule' in value)) return;
+  const at = join(path, 'fillRule');
+  if (version === 1 || version === 2)
+    out.push(issue(at, 'only allowed with formatVersion 3'));
+  else checkOneOf(value.fillRule, ['nonzero', 'evenodd'], at, out);
+}
+
+function checkIconPath(
+  value: unknown,
+  path: string,
+  version: unknown,
+  out: IconsIssue[],
+): void {
   if (!isRecord(value)) return void out.push(issue(path, 'expected object'));
   checkUnknownKeys(value, PATH_KEYS, path, out);
   if (typeof value.d !== 'string' || value.d.trim() === '')
     out.push(issue(join(path, 'd'), 'expected the path data (text)'));
   checkPathStyle(value, path, out);
+  checkFillRule(value, path, version, out);
 }
 
 function checkIcon(
@@ -158,14 +180,14 @@ function checkIcon(
   const at = join(path, 'paths');
   if (!Array.isArray(value.paths) || value.paths.length === 0)
     return void out.push(issue(at, 'expected a non-empty list of paths'));
-  value.paths.forEach((p: unknown, i) => checkIconPath(p, join(at, i), out));
+  value.paths.forEach((p: unknown, i) => checkIconPath(p, join(at, i), version, out));
 }
 
 function checkHeader(input: Record<string, unknown>, out: IconsIssue[]): void {
   if (input.format !== ICONS_FORMAT)
     out.push(issue('format', `must be "${ICONS_FORMAT}"`));
   if (!ICONS_FORMAT_VERSIONS.includes(input.formatVersion as number))
-    out.push(issue('formatVersion', 'must be 1 or 2'));
+    out.push(issue('formatVersion', 'must be 1, 2 or 3'));
   if (!('viewBox' in input)) out.push(issue('viewBox', 'required field'));
   else checkViewBox(input.viewBox, 'viewBox', out);
   for (const key of Object.keys(input))

@@ -1,0 +1,25 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "icon-holes",
+  "name": "Icon holes",
+  "description": "A 48 × 48 tile with an icon of the set. The icons are `evenodd` paths: the inner shapes are cut out, so the tile's background shows through the holes.",
+  "size": { "width": 48, "height": 48 },
+  "preview": { "icon": "ring", "tint": "#2563EB" },
+  "template": {
+    "type": "frame",
+    "name": "tile",
+    "layout": { "type": "row", "align": "center", "justify": "center" },
+    "cornerRadius": 8,
+    "fill": "#E5E7EB",
+    "children": [
+      {
+        "type": "icon",
+        "name": { "$field": "icon" },
+        "color": { "$field": "tint", "default": "#2563EB" },
+        "width": 32,
+        "height": 32
+      }
+    ]
+  }
+}

@@ -95,7 +95,7 @@ export function fitComponentSize(
   options: InstantiateOptions,
   fit: FitOptions = {},
 ): { width: number; height: number; messages: readonly ModelMessage[] } | undefined {
-  const resolved = resolveSizing(component, values);
+  const resolved = resolveSizing(component, values, options.tokens);
   const auto = { ...followedAxes(resolved), ...fit.auto };
   const kinds = {
     width: axisKind(resolved.width, auto.width),

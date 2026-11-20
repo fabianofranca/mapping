@@ -1,0 +1,84 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "spinner",
+  "name": "Spinner",
+  "description": "A loading ring: a faint full ring and, on top, an arc of 216 degrees (60% of the circle) with round caps. The arc is an `ellipse` with `startAngle` and `sweepAngle`, so no dash is computed from the circumference; the three sizes come from the `size` field, an enum.",
+  "size": {
+    "width": 24,
+    "height": 24
+  },
+  "sizing": {
+    "width": {
+      "$switch": "size",
+      "cases": {
+        "small": 16,
+        "medium": 24,
+        "large": 40
+      },
+      "default": 24
+    },
+    "height": {
+      "$switch": "size",
+      "cases": {
+        "small": 16,
+        "medium": 24,
+        "large": 40
+      },
+      "default": 24
+    }
+  },
+  "preview": {
+    "size": "medium"
+  },
+  "template": {
+    "type": "frame",
+    "name": "spinner",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "ellipse",
+        "name": "track",
+        "width": "fill",
+        "height": "fill",
+        "stroke": {
+          "color": "#DBEAFE",
+          "width": {
+            "$switch": "size",
+            "cases": {
+              "small": 2,
+              "medium": 3,
+              "large": 5
+            },
+            "default": 3
+          },
+          "align": "inside"
+        }
+      },
+      {
+        "type": "ellipse",
+        "name": "arc",
+        "width": "fill",
+        "height": "fill",
+        "startAngle": -90,
+        "sweepAngle": 216,
+        "stroke": {
+          "color": "#2563EB",
+          "width": {
+            "$switch": "size",
+            "cases": {
+              "small": 2,
+              "medium": 3,
+              "large": 5
+            },
+            "default": 3
+          },
+          "align": "inside",
+          "cap": "round"
+        }
+      }
+    ]
+  }
+}

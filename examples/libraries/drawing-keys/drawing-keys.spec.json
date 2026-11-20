@@ -1,0 +1,217 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 15,
+  "id": "drawing-keys",
+  "name": "Drawing keys",
+  "version": 1,
+  "description": "Example of the drawing keys added after the faithful components: the icon set with the `fillRule` of each path (icons file formatVersion 3), and the component keys letter spacing in percent, padding items from tokens, a number token in `sizing`, `scale`, `filter.grayscale` and the arc of an `ellipse` (`startAngle`/`sweepAngle`). The Icon holes component draws an icon with holes cut out by `evenodd`; the Tag draws its tracking in percent and reads its padding and height from tokens; the Pressed button scales its drawing by 0.96 when pressed (with an embedded Flag that scales along), the Flag draws gray when disabled and the Spinner draws an arc of 216 degrees with round caps.",
+  "icons": "icons/icons.json",
+  "tokens": {
+    "modes": ["compact", "comfortable"],
+    "values": {
+      "tag-padding": {
+        "compact": 6,
+        "comfortable": 10
+      },
+      "tag-height": {
+        "compact": 20,
+        "comfortable": 28
+      },
+      "tag-info": "#2563EB",
+      "tag-success": "#15803D"
+    }
+  },
+  "layers": [
+    {
+      "id": "ui",
+      "name": "Interface",
+      "color": "#2563EB",
+      "annotationTypes": [
+        {
+          "id": "icon-holes",
+          "name": "Icon holes",
+          "component": "components/icon-holes.json",
+          "doc": "docs/icon-holes.md",
+          "fields": [
+            {
+              "key": "icon",
+              "label": "Icon",
+              "type": "enum",
+              "options": ["ring", "square-hole", "star-evenodd"],
+              "default": "ring"
+            },
+            {
+              "key": "tint",
+              "label": "Color",
+              "type": "string",
+              "default": "#2563EB"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Ring",
+              "values": {
+                "icon": "ring"
+              }
+            },
+            {
+              "name": "Self-intersecting star",
+              "values": {
+                "icon": "star-evenodd"
+              }
+            }
+          ]
+        },
+        {
+          "id": "tag",
+          "name": "Tag",
+          "component": "components/tag.json",
+          "doc": "docs/tag.md",
+          "fields": [
+            {
+              "key": "label",
+              "label": "Label",
+              "type": "string",
+              "default": "NEW"
+            },
+            {
+              "key": "tone",
+              "label": "Tone",
+              "type": "enum",
+              "options": ["info", "success"],
+              "default": "info"
+            },
+            {
+              "key": "spacing",
+              "label": "Letter spacing",
+              "type": "enum",
+              "options": ["tight", "normal", "wide"],
+              "default": "normal"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Info",
+              "values": {
+                "label": "NEW",
+                "tone": "info",
+                "spacing": "normal"
+              }
+            },
+            {
+              "name": "Wide success",
+              "values": {
+                "label": "DONE",
+                "tone": "success",
+                "spacing": "wide"
+              }
+            }
+          ]
+        },
+        {
+          "id": "pressed-button",
+          "name": "Pressed button",
+          "component": "components/pressed-button.json",
+          "doc": "docs/pressed-button.md",
+          "fields": [
+            {
+              "key": "label",
+              "label": "Label",
+              "type": "string",
+              "default": "Save"
+            },
+            {
+              "key": "state",
+              "label": "State",
+              "type": "enum",
+              "options": ["default", "pressed"],
+              "default": "default"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Default",
+              "values": {
+                "label": "Save",
+                "state": "default"
+              }
+            },
+            {
+              "name": "Pressed",
+              "values": {
+                "label": "Save",
+                "state": "pressed"
+              }
+            }
+          ]
+        },
+        {
+          "id": "flag",
+          "name": "Flag",
+          "component": "components/flag.json",
+          "doc": "docs/flag.md",
+          "fields": [
+            {
+              "key": "label",
+              "label": "Label",
+              "type": "string",
+              "default": "OK"
+            },
+            {
+              "key": "disabled",
+              "label": "Disabled",
+              "type": "enum",
+              "options": ["false", "true"],
+              "default": "false"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Enabled",
+              "values": {
+                "label": "OK",
+                "disabled": "false"
+              }
+            },
+            {
+              "name": "Disabled",
+              "values": {
+                "label": "OK",
+                "disabled": "true"
+              }
+            }
+          ]
+        },
+        {
+          "id": "spinner",
+          "name": "Spinner",
+          "component": "components/spinner.json",
+          "doc": "docs/spinner.md",
+          "fields": [
+            {
+              "key": "size",
+              "label": "Size",
+              "type": "enum",
+              "options": ["small", "medium", "large"],
+              "default": "medium"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Medium",
+              "values": {
+                "size": "medium"
+              }
+            },
+            {
+              "name": "Large",
+              "values": {
+                "size": "large"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

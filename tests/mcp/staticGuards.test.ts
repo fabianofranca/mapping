@@ -4,7 +4,8 @@ import { mcpSources } from './sources';
 
 // Static guards on the server's writing (phase 8.5, M8): they scan all of `mcp/**/*.ts`, so
 // a new module in any subfolder that writes to disk or cites `mapping.json` fails here.
-// Changing the list is a decision: the server only writes the empty project and `proposals/`.
+// Changing the list is a decision: the server only writes the empty project, `proposals/`, the
+// conversations and (`import_icons`) the icons file of a library package.
 
 /** `node:fs` functions that change the disk (with or without `Sync`). */
 const WRITERS = [
@@ -41,17 +42,22 @@ describe('who writes to disk (mcp/**)', () => {
     }
     expect(calls).toEqual({
       'createProject.ts': ['mkdir'],
-      'paths.ts': ['rename', 'rm', 'writeFile'],
+      'paths.ts': ['mkdir', 'rename', 'rm', 'writeFile'],
       'proposalStore.ts': ['link', 'mkdir', 'rm', 'writeFile'],
       'threadStore.ts': ['mkdir'],
     });
   });
 
-  it('writeFileAtomic only in createProject.ts, proposalStore.ts and threadStore.ts; on mapping.json (writeFileAtomic or writeNewFile), only in create_project', () => {
+  it('writeFileAtomic only in createProject.ts, iconImport.ts, proposalStore.ts and threadStore.ts; on mapping.json (writeFileAtomic or writeNewFile), only in create_project', () => {
     const callers = sources
       .filter(({ file, code }) => file !== 'paths.ts' && /writeFileAtomic\(/.test(code))
       .map((s) => s.file);
-    expect(callers).toEqual(['createProject.ts', 'proposalStore.ts', 'threadStore.ts']);
+    expect(callers).toEqual([
+      'createProject.ts',
+      'iconImport.ts',
+      'proposalStore.ts',
+      'threadStore.ts',
+    ]);
     const onMapping = sources.flatMap(({ file, code }) =>
       [...code.matchAll(/(?:writeFileAtomic|writeNewFile)\(([^;]*?)\)\s*;/g)]
         .filter((m) => /MAPPING_FILE|mapping\.json/.test(m[1]!))

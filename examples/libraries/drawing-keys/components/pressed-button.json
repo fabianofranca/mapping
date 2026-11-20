@@ -1,0 +1,57 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "pressed-button",
+  "name": "Pressed button",
+  "description": "A button that shrinks when pressed: the template root has `scale` 0.96 when `state` is `pressed` (an expression on the field). The drawing scales around the box center and the layout does not change. The embedded Flag is a `component` node and scales along with the root.",
+  "size": {
+    "width": 160,
+    "height": 48
+  },
+  "preview": {
+    "label": "Save",
+    "state": "pressed"
+  },
+  "template": {
+    "type": "frame",
+    "name": "pressed-button",
+    "scale": {
+      "$if": {
+        "$eq": ["state", "pressed"]
+      },
+      "then": 0.96,
+      "else": 1
+    },
+    "layout": {
+      "type": "row",
+      "gap": 8,
+      "align": "center",
+      "justify": "center",
+      "padding": [0, 16]
+    },
+    "cornerRadius": 24,
+    "fill": "#2563EB",
+    "children": [
+      {
+        "type": "component",
+        "id": "flag",
+        "name": "flag",
+        "width": 48,
+        "height": 32
+      },
+      {
+        "type": "text",
+        "name": "label",
+        "text": {
+          "$field": "label",
+          "default": "Button"
+        },
+        "color": "#FFFFFF",
+        "font": {
+          "size": 14,
+          "weight": 600
+        }
+      }
+    ]
+  }
+}

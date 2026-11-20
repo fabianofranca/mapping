@@ -74,6 +74,7 @@ import type {
   LayoutWrap,
   ImageTemplate,
   IntrinsicSize,
+  EllipseTemplate,
   PathTemplate,
   ResolvedComponent,
   ShadowSpec,
@@ -88,6 +89,8 @@ import type {
 import type { Box } from './box';
 import { STROKE_SIDES } from './componentFormat';
 import { clipBoxOf } from './clipBox';
+import { arcPath } from './arc';
+import { clampGrayscale, grayscaleNode } from './grayscale';
 import { DEFAULT_ICON_VIEWBOX, resolveIcon, type IconPath, type IconSet } from './icons';
 import {
   evaluate,
@@ -224,6 +227,9 @@ export type TextMeasurer = (
   font: MeasureFont,
   maxWidth?: number,
 ) => TextMetrics;
+
+/** `font.letterSpacing` as a percentage of the size (`"2%"`, `"-1.5%"`). */
+const PERCENT_TEXT = /^-?\d+(\.\d+)?%$/;
 
 /** The size of a slot's content: the arranged children plus the slot's padding. */
 export interface SlotSize {
@@ -826,6 +832,21 @@ function createEngine(
     };
   };
 
+  /**
+   * `font.letterSpacing` in px: a number, numeric text or a percentage of the size (`"2%"` is
+   * `0.02 × size`). Another value is an invalid value: the warning and 0.
+   */
+  const letterSpacingOf = (expr: FontSpec['letterSpacing'], size: number): number => {
+    const value = ev<unknown>(expr as Expr<unknown> | undefined, 0);
+    if (value === undefined || value === null || value === '') return 0;
+    if (typeof value === 'string' && PERCENT_TEXT.test(value))
+      return (parseFloat(value) / 100) * size;
+    const n = typeof value === 'number' ? value : Number(value);
+    if (Number.isFinite(n)) return n;
+    invalidValue('font.letterSpacing', value);
+    return 0;
+  };
+
   const textFont = (node: TextTemplate): MeasureFont => {
     const font: FontSpec = node.font ?? {};
     const size = Math.max(0, num(font.size, 14));
@@ -837,7 +858,7 @@ function createEngine(
       weight: num(font.weight, 400),
       italic: bool(font.italic, false),
       lineHeight: lh <= 3 ? lh * size : lh,
-      letterSpacing: num(font.letterSpacing, 0),
+      letterSpacing: letterSpacingOf(font.letterSpacing, size),
       ...(dirOf(node) === 'rtl' ? { direction: 'rtl' as const } : {}),
     };
   };
@@ -847,7 +868,7 @@ function createEngine(
   /** `[vertical, horizontal]` padding of a chip (number = both axes). */
   const runPadding = (run: TextRunTemplate): readonly [number, number] => {
     const value = ev<unknown>(run.padding as Expr<unknown> | undefined, 0);
-    const clean = (n: unknown): number => (typeof n === 'number' && n > 0 ? n : 0);
+    const clean = (n: unknown): number => Math.max(0, num(n as Expr<number>, 0));
     if (Array.isArray(value)) return [clean(value[0]), clean(value[1])];
     return [clean(value), clean(value)];
   };
@@ -1580,11 +1601,17 @@ function createEngine(
     const plan = componentPlan(node);
     if (plan === undefined) return 'fill';
     // The inner `sizing` reads what the inner drawing reads: the direction and `$provided` (node `provide` included).
-    const resolved = resolveSizing(plan.component, {
-      ...plan.values,
-      [DIRECTION_FIELD]: dirOf(node),
-      ...providedFields(extendProvided(options.provided ?? {}, componentProvides(node))),
-    });
+    const resolved = resolveSizing(
+      plan.component,
+      {
+        ...plan.values,
+        [DIRECTION_FIELD]: dirOf(node),
+        ...providedFields(
+          extendProvided(options.provided ?? {}, componentProvides(node)),
+        ),
+      },
+      tokens,
+    );
     for (const message of resolved.messages)
       warn(message.code as ModelMessageTemplateCode, message.params);
     return resolved[axis === 'w' ? 'width' : 'height'].spec;
@@ -2965,6 +2992,41 @@ function createEngine(
     return degrees === 0 ? {} : { rotation: degrees };
   };
 
+  /** The evaluated `scale`; with no value or 1 the node does not scale, an invalid one (negative, not a number) is 1 with a warning. */
+  const scaleOf = (node: TemplateNode): { scale?: number } => {
+    const value = ev<unknown>(node.scale as Expr<unknown> | undefined, undefined);
+    if (value === undefined || value === null || value === '') return {};
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n) || n < 0) {
+      invalidValue('scale', value);
+      return {};
+    }
+    return n === 1 ? {} : { scale: n };
+  };
+
+  /** The inner root's own `scale` times the `component` node's: they compose by multiplying. */
+  const composedScale = (own: number | undefined, node: TemplateNode): number =>
+    (own ?? 1) * (scaleOf(node).scale ?? 1);
+
+  /** The evaluated `filter.grayscale` (clamped to 0..1); an invalid value is 0 with a warning. */
+  const grayscaleOf = (node: TemplateNode): number => {
+    const value = ev<unknown>(
+      node.filter?.grayscale as Expr<unknown> | undefined,
+      undefined,
+    );
+    if (value === undefined || value === null || value === '') return 0;
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n)) {
+      invalidValue('filter.grayscale', value);
+      return 0;
+    }
+    return clampGrayscale(n);
+  };
+
+  /** The node's built subtree through its `filter` (the drawing of a `component` node included). */
+  const filtered = <T extends SceneNode>(node: TemplateNode, built: T): T =>
+    node.filter === undefined ? built : grayscaleNode(built, grayscaleOf(node));
+
   const common = (
     node: TemplateNode,
     id: string,
@@ -2977,6 +3039,7 @@ function createEngine(
     opacity: Math.min(1, Math.max(0, num(node.opacity, 1))),
     transform: translate(x, y),
     ...rotationOf(node),
+    ...scaleOf(node),
     width: w,
     height: h,
     fills: fillsOf(node.fill, w, h),
@@ -3104,7 +3167,7 @@ function createEngine(
       ...(stroke ? { stroke } : {}),
       type: 'path',
       d: iconPath.d,
-      fillRule: 'nonzero',
+      fillRule: iconPath.fillRule ?? 'nonzero',
     };
   };
 
@@ -3354,7 +3417,7 @@ function createEngine(
   /**
    * The inner component drawn in the node's box: the node is the inner root frame (ids prefixed by
    * `<path>/component`), named after the node or, without a name, the inner component. The node's
-   * `opacity` and `rotation` apply to the whole drawing. Its warnings and "does not fit" shortfalls
+   * `opacity`, `rotation` and `scale` apply to the whole drawing. Its warnings and "does not fit" shortfalls
    * come to this instance. Unavailable: nothing.
    */
   const buildComponent = (
@@ -3379,8 +3442,10 @@ function createEngine(
       shortfalls.set(text, Math.max(shortfalls.get(text) ?? 0, missing));
     const { root } = drawn;
     // The node's rotation adds to the inner root's own.
-    const { rotation: own = 0, ...rest } = root;
+    const { rotation: own = 0, scale: ownScale, ...rest } = root;
     const rotation = own + num(node.rotation, 0);
+    // The node's scale composes with the inner root's own (and with the outer ones, by the nesting).
+    const scale = composedScale(ownScale, node);
     // The scene node is the inner root (`<path>/component/root`): a `stroke.gap` naming the node opens on it.
     builtIds.set(node, root.id);
     return {
@@ -3388,10 +3453,97 @@ function createEngine(
       name: node.name ?? plan.component.name,
       opacity: root.opacity * Math.min(1, Math.max(0, num(node.opacity, 1))),
       ...(rotation === 0 ? {} : { rotation }),
+      ...(scale === 1 ? {} : { scale }),
     };
   };
 
+  /** An angle in degrees (`startAngle`/`sweepAngle`); invalid is `undefined`, with a warning. */
+  const angleOf = (expr: Expr<number> | undefined, label: string): number | undefined => {
+    const value = ev<unknown>(expr as Expr<unknown> | undefined, undefined);
+    if (value === undefined || value === null || value === '') return undefined;
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n)) invalidValue(label, value);
+    return Number.isFinite(n) ? n : undefined;
+  };
+
+  /**
+   * `ellipse`: whole, or (with `sweepAngle`) an arc as a scene `path` with the stroke centered on
+   * the arc, which `arcPath` already moved by the ellipse's `align` and `offset`; `cap`, `join`
+   * and `dash` stay the ellipse's. The fill closes on the chord and the stroke does not.
+   */
+  const buildEllipse = (
+    node: EllipseTemplate,
+    id: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ): SceneNode => {
+    const stroke = strokeOf(node.stroke, 'inside', 1);
+    const sweep = angleOf(node.sweepAngle, 'sweepAngle');
+    const start = angleOf(node.startAngle, 'startAngle') ?? 0;
+    if (sweep === undefined)
+      return {
+        ...common(node, id, x, y, w, h),
+        ...(stroke ? { stroke } : {}),
+        type: 'ellipse',
+      };
+    const { offset, ...rest } = stroke ?? {};
+    const arc = (withStroke: boolean): string =>
+      arcPath({
+        width: w,
+        height: h,
+        startAngle: start,
+        sweepAngle: sweep,
+        ...(withStroke && stroke
+          ? { stroke: { width: stroke.width, align: stroke.align, offset } }
+          : {}),
+      });
+    const line = stroke
+      ? { stroke: { ...rest, align: 'center' as const } as Stroke }
+      : {};
+    const base = common(node, id, x, y, w, h);
+    const moved = arc(true) !== arc(false);
+    if (!moved || base.fills.length === 0)
+      return { ...base, ...line, type: 'path', d: arc(true), fillRule: 'nonzero' };
+    // The stroke sits apart from the box's outline (`align`, `offset`) but the fill stays on the
+    // box: two paths in a group, which carries the node's matrix and opacity.
+    const kid = { ...baseNode({ id: '', name: base.name }), width: w, height: h };
+    const fill: PathNode = {
+      ...kid,
+      id: `${id}/fill`,
+      fills: base.fills,
+      effects: base.effects,
+      type: 'path',
+      d: arc(false),
+      fillRule: 'nonzero',
+    };
+    const edge: PathNode = {
+      ...kid,
+      id: `${id}/stroke`,
+      fills: [],
+      effects: [],
+      ...line,
+      type: 'path',
+      d: arc(true),
+      fillRule: 'nonzero',
+    };
+    return { ...base, fills: [], effects: [], type: 'group', children: [fill, edge] };
+  };
+
   const buildNode = (
+    node: TemplateNode,
+    path: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ): SceneNode | undefined => {
+    const built = buildPlainNode(node, path, x, y, w, h);
+    return built === undefined ? undefined : filtered(node, built);
+  };
+
+  const buildPlainNode = (
     node: TemplateNode,
     path: string,
     x: number,
@@ -3431,14 +3583,8 @@ function createEngine(
           cornerRadius: radiusOf(node),
         };
       }
-      case 'ellipse': {
-        const stroke = strokeOf(node.stroke, 'inside', 1);
-        return {
-          ...common(node, id, x, y, w, h),
-          ...(stroke ? { stroke } : {}),
-          type: 'ellipse',
-        };
-      }
+      case 'ellipse':
+        return buildEllipse(node, id, x, y, w, h);
       case 'image':
         return buildImage(node, id, x, y, w, h);
       case 'component':
@@ -3489,8 +3635,11 @@ function createEngine(
   };
 
   const buildRoot = (box: Box): FrameNode =>
-    withGaps(
-      buildFrame(component.template, 'root', box.x, box.y, box.width, box.height, true),
+    filtered(
+      component.template,
+      withGaps(
+        buildFrame(component.template, 'root', box.x, box.y, box.width, box.height, true),
+      ),
     );
 
   return {

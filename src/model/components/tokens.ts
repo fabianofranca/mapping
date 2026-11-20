@@ -90,7 +90,7 @@ function isTokenRef(value: unknown): value is TokenRef {
   );
 }
 
-interface Rgba {
+export interface Rgba {
   readonly r: number;
   readonly g: number;
   readonly b: number;
@@ -213,6 +213,18 @@ function withAlpha(color: string, alpha: number): string {
   return `#${toByte(rgba.r)}${toByte(rgba.g)}${toByte(rgba.b)}${toByte(rgba.a * alpha * 255)}`;
 }
 
+/**
+ * The literal color with each channel changed by `change` (`#rrggbb`, or `#rrggbbaa` when it is not
+ * opaque). `none`, `transparent` and anything that is not an understood color stay as they are.
+ */
+export function mapColor(color: string, change: (rgba: Rgba) => Rgba): string {
+  const rgba = parseColor(color.trim());
+  if (!rgba) return color;
+  const out = change(rgba);
+  const body = `#${toByte(out.r)}${toByte(out.g)}${toByte(out.b)}`;
+  return out.a >= 1 ? body : `${body}${toByte(out.a * 255)}`;
+}
+
 /** The `$token`'s `alpha` as a number from 0 to 1 (literal or number `$token`); none if missing or invalid. */
 function alphaOf(ref: TokenRef, tokens: ResolvedTokens): number | undefined {
   const raw = isTokenRef(ref.alpha) ? tokens[ref.alpha.$token] : ref.alpha;
@@ -248,6 +260,14 @@ function resolveRef(ref: TokenRef, tokens: ResolvedTokens): TokenValue | undefin
   const faded = alpha === undefined ? resolved : withAlpha(resolved, alpha);
   const base = overColor(ref, tokens);
   return base === undefined ? faded : compositeOver(faded, base);
+}
+
+/**
+ * A single value (an axis of `sizing`, or any piece of a component) with each `{ "$token": … }`
+ * replaced by the table's value; a token the table lacks vanishes from an object and stays in a list.
+ */
+export function substituteTokens(node: unknown, tokens: ResolvedTokens): unknown {
+  return isTokenRef(node) ? resolveRef(node, tokens) : substitute(node, tokens);
 }
 
 function substitute(node: unknown, tokens: ResolvedTokens): unknown {

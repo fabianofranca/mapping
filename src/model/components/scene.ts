@@ -47,23 +47,34 @@ export function translate(x: number, y: number): Matrix {
   return [1, 0, 0, 1, x, y];
 }
 
+/** Does the node draw rotated or scaled (so its box is not the one `transform` alone gives)? */
+export function isTransformed(node: {
+  readonly rotation?: number;
+  readonly scale?: number;
+}): boolean {
+  return Boolean(node.rotation) || (node.scale !== undefined && node.scale !== 1);
+}
+
 /**
  * The matrix that takes the node's local space to its parent's: `transform` plus the `rotation`
- * around the center of the box. Without `rotation` it is `transform` itself.
+ * and the `scale` around the center of the box. Without either it is `transform` itself. The two
+ * are about the same point, so the order does not change the result (uniform scale).
  */
 export function nodeMatrix(node: {
   readonly transform: Matrix;
   readonly rotation?: number;
+  readonly scale?: number;
   readonly width: number;
   readonly height: number;
 }): Matrix {
-  if (!node.rotation) return node.transform;
-  const rad = (node.rotation * Math.PI) / 180;
-  const cos = Math.cos(rad);
-  const sin = Math.sin(rad);
+  if (!isTransformed(node)) return node.transform;
+  const rad = ((node.rotation ?? 0) * Math.PI) / 180;
+  const k = node.scale ?? 1;
+  const cos = Math.cos(rad) * k;
+  const sin = Math.sin(rad) * k;
   const cx = node.width / 2;
   const cy = node.height / 2;
-  // translate(c) · rotate · translate(-c)
+  // translate(c) · rotate · scale · translate(-c)
   const turn: Matrix = [
     cos,
     sin,
@@ -111,6 +122,12 @@ export type Paint =
       /** How the image fills the box (absent = `cover`). */
       readonly fit?: ImageFit;
       readonly opacity?: number;
+      /**
+       * `filter.grayscale` amount (0 to 1) that reaches this image (absent = in color): whoever
+       * has the pixels desaturates them with the CSS matrix (`grayscalePixels`); the placeholder
+       * stays as it is.
+       */
+      readonly grayscale?: number;
     };
 
 export interface Stroke {
@@ -213,6 +230,12 @@ interface NodeBase {
    * children rotate along and so does the frame's clip; the box and the layout do not change.
    */
   readonly rotation?: number;
+  /**
+   * Uniform scale around the center of the node's box (`nodeMatrix`); absent = 1. Drawing only,
+   * like `rotation`: the box, the layout and the measurement do not change, the children, the
+   * stroke, the shadow and the frame's clip scale along. 0 draws nothing.
+   */
+  readonly scale?: number;
   /** The node's local box (px); in `path` and `line` it is the box of the points, informative. */
   readonly width: number;
   readonly height: number;

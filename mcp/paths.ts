@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { realpath, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, realpath, rename, rm, writeFile } from 'node:fs/promises';
 import path, {
   basename,
   dirname,
@@ -314,8 +314,16 @@ export async function resolveProjectFile(
   }
 }
 
-/** Writes atomically: a temporary file in the same folder, then renamed over the target. */
-export async function writeFileAtomic(path: string, data: string): Promise<void> {
+/**
+ * Writes atomically: a temporary file in the same folder, then renamed over the target.
+ * `createFolder` first creates the target's folder (a new file in a folder that does not exist yet).
+ */
+export async function writeFileAtomic(
+  path: string,
+  data: string,
+  options: { readonly createFolder?: boolean } = {},
+): Promise<void> {
+  if (options.createFolder === true) await mkdir(dirname(path), { recursive: true });
   const temp = join(
     dirname(path),
     `.${basename(path)}.${randomBytes(6).toString('hex')}.tmp`,

@@ -7,6 +7,7 @@ export const componentMessages = {
   'component.unknownKey': 'unknown key: {key}',
   'component.expectedBoolean': 'expected a boolean',
   'component.expectedNumber': 'expected a number',
+  'component.expectedNumberOrPercentage': 'expected a number or a percentage ("2%")',
   'component.expectedNonNegative': 'expected a number greater than or equal to 0',
   'component.expectedUnit': 'expected a number between 0 and 1',
   'component.expectedWeight': 'expected a weight between 100 and 900',

@@ -1,0 +1,84 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "flag",
+  "name": "Flag",
+  "description": "A small flag: a pole, a colored banner and a label. When `disabled` is `true` the root has `filter: { grayscale: 1 }`, so the whole flag draws gray.",
+  "size": {
+    "width": 48,
+    "height": 32
+  },
+  "preview": {
+    "label": "OK",
+    "disabled": "false"
+  },
+  "template": {
+    "type": "frame",
+    "name": "flag",
+    "filter": {
+      "grayscale": {
+        "$if": {
+          "$eq": ["disabled", "true"]
+        },
+        "then": 1,
+        "else": 0
+      }
+    },
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "rect",
+        "name": "pole",
+        "fill": "#475569",
+        "width": 3,
+        "height": 32,
+        "anchors": {
+          "left": 4,
+          "top": 0
+        }
+      },
+      {
+        "type": "rect",
+        "name": "banner",
+        "fill": "#DC2626",
+        "cornerRadius": 3,
+        "width": 38,
+        "height": 20,
+        "anchors": {
+          "left": 7,
+          "top": 2
+        }
+      },
+      {
+        "type": "ellipse",
+        "name": "dot",
+        "fill": "#FBBF24",
+        "width": 6,
+        "height": 6,
+        "anchors": {
+          "left": 11,
+          "top": 9
+        }
+      },
+      {
+        "type": "text",
+        "name": "label",
+        "text": {
+          "$field": "label",
+          "default": "OK"
+        },
+        "color": "#FFFFFF",
+        "font": {
+          "size": 10,
+          "weight": 700
+        },
+        "anchors": {
+          "left": 21,
+          "top": 6
+        }
+      }
+    ]
+  }
+}

@@ -5,6 +5,7 @@ import { iconsFileMessages } from './icons';
 import { libraryMessages } from './library';
 import { originMessages } from './origins';
 import { specMessages } from './spec';
+import { svgIconMessages } from './svgIcon';
 import { versionMessages } from './versions';
 
 // Catalog of the model messages that the interface translates (stage #1263). Each module in the
@@ -18,6 +19,7 @@ export const MODEL_MESSAGE_TEMPLATES = {
   ...versionMessages,
   ...componentMessages,
   ...iconsFileMessages,
+  ...svgIconMessages,
   ...originMessages,
   ...engineMessages,
 } as const;

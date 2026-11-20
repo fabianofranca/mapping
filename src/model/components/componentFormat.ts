@@ -222,7 +222,8 @@ export interface FontSpec {
   readonly italic?: BoolExpr;
   /** Multiple of the size (1.2) or px when > 3. */
   readonly lineHeight?: Expr<number>;
-  readonly letterSpacing?: Expr<number>;
+  /** px, or (v4) a percentage of the size as text (`"2%"`, `"-1.5%"`). */
+  readonly letterSpacing?: Expr<number | string>;
   /**
    * `justify` (v4): the text fills the box's width, and the last line of each paragraph stays on
    * the left. `start` (the default) and `end` (v4) follow the reading direction: `left`/`right` in
@@ -306,9 +307,14 @@ export type LayoutWrap = 'none' | 'wrap' | 'wrap-reverse';
 export interface LayoutSpec {
   readonly type: Expr<LayoutType>;
   readonly gap?: Expr<number>;
-  /** One value, [vertical, horizontal] or [top, right, bottom, left]. */
+  /**
+   * One value, [vertical, horizontal] or [top, right, bottom, left]; each item of a list is a
+   * number or (v4) a number expression.
+   */
   readonly padding?: Expr<
-    number | readonly [number, number] | readonly [number, number, number, number]
+    | number
+    | readonly [Expr<number>, Expr<number>]
+    | readonly [Expr<number>, Expr<number>, Expr<number>, Expr<number>]
   >;
   /**
    * On the cross axis. `baseline` (v4, only in `row`): the children align by the first baseline,
@@ -352,6 +358,11 @@ export interface LayoutSpec {
 // Template nodes
 // ---------------------------------------------------------------------------------------
 
+/** The `filter` of a node: only `grayscale` (0 to 1, the CSS `grayscale()` amount). */
+export interface FilterSpec {
+  readonly grayscale?: Expr<number>;
+}
+
 interface TemplateNodeBase {
   /** Name of the node (appears in the tree and on hover); optional. */
   readonly name?: string;
@@ -364,6 +375,18 @@ interface TemplateNodeBase {
    * or 0, it does not rotate.
    */
   readonly rotation?: Expr<number>;
+  /**
+   * `formatVersion` 4: scales the node (and a frame's children, stroke, shadow and `clip`)
+   * uniformly around the center of the box, a number ≥ 0 (expression or number `$token`). Drawing
+   * only, like `rotation`: layout, measurement, `hug` and the node's box do not change. Valid on
+   * the root. Without a value, or 1, it does not scale; 0 draws nothing.
+   */
+  readonly scale?: Expr<number>;
+  /**
+   * `formatVersion` 4: filters the node's drawing and its children's (drawing only). Valid on
+   * the root.
+   */
+  readonly filter?: FilterSpec;
   /**
    * `formatVersion` 4: pins the reading direction of the subtree (literal `ltr` or `rtl`), instead
    * of following the container's: a phone number, a snippet of code. The node is placed by its
@@ -424,6 +447,14 @@ export interface RectTemplate extends TemplateNodeBase {
 
 export interface EllipseTemplate extends TemplateNodeBase {
   readonly type: 'ellipse';
+  /**
+   * v4: an arc, like `drawArc` without the center. `startAngle` (degrees, default 0: points right,
+   * grows clockwise, parametric) and `sweepAngle` (degrees; negative goes counterclockwise,
+   * `|sweepAngle| ≥ 360` is the whole ellipse, 0 draws nothing). Without `sweepAngle` the ellipse
+   * is whole. With it the engine emits a scene `path` (`arc.ts`).
+   */
+  readonly startAngle?: Expr<number>;
+  readonly sweepAngle?: Expr<number>;
 }
 
 /**
@@ -446,7 +477,7 @@ export interface TextRunTemplate {
   /** Background color of the inline box (`none` = no box). */
   readonly background?: Expr<Color>;
   readonly radius?: Expr<number>;
-  readonly padding?: Expr<number | readonly [number, number]>;
+  readonly padding?: Expr<number | readonly [Expr<number>, Expr<number>]>;
 }
 
 /**

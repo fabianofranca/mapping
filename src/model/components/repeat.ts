@@ -52,6 +52,8 @@ const INHERITED_KEYS = [
   'visible',
   'opacity',
   'rotation',
+  'scale',
+  'filter',
   'anchors',
   'minWidth',
   'maxWidth',

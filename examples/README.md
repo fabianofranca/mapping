@@ -117,6 +117,24 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 **Scripts.** R38.
 
+### `examples/libraries/drawing-keys/`
+
+**What it is.** The example of the **drawing keys** that the format gained after the faithful components. Today it has five types, **Icon holes** (fields `icon` and `tint`), **Tag** (fields `label`, `tone` and `spacing`), **Pressed button** (fields `label` and `state`), **Flag** (fields `label` and `disabled`) and **Spinner** (field `size`), drawn with the icons file in `formatVersion` 3 (`icons/icons.json`: `ring`, `square-hole` and `star-evenodd`, written by hand, plus five icons that the MCP tool `import_icons` imported from `tests/fixtures/svg-icons/`: `icon-current-color`, `icon-figma-evenodd`, `icon-flag`, `icon-shapes` and `icon-stroked`).
+
+**How to open.** **Specializations** › **Apply folder…** and pick the folder. Mark an Icon holes and change `icon` and `tint`.
+
+**What you can see.**
+
+- The `fillRule` of an icon path (icons file `formatVersion` 3): the three icons are `"fillRule": "evenodd"`, so the ring's inner circle, the square's hole and the middle of the self-intersecting star are cut out and the tile's gray shows through. The same icon with the default `nonzero` would be filled.
+- The icons that came in through `import_icons` (the SVG import, FG3): `icon-figma-evenodd` keeps its `evenodd` hole, `icon-current-color`, `icon-shapes` and `icon-stroked` follow the `tint` (one color), and `icon-flag` keeps its three literal colors and its own `viewBox`. Point the `icon` field at one of them in the file to see it.
+- The Tag (FG4): the letter spacing in percent (`"-1%"`, `"4%"`, `"8%"` from the `spacing` field), the `padding` items from a token (`tag-padding`) and the `sizing` height from a token (`tag-height`); change the drawing mode (`compact`/`comfortable`) and the tag changes size.
+- The Pressed button (FG5): `scale` 0.96 on the template root when `state` is `pressed`, an expression on the field. The drawing shrinks around the box center and the layout does not change; the embedded Flag (a `component` node) scales along with the root.
+- The Flag (FG5): `filter: { "grayscale": 1 }` on the root when `disabled` is `true`, so the whole flag draws gray (CSS `grayscale()`; drawing only).
+- The Spinner (FG6): an `ellipse` with `startAngle: -90` and `sweepAngle: 216` (60% of the circle, clockwise from the top) with round caps, over a faint full ring; the `size` field picks the box and the stroke width (2, 3 or 5 px). The stroke follows only the arc and `align: "inside"` keeps it where the whole ellipse's would be, with no `dash` computed from the circumference.
+- The same drawing in the app, in the viewer and in the `render_marking` PNG.
+
+**Scripts.** R39 in `docs/TESTING.md` ("Icon fill rule, SVG import and drawing keys"): it copies the package and the SVGs, runs `import_icons` (`dryRun`, for real, `replace` and the refusals), applies the package in a folder project and checks the five components with pixel probes in the app and in the `render_marking` PNG.
+
 ### `examples/libraries/measured/`
 
 **What it is.** The example of the **measured** origin (`origins[].kind: "measured"`): the rectangle tree of a page (measured in a browser) becomes markings, matching each node to a type through the `sources`. Two types: **Card** and **Button** (fields `label` and `tone`). The example tree is `examples/page.measured.json`, next to the library folder.
@@ -298,31 +316,36 @@ When one exists, the example is from `libraries/`. The features of the executabl
 
 ### Component
 
-| Feature                                         | Where to see it                                                                                                                                   |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `frame` and `text`                              | All components                                                                                                                                    |
-| `rect`                                          | Divider and Checkbox (`material3-compose`); the class card (`kotlin`)                                                                             |
-| `ellipse`                                       | Switch, Radio button, Slider and Progress indicator (`material3-compose`)                                                                         |
-| `path`                                          | Icons of the Button, the Checkbox, the Chip and others (`material3-compose`)                                                                      |
-| `image`                                         | Image, Card, List item and Carousel (`material3-compose`)                                                                                         |
-| `slot`                                          | Box, Column, Row, Scaffold and others (`material3-compose`)                                                                                       |
-| `repeat`                                        | Table (`notas`); Properties (`kotlin`); Event (`analytics`); Navigation bar, Tabs and Carousel (`material3-compose`)                              |
-| Layout `row`, `column` and `none`               | `row` and `column` in all libraries; `none` in the Box (`material3-compose`)                                                                      |
-| `gap`, `padding` (number, pair and four sides)  | Number in all; pair and four sides (`material3-compose`)                                                                                          |
-| `align` and `justify`                           | `align` `start`, `center` and `stretch`; `justify` `start`, `center`, `end` and `space-between` (`material3-compose`: Tabs, Alert dialog, Slider) |
-| Node size: px, `fill`, `hug` and `%`            | px, `fill` and `hug` in all; `%` in the Slider and the Short navigation bar (`material3-compose`)                                                 |
-| `size`, `minSize` and `sizing`                  | All components; official `minSize` only in the Button, FAB, Text field and others (`material3-compose`)                                           |
-| Anchors (`anchors`)                             | `left`, `right`, `top`, `bottom`, `centerX` and `centerY` (`material3-compose`: FAB, Pull to refresh)                                             |
-| `component` node, its `values` and `provide`    | Icon button, with `glyph`, `spinner` and `badge` (`composition`)                                                                                  |
-| Corner anchor (`anchor.align: "corner-end"`)    | Badge root (`composition`)                                                                                                                        |
-| Screen anchors and scrim                        | `sdui-scrim` and the roots with `anchor` and `margin` (`sdui-backend`)                                                                            |
-| Expressions `$field`, `$if`, `$switch`          | `kotlin` and `material3-compose`; `$field` with `default` in both                                                                                 |
-| `$concat`                                       | Class header (`kotlin`); Box, Column and Image (`material3-compose`)                                                                              |
-| Conditions `$has`, `$eq`, `$not`, `$and`, `$or` | `$has` in `notas`; all in `material3-compose`                                                                                                     |
-| `visible`, `opacity`, `clip`                    | `visible` in `notas`; `opacity` in `kotlin` and Surface; `clip` in the Box (`material3-compose`)                                                  |
-| `fill`, gradient, `stroke`, `shadow`            | Color in all; gradient in the Carousel; `stroke` with `dash` and `align`; `shadow` in `notas` (`material3-compose`)                               |
-| `cornerRadius`                                  | Number in all; four corners (`material3-compose`)                                                                                                 |
-| Text font: `size`, `weight`, `italic`           | All; `italic` in `kotlin` and Text (`material3-compose`)                                                                                          |
-| `preview`                                       | All; in table form in `notas`, `kotlin` and `analytics`                                                                                           |
+| Feature                                                             | Where to see it                                                                                                                                   |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `frame` and `text`                                                  | All components                                                                                                                                    |
+| `rect`                                                              | Divider and Checkbox (`material3-compose`); the class card (`kotlin`)                                                                             |
+| `ellipse`                                                           | Switch, Radio button, Slider and Progress indicator (`material3-compose`)                                                                         |
+| `path`                                                              | Icons of the Button, the Checkbox, the Chip and others (`material3-compose`)                                                                      |
+| `image`                                                             | Image, Card, List item and Carousel (`material3-compose`)                                                                                         |
+| `slot`                                                              | Box, Column, Row, Scaffold and others (`material3-compose`)                                                                                       |
+| `repeat`                                                            | Table (`notas`); Properties (`kotlin`); Event (`analytics`); Navigation bar, Tabs and Carousel (`material3-compose`)                              |
+| Layout `row`, `column` and `none`                                   | `row` and `column` in all libraries; `none` in the Box (`material3-compose`)                                                                      |
+| `gap`, `padding` (number, pair and four sides)                      | Number in all; pair and four sides (`material3-compose`)                                                                                          |
+| `align` and `justify`                                               | `align` `start`, `center` and `stretch`; `justify` `start`, `center`, `end` and `space-between` (`material3-compose`: Tabs, Alert dialog, Slider) |
+| Node size: px, `fill`, `hug` and `%`                                | px, `fill` and `hug` in all; `%` in the Slider and the Short navigation bar (`material3-compose`)                                                 |
+| `size`, `minSize` and `sizing`                                      | All components; official `minSize` only in the Button, FAB, Text field and others (`material3-compose`)                                           |
+| Anchors (`anchors`)                                                 | `left`, `right`, `top`, `bottom`, `centerX` and `centerY` (`material3-compose`: FAB, Pull to refresh)                                             |
+| `component` node, its `values` and `provide`                        | Icon button, with `glyph`, `spinner` and `badge` (`composition`)                                                                                  |
+| Corner anchor (`anchor.align: "corner-end"`)                        | Badge root (`composition`)                                                                                                                        |
+| Icon `fillRule` (icons file `formatVersion` 3)                      | Icon holes (`drawing-keys`)                                                                                                                       |
+| Letter spacing in percent, `padding` items and `$token` in `sizing` | Tag (`drawing-keys`)                                                                                                                              |
+| `scale` (drawing only, composes with an embedded `component`)       | Pressed button (`drawing-keys`)                                                                                                                   |
+| `filter.grayscale`                                                  | Flag (`drawing-keys`)                                                                                                                             |
+| Arc on `ellipse` (`startAngle`, `sweepAngle`)                       | Spinner (`drawing-keys`)                                                                                                                          |
+| Screen anchors and scrim                                            | `sdui-scrim` and the roots with `anchor` and `margin` (`sdui-backend`)                                                                            |
+| Expressions `$field`, `$if`, `$switch`                              | `kotlin` and `material3-compose`; `$field` with `default` in both                                                                                 |
+| `$concat`                                                           | Class header (`kotlin`); Box, Column and Image (`material3-compose`)                                                                              |
+| Conditions `$has`, `$eq`, `$not`, `$and`, `$or`                     | `$has` in `notas`; all in `material3-compose`                                                                                                     |
+| `visible`, `opacity`, `clip`                                        | `visible` in `notas`; `opacity` in `kotlin` and Surface; `clip` in the Box (`material3-compose`)                                                  |
+| `fill`, gradient, `stroke`, `shadow`                                | Color in all; gradient in the Carousel; `stroke` with `dash` and `align`; `shadow` in `notas` (`material3-compose`)                               |
+| `cornerRadius`                                                      | Number in all; four corners (`material3-compose`)                                                                                                 |
+| Text font: `size`, `weight`, `italic`                               | All; `italic` in `kotlin` and Text (`material3-compose`)                                                                                          |
+| `preview`                                                           | All; in table form in `notas`, `kotlin` and `analytics`                                                                                           |
 
 For a feature this table does not mention, run the coverage test (`npx vitest run tests/examples/featureCoverage.test.ts`): it says which example covers each key and each value.

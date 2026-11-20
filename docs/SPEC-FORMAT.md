@@ -1300,7 +1300,7 @@ The format of the component file is in [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.
 
 ## Design tokens
 
-`tokens` (`formatVersion` 15, optional, at the root) holds the library's named **design values**: colors, radii, spacings, and font families. Format 4 components read each value with `{ "$token": "name" }` (see `docs/COMPONENT-FORMAT.md`), instead of repeating the literal in each node. Changing the value in a single place changes the whole design.
+`tokens` (`formatVersion` 15, optional, at the root) holds the library's named **design values**: colors, radii, spacings, and font families. Format 4 components read each value with `{ "$token": "name" }` (see `docs/COMPONENT-FORMAT.md`), instead of repeating the literal in each node. Changing the value in a single place changes the whole design. A number token is also valid in `sizing.width`/`sizing.height`, in each item of a `padding` list and in `font.letterSpacing` (px); a percent `letterSpacing` text is not a token kind.
 
 For color, `{ "$token": "scrim", "alpha": 0.32 }` multiplies the alpha of the token's color (the opacity without duplicating the token in the specialization; `alpha` is a number from 0 to 1 or a number `$token`). The token is also valid in `shadow.x`/`y`/`blur`, in each item of `cornerRadius` and `stroke.dash`, and in `stroke.offset` (see `docs/COMPONENT-FORMAT.md`).
 
@@ -1335,7 +1335,7 @@ For color, `{ "$token": "scrim", "alpha": 0.32 }` multiplies the alpha of the to
 ```json
 {
   "format": "mapping-icons",
-  "formatVersion": 2,
+  "formatVersion": 3,
   "viewBox": [24, 24],
   "icons": {
     "check": {
@@ -1356,14 +1356,24 @@ For color, `{ "$token": "scrim", "alpha": 0.32 }` multiplies the alpha of the to
     "dot": {
       "viewBox": [10, 10],
       "paths": [{ "d": "M5 1a4 4 0 1 0 0 8a4 4 0 1 0 0-8z", "fill": true }]
+    },
+    "ring": {
+      "paths": [
+        {
+          "d": "M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20z M12 6a6 6 0 1 0 0 12a6 6 0 1 0 0-12z",
+          "fillRule": "evenodd"
+        }
+      ]
     }
   }
 }
 ```
 
-- `format` is `mapping-icons` and `formatVersion` is `1` or `2` (`2` is `1` plus the per-icon `mirror`; any other is the error `formatVersion: deve ser 1 ou 2`). `1` is still accepted unchanged. `viewBox` (positive `[width, height]`) is required and applies to all the icons that do not carry their own.
+- `format` is `mapping-icons` and `formatVersion` is `1`, `2` or `3` (`2` is `1` plus the per-icon `mirror`; `3` is `2` plus the per-path `fillRule`; any other is the error `formatVersion: must be 1, 2 or 3`). `1` and `2` are still accepted unchanged. `viewBox` (positive `[width, height]`) is required and applies to all the icons that do not carry their own.
 - `mirror` (`formatVersion` 2 of the file, per icon, default `false`): the icon **flips horizontally** when the reading direction is `rtl` (an arrow, a chevron, an "undo"; not a clock or a camera). Whoever mirrors is marked once, here, and every component benefits; the `icon` node can override it with its own `mirror` (see [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Reading direction"). `mirror` in a `formatVersion` 1 file is the error `only allowed with formatVersion 2`, and a value that is not a boolean, `expected true or false`.
-- `icons`: the icon name (`^[a-z0-9][a-z0-9-_]*$`; `Check` is an error) points to `{ viewBox?, mirror?, paths }`. `paths` is a **non-empty** list of `{ d, fill?, stroke?, width?, cap?, join? }`: `d` is the SVG data; `fill` and `stroke` are `true` (the color of the `icon` node), `false` (nothing), or a color of their own; `width` is the stroke width in `viewBox` units (default 1); `cap` (`butt`, `round`, `square`) and `join` (`miter`, `round`, `bevel`) as in the component's `stroke`. A path with neither `fill` nor `stroke` is filled with the node's color; with `stroke` and without `fill`, only the stroke appears.
+- `icons`: the icon name (`^[a-z0-9][a-z0-9-_]*$`; `Check` is an error) points to `{ viewBox?, mirror?, paths }`. `paths` is a **non-empty** list of `{ d, fill?, stroke?, width?, cap?, join?, fillRule? }`: `d` is the SVG data; `fill` and `stroke` are `true` (the color of the `icon` node), `false` (nothing), or a color of their own; `width` is the stroke width in `viewBox` units (default 1); `cap` (`butt`, `round`, `square`) and `join` (`miter`, `round`, `bevel`) as in the component's `stroke`. A path with neither `fill` nor `stroke` is filled with the node's color; with `stroke` and without `fill`, only the stroke appears.
+- `fillRule` (`formatVersion` 3 of the file, per path, `nonzero` by default or `evenodd`): the rule that decides which points of a self-overlapping or nested path are inside the fill, as in SVG's `fill-rule`. With `evenodd` the inner shapes of a path (the hole of a ring, a self-intersecting star's middle) are cut out; with `nonzero` they are filled when drawn in the same direction. It applies to the fill only: the stroke does not change. The app, the viewer and the MCP's `render_marking` draw it the same way. `fillRule` in a `formatVersion` 1 or 2 file is the error `only allowed with formatVersion 3`, at the path `icons.<name>.paths[i].fillRule`, and a value other than `nonzero` or `evenodd` is `expected one of: nonzero, evenodd`. Figma and Android export many icons as `evenodd`: write the rule instead of rewriting the winding of each subpath.
+- An app or MCP before the version that brought `fillRule` refuses a `formatVersion` 3 file (`formatVersion: must be 1 or 2`) at level 1, so it never draws the holes filled: update the MCP before opening such a library (see [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Known limits").
 - The file is part of the package: the app copies it with the folder (`specs/<id>/`), the specialization that declares `icons` is not valid as a standalone file, and the file pointed to is not an "unreferenced file".
 - **Library validation.** Level 1: the file exists (`file not found: <path>`, at the specialization's `icons` path) and is a valid `mapping-icons` (each error with the path inside the file, e.g., `icons.Check: invalid name; use [a-z0-9][a-z0-9-_]*`). Level 2: every **literal** name of an `icon` node exists in the set (`the icon "cloud" does not exist in the icon set (icons/set.json)`, at the path of the `name`); without a declared `icons` the literal is an error (`the icon "check" cannot be checked: the specialization does not declare icons`). Level 3: an `enum` field read by the `name` of an `icon` node with an `option` that is not in the set produces a warning (`the option "cloud" of the field "icon" is not in the icon set; the drawing falls back to the placeholder`), and the design check warns `unknown icon: <name>`.
 
