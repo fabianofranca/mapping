@@ -8,6 +8,8 @@ import {
   projectIndex,
   type Change,
   type Project,
+  type ProjectContainer,
+  firstPageId,
 } from '../src/model';
 import {
   changeCounts,
@@ -146,6 +148,11 @@ export interface PrepareOptions {
    * from the whole proposed project). It may refuse by throwing a `ToolError`. Without it, the batch starts from the project.
    */
   readonly startFrom?: (project: Project) => Project;
+  /**
+   * Containers that other open proposals still bring (`reservedContainers`): they take space on the
+   * canvas during the batch, so a new container does not get their place, and leave the result.
+   */
+  readonly reservedContainers?: readonly ProjectContainer[];
 }
 
 /**
@@ -179,8 +186,15 @@ export async function prepareBatch(
     diskProject: loaded.project,
     now: () => new Date(options.now()),
   };
-  const start = options.startFrom?.(loaded.project) ?? loaded.project;
-  const result = await runBatch({ ...loaded, project: start }, operations, io);
+  const base = options.startFrom?.(loaded.project) ?? loaded.project;
+  const first = firstPageId(base);
+  const held = (options.reservedContainers ?? [])
+    .filter((c) => !base.containers.some((other) => other.id === c.id))
+    .map((c) => (c.pageId === '' ? { ...c, pageId: first } : c));
+  const start =
+    held.length === 0 ? base : { ...base, containers: [...base.containers, ...held] };
+  const ran = await runBatch({ ...loaded, project: start }, operations, io);
+  const result = held.length === 0 ? ran : withoutContainers(ran, held);
   let changes: readonly Change[] | undefined;
   return {
     location,
@@ -192,6 +206,19 @@ export async function prepareBatch(
     changes: () => (changes ??= computeChanges(result.before, result.project)),
     valid: result.errors.length === 0 && result.invariantIssues.length === 0,
   };
+}
+
+/** The batch result without the containers that only held space (`PrepareOptions.reservedContainers`). */
+function withoutContainers(
+  result: BatchResult,
+  held: readonly ProjectContainer[],
+): BatchResult {
+  const ids = new Set(held.map((c) => c.id));
+  const strip = (p: Project): Project => ({
+    ...p,
+    containers: p.containers.filter((c) => !ids.has(c.id)),
+  });
+  return { ...result, project: strip(result.project), before: strip(result.before) };
 }
 
 /** Warnings from the validation of the library packages (`apply_specialization`/`update_specialization`). */

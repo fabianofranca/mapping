@@ -174,4 +174,62 @@ describe('hug-fill.mjs (R25: fill inside hug)', () => {
     expect(pixel(rect.x + width - 3, rect.y + 2)).toEqual(FILL);
     expect(pixel(rect.x + width + 2, rect.y + 2)).toEqual(WHITE);
   });
+
+  it('render_container does not cut a label by less than a pixel or two: the app draws it whole (CL1)', async () => {
+    // The app, with the system font, measures these chips a few pixels narrower (98, 130 and 136: the
+    // MCP's measurer gives 100, 133 and 136). The same project drawn by the MCP keeps `Ok`, `Open` and
+    // `Edit` whole in the halves the narrower box leaves, and `Settings` is still cut at the 136 cap.
+    const widths = [98, 130, 136];
+    const pairs = [
+      ['Ok', 'Ok'],
+      ['Open', 'Edit'],
+      ['Settings', 'Ok'],
+    ] as const;
+    const operations: Operation[] = [
+      {
+        op: 'add_container',
+        as: '$screen',
+        width: 400,
+        height: 200,
+        background: '#FFFFFF',
+      },
+      ...pairs.map(
+        ([label, leadingIconDescription], i) =>
+          ({
+            op: 'create_marking',
+            container: '$screen',
+            rect: { x: 20, y: 10 + 50 * i, width: widths[i]!, height: 40 },
+            annotation: { type: TYPE, values: { label, leadingIconDescription } },
+          }) as Operation,
+      ),
+    ];
+    const loaded = loadedOf['m3-hug2-p']!;
+    const result = await runBatch(loaded, operations, io);
+    expect(result.errors).toEqual([]);
+    const refs = new Refs({ ...loaded, project: result.project });
+    const container = result.project.containers.find((c) => c.file === null)!;
+    const out = await renderContainer(roots, refs, container, { zoom: 1 });
+    const raster: Raster = (await decodeImage(out.image.bytes)).raster;
+    /** Width of the label's ink in `[from, to)` of the row `y0`..`y0 + 40` (the text is dark gray). */
+    const inkWidth = (from: number, to: number, y0: number): number => {
+      let first = Infinity;
+      let last = -1;
+      for (let y = y0; y < y0 + 40; y++)
+        for (let x = from; x < to; x++)
+          if (raster.data[(y * raster.width + x) * 4]! < 115) {
+            first = Math.min(first, x);
+            last = Math.max(last, x);
+          }
+      return last < 0 ? 0 : last - first + 1;
+    };
+    const halves = widths.map((w) => Math.floor((w - 64) / 2));
+    const first = (i: number) => inkWidth(64, 64 + halves[i]!, 10 + 50 * i);
+    const second = (i: number) =>
+      inkWidth(72 + halves[i]!, 72 + 2 * halves[i]!, 10 + 50 * i);
+    expect(Math.min(first(0), second(0))).toBeGreaterThanOrEqual(14); // `Ok` and `Ok`, whole (cut, the `…` is 10 wide)
+    expect(first(1)).toBeGreaterThanOrEqual(31); // `Open`, whole (cut it is 30)
+    expect(second(1)).toBeGreaterThanOrEqual(22); // `Edit`
+    expect(first(2)).toBeLessThan(40); // `Settings` at the 136 cap stays cut (its content is 49)
+    expect(second(2)).toBeGreaterThanOrEqual(15); // `Ok`
+  });
 });

@@ -454,6 +454,7 @@ function clipLines(
   font: MeasureFont,
   widthOf: (text: string) => number,
   maxWidth: number | undefined,
+  slack: number,
 ): string[] {
   const limit = font.maxLines;
   const cut = limit !== undefined && lines.length > limit;
@@ -461,7 +462,7 @@ function clipLines(
   if (font.ellipsis !== true) return kept;
   const last = kept.length - 1;
   return kept.map((line, i) => {
-    const tooWide = maxWidth !== undefined && widthOf(line) > maxWidth + WRAP_SLACK;
+    const tooWide = maxWidth !== undefined && widthOf(line) > maxWidth + slack;
     return (cut && i === last) || tooWide ? withEllipsis(line, widthOf, maxWidth) : line;
   });
 }
@@ -469,8 +470,9 @@ function clipLines(
 /**
  * Wraps, cuts and measures a text with any width function (`widthOf`): `maxWidth` wraps by
  * words (a word wider than the width stays alone on its line), `wrap: none` is one line per
- * paragraph, `maxLines` cuts and `ellipsis` adds the `…`. It is the basis of the approximate
- * measurer and of the MCP server's real-font measurer.
+ * paragraph, `maxLines` cuts and `ellipsis` adds the `…`, on a line that exceeds the width by more
+ * than `ellipsisSlack`. It is the basis of the approximate measurer and of the MCP server's real-font
+ * measurer.
  */
 export function measureLines(
   text: string,
@@ -478,6 +480,7 @@ export function measureLines(
   maxWidth: number | undefined,
   widthOf: (value: string) => number,
   extents: Pick<CapMetrics, 'ascent' | 'descent'> = approximateExtents(font.size),
+  ellipsisSlack: number = WRAP_SLACK,
 ): TextMetrics {
   const breaks = maxWidth !== undefined && font.wrap !== 'none';
   const raw = text
@@ -485,7 +488,7 @@ export function measureLines(
     .flatMap((paragraph) =>
       breaks ? wrapWords(paragraph, widthOf, maxWidth) : [paragraph],
     );
-  const lines = clipLines(raw, font, widthOf, maxWidth);
+  const lines = clipLines(raw, font, widthOf, maxWidth, ellipsisSlack);
   const widest = lines.reduce((max, line) => Math.max(max, widthOf(line)), 0);
   const count = Math.max(1, lines.length);
   return {

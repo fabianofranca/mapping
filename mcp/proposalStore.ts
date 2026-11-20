@@ -23,6 +23,7 @@ import {
   serializeProposal,
   type Proposal,
   type ProposalStatus,
+  type ProjectContainer,
 } from '../src/model';
 import { ToolError } from './errors';
 import { Roots, hasParentSegment, resolveProjectFile, writeFileAtomic } from './paths';
@@ -164,6 +165,41 @@ export function reservedImages(p: Proposal, status: ProposalStatus = p.status): 
     if (file !== null) files.push(file);
   }
   return files;
+}
+
+/**
+ * The containers that the proposal still reserves in the canvas: those its `image` creations bring
+ * that can still be applied (the same rule as `reservedImages`). A new proposal counts them as
+ * occupied space, so that its own containers do not land on the same place (they would block the
+ * apply of the second). They are drawn as plain background containers: only the place matters.
+ */
+export function reservedContainers(
+  p: Proposal,
+  status: ProposalStatus = p.status,
+): ProjectContainer[] {
+  if (status !== 'open' && status !== 'superseded') return [];
+  const reserved: ProjectContainer[] = [];
+  for (const c of p.changes) {
+    if (c.entity !== 'image' || c.kind !== 'create') continue;
+    if (Object.hasOwn(p.applied, c.id)) continue;
+    const state = p.decisions[c.id]?.state;
+    if (status === 'open' ? state === 'rejected' : state !== 'accepted') continue;
+    const to = c.to as Partial<ProjectContainer> | null;
+    if (to?.placement === undefined) continue;
+    reserved.push({
+      ...(to as ProjectContainer),
+      // Without a `pageId` the container is on the first page (the batch fills it in).
+      pageId: to.pageId ?? '',
+      name: null,
+      parentId: null,
+      markingColor: null,
+      locked: false,
+      source: null,
+      file: null,
+      background: '#FFFFFF',
+    });
+  }
+  return reserved;
 }
 
 /**

@@ -3,6 +3,7 @@ import {
   reviseProposal,
   type Change,
   type Proposal,
+  type ProjectContainer,
   type ReviseError,
 } from '../src/model';
 import { batchReport, createdRefs, prepareBatch, readMapping, sha256 } from './changes';
@@ -14,6 +15,7 @@ import { ProposalRefs, type ResolvedProposal } from './proposalRefs';
 import {
   listStored,
   proposalFiles,
+  reservedContainers,
   reservedImages,
   reviseStored,
   type RevisionPlan,
@@ -112,6 +114,17 @@ async function reservedFor(
   return reserved;
 }
 
+/** The containers of the other open proposals: space that the revision's new containers do not take. */
+async function reservedSpaceFor(
+  roots: Roots,
+  location: ProjectLocation,
+  proposalId: string,
+): Promise<ProjectContainer[]> {
+  return (await listStored(roots, location)).proposals
+    .filter((stored) => stored.id !== proposalId)
+    .flatMap((stored) => reservedContainers(stored.proposal));
+}
+
 interface Computed {
   readonly summary: {
     readonly changed: readonly string[];
@@ -133,6 +146,7 @@ async function compute(
   const prepared = await prepareBatch(roots, location, operations, {
     now,
     reservedImages: await reservedFor(roots, location, current.id),
+    reservedContainers: await reservedSpaceFor(roots, location, current.id),
     startFrom: (project) => {
       const prep = prepareRevision(project, current, drop);
       if (!prep.ok) throw toToolError(prep.error);
