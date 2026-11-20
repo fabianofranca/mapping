@@ -60,6 +60,45 @@ describe('component.schema.json', () => {
     expect(checkSchema(schema, { ...clone(), id: 'Ruim' }).length).toBeGreaterThan(0);
   });
 
+  describe('component node (formatVersion 4)', () => {
+    const v4 = (node: Record<string, unknown>): Record<string, unknown> => ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'icon-button',
+      name: 'Icon button',
+      size: { width: 48, height: 48 },
+      template: { type: 'frame', children: [node] },
+    });
+    const node = (extra: Record<string, unknown> = {}): Record<string, unknown> => ({
+      type: 'component',
+      id: 'spinner',
+      values: { size: 24, label: { $field: 'title' }, extra: null },
+      provide: { tone: 'primary' },
+      width: 24,
+      height: 'hug',
+      ...extra,
+    });
+
+    it('accepts a component node with values and provide', () => {
+      expect(checkSchema(schema, v4(node()))).toEqual([]);
+    });
+
+    it('rejects fill, stroke, shadow, cornerRadius and children on it', () => {
+      for (const key of ['fill', 'stroke', 'shadow', 'cornerRadius', 'children'])
+        expect(
+          checkSchema(schema, v4(node({ [key]: key === 'children' ? [] : 1 }))).length,
+          key,
+        ).toBeGreaterThan(0);
+    });
+
+    it('rejects a node without id and an id outside the pattern', () => {
+      const bare = node();
+      delete bare.id;
+      expect(checkSchema(schema, v4(bare)).length).toBeGreaterThan(0);
+      expect(checkSchema(schema, v4(node({ id: 'Bad' }))).length).toBeGreaterThan(0);
+    });
+  });
+
   describe('image node (formatVersion 3)', () => {
     const image = (extra: Record<string, unknown> = {}): Record<string, unknown> => ({
       type: 'image',

@@ -274,6 +274,7 @@ export const NODE_TYPES = [
   'repeat',
   'image',
   'icon',
+  'component',
 ] as const;
 export const EXPR_OPS = [
   '$field',
@@ -353,6 +354,7 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
   ],
   image: ['src', 'fit'],
   icon: ['name', 'color', 'strokeWidth', 'mirror'],
+  component: ['id', 'values', 'provide'],
 };
 /** `repeat` only accepts these common keys: the drawing belongs to the `template` of each row. */
 export const REPEAT_BASE_KEYS = [
