@@ -19,7 +19,21 @@ const numbers = async (host: Locator, name: string): Promise<number[] | null> =>
   return value === null ? null : value.split(' ').map(Number);
 };
 
-const centerOfBox = async (host: Locator): Promise<Point> => {
+/**
+ * Center of `data-selection-box` in screen px. Waits for the frame that publishes the box: the
+ * attribute exists and differs from `previous` (the text read before the action that changed the
+ * selection), so a stale box is never used.
+ */
+const centerOfBox = async (
+  host: Locator,
+  previous: string | null = null,
+): Promise<Point> => {
+  await expect
+    .poll(async () => {
+      const text = await host.getAttribute('data-selection-box');
+      return text !== null && text !== previous;
+    })
+    .toBe(true);
   const [l, t, w, h] = (await numbers(host, 'data-selection-box')) ?? [];
   const origin = await host.boundingBox();
   if (!origin || l === undefined || t === undefined || !w || !h) {
@@ -39,7 +53,7 @@ test('the selection box falls on the container marking and follows the zoom', as
   await drawMarking(page, top);
   await drawMarking(page, bottom);
 
-  // With no selection there is no box; with the drawn marking selected, its center is the right click.
+  // The second marking was drawn last, so it is selected: its box center is where to click it again.
   const second = await centerOfBox(host);
   const secondRect = await selectedRect(page);
 
@@ -63,18 +77,18 @@ test('the selection box falls on the container marking and follows the zoom', as
 
   // The first one's box matches the conversion through the new view (waiting for the frame).
   const origin = await host.boundingBox();
-  if (!origin || scale0 === undefined || scale1 === undefined)
-    throw new Error('sem vista');
+  if (!origin || scale0 === undefined || scale1 === undefined) throw new Error('no view');
   const centerBefore = { x: second.x - origin.x, y: second.y - origin.y };
   const moved = {
     x: origin.x + ((centerBefore.x - vx0!) / scale0) * scale1 + vx1!,
     y: origin.y + ((centerBefore.y - vy0!) / scale0) * scale1 + vy1!,
   };
   // Clicking where the view says the second marking is selects the second one.
+  const boxBeforeClick = await host.getAttribute('data-selection-box');
   await page.mouse.click(moved.x, moved.y);
   await expect.poll(() => selectedRect(page)).toEqual(secondRect);
   expect(first).not.toEqual(secondRect);
-  const box = await centerOfBox(host);
+  const box = await centerOfBox(host, boxBeforeClick);
   expect(Math.abs(box.x - moved.x)).toBeLessThan(2);
   expect(Math.abs(box.y - moved.y)).toBeLessThan(2);
 
@@ -89,7 +103,7 @@ test('the selection box falls on the container marking and follows the zoom', as
   await expect(host).not.toHaveAttribute('data-selection-box', /.+/);
 });
 
-// Etapa #1076, VC1: `data-selection`, `data-arrow-handles` e `data-container-boxes`.
+// Stage #1076, VC1: `data-selection`, `data-arrow-handles` and `data-container-boxes`.
 
 /** Creates a "Custom" container with the given name and waits for the canvas to draw it. */
 async function addContainer(page: Page, host: Locator, name: string): Promise<void> {
@@ -117,7 +131,7 @@ test('the center of data-arrow-handles selects the arrow and data-selection name
   expect(boxes).toHaveLength(2);
   const origin = await host.boundingBox();
   const vp = await numbers(host, 'data-viewport');
-  if (!origin || !vp) throw new Error('sem vista');
+  if (!origin || !vp) throw new Error('no view');
   const [vx, vy, scale] = vp as [number, number, number];
   const centers: Point[] = [];
   await setMode(page, 'Draw');
