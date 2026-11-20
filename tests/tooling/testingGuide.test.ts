@@ -523,9 +523,9 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(guide).toContain('`material3-compose.zip` (R17)');
     });
 
-    it('has steps R17.1 to R17.59, in order, and none depends on the owner', () => {
+    it('has steps R17.1 to R17.60, in order, and none depends on the owner', () => {
       const codes = [...stepActions(r17).keys()];
-      expect(codes).toEqual(Array.from({ length: 59 }, (_, i) => `R17.${i + 1}`));
+      expect(codes).toEqual(Array.from({ length: 60 }, (_, i) => `R17.${i + 1}`));
       expect(/without a substitute/i.test(r17)).toBe(false);
       expect(r17).not.toContain('[person]');
     });
@@ -1609,11 +1609,10 @@ describe('CL1 — script text of R3.19, R11.4, R17.32, R17.59 and R29.10 (#1134,
     expect(r).toContain('1 pending item(s) remain');
   });
 
-  it('R11.4 lists the provisional Library section of Diagnostics', () => {
+  it('R11.4 expects no Library section in Diagnostics (the Material 3 package has no problem)', () => {
     const r = row('R11.4');
-    expect(r).toContain('**Library**');
-    expect(r).toContain('0 error(s) and 59 warning(s)');
-    expect(r).toContain('#1774');
+    expect(r).toContain('no **Library** section');
+    expect(r).not.toContain('provisional');
   });
 
   it('R29.10 types a Height different from the Palette default (40)', () => {
