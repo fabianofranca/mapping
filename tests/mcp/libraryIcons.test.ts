@@ -53,6 +53,19 @@ beforeAll(async () => {
   };
   badge.template.children[0]!.name = 'nuvem';
   writeFileSync(comp, JSON.stringify(badge));
+  // Icons file with `fillRule`: valid in formatVersion 3, refused at the key's path in 2.
+  for (const version of [3, 2]) {
+    const name = `fill-v${version}`;
+    cpSync(ICONS, join(root, name), { recursive: true });
+    const file = join(root, name, 'icons', 'set.json');
+    const set = JSON.parse(readFileSync(file, 'utf8')) as {
+      formatVersion: number;
+      icons: { dot: { paths: Record<string, unknown>[] } };
+    };
+    set.formatVersion = version;
+    set.icons.dot.paths[0]!.fillRule = 'evenodd';
+    writeFileSync(file, JSON.stringify(set));
+  }
   mcp = await connect([root]);
 });
 
@@ -90,6 +103,25 @@ describe('validate_library with icons', () => {
         file: 'components/badge.json',
         path: 'template.children[0].name',
         message: 'the icon "nuvem" does not exist in the icon set (icons/set.json)',
+      }),
+    ]);
+  });
+
+  it('approves an icons file in formatVersion 3 with fillRule', async () => {
+    const result = ok(await mcp.call<Validated>('validate_library', { path: 'fill-v3' }));
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+    expect(result.valid).toBe(true);
+  });
+
+  it('refuses fillRule in a formatVersion 2 file, at the key path', async () => {
+    const result = ok(await mcp.call<Validated>('validate_library', { path: 'fill-v2' }));
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual([
+      expect.objectContaining({
+        file: 'icons/set.json',
+        path: 'icons.dot.paths[0].fillRule',
+        message: 'only allowed with formatVersion 3',
       }),
     ]);
   });

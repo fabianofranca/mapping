@@ -117,6 +117,19 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 **Scripts.** R38.
 
+### `examples/libraries/drawing-keys/`
+
+**What it is.** The example of the **drawing keys** that the format gained after the faithful components. Today it has one type, **Icon holes** (fields `icon` and `tint`), drawn with the icons file in `formatVersion` 3 (`icons/icons.json`: `ring`, `square-hole` and `star-evenodd`). The next phases of the stage add their own types here.
+
+**How to open.** **Specializations** › **Apply folder…** and pick the folder. Mark an Icon holes and change `icon` and `tint`.
+
+**What you can see.**
+
+- The `fillRule` of an icon path (icons file `formatVersion` 3): the three icons are `"fillRule": "evenodd"`, so the ring's inner circle, the square's hole and the middle of the self-intersecting star are cut out and the tile's gray shows through. The same icon with the default `nonzero` would be filled.
+- The same drawing in the app, in the viewer and in the `render_marking` PNG.
+
+**Scripts.** R39 (written in the last phase of the stage).
+
 ### `examples/libraries/measured/`
 
 **What it is.** The example of the **measured** origin (`origins[].kind: "measured"`): the rectangle tree of a page (measured in a browser) becomes markings, matching each node to a type through the `sources`. Two types: **Card** and **Button** (fields `label` and `tone`). The example tree is `examples/page.measured.json`, next to the library folder.
@@ -315,6 +328,7 @@ When one exists, the example is from `libraries/`. The features of the executabl
 | Anchors (`anchors`)                             | `left`, `right`, `top`, `bottom`, `centerX` and `centerY` (`material3-compose`: FAB, Pull to refresh)                                             |
 | `component` node, its `values` and `provide`    | Icon button, with `glyph`, `spinner` and `badge` (`composition`)                                                                                  |
 | Corner anchor (`anchor.align: "corner-end"`)    | Badge root (`composition`)                                                                                                                        |
+| Icon `fillRule` (icons file `formatVersion` 3)  | Icon holes (`drawing-keys`)                                                                                                                       |
 | Screen anchors and scrim                        | `sdui-scrim` and the roots with `anchor` and `margin` (`sdui-backend`)                                                                            |
 | Expressions `$field`, `$if`, `$switch`          | `kotlin` and `material3-compose`; `$field` with `default` in both                                                                                 |
 | `$concat`                                       | Class header (`kotlin`); Box, Column and Image (`material3-compose`)                                                                              |

@@ -1,0 +1,43 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 15,
+  "id": "drawing-keys",
+  "name": "Drawing keys",
+  "version": 1,
+  "description": "Example of the drawing keys added after the faithful components: the icon set with the `fillRule` of each path (icons file formatVersion 3). The Icon holes component draws an icon with holes cut out by `evenodd`.",
+  "icons": "icons/icons.json",
+  "layers": [
+    {
+      "id": "ui",
+      "name": "Interface",
+      "color": "#2563EB",
+      "annotationTypes": [
+        {
+          "id": "icon-holes",
+          "name": "Icon holes",
+          "component": "components/icon-holes.json",
+          "doc": "docs/icon-holes.md",
+          "fields": [
+            {
+              "key": "icon",
+              "label": "Icon",
+              "type": "enum",
+              "options": ["ring", "square-hole", "star-evenodd"],
+              "default": "ring"
+            },
+            {
+              "key": "tint",
+              "label": "Color",
+              "type": "string",
+              "default": "#2563EB"
+            }
+          ],
+          "examples": [
+            { "name": "Ring", "values": { "icon": "ring" } },
+            { "name": "Self-intersecting star", "values": { "icon": "star-evenodd" } }
+          ]
+        }
+      ]
+    }
+  ]
+}
