@@ -29,8 +29,20 @@ interface Scene {
   readonly other: string;
 }
 
-async function scene(options: { readOnly?: boolean } = {}): Promise<Scene> {
-  const harness = await libraryHarness();
+async function scene(
+  options: { readOnly?: boolean; fabAnchor?: Record<string, unknown> } = {},
+): Promise<Scene> {
+  const { fabAnchor } = options;
+  const harness = await libraryHarness({
+    mutate:
+      fabAnchor === undefined
+        ? undefined
+        : (files) => {
+            const path = 'components/m3-fab.json';
+            const json = JSON.parse(files.get(path) as string) as Record<string, unknown>;
+            files.set(path, JSON.stringify({ ...json, anchor: fabAnchor }));
+          },
+  });
   const add = (typeId: string, containerId: string) => {
     const result = harness.actions.addComponent({
       containerId,
@@ -293,6 +305,81 @@ describe('Anchor section of the Details', () => {
     renderPanel(harness, fab);
     expect(t('anchor.snap')).toBe('Snap to anchor');
     expect(screen.getByRole('button', { name: 'Snap to anchor' })).toBeTruthy();
+  });
+});
+
+const cornerBox = () =>
+  screen.getByRole<HTMLInputElement>('checkbox', {
+    name: new RegExp(t('anchor.corner')),
+  });
+const alignButton = (label: string) =>
+  within(group(t('anchor.align'))).getByRole<HTMLButtonElement>('button', {
+    name: label,
+  });
+
+describe('Corner alignment in the Anchor section (stage #2093, CC4)', () => {
+  it('the checkbox is disabled with Center and enabled with Start or End', async () => {
+    const { harness, button, fab } = await scene();
+    const user = renderPanel(harness, fab);
+    await user.selectOptions(select(), button);
+    expect(cornerBox().disabled).toBe(true);
+    await user.click(alignButton(t('anchor.alignEnd')));
+    expect(cornerBox().disabled).toBe(false);
+    await user.click(alignButton(t('anchor.alignStart')));
+    expect(cornerBox().disabled).toBe(false);
+  });
+
+  it('checking it writes corner-end with End and corner-start with Start, one undo entry each', async () => {
+    const { harness, button, fab } = await scene();
+    const user = renderPanel(harness, fab);
+    await user.selectOptions(select(), button);
+    await user.click(alignButton(t('anchor.alignEnd')));
+    await user.click(cornerBox());
+    expect(marking(harness, fab).anchor?.align).toBe('corner-end');
+    harness.store.undo();
+    expect(marking(harness, fab).anchor?.align).toBe('end');
+    await user.click(alignButton(t('anchor.alignStart')));
+    await user.click(cornerBox());
+    expect(marking(harness, fab).anchor?.align).toBe('corner-start');
+  });
+
+  it('with corner-end saved, End shows pressed and the box checked; Center writes center and unchecks', async () => {
+    const { harness, button, fab } = await scene();
+    harness.actions.setMarkingAnchor(fab, { to: button, align: 'corner-end' });
+    const user = renderPanel(harness, fab);
+    expect(pressed(t('anchor.align'), t('anchor.alignEnd'))).toBe('true');
+    expect(cornerBox().checked).toBe(true);
+    await user.click(alignButton(t('anchor.alignCenter')));
+    expect(marking(harness, fab).anchor?.align).toBe('center');
+    expect(cornerBox().checked).toBe(false);
+    expect(cornerBox().disabled).toBe(true);
+  });
+
+  it('unchecking goes back to end', async () => {
+    const { harness, button, fab } = await scene();
+    harness.actions.setMarkingAnchor(fab, { to: button, align: 'corner-end' });
+    const user = renderPanel(harness, fab);
+    await user.click(cornerBox());
+    expect(marking(harness, fab).anchor?.align).toBe('end');
+  });
+
+  it('pressing Start or End while checked keeps the corner', async () => {
+    const { harness, button, fab } = await scene();
+    harness.actions.setMarkingAnchor(fab, { to: button, align: 'corner-end' });
+    const user = renderPanel(harness, fab);
+    await user.click(alignButton(t('anchor.alignStart')));
+    expect(marking(harness, fab).anchor?.align).toBe('corner-start');
+  });
+
+  it('a component root default of corner-end shows checked when the marking does not say', async () => {
+    const { harness, button, fab } = await scene({
+      fabAnchor: { side: 'top', align: 'corner-end' },
+    });
+    const user = renderPanel(harness, fab);
+    await user.selectOptions(select(), button);
+    expect(marking(harness, fab).anchor).toEqual({ to: button });
+    expect(cornerBox().checked).toBe(true);
+    expect(pressed(t('anchor.align'), t('anchor.alignEnd'))).toBe('true');
   });
 });
 
