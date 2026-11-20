@@ -162,7 +162,7 @@ describe('implementar-fila: new skill on main and session switch (FT1, FC2)', ()
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const switching = section(skill, '## Session switch');
   const CHECK =
-    'git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md';
+    'git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/';
 
   it('"Session switch" says to pull and reread the whole SKILL.md (decision 5; decision 11 of #1322)', () => {
     expect(switching).toContain(CHECK);
