@@ -135,12 +135,6 @@ const MISSING_TODAY: string[] = [
   // Material 3 library (stage #833, M1); `icon.name`/`strokeWidth` do not yet. Covered by
   // tests/model/components/icons.test.ts, libraryIcons.test.ts, tests/mcp/libraryIcons.test.ts and
   // by script R25.
-  // The `component` node (formatVersion 4, stage #2093, CC1): the example package
-  // `examples/libraries/composition/` (CC5) is its first example; remove these lines then.
-  'component:node.component',
-  'component:node.component.id',
-  'component:node.component.provide',
-  'component:node.component.values',
   'component:node.icon.name',
   'component:node.icon.strokeWidth',
   // Reading direction (stage #1096, R1): `direction` on the node, the `$direction` condition and the `mirror`

@@ -446,6 +446,7 @@ const SHAPE_FEATURES = [
   'image.src=literal',
   'image.src=$field',
   'root.preview=table',
+  'root.anchor.align=corner-end',
   'expr.$field.default',
   'expr.$if.else',
   'expr.$switch.default',
@@ -652,6 +653,9 @@ export function componentFeaturesUsed(data: unknown): Set<string> {
   }
   if (isRec(data.preview) && Object.values(data.preview).some(Array.isArray)) {
     out.add('root.preview=table');
+  }
+  if (isRec(data.anchor) && data.anchor.align === 'corner-end') {
+    out.add('root.anchor.align=corner-end');
   }
   nodeFeatures(data.template, out);
   return out;
