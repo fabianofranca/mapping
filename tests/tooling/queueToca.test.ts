@@ -37,7 +37,7 @@ function reasons(): string[] {
 }
 
 function ficha(dep: string, toca: string, schema = 'não'): string {
-  return `dep=${dep} | nivel=impact: low | mcp=não | schema=${schema} | toca=${toca}`;
+  return `dep=${dep} | nivel=impact: low | mcp=não | schema=${schema} | formato=não | toca=${toca}`;
 }
 
 function stage(issue: string, plan: string, ...extra: string[]) {

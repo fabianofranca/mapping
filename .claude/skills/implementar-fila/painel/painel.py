@@ -197,6 +197,23 @@ A row that depends on a `recusada` one shows `dep #N recusada` in `vagas:` (`dep
 row among their open dependencies. The question verb `soltar` is the first command of the `soltar`/`esperar` pair. A `toca=` with only ignored
 citations (`changelog/`, `docs/design-system/`, `mcp/version.ts`) is a ficha without a real `toca`: `outliers` counts it in `without ficha` and
 `is_process_stage` (the `processo` canary filter too) answers no. Every `row` with a `wait=merge pedido ao dono: …` and no `child` restarts `childAt`.
+Early start (stage #2373, phase EA1): a candidate whose only blockers are file conflicts (`first_conflict`) with eligible holders starts at once: a
+started row `em andamento` or `esperando dono` in `Testador`, `Correção` or `Fechamento`, not `exclusive=sim`, not `via-rapida` and with no `cedo`
+pending. The reason is `começa cedo (espera #S para testar)` (holders comma-separated), it takes a slot like `começa`, and `show` prints
+`começar agora: #E (cedo: #S)`; the schema rule, a conflict with a stage that is not an eligible holder, a family in common in `formato=` (the ficha
+field right after `schema=`: `não` or families from spec, component, proposal, comment, signature and icons, comma-separated; absent, `?` or an unknown
+family is unknown and excludes the pair) and a `via-rapida` candidate keep the usual `arquivo <x> com #S`. `row '#E' status="em andamento"` on such a
+candidate writes `cedo` = its holders (`#S #T`); by hand only `cedo=` (empty) is accepted, `import` carries it and `reentra` clears it. The status
+`esperando entrega` (a stage that finished its phases and waits for its holders' merge, started and not merged, no slot, no child) is refused by `row`
+without `cedo`, and every write rewrites its step to `espera merge de #S para testar` with only the holders still open. A holder is resolved when merged
+(`concluída` or `meta.merged`) or released (`falhou`, `recusada` or no row); `show` prints, right after `merge pedido ao dono:`,
+`esperando merge para testar: #E (espera #S); …` and `pode sincronizar: #E (#S mesclada; #T falhou); …` (the rows with every holder resolved, with each outcome:
+`mesclada`, `falhou`, `recusada`, `fora da fila`), each `nenhuma` when empty; the `em andamento` line of a row with `cedo` ends in ` · cedo: #S`. Once
+`cedo` is cleared the stage is an ordinary started one and opens the early start for another (the second level). `fichas a refazer:` also lists the
+non-final rows whose ficha has no `formato=` at all (it does not make the ficha incomplete and holds nothing; `formato=?` is a written value). The
+session kind `sincronização` (`SESSION_KINDS`) has no ruler, signals or context ceiling, and `sinal` refuses it. Graph: `estado` `entrega` (reason =
+the step) for `esperando entrega`, `cedo` on every node (the holders still open, `#S, #T`, or "") and an arrow `{de: #S, para: #E, tipo: entrega}` for
+each open holder of a started row with `cedo`; a `começa cedo` candidate is in wave 0 like `começa`.
 Standard library only. Usage: painel.py [--now ISO] <subcommand> DIR ...
 (the subcommand comes BEFORE the folder: `painel.py row <folder> '#n' status=...`).
 """
@@ -214,13 +231,13 @@ import subprocess
 import sys
 import unicodedata
 
-STATUS = ["aguardando", "em andamento", "concluída", "falhou", "esperando dono", "recusada"]
+STATUS = ["aguardando", "em andamento", "concluída", "falhou", "esperando dono", "recusada", "esperando entrega"]
 FINAL_STATUS = ("concluída", "falhou", "recusada")  # `ended` is written with them (decision 5 of #1791)
-OPEN_STATUS = ("aguardando", "em andamento", "esperando dono")  # `ended` is cleared with them
+OPEN_STATUS = ("aguardando", "em andamento", "esperando dono", "esperando entrega")  # `ended` is cleared with them
 KINDS = ["etapa", "bug", "patch", "via-rapida"]
 STAGES = ["", "Fases", "Testador", "Correção", "Fechamento", "Mesclada"]
 FILES = ["queue", "meta", "log"]
-SESSION_KINDS = ["fase", "correção", "testador", "reteste", "fechamento", "coordenador", "supervisor", "via-rapida"]
+SESSION_KINDS = ["fase", "correção", "testador", "reteste", "fechamento", "coordenador", "supervisor", "via-rapida", "sincronização"]
 CONTEXT_LIMIT = 35
 CONTEXT_STALE_MINUTES = 70  # a context measure older than this is flagged by `show` (decision 5 of #1874)
 CONTEXT_MEASURE_TIMEOUT = 30  # seconds for `contextUsage.mjs` to answer
@@ -230,9 +247,9 @@ TESTER_KINDS = ["testador", "reteste"]
 ROLES = ["coordenador", "supervisor"]
 HOLD_EMPTY_QUEUE = "ordem do dono (só com a fila vazia)"  # becomes exclusive=sim (decisions 12, 17 and 25)
 HOLD_PAUSED = "pausada pelo dono"  # the transition's drain: `import` erases it, `upgrade` leaves it
-IMPORT_STATUS = ["aguardando", "em andamento", "esperando dono", "falhou"]
+IMPORT_STATUS = ["aguardando", "em andamento", "esperando dono", "falhou", "esperando entrega"]
 IMPORT_FIELDS = ["issue", "title", "kind", "plan", "phases", "phasesTotal", "phasesDone", "stage", "step", "pr",
-                 "started", "hold"]
+                 "started", "hold", "cedo"]
 OWNER_WAIT_PREFIX = "dono no chat da fase:"  # the mark of the `wait` of a phase waiting for the owner in its chat
 MERGE_ASK_PREFIX = "merge pedido ao dono:"  # the mark of the `wait` of a merge asked to the owner by text (decision 3 of #1791)
 OWNER_RECHECK_MINUTES = 60  # the hourly check rereads the phase waiting for the owner
@@ -259,6 +276,9 @@ QUEUE_EMPTY = {
     "hold": "",
     # "sim": exclusive stage (starts only with the queue free of any started and not merged stage; no other starts with it); empty: not.
     "exclusive": "",
+    # The eligible holders (`#S #T`, separated by spaces) an early-start stage waits for before its tester; written by `row` itself
+    # when the stage starts with the reason `começa cedo`, cleared (`cedo=`) when the sync with `main` is merged; empty: not early.
+    "cedo": "",
 }
 TIME_FIELDS = ["started", "ended", "childAt", "ciWaitAt"]
 LATE_MINUTES = 30
@@ -375,6 +395,7 @@ class Sessao:
         filled = False
         for row in self.get("queue"):
             filled = fill_phases(row) or filled
+        filled = sync_delivery_steps(self.get("queue"), meta[0]) or filled
         if filled:
             # The ficha completed phases: the change goes into the publication, even on a `context`, which alone is quiet.
             self.touch("queue")
@@ -569,8 +590,29 @@ def validate_row_pairs(pairs, issue):
     for k, allowed in (("status", STATUS), ("kind", KINDS), ("exclusive", ["", "sim"]), ("stage", STAGES)):
         if k in pairs:
             validate_choice(k, pairs[k], allowed)
+    if pairs.get("cedo"):
+        raise Erro("cedo is written by painel.py when the stage starts early; by hand only `cedo=` (empty) is accepted")
     if "phases" in pairs:
         validate_phases(pairs["phases"])
+
+
+def stamp_early_start(s, pairs, row):
+    """Decision 3 of #2373: a candidate that starts (`status=em andamento`) with the reason `começa cedo` gets `cedo` = its holders,
+    computed by `slots_plan` on the state before the write; an explicit `cedo=` in the same call wins."""
+    if pairs.get("status") != "em andamento" or "cedo" in pairs:
+        return
+    if row is None or row["status"] != "aguardando" or row.get("started"):
+        return
+    why, _, early = slots_plan(s.get("queue"), s.get("meta")[0])[3].get(row["issue"], ("", "", []))
+    if why.startswith(STARTS_EARLY):
+        pairs["cedo"] = " ".join(early)
+
+
+def check_delivery_wait(pairs, row):
+    """Decision 4 of #2373: `esperando entrega` is only for a row with `cedo` (the one it ends with after this write)."""
+    status = pairs.get("status", (row or {}).get("status"))
+    if status == WAITS_DELIVERY and not pairs.get("cedo", (row or {}).get("cedo")):
+        raise Erro("esperando entrega needs a row with cedo (the stage that started early waits for its holders)")
 
 
 def cmd_row(a):
@@ -580,6 +622,8 @@ def cmd_row(a):
     pairs = parse_pairs(a.pairs)
     validate_row_pairs(pairs, issue)
     row = find_row(q, issue)
+    stamp_early_start(s, pairs, row)
+    check_delivery_wait(pairs, row)
     ended_follows_status(pairs, row)
     if pairs.get("child") == "":
         pairs["childAt"] = ""
@@ -618,7 +662,7 @@ def cmd_row(a):
 
 
 REENTRA_KINDS = ["via-rapida", "etapa", "bug"]
-REENTRA_CLEARED = ("stage", "started", "ended", "pr", "child", "childAt", "wait", "ciWait", "ciWaitAt", "hold", "phases")
+REENTRA_CLEARED = ("stage", "started", "ended", "pr", "child", "childAt", "wait", "ciWait", "ciWaitAt", "hold", "phases", "cedo")
 
 
 def cmd_reentra(a):
@@ -2408,7 +2452,11 @@ APPEND_ONLY = (
 )
 SECTION_GLOB = ".claude/skills/*/SKILL.md"  # besides every `.md` of docs/ and of the root: compared by anchor (`##` section)
 TESTING_DOC = "docs/TESTING.md"  # its anchors are also scripts (`R<n>`, `RP`, `RF`, `RA`, `RB`)
-STARTED_STATUS = ("em andamento", "esperando dono", "falhou")
+STARTED_STATUS = ("em andamento", "esperando dono", "falhou", "esperando entrega")
+WAITS_DELIVERY = "esperando entrega"  # a stage that finished its phases and waits for its holders' merge before its tester
+STARTS_EARLY = "começa cedo"  # the early start (#2373): the same reason with the holders, `começa cedo (espera #S para testar)`
+EARLY_STAGES = ("Testador", "Correção", "Fechamento")  # the stages of a started row that open the early start (decision 1)
+FORMAT_FAMILIES = ("spec", "component", "proposal", "comment", "signature", "icons")  # the families of `formato=` (decision 8)
 EXCLUSIVE_WAITS = "exclusiva (espera a fila esvaziar)"  # the exclusive stage that waits for the queue to empty (and drains, if at the front)
 STARTS_NOW = "começa"  # the reason of the candidate that `slots_plan` makes start now (the graph puts it in wave 0)
 
@@ -2679,8 +2727,102 @@ def row_incomplete(r):
 
 
 def redo_rows(q):
-    """Non-`concluída` rows with an incomplete ficha (the ficha is redone in the cycle)."""
-    return [r for r in q if r["status"] not in ("concluída", "recusada") and row_incomplete(r)]
+    """Non-final rows whose ficha is incomplete or has no `formato=` field at all (the ficha is redone in the cycle).
+
+    Decision 8 of #2373: the missing `formato=` does not make the ficha incomplete (`row_incomplete`), so it never holds the normal
+    start, and `formato=?` is a written value that is not listed again."""
+    return [r for r in q if r["status"] not in ("concluída", "recusada")
+            and (row_incomplete(r) or plan_field(r.get("plan", ""), "formato") is None)]
+
+
+def format_families(plan):
+    """The format families the ficha raises (`formato=`): the set (empty for `não`), or None when unknown (absent, `?` or a family outside
+    FORMAT_FAMILIES). Decision 8 of #2373."""
+    v = plan_field(plan, "formato")
+    if v is None:
+        return None
+    v = v.strip()
+    if v == "não":
+        return set()
+    families = [f.strip() for f in v.split(",")]
+    return set(families) if all(f in FORMAT_FAMILIES for f in families) else None
+
+
+def format_pair_excluded(mine, other):
+    """A pair is out of the early start when either side is unknown or they share a family (decision 8 of #2373)."""
+    a, b = format_families(mine), format_families(other)
+    return a is None or b is None or bool(a & b)
+
+
+def eligible_holder(r):
+    """Decision 1 of #2373: a started row that opens the early start: `em andamento` or `esperando dono` in a stage of EARLY_STAGES, not
+    exclusive, not a fast track and with no `cedo` pending (so the second level of decision 9 comes from the empty `cedo`)."""
+    return (r["status"] in ("em andamento", "esperando dono") and r.get("stage") in EARLY_STAGES
+            and r.get("exclusive") != "sim" and r.get("kind") != "via-rapida" and not r.get("cedo"))
+
+
+def holder_outcome(issue, q, merged):
+    """How the holder `issue` ended (decision 5 of #2373): `mesclada` (a `concluída` row or `meta.merged`), `falhou`, `recusada`,
+    `fora da fila` (no row) or None while it is still open (`em andamento`, `esperando dono`, `aguardando`, `esperando entrega`)."""
+    row = find_row(q, issue)
+    if issue in merged or (row and row["status"] == "concluída"):
+        return "mesclada"
+    if row is None:
+        return "fora da fila"
+    return row["status"] if row["status"] in ("falhou", "recusada") else None
+
+
+def open_holders(r, q, merged):
+    """The holders of `r.cedo` that are still open."""
+    return [h for h in (r.get("cedo") or "").split() if holder_outcome(h, q, merged) is None]
+
+
+def delivery_rows(q):
+    """The `esperando entrega` rows."""
+    return [r for r in q if r["status"] == WAITS_DELIVERY]
+
+
+def delivery_step(r, q, merged):
+    """The step of an `esperando entrega` row, rewritten on every write: `espera merge de #S, #T para testar`, with the holders still open
+    (the step stays as it is when none is left: the row is in `pode sincronizar:`)."""
+    holders = open_holders(r, q, merged)
+    return "espera merge de " + ", ".join(holders) + " para testar" if holders else r.get("step", "")
+
+
+def sync_delivery_steps(q, meta):
+    """Rewrites the step of each `esperando entrega` row; True when one changed."""
+    merged = set(meta.get("merged", []))
+    changed = False
+    for r in delivery_rows(q):
+        step = delivery_step(r, q, merged)
+        if step != r.get("step"):
+            r["step"], changed = step, True
+    return changed
+
+
+def starting_text(issue, reasons):
+    """An item of `começar agora:`: `#E`, or `#E (cedo: #S, #T)` for a candidate that starts early (decision 2 of #2373)."""
+    early = reasons.get(issue, ("", "", []))[2]
+    return f"{issue} (cedo: {', '.join(early)})" if early else issue
+
+
+def waiting_delivery_text(q, meta):
+    """`#E (espera #S, #T); …` of the `esperando entrega` rows with a holder still open, or `nenhuma`."""
+    merged = set(meta.get("merged", []))
+    return "; ".join(f"{r['issue']} (espera {', '.join(open_holders(r, q, merged))})"
+                     for r in delivery_rows(q) if open_holders(r, q, merged)) or "nenhuma"
+
+
+def can_sync_text(q, meta):
+    """`#E (#S mesclada; #T falhou); …` of the `esperando entrega` rows whose holders are all resolved, or `nenhuma`."""
+    merged = set(meta.get("merged", []))
+    out = []
+    for r in delivery_rows(q):
+        holders = (r.get("cedo") or "").split()
+        outcomes = [holder_outcome(h, q, merged) for h in holders]
+        if holders and all(outcomes):
+            out.append(f"{r['issue']} (" + "; ".join(f"{h} {o}" for h, o in zip(holders, outcomes)) + ")")
+    return "; ".join(out) or "nenhuma"
 
 
 def changes_schema(plan):
@@ -2732,11 +2874,58 @@ def refused_issues(q):
     return {r["issue"] for r in q if r["status"] == "recusada"}
 
 
+def file_conflicts(mine, taking):
+    """`[(started row, citation)]` of every stage of `taking` that `mine` touches the same place as (decision 2 of #2373: all of them,
+    not only the first)."""
+    out = []
+    for o in taking:
+        c = first_conflict(mine, toca_list(o.get("plan", "")))
+        if c:
+            out.append((o, c))
+    return out
+
+
+def file_block(r, conflicts):
+    """`(reason, holder, early holders)` of the file check. A conflict with a stage that is not an eligible holder holds the candidate
+    and names that stage; a fast track holds on the first one (it has no tester to wait before); with every conflict on an eligible
+    holder the candidate may start early: no reason yet, and the holders come back (decisions 1 and 2 of #2373)."""
+    if not conflicts:
+        return "", "", []
+    stuck = [(o, c) for o, c in conflicts if not eligible_holder(o)]
+    if not stuck and r.get("kind") == "via-rapida":
+        stuck = conflicts[:1]  # the first code path by kind in `slots_plan`: no tester step to wait before
+    if stuck:
+        o, c = stuck[0]
+        return f"arquivo {c} com {o['issue']}", o["issue"], []
+    return "", "", [o["issue"] for o, _ in conflicts]
+
+
+def format_block(plan, conflicts):
+    """`(reason, holder)` of the same-format pair check of the early start (decision 8 of #2373); `("", "")` if none holds."""
+    for o, c in conflicts:
+        if format_pair_excluded(plan, o.get("plan", "")):
+            return f"arquivo {c} com {o['issue']}", o["issue"]
+    return "", ""
+
+
+def schema_block(plan, taking):
+    """`(reason, holder)` of the schema rule: it holds against every started stage, early or not (decision 10 of #2373)."""
+    for o in taking:
+        if changes_schema(plan) and changes_schema(o.get("plan", "")):
+            return f"schema com {o['issue']}", o["issue"]
+    return "", ""
+
+
 def slots_plan(q, meta):
     """(text of meta.vagas, [issues that start now], pieces of the text, reasons, exclusive stage at the front).
 
-    Decisions 4 and 5 of #1440. The reasons (decision 4 of #1761) are `{issue: (reason text, #N that holds)}` per
-    candidate; the `#N` only comes in the reasons `arquivo <x> com #N` and `schema com #N`, otherwise it is "".
+    Decisions 4 and 5 of #1440. The reasons (decision 4 of #1761) are `{issue: (reason text, #N that holds, early holders)}` per
+    candidate; the `#N` only comes in the reasons `arquivo <x> com #N` and `schema com #N`, otherwise it is "". The early holders
+    (decision 2 of #2373) are the eligible holders of a `começa cedo` candidate (`["#S", …]`), otherwise `[]`: `row` writes them in `cedo`.
+
+    Early start (#2373): a candidate whose only blockers are file conflicts with eligible holders (`eligible_holder`) starts with the
+    reason `começa cedo (espera #S para testar)`, after the schema and the same-format checks and in a free slot; a `via-rapida`
+    candidate never does.
 
     Decision 1 of #1813: the exclusive stage at the front is the first candidate, by `order`, without `hold`, with a complete ficha and
     merged dependencies, that does not start in this calculation, if it is exclusive and waits for the queue to empty ("" if the first
@@ -2758,7 +2947,7 @@ def slots_plan(q, meta):
     front, decided = "", False
     for r in cands:
         plan = r.get("plan", "")
-        holder = ""
+        holder, early = "", []
         why = r.get("hold") or ""
         counts = not why
         if not why:
@@ -2768,29 +2957,25 @@ def slots_plan(q, meta):
             why = exclusive_block(r, taking, front)
             if why == EXCLUSIVE_WAITS and not decided:
                 front = r["issue"]
-        mine = toca_list(plan)
+        conflicts = file_conflicts(toca_list(plan), taking) if not why else []
+        if conflicts:
+            why, holder, early = file_block(r, conflicts)
         if not why:
-            for o in taking:
-                c = first_conflict(mine, toca_list(o.get("plan", "")))
-                if c:
-                    why, holder = f"arquivo {c} com {o['issue']}", o["issue"]
-                    break
-        if not why:
-            for o in taking:
-                if changes_schema(plan) and changes_schema(o.get("plan", "")):
-                    why, holder = f"schema com {o['issue']}", o["issue"]
-                    break
-        if not why:
-            if free > 0:
-                why = STARTS_NOW
-                free -= 1
-                now_list.append(r["issue"])
-                taking.append(r)
-            else:
-                why = "vagas cheias"
-        decided = decided or (counts and why != STARTS_NOW)
+            why, holder = schema_block(plan, taking)
+        if not why and early:
+            why, holder = format_block(plan, conflicts)
+        if why:
+            early = []
+        elif free > 0:
+            why = f"{STARTS_EARLY} (espera {', '.join(early)} para testar)" if early else STARTS_NOW
+            free -= 1
+            now_list.append(r["issue"])
+            taking.append(r)
+        else:
+            why, early = "vagas cheias", []
+        decided = decided or (counts and not why.startswith(STARTS_NOW))
         parts.append(f"{r['issue']} {why}")
-        reasons[r["issue"]] = (why, holder)
+        reasons[r["issue"]] = (why, holder, early)
     if free > 0:
         parts.append("nenhuma ready elegível")
     return " · ".join(parts), now_list, parts, reasons, front
@@ -2812,6 +2997,8 @@ def started_state(r):
         return "dono", r.get("wait") or "esperando o dono"
     if st == "falhou":
         return "dono", "falhou"
+    if st == WAITS_DELIVERY:
+        return "entrega", r.get("step") or "espera merge para testar"
     return "dep", r.get("step") or "parada"
 
 
@@ -2901,7 +3088,11 @@ def first_open_phase(r):
 
 
 def queue_graph(q, meta, reasons):
-    """(grafoNos, grafoSetas) of the queue; decisions 3 to 8 of #1761. Reads what `slots_plan` already decided."""
+    """(grafoNos, grafoSetas) of the queue; decisions 3 to 8 of #1761. Reads what `slots_plan` already decided.
+
+    Early start (decisions 7 and 11 of #2373): the node has `cedo` (the holders still open, `#S, #T`, or ""), a started `esperando entrega`
+    row has `estado` `entrega` with its step as `motivo`, and every open holder of a started row with `cedo` has an arrow
+    `(holder, row, "entrega")`. A `começa cedo` candidate is in wave 0 like a `começa` one (the reason is read by prefix)."""
     rows = sorted((r for r in q if r["status"] not in ("concluída", "recusada")), key=lambda r: r["order"])
     nodes = {r["issue"]: r for r in rows}
     merged = set(meta.get("merged", []))
@@ -2911,7 +3102,7 @@ def queue_graph(q, meta, reasons):
         why = reasons.get(r["issue"], ("", ""))[0]
         state[r["issue"]] = started_state(r) if is_started(r) else (candidate_state(r, why), why)
     wave = {r["issue"]: 0 for r in rows
-            if is_started(r) or reasons.get(r["issue"], ("", ""))[0] == STARTS_NOW}
+            if is_started(r) or reasons.get(r["issue"], ("", ""))[0].startswith(STARTS_NOW)}
     assign_waves(rows, wave, deps)
     ranked = sorted((r for r in rows if not is_started(r) and state[r["issue"]][0] not in ("segurada", "ficha")),
                     key=lambda r: (wave[r["issue"]], r["order"]))
@@ -2925,11 +3116,14 @@ def queue_graph(q, meta, reasons):
         holder = reasons.get(k, ("", ""))[1]
         if holder and holder in nodes:
             edges.append((holder, k, "arquivo"))
+        if is_started(nodes[k]):
+            edges += [(h, k, "entrega") for h in open_holders(nodes[k], q, merged) if h in nodes]
     edges.sort(key=lambda e: (pos[e[1]], pos[e[0]]))
     graph_nodes = [{
         "issue": r["issue"], "titulo": r.get("title", ""), "onda": wave[r["issue"]],
         "rank": rank.get(r["issue"]), "estado": state[r["issue"]][0], "motivo": state[r["issue"]][1],
         "fase": first_open_phase(r), "feitas": r.get("phasesDone", 0), "total": r.get("phasesTotal", 0),
+        "cedo": ", ".join(open_holders(r, q, merged)),
     } for r in listed]
     return graph_nodes, [{"de": d, "para": k, "tipo": t} for d, k, t in edges]
 
@@ -3164,9 +3358,9 @@ def cmd_show(a):
         print(f"  {st}: {sum(1 for r in q if r['status'] == st)}")
     meta = m[0] if m else {}
     print(f"atual: {meta.get('current') or '—'}")
-    vagas, agora, _, _, drena = slots_plan(q, meta)
+    vagas, agora, _, reasons, drena = slots_plan(q, meta)
     print(f"vagas: {vagas}")
-    print("começar agora: " + (" ".join(agora) or "nenhuma"))
+    print("começar agora: " + (" ".join(starting_text(i, reasons) for i in agora) or "nenhuma"))
     print(f"drenando para a exclusiva: {drena or 'nenhuma'}")
     print(f"início: {meta.get('runStart') or '—'}  atualizado: {meta.get('updatedAt', '—')}")
     print(f"reserva: {meta.get('reserve') or '—'}")
@@ -3195,7 +3389,8 @@ def cmd_show(a):
               f"{context_notes(meta)}")
     for r in q:
         if r["status"] == "em andamento":
-            print(f"  {r['issue']} {r['stage']} · {r['step']} · filhas: {r.get('child') or '—'}")
+            early = f" · cedo: {', '.join(r['cedo'].split())}" if r.get("cedo") else ""
+            print(f"  {r['issue']} {r['stage']} · {r['step']} · filhas: {r.get('child') or '—'}{early}")
     late = late_rows(q)
     print("atrasadas: " + ("; ".join(
         f"{r['issue']} {r['child']} ({minutes_since(r['childAt'])} min)" for r in late) or "nenhuma"))
@@ -3208,6 +3403,8 @@ def cmd_show(a):
     print("CI esperando o coordenador: " + ("; ".join(
         ci_wait_text(r) for r in ci_wait_rows(q)) or "nenhuma"))
     print("merge pedido ao dono: " + ("; ".join(merge_ask_text(r) for r in merge_ask_rows(q)) or "nenhum"))
+    print("esperando merge para testar: " + waiting_delivery_text(q, meta))
+    print("pode sincronizar: " + can_sync_text(q, meta))
     print("últimas do log:")
     for e in lg[-5:]:
         print(f"  {e['at']}  {e['text']}")
