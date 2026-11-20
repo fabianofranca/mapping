@@ -36,6 +36,7 @@ import {
   effectiveDensity,
   componentMinSize,
   componentPlacement,
+  placementIsFree,
   markingComponent,
   typeSlots,
   componentSize,
@@ -2533,6 +2534,7 @@ class Batch {
     const rowAliases: [string, AliasTarget][] = [];
     let project: Project;
     let annotationId: string | null = null;
+    let autoPlaced = false;
 
     if (annotation && typeRef !== null && component !== null) {
       const newAnnotationId = crypto.randomUUID();
@@ -2587,6 +2589,13 @@ class Batch {
           this.measurer,
         ),
       );
+      // Automatic placement only (no rect, near, inside or anchor; not a floating type): the "no free space" check
+      // runs below, on the stored rectangle (decision 5 of #1891). `inside` has its own full-slot warning.
+      autoPlaced =
+        rectFromComponent &&
+        anchor === null &&
+        op.near === undefined &&
+        component.floating !== true;
       if (inside) {
         this.noteInsideFit(notes, p, project, inside.id, {
           id: markingId,
@@ -2638,6 +2647,9 @@ class Batch {
       }
     }
     const { rect } = created;
+    if (autoPlaced && typeRef !== null) {
+      this.noteNoFreeSpace(notes, p, { containerId, pageId, typeRef, rect });
+    }
     if (anchor !== null && created.anchor == null) {
       notes.push(
         'the anchor was dropped: by geometry the marking was created in a different space than the target (the container or the canvas); anchor it afterwards with `update_marking`, in the same space as the target',
@@ -2795,6 +2807,39 @@ class Batch {
         ...initialValuesArg(op.annotation?.values),
       },
       this.measurer,
+    );
+  }
+
+  /**
+   * The warning of a marking created without `rect`, `inside`, `near` or `anchor` that was born over others:
+   * `placementIsFree` (on the project from before, with the rectangle that was stored) says it did not find a
+   * free spot at any level. The note becomes the usual `ignored-argument` warning.
+   */
+  private noteNoFreeSpace(
+    notes: string[],
+    before: Project,
+    created: {
+      containerId: string | null;
+      pageId: string | undefined;
+      typeRef: AnnotationTypeRef;
+      rect: Rect;
+    },
+  ): void {
+    const free = placementIsFree(
+      before,
+      this.catalog,
+      {
+        containerId: created.containerId,
+        parentId: null,
+        ...(created.pageId === undefined ? {} : { pageId: created.pageId }),
+        ...created.typeRef,
+        rect: created.rect,
+      },
+      this.measurer,
+    );
+    if (free) return;
+    notes.push(
+      'no free space: the marking was born over other markings (give `rect` or make room in the container)',
     );
   }
 

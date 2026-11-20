@@ -53,6 +53,7 @@ import {
 } from './geometry';
 import {
   crowdedRectIn,
+  freeRectGoingUp,
   freeRectIn,
   isFreeInLevel,
   placementLevel,
@@ -992,8 +993,10 @@ function componentPageId(
  *
  * If R0 is already free, it is the one. Otherwise it goes to the free place nearest to it (`placementLevel`:
  * inside the smallest marking that contains it and is different from it, or on the image, without covering or
- * coinciding with other markings), with the gap `PLACEMENT_GAP`. With no place in the area, it stays at R0 (clamped
- * to the component with a slot), without error. The floating type (outside the tree) returns R0 without searching.
+ * coinciding with other markings), with the gap `PLACEMENT_GAP`. With no place in the area, outside a component with a
+ * slot the search goes up a level at a time, up to the root (`freeRectGoingUp`); with no place at any level (and in a
+ * full slot) it stays at the origin level, clamped to the component with a slot, never contained in or equal to a
+ * sibling (`crowdedRectIn`), without error. The floating type (outside the tree) returns R0 without searching.
  */
 export function componentPlacement(
   p: Project,
@@ -1007,9 +1010,12 @@ export function componentPlacement(
   if (parent === null || slot === null) {
     const r0 = centeredRect(space, size, args.center);
     if (space.floating) return r0;
+    // No spot at the level where it would be born: it goes up level by level; with none at any, it
+    // stays at the origin level, never contained in or equal to a sibling (decision 4 of #1891).
+    const level = placementLevel(p, args.containerId, r0, undefined, args.pageId);
     return (
-      freeRectIn(placementLevel(p, args.containerId, r0, undefined, args.pageId), r0) ??
-      r0
+      freeRectGoingUp(p, args.containerId, level, r0, args.pageId) ??
+      crowdedRectIn(level, r0)
     );
   }
   const placed = slotRect(p, parent, slot, size);
@@ -1027,7 +1033,8 @@ export function componentPlacement(
 }
 
 /**
- * The rectangle `rect` is free where `componentPlacement` would put it: it fits in the level's area (the image,
+ * The rectangle `rect` is free where `componentPlacement` would put it, at the level that contains it (the one it
+ * was found at, going up): it fits in the level's area (the image,
  * the marking that contains it or the box of the slot of `parentId`) and does not overlap any
  * non-floating marking (nor, on the canvas, any container) that crosses the area, except the parent and the ancestors.
  * It gives the test, and whoever wants to warn later, whether the chosen piece ended up free (decision 5).
