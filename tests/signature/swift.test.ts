@@ -920,6 +920,21 @@ struct Foo: View {
     expect(by.other?.value).toMatchObject({ kind: 'text', default: 'plain' });
   });
 
+  it('a raw string with an escape (`\\#n`, `\\#t`) keeps only the text `default`: the decoded value is not the written one', () => {
+    const sig = swiftJson(withInit('label: String = #"line1\\#nline2"#'), 'Foo');
+    const by = byName(sig);
+    expect(by.label?.default).toBe('#"line1\\#nline2"#');
+    expect(by.label?.value).toEqual({ kind: 'text' });
+  });
+
+  it('the ambiguous header with an --also file does not place every init in the main file', () => {
+    const result = banner('Banner', [], true);
+    expect(result.stderr).toContain(
+      'in tests/fixtures/signature/swift/Banner.swift and the --also files;',
+    );
+    expect(banner('Pill').stderr).toContain('Banner.swift; pick one');
+  });
+
   it('a raw string of two `#` and an embedded `"#` stay in one token', () => {
     const sig = swiftJson(withInit('label: String = ##"a"#b"##, n: Int = 2'), 'Foo');
     const by = byName(sig);

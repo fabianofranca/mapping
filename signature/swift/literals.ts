@@ -39,7 +39,8 @@ const QUALIFIED_CASE = /^(?:\w+\.)*(\w+)\.(\w+)$/;
 
 /**
  * The content of a raw string `#"…"#` (any number of `#`) written on a single line, as it is, with no
- * interpolation (`\#(`); `undefined` for any other text (multi-line, with interpolation, an expression).
+ * escape or interpolation (`\#` followed by anything decodes to something else); `undefined` for any other
+ * text (multi-line, with an escape, an expression).
  */
 export function rawStringContent(text: string): string | undefined {
   const hashes = RAW_OPEN.exec(text)?.[1];
@@ -49,7 +50,7 @@ export function rawStringContent(text: string): string | undefined {
     return undefined;
   const content = text.slice(hashes.length + 1, text.length - close.length);
   const opaque = content.includes('\n') || content.includes(close);
-  return opaque || content.includes(`\\${hashes}(`) ? undefined : content;
+  return opaque || content.includes(`\\${hashes}`) ? undefined : content;
 }
 
 const toNumber = (text: string): number | undefined => {

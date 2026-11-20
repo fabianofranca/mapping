@@ -144,13 +144,19 @@ const isCallable = (candidate: Candidate): boolean =>
 const isHidden = (candidate: Candidate): boolean =>
   candidate.kind === 'init' && candidate.init.hidden;
 
+/** Where the inits are: the main file, and the `--also` files when some candidate comes from one. */
+function placeOf(stream: TokenStream, candidates: readonly Candidate[]): string {
+  const also = candidates.some((c) => c.kind === 'init' && c.file !== undefined);
+  return `${stream.src.name}${also ? ' and the --also files' : ''}`;
+}
+
 function chooseInit(
   stream: TokenStream,
   decl: TypeDecl,
   candidates: readonly Candidate[],
   requested: number | undefined,
 ): Candidate {
-  const where = stream.src.name;
+  const where = placeOf(stream, candidates);
   if (candidates.length === 0) {
     if (requested === undefined || requested === 0)
       return { kind: 'memberwise', labels: '' };
