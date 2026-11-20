@@ -332,24 +332,24 @@ describe('components on the canvas and between spaces (ME1)', () => {
     expect(marking(current(store), result.value).floating).toBe(false);
   });
 
-  /** I1 reduced to a quarter: a 100×40 pixel text measures 25×10 on the canvas (the minimum is 60×24). */
+  /** I1 reduced to a quarter: a 100×40 pixel text measures 25×10 on the canvas but keeps its 100×40 units there (stage #2210). */
   function smallImage() {
     let p = setContainerPlacement(componentProject(), 'I1', { x: 0, y: 0, scale: 0.25 });
     p = add(p, 'T', 'text', box(100, 100, 100, 40));
     return setup(p);
   }
 
-  it('moving the component to the canvas respects its minimum size in the rect conversion', () => {
+  it('moving the component to the canvas keeps its size in units in the rect conversion', () => {
     const { store, actions } = smallImage();
     // 2000 pixels of I1 = 500 canvas units: it leaves the image (0..250).
     expect(actions.moveMarking('T', 2000, 0).ok).toBe(true);
     expect(marking(current(store), 'T')).toMatchObject({
       containerId: null,
-      rect: { x: 525, y: 25, width: 60, height: 24 },
+      rect: { x: 525, y: 25, width: 100, height: 40 },
     });
   });
 
-  it('the move gesture too: the final one settles with the component minimum', () => {
+  it('the move gesture too: the final one settles keeping the units', () => {
     const { store, actions } = smallImage();
     expect(actions.beginGesture().ok).toBe(true);
     actions.previewMarkingMove('T', 2000, 0);
@@ -359,7 +359,7 @@ describe('components on the canvas and between spaces (ME1)', () => {
     actions.commitGesture();
     expect(marking(current(store), 'T')).toMatchObject({
       containerId: null,
-      rect: { x: 525, y: 25, width: 60, height: 24 },
+      rect: { x: 525, y: 25, width: 100, height: 40 },
     });
     expect(undoDepth(store)).toBe(1);
   });

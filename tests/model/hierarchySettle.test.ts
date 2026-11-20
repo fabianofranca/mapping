@@ -281,21 +281,24 @@ describe('space change on settle', () => {
 
   it('the conversion rounds by the edges, enforces the minimum and the component minimum', () => {
     const D = container('D', 300, 300, { x: 0, y: 2000, scale: 3 });
-    const p = settleHierarchy(
-      project(
-        [D],
-        [
-          // 10×10 on the canvas = 3.33 px of D: rises to the minimum of 8.
-          mk('tiny', null, rect(31, 2031, 10, 10)),
-          mk('button', null, rect(301, 2301, 31, 31)),
-        ],
-      ),
+    // Two separate settles: a component in the same set would scale the plain marking too (stage #2210).
+    const plain = settleHierarchy(
+      project([D], [mk('tiny', null, rect(31, 2031, 10, 10))]),
+      { minSizeOf: () => null },
+    );
+    // 10×10 on the canvas = 3.33 px of D: rises to the minimum of 8.
+    expect(get(plain, 'tiny')).toMatchObject({
+      containerId: 'D',
+      rect: rect(10, 10, 8, 8),
+    });
+    const component = settleHierarchy(
+      project([D], [mk('button', null, rect(301, 2301, 31, 31))]),
       { minSizeOf: (id) => (id === 'button' ? { width: 40, height: 12 } : null) },
     );
-    expect(get(p, 'tiny')).toMatchObject({ containerId: 'D', rect: rect(10, 10, 8, 8) });
-    expect(get(p, 'button')).toMatchObject({
+    // A component keeps its units: 31×31 canvas · 3 = 93 canvas = 31 px of D, and the width rises to the minimum 40.
+    expect(get(component, 'button')).toMatchObject({
       containerId: 'D',
-      rect: rect(100, 100, 40, 12),
+      rect: rect(100, 100, 40, 31),
     });
   });
 

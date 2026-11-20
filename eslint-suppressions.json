@@ -304,11 +304,6 @@
       "count": 1
     }
   },
-  "src/model/hierarchySettle.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/model/invariants.ts": {
     "complexity": {
       "count": 1

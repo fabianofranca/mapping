@@ -468,10 +468,40 @@ describe('markings: floating', () => {
 
   it('the component minimum applies in the conversion to the canvas', () => {
     const q = setMarkingFloating(sampleProject(), 'M3', true, {
+      minSize: { width: 80, height: 60 },
+    });
+    // 50×50 pixels at scale 0.25 = 12.5 on the canvas: a plain marking would be 12.5, but a
+    // component keeps its 50×50 units, and the component minimum is above that.
+    expect(marking(q, 'M3').rect).toMatchObject({ width: 80, height: 60 });
+  });
+
+  it('a component keeps its units on the canvas: 50×50 px at scale 0.25 stay 50×50 (stage #2210)', () => {
+    const q = setMarkingFloating(sampleProject(), 'M3', true, {
       minSize: { width: 40, height: 30 },
     });
-    // 50×50 pixels at scale 0.25 = 12.5 on the canvas: it rises to the component minimum.
-    expect(marking(q, 'M3').rect).toMatchObject({ width: 40, height: 30 });
+    expect(marking(q, 'M3').rect).toMatchObject({ width: 50, height: 50 });
+  });
+
+  it('a component of a density 2 container halves on the canvas and doubles back with Floating off', () => {
+    const base = sampleProject();
+    const dense = {
+      ...base,
+      containers: base.containers.map((c) => (c.id === 'I2' ? { ...c, density: 2 } : c)),
+    };
+    const options = {
+      minSizeOf: (id: string) => (id === 'M4' ? { width: 1, height: 1 } : null),
+    };
+    const on = setMarkingFloating(dense, 'M4', true, options);
+    // I2 has scale 1: 100×100 px of density 2 = 50×50 units = 50×50 on the canvas.
+    expect(marking(on, 'M4').rect).toMatchObject({ width: 50, height: 50 });
+    const off = setMarkingFloating(on, 'M4', false, options);
+    expect(marking(off, 'M4')).toMatchObject({
+      containerId: 'I2',
+      rect: { width: 100, height: 100 },
+    });
+    // A plain marking keeps the size on screen on both ways.
+    const plain = setMarkingFloating(dense, 'M4', true);
+    expect(marking(plain, 'M4').rect).toMatchObject({ width: 100, height: 100 });
   });
 });
 

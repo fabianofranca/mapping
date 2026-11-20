@@ -750,6 +750,13 @@ decided by the tool, from the rectangles, and written to the JSON. Whoever reads
 4. **Space change.** A container marking whose rectangle, on the canvas, no longer fits in the container becomes
    a canvas marking (and the reverse, when it fits entirely in a container): the `containerId` changes and the `rect` is
    converted from one space to the other, without changing the size the person sees. Its descendants go along.
+   The exception is a marking that draws a **component** (its annotation type has a component, see
+   [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Units and density"): it keeps its size in **component units**, so
+   its `rect` is scaled by `k = (density × scale of the new space) ÷ (density × scale of the old one)` (1 on the canvas)
+   instead of keeping the size on screen. The set that moves together (the markings that go from the same space to the
+   same space, with their descendants) scales as a whole around its top-left corner, so a plain area keeps its text as a
+   child and a multiple selection keeps its layout. A set with no component marking, or with `k` = 1, keeps the
+   size on screen as before. This is a rule of the tool; the file only stores the result.
 5. **Floating outside the tree.** The floating marking is never a parent or a child, of a marking or of a container.
 6. A marking has **only one parent**; groups that cross without containing one another generate no relation.
 
