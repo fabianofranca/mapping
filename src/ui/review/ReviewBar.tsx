@@ -48,7 +48,21 @@ function Stat({
   );
 }
 
-/** Label of "Apply accepted · N" and the reason it is disabled. */
+/** Why "Apply accepted" is disabled, in the order of precedence; `null` when nothing blocks it. */
+function applyBlockedReason(
+  readOnly: boolean,
+  applying: boolean,
+  acceptedPending: number,
+  invalid: boolean,
+): string | null {
+  if (readOnly) return t('proposal.error.readOnly');
+  if (applying) return t('review.applying');
+  if (acceptedPending === 0) return t('review.applyNone');
+  if (invalid) return t('review.applyBlocked');
+  return null;
+}
+
+/** Label of "Apply accepted · N" (or "Conclude review") and the reason it is disabled. */
 export function useApplyState() {
   const { review, store } = useEditor();
   const d = review.derived;
@@ -67,11 +81,12 @@ export function useApplyState() {
     };
   }
   const label = t('review.applyCount', { count: counts.acceptedPending });
-  let reason: string | null = null;
-  if (store.readOnly.value) reason = t('proposal.error.readOnly');
-  else if (d.applying.value) reason = t('review.applying');
-  else if (counts.acceptedPending === 0) reason = t('review.applyNone');
-  else if (validation && !validation.ok) reason = t('review.applyBlocked');
+  const reason = applyBlockedReason(
+    store.readOnly.value,
+    d.applying.value,
+    counts.acceptedPending,
+    validation !== null && !validation.ok,
+  );
   return {
     label,
     disabled: !canApply,
@@ -161,6 +176,9 @@ export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
           <Flag tone="warn">{t('proposals.status.superseded')}</Flag>
         )}
         {p.status === 'applied' && <Flag tone="ok">{t('proposals.status.applied')}</Flag>}
+        {p.status === 'rejected' && (
+          <Flag tone="neutral">{t('proposals.status.rejected')}</Flag>
+        )}
         {!compact && p.origin && (
           <span class="review-bar-origin" title={p.origin}>
             {p.origin}

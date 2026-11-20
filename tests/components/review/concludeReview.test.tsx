@@ -9,6 +9,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { locale } from '../../../src/store/settings';
 import { ReviewBar } from '../../../src/ui/review/ReviewBar';
+import { ReviewLevels } from '../../../src/ui/review/ReviewLevels';
 import { ReviewPanel } from '../../../src/ui/review/ReviewPanel';
 import { decided } from '../../model/proposalFixtures';
 import { richScenario, writeOutside } from '../../store/proposalHarness';
@@ -93,6 +94,32 @@ describe('Conclude review: the review bar', () => {
     expect(screen.queryByRole('button', { name: 'Conclude review' })).toBeNull();
     const apply = screen.getByRole('button', { name: /^Apply accepted/ });
     expect((apply as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('the bar flags a concluded proposal as Rejected, like the Proposals list', async () => {
+    const { h } = await rejectedHarness();
+    renderInEditor(h, <ReviewBar onExit={() => {}} />);
+    expect(screen.queryByText('Rejected')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Conclude review' }));
+    await waitFor(() => expect(screen.getByText('Rejected')).toBeTruthy());
+  });
+
+  it('the shortcuts footer names Ctrl+Enter as Conclude while the button concludes', async () => {
+    const { h } = await rejectedHarness();
+    renderInEditor(h, <ReviewLevels />);
+    const footer = screen.getByLabelText('Review shortcuts');
+    expect(footer.textContent).toContain('Conclude');
+    expect(footer.textContent).not.toContain('Apply');
+  });
+
+  it('the shortcuts footer says Apply while there is something to decide', async () => {
+    const { proposal } = richScenario();
+    const h = await openReviewHarness({ proposals: [proposal], files });
+    h.review.open('P1');
+    renderInEditor(h, <ReviewLevels />);
+    const footer = screen.getByLabelText('Review shortcuts');
+    expect(footer.textContent).toContain('Apply');
+    expect(footer.textContent).not.toContain('Conclude');
   });
 
   it('after a partial application, concluding says the proposal was applied', async () => {
