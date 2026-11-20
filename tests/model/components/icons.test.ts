@@ -167,8 +167,9 @@ describe('parseIconsFile', () => {
         oldIssue?.params ?? {},
         oldIssue?.message ?? '',
       );
-      // pt-BR kept: the object of the test is the pt-BR rendering of the model message
+      // portuguese-guard:begin the object of the test is the pt-BR rendering of the model message
       expect(ptBRText(oldMessage)).toBe('só é permitido com formatVersion 3');
+      // portuguese-guard:end
       const badIssue = bad.issues[0];
       expect(badIssue?.code).toBe('iconsFile.expectedOneOf');
       expect(badIssue?.params).toEqual({ options: 'nonzero, evenodd' });
