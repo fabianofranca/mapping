@@ -2,5 +2,5 @@
 
 ## Corrigido
 
-- The review tree keeps its keys (arrows, Home, End, Enter) after a click on the chevron or on the ✓/✕ of a row.
-- Ctrl+, opens Settings from the Comments composer and the other text fields.
+- The review tree keeps its keys (arrows, Home, End, Enter) after a click on the chevron or on the ✓/✕ of a row (#2160).
+- Ctrl+, opens Settings from the Comments composer and the other text fields (#2226).

@@ -110,7 +110,12 @@ export function DecisionControl({
 
   if (variant === 'text') {
     return (
-      <div class="decision-control decision-control-text" role="group" aria-label={name}>
+      <div
+        class="decision-control decision-control-text"
+        data-decision-control
+        role="group"
+        aria-label={name}
+      >
         <Button
           variant="accept"
           aria-pressed={value === 'accepted'}
@@ -152,7 +157,7 @@ export function DecisionControl({
   }
 
   return (
-    <span class="decision-control" role="group" aria-label={name}>
+    <span class="decision-control" data-decision-control role="group" aria-label={name}>
       <IconButton
         icon="check"
         size="sm"

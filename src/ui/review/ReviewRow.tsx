@@ -42,6 +42,8 @@ export interface ReviewRowProps {
   readonly onSelect: () => void;
   readonly onToggle: () => void;
   readonly onDecide: (state: DecisionValue) => void;
+  /** A mouse press on the chevron or the decision cell: the focus goes to the tree, not the button (#2160). */
+  readonly onPointerFocus: () => void;
 }
 
 /** ARIA attributes of the `treeitem` (position and total among siblings, for the virtualized list). */
@@ -100,7 +102,14 @@ export function ReviewRow({
   onSelect,
   onToggle,
   onDecide,
+  onPointerFocus,
 }: ReviewRowProps) {
+  // The button never takes the focus on a mouse press; the click still happens (#2160).
+  const keepFocusOnTree = (e: MouseEvent) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    onPointerFocus();
+  };
   return (
     <div
       class={classes(
@@ -134,6 +143,7 @@ export function ReviewRow({
             class="review-row-toggle"
             tabIndex={-1}
             aria-label={t(expanded ? 'tree.collapse' : 'tree.expand', { name: label })}
+            onMouseDown={keepFocusOnTree}
             onClick={onToggle}
           >
             <Icon name={expanded ? 'chevronDown' : 'chevronRight'} />
@@ -155,7 +165,7 @@ export function ReviewRow({
         {flags}
       </span>
       <span class="review-row-summary">{summary}</span>
-      <span class="review-row-decision">
+      <span class="review-row-decision" onMouseDown={keepFocusOnTree}>
         <DecisionControl
           value={decision}
           name={label}

@@ -2,4 +2,10 @@
 
 ## Pendências
 
+None.
+
+## Sincronização
+
+Sem impacto: focus and keyboard handling only; no component, token or icon changes.
+
 DS impact: none.
