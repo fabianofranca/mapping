@@ -132,6 +132,7 @@ describe('Conclude review: the review bar', () => {
   });
 
   it('pt-BR: label, toast and notice', async () => {
+    // pt-BR kept: the test checks the pt-BR text of the button, the toast and the notice
     locale.value = 'pt-BR';
     const { h } = await rejectedHarness();
     renderInEditor(h, <Screen />);

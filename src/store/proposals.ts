@@ -413,7 +413,10 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
     const skip = new Set<string>();
     for (const [id, entry] of known) {
       const { status } = entry.proposal;
-      if (entry.stamp !== null && (status === 'applied' || status === 'withdrawn' || status === 'rejected'))
+      if (
+        entry.stamp !== null &&
+        (status === 'applied' || status === 'withdrawn' || status === 'rejected')
+      )
         skip.add(id);
     }
     return skip;

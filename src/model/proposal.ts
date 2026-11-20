@@ -239,8 +239,7 @@ export const PROPOSAL_FILE = 'proposal.json';
  * cannot). `withdrawn`: withdrawn by the agent. `rejected`: the review finished with nothing
  * applied (the person concluded it).
  */
-export type ProposalStatus =
-  'open' | 'applied' | 'superseded' | 'withdrawn' | 'rejected';
+export type ProposalStatus = 'open' | 'applied' | 'superseded' | 'withdrawn' | 'rejected';
 export const PROPOSAL_STATUSES: readonly ProposalStatus[] = [
   'open',
   'applied',
