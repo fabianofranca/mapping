@@ -18,6 +18,15 @@ function itemCanvasRect(project: Project, item: SelectionItem): Rect | null {
   return imageCanvasRect(selected.image, selected.image.placement);
 }
 
+/** Is there something to frame: at least one item resolves to a box (items that no longer exist do not count)? */
+export function canFitSelection(
+  project: Project | null,
+  items: readonly SelectionItem[],
+): boolean {
+  if (!project) return false;
+  return items.some((item) => itemCanvasRect(project, item) !== null);
+}
+
 /** Union of the items' boxes; `null` without any item that exists. */
 export function selectionCanvasBounds(
   project: Project | null,

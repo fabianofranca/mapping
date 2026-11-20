@@ -1,7 +1,17 @@
 // fiel.mjs: node fiel.mjs <library folder> [formatVersion]
 import fs from 'node:fs';
-const dir = process.argv[2] + '/components/';
+const usage = (reason) => {
+  console.error(`Usage: node fiel.mjs <library folder> [formatVersion]\n${reason}`);
+  process.exit(2);
+};
+const folder = process.argv[2];
+if (!folder) usage('Missing the library folder.');
+const dir = folder + '/components/';
+if (!fs.existsSync(dir)) usage(`No components/ folder in ${folder}.`);
 const version = Number(process.argv[3] ?? 4);
+if (version !== 3 && version !== 4) {
+  usage(`formatVersion must be 3 or 4, got ${process.argv[3]}.`);
+}
 const INK = '#B3261E';
 const bar = (name, top, cap) => ({
   type: 'path',

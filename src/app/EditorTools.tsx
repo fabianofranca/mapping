@@ -9,6 +9,7 @@ import { selectedItems, setViewMode, showToast } from '../store/ui';
 import { proposalErrorMessage } from '../ui/labels';
 import { REVIEW_ERROR_MS } from '../ui/review/useReviewCommands';
 import type { ProposalActionError } from '../store/proposalActions';
+import { canFitSelection } from '../canvas/selectionBounds';
 import { SHORTCUT_LABELS } from './shortcuts';
 
 // Tool buttons of the main bar and of the breadcrumbs bar.
@@ -172,10 +173,10 @@ export function FitButton() {
   );
 }
 
-/** Fit selection: zoom and center on the selected items; disabled without a selection. */
+/** Fit selection: zoom and center on the selected items; disabled with nothing to fit. */
 export function FitSelectionButton() {
-  const { canvas, ui } = useEditor();
-  const empty = selectedItems(ui).length === 0;
+  const { canvas, ui, review } = useEditor();
+  const empty = !canFitSelection(review.derived.shownProject.value, selectedItems(ui));
   return (
     <IconButton
       icon="fit-selection"
@@ -226,7 +227,8 @@ export function ViewModeButton() {
  * texts as the buttons, and the thread badge and dot. Only the CSS shows it.
  */
 export function OverflowMenu() {
-  const { ui, canvas } = useEditor();
+  const { ui, canvas, review } = useEditor();
+  const shown = review.derived.shownProject.value;
   const { on: pins, showCount, waiting, alert } = usePinsState();
   const view = ui.viewMode.value;
   const items: ActionMenuItem[] = [
@@ -254,7 +256,7 @@ export function OverflowMenu() {
     {
       label: t('editor.fitSelection'),
       shortcut: SHORTCUT_LABELS.fitSelection,
-      disabled: selectedItems(ui).length === 0 || view,
+      disabled: !canFitSelection(shown, selectedItems(ui)) || view,
       onSelect: () => canvas.current?.fitSelection(),
     },
   ];

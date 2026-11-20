@@ -31,6 +31,31 @@ async function setup() {
   return { session, editor, hiddenOfV, visible };
 }
 
+describe('hidden() memoization (CD3, item 15)', () => {
+  it('with a perspective open, two calls without a change return the same set; after toggle, a new one with the right content', async () => {
+    const { session, editor } = await setup();
+    session.perspective.open('V');
+    const a = editor.layers.hidden();
+    expect(editor.layers.hidden()).toBe(a);
+    expect([...a]).toEqual(['L1']);
+    editor.layers.toggle('L2');
+    const b = editor.layers.hidden();
+    expect(b).not.toBe(a);
+    expect([...b].sort()).toEqual(['L1', 'L2']);
+    expect(editor.layers.hidden()).toBe(b);
+    editor.review.dispose();
+  });
+
+  it('in Main, it is ui.hiddenLayers.value', async () => {
+    const { editor } = await setup();
+    expect(editor.layers.hidden()).toBe(editor.ui.hiddenLayers.value);
+    editor.layers.toggle('L1');
+    expect(editor.layers.hidden()).toBe(editor.ui.hiddenLayers.value);
+    expect(editor.layers.hidden().has('L1')).toBe(true);
+    editor.review.dispose();
+  });
+});
+
 describe('with a perspective open', () => {
   it('toggling writes the perspective hidden ones, with undo, and does not touch ui.hiddenLayers', async () => {
     const { session, editor, hiddenOfV, visible } = await setup();

@@ -1,4 +1,4 @@
-// Plugins do Vite que fecham o `index.html` (usados por vite.config.ts e por tests/app/pluginOrder.test.ts).
+// Vite plugins that close the `index.html` (used by vite.config.ts and tests/build/pluginOrder.test.ts).
 import type { Plugin } from 'vite';
 import { readFileSync } from 'node:fs';
 import { channelManifest, stampServiceWorker, type BuildChannel } from './build';
@@ -22,7 +22,7 @@ function hash(text: string): string {
  * The order does not depend on the singlefile version (2.3.3 embeds in the normal phase; 2.3.4,
  * in `order: 'post'`): our plugins have `enforce: 'post'` (they run after the regular plugins
  * and after singlefile in the list) and `generateBundle` with `order: 'post'`; between them the
- * order of the `vite.config.ts` list holds (singlefile, CSP, sw). Locked by `tests/app/pluginOrder.test.ts`.
+ * order of the `vite.config.ts` list holds (singlefile, CSP, sw). Locked by `tests/build/pluginOrder.test.ts`.
  */
 export function contentSecurityPolicy(): Plugin {
   return {
