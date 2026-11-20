@@ -276,8 +276,11 @@ describe('review findings (FM3)', () => {
     const page = readFileSync(`${BASE}/painel/index.html`, 'utf8');
     const py = readFileSync(`${BASE}/painel/painel.py`, 'utf8');
     const kinds = /SESSION_KINDS = \[([^\]]*)\]/.exec(py)?.[1].match(/"[^"]+"/g) ?? [];
-    const pageKinds = /const KINDS = \[([^\]]*)\]/.exec(page)?.[1].match(/'[^']+'/g) ?? [];
-    expect(pageKinds.map((k) => k.slice(1, -1))).toEqual(kinds.map((k) => k.slice(1, -1)));
+    const pageKinds =
+      /const KINDS = \[([^\]]*)\]/.exec(page)?.[1].match(/'[^']+'/g) ?? [];
+    expect(pageKinds.map((k) => k.slice(1, -1))).toEqual(
+      kinds.map((k) => k.slice(1, -1)),
+    );
   });
 
   it('the SKILL says to record the cost on every path that archives', () => {
