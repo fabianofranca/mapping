@@ -116,14 +116,23 @@ const NAMED_ENTITIES: Readonly<Record<string, string>> = {
   apos: "'",
 };
 
+/** The characters XML 1.0 allows (tab, line feed, carriage return and from space up, no surrogates). */
+function isXmlChar(code: number): boolean {
+  if (code === 9 || code === 10 || code === 13) return true;
+  return (
+    (code >= 0x20 && code <= 0xd7ff) ||
+    (code >= 0xe000 && code <= 0xfffd) ||
+    (code >= 0x10000 && code <= 0x10ffff)
+  );
+}
+
 /** The text of a reference (`lt`, `#65`, `#x41`) or `undefined` when it is unknown or invalid. */
 function referenceText(body: string): string | undefined {
   if (Object.hasOwn(NAMED_ENTITIES, body)) return NAMED_ENTITIES[body];
   const hex = /^#x([0-9a-fA-F]{1,6})$/.exec(body)?.[1];
   const dec = /^#([0-9]{1,7})$/.exec(body)?.[1];
   const code = hex !== undefined ? parseInt(hex, 16) : dec !== undefined ? +dec : NaN;
-  const valid = code > 0 && code <= 0x10ffff && (code < 0xd800 || code > 0xdfff);
-  return valid ? String.fromCodePoint(code) : undefined;
+  return isXmlChar(code) ? String.fromCodePoint(code) : undefined;
 }
 
 /** The value with the references replaced (once: `&amp;lt;` becomes `&lt;`), or the error. */
@@ -179,12 +188,15 @@ function readAttributes(
 ): { selfClosing: boolean } | ModelMessage {
   const start = state.pos;
   for (;;) {
+    const before = state.pos;
     skipSpaces(state);
     const char = state.text[state.pos];
     if (char === undefined) return syntax(state, start);
     if (char === '>') return (state.pos++, { selfClosing: false });
     if (char === '/' && state.text[state.pos + 1] === '>')
       return ((state.pos += 2), { selfClosing: true });
+    // An attribute needs whitespace before it (`<a x="1"y="2"/>` is not XML).
+    if (state.pos === before) return syntax(state, state.pos);
     const error = readAttribute(state, attributes);
     if (error !== null) return error;
   }

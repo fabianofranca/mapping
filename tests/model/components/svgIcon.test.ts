@@ -144,9 +144,16 @@ describe('svgToIcon: the icon entry', () => {
     expect(result.icon.paths[0]?.fill).toBe('#00ff00');
   });
 
-  it('fill="none" is fill: false, and without a stroke the path has nothing else', () => {
-    const result = convert(svg('<path d="M0 0h4v4z" fill="none"/><path d="M1 1h4v4z"/>'));
-    expect(result.icon.paths[0]).toEqual({ d: 'M0 0h4v4z', fill: false });
+  it('fill="none" is fill: false, and the stroke is what draws', () => {
+    const result = convert(
+      svg('<path d="M0 0h4v4z" fill="none" stroke="#000"/><path d="M1 1h4v4z"/>'),
+    );
+    expect(result.icon.paths[0]).toEqual({
+      d: 'M0 0h4v4z',
+      fill: false,
+      stroke: true,
+      width: 1,
+    });
     expect(result.icon.paths[1]?.fill).toBe(true);
   });
 
@@ -528,7 +535,7 @@ describe('svgToIcon: the box', () => {
     );
   });
 
-  it.each(['0 0 24', '0 0 0 24', '0 0 -1 24', '0 0 a b', ''])(
+  it.each(['0 0 24', '0 0 0 24', '0 0 -1 24', '0 0 a b', '', '0 0 24px 24px'])(
     'refuses the viewBox "%s"',
     (viewBox) => {
       expect(problemsOf(svg('<path d="M0 0h4v4z"/>', `viewBox="${viewBox}"`))).toEqual([
@@ -749,5 +756,31 @@ describe('the result is a valid icons file entry', () => {
       const { icon } = convert(fixture(file), { file });
       expect(JSON.parse(JSON.stringify(icon))).toEqual(icon);
     }
+  });
+});
+
+describe('svgToIcon: review fixes', () => {
+  it('a single color with alpha keeps its literal: the icon node color has no alpha', () => {
+    const half = convert(svg('<path d="M0 0h4v4z" fill="rgba(0, 0, 0, 0.5)"/>'));
+    expect(half.icon.paths[0]?.fill).toBe('#00000080');
+    const clear = convert(svg('<path d="M0 0h4v4z" fill="transparent"/>'));
+    expect(clear.icon.paths[0]?.fill).toBe('#00000000');
+  });
+
+  it('a single opaque color still becomes true next to a path without alpha', () => {
+    const result = convert(
+      svg('<path d="M0 0h4v4z" fill="#000"/><path d="M5 5h4v4z" fill="#000000ff"/>'),
+    );
+    expect(result.icon.paths.map((p) => p.fill)).toEqual([true, true]);
+  });
+
+  it('a shape that paints nothing is dropped and does not count as a shape', () => {
+    expect(problemsOf(svg('<path d="M0 0h4v4z" fill="none"/>'))).toEqual([
+      'the SVG has no shape',
+    ]);
+    const result = convert(
+      svg('<path d="M0 0h4v4z" fill="none"/><path d="M5 5h4v4z"/><line x2="4"/>'),
+    );
+    expect(result.icon.paths.map((p) => p.d)).toEqual(['M5 5h4v4z']);
   });
 });

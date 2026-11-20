@@ -32,6 +32,13 @@ export type AttributeGetter = (name: string) => string | undefined;
 const NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
 const UNIT = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?(?:[a-zA-Z]+|%)$/;
 
+/** A bare number (no unit), or `undefined` for anything else. */
+export function parseNumber(value: string): number | undefined {
+  const text = value.trim();
+  const n = NUMBER.test(text) ? Number(text) : NaN;
+  return Number.isFinite(n) ? n : undefined;
+}
+
 /**
  * A length in px: a number, with or without the `px` unit. `'unit'` is a number with another
  * unit (`1em`, `50%`) and `undefined` is anything else.
@@ -39,10 +46,7 @@ const UNIT = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?(?:[a-zA-Z]+|%)$/;
 export function parseLength(value: string): number | 'unit' | undefined {
   const text = value.trim();
   const bare = text.toLowerCase().endsWith('px') ? text.slice(0, -2) : text;
-  if (NUMBER.test(bare)) {
-    const n = Number(bare);
-    return Number.isFinite(n) ? n : undefined;
-  }
+  if (NUMBER.test(bare)) return parseNumber(bare);
   return UNIT.test(text) ? 'unit' : undefined;
 }
 

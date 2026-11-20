@@ -8,7 +8,13 @@ import {
   type IconJoin,
   type IconPath,
 } from './icons';
-import { SHAPE_ATTRIBUTES, isBasicShape, parseLength, shapePath } from './svgShapes';
+import {
+  SHAPE_ATTRIBUTES,
+  isBasicShape,
+  parseLength,
+  parseNumber,
+  shapePath,
+} from './svgShapes';
 import { parseXml, type XmlElement } from './svgXml';
 
 /**
@@ -327,7 +333,7 @@ function viewBoxOf(value: string, problems: Problems): Box | undefined {
   const parts = value
     .trim()
     .split(/[\s,]+/)
-    .map(parseLength);
+    .map(parseNumber);
   if (parts.length !== 4 || !parts.every((n) => typeof n === 'number')) {
     problems.add(invalidValue('svg', 'viewBox', value));
     return undefined;
@@ -483,12 +489,12 @@ function visitShape(walk: Walk, element: XmlElement, inherited: Style): void {
   );
   const style = styleOf(element, inherited, walk.problems);
   const d = dataOf(walk, element);
+  if (d === undefined) return;
   // A line has no area, so its fill is nothing (and does not count as the default black).
-  if (d !== undefined)
-    walk.shapes.push({
-      d,
-      style: element.name === 'line' ? { ...style, fill: NONE } : style,
-    });
+  const painted = element.name === 'line' ? { ...style, fill: NONE } : style;
+  // Neither fill nor stroke: the shape draws nothing, so it is not an icon path.
+  if (painted.fill.kind !== 'none' || painted.stroke.kind !== 'none')
+    walk.shapes.push({ d, style: painted });
 }
 
 function visit(walk: Walk, element: XmlElement, inherited: Style): void {
@@ -520,7 +526,9 @@ function paintResolver(
   for (const { style } of shapes)
     for (const paint of [style.fill, style.stroke])
       if (paint.kind === 'color') literals.add(paint.value);
-  const single = colors !== 'keep' && literals.size === 1;
+  // The `icon` node color has no alpha, so a lone color with alpha keeps its literal.
+  const [only] = literals;
+  const single = colors !== 'keep' && literals.size === 1 && only?.length === 7;
   return (paint) => {
     if (paint.kind === 'none') return false;
     return paint.kind === 'current' || single ? true : paint.value;

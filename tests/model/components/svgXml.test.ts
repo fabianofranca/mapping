@@ -212,3 +212,25 @@ describe('parseXml: limits', () => {
     expect(root.children).toHaveLength(10_000);
   });
 });
+
+describe('parseXml: strictness (review)', () => {
+  it('requires whitespace before every attribute', () => {
+    expect(errorOf('<svg a="1"b="2"/>').code).toBe('svgIcon.xmlSyntax');
+    expect(errorOf('<svg"a"/>').code).toBe('svgIcon.xmlSyntax');
+    expect(rootOf('<svg a="1"\n\tb="2"/>').attributes.size).toBe(2);
+  });
+
+  it.each(['&#1;', '&#x1;', '&#x8;', '&#xB;', '&#x1F;', '&#xFFFE;', '&#xFFFF;'])(
+    'refuses the reference %s to a character XML does not allow',
+    (reference) => {
+      expect(errorOf(`<svg a="${reference}"/>`).code).toBe('svgIcon.xmlEntity');
+    },
+  );
+
+  it.each(['&#9;', '&#10;', '&#xD;', '&#x20;', '&#x10FFFF;'])(
+    'accepts the reference %s',
+    (reference) => {
+      expect(parseXml(`<svg a="${reference}"/>`).ok).toBe(true);
+    },
+  );
+});
