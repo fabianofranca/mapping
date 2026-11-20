@@ -492,3 +492,77 @@ describe('painel.py — final review fixes (VG3, #1440)', () => {
     expect(html).toContain('m.vagasItens');
   });
 });
+
+describe('painel.py — dependent of a refused row (FR1, #2204 decision 4)', () => {
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'recusada-'));
+    run('init', dir);
+    stage('#1', ficha('nenhuma', 'a.ts'), 'status=recusada');
+    stage('#2', ficha('#1', 'b.ts'));
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  function showLines(): string[] {
+    return run('show', dir).split('\n');
+  }
+
+  it('the reason says `dep #N recusada`, and the state stays `dep`', () => {
+    expect(slots()).toContain('#2 dep #1 recusada');
+    const node = (json('meta')[0]?.grafoNos as Array<Record<string, unknown>>).find(
+      (n) => n.issue === '#2',
+    );
+    expect(node?.estado).toBe('dep');
+  });
+
+  it('with another open dependency it says `dep #N recusada, #K`', () => {
+    stage('#3', ficha('nenhuma', 'c.ts'), 'status=em andamento');
+    stage('#4', ficha('#1,#3', 'd.ts'));
+    expect(slots()).toContain('#4 dep #1 recusada, #3');
+  });
+
+  it('a dependency that is not refused keeps the plain reason', () => {
+    stage('#3', ficha('nenhuma', 'c.ts'), 'status=em andamento');
+    stage('#4', ficha('#3', 'd.ts'));
+    expect(slots()).toContain('#4 dep #3');
+    expect(slots()).not.toContain('#4 dep #3 recusada');
+  });
+
+  it('show lists `dependem de recusada:` right after `perguntas ao dono:`', () => {
+    const lines = showLines();
+    const i = lines.findIndex((l) => l.startsWith('perguntas ao dono:'));
+    expect(lines[i]).toBe('perguntas ao dono: nenhuma');
+    expect(lines[i + 1]).toBe('dependem de recusada: #2 (#1)');
+  });
+
+  it('show goes after the lines of an open question', () => {
+    run('pergunta', dir, '#2', 'soltar', 'texto=#2 depende de #1, recusada');
+    const lines = showLines();
+    const i = lines.findIndex((l) => l.startsWith('perguntas ao dono:'));
+    expect(lines[i]).toBe('perguntas ao dono: 1');
+    expect(lines[i + 1]).toContain('#2 soltar');
+    expect(lines[i + 2]).toBe('dependem de recusada: #2 (#1)');
+  });
+
+  it('is `nenhum` with no dependent, and a started or finished dependent is not listed', () => {
+    run('row', dir, '#2', 'status=em andamento', 'started=now');
+    expect(showLines()).toContain('dependem de recusada: nenhum');
+    run('row', dir, '#2', 'status=aguardando', 'started=');
+    expect(showLines()).toContain('dependem de recusada: #2 (#1)');
+    run('row', dir, '#2', 'status=concluída');
+    expect(showLines()).toContain('dependem de recusada: nenhum');
+  });
+
+  it('lists several dependents and several refused dependencies', () => {
+    stage('#3', ficha('nenhuma', 'c.ts'), 'status=recusada');
+    stage('#4', ficha('#1,#3', 'd.ts'));
+    expect(showLines()).toContain('dependem de recusada: #2 (#1); #4 (#1, #3)');
+  });
+
+  it('a `:main` dependency or a merged one is not open, so it is not listed', () => {
+    stage('#5', ficha('#1:main', 'e.ts'));
+    expect(showLines()).toContain('dependem de recusada: #2 (#1)');
+  });
+});

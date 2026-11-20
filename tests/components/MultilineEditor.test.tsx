@@ -55,6 +55,26 @@ describe('MultilineEditor — external value (#956)', () => {
     expect(stored(harness)).toBe('C\nD');
   });
 
+  // CD3 (item 13): a draft that stopped holding is dropped; coming back to its `base` (two undos)
+  // shows the project value, not the old text.
+  it('an old draft does not come back when the project value returns to the first one', async () => {
+    const { harness, user } = setup('A\nB');
+    const area = () => screen.getByLabelText('texto') as HTMLTextAreaElement;
+    await user.click(area());
+    await user.type(area(), 'x');
+    expect(area().value).toBe('A\nBx');
+
+    act(() => {
+      harness.actions.setFieldValue('AB', 'texto', 'C\nD');
+    });
+    expect(area().value).toBe('C\nD');
+
+    act(() => {
+      harness.actions.setFieldValue('AB', 'texto', 'A\nB');
+    });
+    expect(area().value).toBe('A\nB');
+  });
+
   it('blur without editing saves nothing', async () => {
     const { harness, user } = setup('A\nB');
     const set = vi.spyOn(harness.actions, 'setFieldValue');

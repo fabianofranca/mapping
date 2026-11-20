@@ -36,7 +36,7 @@ export function selectionScreenBox(
   };
 }
 
-const round2 = (n: number): string => String(Math.round(n * 100) / 100);
+export const round2 = (n: number): string => String(Math.round(n * 100) / 100);
 
 /** `"<left> <top> <width> <height>"` with 2 decimals; `null` becomes an absent attribute. */
 export function formatSelectionBox(box: Rect | null): string | null {

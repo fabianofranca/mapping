@@ -99,6 +99,30 @@ describe('Dialog', () => {
     expect(onCancel).not.toHaveBeenCalled();
 
     fireEvent.pointerDown(dialogEl());
+    fireEvent.pointerUp(dialogEl());
+    fireEvent.click(dialogEl());
+    expect(onCancel).toHaveBeenCalledOnce();
+    expect(onCancel).toHaveBeenCalledWith('backdrop');
+  });
+
+  // CD3 (item 11): the opposite drag (backdrop → content) does not close either; the `click` of
+  // that drag targets the `<dialog>` (the common ancestor).
+  it('backdrop: pointerdown on the <dialog>, pointerup on the content and click on the <dialog> does not close', () => {
+    const onCancel = vi.fn();
+    render(
+      <Dialog title="Title" onCancel={onCancel} actions={<button>Action</button>}>
+        <p>Content</p>
+      </Dialog>,
+    );
+    const content = within(dialogEl()).getByText('Content');
+    fireEvent.pointerDown(dialogEl());
+    fireEvent.pointerUp(content);
+    fireEvent.click(dialogEl());
+    expect(onCancel).not.toHaveBeenCalled();
+
+    // The next whole click on the backdrop still closes (the press state does not stick).
+    fireEvent.pointerDown(dialogEl());
+    fireEvent.pointerUp(dialogEl());
     fireEvent.click(dialogEl());
     expect(onCancel).toHaveBeenCalledOnce();
     expect(onCancel).toHaveBeenCalledWith('backdrop');

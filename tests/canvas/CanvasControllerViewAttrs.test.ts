@@ -231,4 +231,26 @@ describe('CanvasController: data-viewport e data-selection-box', () => {
     expect(container.dataset.containerBoxes).toContain('B 3000 0 500 1000 2');
     controller.destroy();
   });
+
+  it('on zoom only data-viewport and data-selection-box are rewritten; a frame without changes writes nothing', () => {
+    const { container, controller, ui } = setup();
+    selectItems(ui, [{ kind: 'marking', id: 'H' }]);
+    flush();
+    const observer = new MutationObserver(() => undefined);
+    observer.observe(container, { attributes: true });
+    observer.takeRecords();
+    controller.zoomBy(2);
+    flush();
+    const changed = new Set(observer.takeRecords().map((r) => r.attributeName));
+    expect(changed).toContain('data-viewport');
+    expect(changed).toContain('data-selection-box');
+    // `data-drawn-markings` may legitimately change with the view (culling); the rest did not.
+    changed.delete('data-drawn-markings');
+    expect([...changed].sort()).toEqual(['data-selection-box', 'data-viewport']);
+    controller.zoomBy(1);
+    flush();
+    expect(observer.takeRecords()).toEqual([]);
+    observer.disconnect();
+    controller.destroy();
+  });
 });
