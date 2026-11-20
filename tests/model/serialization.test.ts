@@ -179,7 +179,7 @@ describe('product name (app)', () => {
 describe('migrations', () => {
   it('the current registry has no pending migrations', () => {
     expect(SCHEMA_VERSION).toBe(22);
-    expect(migrate({ a: 1 }, 21)).toEqual({ ok: true, data: { a: 1 } });
+    expect(migrate({ a: 1 }, 22)).toEqual({ ok: true, data: { a: 1 } });
   });
 
   it('applies the registered migrations in sequence', () => {

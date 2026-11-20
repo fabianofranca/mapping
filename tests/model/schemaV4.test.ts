@@ -106,7 +106,7 @@ describe('migration v3 → v4', () => {
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(3);
     const p = result.project;
-    expect(p.schemaVersion).toBe(21);
+    expect(p.schemaVersion).toBe(22);
     expect(p.specializations).toEqual([]);
     expect(p.layers.every((l) => l.spec === null)).toBe(true);
     expect(p.annotations.every((a) => a.type === null && a.values === null)).toBe(true);
@@ -125,7 +125,7 @@ describe('migration v3 → v4', () => {
     const first = deserialize(v3Text());
     if (!first.ok) throw new Error('failed');
     const saved = serialize(first.project);
-    expect(JSON.parse(saved).schemaVersion).toBe(21);
+    expect(JSON.parse(saved).schemaVersion).toBe(22);
     const again = deserialize(saved);
     if (!again.ok) throw new Error('failed');
     expect(serialize(again.project)).toBe(saved);
