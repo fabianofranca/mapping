@@ -1,4 +1,4 @@
-# Conclude a decided review and group library notices — [Não lançado] (épico `epic/review-close-notices`, PR #0, MCP 0.52.0, schema v21)
+# Conclude a decided review and group library notices — [Não lançado] (épico `epic/review-close-notices`, PR #2399, MCP 0.52.0, schema v21)
 
 ## Adicionado
 
