@@ -3432,6 +3432,12 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
       'the frozen panel values of the early-start tests (ficha value não, arrow keys de/para/tipo, the status concluída) that painel.py writes and reads',
   },
   {
+    path: 'tests/tooling/queueEarlyStartText.test.ts',
+    pattern: /não|nenhuma|\.para\b|começa cedo|espera merge/,
+    reason:
+      'the frozen panel values of the early-start text tests (ficha value não, the arrow key para, the reason começa cedo and the step espera merge de #S para testar) that painel.py writes and the skill text quotes',
+  },
+  {
     path: 'tests/tooling/queueExclusive.test.ts',
     pattern: /'formato=não'/,
     reason:

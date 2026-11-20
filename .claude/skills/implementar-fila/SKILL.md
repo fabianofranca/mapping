@@ -303,7 +303,8 @@ The supervisor (an Opus session outside the queue, registered in `meta.roles.sup
 
 **Type A** (closed list; the coordinator applies it without asking the owner):
 
-- hold or release a stage (`hold`); reorder, pause, resume and drain ("Queue changes during the run");
+- hold or release a stage (`hold`);
+- reorder, pause, resume and drain ("Queue changes during the run");
 - a panel writing rule (`rule add`, with `origem=SUP-<n>`);
 - "confira X": a read-only check, with the answer in the evidence;
 - register the supervisor: `role supervisor <id> link=<handoff>` and the predecessor's cost, which the request carries (`cost <folder> <id> usd=… ctx=… model=… effort=… kind=supervisor`).
