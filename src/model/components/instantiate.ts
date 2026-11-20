@@ -37,15 +37,17 @@
  *   the smallest size at which `distributeFill` gives each `fill` at least that (a single `fill`:
  *   the sum), capped by what is left of the available limit after the fixed children, the gaps and
  *   the padding (#2164). Then the result becomes the frame's size and `fill`/`%` are resolved
- *   against it (the text is measured at that width). Text measured with maximum width 0 warns `text measured with width 0: <name>`. `hug` text does not wrap.
+ *   against it (the text is measured at that width). Text measured with maximum width 0 warns
+ *   `text measured with width 0: <name>`. `hug` text does not wrap.
  * - Anchors (`none` parent): `left`+`right` (or `top`+`bottom`) stretch the child between them,
  *   even if it has a fixed size (like Figma's constraints).
  * - `lineHeight` is handed to the `TextMeasurer` already in px.
  * - A `slot` node with `options.slotContent` (size of the already arranged children plus the
  *   slot's padding, coming from `layout.ts`): `hug` takes the axis's `slotContent`; `fill` (or
  *   anchors on both sides) with the parent being measured (`hug`) also does. With the parent
- *   already measured, `fill` divides what is left, which is then the `slotContent` itself. Without `slotContent` nothing changes (the slot is 0 when
- *   measuring). `measureComponent` measures only the root's plan.
+ *   already measured, `fill` divides what is left, which is then the `slotContent` itself.
+ *   Without `slotContent` nothing changes (the slot is 0 when measuring). `measureComponent`
+ *   measures only the root's plan.
  * - `slotContent` is either that size (the only slot, as before) or a map by slot id (`slotKey`,
  *   the empty key for a slot without `id`): the slots in the map, and those in `filledSlots`, hold
  *   child markings. A slot with a `fallback` (the default content, decision 3 of #1080) and no child
