@@ -14,7 +14,6 @@ import reference from '../fixtures/material3-tokens-reference.json';
 import {
   MIGRATED,
   SPEC_FILE,
-  unknownWarnings,
   drawIn,
   files,
   instantiateOptions,
@@ -301,7 +300,7 @@ describe('Material 3 (Compose) library', () => {
     expect(types).toHaveLength(50);
   });
 
-  it('validates with no error at the three levels, with the known warnings', () => {
+  it('validates with no error or warning at the three levels', () => {
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(report.ok).toBe(true);
@@ -311,12 +310,9 @@ describe('Material 3 (Compose) library', () => {
       components: 50,
       docs: 50,
     });
-    // Only the known `parameter outside the signature` warnings (provisional: owner decision pending in bug #1774; curation
-    // in #1134): the fonts come in the package and `code` covers the fields the drawing does not use. The set cannot grow
-    // or keep an item that disappeared.
-    const known = unknownWarnings(report.warnings);
-    expect(known.unexpected).toEqual([]);
-    expect(known.missing).toEqual([]);
+    // The package validates with no warnings: the fonts come in it and a `variants` case no longer inherits a base
+    // parameter that its own sheet lacks.
+    expect(report.warnings).toEqual([]);
   }, 30_000);
 
   it('is formatVersion 18, at least version 18, with tokens in light and dark modes and the compose platform in androidx pinned at the commit', () => {
@@ -596,12 +592,12 @@ describe('Material 3 (Compose) library v2 tokens', () => {
 });
 
 describe('Material 3 (Compose) library v2 icon set', () => {
-  it('is a valid mapping-icons (the library validates with 0 errors and only the known warnings (provisional, #1774) at the three levels)', () => {
+  it('is a valid mapping-icons (the library validates with 0 errors and 0 warnings at the three levels)', () => {
     expect(iconSet.format).toBe('mapping-icons');
     expect(iconSet.formatVersion).toBe(2);
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
-    expect(unknownWarnings(report.warnings).unexpected).toEqual([]);
+    expect(report.warnings).toEqual([]);
     expect(report.summary.level).toBe(3);
   }, 30_000);
 

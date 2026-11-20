@@ -108,8 +108,8 @@ export function variantsSpec(): Spec {
  * Buttons `BF` (no value in `style`: uses the `default` filled), `BO` (outlined), `BT` (text),
  * `BN` (tonal, `size: large`) and a Card `CD`, all in the container `I1`.
  */
-export function variantsProject(): Project {
-  let p = applySpecialization(emptyProject(), variantsSpec(), { newId: idGen('LV') });
+export function variantsProject(spec: Spec = variantsSpec()): Project {
+  let p = applySpecialization(emptyProject(), spec, { newId: idGen('LV') });
   p = addContainer(p, { id: 'I1', file: 'images/a.png', width: 1000, height: 1000 });
   const layerId = layerOf(p, 'm3', 'ui');
   const add = (

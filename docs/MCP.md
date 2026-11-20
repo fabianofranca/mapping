@@ -332,6 +332,11 @@ A change in 0.47.1, patch: no new tool, operation or argument; schema and format
 - **`near`** in `create_marking` (reference, id or alias of a container or a marking): only for a floating annotation type (without `container`); the marking is born in a free spot on the target's margin (to the right, stacked from top to bottom with a 24-canvas-unit gap, without overlapping containers or other floating markings; if it does not fit, left, below, above). The `rect`, if given, supplies only the size (x and y are ignored). On a non-floating type or marking, `near` is ignored with an `ignored-argument` warning.
 - `changes` of `plan_changes`/`propose_changes` gains `arrows` (created, changed, deleted) and `created` carries `kind: "arrow"`.
 
+### Change in 0.48.2 — a case no longer inherits parameters its sheet lacks
+
+- **`get_code_hints`, `get_annotation` and `get_marking`** (stage #1774): for a `variants` case with its own `signature` sheet, the resolved `code` leaves out the base `params` that the sheet lacks (a parameter it does not have, a factory argument it does not expand, a position beyond it). `get_code_hints` writes no argument for them and `code.params` has no entry for them; the field's value stays in the tree annotation's `values`. In Material 3, `top-app-bar` with `style = center` and `subtitle` filled resolves to `CenterAlignedTopAppBar` without `subtitle`; the `small` one keeps it. No output key is added, and a case without its own sheet behaves as before.
+- **`validate_library`**: the `parameter outside the signature` warning in such a case is only for the case's own `params`. The Material 3 package validates with no warnings.
+
 ### Change in 0.38.1 — the word wider than the box warns
 
 - **`component-overflow` with `kind: "text"` also for the wide word** (stage #1631): a text without `maxLines` or `ellipsis` whose widest word exceeds the node's width (the text only breaks between words) returns `text larger than the box: <node>`, with `missing` in pixels, in `plan_changes`, `propose_changes` and `validate_library` (drawing proof). That is the "Save" `button` at 58 × 40 and the narrow `extended-fab`, which previously did not warn. The drawing and the PNG do not change. No new tool, argument or operation; the embedded `docs/AGENT-GUIDE.md` describes the warning.

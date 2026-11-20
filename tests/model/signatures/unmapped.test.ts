@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   parseSignature,
+  inheritedOutsideCase,
   paramsOutsideSignature,
   unmappedParams,
   type Signature,
@@ -277,5 +278,42 @@ describe('paramsOutsideSignature and the importer use the same expansion (CL1, S
     for (const unit of unitsOf(sig(), models)) {
       expect(outside(unit.target), unit.target).toEqual([]);
     }
+  });
+});
+
+describe('inheritedOutsideCase (a case no longer inherits base params its sheet lacks)', () => {
+  const base = {
+    params: { a: 'removedParam', ok: 'colors.containerColor', f: 'colors.nope', p: '#9' },
+  };
+
+  it('lists the base params that paramsOutsideSignature flags: a name, a factory argument, a positional', () => {
+    expect(inheritedOutsideCase(base, {}, signature())).toEqual([
+      { field: 'a', name: 'removedParam' },
+      { field: 'f', name: 'colors.nope' },
+      { field: 'p', name: '#9' },
+    ]);
+  });
+
+  it("skips a key the case redeclares: it is the case's own, and the validator checks it", () => {
+    expect(
+      inheritedOutsideCase(base, { params: { a: 'x', p: 'y' } }, signature()),
+    ).toEqual([{ field: 'f', name: 'colors.nope' }]);
+  });
+
+  it('uses the field models, like paramsOutsideSignature', () => {
+    const sheet = signature((s) => {
+      (s.params as Json[]).push({ name: 'border', role: 'value', type: 'BorderStroke?' });
+    });
+    const models = {
+      'BorderStroke?': { expand: { call: 'BorderStroke', params: { width: 'Dp' } } },
+    };
+    const inherited = { params: { w: 'border.width', n: 'border.nope' } };
+    expect(inheritedOutsideCase(inherited, {}, sheet, models)).toEqual([
+      { field: 'n', name: 'border.nope' },
+    ]);
+  });
+
+  it('nothing without params', () => {
+    expect(inheritedOutsideCase({}, {}, signature())).toEqual([]);
   });
 });
