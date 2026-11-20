@@ -514,6 +514,11 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'script-output',
   },
   {
+    term: 'cedo · espera #S para testar',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'script-output',
+  },
+  {
     term: 'espera merge de #S, #T para testar',
     source: '.claude/skills/implementar-fila/painel/painel.py',
     group: 'script-output',
@@ -1031,6 +1036,13 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'session-notices',
   },
   { term: 'Aviso não entregue:', source: 'docs/FLOW.md', group: 'session-notices' },
+  {
+    term: 'Sincronização SM<k> pronta',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
+  { term: 'conflitos: <k>', source: 'docs/FLOW.md', group: 'session-notices' },
+  { term: 'SM<k> — main com #S', source: 'docs/FLOW.md', group: 'session-notices' },
   {
     term: 'recusada: label anterior à recusa',
     source: '.claude/skills/implementar-fila/SKILL.md',
@@ -3389,6 +3401,12 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
   },
   {
     path: 'tests/tooling/queuePanelPage.test.ts',
+    pattern: /espera merge de #1, #9 para testar|cedo · espera #1(, #9)? para testar/,
+    reason:
+      'the step and the tag that painel.py and the page write for an early stage (frozen panel text), asserted by the early-start page tests',
+  },
+  {
+    path: 'tests/tooling/queuePanelPage.test.ts',
     pattern: /\bde: '[^']*'(, para: |\s*\})|\bpara: |para: string/,
     reason:
       '`para` is a key of the graph arrows that painel.py emits (`de`, `para`, `tipo`), frozen vocabulary of decision 16',
@@ -3414,6 +3432,13 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
       'the frozen panel values of the early-start tests (ficha value não, arrow keys de/para/tipo, the status concluída) that painel.py writes and reads',
   },
   {
+    path: 'tests/tooling/queueEarlyStartText.test.ts',
+    pattern:
+      /'não'|"não"|=não|=nenhuma|\.para\b|começa cedo|espera merge|Você é o agente da sincronização/,
+    reason:
+      'the frozen panel values of the early-start text tests (ficha value não, the arrow key para, the reason começa cedo and the step espera merge de #S para testar) that painel.py writes and the skill text quotes',
+  },
+  {
     path: 'tests/tooling/queueExclusive.test.ts',
     pattern: /'formato=não'/,
     reason:
@@ -3436,6 +3461,12 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
     pattern: /troque de sessão agora \(\\"Troca de sessão\\"\)/,
     reason:
       'the context note of the show output, matched verbatim by tests/tooling/queueContext.test.ts and queueSlots.test.ts',
+  },
+  {
+    path: '.claude/skills/implementar-fila/painel/index.html',
+    pattern: /'cedo · espera ' \+ holders \+ ' para testar'/,
+    reason:
+      'the tag of a stage that started early, `cedo · espera #S para testar`, a frozen panel text that tests/tooling/queuePanelPage.test.ts and the queue skill match',
   },
   {
     path: '.claude/skills/implementar-fila/painel/index.html',
