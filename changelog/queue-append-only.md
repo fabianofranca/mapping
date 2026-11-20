@@ -1,4 +1,4 @@
-# Queue ignores append-only index citations — [Não lançado] (epic `epic/queue-append-only`, PR #0, MCP unchanged, schema unchanged)
+# Queue ignores append-only index citations — [Não lançado] (epic `epic/queue-append-only`, PR #2329, MCP unchanged, schema unchanged)
 
 ## Alterado
 
