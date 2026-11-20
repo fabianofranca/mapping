@@ -226,6 +226,55 @@ describe('painel.py outliers: groups, small base and without ficha (decisions 4,
   });
 });
 
+describe('painel.py outliers: a toca= with only ignored citations is without ficha (#2204, decision 5)', () => {
+  const IGNORED_TOCA = 'changelog/x.md, mcp/version.ts';
+
+  it('stays out of the base and enters `without ficha`, like `toca=?`', () => {
+    cheap(10);
+    stage(20, [['fase', 400]], { toca: IGNORED_TOCA });
+    const out = run('outliers', dir);
+    expect(out.split('\n')[0]).toBe(
+      'outliers (since all): 4 stages in the base, without ficha: 1',
+    );
+    expect(out).not.toContain('#20 ');
+  });
+
+  it('with testador=nenhum it is not in the process group', () => {
+    for (let n = 10; n < 15; n++)
+      stage(n, [['fase', 4]], { toca: PROCESS_TOCA, testador: 'nenhum' });
+    stage(30, [['fase', 400]], { toca: IGNORED_TOCA, testador: 'nenhum' });
+    const out = run('outliers', dir);
+    expect(out).toContain(
+      'process: 5 stages, median US$ 2.00 per phase, ceiling US$ 4.00',
+    );
+    expect(out).not.toContain('#30 ');
+    expect(out.split('\n')[0]).toContain('without ficha: 1');
+  });
+
+  it('the canary filter `processo` does not count it as a process stage', () => {
+    stage(40, [['fase', 4]], { toca: IGNORED_TOCA, testador: 'nenhum' });
+    stage(41, [['fase', 4]], { toca: PROCESS_TOCA, testador: 'nenhum' });
+    run(
+      'canario',
+      dir,
+      'add',
+      'B',
+      'papel=fase',
+      'de=Sonnet high',
+      'esforco=medium',
+      'filtro=processo',
+      'n=5',
+      'volta=2',
+    );
+    expect(
+      run('canario', dir, 'usar', 'fase', '#40', 'modelo=Sonnet', 'esforco=high'),
+    ).not.toContain('canario=B');
+    expect(
+      run('canario', dir, 'usar', 'fase', '#41', 'modelo=Sonnet', 'esforco=high'),
+    ).toContain('canario=B');
+  });
+});
+
 describe('painel.py outliers: --desde and read-only (decisions 3 and 4)', () => {
   it('--desde filters by the started of the row', () => {
     cheap(10, 4, { started: '2026-11-12T08:00:00Z' });

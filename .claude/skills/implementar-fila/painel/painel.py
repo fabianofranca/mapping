@@ -85,7 +85,7 @@ da lista`; with nothing to show, `nenhum desde <ISO>` (and `nenhum` if the panel
 Rules in force (decision 10): `rule DIR add "<text>" origem=<dono|SUP-n> [saida="…"]` gives `R<k>` in `meta.rules` and
 `rule DIR end R<k> [motivo="…"]` withdraws it; `show` prints `regras em vigor:` with the full text of each one.
 Owner questions (stage #2070, decisions 4 and 5): `pergunta DIR '#n' <verbo> texto="…"` opens a question in `meta.perguntas`
-(`{issue, verbo, texto, at}`; the verbs are `PERGUNTA_VERBOS`: `segurar`, `reabrir`, `refazer`, `ampliar`; an unknown verb, a missing
+(`{issue, verbo, texto, at}`; the verbs are `PERGUNTA_VERBOS`: `segurar`, `reabrir`, `refazer`, `ampliar`, `soltar`; an unknown verb, a missing
 `texto` or a row outside the queue gives code 2; the same row and verb already open changes nothing) and `pergunta DIR '#n' <verbo> --fim
 [resposta="…"]` closes it, writing the `log` line `pergunta #n <verbo> fechada: <resposta>` (a question that is not open: no-op, code 0).
 `row` with a final status closes the row's open questions (`fechada: etapa <status>`). An open question changes nothing in `vagas:`,
@@ -173,8 +173,9 @@ The signals `xFalso` (false ❌) and `naoExec` (steps not executed) are numbers 
 A role with a canary `ativo` or `em avaliação` has no `candidato` in `meta.uso`.
 `show` prints the line `canários: <id> <role> <de> → <model> <effort> <k>/<n> (retrabalhos <r>/<volta>, <state>; <verdict>); …`
 (or `canários: nenhum`) right after the `meta.uso` candidates line; a `sem base` verdict whose `base.fonte` is not `nenhuma` ends in ` — rodar canario base`.
-Fast track in the queue (stage #1791, decisions 3 to 7): `KINDS` has `via-rapida` and `STATUS` has `recusada`, a final state (not a
-candidate, not started, out of `grafoNos` and `fichas a refazer:`, skipped by `fill_phases` and `import`; a row that depends on it stays `dep`).
+Fast track in the queue (stage #1791, decisions 3 to 7): `KINDS` has `via-rapida` and `STATUS` has `recusada`, final until `reentra` (not a
+candidate, not started, out of `grafoNos` and `fichas a refazer:`, skipped by `fill_phases` and `import`; a row that depends on it stays `dep` and its
+reason says `dep #N recusada`).
 A `via-rapida` row takes a slot and goes through dependency, file, schema, exclusive and draining like any row (there is no code path by kind in
 `slots_plan`); its session kind `via-rapida` is in `SESSION_KINDS` (no ruler, signals or ceiling; it shows in `costs` and `uso`) and `canario usar`
 answers `atual` for it. `row … phases=` takes only `<code>:<todo|open|ok>` items (an Erro, code 2, otherwise); `phase` counts an item without `:` as `open`.
@@ -182,6 +183,15 @@ answers `atual` for it. `row … phases=` takes only `<code>:<todo|open|ok>` ite
 `esperando dono` clear it, and an explicit `ended=` wins. `end DIR` writes `meta.runEnd = now` (into `apply`); `start` clears it. A merge asked to the owner by
 text is a row `esperando dono` with a `wait` starting with `merge pedido ao dono:` and no `child` (`row` stamps `childAt` on a new ask): `show` prints
 `merge pedido ao dono: #n (PR #p, <hours since the ask>); …` (or `nenhum`), and the row is not in `esperando o coordenador:` nor `atrasadas:`.
+Refused row (stage #2204, decisions 3 to 6): `reentra DIR '#n' kind=<via-rapida|etapa|bug> plan="<ficha>"` (also in `apply`) brings a `recusada` row
+back as a fresh `aguardando` one (any other status is an Erro, code 2): it sets the `kind` and the `plan`, clears `started`, `ended`, `pr`, `child`,
+`childAt`, `wait`, `ciWait`, `ciWaitAt`, `hold` and `phases` (rebuilt from the new ficha, all `todo`), writes `step="reentrou depois da recusa"` and the
+`log` line `#n reentrou depois da recusa (<kind>)`; the row keeps its `order` and its sessions (the coordinator applies the order again, `reorder`).
+A row that depends on a `recusada` one shows `dep #N recusada` in `vagas:` (`dep #N recusada, #K` with another open dependency; the state stays `dep`), and
+`show` prints `dependem de recusada: #M (#N); …` (or `nenhum`) right after `perguntas ao dono:`: the `aguardando` rows not yet started with a `recusada`
+row among their open dependencies. The question verb `soltar` is the first command of the `soltar`/`esperar` pair. A `toca=` with only ignored
+citations (`changelog/`, `docs/design-system/`, `mcp/version.ts`) is a ficha without a real `toca`: `outliers` counts it in `without ficha` and
+`is_process_stage` (the `processo` canary filter too) answers no. Every `row` with a `wait=merge pedido ao dono: …` and no `child` restarts `childAt`.
 Standard library only. Usage: painel.py [--now ISO] <subcommand> DIR ...
 (the subcommand comes BEFORE the folder: `painel.py row <folder> '#n' status=...`).
 """
@@ -252,7 +262,7 @@ REQUEST_NEEDS_EVIDENCE = ("aplicado", "recusado")
 REQUEST_LATE_STATES = ("enviado", "aprovado")  # `atrasado` is computed, never written
 REQUEST_OPEN_STATES = ("enviado", "perguntado ao dono", "aprovado")
 REQUEST_LATE_MINUTES = 90
-PERGUNTA_VERBOS = ["segurar", "reabrir", "refazer", "ampliar"]  # the first command of each pair the owner can answer (decision 4 of #2070)
+PERGUNTA_VERBOS = ["segurar", "reabrir", "refazer", "ampliar", "soltar"]  # the first command of each pair the owner can answer (decision 4 of #2070)
 # Usage and quality per role x model x effort (stage #1889).
 CLEAN_STREAK = 10  # decided sessions in a row without rework that make a key a candidate for a test (decision 7)
 ESCAPE_CHECK_HOURS = 24  # `show` asks to check the escaped defects again after this many hours (decision 5)
@@ -534,12 +544,13 @@ def ended_follows_status(pairs, row):
 
 
 def stamp_merge_ask(pairs, row):
-    """A merge asked by text has no `child`: the `childAt` says since when (the hours of `show`), restarted on every new ask."""
+    """A merge asked by text has no `child`: the `childAt` says since when (the hours of `show`), restarted on every `row` call that
+    carries the ask, even with the same `wait` (the skill never records the same ask as a no-op; decision 6 of #2204)."""
     wait = pairs.get("wait") or ""
     if not wait.startswith(MERGE_ASK_PREFIX) or pairs.get("childAt"):
         return
     child = pairs["child"] if "child" in pairs else (row or {}).get("child")
-    if not child and wait != (row or {}).get("wait"):
+    if not child:
         pairs["childAt"] = "now"
 
 
@@ -598,6 +609,36 @@ def cmd_row(a):
         row["phasesTotal"], row["phasesDone"] = count_phases(row["phases"])
     close_final_questions(s, issue, pairs)
     s.touch("queue")
+    s.commit()
+
+
+REENTRA_KINDS = ["via-rapida", "etapa", "bug"]
+REENTRA_CLEARED = ("started", "ended", "pr", "child", "childAt", "wait", "ciWait", "ciWaitAt", "hold", "phases")
+
+
+def cmd_reentra(a):
+    """Decision 3 of #2204: a `recusada` row comes back as a fresh `aguardando` one, with the new `kind` and `plan`."""
+    issue = norm_issue(a.issue)
+    pairs = parse_pairs(a.pairs)
+    for k in pairs:
+        if k not in ("kind", "plan"):
+            raise Erro(f"unknown field '{k}'; valid: kind, plan")
+    for k in ("kind", "plan"):
+        if not pairs.get(k, "").strip():
+            raise Erro(f"missing {k}=")
+    validate_choice("kind", pairs["kind"], REENTRA_KINDS)
+    s = open_session(a.dir)
+    row = find_row(s.get("queue"), issue)
+    if row is None:
+        raise Erro(f"{issue} is not in the queue")
+    if row["status"] != "recusada":
+        raise Erro(f"{issue} is '{row['status']}': only a refused row re-enters")
+    row.update({k: QUEUE_EMPTY[k] for k in REENTRA_CLEARED})  # `phases` comes back from the new ficha (`fill_phases`, all `todo`)
+    row.update(status="aguardando", kind=pairs["kind"], plan=pairs["plan"], step="reentrou depois da recusa",
+               phasesTotal=0, phasesDone=0)
+    s.get("log").append({"at": now(), "text": f"{issue} reentrou depois da recusa ({pairs['kind']})"})
+    s.touch("queue")
+    s.touch("log")
     s.commit()
 
 
@@ -1390,7 +1431,7 @@ def outlier_base(q, meta, since):
     """The `concluída` rows with a valid `fases=` and a `toca=` other than `?` (and `started` from `since` on), and the
     count of the stages that stay out for lack of a ficha (rows without one, and those only in `meta.merged`)."""
     rows = [r for r in q if r.get("status") == "concluída" and not (since and (r.get("started") or "") < since)]
-    base = [r for r in rows if plan_phase_codes(r.get("plan") or "") and toca_list(r.get("plan") or "") != ["?"]]
+    base = [r for r in rows if plan_phase_codes(r.get("plan") or "") and has_toca(r.get("plan") or "")]
     queued = {r.get("issue") for r in q}
     merged_only = {i for i in meta.get("merged") or [] if i not in queued}
     if since:  # a merged-only stage has no row: it counts only with a session created from `since` on
@@ -1484,7 +1525,7 @@ def is_process_stage(row):
     if (plan_field(plan, "testador") or "").strip().lower() != "nenhum":
         return False
     cites = toca_list(plan)
-    return cites != ["?"] and all(process_cite(c) for c in cites)
+    return has_toca(plan) and all(process_cite(c) for c in cites)
 
 
 def canary_members(c, meta):
@@ -2390,6 +2431,11 @@ def toca_list(plan):
     return norm_toca(plan_field(plan, "toca"))
 
 
+def has_toca(plan):
+    """Whether the ficha has a real `toca=`: not `?` and not only ignored citations (`toca_list` is `[]`), decision 5 of #2204."""
+    return toca_list(plan) not in (["?"], [])
+
+
 @functools.lru_cache(maxsize=None)
 def repo_root():
     """The repository root: the folder above `painel.py` that has `.git` (file or folder) or, when installed
@@ -2609,14 +2655,21 @@ def changes_schema(plan):
     return v is None or v.strip() != "não"
 
 
-def plan_block(r, merged, done):
-    """Reason the ficha holds the stage: incomplete ficha or dependency outside `main`; "" if it does not hold."""
-    plan = r.get("plan", "")
+def open_deps(r, merged, done):
+    """The `dep=` of the ficha that are still open: not `:main`, not merged and not `concluída` in the queue."""
+    return [d for d, st in dep_state(r.get("plan", "")) or []
+            if not (st == "main" or d in merged or d in done)]
+
+
+def plan_block(r, merged, done, refused=()):
+    """Reason the ficha holds the stage: incomplete ficha or dependency outside `main`; "" if it does not hold.
+
+    Decision 4 of #2204: a dependency whose row is `recusada` (`refused`) is written `#N recusada` in the reason (`dep #N recusada, #K`);
+    the state stays `dep`."""
     miss = row_incomplete(r)
     if miss:
         return "ficha incompleta (" + ", ".join(miss) + ")"
-    miss = [d for d, st in dep_state(plan) or []
-            if not (st == "main" or d in merged or d in done)]
+    miss = [d + " recusada" if d in refused else d for d in open_deps(r, merged, done)]
     return "dep " + ", ".join(miss) if miss else ""
 
 
@@ -2641,6 +2694,11 @@ def exclusive_block(r, taking, front=""):
     return ""
 
 
+def refused_issues(q):
+    """The issues of the `recusada` rows."""
+    return {r["issue"] for r in q if r["status"] == "recusada"}
+
+
 def slots_plan(q, meta):
     """(text of meta.vagas, [issues that start now], pieces of the text, reasons, exclusive stage at the front).
 
@@ -2654,6 +2712,7 @@ def slots_plan(q, meta):
     n = meta.get("paralelo") or DEFAULT_PARALELO
     merged = set(meta.get("merged", []))
     done = {r["issue"] for r in q if r["status"] == "concluída"}
+    refused = refused_issues(q)
     busy = sum(1 for r in q if r["status"] == "em andamento")
     started = [r for r in q if is_started(r)]
     cands = sorted((r for r in q if r["status"] == "aguardando" and not r.get("started")),
@@ -2670,7 +2729,7 @@ def slots_plan(q, meta):
         why = r.get("hold") or ""
         counts = not why
         if not why:
-            why = plan_block(r, merged, done)
+            why = plan_block(r, merged, done, refused)
             counts = not why
         if not why:
             why = exclusive_block(r, taking, front)
@@ -2950,6 +3009,26 @@ def print_questions(meta, issue=None):
         print(line)
 
 
+def refused_dependents(q, meta):
+    """[(#M, [#N recusada that holds it])]: the `aguardando` rows not yet started whose open dependencies include a `recusada` row,
+    in the order of the queue (decision 4 of #2204)."""
+    merged = set(meta.get("merged", []))
+    done = {r["issue"] for r in q if r["status"] == "concluída"}
+    refused = refused_issues(q)
+    out = []
+    for r in sorted(q, key=lambda r: r["order"]):
+        if r["status"] != "aguardando" or r.get("started"):
+            continue
+        held = [d for d in open_deps(r, merged, done) if d in refused]
+        if held:
+            out.append((r["issue"], held))
+    return out
+
+
+def refused_dependents_text(q, meta):
+    return "; ".join(f"{i} ({', '.join(held)})" for i, held in refused_dependents(q, meta)) or "nenhum"
+
+
 def show_row(r):
     print(f"{r['issue']} {r['title']}")
     for k, v in r.items():
@@ -3073,6 +3152,7 @@ def cmd_show(a):
     print(f"canários: {canary_text(meta)}")
     print(f"pedidos do supervisor: {requests_summary(meta)}")
     print_questions(meta)
+    print(f"dependem de recusada: {refused_dependents_text(q, meta)}")
     print_rules(meta)
     ctx = meta.get("context")
     if ctx is None:
@@ -3128,6 +3208,9 @@ def build_parser():
     sp = add("row", cmd_row, "inserts or updates a queue row")
     sp.add_argument("issue")
     sp.add_argument("pairs", nargs="*")
+    sp = add("reentra", cmd_reentra, "a `recusada` row comes back as a fresh `aguardando` one: '#n' kind=<via-rapida|etapa|bug> plan=\"<ficha>\" (clears started, ended, pr, child, wait, ciWait, hold and phases; keeps order and sessions)")
+    sp.add_argument("issue")
+    sp.add_argument("pairs", nargs="*")
     sp = add("phase", cmd_phase, "changes the state of the phases of a row (<code>=ok|open; the `todo` comes from the ficha, on every write)")
     sp.add_argument("issue")
     sp.add_argument("pairs", nargs="+")
@@ -3176,7 +3259,7 @@ def build_parser():
     sp = add("sup", cmd_sup, "writes a supervisor request (SUP-n tipo= pedido= estado= [evidencia=]) to meta.requests")
     sp.add_argument("request")
     sp.add_argument("pairs", nargs="+")
-    sp = add("pergunta", cmd_pergunta, "owner question of a row: '#n' <segurar|reabrir|refazer|ampliar> texto=\"…\" opens it; --fim [resposta=\"…\"] closes it (meta.perguntas)")
+    sp = add("pergunta", cmd_pergunta, "owner question of a row: '#n' <segurar|reabrir|refazer|ampliar|soltar> texto=\"…\" opens it; --fim [resposta=\"…\"] closes it (meta.perguntas)")
     sp.add_argument("issue")
     sp.add_argument("verbo")
     sp.add_argument("pairs", nargs="*", help="texto=\"…\" (to open)")
