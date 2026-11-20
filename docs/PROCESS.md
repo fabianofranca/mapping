@@ -59,7 +59,7 @@ Rules of the delivery workflow: issue planning, epics, phases, tester, code revi
      - **skill:** format of the specialization, the component or the library (`formatVersion`, field type, new key, validation rule, cited error message, migration);
      - **guide:** an MCP tool, parameter or operation, an error code, or a new modeling pattern.
      - The usage rules stay in the guide and the skill, never only in `examples/workspace/AGENTS.md`, which does not update itself in the workspaces.
-     - What breaks: `tests/tooling/agentDocs.test.ts` (the skill and the guide say "A versão atual do formato é a N"; "13. Versão" of the skill lists `formatVersion` 1 to N; `docs/SPEC-FORMAT.md` has the row for each version) and `tests/mcp/agentGuideCoverage.test.ts` (every tool and every batch `op` in backticks in the guide).
+     - What breaks: `tests/tooling/agentDocs.test.ts` ("The current format version is N" in the skill and the guide; "13. Version" lists 1 to N; `SPEC-FORMAT.md` rows; prompt template, component, icon set and example versions) and `tests/mcp/agentGuideCoverage.test.ts` (every tool and every batch `op` in backticks in the guide).
 - An ambiguous or infeasible issue: record the doubt in a comment on the issue and in the PR, instead of inventing a big behavior; a small detail, decide, carry on and document.
 
 ## Model use (saving quota without losing quality)
