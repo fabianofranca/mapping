@@ -34,6 +34,8 @@ curl -fsSL https://github.com/fabianofranca/mapping/releases/latest/download/set
 
 It only works after the first stable release that ships `setup.sh`; before that, use the release candidate: replace `latest/download` with `download/<tag>` and pass the same tag to `./setup.sh` (e.g. `…/releases/download/mcp-v0.25.0-rc.1/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh mcp-v0.25.0-rc.1`).
 
+A workspace created before the `scratch/` folder (MCP 0.51) adds it by hand, once: `"--scratch", "scratch"` after the two `--root` in the client configuration (`.mcp.json`, `.cursor/mcp.json`, `.gemini/settings.json`, `.vscode/mcp.json`; `--scratch scratch` after the roots in the `args` of `.codex/config.toml`) and a `scratch/` line in the `.gitignore`. `setup.sh` never touches those files. Without it, `list_projects` returns `scratch: []` and the `operationsFile` keeps working inside the roots.
+
 ### `AGENTS.md` and the markers
 
 The rules for the agent live in a **managed block**, between the lines `<!-- mapping:begin … -->` and `<!-- mapping:end -->`. `setup.sh` replaces only what is between them; **do not edit the block**, because the next update overwrites it. Everything outside the block is yours, starting with the "What these mappings are for" section.
@@ -139,6 +141,8 @@ All of them point to the same command: `node tools/mapping-mcp.js --root project
 ## Two roots, not the whole folder
 
 `projects/` is where the server looks for `mapping.json` (at any depth). `specializations/` holds the sources of the specializations, which must be inside a root for `validate_specialization({ path })` and `apply_specialization` to read them. `.git/` and `tools/` stay out.
+
+`scratch/` is a third folder, **read-only** for the server: put there the temporary batches (`operationsFile`) and the images a batch reads (exported screens). The server never writes in it and never looks for projects or specializations in it (a `mapping.json` copied there is not a project, and a library package must be inside a root). It is ignored by git: delete what you no longer need. Create the folder when you write the first file.
 
 ## Writing the solution from the markings
 

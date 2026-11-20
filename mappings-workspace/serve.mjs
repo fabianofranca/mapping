@@ -56,6 +56,8 @@ const child = spawn(
     join(here, 'projects'),
     '--root',
     join(here, 'specializations'),
+    '--scratch',
+    join(here, 'scratch'),
   ],
   { stdio: 'inherit' },
 )
