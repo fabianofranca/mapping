@@ -25,7 +25,7 @@ const RAD = Math.PI / 180;
 const fmt = (n: number): string => String(Math.round(n * 1e4) / 1e4 || 0);
 
 /**
- * The `d` of the arc in the node's box space (the box starts at 0, 0), made of cubic Béziers of at
+ * The `d` of the arc in the node's box space (the box starts at 0, 0), made of cubic Bezier curves of at
  * most 90° (every renderer draws those). Open, so the stroke follows only the arc and the fill
  * closes on the chord; the whole ellipse is closed with `Z`. A zero sweep, a non-finite angle or
  * a radius that the stroke swallows gives `''` (nothing to draw).
