@@ -6,10 +6,12 @@ import { describe, expect, it } from 'vitest';
 import {
   addComponentMarking,
   approximateMeasurer,
+  componentMinSize,
   createDrawingCache,
   fitMarking,
   moveMarking,
   setContainerDensity,
+  setMarkingFloating,
   type Project,
   type Rect,
 } from '../../src/model';
@@ -144,6 +146,41 @@ describe.each(SPACES)('Text Arrange on %s', (_name, containerId, density, unit) 
 
 // F.5: the drawing, the fit and the minimum compare the font and the box in the same unit (the container's
 // density), so a text that moves into a container never stays "Incomplete" after Arrange.
+// Stage #2210: with the minimum of the components (`minSizeOf`, as the store and the MCP pass it) the
+// settle itself keeps the text in its units, so there is no overflow right after the move, before Arrange.
+describe('Text moved into a container, before Arrange', () => {
+  it.each([
+    ['scale 3.33', undefined, 3.33],
+    ['density 3.33', 3.33, 1],
+    ['density and scale 3.33', 3.33, 3.33],
+  ] as const)('with %s: the move leaves no overflow', (_n, density, scale) => {
+    let p = textProject(
+      { texto: 'A long label', ...BOLD20 },
+      { x: 5000, y: 0, width: 144, height: 24 },
+      null,
+    );
+    if (density !== undefined) p = setContainerDensity(p, 'I1', density);
+    p = {
+      ...p,
+      containers: p.containers.map((c) =>
+        c.id === 'I1' ? { ...c, placement: { ...c.placement, scale } } : c,
+      ),
+    };
+    const placement = p.containers.find((c) => c.id === 'I1')!.placement;
+    const moved = moveMarking(p, 'X1', placement.x + 20 - 5000, placement.y + 20, {
+      minSizeOf: (id) => componentMinSize(p, catalog, id),
+    });
+    expect(moved.markings.find((m) => m.id === 'X1')!.containerId).toBe('I1');
+    expect(overflows(moved)).toBe(false);
+    // Floating on takes it out again: the box is back to the canvas size.
+    const floated = setMarkingFloating(moved, 'X1', true, {
+      minSizeOf: (id) => componentMinSize(moved, catalog, id),
+    });
+    expect(Math.abs(rectOf(floated).width - 144)).toBeLessThanOrEqual(1);
+    expect(Math.abs(rectOf(floated).height - 24)).toBeLessThanOrEqual(1);
+  });
+});
+
 describe('Text moved into a container', () => {
   it.each([
     ['scale 3.33', undefined, 3.33],
