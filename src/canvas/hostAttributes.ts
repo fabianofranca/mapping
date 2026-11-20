@@ -10,9 +10,8 @@ import {
 } from '../model';
 import { resolveSelection, type Selection } from '../store/ui';
 import { arrowHandles, type ArrowHandle, type ArrowShape } from './arrowGeometry';
+import { round2 } from './selectionBox';
 import type { Viewport } from './viewport';
-
-const round2 = (n: number): string => String(Math.round(n * 100) / 100);
 
 /** `"<type> <id>"` of the primary selection (`image`, `marking` or `arrow`); `null` if it does not resolve. */
 export function formatSelection(
@@ -41,7 +40,7 @@ export function formatArrowHandles(shape: ArrowShape, view: Viewport): string {
 }
 
 /**
- * `"<id> <x> <y> <width> <height> <scale>"` per placed container, em unidades do canvas e na
+ * `"<id> <x> <y> <width> <height> <scale>"` per placed container, in canvas units and in the
  * order of `containers`, separated by `;`. `null` without a placed container.
  */
 export function formatContainerBoxes(
