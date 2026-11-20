@@ -1,4 +1,4 @@
-# spec-author aligned with formatVersion 19 — [Não lançado] (épico `epic/spec-author-align`, PR #2387, MCP 0.50.1, schema v22 unchanged)
+# spec-author aligned with formatVersion 19 — 2026-11-20 (épico `epic/spec-author-align`, PR #2387, MCP 0.50.1, schema v22 unchanged)
 
 ## Corrigido
 

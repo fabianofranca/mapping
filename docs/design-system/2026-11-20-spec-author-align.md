@@ -1,4 +1,4 @@
-# spec-author aligned with formatVersion 18 — [Não lançado] (épico `epic/spec-author-align`)
+# spec-author aligned with formatVersion 19 — 2026-11-20 (épico `epic/spec-author-align`)
 
 ## Pendências
 
