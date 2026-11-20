@@ -58,7 +58,7 @@ test('container with a Library component, with no saved drawing', async ({ page 
 
   // The mapping.json keeps the marking and the annotation, nothing of the drawing.
   const { mapping } = await exportMapping(page);
-  expect(mapping.schemaVersion).toBe(21);
+  expect(mapping.schemaVersion).toBe(22);
   expect(mapping.containers).toHaveLength(1);
   expect(mapping.containers[0]).toMatchObject({ file: null, background: '#FFFFFF' });
   expect(mapping.markings).toHaveLength(1);

@@ -364,6 +364,13 @@ export const migrateFrom20To21: Migration = (data, context = NO_CONTEXT) => {
   };
 };
 
+/**
+ * v21 → v22 (corner alignment): only the version changes. The anchor's `align` gains `corner-start` and
+ * `corner-end`; the new version exists so that an earlier app opens the file read-only, instead of
+ * failing to read (or discarding) a corner value.
+ */
+export const migrateFrom21To22: Migration = (data) => data;
+
 /** Migration registry: the key is the source version. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -386,6 +393,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [18, migrateFrom18To19],
   [19, migrateFrom19To20],
   [20, migrateFrom20To21],
+  [21, migrateFrom21To22],
 ]);
 
 export type MigrationResult =

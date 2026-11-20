@@ -61,7 +61,7 @@
           "enum": ["top", "bottom", "start", "end"]
         },
         "align": {
-          "enum": ["start", "center", "end"]
+          "enum": ["start", "center", "end", "corner-start", "corner-end"]
         },
         "offset": {
           "type": "object",

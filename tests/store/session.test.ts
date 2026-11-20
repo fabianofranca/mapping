@@ -1245,7 +1245,7 @@ describe('project session', () => {
         revision: number;
         platformRepos: unknown;
       };
-      expect(saved.schemaVersion).toBe(21);
+      expect(saved.schemaVersion).toBe(22);
       expect(saved.revision).toBe(1);
       expect(saved.platformRepos).toEqual({ android: { localPath: '../..' } });
       expect(session.backupSaved.value).toBe(6);
@@ -1279,7 +1279,7 @@ describe('project session', () => {
       expect(await root.read(backup)).toBe(v8Text);
       const savedText = (await root.read('mapping.json')) ?? '';
       const saved = JSON.parse(savedText) as { schemaVersion: number; revision: number };
-      expect(saved.schemaVersion).toBe(21);
+      expect(saved.schemaVersion).toBe(22);
       expect(saved.revision).toBe(1);
       // pt-BR kept: legacy field name 'implementacao' of the v8 fixture (migration data)
       expect(savedText).not.toContain('implementacao');
@@ -1336,7 +1336,7 @@ describe('project session', () => {
         revision: number;
         platformRepos: unknown;
       };
-      expect(saved.schemaVersion).toBe(21);
+      expect(saved.schemaVersion).toBe(22);
       expect(saved.revision).toBe(1);
       expect(saved.platformRepos).toEqual({ android: { localPath: '../..' } });
       expect(savedText).not.toContain('urlTemplate');

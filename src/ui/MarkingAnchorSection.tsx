@@ -1,7 +1,6 @@
 import { useId, useMemo, useState } from 'preact/hooks';
 import { t, type TranslationKey } from '../i18n';
 import {
-  ANCHOR_ALIGNS,
   ANCHOR_SIDES,
   anchorCandidates,
   canEditMarkingGeometry,
@@ -11,7 +10,6 @@ import {
   markingTypeName,
   projectIndex,
   resolveMarkingAnchor,
-  type AnchorAlign,
   type AnchorSide,
   type Marking,
   type MarkingAnchor,
@@ -38,7 +36,9 @@ const SIDE_LABELS: Readonly<Record<AnchorSide, TranslationKey>> = {
   end: 'anchor.sideEnd',
 };
 
-const ALIGN_LABELS: Readonly<Record<AnchorAlign, TranslationKey>> = {
+/** The Alignment `Segmented` offers the three plain alignments; the corner ones come with the checkbox of CC4. */
+const SEGMENT_ALIGNS = ['start', 'center', 'end'] as const;
+const ALIGN_LABELS: Readonly<Record<(typeof SEGMENT_ALIGNS)[number], TranslationKey>> = {
   start: 'anchor.alignStart',
   center: 'anchor.alignCenter',
   end: 'anchor.alignEnd',
@@ -185,7 +185,7 @@ function SideAndAlignFields({ form, disabled }: FieldsProps) {
           label={t('anchor.align')}
           disabled={disabled}
           value={form.resolved?.align ?? null}
-          items={ANCHOR_ALIGNS.map((align) => ({
+          items={SEGMENT_ALIGNS.map((align) => ({
             id: align,
             label: t(ALIGN_LABELS[align]),
           }))}

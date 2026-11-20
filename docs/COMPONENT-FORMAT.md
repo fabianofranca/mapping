@@ -917,16 +917,29 @@ A marking can declare another marking in the **same space** as its **anchor** (`
 { "anchor": { "side": "top", "align": "center", "offset": { "main": 4, "cross": 0 } } }
 ```
 
-| Key            | Values                          | Default  | Description                                                                                                  |
-| -------------- | ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
-| `side`         | `top`, `bottom`, `start`, `end` | `top`    | Which side of the anchor the marking sits on (outside it). `start` and `end` follow the effective direction. |
-| `align`        | `start`, `center`, `end`        | `center` | The alignment along that side.                                                                               |
-| `offset.main`  | number                          | `0`      | The distance from the anchor's edge, in **component units** (negative overlaps).                             |
-| `offset.cross` | number                          | `0`      | The offset along the side, in units (logical: see below).                                                    |
+| Key            | Values                                                 | Default  | Description                                                                                                  |
+| -------------- | ------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------ |
+| `side`         | `top`, `bottom`, `start`, `end`                        | `top`    | Which side of the anchor the marking sits on (outside it). `start` and `end` follow the effective direction. |
+| `align`        | `start`, `center`, `end`, `corner-start`, `corner-end` | `center` | The alignment along that side; `corner-*` puts the marking's **center** on the anchor's corner (see below).  |
+| `offset.main`  | number                                                 | `0`      | The distance from the anchor's edge, in **component units** (negative overlaps).                             |
+| `offset.cross` | number                                                 | `0`      | The offset along the side, in units (logical: see below).                                                    |
 
 The `offset.cross` is **logical**: with `side` `top` or `bottom`, positive goes in the reading direction (to the right in `ltr`, to the left in `rtl`); with `start` or `end`, positive goes down. The `offset.main` is always the distance outward from the anchor's edge.
 
-Everything is optional (`anchor: {}` gives the defaults). They are the defaults of a marking that declares an anchor without saying the side, the alignment or the offset; what the marking says wins. The `offset` is in **units** (see "Units and density"): when applying, the container's density converts it to pixels (`componentAnchorDefaults(file, density)` returns the three defaults already in pixels). A value outside the set is an error (`expected one of: top, bottom, start, end`), and so is an unknown key; in a `formatVersion` 1 to 3 the error is `only allowed with formatVersion 4`, at the key's path (`anchor`).
+Everything is optional (`anchor: {}` gives the defaults). They are the defaults of a marking that declares an anchor without saying the side, the alignment or the offset; what the marking says wins. The `offset` is in **units** (see "Units and density"): when applying, the container's density converts it to pixels (`componentAnchorDefaults(file, density)` returns the three defaults already in pixels). A value outside the set is an error (`expected one of: top, bottom, start, end`; for `align`, `expected one of: start, center, end, corner-start, corner-end`), and so is an unknown key; in a `formatVersion` 1 to 3 the error is `only allowed with formatVersion 4`, at the key's path (`anchor`).
+
+#### Corner alignment (`corner-start` and `corner-end`)
+
+With `align: "corner-end"` (or `"corner-start"`) the marking's **center** sits on the anchor's corner instead of its edge sitting along the side, so it stays there while the marking grows. It is how a Badge on a bare icon (no background) is declared: the count grows from `3` to `12` to `99+` and the center stays on the icon's top-end corner. `corner-start` and `corner-end` are `formatVersion` 4 values (no new component version) and are also valid on the marking's own `anchor.align` (project schema v22; `docs/FORMAT.md`, "Fields of v22").
+
+```json
+{ "anchor": { "side": "top", "align": "corner-end" } }
+```
+
+- On `top`/`bottom`, the center x is the anchor's start edge (`corner-start`) or end edge (`corner-end`), in the reading direction (`corner-end` is the right edge in `ltr` and the left one in `rtl`), and the center y is the anchor's top (`top`) or bottom (`bottom`) edge.
+- On `start`/`end`, the center x is that side's edge and the center y is the anchor's top (`corner-start`) or bottom (`corner-end`) edge. `top` + `corner-end` and `end` + `corner-start` are the same point.
+- `offset.main` then moves the center **outward** from the corner (negative inward) and `offset.cross` moves it **along** the side, as above, in units × density. Without offsets the center is exactly on the corner.
+- The rectangle comes from the marking's current size, so **Snap to anchor** (and Arrange, which fits the marking to its content and then snaps) keeps the center on the corner at any width. The measured Icon Chip case (a badge against the outside of a circular background) keeps `end`/`start` with its measured offsets.
 
 ### The `$anchor.*` pseudo-fields
 
