@@ -113,3 +113,71 @@ describe('useDeleteThread: delete failure', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });
+
+// CD3 (item 12): one removal per confirmation, whatever the number of clicks.
+describe('useDeleteThread: double click', () => {
+  function deferred() {
+    let resolve: (r: { ok: true } | { ok: false; error: 'gone' }) => void = () => {};
+    const promise = new Promise<{ ok: true } | { ok: false; error: 'gone' }>((r) => {
+      resolve = r;
+    });
+    return { promise, resolve };
+  }
+
+  it('with confirmation: two clicks in the same tick remove once, Delete is disabled while it runs and no alert remains', async () => {
+    const s = setup({ ok: true });
+    const first = deferred();
+    s.remove.mockReset();
+    s.remove
+      .mockReturnValueOnce(first.promise)
+      .mockResolvedValue({ ok: false, error: 'gone' });
+    s.request(mixed);
+    const button = await screen.findByRole('button', {
+      name: t('comments.delete.confirm'),
+    });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(s.remove).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(true));
+    fireEvent.click(button);
+    expect(s.remove).toHaveBeenCalledTimes(1);
+
+    first.resolve({ ok: true });
+    await waitFor(() =>
+      expect(screen.queryByText(t('comments.delete.title'))).toBeNull(),
+    );
+    expect(s.remove).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('direct path: two requests while the removal is pending remove once, without a loose alert', async () => {
+    const s = setup({ ok: true });
+    const first = deferred();
+    s.remove.mockReset();
+    s.remove
+      .mockReturnValueOnce(first.promise)
+      .mockResolvedValue({ ok: false, error: 'gone' });
+    s.request(own);
+    s.request(own);
+    expect(s.remove).toHaveBeenCalledTimes(1);
+    first.resolve({ ok: true });
+    await act(async () => {
+      await first.promise;
+    });
+    expect(s.remove).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('a new confirmation after a failure removes again', async () => {
+    const s = setup({ ok: false, error: 'gone' });
+    s.request(mixed);
+    const button = await screen.findByRole('button', {
+      name: t('comments.delete.confirm'),
+    });
+    fireEvent.click(button);
+    await screen.findByRole('alert');
+    await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(button);
+    await waitFor(() => expect(s.remove).toHaveBeenCalledTimes(2));
+  });
+});

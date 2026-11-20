@@ -1,7 +1,13 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import { afterEach, describe, expect, it } from 'vitest';
-import { OverflowMenu, PinsButton, ViewModeButton } from '../../src/app/EditorTools';
+import {
+  FitSelectionButton,
+  OverflowMenu,
+  PinsButton,
+  ViewModeButton,
+} from '../../src/app/EditorTools';
 import { t } from '../../src/i18n';
+import { selectItems } from '../../src/store/ui';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { ViewModePanel } from '../../src/ui/ViewModePanel';
 import type { Thread } from '../../src/model';
@@ -22,6 +28,7 @@ function setup() {
   renderLive(h, () => (
     <EditorContext.Provider value={h.context}>
       <OverflowMenu />
+      <FitSelectionButton />
       <PinsButton />
       <ViewModeButton />
       <ViewModePanel />
@@ -99,6 +106,22 @@ describe('The "⋯" of the hidden controls of the canvas bar', () => {
     open();
     fireEvent.click(item(t('editor.fitAll')));
     expect(fitted).toBe(1);
+  });
+
+  it('Fit selection (button and menu item) is enabled only with an item that still exists', () => {
+    const h = setup();
+    const button = () =>
+      screen.getByRole('button', { name: new RegExp(t('editor.fitSelection')) });
+    const enabled = () => !(button() as HTMLButtonElement).disabled;
+    act(() => selectItems(h.ui, [{ kind: 'marking', id: 'gone' }]));
+    expect(enabled()).toBe(false);
+    open();
+    expect(item(t('editor.fitSelection')).hasAttribute('disabled')).toBe(true);
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    act(() => selectItems(h.ui, [{ kind: 'marking', id: 'M1' }]));
+    expect(enabled()).toBe(true);
+    open();
+    expect(item(t('editor.fitSelection')).hasAttribute('disabled')).toBe(false);
   });
 
   it('the count badge and the unread dot show on the "⋯" with threads off', async () => {

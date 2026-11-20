@@ -1,3 +1,4 @@
+import { canFitSelection } from '../canvas/selectionBounds';
 import { useEffect, useRef } from 'preact/hooks';
 import { NudgeSession } from './nudgeKeys';
 import { modalOpen } from '../ui/focus';
@@ -212,6 +213,11 @@ export function useEditorShortcuts(
         return copyTarget(shortcut) !== null;
       }
       if (shortcut.kind === 'wrap') return canWrapNow(editor, currentWrapItems(editor));
+      if (shortcut.kind === 'fit-selection') {
+        return (
+          !ui.viewMode.peek() && canFitSelection(shown.peek(), peekSelectedItems(ui))
+        );
+      }
       return true;
     };
 
