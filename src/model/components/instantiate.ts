@@ -3117,6 +3117,13 @@ function createEngine(
       }
       case 'image':
         return buildImage(node, id, x, y, w, h);
+      case 'component':
+        // CC1: the node draws nothing yet (an empty rectangle keeps the box); CC2 draws the inner component.
+        return {
+          ...common(node, id, x, y, w, h),
+          type: 'rect',
+          cornerRadius: radiusOf(node),
+        };
       case 'repeat':
         // `expandRepeats` already replaced every `repeat` with a frame: it never gets here.
         throw new Error('repeat not expanded');

@@ -631,6 +631,22 @@ export interface IconTemplate extends Omit<TemplateNodeBase, 'name'> {
   readonly mirror?: BoolExpr;
 }
 
+/**
+ * A component of the same specialization drawn inside this one (`formatVersion` 4). `id` is the id
+ * of an annotation type of the specialization (its `component` draws the node); `values` gives the
+ * inner type's fields, each an expression evaluated in the OUTER component's scope (a `table`
+ * field only accepts `{ "$field": "<outer table field>" }`, a `ref` field cannot be given);
+ * `provide` offers inherited values (`$provided`) to the inner drawing, like a slot's. The node has
+ * no drawing of its own: no `fill`, `stroke`, `shadow`, `cornerRadius`, `children` or `layout`.
+ * The library rejects types without a component, with a slot or with `screen` drawing, and cycles.
+ */
+export interface ComponentNodeTemplate extends TemplateNodeBase {
+  readonly type: 'component';
+  readonly id: string;
+  readonly values?: Readonly<Record<string, Expr<string | number | boolean | null>>>;
+  readonly provide?: Readonly<Record<string, Expr<string | number>>>;
+}
+
 export type TemplateNode =
   | FrameTemplate
   | RectTemplate
@@ -640,7 +656,8 @@ export type TemplateNode =
   | SlotTemplate
   | RepeatTemplate
   | ImageTemplate
-  | IconTemplate;
+  | IconTemplate
+  | ComponentNodeTemplate;
 
 // ---------------------------------------------------------------------------------------
 // File

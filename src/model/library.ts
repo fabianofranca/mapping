@@ -26,6 +26,11 @@ import {
 import { specWarnings } from './specWarnings';
 import { missingMigrations } from './specVersions';
 import { drawingIssues } from './libraryDrawing';
+import {
+  componentNodeIssues,
+  nestingEnv,
+  type NestingEnv,
+} from './libraryComponentNodes';
 import { libraryIssue } from './libraryIssue';
 import { checkSignatures } from './librarySignature';
 import type { ModelMessageTemplateCode } from './messages';
@@ -675,6 +680,7 @@ function typeCoherence(
   base: string,
   out: Collector,
   used: Map<string, string>,
+  nest: NestingEnv,
 ): void {
   if (type.component === undefined) return;
   const path = pkg.resolve(type.component);
@@ -728,6 +734,9 @@ function typeCoherence(
   const innerUsed = repeatChecks(type, path, rawTemplate, out);
   rowsChecks(type, path, rawTemplate, out);
   imageChecks(type, path, rawTemplate, out);
+  remapIssues(pkg, path, out.issues, from);
+  from = out.issues.length;
+  out.issues.push(...componentNodeIssues(nest, type, path, component));
   remapIssues(pkg, path, out.issues, from);
   for (const [key, value] of Object.entries(component.preview ?? {})) {
     const field = type.fields.find((f) => f.key === key);
@@ -1110,8 +1119,13 @@ function level2(
   const used = new Map<string, string>();
   const jsons = new Map<string, unknown>();
   const seen = new Set<string>();
+  const nest = nestingEnv(spec, (type) =>
+    type.component === undefined
+      ? undefined
+      : pkg.components.get(pkg.resolve(type.component)),
+  );
   eachType(spec, (type, base) => {
-    typeCoherence(pkg, type, base, out, used);
+    typeCoherence(pkg, type, base, out, used, nest);
     (type.examples ?? []).forEach((example, index) => {
       if (example.file === undefined) return;
       readJsonFile(
