@@ -1,4 +1,4 @@
-# Batch preview and scratch folder — [Não lançado] (épico `epic/batch-preview`, PR #2385, MCP 0.51.0, schema v22)
+# Batch preview and scratch folder — 2026-11-20 (épico `epic/batch-preview`, PR #2385, MCP 0.51.0, schema v22)
 
 Schema unchanged. Details in #2090.
 
