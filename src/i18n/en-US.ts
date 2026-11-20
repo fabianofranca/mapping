@@ -489,6 +489,8 @@ export const enUS = {
   'spec.impact.op.removeField': 'Remove field {field} in {type}',
   'spec.impact.op.mapValues': 'Map values of {field} in {type}: {pairs}',
   'spec.impact.op.fillField': 'Fill {field} in {type} with {value}',
+  'spec.impact.op.copyField': 'Copy {from} to {to} in {type}',
+  'spec.impact.op.copyFieldWhen': 'Copy {from} to {to} in {type} when {condition}',
   'spec.impact.op.renameRole': 'Rename role {from} → {to} in {type}',
   'spec.impact.op.removeRoleClear': 'Remove role {role} in {type} (clear the role)',
   'spec.impact.op.removeRoleUnlink': 'Remove role {role} in {type} (unlink)',

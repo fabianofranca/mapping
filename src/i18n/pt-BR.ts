@@ -488,6 +488,8 @@ export const ptBR: Dictionary = {
   'spec.impact.op.removeField': 'Remover o campo {field} em {type}',
   'spec.impact.op.mapValues': 'Mapear valores de {field} em {type}: {pairs}',
   'spec.impact.op.fillField': 'Preencher {field} em {type} com {value}',
+  'spec.impact.op.copyField': 'Copiar {from} para {to} em {type}',
+  'spec.impact.op.copyFieldWhen': 'Copiar {from} para {to} em {type} quando {condition}',
   'spec.impact.op.renameRole': 'Renomear o papel {from} → {to} em {type}',
   'spec.impact.op.removeRoleClear': 'Remover o papel {role} em {type} (limpar o papel)',
   'spec.impact.op.removeRoleUnlink': 'Remover o papel {role} em {type} (desvincular)',

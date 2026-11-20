@@ -107,7 +107,7 @@ const plan = async (path: string) =>
   ok(await mcp.call<Plan>('plan_library_update', { project: ws.project, path }));
 
 describe('plan_library_update: role breaks without a step', () => {
-  it('removed role: refused with removed-role and the hint cites the nine steps', async () => {
+  it('removed role: refused with removed-role and the hint cites the ten steps', async () => {
     const result = await plan(files.removeNoStep!);
     expect(result.decision).toBe('update');
     expect(result.refused).toBe(true);
@@ -115,7 +115,7 @@ describe('plan_library_update: role breaks without a step', () => {
     expect(result.missingMigrations[0]!.message).toContain('"click"');
     expect(result.missingMigrations[0]!.path).toContain('childRoles');
     expect(result.hint).toMatch(
-      /rename-type, remove-type, rename-field, remove-field, map-values, fill-field, rename-role, remove-role or set-role/,
+      /rename-type, remove-type, rename-field, remove-field, map-values, fill-field, rename-role, remove-role, set-role or copy-field/,
     );
   });
 

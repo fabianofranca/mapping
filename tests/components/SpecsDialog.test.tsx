@@ -692,6 +692,48 @@ describe('UpdateImpact: library with migrations', () => {
     expect(screen.queryByText(/This update deletes/)).toBeNull();
   });
 
+  describe('copy-field', () => {
+    const withCaption = (when?: Record<string, string>): Spec => {
+      const next = libNext(
+        [
+          {
+            from: 1,
+            to: 2,
+            steps: [
+              {
+                op: 'copy-field',
+                type: 'button',
+                from: 'label',
+                to: 'caption',
+                ...(when ? { when } : {}),
+              },
+            ],
+          },
+        ],
+        (types) => {
+          types[0]!.fields = [...types[0]!.fields, { key: 'caption', type: 'string' }];
+        },
+      );
+      return next;
+    };
+
+    it('an additive update with the step shows the steps, not the additive line', () => {
+      renderImpact(base(), withCaption());
+      expect(screen.getByText('Migration steps')).toBeTruthy();
+      expect(screen.getByText('Copy label to caption in button')).toBeTruthy();
+      expect(screen.getByText('2 annotation(s), 2 value(s)')).toBeTruthy();
+      expect(screen.queryByText(/Additive update/)).toBeNull();
+    });
+
+    it('with `when`, the label carries the condition', () => {
+      renderImpact(base(), withCaption({ label: 'OK' }));
+      expect(
+        screen.getByText('Copy label to caption in button when label = OK'),
+      ).toBeTruthy();
+      expect(screen.getByText('1 annotation(s), 1 value(s)')).toBeTruthy();
+    });
+  });
+
   it('step with no effect in this project', () => {
     const next = libNext([
       {

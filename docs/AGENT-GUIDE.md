@@ -349,6 +349,8 @@ Bumping a library's `version` affects the projects that applied it: the annotati
 
 **Renaming a field** (a break with migration): bump the `version`, change the `key` in the type, in the drawing, in the `preview` and in the examples and declare `{ "from": <applied>, "to": <new>, "steps": [{ "op": "rename-field", "type": "<type>", "from": "<old key>", "to": "<new key>" }] }`. In `plan_library_update`, the step shows how many annotations and values follow the new field (`values`) and `losses` must come back empty; if it does not, check whether the rename is declared. References (`ref`) to renamed fields are rewritten by the step.
 
+**Splitting a field** (additive, formatVersion 19): when one field becomes two and the stored values must feed the new one (the Chip's `leadingIcon` of the avatar variant became `avatarIcon`), add the new optional field, bump the `version` and declare `{ "from": <applied>, "to": <new>, "steps": [{ "op": "copy-field", "type": "<type>", "from": "<old key>", "to": "<new key>", "when": { "<field>": "<value or list>" } }] }`. `when` is optional and only tests top-level fields. The step copies only into an empty `to` and `from` keeps its value. In `plan_library_update`, `steps[].step` brings `when` as declared, `values` counts the copies and `losses` must come back empty. An invalid copied value shows up as a pending item; to retire the old field afterwards, add a `remove-field` after the `copy-field`.
+
 ### Aliases
 
 An item created in the batch can be cited in the following operations by an **alias** (`"as": "$door"`). That way a marking, an annotation and a linked event come out in a single call:
