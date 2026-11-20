@@ -27,10 +27,12 @@ This folder centralizes the **Mapping** projects: containers (images of screens,
 The tools appear as `mcp__mapping__…` (or `mapping/…`, depending on the client). If they do not appear, the client did not load this folder's configuration; the command is:
 
 ```
-node tools/mapping-mcp.js --root projects --root specializations
+node tools/mapping-mcp.js --root projects --root specializations --scratch scratch
 ```
 
 Start with `list_projects`. The server describes its usage in its own instructions and in the `mapping-docs://AGENT-GUIDE.md` resource; read the guide before the first change. Items are cited by reference `mapping://<project>/<m|i|a|p>/<code>`, URL only (no readable path and with the project encoded: `My%20Project`); a reference in the old format gives `invalid-ref` and must be copied again from the app.
+
+**Scratch folder.** Temporary batches (`operationsFile`) and exported images go in `scratch/`, never in `projects/` or `specializations/`; the server only reads it; delete what you no longer need. If `list_projects` returns `scratch: []`, ask the person to add `--scratch scratch` to the client configuration and `scratch/` to the `.gitignore`.
 
 ## Rules
 
