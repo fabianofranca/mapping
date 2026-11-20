@@ -175,7 +175,7 @@ describe('plan_changes: accessible-label-missing in issues.new', () => {
   });
 
   it('a bar created with action icons and no description lists one item per part', async () => {
-    const reply = await plan([createBar()]);
+    const reply = await plan([createBar({ actionIcon1: 'Search', actionIcon2: 'More' })]);
     expect(reply.errors).toBeUndefined();
     expect(labelItems(reply)).toEqual([
       {

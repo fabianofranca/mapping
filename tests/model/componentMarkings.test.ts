@@ -1100,3 +1100,85 @@ describe('the Material 3 top-app-bar is born with the style height (TB1, decisio
     expect(rectOf(p, 'B')).toEqual(given);
   });
 });
+
+describe("preview: 'required' fills only the required fields without a default (decisions 8 and 9 of #1891)", () => {
+  const m3 = (): Project => {
+    let n = 0;
+    const p = applySpecialization(emptyProject(), m3Spec, {
+      newId: () => `PR${++n}`,
+      packageSpecName: 'material3-compose.spec.json',
+    });
+    return addContainer(p, { id: 'I1', file: null, width: 360, height: 800 } as never);
+  };
+  const base = (
+    typeId: string,
+    extra: Partial<NewComponentArgs> = {},
+  ): NewComponentArgs => ({
+    markingId: 'B',
+    annotationId: 'A_B',
+    containerId: 'I1',
+    parentId: null,
+    specId: m3Spec.id,
+    typeId,
+    ...extra,
+  });
+  const create = (typeId: string, extra: Partial<NewComponentArgs> = {}): Project =>
+    addComponentMarking(m3(), m3Catalog, base(typeId, extra), approximateMeasurer);
+  const valuesOf = (p: Project): Record<string, unknown> =>
+    p.annotations.find((a) => a.id === 'A_B')!.values as Record<string, unknown>;
+
+  it("fills the card's required title, leaves the optional fields empty and keeps the style default", () => {
+    const values = valuesOf(create('card', { preview: 'required' }));
+    expect(values.title).toBe('Praia do Rosa');
+    expect(values.subtitle ?? null).toBeNull();
+    expect(values.supportingText ?? null).toBeNull();
+    expect(values.media ?? null).toBeNull();
+    expect(values.style).toBe('filled');
+  });
+
+  it("fills the snackbar's message and leaves actionLabel empty", () => {
+    const values = valuesOf(create('snackbar', { preview: 'required' }));
+    expect(values.message).toBe('Message archived');
+    expect(values.actionLabel ?? null).toBeNull();
+  });
+
+  it("'all' and an absent preview keep the whole preview (the Palette)", () => {
+    for (const preview of ['all', undefined] as const) {
+      const values = valuesOf(
+        create('snackbar', preview === undefined ? {} : { preview }),
+      );
+      expect(values.actionLabel).toBe('Desfazer');
+    }
+  });
+
+  it('values still win over the preview in required mode', () => {
+    const values = valuesOf(
+      create('snackbar', {
+        preview: 'required',
+        values: { message: 'Given', actionLabel: 'Undo' },
+      }),
+    );
+    expect(values).toMatchObject({ message: 'Given', actionLabel: 'Undo' });
+  });
+
+  it('partial values do not leave a required field empty', () => {
+    const values = valuesOf(
+      create('snackbar', { preview: 'required', values: { actionLabel: 'Undo' } }),
+    );
+    expect(values).toMatchObject({ message: 'Message archived', actionLabel: 'Undo' });
+  });
+
+  it('componentSize and componentPlacement measure with the same values as the creation', () => {
+    const args = base('snackbar', { preview: 'required' });
+    const withEmptyAction = {
+      ...args,
+      preview: 'all' as const,
+      values: { actionLabel: '' },
+    };
+    const required = componentSize(m3(), m3Catalog, args, approximateMeasurer);
+    const all = componentSize(m3(), m3Catalog, withEmptyAction, approximateMeasurer);
+    expect(required).toEqual(all);
+    const rect = componentPlacement(m3(), m3Catalog, args, approximateMeasurer);
+    expect({ width: rect.width, height: rect.height }).toEqual(required);
+  });
+});

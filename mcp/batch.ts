@@ -325,18 +325,24 @@ const DEPRECATED_OPS: Partial<Record<Operation['op'], string>> = {
 };
 
 /**
- * The simple values (text, number, empty) of `annotation.values` for measuring the size of the new
- * instance (decision 16 of #898): table and reference do not count (they stay on the `default`).
+ * What the model needs to measure the size of the new instance (decision 16 of #898): the simple values
+ * (text, number, empty) of `annotation.values` (table and reference do not count, they stay on the
+ * `default`) and `preview: 'required'` (decision 9 of #1891): only the required fields without a
+ * `default` that the batch does not give come from the component's `preview`.
  */
 function initialValuesArg(values: Record<string, JsonValue> | undefined): {
   values?: Record<string, JsonValue>;
+  preview: 'required';
 } {
-  if (values === undefined) return {};
+  const preview = { preview: 'required' } as const;
+  if (values === undefined) return preview;
   const simple = Object.entries(values).filter(
     ([, value]) =>
       value === null || typeof value === 'string' || typeof value === 'number',
   );
-  return simple.length === 0 ? {} : { values: Object.fromEntries(simple) };
+  return simple.length === 0
+    ? preview
+    : { values: Object.fromEntries(simple), ...preview };
 }
 
 /** `{ pageId }` for the model's creators, or `{}` to leave the choice to them (the first page). */
@@ -2575,6 +2581,7 @@ class Batch {
             ...typeRef,
             rect,
             name: op.name ?? null,
+            preview: 'required',
             ...(anchor === null ? {} : { anchor }),
           },
           this.measurer,

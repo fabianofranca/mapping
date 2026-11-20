@@ -120,6 +120,9 @@ export function componentTypes(p: Project, catalog: ComponentCatalog): Component
   return result;
 }
 
+/** How much of the component's `preview` an instance takes (see `NewComponentArgs.preview`). */
+export type PreviewMode = 'all' | 'required';
+
 export interface NewComponentArgs {
   readonly markingId: string;
   readonly annotationId: string;
@@ -164,6 +167,12 @@ export interface NewComponentArgs {
    * the fields that do not come here start with the `preview`; absent = only the `preview`.
    */
   readonly values?: TypedValues;
+  /**
+   * Which `preview` fields start the instance: `'all'` (absent; the app's Palette) or `'required'` (the
+   * MCP): only the fields with `required: true` and no `default`; the others keep the `default` or stay
+   * empty. The size measured without `rect` follows the same choice.
+   */
+  readonly preview?: PreviewMode;
   readonly name?: string | null;
   /**
    * The app's drawings (`derived.drawingsOf`): the placement reads the slot of each child from the
@@ -488,6 +497,7 @@ type PlacementArgs = Pick<
   | 'center'
   | 'values'
   | 'pageId'
+  | 'preview'
 > & {
   /** The app's drawings: the slot of each child and the boxes come from them (the same result without them). */
   readonly drawings?: ComponentDrawings;
@@ -579,7 +589,14 @@ function initialValues(
     layerId: layer.id,
     type: { specId: args.specId, typeId: args.typeId },
   });
-  next = applyPreview(next, SCRATCH_ANNOTATION, space.type, space.component, args.values);
+  next = applyPreview(
+    next,
+    SCRATCH_ANNOTATION,
+    space.type,
+    space.component,
+    args.values,
+    args.preview,
+  );
   for (const [key, value] of Object.entries(args.values ?? {})) {
     try {
       next = setFieldValue(next, SCRATCH_ANNOTATION, key, value);
@@ -682,6 +699,7 @@ export function componentSize(
     | 'typeId'
     | 'size'
     | 'values'
+    | 'preview'
     | 'instanceAnchor'
   >,
   measure: TextMeasurer,
@@ -1047,9 +1065,21 @@ function simplePreview(
   return simple ? preview : undefined;
 }
 
+/** Whether the field takes the `preview` in this mode (`'required'`: only a required field without a `default`). */
+function takesPreview(
+  field: SpecAnnotationType['fields'][number],
+  mode: PreviewMode,
+): boolean {
+  return (
+    mode === 'all' ||
+    (field.required === true && !('default' in field && field.default !== undefined))
+  );
+}
+
 /**
  * Puts the component's `preview` into the annotation fields that `given` does not specify (the `table`
  * and `ref` fields stay at the `default`). A `preview` that the field does not accept stays at the `default`.
+ * In `'required'` mode only the required fields without a `default` take it.
  */
 function applyPreview(
   p: Project,
@@ -1057,10 +1087,12 @@ function applyPreview(
   type: SpecAnnotationType,
   component: ComponentFile,
   given: TypedValues | undefined,
+  mode: PreviewMode = 'all',
 ): Project {
   let next = p;
   for (const field of type.fields) {
     if (given !== undefined && field.key in given) continue;
+    if (!takesPreview(field, mode)) continue;
     const preview = simplePreview(field, component);
     if (preview === undefined) continue;
     try {
@@ -1089,6 +1121,7 @@ export function componentAnchoredPlacement(
     | 'specId'
     | 'typeId'
     | 'values'
+    | 'preview'
     | 'name'
     | 'anchorDefaults'
     | 'pageId'
@@ -1187,6 +1220,7 @@ export function addComponentMarking(
         specId: args.specId,
         typeId: args.typeId,
         ...(args.values ? { values: args.values } : {}),
+        ...(args.preview ? { preview: args.preview } : {}),
       },
       measure,
     );
@@ -1214,6 +1248,7 @@ export function addComponentMarking(
         typeId: args.typeId,
         ...(args.center ? { center: args.center } : {}),
         ...(args.values ? { values: args.values } : {}),
+        ...(args.preview ? { preview: args.preview } : {}),
         ...(args.drawings ? { drawings: args.drawings } : {}),
       },
       measure,
@@ -1245,7 +1280,14 @@ export function addComponentMarking(
     type: { specId: args.specId, typeId: args.typeId },
   });
 
-  next = applyPreview(next, args.annotationId, type, component, args.values);
+  next = applyPreview(
+    next,
+    args.annotationId,
+    type,
+    component,
+    args.values,
+    args.preview,
+  );
   for (const [key, value] of Object.entries(args.values ?? {})) {
     next = setFieldValue(next, args.annotationId, key, value);
   }
