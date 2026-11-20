@@ -15,7 +15,7 @@ The sheet stores nothing about the solution or the project; it only records what
 
 ## The object
 
-**Strict** object: an unknown key is an error (`propriedade desconhecida: "x"`).
+**Strict** object: an unknown key is an error (`unknown property: "x"`).
 
 | Key             | Required | Description                                                                                                       |
 | --------------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
