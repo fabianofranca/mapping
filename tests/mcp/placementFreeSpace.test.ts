@@ -273,6 +273,21 @@ describe('create_marking without rect: free space', () => {
       expect(warning?.message).toMatch(/give `rect` or make room in the container/);
     });
 
+    it('near on a type that is not floating is ignored, with its own warning and without the free-space one', async () => {
+      const result = await run([
+        SCREEN,
+        plain('$p', { x: 0, y: 0, width: 390, height: 844 }),
+        plain('$a', { x: 0, y: 0, width: 195, height: 844 }),
+        plain('$b', { x: 195, y: 0, width: 195, height: 844 }),
+        button('$btn', { near: '$p' } as Partial<Operation>),
+      ]);
+      expect(result.errors).toEqual([]);
+      expect(warningOf(result, 4)).toBeUndefined();
+      expect(
+        result.deprecations.some((d) => d.index === 4 && /`near`/.test(d.message)),
+      ).toBe(true);
+    });
+
     it('an explicit rect over others: no search and no warning', async () => {
       const result = await run([
         SCREEN,

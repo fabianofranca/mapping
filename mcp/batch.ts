@@ -2534,6 +2534,7 @@ class Batch {
     const rowAliases: [string, AliasTarget][] = [];
     let project: Project;
     let annotationId: string | null = null;
+    let autoPlaced = false;
 
     if (annotation && typeRef !== null && component !== null) {
       const newAnnotationId = crypto.randomUUID();
@@ -2588,11 +2589,13 @@ class Batch {
           this.measurer,
         ),
       );
-      // Automatic placement only (no rect, near, inside or anchor; not a floating type): with no free spot at any
-      // level the marking was born over others (decision 5 of #1891). `inside` has its own full-slot warning.
-      if (rectFromComponent && anchor === null && component.floating !== true) {
-        this.noteNoFreeSpace(notes, p, { containerId, pageId, typeRef, rect });
-      }
+      // Automatic placement only (no rect, near, inside or anchor; not a floating type): the "no free space" check
+      // runs below, on the stored rectangle (decision 5 of #1891). `inside` has its own full-slot warning.
+      autoPlaced =
+        rectFromComponent &&
+        anchor === null &&
+        op.near === undefined &&
+        component.floating !== true;
       if (inside) {
         this.noteInsideFit(notes, p, project, inside.id, {
           id: markingId,
@@ -2644,6 +2647,9 @@ class Batch {
       }
     }
     const { rect } = created;
+    if (autoPlaced && typeRef !== null) {
+      this.noteNoFreeSpace(notes, p, { containerId, pageId, typeRef, rect });
+    }
     if (anchor !== null && created.anchor == null) {
       notes.push(
         'the anchor was dropped: by geometry the marking was created in a different space than the target (the container or the canvas); anchor it afterwards with `update_marking`, in the same space as the target',
