@@ -82,7 +82,11 @@ describe('example library drawing-keys', () => {
     const entry = findEntry(buildCatalog(files), 'flag')!;
     expect(entry).toBeDefined();
     const fillsOf = (disabled: boolean): string[] => {
-      const drawing = drawEntry(entry, { disabled }, approximateMeasurer)!;
+      const drawing = drawEntry(
+        entry,
+        { disabled: String(disabled) },
+        approximateMeasurer,
+      )!;
       expect(drawing.warnings).toEqual([]);
       const out: string[] = [];
       const visit = (node: SceneNode): void => {
