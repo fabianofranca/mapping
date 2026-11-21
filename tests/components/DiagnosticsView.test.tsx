@@ -14,7 +14,13 @@ import {
   DiagnosticsView,
   useCopyErrors,
 } from '../../src/ui/DiagnosticsView';
-import { SCHEMA_VERSION } from '../../src/model';
+import {
+  SCHEMA_VERSION,
+  applySpecialization,
+  setContainerClass,
+  type ProjectContainer,
+} from '../../src/model';
+import { imageLabel } from '../../src/ui/labels';
 import { locale } from '../../src/store/settings';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { BUILD_ID } from '../../src/utils/build';
@@ -467,5 +473,68 @@ describe('Diagnostics: the copy result disappears by itself', () => {
       await vi.advanceTimersByTimeAsync(0);
     });
     expect(screen.getByRole('status').textContent).toBe('');
+  });
+});
+
+describe('Diagnostics: undeclared container classes (stage #1901, CX3, decision 16)', () => {
+  const SPEC = {
+    format: 'mapping-spec' as const,
+    formatVersion: 21 as const,
+    id: 'ds',
+    name: 'DS',
+    version: 1,
+    layers: [],
+    containerClasses: [
+      { id: 'platform', name: 'Platform', classes: [{ id: 'android', name: 'Android' }] },
+    ],
+  };
+
+  it('lists a stored choice whose set or class is no longer declared', () => {
+    let p = applySpecialization(sampleProject(), SPEC);
+    p = setContainerClass(p, 'I1', 'platform', 'android');
+    p = setContainerClass(p, 'I1', 'platform', 'gone');
+    p = setContainerClass(p, 'I1', 'orphan', 'x');
+    const harness = createHarness(p);
+    render(
+      <EditorContext.Provider value={harness.context}>
+        <Diagnostics />
+      </EditorContext.Provider>,
+    );
+    expect(
+      screen.getByRole('heading', { name: t('diagnostics.containerClasses') }),
+    ).toBeTruthy();
+    const name = imageLabel(p.containers[0] as ProjectContainer);
+    expect(
+      screen.getByText(
+        t('diagnostics.containerClassUndeclared', {
+          container: name,
+          set: 'platform',
+          class: 'gone',
+        }),
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        t('diagnostics.containerClassUndeclared', {
+          container: name,
+          set: 'orphan',
+          class: 'x',
+        }),
+      ),
+    ).toBeTruthy();
+  });
+
+  it('with every choice declared, the section does not appear', () => {
+    let p = applySpecialization(sampleProject(), SPEC);
+    p = setContainerClass(p, 'I1', 'platform', 'android');
+    const harness = createHarness(p);
+    render(
+      <EditorContext.Provider value={harness.context}>
+        <Diagnostics />
+      </EditorContext.Provider>,
+    );
+    expect(
+      screen.queryByRole('heading', { name: t('diagnostics.containerClasses') }),
+    ).toBeNull();
   });
 });

@@ -36,6 +36,8 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
   // `null`: the number typed in "Custom" is not valid.
   const [density, setDensity] = useState<number | null>(1);
   const densityId = useId();
+  // The ready-made size in use carries its classes; any edit of the size makes it Custom (no classes).
+  const classes = groups.flatMap((g) => g.presets).find((p) => p.id === preset)?.classes;
   const [error, setError] = useState<string | null>(null);
   const [invalid, setInvalid] = useState<'name' | 'size' | 'color' | null>(null);
 
@@ -61,6 +63,7 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
     const result = actions.addBackgroundContainer({
       ...form.value,
       ...(density !== 1 ? { density } : {}),
+      ...(classes ? { classes } : {}),
       ...(center ? { center } : {}),
     });
     if (!result.ok) {

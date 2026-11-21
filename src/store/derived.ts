@@ -360,7 +360,18 @@ function sameIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
     x.rowId === y.rowId &&
     x.column === y.column &&
     samePart(x, y) &&
-    sameSlotIssue(x, y)
+    sameSlotIssue(x, y) &&
+    sameContainerClassIssue(x, y)
+  );
+}
+
+/** The set, the class and the allowed classes of `outside-container-class`. */
+function sameContainerClassIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
+  return (
+    x.set?.id === y.set?.id &&
+    x.class?.id === y.class?.id &&
+    x.allowed?.length === y.allowed?.length &&
+    (x.allowed ?? []).every((c, i) => c.id === y.allowed?.[i]?.id)
   );
 }
 

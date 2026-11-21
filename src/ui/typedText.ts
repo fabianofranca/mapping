@@ -88,6 +88,15 @@ function slotParams(p: Project, a: Annotation, issue: AnnotationIssue) {
   };
 }
 
+/** The values of the text of `outside-container-class`: the set, the class and the classes meant for. */
+function containerClassParams(issue: AnnotationIssue) {
+  return {
+    set: issue.set?.name ?? '',
+    class: issue.class?.name ?? '',
+    allowed: (issue.allowed ?? []).map((c) => c.name).join(t('typed.ownersJoin')),
+  };
+}
+
 /** Position (1-based) of the table row of the issue, 0 when the row is gone. */
 function issueRow(a: Annotation, issue: AnnotationIssue): number {
   if (issue.key === undefined || issue.rowId === undefined) return 0;
@@ -120,6 +129,7 @@ export function issueReason(p: Project, a: Annotation, issue: AnnotationIssue): 
     label: offered?.label ?? t('typed.roleLabel'),
     roles: (offered?.roles ?? []).map((r) => r.name).join(t('typed.ownersJoin')),
     ...slotParams(p, a, issue),
+    ...containerClassParams(issue),
   });
 }
 

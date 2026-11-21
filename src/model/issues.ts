@@ -1,3 +1,4 @@
+import { containerClassIn, type SpecContainerClassSet } from './containerClasses';
 import { findById } from './project';
 import { memoByProject, projectIndex } from './projectIndex';
 import {
@@ -13,6 +14,7 @@ import {
   ownerRolesOf,
   specLayerOf,
   typeOfAnnotation,
+  type ResolvedType,
 } from './specLookup';
 import { checkSimpleValue, isEmptyValue } from './typed';
 import { typeAppliesTo, type SpecRefAccepts } from './spec';
@@ -45,6 +47,11 @@ export type AnnotationIssueCode =
   | 'unknown-role'
   /** The type no longer applies to the owner (marking or arrow) after an update. */
   | 'type-not-applicable'
+  /**
+   * The marking's container has a class outside the type's `appliesIn` (stage #1901, decisions 7 and 9):
+   * one item per failing set, with `set`, `class` and `allowed`.
+   */
+  | 'outside-container-class'
   /** The reference's target no longer exists. */
   | 'broken-ref'
   /** The target exists but is not accepted by the field (lost its label, stopped being free). */
@@ -83,6 +90,12 @@ export interface AnnotationIssue {
   readonly owner?: string;
   /** `slot-full`: the number of children the slot takes. */
   readonly max?: number;
+  /** `outside-container-class`: the set that fails (`id` and name). */
+  readonly set?: { readonly id: string; readonly name: string };
+  /** `outside-container-class`: the class the container has in that set. */
+  readonly class?: { readonly id: string; readonly name: string };
+  /** `outside-container-class`: the classes the type is meant for, in the set's order. */
+  readonly allowed?: readonly { readonly id: string; readonly name: string }[];
   /** `accessible-label-missing` of a part: the part (`id` and its name, `id` by default). */
   readonly part?: { readonly id: string; readonly name: string };
 }
@@ -102,6 +115,44 @@ function refProblem(
     !isTargetAccepted(target, accepts, acceptContextOf(p, a.id))
     ? 'ref-not-accepted'
     : null;
+}
+
+/**
+ * `outside-container-class` (decision 7): for each set the type lists in `appliesIn`, in which the
+ * marking's container has a class, that class must be in the list. A canvas marking, a floating one
+ * and an annotation on an arrow are not checked; a set with no class (a chosen set with no choice)
+ * checks nothing.
+ */
+function containerClassIssues(
+  p: Project,
+  a: Annotation,
+  resolved: ResolvedType,
+): AnnotationIssue[] {
+  const { appliesIn } = resolved.type;
+  if (appliesIn === undefined) return [];
+  const index = projectIndex(p);
+  const marking = index.markings.get(a.markingId);
+  const container =
+    marking === undefined || marking.floating || marking.containerId === null
+      ? undefined
+      : index.containers.get(marking.containerId);
+  if (container === undefined) return [];
+  const sets = resolved.spec.containerClasses ?? [];
+  const issues: AnnotationIssue[] = [];
+  for (const [setId, allowedIds] of Object.entries(appliesIn)) {
+    const set: SpecContainerClassSet | undefined = sets.find((s) => s.id === setId);
+    const found = set && containerClassIn(p, container, set);
+    if (!set || !found || allowedIds.includes(found.id)) continue;
+    issues.push({
+      code: 'outside-container-class',
+      set: { id: set.id, name: set.name },
+      class: { id: found.id, name: found.name },
+      allowed: set.classes
+        .filter((c) => allowedIds.includes(c.id))
+        .map((c) => ({ id: c.id, name: c.name })),
+    });
+  }
+  return issues;
 }
 
 function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
@@ -128,6 +179,7 @@ function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
   if (!typeAppliesTo(type, index.arrows.has(a.markingId) ? 'arrow' : 'marking')) {
     issues.push({ code: 'type-not-applicable' });
   }
+  issues.push(...containerClassIssues(p, a, resolved));
 
   for (const key of Object.keys(values)) {
     if (!fieldOf(type, key)) issues.push({ code: 'unknown-field', key });

@@ -358,6 +358,16 @@ The file format is in [`SPEC-FORMAT.md`](SPEC-FORMAT.md) and the project's (stab
   (including a table column), incompatible value, nonexistent option or type, missing owner or owner of a disallowed type, broken reference
   and unaccepted target (lost the label or stopped being free). They appear as an alert on the annotation, along with the marking's indicators
   on the canvas and in the **Incomplete** filter of the List.
+- **Container class pending item** (`outside-container-class`, stage #1901, `model/issues.ts`, next to `type-not-applicable`).
+  Computed from the container's class, never stored: for each set a type lists in `appliesIn`, the class the marking's container has
+  in **that type's own specialization** (`containerClassIn`: computed from the size in units with its thresholds, or the stored
+  choice) must be in the list (OR inside a set, AND across sets), otherwise one item per failing set, with `set`, `class` and
+  `allowed` (`{ id, name }`). A canvas marking, a floating marking, an annotation on an arrow and a chosen set with no choice check
+  nothing. It counts in **Incomplete**, shows in the Details with the text "Not meant for {set}: {class} (meant for: {allowed})" and
+  reaches the MCP through `issueView` (`get_marking`, `get_annotation`, `list_markings`) and `issues.new` of `plan_changes`. The
+  container Details have one `Select` per chosen set and a read-only line per computed set (`ContainerClassField`); the New container
+  dialog creates the container with the `classes` of the ready-made size; Diagnostics lists a stored choice no applied specialization
+  declares (`undeclaredContainerClasses`).
 - **Display** (`model/typedDisplay.ts`, pure functions; the interface passes the translated texts): title "type name · instance
   label" (label: `name`, otherwise the `labelField`; with no label, just the type); values in field order with the `label`, empty optional ones
   omitted and empty required ones as `id: —` in the alert color; `table` as a summary in semantic zoom (`attributes: 3 rows`)

@@ -12,6 +12,8 @@ export interface ContainerPreset {
   readonly width: number;
   readonly height: number;
   readonly background: string;
+  /** Chosen container classes the ready-made size carries (set id → class id), absent without any. */
+  readonly classes?: Readonly<Record<string, string>>;
 }
 
 /** Presets of an applied specialization, shown under its name. */
@@ -47,6 +49,7 @@ export function presetGroups(
         width: c.width,
         height: c.height,
         background: c.background ?? DEFAULT_CONTAINER_BACKGROUND,
+        ...(c.classes ? { classes: c.classes } : {}),
       })),
     });
   }
