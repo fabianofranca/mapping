@@ -204,18 +204,23 @@ describe('implementar-fila: new skill on main (decision 11)', () => {
   });
 
   it('the reread is a `Read` in consecutive parts that fits the tool limit, and the proof starts with "relido inteiro, <n> linhas" (RS1, decision 8; #2440)', () => {
-    const small = switching.slice(switching.indexOf('**Small:**'));
+    // Only the Small bullet: up to the "Lineage limit" paragraph that follows it.
+    const small = between(switching, '- **Small:**', '**Lineage limit.**');
     expect(small).toContain('`Read`');
     expect(small).toContain('consecutive parts');
     expect(small).toContain('`offset`');
     expect(small).toContain('`limit`');
     expect(small).toContain('line 1 to the last line');
-    expect(small).toContain('`allow_large: true`');
     // The file is over the `Read` limit (~25 thousand tokens): a whole-file `Read` is refused.
     expect(small).toContain('over the `Read` limit');
+    expect(small).toContain('a single `Read` of it is refused');
+    // `allow_large` is the last resort: it puts the whole file in the context at once.
+    expect(small).toContain('last resort');
+    expect(small).toContain('`allow_large: true`');
     expect(small).not.toContain('without `offset` or `limit`');
     expect(small).toContain('skill <commit>: relido inteiro, <n> linhas');
-    expect(small).toContain('`<n>` is the last line read');
+    // The proof is only true when the last part reaches the file's last line.
+    expect(small).toMatch(/`<n>` is the last line read and must equal `wc -l`/);
     expect(small).toMatch(/`git diff --numstat` is only for classifying/);
     expect(small).toMatch(/`SKILL.md` diff is not opened before/);
     const fallback = between(queue, '**Fallback checks:**', '**Red CI');
@@ -233,6 +238,9 @@ describe('implementar-fila: new skill on main (decision 11)', () => {
     expect(item).toBeDefined();
     expect(item).toMatch(/exception/);
     expect(item).toMatch(/not delegated to a subagent nor summarized/);
+    // The reread is a `Read` in consecutive parts: a single whole-file `Read` is refused (#2440).
+    expect(item).toContain('consecutive parts');
+    expect(item).not.toContain('Read` of the whole file');
   });
 });
 
