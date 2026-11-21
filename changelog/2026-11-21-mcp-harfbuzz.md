@@ -1,4 +1,4 @@
-# The MCP server shapes text with HarfBuzz — [Não lançado] (épico `epic/mcp-harfbuzz`, PR #2398, MCP 0.51.0, schema v22 unchanged)
+# The MCP server shapes text with HarfBuzz — 2026-11-21 (épico `epic/mcp-harfbuzz`, PR #2421, MCP 0.53.0, schema v22 unchanged)
 
 ## Alterado
 

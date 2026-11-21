@@ -1,4 +1,4 @@
-# The MCP server shapes text with HarfBuzz — [Não lançado] (épico `epic/mcp-harfbuzz`)
+# The MCP server shapes text with HarfBuzz — 2026-11-21 (épico `epic/mcp-harfbuzz`)
 
 ## Pendências
 
