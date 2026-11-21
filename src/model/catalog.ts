@@ -30,6 +30,7 @@ import {
   type SpecAnnotationType,
   type SpecColumn,
   type SpecField,
+  type SpecNotice,
   type SpecRefAccepts,
   type SpecTypeSource,
 } from './spec';
@@ -51,6 +52,8 @@ export interface CatalogField {
   readonly options?: readonly string[];
   readonly default?: string | number;
   readonly description?: string;
+  /** The field's or column's notices (v10), in file order; absent without any. */
+  readonly notices?: readonly SpecNotice[];
   /** Columns of a `table` field. */
   readonly columns?: readonly CatalogField[];
   readonly rowLabel?: string;
@@ -170,6 +173,11 @@ function withRowIds(values: FieldValues): FieldValues {
   return out;
 }
 
+/** The `notices` key of a catalog field: absent without any notice. */
+function noticesOf(notices: readonly SpecNotice[] | undefined) {
+  return notices === undefined || notices.length === 0 ? {} : { notices };
+}
+
 function fieldOf(field: SpecField | SpecColumn): CatalogField {
   const base = {
     key: field.key,
@@ -177,6 +185,7 @@ function fieldOf(field: SpecField | SpecColumn): CatalogField {
     type: field.type,
     required: field.required === true,
     ...(field.description === undefined ? {} : { description: field.description }),
+    ...noticesOf(field.notices),
   };
   switch (field.type) {
     case 'enum':

@@ -21,7 +21,7 @@ const ICONS: Record<SpecNoticeKind, IconName> = {
   pending: 'info',
 };
 
-/** The icon of the `kind` (the same on the badge, the block and the field label). */
+/** The icon of the `kind` (the same on the badge, the block and the line). */
 export function noticeIcon(kind: SpecNoticeKind): IconName {
   return ICONS[kind];
 }
@@ -74,6 +74,19 @@ export function TypeNoticeBadge({ type }: { readonly type: SpecAnnotationType })
   return <NoticeBadge notice={top} tip={tip} />;
 }
 
+/**
+ * The `ref` as short pieces with a break opportunity after each `/` and `.`: a long path wraps
+ * between segments, never in the middle of one. The text content stays the `ref`.
+ */
+function refSegments(ref: string) {
+  return ref.split(/(?<=[/.])/).map((part, index) => (
+    <>
+      {index > 0 && <wbr />}
+      {part}
+    </>
+  ));
+}
+
 /** `since` and `ref` of the notice (the `ref` in a mono font). */
 function NoticeOrigin({ notice }: { readonly notice: SpecNotice }) {
   return (
@@ -83,7 +96,7 @@ function NoticeOrigin({ notice }: { readonly notice: SpecNotice }) {
       )}
       {notice.ref && (
         <span class="notice-origin">
-          {t('notice.ref')} <span class="notice-ref">{notice.ref}</span>
+          {t('notice.ref')} <span class="notice-ref">{refSegments(notice.ref)}</span>
         </span>
       )}
     </>
@@ -147,20 +160,5 @@ export function NoticeLines({
         <NoticeLine key={`${notice.kind}-${index}`} notice={notice} column={column} />
       ))}
     </>
-  );
-}
-
-/** The icon of the most severe notice on the field label. */
-export function NoticeLabelIcon({
-  notices,
-}: {
-  readonly notices: readonly SpecNotice[] | undefined;
-}) {
-  const top = notices ? sortNotices(notices)[0] : undefined;
-  if (!top) return null;
-  return (
-    <span class={`notice-label-icon notice-${top.kind}`} aria-hidden="true">
-      <Icon name={ICONS[top.kind]} />
-    </span>
   );
 }
