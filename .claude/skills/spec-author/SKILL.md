@@ -260,7 +260,7 @@ A specialization **does not cite another**: the notes library already brings the
 Use `image` when the drawing shows a photo whose URL comes from the data (avatar, photo, logo). Bind the `src` to a `string` field of the type, `{ "$field": "photo" }` (in `repeat`, the `string` column of the `table`). Rules:
 
 - `src` is only the literal (an absolute `https://...`) or the bare `$field`: **never `$concat`**, `$switch` or `$if`; never `http:`, `data:` or a relative path.
-- `fit`: `cover` (default), `contain` or `fill`; in `formatVersion` 4 also `fill-width`, `fill-height` (occupy the width or the height, centered and cropped), `scale-down` (like `contain`, without enlarging) and `none` (natural size). In a lower version: `template.children[0].fit: only allowed with formatVersion 4`. The MCP's PNG draws a package image and still draws the placeholder for a remote one. Give it a fixed size, `fill` or `%`; **never `hug`** (it is an error). `fill` (color) serves as a background behind the image and `cornerRadius` makes a round avatar.
+- `fit`: `cover` (default), `contain` or `fill`; in `formatVersion` 4 also `fill-width`, `fill-height` (occupy the width or the height, centered and cropped), `scale-down` (like `contain`, without enlarging) and `none` (natural size). In a lower version: `template.children[0].fit: only allowed with formatVersion 4`. For now the MCP's PNG draws the placeholder for a package image and for a remote one. Give it a fixed size, `fill` or `%`; **never `hug`** (it is an error). `fill` (color) serves as a background behind the image and `cornerRadius` makes a round avatar.
 - A component with an `image` node uses `formatVersion` 3 of the component. The specialization does not change (no declaring an origin) and the `preview` brings an `https://` URL only if you saw it in the origin.
 
 #### Package image: a picture inside the library (component `formatVersion` 4)
@@ -269,7 +269,7 @@ Put an image in the package (`images/logo.png`, next to the specialization) when
 
 - `src` is a literal package path (relative to the specialization's folder, `/`, no `..`, no leading `/`, ending in `.png`, `.jpg`, `.jpeg` or `.webp`), a `{ "$field" }` whose value is such a path (or an `https://` URL), or a `$switch`/`$if` whose every result is a literal package path (a `$switch` over an `enum` field that picks the picture; otherwise `src: in $switch and $if every result must be a package image path`). Never `$concat`, `http:` or `data:`.
 - Formats PNG, JPEG and WebP, the content matching the extension. Each cited image up to 1 MB and 2048 px on each side; the cited images add up to 8 MB. Shrink or re-encode before copying; an image file that no component cites is not checked and not warned about.
-- Package images need component `formatVersion` 4. The specialization does not change. The MCP's PNG draws them; a remote image stays the placeholder.
+- Package images need component `formatVersion` 4. The specialization does not change. For now the MCP's PNG draws the placeholder for both.
 
 #### Compute instead of enumerating (component `formatVersion` 4)
 

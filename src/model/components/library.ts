@@ -518,7 +518,9 @@ function readFonts(
 function arrayBufferOf(
   bytes: ArrayBuffer | Uint8Array | undefined,
 ): ArrayBuffer | undefined {
-  if (bytes === undefined || bytes instanceof ArrayBuffer) return bytes;
+  if (bytes === undefined) return undefined;
+  // `ArrayBuffer.isView` also holds across realms (`instanceof` does not).
+  if (!ArrayBuffer.isView(bytes)) return bytes;
   return bytes.buffer instanceof ArrayBuffer &&
     bytes.byteOffset === 0 &&
     bytes.byteLength === bytes.buffer.byteLength

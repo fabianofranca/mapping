@@ -17,10 +17,12 @@ const SCHEME_OR_DRIVE = /^[A-Za-z][A-Za-z0-9+.-]*:/;
 /**
  * Is the text a package image path? Relative to the package root, with `/`: no leading `/`, no
  * `\`, no empty, `.` or `..` segment, no scheme or drive letter, and an image extension (any
- * case). The text is taken as written (the caller trims what comes from a field).
+ * case). The text is taken as written, so one with leading or trailing whitespace is not a path
+ * (the engine trims a field's value before asking; a literal in the component is not trimmed).
  */
 export function isPackageImagePath(text: string): boolean {
-  if (text === '' || text.startsWith('/') || text.includes('\\')) return false;
+  if (text === '' || text !== text.trim() || text.startsWith('/') || text.includes('\\'))
+    return false;
   if (SCHEME_OR_DRIVE.test(text)) return false;
   if (text.split('/').some((part) => part === '' || part === '.' || part === '..'))
     return false;

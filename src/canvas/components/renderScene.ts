@@ -529,6 +529,10 @@ class Renderer {
       this.imageUrls.add(paint.url);
       return this.remoteImageFill(shape, paint, paint.url, box);
     }
+    // A package image (`asset`) is not loaded here yet: the placeholder, with no warning (it is a
+    // known state, not a defect of the component).
+    if (!paint.src && paint.asset !== undefined)
+      return placeholder(shape, box, this.palette);
     // Only the embedded image (`data:`) is loaded here; any other scheme becomes a placeholder.
     if (!paint.src || !DATA_URL.test(paint.src)) {
       this.warn('image-without-pixels');

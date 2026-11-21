@@ -15,6 +15,7 @@ import {
   type Box,
 } from '../../../src/model/components/instantiate';
 import { referencedFields } from '../../../src/model/components/expressions';
+import { isPackageImagePath } from '../../../src/model/components/imagePath';
 import {
   absoluteBoxes,
   type FrameNode,
@@ -428,5 +429,14 @@ describe('instantiate: package image', () => {
     const src = { $if: { $has: 'x' }, then: 'img/yes.png', else: 'img/no.png' };
     expect(paintOf(src, { x: 'v' })).toMatchObject({ asset: 'img/yes.png' });
     expect(paintOf(src, {})).toMatchObject({ asset: 'img/no.png' });
+  });
+});
+
+describe('isPackageImagePath: the text is taken as written', () => {
+  it('rejects leading or trailing whitespace (the engine trims a field value, a literal is not trimmed)', () => {
+    expect(isPackageImagePath('images/a.png')).toBe(true);
+    expect(isPackageImagePath(' images/a.png')).toBe(false);
+    expect(isPackageImagePath('images/a.png ')).toBe(false);
+    expect(isPackageImagePath('images/a.png\n')).toBe(false);
   });
 });

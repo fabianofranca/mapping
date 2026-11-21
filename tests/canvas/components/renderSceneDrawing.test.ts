@@ -175,6 +175,17 @@ describe('drawing warnings carry code and parameters', () => {
     const { warnings } = renderScene(scene(root));
     expect(warnings).toEqual([{ code: 'image-without-pixels' }]);
   });
+
+  it('a package image (asset) is the placeholder without a warning until it is drawn', () => {
+    const node: SceneNode = {
+      ...baseNode({ id: 'logo', name: 'logo', width: 20, height: 20 }),
+      type: 'rect',
+      cornerRadius: 0,
+      fills: [{ type: 'image', asset: 'images/logo.png' }],
+    };
+    const { warnings } = renderScene(scene(node));
+    expect(warnings).toEqual([]);
+  });
 });
 
 describe('slot and unknown node: opacity and color come from the palette', () => {
