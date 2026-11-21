@@ -121,6 +121,18 @@ function loadQuickJs(): Promise<QuickJSWASMModule> {
   return quickJsModule;
 }
 
+/**
+ * The module as it is right after the wait: a call that was waiting while another one dropped the
+ * module (`hostFailure`) loads a fresh one instead of running on the dropped one.
+ */
+async function currentModule(): Promise<QuickJSWASMModule> {
+  for (;;) {
+    const loading = loadQuickJs();
+    const quickjs = await loading;
+    if (loading === quickJsModule) return quickjs;
+  }
+}
+
 // ----------------------------------------------------------------------------------- the failures
 
 function failed(
@@ -418,7 +430,11 @@ function runInSandbox(
   const result = runScripts({ context, timedOut: () => timedOut }, call, source, payload);
   context.dispose();
   runtime.dispose();
-  return result;
+  // QuickJS asks the handler only every few thousand instructions, so a long native call
+  // (`indexOf` on a huge string, `sort`) can pass the deadline unseen: a late answer is a timeout.
+  return result.ok && Date.now() >= deadline
+    ? evalFailure(call, 'call', { message: 'interrupted' }, true)
+    : result;
 }
 
 /**
@@ -443,7 +459,7 @@ export async function runPlugin(
   const refused = checkInput(call, source, input);
   if (refused) return refused;
   try {
-    return runInSandbox(await loadQuickJs(), call, source, input.payload);
+    return runInSandbox(await currentModule(), call, source, input.payload);
   } catch (error) {
     return hostFailure(call, error);
   }

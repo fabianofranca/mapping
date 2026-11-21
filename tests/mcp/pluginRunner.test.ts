@@ -200,6 +200,16 @@ describe('runPlugin: the limits', () => {
     expect(elapsed).toBeLessThan(8000);
   }, 20000);
 
+  it('a long native call that returns late is a plugin-timeout, not a success', async () => {
+    const source =
+      'function generate() { var s = "a".repeat(20000000); for (var k = 0; k < 8; k++) { s.indexOf("b"); } return "late"; }';
+    const result = failure(
+      await run(source, 'generate', [input], { limits: { timeoutMs: 100 } }),
+      'plugin-timeout',
+    );
+    expect(result.details).toMatchObject({ timeoutMs: 100 });
+  });
+
   it('a regular expression that backtracks forever also hits the time limit', async () => {
     failure(
       await run(
@@ -328,7 +338,8 @@ describe('runPlugin: the sandbox', () => {
       console: string[];
     };
     expect(report.found).toEqual([]);
-    expect(report.imported).not.toBe('loaded');
+    // The runner never runs pending jobs, so an import() can only be left pending here.
+    expect(report.imported).toBe('pending');
     expect(report.console).toEqual(['function', 'function', 'function']);
   });
 

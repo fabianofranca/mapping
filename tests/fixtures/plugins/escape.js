@@ -13,6 +13,10 @@ function generate() {
     'setInterval',
     'setImmediate',
     'queueMicrotask',
+    'std',
+    'os',
+    'print',
+    'scriptArgs',
     'WebAssembly',
   ];
   names.forEach(function (name) {
