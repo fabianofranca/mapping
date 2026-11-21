@@ -520,6 +520,20 @@ class Renderer {
     return [shape];
   }
 
+  /**
+   * A package image (`asset`) is not loaded here yet: the placeholder, with no warning (it is a
+   * known state, not a defect of the component). `undefined` for any other paint.
+   */
+  private packageImageFill(
+    shape: ShapeWithFill,
+    paint: Paint & { type: 'image' },
+    box: Box,
+  ): Konva.Shape[] | undefined {
+    return !paint.src && paint.asset !== undefined
+      ? placeholder(shape, box, this.palette)
+      : undefined;
+  }
+
   private imageFill(shape: ShapeWithFill, paint: Paint & { type: 'image' }, box: Box) {
     // `paint.url` is the remote image of the component's `image` node: the renderer does not
     // download it; the options function returns the state (and the ready image, already passed
@@ -529,10 +543,8 @@ class Renderer {
       this.imageUrls.add(paint.url);
       return this.remoteImageFill(shape, paint, paint.url, box);
     }
-    // A package image (`asset`) is not loaded here yet: the placeholder, with no warning (it is a
-    // known state, not a defect of the component).
-    if (!paint.src && paint.asset !== undefined)
-      return placeholder(shape, box, this.palette);
+    const packaged = this.packageImageFill(shape, paint, box);
+    if (packaged) return packaged;
     // Only the embedded image (`data:`) is loaded here; any other scheme becomes a placeholder.
     if (!paint.src || !DATA_URL.test(paint.src)) {
       this.warn('image-without-pixels');
