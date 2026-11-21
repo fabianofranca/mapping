@@ -174,6 +174,7 @@ import {
   type CornerRadius,
   type FrameNode,
   type Matrix,
+  type GradientStop,
   type Paint,
   type PathNode,
   type SceneNode,
@@ -2879,12 +2880,38 @@ function createEngine(
 
   // --- style ----------------------------------------------------------------------------
 
+  const stopsOf = (gradient: GradientSpec): GradientStop[] =>
+    gradient.stops.map((stop) => ({
+      offset: stop.offset,
+      color: ev<Color>(stop.color, 'none'),
+    }));
+
   /**
-   * Linear gradient by the SVG/Figma convention (not CSS's `linear-gradient`): the angle grows
-   * clockwise with the y axis pointing down (0° = left→right, 90° = top→bottom); the line passes
-   * through the center of the box, with a length that covers the corners.
+   * The paint of a gradient, in the node's local px. The linear one follows the SVG/Figma
+   * convention (not CSS's `linear-gradient`): the angle grows clockwise with the y axis pointing
+   * down (0° = left→right, 90° = top→bottom); the line passes through the center of the box, with
+   * a length that covers the corners. The radial one is a circle (default radius: half the
+   * smaller side) and the angular one sweeps the turn clockwise from its start angle.
    */
   const gradientPaint = (gradient: GradientSpec, w: number, h: number): Paint => {
+    if (gradient.type === 'radial') {
+      const [fx, fy] = gradient.center ?? [0.5, 0.5];
+      return {
+        type: 'radial',
+        center: { x: fx * w, y: fy * h },
+        radius: gradient.radius ?? Math.min(w, h) / 2,
+        stops: stopsOf(gradient),
+      };
+    }
+    if (gradient.type === 'angular') {
+      const [fx, fy] = gradient.center ?? [0.5, 0.5];
+      return {
+        type: 'angular',
+        center: { x: fx * w, y: fy * h },
+        angle: gradient.angle ?? 0,
+        stops: stopsOf(gradient),
+      };
+    }
     const rad = (gradient.angle * Math.PI) / 180;
     const dx = Math.cos(rad);
     const dy = Math.sin(rad);
@@ -2895,18 +2922,21 @@ function createEngine(
       type: 'linear',
       start: { x: cx - (dx * length) / 2, y: cy - (dy * length) / 2 },
       end: { x: cx + (dx * length) / 2, y: cy + (dy * length) / 2 },
-      stops: gradient.stops.map((stop) => ({
-        offset: stop.offset,
-        color: ev<Color>(stop.color, 'none'),
-      })),
+      stops: stopsOf(gradient),
     };
   };
+
+  const isGradient = (value: unknown): value is GradientSpec =>
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    (value.type === 'linear' || value.type === 'radial' || value.type === 'angular');
 
   const fillsOf = (fill: Expr<FillSpec> | undefined, w: number, h: number): Paint[] => {
     const value = ev<FillSpec>(fill, 'none');
     if (typeof value === 'string')
       return isNone(value) ? [] : [{ type: 'solid', color: value }];
-    if (typeof value === 'object' && value !== null && value.type === 'linear')
+    if (isGradient(value))
       return value.stops.length > 0 ? [gradientPaint(value, w, h)] : [];
     return [];
   };

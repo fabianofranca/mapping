@@ -178,7 +178,7 @@ async function renderRegion(
       region: rectJson(region),
       drawings: drawn,
       ...(warning === undefined ? {} : { warning }),
-      note: "the server's drawing (bundled free font or the library's), not a capture of the app; a remote image becomes a placeholder and the gradient takes the first color",
+      note: "the server's drawing (bundled free font or the library's), not a capture of the app; a remote image becomes a placeholder",
       ...(await urlFields(images, bytes, format, 'drawing')),
     },
     image: { bytes, mimeType: MIME[format] },

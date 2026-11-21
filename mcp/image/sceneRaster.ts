@@ -23,6 +23,7 @@ import {
   type TextNode,
 } from '../../src/model/components/scene';
 import { MAX_SHADOW_PIXELS, compositeShadow, dashPaths } from './effects';
+import { gradientShader, type Shader } from './gradientShader';
 import { createRaster, type PixelRect, type Raster } from './raster';
 import { textBars, type TextBar } from './textBars';
 import { textInk } from './textLayout';
@@ -32,7 +33,7 @@ export { textBars, type TextBar };
 
 // Simplified drawing of a component scene, in pixels, for `get_marking_image` on a blank
 // screen. The server has no fonts or canvas: shapes become polygons filled by
-// scanline with (smoothed) coverage, the gradient becomes the color of the first stop, the image becomes
+// scanline with (smoothed) coverage, the gradient is painted per pixel (a shader), the image becomes
 // a gray placeholder. With `view.fonts` the text is drawn with the font's glyphs (wrapping, `…`
 // and runs); without it, it becomes bars (one per line, in the text color). Stroke with `align`, dashes,
 // `cap`/`join` and `sides`, and blurred shadow. Pure: no disk.
@@ -114,7 +115,10 @@ function clamp255(value: number): number {
   return Math.min(255, Math.max(0, Math.round(value)));
 }
 
-/** The solid color the fill becomes (gradient: the first stop; image: placeholder). */
+/**
+ * The solid color a paint becomes where only one color fits (a stroke, the text): the gradient's
+ * first stop, or the placeholder of an image. A fill uses `fillSource`, which paints the gradients.
+ */
 function paintColor(paint: Paint): Color | null {
   let base: Color | null;
   switch (paint.type) {
@@ -123,6 +127,7 @@ function paintColor(paint: Paint): Color | null {
       break;
     case 'linear':
     case 'radial':
+    case 'angular':
       base = paint.stops[0] ? parseColor(paint.stops[0].color) : null;
       break;
     case 'image':
@@ -131,6 +136,20 @@ function paintColor(paint: Paint): Color | null {
   }
   if (base === null) return null;
   return { rgb: base.rgb, alpha: base.alpha * (paint.opacity ?? 1) };
+}
+
+/**
+ * What a fill paints with: the color of a solid or image paint (the caller applies the node's
+ * opacity), or the shader of a gradient, which takes the node's `matrix` (local → raster) and the
+ * accumulated `opacity` itself. `null` when the paint draws nothing.
+ */
+function fillSource(
+  paint: Paint,
+  matrix: Matrix,
+  opacity: number,
+): Color | Shader | null {
+  if (paint.type === 'image' || paint.type === 'solid') return paintColor(paint);
+  return gradientShader(paint, matrix, opacity, parseColor);
 }
 
 // ---------------------------------------------------------------------------
@@ -692,16 +711,18 @@ function blend(raster: Raster, index: number, color: Color, coverage: number): v
 /**
  * Fills the polygons (in raster pixels) with the even-odd or non-zero rule, within
  * `clip`. The coverage of each pixel comes from `SUBSAMPLES` vertical samples with exact
- * horizontal coverage.
+ * horizontal coverage. `source` is a solid color (the fast path) or a shader, which gives the
+ * color of each pixel from its center.
  */
 export function fillPolygons(
   raster: Raster,
   polygons: readonly Polygon[],
   rule: 'nonzero' | 'evenodd',
-  color: Color,
+  source: Color | Shader,
   clip: PixelRect,
 ): void {
-  if (color.alpha <= 0) return;
+  const solid = typeof source === 'function' ? undefined : source;
+  if (solid !== undefined && solid.alpha <= 0) return;
   const edges: Edge[] = [];
   let minX = Infinity;
   let maxX = -Infinity;
@@ -777,7 +798,9 @@ export function fillPolygons(
     }
     for (let x = 0; x < width; x++) {
       const c = coverage[x]!;
-      if (c > 0) blend(raster, (y * raster.width + bx0 + x) * 4, color, Math.min(1, c));
+      if (c <= 0) continue;
+      const color = solid ?? (source as Shader)(bx0 + x + 0.5, y + 0.5);
+      blend(raster, (y * raster.width + bx0 + x) * 4, color, Math.min(1, c));
     }
   }
 }
@@ -884,13 +907,13 @@ class Painter {
     const fillable = node.type !== 'line' || node.closed;
     if (fillable && node.type !== 'text') {
       for (const paint of node.fills) {
-        const color = paintColor(paint);
-        if (color === null) continue;
+        const source = fillSource(paint, matrix, alpha);
+        if (source === null) continue;
         this.fill(
           shapes.map((s) => s.points),
           matrix,
           rule,
-          color,
+          source,
           alpha,
           clip,
         );
@@ -1150,7 +1173,7 @@ class Painter {
     polygons: readonly Polygon[],
     matrix: Matrix,
     rule: 'nonzero' | 'evenodd',
-    color: Color,
+    source: Color | Shader,
     opacity: number,
     clip: PixelRect,
   ): void {
@@ -1159,7 +1182,10 @@ class Painter {
       this.raster,
       polygons.map((poly) => this.toRaster(poly, matrix)),
       rule,
-      { rgb: color.rgb, alpha: color.alpha * opacity },
+      // A shader already carries the opacity (`fillSource`).
+      typeof source === 'function'
+        ? source
+        : { rgb: source.rgb, alpha: source.alpha * opacity },
       clip,
     );
   }

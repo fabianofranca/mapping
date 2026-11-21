@@ -1,0 +1,58 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 15,
+  "id": "drawing-extras",
+  "name": "Drawing extras",
+  "version": 1,
+  "description": "Example of the drawing extras of the component format: radial and angular gradients in a node's fill, next to the linear one, and a gradient chosen by a $switch. The Gradients component draws four swatches that read their two colors from fields.",
+  "layers": [
+    {
+      "id": "ui",
+      "name": "Interface",
+      "color": "#7C3AED",
+      "annotationTypes": [
+        {
+          "id": "gradients",
+          "name": "Gradients",
+          "description": "Swatches of a radial, an angular and a linear gradient, and a main swatch whose gradient type follows the kind field.",
+          "component": "components/gradients.json",
+          "doc": "docs/gradients.md",
+          "fields": [
+            {
+              "key": "kind",
+              "label": "Kind",
+              "description": "The gradient type of the main swatch: radial, angular or linear.",
+              "type": "enum",
+              "options": ["radial", "angular", "linear"],
+              "default": "radial"
+            },
+            {
+              "key": "from",
+              "label": "From",
+              "description": "The first color of every gradient.",
+              "type": "string",
+              "default": "#F59E0B"
+            },
+            {
+              "key": "to",
+              "label": "To",
+              "description": "The last color of every gradient; it continues beyond the radius of the radial one.",
+              "type": "string",
+              "default": "#7C3AED"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Angular sweep",
+              "values": {
+                "kind": "angular",
+                "from": "#22C55E",
+                "to": "#2563EB"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

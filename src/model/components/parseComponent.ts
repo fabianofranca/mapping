@@ -296,12 +296,48 @@ const checkCornerRadius = tokenCheck('number', (v, p, out) => {
   add(out, p, 'expected a number greater than or equal to 0 or a list of 4 numbers');
 });
 
+/** A gradient's `center`: two numbers from 0 to 1 (fractions of the box). */
+function checkGradientCenter(value: unknown, path: string, out: Ctx): void {
+  const ok =
+    Array.isArray(value) &&
+    value.length === 2 &&
+    value.every((n) => isFiniteNumber(n) && n >= 0 && n <= 1);
+  if (!ok) add(out, path, 'expected two numbers from 0 to 1');
+}
+
+/** The keys each gradient type accepts, besides `type` and `stops`. */
+const GRADIENT_KEYS: Readonly<Record<string, readonly string[]>> = {
+  linear: ['angle'],
+  radial: ['center', 'radius'],
+  angular: ['center', 'angle'],
+};
+
+/** The optional keys and `angle` of a gradient of the given type. */
+function checkGradientKeys(type: string, v: Rec, p: string, out: Ctx): void {
+  if (type === 'linear') {
+    if (!isFiniteNumber(v.angle)) add(out, join(p, 'angle'), 'expected a number');
+    return;
+  }
+  if ('center' in v) checkGradientCenter(v.center, join(p, 'center'), out);
+  if (type === 'radial') {
+    if ('radius' in v && !(isFiniteNumber(v.radius) && v.radius > 0))
+      add(out, join(p, 'radius'), 'expected a number greater than 0');
+  } else if ('angle' in v && !isFiniteNumber(v.angle)) {
+    add(out, join(p, 'angle'), 'expected a number');
+  }
+}
+
 const checkFill = tokenCheck('color', (v, p, out) => {
   if (typeof v === 'string') return checkColor(v, p, out);
   if (!isRecord(v)) return add(out, p, 'expected a color or gradient');
-  checkKeys(v, ['type', 'angle', 'stops'], p, out);
-  if (v.type !== 'linear') add(out, join(p, 'type'), 'expected "linear"');
-  if (!isFiniteNumber(v.angle)) add(out, join(p, 'angle'), 'expected a number');
+  const type =
+    typeof v.type === 'string' && Object.hasOwn(GRADIENT_KEYS, v.type)
+      ? v.type
+      : undefined;
+  checkKeys(v, ['type', 'stops', ...(GRADIENT_KEYS[type ?? 'linear'] ?? [])], p, out);
+  if (type === undefined)
+    add(out, join(p, 'type'), 'expected "linear", "radial" or "angular"');
+  else checkGradientKeys(type, v, p, out);
   const stops = join(p, 'stops');
   if (!Array.isArray(v.stops)) return add(out, stops, 'expected a list of stops');
   if (v.stops.length < 2) add(out, stops, 'expected at least 2 stops');
@@ -1625,6 +1661,35 @@ function shadowListVersionIssues(version: unknown, template: unknown): Component
   return out;
 }
 
+/**
+ * The radial and angular gradients (v4) in a `fill` of a version before 4: `only allowed with
+ * formatVersion 4`, at the `type`'s path. It looks through the results of `$switch` (`cases`,
+ * `default`) and `$if` (`then`, `else`), where a `fill` accepts a gradient.
+ */
+function gradientVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return out;
+  const results = (value: unknown, at: string): void => {
+    if (!isRecord(value)) return;
+    if (value.type === 'radial' || value.type === 'angular')
+      return addIssue(out, join(at, 'type'), V4_ONLY_MESSAGE);
+    for (const key of ['then', 'else', 'default']) results(value[key], join(at, key));
+    if (isRecord(value.cases))
+      for (const [name, c] of Object.entries(value.cases))
+        results(c, join(join(at, 'cases'), name));
+  };
+  const walk = (node: unknown, at: string): void => {
+    if (!isRecord(node)) return;
+    results(node.fill, join(at, 'fill'));
+    if (Array.isArray(node.children))
+      node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'));
+  };
+  walk(template, 'template');
+  return out;
+}
+
 /** The name the drawing gives the node (`name`, or the type; for an icon, the literal icon's name). */
 function templateNodeName(node: Rec): string | undefined {
   const type = typeof node.type === 'string' ? node.type : undefined;
@@ -2301,6 +2366,7 @@ function collectIssues(
       ),
     );
     issues.push(...shadowListVersionIssues(version, template));
+    issues.push(...gradientVersionIssues(version, template));
     issues.push(...noneAlignVersionIssues(version, template));
     issues.push(...tokenVersionIssues(version, template));
     issues.push(...paddingSpacingVersionIssues(version, template));

@@ -111,6 +111,17 @@ export type Paint =
     }
   | {
       /**
+       * Angular (sweep) gradient: the stops cover the full turn around `center` (local px),
+       * clockwise from `angle` (degrees, 0 = pointing right, like the linear convention).
+       */
+      readonly type: 'angular';
+      readonly center: Point;
+      readonly angle: number;
+      readonly stops: readonly GradientStop[];
+      readonly opacity?: number;
+    }
+  | {
+      /**
        * Image, with two sources that do not mix. `src` is only the embedded image (`data:`),
        * a legacy of the lab and the Figma/SVG converters. `url` is the remote URL coming from the
        * component's `image` node: the model never downloads it nor applies the policy (whoever

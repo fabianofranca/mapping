@@ -449,6 +449,10 @@ const SHAPE_FEATURES = [
   'fill=color',
   'fill=none',
   'fill=gradient',
+  'fill=gradient.linear',
+  'fill=gradient.radial',
+  'fill=gradient.angular',
+  'fill=gradient.expression',
   'cornerRadius=number',
   'cornerRadius=quad',
   'image.src=literal',
@@ -625,7 +629,15 @@ function nodeFeatures(node: unknown, out: Set<string>): void {
   for (const leaf of leaves(node.fill)) {
     if (leaf === 'none') out.add('fill=none');
     else if (typeof leaf === 'string') out.add('fill=color');
-    else if (isRec(leaf)) out.add('fill=gradient');
+    else if (isRec(leaf)) {
+      out.add('fill=gradient');
+      if (typeof leaf.type === 'string') out.add(`fill=gradient.${leaf.type}`);
+    }
+  }
+  // a gradient that is the result of an expression (`$switch`/`$if`) in `fill`
+  if (isRec(node.fill) && !('type' in node.fill)) {
+    if (leaves(node.fill).some((leaf) => isRec(leaf) && 'stops' in leaf))
+      out.add('fill=gradient.expression');
   }
   for (const leaf of leaves(node.cornerRadius)) {
     if (typeof leaf === 'number') out.add('cornerRadius=number');

@@ -93,6 +93,8 @@ export const catalogEnUS = {
   'catalog.drawWarning.stroke-radial-first-color':
     'Stroke with a radial gradient drawn with its first color.',
   'catalog.drawWarning.stroke-image-gray': 'Stroke with an image drawn in gray.',
+  'catalog.drawWarning.angular-gradient-unsupported':
+    'Angular gradient is not supported by this browser: drawn with its first color.',
 } as const;
 
 // portuguese-guard:begin pt-BR part of the bilingual module (decision 2 of #741)
@@ -187,5 +189,7 @@ export const catalogPtBR: Record<keyof typeof catalogEnUS, string> = {
   'catalog.drawWarning.stroke-radial-first-color':
     'Traço com gradiente radial desenhado com a primeira cor.',
   'catalog.drawWarning.stroke-image-gray': 'Traço com imagem desenhado em cinza.',
+  'catalog.drawWarning.angular-gradient-unsupported':
+    'Gradiente angular não é suportado por este navegador: desenhado com a primeira cor.',
 };
 // portuguese-guard:end

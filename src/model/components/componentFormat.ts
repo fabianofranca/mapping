@@ -149,12 +149,41 @@ export type Expr<T> =
 /** CSS color (`#rrggbb`, `#rrggbbaa`, `rgba(...)`) or `"none"`. */
 export type Color = string;
 
-export interface GradientSpec {
+/** A gradient stop: `offset` from 0 to 1 and a color (an expression is accepted). */
+export interface GradientStopSpec {
+  readonly offset: number;
+  readonly color: Expr<Color>;
+}
+
+/** Linear gradient. */
+export interface LinearGradientSpec {
   readonly type: 'linear';
   /** Angle in degrees (0 = left to right, 90 = top to bottom). */
   readonly angle: number;
-  readonly stops: readonly { readonly offset: number; readonly color: Expr<Color> }[];
+  readonly stops: readonly GradientStopSpec[];
 }
+
+/** Radial gradient (v4): always a circle, from the center out to `radius`. */
+export interface RadialGradientSpec {
+  readonly type: 'radial';
+  /** Fractions of the node's box, each from 0 to 1 (default `[0.5, 0.5]`). */
+  readonly center?: readonly [number, number];
+  /** Radius in px, greater than 0 (default: half the smaller side of the box). */
+  readonly radius?: number;
+  readonly stops: readonly GradientStopSpec[];
+}
+
+/** Angular (sweep) gradient (v4): the stops cover the full turn, clockwise from `angle`. */
+export interface AngularGradientSpec {
+  readonly type: 'angular';
+  /** Fractions of the node's box, each from 0 to 1 (default `[0.5, 0.5]`). */
+  readonly center?: readonly [number, number];
+  /** Start angle in degrees, with the linear convention (0 = right, growing clockwise; default 0). */
+  readonly angle?: number;
+  readonly stops: readonly GradientStopSpec[];
+}
+
+export type GradientSpec = LinearGradientSpec | RadialGradientSpec | AngularGradientSpec;
 
 export type FillSpec = Color | GradientSpec;
 

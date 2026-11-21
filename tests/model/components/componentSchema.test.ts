@@ -591,4 +591,59 @@ describe('component.schema.json — arcs on ellipse (FG6)', () => {
     template.children = [{ type: 'rect', width: 4, height: 4, sweepAngle: 90 }];
     expect(checkSchema(schema, component)).not.toEqual([]);
   });
+
+  describe('radial and angular gradients (formatVersion 4)', () => {
+    const stops = [
+      { offset: 0, color: '#fff' },
+      { offset: 1, color: '#1a73e8' },
+    ];
+    const withFill = (fill: unknown): Record<string, unknown> => ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'glow',
+      name: 'Glow',
+      size: { width: 40, height: 40 },
+      template: { type: 'frame', fill, children: [] },
+    });
+
+    it('accepts linear, radial and angular, with and without the optional keys', () => {
+      for (const fill of [
+        { type: 'linear', angle: 90, stops },
+        { type: 'radial', stops },
+        { type: 'radial', center: [0.25, 1], radius: 12, stops },
+        { type: 'angular', stops },
+        { type: 'angular', center: [0, 0.5], angle: -90, stops },
+        { $if: { $field: 'on' }, then: { type: 'radial', stops }, else: 'none' },
+        {
+          type: 'angular',
+          stops: [
+            { offset: 0, color: { $field: 'from', default: '#fff' } },
+            { offset: 1, color: { $token: 'brand' } },
+          ],
+        },
+      ]) {
+        const c = withFill(fill);
+        expect(checkSchema(schema, c), JSON.stringify(fill)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(fill)).toBe(true);
+      }
+    });
+
+    it('rejects what the parser rejects', () => {
+      for (const fill of [
+        { type: 'conic', stops },
+        { type: 'radial', center: [0.5], stops },
+        { type: 'radial', center: [0.5, 2], stops },
+        { type: 'radial', radius: 0, stops },
+        { type: 'radial', radius: -3, stops },
+        { type: 'radial', stops: [stops[0]] },
+        { type: 'radial', angle: 90, stops },
+        { type: 'angular', radius: 10, stops },
+        { type: 'angular', stops: [{ offset: 2, color: '#fff' }, stops[1]] },
+      ]) {
+        const c = withFill(fill);
+        expect(checkSchema(schema, c).length, JSON.stringify(fill)).toBeGreaterThan(0);
+        expect(parseComponent(c).ok, JSON.stringify(fill)).toBe(false);
+      }
+    });
+  });
 });
