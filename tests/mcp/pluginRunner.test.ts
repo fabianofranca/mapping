@@ -53,7 +53,7 @@ describe('runPlugin: the values go in and come out', () => {
   });
 
   it('echo.js: parse receives the text and the input and returns an object', async () => {
-    const text = 'a,b\n"quoted ""é"" é",日本語\n';
+    const text = 'a,b\n"quoted ""\u00e9"" \u00e9",\u65e5\u672c\u8a9e\n';
     const result = value(await run(fixture('echo.js'), 'parse', [text, input]));
     expect(result).toEqual({ operations: [], warnings: [text], input });
   });
