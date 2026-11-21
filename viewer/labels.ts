@@ -25,6 +25,8 @@ function drawWarning({ code, params }: RenderWarning): string {
       return 'stroke with a radial gradient drawn with the first color';
     case 'stroke-image-gray':
       return 'stroke with an image drawn in gray';
+    case 'angular-gradient-unsupported':
+      return 'angular gradient is not supported by this browser: drawn with its first color';
   }
 }
 

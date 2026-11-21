@@ -18,7 +18,9 @@ export const componentMessages = {
   'component.expectedRadius':
     'expected a number greater than or equal to 0 or a list of 4 numbers',
   'component.expectedFill': 'expected a color or gradient',
-  'component.expectedLinear': 'expected "linear"',
+  'component.expectedGradientType': 'expected "linear", "radial" or "angular"',
+  'component.expectedGradientCenter': 'expected two numbers from 0 to 1',
+  'component.expectedGradientRadius': 'expected a number greater than 0',
   'component.expectedStops': 'expected a list of stops',
   'component.expectedTwoStops': 'expected at least 2 stops',
   'component.expectedObject': 'expected an object',

@@ -327,7 +327,7 @@ export async function markingImage(
         ? {
             drawing: 'rendered',
             drawingNote:
-              "drawing of the components with real text (bundled font or the library's), shadow, dashes and icons; no gradient (the first color applies) and no remote image (it becomes a placeholder)",
+              "drawing of the components with real text (bundled font or the library's), shadow, dashes, gradients and icons; no remote image (it becomes a placeholder)",
           }
         : {}),
       format,

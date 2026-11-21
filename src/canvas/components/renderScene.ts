@@ -476,9 +476,29 @@ class Renderer {
         shape.fillRadialGradientEndRadius(paint.radius);
         shape.fillRadialGradientColorStops(flattenStops(paint.stops));
         return [shape];
+      case 'angular':
+        return this.angularFill(shape, paint);
       case 'image':
         return this.imageFill(shape, paint, box);
     }
+  }
+
+  /**
+   * The angular gradient has no Konva fill: it is a `createConicGradient` of the 2D context set as
+   * the shape's `fill` (its coordinates are the node's local ones, like the other gradients').
+   * Without that method it takes the first stop's color and warns.
+   */
+  private angularFill(
+    shape: ShapeWithFill,
+    paint: Paint & { type: 'angular' },
+  ): Konva.Shape[] {
+    const gradient = conicGradient(paint);
+    if (gradient) shape.fill(gradient);
+    else {
+      this.warn('angular-gradient-unsupported');
+      shape.fill(paint.stops[0]?.color ?? this.palette.placeholderLine);
+    }
+    return [shape];
   }
 
   private imageFill(shape: ShapeWithFill, paint: Paint & { type: 'image' }, box: Box) {
@@ -654,7 +674,8 @@ class Renderer {
         shape.strokeLinearGradientEndPoint(paint.end);
         shape.strokeLinearGradientColorStops(flattenStops(paint.stops));
         return;
-      case 'radial': {
+      case 'radial':
+      case 'angular': {
         this.warn('stroke-radial-first-color');
         shape.stroke(paint.stops[0]?.color ?? this.palette.placeholderLine);
         return;
@@ -1139,6 +1160,22 @@ function flattenStops(
   stops: readonly { offset: number; color: string }[],
 ): Array<number | string> {
   return stops.flatMap((s) => [s.offset, s.color]);
+}
+
+/**
+ * The conic gradient of an angular paint (angle in degrees, 0 pointing right and growing
+ * clockwise, as the canvas does), or `undefined` where the 2D context has no `createConicGradient`.
+ */
+function conicGradient(paint: Paint & { type: 'angular' }): CanvasGradient | undefined {
+  const context = document.createElement('canvas').getContext('2d');
+  if (!context || typeof context.createConicGradient !== 'function') return undefined;
+  const gradient = context.createConicGradient(
+    (paint.angle * Math.PI) / 180,
+    paint.center.x,
+    paint.center.y,
+  );
+  for (const stop of paint.stops) gradient.addColorStop(stop.offset, stop.color);
+  return gradient;
 }
 
 /** Konva `fontStyle`: "italic 600", "bold", "normal"… (it builds the canvas font from this). */

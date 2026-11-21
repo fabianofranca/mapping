@@ -2190,37 +2190,95 @@
         }
       ]
     },
-    "gradient": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "angle", "stops"],
-      "properties": {
-        "type": {
-          "const": "linear"
-        },
-        "angle": {
-          "type": "number"
-        },
-        "stops": {
-          "type": "array",
-          "minItems": 2,
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["offset", "color"],
-            "properties": {
-              "offset": {
-                "type": "number",
-                "minimum": 0,
-                "maximum": 1
-              },
-              "color": {
-                "$ref": "#/$defs/lit_color"
-              }
-            }
+    "gradient_stops": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["offset", "color"],
+        "properties": {
+          "offset": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "color": {
+            "$ref": "#/$defs/lit_color"
           }
         }
       }
+    },
+    "gradient_center": {
+      "description": "Center as fractions of the node's box (0 to 1); default [0.5, 0.5].",
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    "gradient": {
+      "description": "Gradient of a fill: linear, radial or angular (radial and angular only in formatVersion 4).",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "angle", "stops"],
+          "properties": {
+            "type": {
+              "const": "linear"
+            },
+            "angle": {
+              "type": "number"
+            },
+            "stops": {
+              "$ref": "#/$defs/gradient_stops"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "stops"],
+          "properties": {
+            "type": {
+              "const": "radial"
+            },
+            "center": {
+              "$ref": "#/$defs/gradient_center"
+            },
+            "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "stops": {
+              "$ref": "#/$defs/gradient_stops"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "stops"],
+          "properties": {
+            "type": {
+              "const": "angular"
+            },
+            "center": {
+              "$ref": "#/$defs/gradient_center"
+            },
+            "angle": {
+              "type": "number"
+            },
+            "stops": {
+              "$ref": "#/$defs/gradient_stops"
+            }
+          }
+        }
+      ]
     },
     "size_noHug": {
       "description": "Size of the image node: px, \"fill\" or \"NN%\" (hug is an error, the layout does not depend on the downloaded image).",
