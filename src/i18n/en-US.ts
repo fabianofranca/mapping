@@ -1194,6 +1194,7 @@ export const enUS = {
   'library.addToCanvas': 'Add to canvas',
   'library.dragHint': 'Drag to the canvas to create where you drop',
   'library.noScreen': 'Select or center a screen',
+  'library.noFreeSpace': 'No free space: the new component overlaps other markings.',
   'library.readOnly': 'The project is read-only.',
   'library.error.generic': 'Could not add the component.',
   'library.error.rect-out-of-image': 'The component does not fit on this screen.',

@@ -234,6 +234,47 @@ describe('plan_signature_import: SwiftUI and Figma', () => {
   });
 });
 
+describe('plan_signature_import: ignore next to the design sheet (stage #1926)', () => {
+  it('a type whose figma source has signature and ignore is not invalid-spec, and Icon stays out of unmapped', async () => {
+    const lib = join(base, 'lib-ignore');
+    cpSync(join(FIXTURES, 'library'), lib, { recursive: true });
+    const first = await call('plan_signature_import', {
+      path: 'lib-ignore',
+      type: 'button',
+      system: 'figma',
+      signature: fixture('button.figma.json'),
+    });
+    expect(first.isError, JSON.stringify(first.data)).toBe(false);
+    const written = first.data as Plan;
+    expect(written.unmapped.map((u) => u.name)).toEqual(['Icon']);
+    // As the skill says (6a step 4): the agent adds `ignore` by hand to the source of the sheet.
+    const spec = written.spec as unknown as {
+      layers: {
+        annotationTypes: { id: string; sources?: Record<string, unknown>[] }[];
+      }[];
+    };
+    const button = spec.layers[0]!.annotationTypes.find((t) => t.id === 'button')!;
+    expect(button.sources?.[0]).toMatchObject({ system: 'figma' });
+    button.sources![0]!.ignore = ['Icon'];
+    writeFileSync(join(lib, 'lib.spec.json'), `${JSON.stringify(spec, null, 2)}\n`);
+    const target = join(lib, written.signaturePath);
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, `${JSON.stringify(fixture('button.figma.json'), null, 2)}\n`);
+
+    const again = await call('plan_signature_import', {
+      path: 'lib-ignore',
+      type: 'button',
+      system: 'figma',
+      signature: fixture('button.figma.json'),
+    });
+    expect(again.isError, JSON.stringify(again.data)).toBe(false);
+    const result = again.data as Plan;
+    expect(result.unmapped).toEqual([]);
+    expect(result.changes).toEqual([]);
+    expect(result.versionBump).toBe(false);
+  });
+});
+
 describe('plan_signature_import: errors', () => {
   const ficha = (): unknown => fixture('button.compose.json');
 

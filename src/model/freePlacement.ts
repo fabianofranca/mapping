@@ -124,6 +124,31 @@ function isLevelObstacle(
   return containerId !== null || m.pageId === pageId;
 }
 
+/** The level whose placement parent is `parent` (`null` = the root of the space), on the page `page` of the canvas. */
+function levelOf(
+  p: Project,
+  containerId: string | null,
+  page: string | null,
+  parent: Marking | null,
+  area: Rect | null = levelArea(p, containerId, parent),
+): PlacementLevel {
+  const excluded = parent === null ? new Set<string>() : lineage(p, parent);
+  return {
+    parent,
+    area,
+    obstacles: levelObstacles(p, containerId, page, area, excluded),
+  };
+}
+
+/** The page of the canvas space (`null` in a container): the one asked for, by default the first. */
+function spacePage(
+  p: Project,
+  containerId: string | null,
+  pageId?: string,
+): string | null {
+  return containerId === null ? (pageId ?? firstPageId(p)) : null;
+}
+
 /**
  * The placement level of `rect` (R0) in space `containerId` (`null` = the canvas of `pageId`, by
  * default the first page). With `target`
@@ -137,15 +162,29 @@ export function placementLevel(
   pageId?: string,
 ): PlacementLevel {
   // The canvas is one space per page: `pageId` (default: the first page) picks it.
-  const page = containerId === null ? (pageId ?? firstPageId(p)) : null;
+  const page = spacePage(p, containerId, pageId);
   const parent = target?.parent ?? levelParent(p, containerId, rect, page);
-  const area = target?.area ?? levelArea(p, containerId, parent);
-  const excluded = parent === null ? new Set<string>() : lineage(p, parent);
-  return {
-    parent,
-    area,
-    obstacles: levelObstacles(p, containerId, page, area, excluded),
-  };
+  return levelOf(p, containerId, page, parent, target?.area);
+}
+
+/**
+ * The level above `level` (stage #1891, decision 4): its placement parent is the parent of the
+ * current one (`null` = the root of the space), its area is that marking's rectangle (the image at
+ * the root; on the canvas, none) and its obstacles follow the same rule, now excluding the new
+ * parent and its ancestors: the old parent becomes an obstacle. On the canvas it keeps the
+ * origin level's page (`pageId`, the first one by default). `null` when `level` is already the root.
+ */
+export function levelAbove(
+  p: Project,
+  containerId: string | null,
+  level: PlacementLevel,
+  pageId?: string,
+): PlacementLevel | null {
+  if (level.parent === null) return null;
+  const parentId = level.parent.parentId;
+  const above =
+    parentId === null ? null : (projectIndex(p).markings.get(parentId) ?? null);
+  return levelOf(p, containerId, spacePage(p, containerId, pageId), above);
 }
 
 /** Is the rectangle free at the level (fits in the area and does not overlap an obstacle)? */
@@ -167,6 +206,27 @@ export function freeRectIn(level: PlacementLevel, rect: Rect): Rect | null {
     level.area,
   );
   return spot === null ? null : { ...spot, width: rect.width, height: rect.height };
+}
+
+/**
+ * `rect` (R0) at the nearest free spot of `level` or, with none, of the level above, and so on up
+ * to the root (stage #1891, decision 4); the search always starts from the same `rect`. `null`
+ * with no spot at any level (the caller falls back to `crowdedRectIn` at the origin level).
+ */
+export function freeRectGoingUp(
+  p: Project,
+  containerId: string | null,
+  level: PlacementLevel,
+  rect: Rect,
+  pageId?: string,
+): Rect | null {
+  let current: PlacementLevel | null = level;
+  while (current !== null) {
+    const spot = freeRectIn(current, rect);
+    if (spot !== null) return spot;
+    current = levelAbove(p, containerId, current, pageId);
+  }
+  return null;
 }
 
 function overlapArea(a: Rect, b: Rect): number {

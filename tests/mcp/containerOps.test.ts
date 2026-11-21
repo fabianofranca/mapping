@@ -492,3 +492,54 @@ describe('reading always in plain language, without raw error JSON', () => {
     expect(readProject(dir).containers).toHaveLength(1);
   });
 });
+
+describe('replace_container: the density follows the width (stage #1891)', () => {
+  it('stores the new density, the step says "density 3x → 6x" and the proposal carries the density field next to the file', async () => {
+    const { name, dir } = await newProject();
+    const created = await propose(mcp, name, [
+      { op: 'add_container', file: 'fontes/foto.png', name: 'Photo', density: 3 },
+    ]);
+    acceptAllAndApply(dir, created.proposal.id);
+    const photo = created.created[0]!.ref!;
+    const marked = await propose(mcp, name, [
+      {
+        op: 'create_marking',
+        container: photo,
+        rect: { x: 30, y: 40, width: 60, height: 20 },
+      },
+    ]);
+    acceptAllAndApply(dir, marked.proposal.id);
+    const bigger = (await encodePng(quadrants(600, 400))).toString('base64');
+    const operations = [{ op: 'replace_container', container: photo, base64: bigger }];
+
+    const result = await plan(name, operations);
+    expect(result.errors).toBeUndefined();
+    expect(result.summary[0]).toContain(', density 3x → 6x)');
+
+    const proposed = await propose(mcp, name, operations);
+    const proposal = readProposal(dir, proposed.proposal.id);
+    const fields = proposal.changes
+      .filter((c) => c.entity === 'image')
+      .map((c) => c.field);
+    expect(fields).toContain('file');
+    expect(fields).toContain('density');
+    const saved = acceptAllAndApply(dir, proposed.proposal.id);
+    expect(saved.containers[0]!.density).toBe(6);
+    expect(saved.containers[0]!.width).toBe(600);
+    expect(saved.markings[0]!.rect).toEqual({ x: 60, y: 80, width: 120, height: 40 });
+    expect(ok(await mcp.call('get_container', { ref: photo })).density).toBe(6);
+  });
+
+  it('with the same width the step does not mention the density', async () => {
+    const { name, dir } = await newProject();
+    const created = await propose(mcp, name, [
+      { op: 'add_container', file: 'fontes/foto.png', name: 'Photo', density: 3 },
+    ]);
+    acceptAllAndApply(dir, created.proposal.id);
+    const same = (await encodePng(quadrants(300, 200))).toString('base64');
+    const result = await plan(name, [
+      { op: 'replace_container', container: created.created[0]!.ref!, base64: same },
+    ]);
+    expect(result.summary[0]).not.toContain('density');
+  });
+});
