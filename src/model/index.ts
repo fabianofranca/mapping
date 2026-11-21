@@ -70,6 +70,13 @@ export * from './specLookup';
 export * from './specSlots';
 export * from './specializations';
 export * from './libraryPackage';
+export {
+  MAX_IMAGE_BYTES,
+  MAX_IMAGE_SIDE,
+  MAX_IMAGES_TOTAL_BYTES,
+  citedImages,
+  type CitedImage,
+} from './libraryImages';
 export * from './bundledLibrary';
 export * from './catalog';
 export * from './specVersions';

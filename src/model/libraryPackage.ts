@@ -103,22 +103,25 @@ export function toLibraryFiles(
   const files: LibraryFile[] = [];
   for (const entry of entries) {
     if (!entry.path.startsWith(prefix) || entry.path.length === prefix.length) continue;
-    const path = entry.path.slice(prefix.length);
-    if (isTextPackageFile(path)) {
-      if (entry.text !== undefined) files.push({ path, text: entry.text });
-    } else if (isImagePath(path)) {
-      const size = entry.bytes?.length ?? entry.size;
-      files.push({
-        path,
-        binary: true,
-        ...(entry.bytes === undefined ? {} : { bytes: entry.bytes }),
-        ...(size === undefined ? {} : { size }),
-      });
-    } else {
-      files.push({ path, binary: true });
-    }
+    const file = libraryFileOf(entry.path.slice(prefix.length), entry);
+    if (file !== undefined) files.push(file);
   }
   return files;
+}
+
+/** One entry as a library file: text, an image with its content, or a present binary; `undefined` for an unread text. */
+function libraryFileOf(path: string, entry: PackageEntry): LibraryFile | undefined {
+  if (isTextPackageFile(path)) {
+    return entry.text === undefined ? undefined : { path, text: entry.text };
+  }
+  if (!isImagePath(path)) return { path, binary: true };
+  const size = entry.bytes?.length ?? entry.size;
+  return {
+    path,
+    binary: true,
+    ...(entry.bytes === undefined ? {} : { bytes: entry.bytes }),
+    ...(size === undefined ? {} : { size }),
+  };
 }
 
 /**

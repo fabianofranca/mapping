@@ -149,35 +149,34 @@ export function imageSize(file: ImageFileFacts): number | undefined {
   return file.bytes?.length ?? file.size;
 }
 
+/** More than 2048 px on a side (read from the header); nothing when the size cannot be read. */
+function oversize(path: string, bytes: Uint8Array, format: ImageFormat): ImageProblem[] {
+  const size = readSize(bytes, format);
+  if (size === null || Math.max(size.width, size.height) <= MAX_IMAGE_SIDE) return [];
+  return [
+    {
+      code: 'library.imageTooWide',
+      params: { path, width: size.width, height: size.height },
+    },
+  ];
+}
+
 /**
  * The problems of an existing cited image: the content does not match the extension's format,
  * more than 1 MB, more than 2048 px on a side. Without bytes only the size can be checked (when
  * known).
  */
 export function imageProblems(path: string, file: ImageFileFacts): ImageProblem[] {
-  const out: ImageProblem[] = [];
   const { bytes } = file;
-  if (bytes !== undefined) {
-    const format = detectFormat(bytes);
-    if (format === null || format !== formatOfExtension(path)) {
-      return [{ code: 'library.imageBadFormat', params: { path } }];
-    }
+  const format = bytes === undefined ? null : detectFormat(bytes);
+  if (bytes !== undefined && format !== formatOfExtension(path)) {
+    return [{ code: 'library.imageBadFormat', params: { path } }];
   }
+  const out: ImageProblem[] = [];
   const size = imageSize(file);
   if (size !== undefined && size > MAX_IMAGE_BYTES) {
     out.push({ code: 'library.imageTooHeavy', params: { path } });
   }
-  const format = bytes === undefined ? null : detectFormat(bytes);
-  const dimensions =
-    bytes === undefined || format === null ? null : readSize(bytes, format);
-  if (
-    dimensions !== null &&
-    (dimensions.width > MAX_IMAGE_SIDE || dimensions.height > MAX_IMAGE_SIDE)
-  ) {
-    out.push({
-      code: 'library.imageTooWide',
-      params: { path, width: dimensions.width, height: dimensions.height },
-    });
-  }
+  if (bytes !== undefined && format !== null) out.push(...oversize(path, bytes, format));
   return out;
 }

@@ -8,6 +8,7 @@ import {
   type LibraryFile,
   type LibraryIssue,
 } from '../../src/model/library';
+import { loadLibrary } from '../../src/model/components/library';
 import { toLibraryFiles } from '../../src/model/libraryPackage';
 import { jpegBytes, pngBytes, webpBytes } from '../support/imageBytes';
 
@@ -184,7 +185,9 @@ describe('level 1: package image files', () => {
     const names = Array.from({ length: 9 }, (_, i) => `images/i${i}.png`);
     const files = names.map((n) => withBytes(n, pngBytes(10, 10, MB)));
     const report = validate(component(names.map((n) => image(n))), files);
-    expect(report.errors.map(where)).toEqual([['', '', 'the package images exceed 8 MB']]);
+    expect(report.errors.map(where)).toEqual([
+      ['', '', 'the package images exceed 8 MB'],
+    ]);
     expect(report.errors[0]?.code).toBe('library.imagesTooHeavy');
     // 8 MB exactly is fine.
     const ok = validate(
@@ -285,11 +288,7 @@ describe('level 1: package image files', () => {
         'template.children[0].src.default',
         'file not found: images/b.png',
       ],
-      [
-        COMPONENT_PATH,
-        'template.children[1].src.else',
-        'file not found: images/d.png',
-      ],
+      [COMPONENT_PATH, 'template.children[1].src.else', 'file not found: images/d.png'],
     ]);
     expect(report.summary.images).toBe(4);
   });
@@ -374,9 +373,11 @@ describe('level 3: example value that names a missing package image', () => {
   const photoComponent = (): Raw => component([image({ $field: 'photo' })]);
 
   it('warns at the example value when the file is missing', () => {
-    const report = validate(photoComponent(), [], [
-      { name: 'one', values: { photo: 'images/missing.png' } },
-    ]);
+    const report = validate(
+      photoComponent(),
+      [],
+      [{ name: 'one', values: { photo: 'images/missing.png' } }],
+    );
     expect(report.errors).toEqual([]);
     const issue = report.warnings.find((w) => w.code === 'library.imageValueMissing');
     expect(issue?.message).toBe('package image not found: images/missing.png');
@@ -410,9 +411,11 @@ describe('level 3: example value that names a missing package image', () => {
   });
 
   it('only fields read by an image src count', () => {
-    const report = validate(photoComponent(), [], [
-      { name: 'one', values: { mode: 'a', photo: 'x.png' } },
-    ]);
+    const report = validate(
+      photoComponent(),
+      [],
+      [{ name: 'one', values: { mode: 'a', photo: 'x.png' } }],
+    );
     // `mode` is not an image field; `photo` is, and `x.png` is missing.
     expect(
       report.warnings.filter((w) => w.code === 'library.imageValueMissing'),
@@ -436,5 +439,32 @@ describe('toLibraryFiles with images', () => {
       { path: 'images/big.jpg', binary: true, size: 5 * MB },
       { path: 'fonts/f.ttf', binary: true },
     ]);
+  });
+});
+
+describe('loadLibrary with images', () => {
+  const texts = [
+    { path: SPEC_PATH, text: JSON.stringify(spec()) },
+    { path: COMPONENT_PATH, text: JSON.stringify(component([image('images/a.png')])) },
+  ];
+
+  it('keeps the bytes of the image files by path, and only of image files', () => {
+    const png = pngBytes(8, 8);
+    const library = loadLibrary([
+      ...texts,
+      { path: 'images/a.png', bytes: png },
+      { path: 'images/b.WEBP', bytes: webpBytes(8, 8).buffer as ArrayBuffer },
+      { path: 'fonts/f.ttf', bytes: Uint8Array.from([0, 1, 2, 3]) },
+    ]);
+    expect([...(library.images ?? new Map()).keys()]).toEqual([
+      'images/a.png',
+      'images/b.WEBP',
+    ]);
+    expect(library.images?.get('images/a.png')).toBe(png);
+    expect(library.images?.get('images/b.WEBP')).toBeInstanceOf(Uint8Array);
+  });
+
+  it('has no images when no file carries bytes', () => {
+    expect(loadLibrary(texts).images?.size).toBe(0);
   });
 });
