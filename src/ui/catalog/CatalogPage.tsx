@@ -389,16 +389,7 @@ function Gallery({
       list.push(make(`ex-${i}`, example.name, example.description, example));
     });
     return list;
-  }, [
-    catalog,
-    entry,
-    specId,
-    version,
-    renderer,
-    fontsEpoch,
-    imagesEpoch,
-    imageSource,
-  ]);
+  }, [catalog, entry, specId, version, renderer, fontsEpoch, imagesEpoch, imageSource]);
 
   if (items.length === 0) return <p class="muted">{t('catalog.gallery.empty')}</p>;
   return (

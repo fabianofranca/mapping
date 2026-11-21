@@ -34,7 +34,19 @@ export function CanvasHost() {
       canvas.current = null;
       controller.destroy();
     };
-  }, [store, actions, display, ui, derived, canvas, view, review, perspective, page, session]);
+  }, [
+    store,
+    actions,
+    display,
+    ui,
+    derived,
+    canvas,
+    view,
+    review,
+    perspective,
+    page,
+    session,
+  ]);
 
   return <div ref={ref} class="canvas-host" />;
 }

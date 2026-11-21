@@ -214,7 +214,11 @@ describe('PreviewController', () => {
         size: 0,
         bytes: 0,
       };
-      return { images, emit: (key: string) => listener?.(key), has: () => listener !== null };
+      return {
+        images,
+        emit: (key: string) => listener?.(key),
+        has: () => listener !== null,
+      };
     }
 
     it('redoes the drawings that cite an image when it finishes, in one frame, and stops listening when destroyed', () => {

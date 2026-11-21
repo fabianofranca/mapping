@@ -51,15 +51,13 @@ function setup(
     Promise.resolve(files[asset] ?? null),
   );
   const decode = vi.fn(() => Promise.resolve(asImage(fake(8, 4))));
-  const defer = vi.fn((fn: () => void) => fn());
   const images = createPackageImages({
     read,
     decode,
-    defer,
     ...(options.cacheBytes === undefined ? {} : { cacheBytes: options.cacheBytes }),
     ...(options.concurrency === undefined ? {} : { concurrency: options.concurrency }),
   });
-  return { images, read, decode, defer };
+  return { images, read, decode };
 }
 
 const ready = (view: PackageImageView) => {
@@ -67,7 +65,10 @@ const ready = (view: PackageImageView) => {
   return view;
 };
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 describe('createPackageImages', () => {
   it('is loading at first, then ready with the decoded size; it notifies the key once', async () => {
@@ -189,7 +190,7 @@ describe('createPackageImages', () => {
     expect(PACKAGE_IMAGE_LIMITS.concurrency).toBeGreaterThan(1);
   });
 
-  it('drop(spec) frees that library bitmaps (closing them) and keeps the others', async () => {
+  it('drop(spec) frees that library bitmaps (without closing what a drawing may hold) and keeps the others', async () => {
     const bitmaps: Fake[] = [];
     const read = vi.fn(() => Promise.resolve(PNG));
     const decode = vi.fn(() => {
@@ -197,36 +198,62 @@ describe('createPackageImages', () => {
       bitmaps.push(bitmap);
       return Promise.resolve(asImage(bitmap));
     });
-    const defer = vi.fn((fn: () => void) => fn());
-    const images = createPackageImages({ read, decode, defer });
+    const images = createPackageImages({ read, decode });
     images.resolve('one', 'images/logo.png');
     images.resolve('two', 'images/logo.png');
     await settle();
     expect(images.size).toBe(2);
     images.drop('one');
     expect(images.size).toBe(1);
-    expect(bitmaps[0]?.close).toHaveBeenCalledTimes(1);
+    expect(bitmaps[0]?.close).not.toHaveBeenCalled();
     expect(bitmaps[1]?.close).not.toHaveBeenCalled();
     expect(images.resolve('one', 'images/logo.png')).toEqual({ state: 'loading' });
     images.clear();
     expect(images.size).toBe(0);
-    expect(bitmaps[1]?.close).toHaveBeenCalledTimes(1);
+    expect(bitmaps[1]?.close).not.toHaveBeenCalled();
   });
 
-  it('closes a freed bitmap only after the deferral, so a frame in flight does not draw a closed one', async () => {
-    const pending: (() => void)[] = [];
+  it('never closes a bitmap it handed out: a mounted drawing may hold it for as long as it lives', async () => {
     const bitmap = fake(8, 4);
     const images = createPackageImages({
       read: () => Promise.resolve(PNG),
       decode: () => Promise.resolve(asImage(bitmap)),
-      defer: (fn) => pending.push(fn),
     });
     images.resolve('lib', 'images/logo.png');
     await settle();
+    vi.useFakeTimers();
     images.clear();
+    vi.advanceTimersByTime(60_000);
     expect(bitmap.close).not.toHaveBeenCalled();
-    pending.forEach((fn) => fn());
-    expect(bitmap.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('trim keeps an image that is still loading: its result must reach the drawing', async () => {
+    // `a` and `b` are ready and fill the cache; `c` is still reading when `b` finishes a second
+    // image over the limit, which must not take `c` (nothing to free) out from under its load.
+    let finishSlow: (value: ArrayBuffer) => void = () => undefined;
+    const read = vi.fn((_spec: string, asset: string) =>
+      asset === 'images/slow.png'
+        ? new Promise<ArrayBuffer>((resolve) => (finishSlow = resolve))
+        : Promise.resolve(PNG),
+    );
+    const images = createPackageImages({
+      read,
+      decode: () => Promise.resolve(asImage(fake(8, 4))),
+      cacheBytes: 100,
+      concurrency: 4,
+    });
+    const heard = vi.fn();
+    images.subscribe(heard);
+    images.resolve('lib', 'images/slow.png');
+    images.resolve('lib', 'images/a.png');
+    await settle();
+    // `a` is over the limit by itself (128 > 100) and only `slow` (loading) is older than it.
+    expect(images.resolve('lib', 'images/slow.png')).toEqual({ state: 'loading' });
+    finishSlow(PNG);
+    await settle();
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(heard).toHaveBeenCalledWith(packageImageKey('lib', 'images/slow.png'));
+    expect(images.resolve('lib', 'images/slow.png').state).toBe('ready');
   });
 
   it('a result that arrives after the library was dropped is discarded and closed', async () => {
@@ -235,7 +262,6 @@ describe('createPackageImages', () => {
     const images = createPackageImages({
       read: () => new Promise<ArrayBuffer>((resolve) => (finish = resolve)),
       decode: () => Promise.resolve(asImage(bitmap)),
-      defer: (fn) => fn(),
     });
     const heard = vi.fn();
     images.subscribe(heard);

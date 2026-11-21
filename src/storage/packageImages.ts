@@ -35,8 +35,6 @@ export const PACKAGE_IMAGE_LIMITS = {
   cacheBytes: 64 * 1024 * 1024,
   /** How many files are read and decoded at the same time. */
   concurrency: 4,
-  /** Milliseconds a freed bitmap waits before `close()`, for a frame in flight to finish. */
-  closeDelayMs: 2000,
 } as const;
 
 /** What the canvas and the gallery need to draw package images. */
@@ -60,8 +58,6 @@ export interface PackageImagesDeps {
   readonly read: (specId: string, asset: string) => Promise<ArrayBuffer | null>;
   /** Default: `createImageBitmap(blob, { imageOrientation: 'from-image' })`. */
   readonly decode?: (blob: Blob) => Promise<DecodedPackageImage>;
-  /** Runs `fn` later (default `setTimeout`); injectable for tests. */
-  readonly defer?: (fn: () => void) => void;
   readonly cacheBytes?: number;
   readonly concurrency?: number;
 }
@@ -71,10 +67,6 @@ export { packageImageKey };
 const defaultDecode = (blob: Blob): Promise<DecodedPackageImage> =>
   createImageBitmap(blob, { imageOrientation: 'from-image' });
 
-const defaultDefer = (fn: () => void): void => {
-  setTimeout(fn, PACKAGE_IMAGE_LIMITS.closeDelayMs);
-};
-
 interface Entry {
   view: PackageImageView;
   readonly specId: string;
@@ -82,7 +74,6 @@ interface Entry {
 
 export function createPackageImages(deps: PackageImagesDeps): PackageImages {
   const decode = deps.decode ?? defaultDecode;
-  const defer = deps.defer ?? defaultDefer;
   const cacheBytes = deps.cacheBytes ?? PACKAGE_IMAGE_LIMITS.cacheBytes;
   const concurrency = deps.concurrency ?? PACKAGE_IMAGE_LIMITS.concurrency;
   /** In use order: the first is the least recently used. */
@@ -94,14 +85,10 @@ export function createPackageImages(deps: PackageImagesDeps): PackageImages {
   const bytesOf = (entry: Entry): number =>
     entry.view.state === 'ready' ? entry.view.width * entry.view.height * 4 : 0;
 
-  const release = (image: DecodedPackageImage): void => {
-    // A frame in flight may still hold the bitmap: it is closed after a delay.
-    defer(() => image.close());
-  };
-
-  const free = (key: string, entry: Entry): void => {
+  // A bitmap that was handed out is never closed: a mounted drawing may hold it for as long as it
+  // lives, and a closed one throws in `drawImage`; the garbage collector reclaims it.
+  const free = (key: string): void => {
     entries.delete(key);
-    if (entry.view.state === 'ready') release(entry.view.image);
   };
 
   const total = (): number => {
@@ -115,8 +102,9 @@ export function createPackageImages(deps: PackageImagesDeps): PackageImages {
     for (const [key, entry] of entries) {
       if (held <= cacheBytes) return;
       if (key === keep) continue;
+      // A read in flight has nothing to free, and dropping it would discard its result.
+      if (entry.view.state !== 'ready') continue;
       held -= bytesOf(entry);
-      // Not closed: a drawing may still hold it; the garbage collector reclaims it.
       entries.delete(key);
     }
   };
@@ -147,8 +135,8 @@ export function createPackageImages(deps: PackageImagesDeps): PackageImages {
 
   function finish(key: string, owner: Entry, view: PackageImageView): void {
     if (entries.get(key) !== owner) {
-      // Dropped while it loaded: nobody wants it.
-      if (view.state === 'ready') release(view.image);
+      // Dropped while it loaded: nobody was given it, so it can be closed at once.
+      if (view.state === 'ready') view.image.close();
       return;
     }
     owner.view = view;
@@ -192,11 +180,11 @@ export function createPackageImages(deps: PackageImagesDeps): PackageImages {
     },
     drop(specId) {
       for (const [key, entry] of [...entries]) {
-        if (entry.specId === specId) free(key, entry);
+        if (entry.specId === specId) free(key);
       }
     },
     clear() {
-      for (const [key, entry] of [...entries]) free(key, entry);
+      for (const key of [...entries.keys()]) free(key);
     },
     get size() {
       return entries.size;
