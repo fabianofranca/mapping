@@ -26,6 +26,7 @@ export const MCP_ERROR_CODES = [
   'empty-message',
   'encode-failed',
   'file-too-large',
+  'format-not-found',
   'icons-not-declared',
   'image-exists',
   'image-file-missing',
