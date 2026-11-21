@@ -7,6 +7,7 @@ import {
   CUSTOM_PRESET,
   DEFAULT_CONTAINER_BACKGROUND,
   SELECTION_PRESET,
+  containerExtras,
   presetGroups,
   readContainerForm,
   selectionSize,
@@ -62,9 +63,7 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
     const center = canvas.current?.viewportCenter();
     const result = actions.addBackgroundContainer({
       ...form.value,
-      ...(density !== 1 ? { density } : {}),
-      ...(classes ? { classes } : {}),
-      ...(center ? { center } : {}),
+      ...containerExtras({ density, classes, center: center ?? undefined }),
     });
     if (!result.ok) {
       setInvalid(null);

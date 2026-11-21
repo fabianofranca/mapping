@@ -365,15 +365,12 @@ function sameIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
   );
 }
 
-/** The set, the class and the allowed classes of `outside-container-class`. */
-function sameContainerClassIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
-  return (
-    x.set?.id === y.set?.id &&
-    x.class?.id === y.class?.id &&
-    x.allowed?.length === y.allowed?.length &&
-    (x.allowed ?? []).every((c, i) => c.id === y.allowed?.[i]?.id)
-  );
-}
+/** The set, the class and the allowed classes of `outside-container-class`, as one comparable text. */
+const containerClassKey = (i: AnnotationIssue): string =>
+  [i.set?.id, i.class?.id, ...(i.allowed ?? []).map((c) => c.id)].join('/');
+
+const sameContainerClassIssue = (x: AnnotationIssue, y: AnnotationIssue): boolean =>
+  containerClassKey(x) === containerClassKey(y);
 
 /** The part of `accessible-label-missing` (its id and name). */
 function samePart(x: AnnotationIssue, y: AnnotationIssue): boolean {

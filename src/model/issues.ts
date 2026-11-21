@@ -1,4 +1,8 @@
-import { containerClassIn, type SpecContainerClassSet } from './containerClasses';
+import {
+  containerClassIn,
+  type SpecContainerClass,
+  type SpecContainerClassSet,
+} from './containerClasses';
 import { findById } from './project';
 import { memoByProject, projectIndex } from './projectIndex';
 import {
@@ -138,21 +142,29 @@ function containerClassIssues(
       : index.containers.get(marking.containerId);
   if (container === undefined) return [];
   const sets = resolved.spec.containerClasses ?? [];
-  const issues: AnnotationIssue[] = [];
-  for (const [setId, allowedIds] of Object.entries(appliesIn)) {
-    const set: SpecContainerClassSet | undefined = sets.find((s) => s.id === setId);
+  return Object.entries(appliesIn).flatMap(([setId, allowedIds]) => {
+    const set = sets.find((x) => x.id === setId);
     const found = set && containerClassIn(p, container, set);
-    if (!set || !found || allowedIds.includes(found.id)) continue;
-    issues.push({
-      code: 'outside-container-class',
-      set: { id: set.id, name: set.name },
-      class: { id: found.id, name: found.name },
-      allowed: set.classes
-        .filter((c) => allowedIds.includes(c.id))
-        .map((c) => ({ id: c.id, name: c.name })),
-    });
-  }
-  return issues;
+    return set && found && !allowedIds.includes(found.id)
+      ? [outsideItem(set, found, allowedIds)]
+      : [];
+  });
+}
+
+/** The `outside-container-class` item of one set: the class the container has and the ones allowed. */
+function outsideItem(
+  set: SpecContainerClassSet,
+  found: SpecContainerClass,
+  allowedIds: readonly string[],
+): AnnotationIssue {
+  return {
+    code: 'outside-container-class',
+    set: { id: set.id, name: set.name },
+    class: { id: found.id, name: found.name },
+    allowed: set.classes
+      .filter((c) => allowedIds.includes(c.id))
+      .map((c) => ({ id: c.id, name: c.name })),
+  };
 }
 
 function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
