@@ -85,7 +85,7 @@ describe('painel.py — `começar agora:` after a write (#2480)', () => {
       const out = apply("log 'no change'\n");
       expect(line(out)).toBe('');
       const batch = apply("row '#1' stage=Testador\nrow '#1' step=x\n");
-      expect(batch.match(/começar agora:/g)).toHaveLength(1);
+      expect(batch.split('começar agora:')).toHaveLength(2);
       expect(batch.match(/alterados:/g)).toHaveLength(1);
     },
     TIMEOUT,
