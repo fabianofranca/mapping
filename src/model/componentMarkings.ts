@@ -30,6 +30,7 @@ import {
 import { anchorValues, drawingValues } from './componentValues';
 import { effectiveDensity, unitSpaceOf, unitsToPixels } from './density';
 import { slotInputsOf } from './componentSlotInputs';
+import { withContainer } from './components/container';
 import { componentForDrawing, drawOptions } from './drawingMode';
 import {
   anchoredRect,
@@ -410,7 +411,10 @@ function slotArea(
   if (slot === undefined || box === undefined) return whole;
   const area = wholePixels(box, container.rect);
   if (area === null) return whole;
-  const values = drawingValues(p, mc.annotation, mc.type).values;
+  const values = withContainer(
+    drawingValues(p, mc.annotation, mc.type).values,
+    drawn.container,
+  );
   const density = effectiveDensity(p, container.containerId);
   const layout = scaledLayout(resolveSlotLayout(slot, values), density);
   return {
@@ -638,7 +642,11 @@ function wantedSize(
   // exist yet (born at `size`; Arrange adjusts it after they come in). With no such axis (the Material 3
   // top app bar's height by `style`) nothing depends on them and the component is measured as always.
   const drawn = componentForDrawing(p, component, args.containerId);
-  const reserved = { anchor: args.instanceAnchor, direction: drawn.direction };
+  const reserved = {
+    anchor: args.instanceAnchor,
+    direction: drawn.direction,
+    container: drawn.container,
+  };
   if (hasSlotComponent(component) && sizingFollowsContent(component, values, reserved))
     return nominal;
   const fitted = fitComponentSize(

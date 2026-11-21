@@ -14,6 +14,7 @@ import type {
   IntrinsicSize,
 } from './components/componentFormat';
 import type { InstanceAnchor } from './components/anchor';
+import { withContainer, type InstanceContainer } from './components/container';
 import { intrinsicModeOf } from './components/layoutValues';
 import {
   expressionPx,
@@ -110,6 +111,8 @@ interface Container {
   readonly tokens: ResolvedTokens | undefined;
   /** Effective reading direction of the marking's space (`rtl` mirrors the row and the grid). */
   readonly direction: ReadingDirection;
+  /** The container's `$container.*` context, when the component reads it (`componentForDrawing`). */
+  readonly container: InstanceContainer | undefined;
   readonly values: FieldValues;
   /** The slots that hold children, in template order (a plain `none` layout is not arranged). */
   readonly slots: readonly ContainerSlot[];
@@ -190,7 +193,10 @@ function containerOf(
   if (templates.length === 0) return null;
   const kids = projectIndex(p).children.get(markingId) ?? [];
   if (kids.length === 0) return null;
-  const values = drawingValues(p, mc.annotation, mc.type).values;
+  const values = withContainer(
+    drawingValues(p, mc.annotation, mc.type).values,
+    drawn.container,
+  );
   const bySlot = kidsBySlot(p, catalog, marking, mc, drawn, values, kids, measure);
   const slots = templates.flatMap((template): ContainerSlot[] => {
     const id = slotKey(template);
@@ -205,6 +211,7 @@ function containerOf(
     component: drawn.component,
     tokens: drawn.tokens,
     direction: drawn.direction,
+    container: drawn.container,
     values,
     slots,
     slotOf: new Map(slots.flatMap((slot) => slot.kids.map((kid) => [kid.id, slot.id]))),
@@ -746,6 +753,8 @@ interface FitTarget {
   readonly component: ComponentFile;
   readonly tokens: ResolvedTokens | undefined;
   readonly direction: ReadingDirection;
+  /** The container's `$container.*` context, when the component reads it. */
+  readonly container: InstanceContainer | undefined;
   /** The marking's anchor as the drawing reads it (`$anchor.*`); `undefined` with no anchor. */
   readonly anchor: InstanceAnchor | undefined;
   readonly values: FieldValues;
@@ -776,6 +785,7 @@ function fitTargetOf(
     resolveSizing(mc.component, values, drawn.tokens, {
       anchor,
       direction: drawn.direction,
+      container: drawn.container,
     }),
   );
   if (!followed.width && !followed.height) return null;
@@ -784,6 +794,7 @@ function fitTargetOf(
     component: drawn.component,
     tokens: drawn.tokens,
     direction: drawn.direction,
+    container: drawn.container,
     anchor,
     values,
     parent: marking.parentId === null ? null : containerOf(p, catalog, marking.parentId),

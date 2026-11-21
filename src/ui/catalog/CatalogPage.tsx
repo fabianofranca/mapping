@@ -3,6 +3,7 @@ import { t } from '../../i18n';
 import {
   type Catalog,
   type CatalogCodeVariants,
+  type CatalogDocExternal,
   type CatalogEntry,
   type CatalogField,
   type ModelMessage,
@@ -407,6 +408,38 @@ function Gallery({
   );
 }
 
+export interface DocumentBodyProps {
+  readonly external: CatalogDocExternal | null;
+  readonly text: string | null;
+  /** Message when there is neither an external reference nor text. */
+  readonly emptyKey: 'catalog.page.noDoc' | 'catalog.documentPage.noText';
+  readonly access: DocFolderAccess;
+  readonly onLink?: (href: string) => void;
+}
+
+/** Text of a document (type or library): external reference, package markdown or the empty message. */
+export function DocumentBody({
+  external,
+  text,
+  emptyKey,
+  access,
+  onLink,
+}: DocumentBodyProps) {
+  if (external !== null) {
+    return (
+      <ExternalDoc
+        key={`${external.repo}|${external.path}`}
+        external={external}
+        access={access}
+        {...(onLink === undefined ? {} : { onLink })}
+      />
+    );
+  }
+  if (text !== null)
+    return <Markdown text={text} {...(onLink === undefined ? {} : { onLink })} />;
+  return <p class="muted">{t(emptyKey)}</p>;
+}
+
 export function CatalogPage({
   catalog,
   entry,
@@ -461,18 +494,13 @@ export function CatalogPage({
 
       <section aria-labelledby={section('doc')} class="catalog-section">
         <h3 id={section('doc')}>{t('catalog.page.document')}</h3>
-        {entry.docExternal !== null ? (
-          <ExternalDoc
-            key={`${entry.docExternal.repo}|${entry.docExternal.path}`}
-            external={entry.docExternal}
-            access={docAccess}
-            onLink={onLink}
-          />
-        ) : entry.docText !== null ? (
-          <Markdown text={entry.docText} onLink={onLink} />
-        ) : (
-          <p class="muted">{t('catalog.page.noDoc')}</p>
-        )}
+        <DocumentBody
+          external={entry.docExternal}
+          text={entry.docText}
+          emptyKey="catalog.page.noDoc"
+          access={docAccess}
+          {...(onLink === undefined ? {} : { onLink })}
+        />
       </section>
 
       <section aria-labelledby={section('props')} class="catalog-section">

@@ -16,9 +16,9 @@ export interface CaseSheets {
   readonly models?: ExpandModels | undefined;
 }
 
-/** Case chosen by `variants` for these values, or `undefined` (uses the base). */
-function chosenValue(
-  variants: NonNullable<SpecCode['variants']>,
+/** Value of the `variants.field` that chooses the case (the annotation's, else the field's enum `default`), or `undefined`. */
+export function chosenValue(
+  variants: { readonly field: string },
   values: Readonly<Record<string, JsonValue>> | null | undefined,
   fields: readonly SpecField[],
 ): string | undefined {
@@ -27,6 +27,21 @@ function chosenValue(
   const field = fields.find((f) => f.key === variants.field);
   return field?.type === 'enum' && field.default !== undefined && field.default !== ''
     ? field.default
+    : undefined;
+}
+
+/**
+ * The case that `variants` chooses for these values (a value with no case, or no value and no `default`, gives
+ * `undefined`: the base applies). Shared by `resolveCode` and the accessibility.
+ */
+export function chosenCase<C>(
+  variants: { readonly field: string; readonly cases: Readonly<Record<string, C>> },
+  values: Readonly<Record<string, JsonValue>> | null | undefined,
+  fields: readonly SpecField[],
+): C | undefined {
+  const value = chosenValue(variants, values, fields);
+  return value !== undefined && Object.hasOwn(variants.cases, value)
+    ? variants.cases[value]
     : undefined;
 }
 
@@ -48,11 +63,7 @@ export function resolveCode(
 ): SpecCode {
   const { variants, ...base } = code;
   if (variants === undefined) return code;
-  const value = chosenValue(variants, values, fields);
-  const kase =
-    value !== undefined && Object.hasOwn(variants.cases, value)
-      ? variants.cases[value]
-      : undefined;
+  const kase = chosenCase(variants, values, fields);
   if (kase === undefined) return base;
   return applyCase(base, kase, sheets);
 }

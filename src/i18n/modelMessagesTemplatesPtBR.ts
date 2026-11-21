@@ -41,6 +41,7 @@ export const templatePtBR: {
     'o slot do componente {path} é "{slot}", não "{expected}"',
   'model.library.fieldUndeclared':
     'o desenho usa o campo "{key}", que o tipo "{typeId}" não declara',
+  'model.library.containerFieldUnknown': 'campo não existe: $container.{name}',
   'model.library.fieldUnused':
     'o campo "{key}" do tipo "{typeId}" não é usado pelo desenho do componente {path}',
   'model.library.previewNoField': 'o tipo "{typeId}" não tem o campo "{key}"',
@@ -248,6 +249,7 @@ export const templatePtBR: {
   'model.spec.groupRepeated': 'grupo "{group}" repetido',
   'model.spec.slotIdInvalid': 'id de slot inválido; use [a-z][a-zA-Z0-9_-]*',
   'model.spec.accessibilityRoleInvalid': 'role "{value}" inválido; use {roles}',
+  'model.spec.accessibilityVariantEmptyCase': 'caso vazio: declare role ou label',
   'model.spec.accessibilityTouchNeedsRole':
     'touchTarget: só é válido com um role interativo',
   'model.spec.accessibilityLabelFieldMissing': 'label: o campo não existe: {key}',
@@ -268,6 +270,7 @@ export const templatePtBR: {
   'model.spec.urlInvalid': 'deve começar com http:// ou https://, sem espaços',
   'model.spec.urlTemplateNeedsPath': 'deve conter {path}',
   'model.spec.repoIdInvalid': 'id de repositório inválido; use [a-z0-9-]+',
+  'model.spec.documentIdInvalid': 'id de documento inválido; use [a-z0-9-]+',
   'model.spec.mustBeNumber': 'deve ser um número',
   'model.spec.mustBeInteger': 'deve ser inteiro',
   'model.spec.minOne': 'deve ser >= 1',
@@ -301,6 +304,26 @@ export const templatePtBR: {
     'extensão inválida; use [a-z0-9]+ (minúsculas, sem o ponto)',
   'model.spec.fileFormatContractInvalid': 'deve ser 1',
   'model.spec.fileFormatScopeInvalid': 'escopo inválido; use "project" ou "container"',
+  'model.spec.containerClassSetsShape':
+    'deve ser uma lista de conjuntos de classes de contêiner',
+  'model.spec.containerClassListShape': 'deve ser uma lista de classes',
+  'model.spec.containerClassKeyUnknown': 'chave desconhecida: {key}',
+  'model.spec.containerClassIdInvalid': 'id inválido; use [a-z0-9-]+',
+  'model.spec.containerClassIdReserved':
+    'nome reservado: width e height são lidos por $container.width e $container.height',
+  'model.spec.containerClassByInvalid': 'deve ser "width" ou "height"',
+  'model.spec.containerClassBelowInvalid': 'deve ser um número maior que 0',
+  'model.spec.containerClassBelowRequired':
+    'below é obrigatório em todas as classes, menos na última',
+  'model.spec.containerClassLastBelow': 'a última classe não tem below',
+  'model.spec.containerClassBelowIncrease': 'below deve crescer ao longo da lista',
+  'model.spec.containerClassBelowNotComputed': 'below só em um conjunto com by',
+  'model.spec.containerClassSetMissing': 'o conjunto "{set}" não existe',
+  'model.spec.containerClassSetComputed':
+    'o conjunto "{set}" é calculado por {by}: não é escolhido',
+  'model.spec.containerClassNotInSet': '"{class}" não é uma classe de "{set}"',
+  'model.spec.appliesInNotInContainer':
+    'appliesIn só em um tipo que se aplica a marcações em um contêiner',
   'model.spec.sourceOnlyOrigins': 'só é permitido em sistema declarado em origins',
   'model.spec.sourceIgnoreOriginsOrSignature':
     'só é permitido em sistema declarado em origins ou ao lado de signature',
@@ -403,6 +426,8 @@ export const templatePtBR: {
     'o repositório "{repo}" de docRepos é declarado, mas nenhum `doc` o usa',
   'model.versions.labelWithoutRole':
     'o tipo "{typeId}" declara `label` sem role: não tem efeito até o tipo ter um role diferente de `none`',
+  'model.versions.labelWithoutRoleCase':
+    'o tipo "{typeId}" declara `label` no caso "{value}" sem role: não tem efeito até o caso ter um role diferente de `none`',
   'model.versions.legacyFormat':
     '"{legacy}" é o nome antigo do formato; use "mapping-spec"',
   'model.versions.typeWithoutCode':
@@ -705,4 +730,5 @@ export const templatePtBR: {
   'model.engine.screenTooTall': 'tela: conteúdo maior que a altura da tela',
   'model.engine.approximate': '{reason} (aproximado)',
   'model.engine.inRtl': 'em rtl: {reason}',
+  'model.engine.inContainer': 'no container {container}: {reason}',
 };

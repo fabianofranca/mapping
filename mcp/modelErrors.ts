@@ -21,6 +21,8 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'container-has-file':
     'the container has an image file: only a container without a file (plain background) has an editable background color and size',
   'container-density': 'the container density must be a number from 0.5 to 8',
+  'container-class':
+    'a container class set and a class id must follow [a-z0-9-]+ (lowercase letters, digits and hyphens)',
   'aspect-change-not-confirmed':
     'the container\'s new image has a different aspect ratio: pass confirmAspectChange: true (the markings will be rescaled and marked "needs review")',
   'image-too-small': "the container's new image is too small for the markings",
@@ -128,6 +130,8 @@ export const MODEL_ERROR_HINTS: Readonly<Partial<Record<ModelErrorCode, string>>
     "add the other marking's root to `roots`, or remove the anchor with `update_marking` and `anchor: null`, then call again",
   'container-density':
     'from 0.5 to 8; 3 for a 1080 px capture of a 360 dp phone (image pixels per component unit); `null` goes back to 1',
+  'container-class':
+    'write the set id and the class id as the specialization declares them (`containerClasses` in get_specialization): lowercase letters, digits and hyphens, e.g. `{ "platform": "android" }`',
   'image-overlap':
     "change the container's `x`, `y` or `scale` (or its size) so it does not cover the other one, or move the other container first",
 };

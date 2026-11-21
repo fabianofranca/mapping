@@ -1,10 +1,17 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 7,
+  "formatVersion": 21,
   "id": "analytics",
   "name": "Analytics",
-  "version": 2,
+  "version": 3,
   "description": "Analytics events on the canvas: the table of an event (name and properties), linked by an arrow to the element that fires it, and the transition annotated on the arrow between the source and the destination of a flow.",
+  "documents": [
+    {
+      "id": "conventions",
+      "name": "Event conventions",
+      "doc": "docs/conventions.md"
+    }
+  ],
   "migrations": [
     {
       "from": 1,

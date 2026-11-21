@@ -358,6 +358,16 @@ The file format is in [`SPEC-FORMAT.md`](SPEC-FORMAT.md) and the project's (stab
   (including a table column), incompatible value, nonexistent option or type, missing owner or owner of a disallowed type, broken reference
   and unaccepted target (lost the label or stopped being free). They appear as an alert on the annotation, along with the marking's indicators
   on the canvas and in the **Incomplete** filter of the List.
+- **Container class pending item** (`outside-container-class`, stage #1901, `model/issues.ts`, next to `type-not-applicable`).
+  Computed from the container's class, never stored: for each set a type lists in `appliesIn`, the class the marking's container has
+  in **that type's own specialization** (`containerClassIn`: computed from the size in units with its thresholds, or the stored
+  choice) must be in the list (OR inside a set, AND across sets), otherwise one item per failing set, with `set`, `class` and
+  `allowed` (`{ id, name }`). A canvas marking, a floating marking, an annotation on an arrow and a chosen set with no choice check
+  nothing. It counts in **Incomplete**, shows in the Details with the text "Not meant for {set}: {class} (meant for: {allowed})" and
+  reaches the MCP through `issueView` (`get_marking`, `get_annotation`, `list_markings`) and `issues.new` of `plan_changes`. The
+  container Details have one `Select` per chosen set and a read-only line per computed set (`ContainerClassField`); the New container
+  dialog creates the container with the `classes` of the ready-made size; Diagnostics lists a stored choice no applied specialization
+  declares (`undeclaredContainerClasses`).
 - **Display** (`model/typedDisplay.ts`, pure functions; the interface passes the translated texts): title "type name · instance
   label" (label: `name`, otherwise the `labelField`; with no label, just the type); values in field order with the `label`, empty optional ones
   omitted and empty required ones as `id: —` in the alert color; `table` as a summary in semantic zoom (`attributes: 3 rows`)
@@ -429,6 +439,7 @@ Applies to every image that enters through the app (file, camera, paste, drag an
   `syncParts` when they do not show). The marking that is selected, under the mouse or with a review mark is complete by exception and creates
   its own. `MarkingRenderer.destroy` (called by `CanvasController.destroy`) and the removal of a marking also destroy the
   detached parts: they are not children of the group, and without this the shapes stayed in Konva's hit color registry.
+- **Container context in the drawing cache** (`componentDrawings.ts`, `components/container.ts`; CX4 of the container-context stage, decision 18): a component that cites `$container.*` (`containerReads`, memoized per component object, including the inner components of `component` nodes) gets the container's size in units and its effective classes, but only the part it cites is kept in the entry and compared (`readContainer`, `sameContainer`): a sibling that does not read the container keeps the same drawing object, and a change to another set does not redraw a reader of `window`. The measures (`componentForDrawing` → `drawOptions`, `resolveSizing`) and the slot layout (`withContainer`) read the same values, so what is measured is what is drawn. Pan and zoom recompute nothing of this.
 - **On-demand component drawings** (`componentLayer.ts`; decision 3, gate opened in CD1: opening 2,000 markings went from
   206.6 to 406.7 ms with components, +96.9%): the drawing is only assembled (`renderScene`) in the first frame in which its box
   (scene matrix, or the anchor in the rectangle, for the screen-pixel ones, plus a 64 px margin) crosses the visible area, and it stays until the

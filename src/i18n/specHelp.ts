@@ -195,6 +195,43 @@ const CONTAINERS_EXCERPT = `{
   ]
 }`;
 
+/** Excerpt of a v21 specialization: container classes (`containerClasses`) and the choice on a ready-made size. */
+const CONTAINER_CLASSES_EXCERPT = `{
+  "formatVersion": 21,
+  "containerClasses": [
+    {
+      "id": "platform",
+      "name": "Platform",
+      "classes": [
+        { "id": "android", "name": "Android" },
+        { "id": "ios", "name": "iOS" },
+        { "id": "web", "name": "Web" }
+      ]
+    },
+    {
+      "id": "window",
+      "name": "Window",
+      "by": "width",
+      "classes": [
+        { "id": "compact", "name": "Compact", "below": 600 },
+        { "id": "medium", "name": "Medium", "below": 840 },
+        { "id": "expanded", "name": "Expanded" }
+      ]
+    }
+  ],
+  "containers": [
+    { "id": "phone", "name": "Phone", "width": 412, "height": 917, "classes": { "platform": "android" } }
+  ]
+}`;
+
+/** Excerpt of a v21 specialization: the container classes a type is meant for (`appliesIn`). */
+const APPLIES_IN_EXCERPT = `{
+  "id": "sheet",
+  "name": "Sheet",
+  "appliesIn": { "platform": ["android", "ios"] },
+  "fields": [{ "key": "title", "label": "Title", "type": "string" }]
+}`;
+
 /** Excerpt of a v7 specialization: the floating type (`floating`). */
 const FLOATING_EXCERPT = `{
   "formatVersion": 7,
@@ -781,6 +818,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 18 adds accessibility: accessibility at the root (touchTarget, the minimum touch area in component units) and on the type (role, label, touchTarget and parts), which the audit reads to report the pending item accessible-label-missing and the warning touch-target-small (section "Accessibility (accessibility)"). Only whoever uses it moves to 18; versions 1 to 17 stay accepted, and the key in an earlier version is the usual error only allowed with formatVersion 18.',
           'formatVersion 19 adds the copy-field migration step: in migrations, it copies the value of a field (or of a table column) into another one, only on the annotations that match when, so a library update can split a field into two without losing values (section "Version contract"). from keeps its value, to is only filled when empty, and nothing is ever lost. It covers no break. Only a specialization that declares the step goes up to 19. Versions 1 to 18 are still accepted.',
           'formatVersion 20 adds the file formats: fileFormats at the root, the list of file formats that the specialization reads and writes, each one handled by a plugin, a .js file of the package (section "Library: the package"). It makes the specialization a package. The key is outside the version contract: adding, changing or removing a format needs no version raise and no migration. Before 20 it is the error only allowed with formatVersion 20, at fileFormats. Only a specialization that declares fileFormats goes up to 20. Versions 1 to 19 are still accepted, and origins stays as it was.',
+          'formatVersion 21 adds container classes: containerClasses at the root (named sets of classes, computed from the container size or chosen per container), classes on a ready-made size (the choice the size carries) and appliesIn on the type (the classes the type is meant for), sections "Containers (ready-made sizes)" and "What the type applies to"; it also adds documents at the root (the general documents of the library: id, name and doc, a package .md or { repo, path } of docRepos), section "Library documents (formatVersion 21)"; and accessibility.variants on the type (an enum field of the type chooses the role and/or the label per option, like code.variants: a filter chip is a checkbox and an assist chip is a button; the audit, Incomplete, the Details and get_code_hints follow the case), section "Accessibility (accessibility)". Only a specialization that uses them goes up to 21; versions 1 to 20 are still accepted.',
           'formatVersion 4 adds the library: components that draw the types, documents, examples, fonts, executable origins and the version contract (sections "Library: the package", "Version contract" and "Library validation").',
           'formatVersion 5 is 4 plus repo on the platforms: the library repository on each platform, where the link and the revision of the file of each symbol come from (section "Platforms and code").',
           'formatVersion 6 is 5 plus containers: the ready-made sizes the New container dialog offers when the specialization is applied (section "Containers (ready-made sizes)"). The core only has Custom and Selection size; versions 1 to 5 are still accepted.',
@@ -799,7 +837,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 20), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 21), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), containerClasses and documents (from version 21), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -1217,6 +1255,24 @@ const enUS: readonly HelpSection[] = [
       },
       {
         kind: 'p',
+        text: 'formatVersion 21 adds container classes: named sets of classes that the library declares at the root and that a type can be restricted to (appliesIn, section "What the type applies to"). A set with by (width or height) is computed from the container size in units, which is its size in pixels divided by its density: every class but the last has below, increasing along the list, and the class is the first whose below is greater than the size, otherwise the last (a container 1080 px wide at density 3 is 360 units wide: compact, below 600). A set without by is chosen per container, and a ready-made size can carry the choice. The library names the sets and the classes: the format knows no breakpoint and no platform. The keys are outside the version contract.',
+      },
+      { kind: 'code', code: CONTAINER_CLASSES_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'containerClasses',
+            text: 'At the root, optional, formatVersion 21 only. A list of sets { id, name, by?, classes }. The id is in the [a-z0-9-]+ format and unique; width and height are reserved (they are read by $container.width and $container.height). by is "width" or "height": with it the set is computed from the container size; without it, it is chosen per container. classes is a non-empty list of { id, name, below? } with the id unique in the set; in a computed set every class but the last has below (a number above 0, in units, increasing along the list) and the last has none; in a chosen set below is an error.',
+          },
+          {
+            term: 'classes',
+            text: 'On a ready-made size, optional, formatVersion 21 only. The choice the size carries: set id to class id, only for chosen sets of this specialization. A set that does not exist, a computed set or a class the set does not declare is an error, at containers[n].classes.<set>.',
+          },
+        ],
+      },
+      {
+        kind: 'p',
         text: 'Version 5 is still accepted: a specialization without containers only shows Custom and Selection size in the list. The list is outside the version contract: adding, changing or removing sizes is never a break and needs no migration. The repository’s material3-compose library brings Phone 360 × 800, Large phone 412 × 915, Tablet 800 × 1280 and Desktop 1440 × 900.',
       },
     ],
@@ -1269,6 +1325,20 @@ const enUS: readonly HelpSection[] = [
           {
             term: 'appliesTo',
             text: 'List of "marking" and/or "arrow", optional; non-empty, without repetition. Defaults to ["marking"]. From formatVersion 7 on only: in an earlier version the error is only allowed with formatVersion 7, at the type path.',
+          },
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'formatVersion 21 adds appliesIn on the type: the container classes the type is meant for, a map from the id of a set of the specialization to a non-empty list of its classes (section "Containers (ready-made sizes)"). A marking whose container has a class in a listed set must have one of the listed classes (any of the listed ones inside a set, all the sets together); a marking with no class in that set (on the canvas, floating, or in a container with no choice in a chosen set) is not checked. A marking outside the listed classes is flagged as a pending item.',
+      },
+      { kind: 'code', code: APPLIES_IN_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'appliesIn',
+            text: 'Optional, formatVersion 21 only: { "<set>": ["<class>", …] }, a non-empty object; each key is a set of the same specialization; each list is non-empty, without repetition, of classes of that set. Errors at the appliesIn.<set> path: the set "x" does not exist, "c" is not a class of "x", cannot be empty, repeated values. On a type that does not apply to markings in a container (arrow-only or floating) the error is appliesIn only on a type that applies to markings in a container. In an earlier version the error is only allowed with formatVersion 21, at the type path.',
           },
         ],
       },
@@ -1577,7 +1647,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 to 20), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 to 21), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types, in another layer (from formatVersion 13, also in the owner’s own layer);',
           'every type with requiresOwner: true appears in the allowedChildren of some type (in formatVersion 11, in the resolved set of children of some owner: by id, by whole layer or by group);',
@@ -1595,6 +1665,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 18, accessibility at the root and on the type: only in version 18 (before it the error is only allowed with formatVersion 18, at the path of each key); role is one of the listed roles; touchTarget has width and height above 0 and mode visual or expanded, and on a type it needs an interactive role; label.fields are string or enum fields of the type; the id of a part is unique and its when is a field, a table or table.column that exists; a part has no touchTarget.',
           'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) from formatVersion 3 on;',
           'formatVersion 11, children by layer and group: version 11 only (before it the error is only allowed with formatVersion 11, at the exact path); each allowedChildren item is a type id or a strict { layer, groups } clause (any other property is an error, and so is an empty groups); errors: a layer that is not a layer of the specialization or is the owner’s own before formatVersion 13 (children must be in another layer) and a group that does not exist in the clause’s layer; requiresOwner is checked against the resolved set; layer groups with a non-empty id unique in the layer and a non-empty name; type groups non-empty, without repetition and only from its own layer; warnings: 20 ids or more in text in the same allowedChildren and a group no type uses;',
+          'formatVersion 21, containerClasses, classes on a ready-made size and appliesIn on the type: version 21 only (before it the error is only allowed with formatVersion 21, at the path of each key); a set has a unique id in [a-z0-9-]+ that is never width or height, a non-empty name and a non-empty list of classes with ids unique in the set; by is "width" or "height"; in a computed set (with by) every class but the last has below, a number above 0 that increases along the list (the error is at the class: below is required in every class but the last, the last class has no below, below must increase along the list), and in a chosen set below is an error; classes on a ready-made size names a chosen set of the specialization and one of its classes; appliesIn is a non-empty object whose keys are sets of the specialization and whose values are non-empty lists, without repetition, of classes of that set (at appliesIn.<set>), and only on a type that applies to markings and is not floating; formatVersion 21, documents: version 21 only (before it the error is only allowed with formatVersion 21, at the path documents); a non-empty list of strict { id, name, doc }, id in [a-z0-9-]+ and unique, name non-empty, doc a package .md or { repo, path } with a repo declared in docRepos (a text doc is a cited package file; a { repo, path } one counts as a use of its repository); formatVersion 21, accessibility.variants: version 21 only (before it the error is only allowed with formatVersion 21, at accessibility.variants); field is an enum field of the type (not a field of the type, must be an enum field of the type); cases has at least one case (declare at least one case) and each key is an option of the field; a case declares role, label or both (empty case: declare role or label); role is on the list; the label fields are string or enum fields of the type; any other key, touchTarget and parts included, is unknown key; the warning label-without-role also covers a case whose resolved role is absent or none and that declares a label;',
           'formatVersion 20, fileFormats: version 20 only (before it the error is only allowed with formatVersion 20, at fileFormats); a list of strict objects (another key is unknown key: <key>, at its exact path); id is [a-z0-9][a-z0-9-]* and unique, name is not empty, extension is [a-z0-9]+, plugin is a package path ending in .js, contract is required and only 1, scope is project or container; each example has a non-empty name, unique in the format, a file that is a package path and an optional input that is a .json package path; level 1 of the library validator checks that the plugin, the example files and the input exist in the package and that the plugin has at most 1 MiB (error at fileFormats[i].plugin); nothing here runs a plugin;',
           'formatVersion 19, copy-field step in migrations: version 19 only (before it the error is only allowed with formatVersion 19, at migrations[i].steps[j].op); strict keys type, from, to and when; type is a type of this version and to is a field or column of it; from may not exist; from and to are both fields or both columns of the same table, never a table field and never the same; when is not empty, its keys are top-level fields of the type that are not table or ref, each value is text, a number or a non-empty list of them and in an enum each value is an option; warning: a from that was not a field of the type in the previous version;',
           'formatVersion 12, role steps in migrations: rename-role, remove-role and set-role in version 12 only (from 4 to 11 the error is only allowed with formatVersion 12, at migrations[i].steps[j].op); strict keys; rename-role: type is a type of this version with childRoles, to is one of its roles and from is not; remove-role: type is a type of this version, role is not one of its roles and mode is clear or unlink; set-role: type has childRoles, role is one of its roles and childType only checks the id format; warning: a rename-role.from or remove-role.role that was not a role of the type in the previous version;',
@@ -1660,6 +1731,7 @@ const ptBR: readonly HelpSection[] = [
           'A formatVersion 18 acrescenta a acessibilidade: accessibility na raiz (touchTarget, a área mínima de toque em unidades do componente) e no tipo (role, label, touchTarget e parts), que a auditoria lê para apontar a pendência accessible-label-missing e o aviso touch-target-small (seção "Acessibilidade (accessibility)"). Só sobe para a 18 quem a usa; as versões 1 a 17 continuam aceitas, e a chave numa versão anterior é o erro só é permitido com formatVersion 18.',
           'A formatVersion 19 acrescenta o passo de migração copy-field: em migrations, copia o valor de um campo (ou de uma coluna de table) para outro, só nas anotações que casam com when, para que a atualização de uma biblioteca possa dividir um campo em dois sem perder valores (seção "Contrato de versão"). O from guarda o valor, o to só é preenchido quando vazio e nunca há perda. Ele não cobre nenhuma quebra. Só sobe para a 19 quem declara o passo. As versões 1 a 18 continuam aceitas.',
           'A formatVersion 20 acrescenta os formatos de arquivo: fileFormats na raiz, a lista de formatos de arquivo que a especialização lê e escreve, cada um tratado por um plugin, um arquivo .js do pacote (seção "Biblioteca: o pacote"). Ela faz da especialização um pacote. A chave fica fora do contrato de versão: incluir, mudar ou tirar um formato não pede subir a versão nem migração. Antes da 20 o erro é só é permitido com formatVersion 20, em fileFormats. Só sobe para a 20 quem declara fileFormats. As versões 1 a 19 continuam aceitas, e origins continua como era.',
+          'A formatVersion 21 acrescenta as classes de container: containerClasses na raiz (conjuntos nomeados de classes, calculados pelo tamanho do container ou escolhidos por container), classes num tamanho pronto (a escolha que o tamanho carrega) e appliesIn no tipo (as classes para as quais o tipo serve), seções "Containers (tamanhos prontos)" e "Onde o tipo se aplica"; acrescenta também documents na raiz (os documentos gerais da biblioteca: id, name e doc, um .md do pacote ou { repo, path } de docRepos), seção "Documentos da biblioteca (formatVersion 21)"; e accessibility.variants no tipo (um campo enum do tipo escolhe o papel e/ou o rótulo por opção, como o code.variants: um chip de filtro é checkbox e um chip de ação é button; a auditoria, as Incompletas, os Detalhes e o get_code_hints seguem o caso), seção "Acessibilidade (accessibility)". Só a especialização que as usa sobe para a 21; as versões 1 a 20 continuam aceitas.',
           'A formatVersion 4 acrescenta a biblioteca: componentes que desenham os tipos, documentos, exemplos, fontes, origens executáveis e o contrato de versão (seções "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca").',
           'A formatVersion 5 é a 4 mais o repo nas plataformas: o repositório da biblioteca em cada plataforma, de onde vêm o link e a revisão do arquivo de cada symbol (seção "Plataformas e code").',
           'A formatVersion 6 é a 5 mais containers: os tamanhos prontos que o diálogo Novo container oferece quando a especialização está aplicada (seção "Containers (tamanhos prontos)"). O núcleo só tem Personalizado e Tamanho da seleção; as versões 1 a 5 continuam aceitas.',
@@ -1678,7 +1750,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 20), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 21), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), containerClasses e documents (a partir da versão 21), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -2093,6 +2165,24 @@ const ptBR: readonly HelpSection[] = [
       },
       {
         kind: 'p',
+        text: 'A formatVersion 21 acrescenta as classes de container: conjuntos nomeados de classes que a biblioteca declara na raiz e a que um tipo pode ser restrito (appliesIn, seção "Onde o tipo se aplica"). Um conjunto com by (width ou height) é calculado pelo tamanho do container em unidades, que é o seu tamanho em pixels dividido pela sua densidade: toda classe, menos a última, tem below, crescente ao longo da lista, e a classe é a primeira cujo below é maior que o tamanho, senão a última (um container de 1080 px de largura na densidade 3 tem 360 unidades de largura: compact, below 600). Um conjunto sem by é escolhido por container, e um tamanho pronto pode carregar a escolha. A biblioteca dá nome aos conjuntos e às classes: o formato não conhece breakpoint nem plataforma. As chaves ficam fora do contrato de versão.',
+      },
+      { kind: 'code', code: inPtBR(CONTAINER_CLASSES_EXCERPT) },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'containerClasses',
+            text: 'Na raiz, opcional, só na formatVersion 21. Uma lista de conjuntos { id, name, by?, classes }. O id está no formato [a-z0-9-]+ e é único; width e height são reservados (são lidos por $container.width e $container.height). by é "width" ou "height": com ele o conjunto é calculado pelo tamanho do container; sem ele, é escolhido por container. classes é uma lista não vazia de { id, name, below? } com o id único no conjunto; num conjunto calculado toda classe, menos a última, tem below (um número maior que 0, em unidades, crescente ao longo da lista) e a última não tem; num conjunto escolhido below é erro.',
+          },
+          {
+            term: 'classes',
+            text: 'Num tamanho pronto, opcional, só na formatVersion 21. A escolha que o tamanho carrega: id do conjunto para id da classe, só para conjuntos escolhidos desta especialização. Um conjunto que não existe, um conjunto calculado ou uma classe que o conjunto não declara é erro, em containers[n].classes.<set>.',
+          },
+        ],
+      },
+      {
+        kind: 'p',
         text: 'A 5 continua aceita: uma especialização sem containers só aparece na lista com Personalizado e Tamanho da seleção. A lista está fora do contrato de versão: acrescentar, mudar ou remover tamanhos nunca é quebra nem pede migração. A biblioteca material3-compose do repositório traz Celular 360 × 800, Celular grande 412 × 915, Tablet 800 × 1280 e Desktop 1440 × 900.',
       },
     ],
@@ -2145,6 +2235,20 @@ const ptBR: readonly HelpSection[] = [
           {
             term: 'appliesTo',
             text: 'Lista de "marking" e/ou "arrow", opcional; não vazia, sem repetição. O padrão é ["marking"]. Só a partir da formatVersion 7: numa versão anterior o erro é só é permitido com formatVersion 7, no caminho do tipo.',
+          },
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'A formatVersion 21 acrescenta appliesIn no tipo: as classes de container para as quais o tipo serve, um mapa do id de um conjunto da especialização para uma lista não vazia de suas classes (seção "Containers (tamanhos prontos)"). Uma marcação cujo container tem uma classe num conjunto listado precisa ter uma das classes listadas (qualquer uma das listadas dentro de um conjunto, todos os conjuntos juntos); uma marcação sem classe nesse conjunto (no canvas, flutuante, ou num container sem escolha num conjunto escolhido) não é verificada. Uma marcação fora das classes listadas aparece como pendência.',
+      },
+      { kind: 'code', code: inPtBR(APPLIES_IN_EXCERPT) },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'appliesIn',
+            text: 'Opcional, só na formatVersion 21: { "<set>": ["<class>", …] }, um objeto não vazio; cada chave é um conjunto da mesma especialização; cada lista é não vazia, sem repetição, de classes desse conjunto. Erros no caminho appliesIn.<set>: o conjunto "x" não existe, "c" não é uma classe de "x", não pode ser vazio, valores repetidos. Num tipo que não se aplica a marcações em um container (só seta ou flutuante) o erro é appliesIn só em um tipo que se aplica a marcações em um contêiner. Numa versão anterior o erro é só é permitido com formatVersion 21, no caminho do tipo.',
           },
         ],
       },
@@ -2453,7 +2557,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 a 20), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 a 21), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes, em outra camada (a partir da formatVersion 13, também na camada do próprio dono);',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo (na formatVersion 11, no conjunto resolvido dos filhos de algum dono: por id, por camada inteira ou por grupo);',
@@ -2471,6 +2575,7 @@ const ptBR: readonly HelpSection[] = [
           'formatVersion 18, accessibility na raiz e no tipo: só na versão 18 (antes dela o erro é só é permitido com formatVersion 18, no caminho de cada chave); role é um dos papéis listados; touchTarget tem width e height maiores que 0 e mode visual ou expanded, e no tipo exige um role interativo; label.fields são campos string ou enum do tipo; o id de uma parte é único e o when dela é um campo, uma tabela ou tabela.coluna que existe; uma parte não tem touchTarget.',
           'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) a partir da formatVersion 3;',
           'formatVersion 11, filhos por camada e grupo: só na versão 11 (antes dela o erro é só é permitido com formatVersion 11, no caminho exato); cada item de allowedChildren é um id de tipo ou uma cláusula { layer, groups } estrita (outra propriedade é erro, e groups vazio também); erros: layer que não é camada da especialização ou é a do próprio dono antes da formatVersion 13 (filhos devem estar em outra camada) e grupo inexistente na camada da cláusula; requiresOwner conferido no conjunto resolvido; groups da camada com id não vazio e único na camada e name não vazio; groups do tipo não vazio, sem repetição e só da própria camada; avisos: 20 ids ou mais em texto no mesmo allowedChildren e grupo que nenhum tipo usa;',
+          'formatVersion 21, containerClasses, classes num tamanho pronto e appliesIn no tipo: só na versão 21 (antes dela o erro é só é permitido com formatVersion 21, no caminho de cada chave); um conjunto tem id único em [a-z0-9-]+ que nunca é width nem height, name não vazio e uma lista não vazia de classes com ids únicos no conjunto; by é "width" ou "height"; num conjunto calculado (com by) toda classe, menos a última, tem below, um número maior que 0 que cresce ao longo da lista (o erro fica na classe: below é obrigatório em todas as classes, menos na última; a última classe não tem below; below deve crescer ao longo da lista), e num conjunto escolhido below é erro; classes num tamanho pronto cita um conjunto escolhido da especialização e uma de suas classes; appliesIn é um objeto não vazio cujas chaves são conjuntos da especialização e cujos valores são listas não vazias, sem repetição, de classes desse conjunto (em appliesIn.<set>), e só num tipo que se aplica a marcações e não é flutuante; formatVersion 21, documents: só na versão 21 (antes dela o erro é só é permitido com formatVersion 21, no caminho documents); uma lista não vazia de { id, name, doc } estritos, id em [a-z0-9-]+ e único, name não vazio, doc um .md do pacote ou { repo, path } com repo declarado em docRepos (um doc em texto é arquivo citado do pacote; um { repo, path } conta como uso do seu repositório); formatVersion 21, accessibility.variants: só na versão 21 (antes dela o erro é só é permitido com formatVersion 21, em accessibility.variants); field é um campo enum do tipo (não é campo do tipo, deve ser campo enum do tipo); cases tem ao menos um caso (declare at least one case) e cada chave é uma opção do campo; um caso declara role, label ou os dois (caso vazio: declare role ou label); role está na lista; os campos do label são campos string ou enum do tipo; qualquer outra chave, touchTarget e parts inclusos, é unknown key; o aviso label-without-role também vale para um caso cujo papel resolvido é ausente ou none e que declara label;',
           'formatVersion 20, fileFormats: só na versão 20 (antes dela o erro é só é permitido com formatVersion 20, em fileFormats); uma lista de objetos estritos (outra chave é unknown key: <key>, no caminho exato dela); id é [a-z0-9][a-z0-9-]* e único, name não é vazio, extension é [a-z0-9]+, plugin é um caminho do pacote que termina em .js, contract é obrigatório e só 1, scope é project ou container; cada exemplo tem name não vazio, único no formato, um file que é caminho do pacote e um input opcional que é caminho .json do pacote; o nível 1 do validador da biblioteca confere que o plugin, os arquivos dos exemplos e o input existem no pacote e que o plugin tem no máximo 1 MiB (erro em fileFormats[i].plugin); nada aqui executa um plugin;',
           'formatVersion 19, passo copy-field em migrations: só na versão 19 (antes dela o erro é só é permitido com formatVersion 19, em migrations[i].steps[j].op); chaves estritas type, from, to e when; type é tipo desta versão e to é campo ou coluna dele; from pode não existir; from e to são ambos campos ou ambos colunas da mesma tabela, nunca um campo table e nunca o mesmo; when não é vazio, suas chaves são campos de primeiro nível do tipo que não são table nem ref, cada valor é texto, número ou lista não vazia deles e em um enum cada valor é uma option; aviso: um from que não era campo do tipo na versão anterior;',
           'formatVersion 12, passos de papel em migrations: rename-role, remove-role e set-role só na versão 12 (de 4 a 11 o erro é só é permitido com formatVersion 12, no caminho migrations[i].steps[j].op); chaves estritas; rename-role: type é tipo desta versão com childRoles, to é papel dele e from não é; remove-role: type é tipo desta versão, role não é papel dele e mode é clear ou unlink; set-role: type tem childRoles, role é papel dele e childType só confere o formato de id; aviso: rename-role.from ou remove-role.role que não era papel do tipo na versão anterior;',

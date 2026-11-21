@@ -92,6 +92,9 @@ export function serialize(p: Project): string {
       ...(i.drawingMode == null ? {} : { drawingMode: i.drawingMode }),
       ...(i.direction == null ? {} : { direction: i.direction }),
       ...(i.density == null ? {} : { density: i.density }),
+      ...(i.classes == null || Object.keys(i.classes).length === 0
+        ? {}
+        : { classes: { ...i.classes } }),
     })),
     markings: p.markings.map((m) => ({
       id: m.id,

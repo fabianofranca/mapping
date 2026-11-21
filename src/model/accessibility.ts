@@ -1,3 +1,4 @@
+import { chosenCase } from './codeVariants';
 import type { ComponentDrawings } from './componentDrawings';
 import { effectiveDensity } from './density';
 import type { AnnotationIssue } from './issues';
@@ -8,6 +9,7 @@ import {
   type SpecAccessibilityLabel,
   type SpecAccessibilityPart,
   type SpecAnnotationType,
+  type SpecField,
   type SpecTouchTarget,
   type SpecTypeAccessibility,
 } from './spec';
@@ -85,14 +87,27 @@ interface ResolvedPart {
   readonly label: ResolvedLabel | null;
 }
 
-interface ResolvedType {
-  /** The type's role; `undefined` when it has none. */
+/** What a `variants` case (or the base) decides: the role and what the audit reads from it. */
+interface ResolvedRole {
+  /** The role; `undefined` when there is none. */
   readonly role: string | undefined;
-  /** Label of the type; `null` when the type is not audited by itself. */
+  /** Label of the role; `null` when it is not audited by itself. */
   readonly label: ResolvedLabel | null;
   /** The touch area to audit (`visual` mode only); `null` when there is none to audit. */
   readonly touch: SpecTouchTarget | null;
+}
+
+/** The `accessibility.variants` of a type, each case resolved once (the chosen one overlays the base per annotation). */
+interface ResolvedVariants {
+  readonly field: string;
+  /** The type's fields: the enum `default` of the field chooses the case when the annotation has no value. */
+  readonly fields: readonly SpecField[];
+  readonly cases: Readonly<Record<string, ResolvedRole>>;
+}
+
+interface ResolvedType extends ResolvedRole {
   readonly parts: readonly ResolvedPart[];
+  readonly variants?: ResolvedVariants;
 }
 
 type ResolvedSpec = ReadonlyMap<string, ResolvedType>;
@@ -143,6 +158,37 @@ function resolveTouch(
     : touch;
 }
 
+/** Role, label and touch area for a role (the base's or a case's) with its label: the defaults follow the role. */
+function resolveRole(
+  type: SpecAnnotationType,
+  root: SpecTouchTarget | undefined,
+  role: string | undefined,
+  label: SpecAccessibilityLabel | undefined,
+): ResolvedRole {
+  return {
+    role,
+    label: isAudited(role) ? resolveLabel(label, role ?? '', null) : null,
+    touch: isInteractive(role) ? resolveTouch(type, root) : null,
+  };
+}
+
+function resolveVariants(
+  type: SpecAnnotationType,
+  root: SpecTouchTarget | undefined,
+  a: SpecTypeAccessibility,
+): ResolvedVariants | undefined {
+  const variants = a.variants;
+  if (variants === undefined) return undefined;
+  const cases = Object.entries(variants.cases).map(
+    ([value, kase]) =>
+      [
+        value,
+        resolveRole(type, root, kase.role ?? a.role, kase.label ?? a.label),
+      ] as const,
+  );
+  return { field: variants.field, fields: type.fields, cases: Object.fromEntries(cases) };
+}
+
 function resolveType(
   type: SpecAnnotationType,
   root: SpecTouchTarget | undefined,
@@ -150,11 +196,11 @@ function resolveType(
   if (type.accessibility === undefined) return null;
   const a: SpecTypeAccessibility = type.accessibility;
   const tables = new Set(type.fields.filter((f) => f.type === 'table').map((f) => f.key));
+  const variants = resolveVariants(type, root, a);
   return {
-    role: a.role,
-    label: isAudited(a.role) ? resolveLabel(a.label, a.role ?? '', null) : null,
-    touch: isInteractive(a.role) ? resolveTouch(type, root) : null,
+    ...resolveRole(type, root, a.role, a.label),
     parts: (a.parts ?? []).map((part) => resolvePart(part, tables)),
+    ...(variants === undefined ? {} : { variants }),
   };
 }
 
@@ -316,10 +362,16 @@ function auditAnnotation(
   return issues.length === 0 && findings.length === 0 ? null : { issues, findings };
 }
 
-/** The resolved accessibility of a typed annotation's type; `null` for a free annotation or a type that declares none. */
+/**
+ * The resolved accessibility of a typed annotation, with the `variants` case its value chooses laid over the base
+ * (the role, the label and the touch area; the parts stay); `null` for a free annotation or a type that declares none.
+ */
 function resolvedOf(p: Project, a: Annotation): ResolvedType | null {
   const type = a.type && a.values ? typeOfAnnotation(p, a) : null;
-  return (type && resolveSpec(type.spec).get(type.type.id)) ?? null;
+  const resolved = (type && resolveSpec(type.spec).get(type.type.id)) ?? null;
+  if (resolved?.variants === undefined) return resolved;
+  const kase = chosenCase(resolved.variants, a.values, resolved.variants.fields);
+  return kase === undefined ? resolved : { ...resolved, ...kase };
 }
 
 function computeAudit(p: Project, ctx: AuditContext): AccessibilityAudit {
@@ -493,6 +545,20 @@ export interface TypeAccessibility {
   /** The touch area of an interactive type; `false` when the type opts out. */
   readonly touchTarget?: (SpecTouchTarget & { readonly mode: string }) | false;
   readonly parts?: readonly TypeAccessibilityPart[];
+  /** The role and label per case of an enum field, each case resolved (the effective role, the label with `required` filled). */
+  readonly variants?: TypeAccessibilityVariants;
+}
+
+/** A `variants` case resolved: only the keys that apply (the touch area is there when the resolved role is interactive). */
+export type TypeAccessibilityCase = Pick<
+  TypeAccessibility,
+  'role' | 'label' | 'touchTarget'
+>;
+
+export interface TypeAccessibilityVariants {
+  readonly field: string;
+  /** In the declaration order. */
+  readonly cases: Readonly<Record<string, TypeAccessibilityCase>>;
 }
 
 function declaredLabel(
@@ -521,6 +587,36 @@ function declaredTouch(
   };
 }
 
+/** The role, the label and the touch area of a role (the base's or a case's), with the defaults filled in. */
+function declaredRole(
+  spec: Spec,
+  type: SpecAnnotationType,
+  role: string | undefined,
+  label: SpecAccessibilityLabel | undefined,
+): TypeAccessibilityCase {
+  return {
+    ...(role === undefined ? {} : { role }),
+    ...(isAudited(role) ? declaredLabel(label, role ?? '') : {}),
+    ...(isInteractive(role) ? declaredTouch(type, spec.accessibility?.touchTarget) : {}),
+  };
+}
+
+function declaredVariants(
+  spec: Spec,
+  type: SpecAnnotationType,
+  a: SpecTypeAccessibility,
+): Pick<TypeAccessibility, 'variants'> {
+  if (a.variants === undefined) return {};
+  const cases = Object.entries(a.variants.cases).map(
+    ([value, kase]) =>
+      [
+        value,
+        declaredRole(spec, type, kase.role ?? a.role, kase.label ?? a.label),
+      ] as const,
+  );
+  return { variants: { field: a.variants.field, cases: Object.fromEntries(cases) } };
+}
+
 /** The type's accessibility resolved (`get_component` and the type views); `null` when it has none. */
 export function typeAccessibility(
   spec: Spec,
@@ -536,12 +632,9 @@ export function typeAccessibility(
     ...declaredLabel(part.label, part.role ?? 'button'),
   }));
   const resolved: TypeAccessibility = {
-    ...(a.role === undefined ? {} : { role: a.role }),
-    ...(isAudited(a.role) ? declaredLabel(a.label, a.role ?? '') : {}),
-    ...(isInteractive(a.role)
-      ? declaredTouch(type, spec.accessibility?.touchTarget)
-      : {}),
+    ...declaredRole(spec, type, a.role, a.label),
     ...(parts.length === 0 ? {} : { parts }),
+    ...declaredVariants(spec, type, a),
   };
   // `accessibility: {}` declares nothing: it reads as no accessibility, not as an empty declaration.
   return Object.keys(resolved).length === 0 ? null : resolved;

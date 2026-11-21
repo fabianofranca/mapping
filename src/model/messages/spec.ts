@@ -113,6 +113,7 @@ export const specMessages = {
   'spec.groupRepeated': 'group "{group}" repeated',
   'spec.slotIdInvalid': 'invalid slot id; use [a-z][a-zA-Z0-9_-]*',
   'spec.accessibilityRoleInvalid': 'role "{value}" is invalid; use {roles}',
+  'spec.accessibilityVariantEmptyCase': 'empty case: declare role or label',
   'spec.accessibilityTouchNeedsRole': 'touchTarget: only valid with an interactive role',
   'spec.accessibilityLabelFieldMissing': 'label: field does not exist: {key}',
   'spec.accessibilityLabelFieldType': 'label: field {key} must be string or enum',
@@ -131,6 +132,7 @@ export const specMessages = {
   'spec.urlInvalid': 'must start with http:// or https://, without spaces',
   'spec.urlTemplateNeedsPath': 'must contain {path}',
   'spec.repoIdInvalid': 'invalid repository id; use [a-z0-9-]+',
+  'spec.documentIdInvalid': 'invalid document id; use [a-z0-9-]+',
   'spec.mustBeNumber': 'must be a number',
   'spec.mustBeInteger': 'must be an integer',
   'spec.minOne': 'must be >= 1',
@@ -165,6 +167,25 @@ export const specMessages = {
     'invalid extension; use [a-z0-9]+ (lowercase, without the dot)',
   'spec.fileFormatContractInvalid': 'must be 1',
   'spec.fileFormatScopeInvalid': 'invalid scope; use "project" or "container"',
+  // Container classes (`containerClasses`, `classes` on a ready-made size, `appliesIn`; formatVersion 21)
+  'spec.containerClassSetsShape': 'must be a list of container class sets',
+  'spec.containerClassListShape': 'must be a list of classes',
+  'spec.containerClassKeyUnknown': 'unknown key: {key}',
+  'spec.containerClassIdInvalid': 'invalid id; use [a-z0-9-]+',
+  'spec.containerClassIdReserved':
+    'reserved name: width and height are read by $container.width and $container.height',
+  'spec.containerClassByInvalid': 'must be "width" or "height"',
+  'spec.containerClassBelowInvalid': 'must be a number greater than 0',
+  'spec.containerClassBelowRequired': 'below is required in every class but the last',
+  'spec.containerClassLastBelow': 'the last class has no below',
+  'spec.containerClassBelowIncrease': 'below must increase along the list',
+  'spec.containerClassBelowNotComputed': 'below only in a set with by',
+  'spec.containerClassSetMissing': 'the set "{set}" does not exist',
+  'spec.containerClassSetComputed':
+    'the set "{set}" is computed by {by}: it is not chosen',
+  'spec.containerClassNotInSet': '"{class}" is not a class of "{set}"',
+  'spec.appliesInNotInContainer':
+    'appliesIn only on a type that applies to markings in a container',
   'spec.sourceOnlyOrigins': 'only allowed in a system declared in origins',
   'spec.sourceIgnoreOriginsOrSignature':
     'only allowed in a system declared in origins or next to signature',

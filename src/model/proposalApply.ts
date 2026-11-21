@@ -248,6 +248,14 @@ function withField(
         if (to === null || to === 1) return withoutDensity(i);
         return { ...i, density: to as number };
       }
+      if (field === 'classes') {
+        // `null` (or an empty map) removes the choice: the key leaves.
+        const { classes, ...rest } = i;
+        void classes;
+        return isRecord(to) && Object.keys(to).length > 0
+          ? { ...rest, classes: to as unknown as Readonly<Record<string, string>> }
+          : rest;
+      }
       if (field === 'placement')
         return { ...i, placement: snapPlacement(to as unknown as Placement) };
       // Page swap: the page and the placement on it, together.

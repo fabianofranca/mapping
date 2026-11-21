@@ -466,3 +466,79 @@ describe('catalog: notices of the fields and columns (stage #2085)', () => {
     ]);
   });
 });
+
+describe('library documents (stage #1901, CX5)', () => {
+  const GITLAB = 'https://gitlab.example.com/team/docs';
+  /** A v21 specialization with `documents` and the package's text file. */
+  const build = (documents?: unknown[], extra: LibraryFile[] = []) => {
+    const json = {
+      format: 'mapping-spec',
+      formatVersion: 21,
+      id: 'docs-lib',
+      name: 'Docs',
+      version: 1,
+      docRepos: [
+        { id: 'handbook', url: GITLAB, urlTemplate: `${GITLAB}/-/blob/main/{path}` },
+      ],
+      ...(documents === undefined ? {} : { documents }),
+      layers: [
+        {
+          id: 'ui',
+          name: 'UI',
+          color: '#112233',
+          annotationTypes: [{ id: 'screen', name: 'Screen', fields: [] }],
+        },
+      ],
+    };
+    return buildCatalog([
+      { path: 'docs-lib.json', text: JSON.stringify(json) },
+      ...extra,
+    ]);
+  };
+
+  it('a text document carries its text, in the order of the specialization', () => {
+    const result = build(
+      [
+        { id: 'conventions', name: 'Conventions', doc: 'docs/conventions.md' },
+        { id: 'glossary', name: 'Glossary', doc: 'docs/glossary.md' },
+      ],
+      [
+        { path: 'docs/conventions.md', text: '# Conventions\n' },
+        { path: 'docs/glossary.md', text: '# Glossary\n' },
+      ],
+    );
+    expect(result.documents.map((d) => [d.id, d.name, d.docText, d.docExternal])).toEqual(
+      [
+        ['conventions', 'Conventions', '# Conventions\n', null],
+        ['glossary', 'Glossary', '# Glossary\n', null],
+      ],
+    );
+  });
+
+  it('a missing file is a null text', () => {
+    const result = build([{ id: 'conventions', name: 'C', doc: 'docs/conventions.md' }]);
+    expect(result.documents[0]?.docText).toBeNull();
+  });
+
+  it('an external document carries the repository and the link, like the type doc', () => {
+    const result = build([
+      { id: 'rules', name: 'Rules', doc: { repo: 'handbook', path: 'docs/rules.md' } },
+    ]);
+    expect(result.documents[0]).toMatchObject({
+      id: 'rules',
+      docText: null,
+      docExternal: {
+        repo: 'handbook',
+        path: 'docs/rules.md',
+        repoUrl: GITLAB,
+        url: `${GITLAB}/-/blob/main/docs/rules.md`,
+      },
+    });
+  });
+
+  it('no documents key: an empty list; no specialization: an empty list', () => {
+    expect(build().documents).toEqual([]);
+    expect(buildCatalog([]).documents).toEqual([]);
+    expect(catalog.documents).toEqual([]);
+  });
+});

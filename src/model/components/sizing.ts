@@ -101,6 +101,7 @@ export function fitComponentSize(
   const resolved = resolveSizing(component, values, options.tokens, {
     anchor: options.anchor,
     direction: options.direction,
+    container: options.container,
   });
   const auto = { ...followedAxes(resolved), ...fit.auto };
   const kinds = {

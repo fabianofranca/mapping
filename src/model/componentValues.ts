@@ -1,4 +1,8 @@
 import type { InstanceAnchor } from './components/anchor';
+import type { InstanceContainer } from './components/container';
+import { effectiveContainerClasses, unitsOf } from './containerClasses';
+import { effectiveDensity } from './density';
+import { projectIndex } from './projectIndex';
 import type {
   AnchorSide,
   FieldRow,
@@ -203,5 +207,27 @@ export function anchorValues(input: {
     centerY: (anchorRect.y + anchorRect.height / 2 - rect.y) / density,
     width: anchorRect.width / density,
     height: anchorRect.height / density,
+  };
+}
+
+/**
+ * The container a marking is in, in the form the instance reads (`InstantiateOptions.container`, the
+ * `$container.*` pseudo-fields, decision 17 of #1901): its width and height in component UNITS (pixels ÷
+ * the effective density) and its effective classes (`effectiveContainerClasses`: computed by the size in
+ * units, chosen by the container). `undefined` for a canvas marking (`null`) and for an unknown id: the
+ * fields stay empty there. One object per call: whoever caches compares it by value (`sameContainer`).
+ */
+export function containerValues(
+  p: Project,
+  containerId: string | null,
+): InstanceContainer | undefined {
+  if (containerId === null) return undefined;
+  const container = projectIndex(p).containers.get(containerId);
+  if (container === undefined) return undefined;
+  const density = effectiveDensity(p, containerId);
+  return {
+    width: unitsOf(container.width, density),
+    height: unitsOf(container.height, density),
+    classes: effectiveContainerClasses(p, containerId),
   };
 }

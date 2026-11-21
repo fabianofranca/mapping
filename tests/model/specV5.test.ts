@@ -49,8 +49,8 @@ function parsed(spec: Json): Spec {
 }
 
 describe('formatVersion 5: repo nas plataformas', () => {
-  it('the current format version is 20', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(20);
+  it('the current format version is 21', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(21);
   });
 
   it('a complete repo is valid in zod and in the JSON Schema and survives parsing', () => {

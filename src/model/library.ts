@@ -1,7 +1,12 @@
 import type { ComponentFile } from './components/componentFormat';
 import { componentSlots, slotKey } from './components/slots';
 import { resolvePath, type TextFile } from './components/library';
-import { INDEX_FIELD, isAnchorFieldName } from './components/expressions';
+import {
+  CONTAINER_PREFIX,
+  isContainerFieldShape,
+  isReservedFieldName,
+} from './components/expressions';
+import { citedContainerNames } from './components/container';
 import {
   collectFieldKeys,
   parseComponent,
@@ -190,20 +195,42 @@ function fieldReferences(
       (key === '$field' || key === '$has' || key === '$switch' || key === '$rows') &&
       typeof value === 'string'
     ) {
-      // `$index` is the row index of a `repeat` and `$anchor.*` come from the anchor: they are not fields of the type.
-      if (
-        !out.has(value) &&
-        (key === '$rows' || (value !== INDEX_FIELD && !isAnchorFieldName(value)))
-      )
+      // `$index` is the row index of a `repeat`, `$anchor.*` come from the anchor and `$container.*` from the
+      // container: they are not fields of the type.
+      if (!out.has(value) && (key === '$rows' || !isReservedFieldName(value)))
         out.set(value, at);
     } else if (key === '$eq' && Array.isArray(value) && typeof value[0] === 'string') {
-      if (!out.has(value[0]) && value[0] !== INDEX_FIELD && !isAnchorFieldName(value[0]))
+      if (!out.has(value[0]) && !isReservedFieldName(value[0]))
         out.set(value[0], `${at}[0]`);
     } else {
       fieldReferences(value, at, out);
     }
   }
   return out;
+}
+
+/**
+ * `$container.<name>` in the template and in the `sizing`: a name that is neither `width`, `height` nor a
+ * set of the component's specialization (`containerClasses`) is `field does not exist` (stage #1901,
+ * decision 4). The name is not a field of the type, so it never reaches `library.fieldUndeclared`.
+ */
+function containerNameChecks(
+  pkg: Package,
+  type: SpecAnnotationType,
+  path: string,
+  raw: unknown,
+  out: Collector,
+): void {
+  if (!isRecord(raw)) return;
+  const sets = new Set((pkg.spec.containerClasses ?? []).map((set) => set.id));
+  for (const where of ['template', 'sizing'] as const) {
+    for (const name of citedContainerNames(raw[where])) {
+      // A name that cannot be `width`, `height` or a set id was already refused by the parser, at its own path.
+      if (name === 'width' || name === 'height' || sets.has(name)) continue;
+      if (!isContainerFieldShape(`${CONTAINER_PREFIX}${name}`)) continue;
+      out.error(path, where, 'library.containerFieldUnknown', { name, typeId: type.id });
+    }
+  }
 }
 
 /** Where the template's JSON uses `$rows` (the field's key and its path). */
@@ -477,6 +504,7 @@ function level1(
   }
   signatureChecks(pkg, referenced, out);
   fileFormatChecks(pkg, referenced, out);
+  documentChecks(pkg, referenced, out);
 
   for (const file of files) {
     const lower = file.path.toLowerCase();
@@ -489,6 +517,24 @@ function level1(
     }
   }
   return pkg;
+}
+
+/**
+ * Level 1 (formatVersion 21): a text document of `documents` is a cited package file (it exists, is
+ * not empty, is not "unreferenced"); a `{ repo, path }` one is not a package file and is not read.
+ */
+function documentChecks(pkg: Package, referenced: Set<string>, out: Collector): void {
+  (pkg.spec.documents ?? []).forEach((document, i) => {
+    if (typeof document.doc !== 'string') return;
+    const path = pkg.resolve(document.doc);
+    referenced.add(path);
+    const file = pkg.byPath.get(path);
+    if (file === undefined) {
+      out.fileNotFound(pkg.specPath, `documents[${i}].doc`, path);
+    } else if ((file.text ?? '').trim() === '') {
+      out.warning(path, '', 'library.emptyDoc');
+    }
+  });
 }
 
 /** Level 1 (formatVersion 16): the cited signature sheets exist, are valid and are those of the same code. */
@@ -777,6 +823,7 @@ function typeCoherence(
     });
   }
   remapIssues(pkg, path, out.issues, from);
+  containerNameChecks(pkg, type, path, raw, out);
   // The `tokenRefs` already come with the written file's path (`parseComponent`).
   tokenChecks(pkg, path, out);
   from = out.issues.length;
@@ -1258,6 +1305,13 @@ function iconOptionChecks(pkg: Package): LibraryIssue[] {
 // Entry
 // ---------------------------------------------------------------------------------------
 
+/** The library documents (`documents`) enter the count of distinct documents. */
+function addLibraryDocuments(spec: Spec, pkg: Package, docs: Set<string>): void {
+  for (const { doc } of spec.documents ?? []) {
+    docs.add(typeof doc === 'string' ? pkg.resolve(doc) : `${doc.repo}\u0000${doc.path}`);
+  }
+}
+
 function summarize(
   spec: Spec | undefined,
   pkg: Package | undefined,
@@ -1279,6 +1333,7 @@ function summarize(
     examples += type.examples?.length ?? 0;
   });
   for (const origin of spec.origins ?? []) examples += origin.examples?.length ?? 0;
+  addLibraryDocuments(spec, pkg, docs);
   return {
     level,
     types,

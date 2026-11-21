@@ -1,4 +1,4 @@
-# Format of `mapping.json` (schema v22)
+# Format of `mapping.json` (schema v23)
 
 The project is a folder (or a zip with the same content) with `mapping.json`, `images/` (the containers' image files) and,
 if any specializations are applied, `specs/` (and, if there are change proposals, `proposals/`). All the markings' coordinates are
@@ -34,7 +34,7 @@ per project). The `backups/` folder is not part of the project: the exported zip
 
 ```json
 {
-  "schemaVersion": 22,
+  "schemaVersion": 23,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -127,7 +127,7 @@ in the project; `null` in the container without a file, v10: see below); `width`
 `pageId` (v21: the page the container lives on; see "Fields of v21 (pages)");
 `markingColor` (`null` or color); `locked` (boolean, v5: see below); `source` (`null` or source, v8:
 see below); `background` (`null` or `#RRGGBB` color, v10: the background color of the container without a file);
-`drawingMode` (v18, optional: the drawing mode that the container pins; see "Fields of v18"); `direction` (v20, optional: the reading direction that the container pins, `ltr` or `rtl`; see "Fields of v20"); `density` (v19, optional: image pixels per component unit; see "Fields of v19").
+`drawingMode` (v18, optional: the drawing mode that the container pins; see "Fields of v18"); `direction` (v20, optional: the reading direction that the container pins, `ltr` or `rtl`; see "Fields of v20"); `density` (v19, optional: image pixels per component unit; see "Fields of v19"). `classes` (v23, optional: the container classes the container is in, a map `set id → class id` of the chosen sets; see "Fields of v23").
 
 **`markings[]`**: `id`; `containerId` (v12; formerly `imageId`; `null` in the canvas marking, v13); `parentId` (parent marking or `null`,
 computed by the app since v13); `pageId` (v21: the page of a canvas marking; `null` inside a container); `name` (`string` or `null`);
@@ -1218,6 +1218,21 @@ An earlier app rejects the v22 file as a "newer version" (read-only), instead of
 
 Only `schemaVersion` changes to 22; no data is altered (no corner value is created). As in every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
 
+## Fields of v23 (container classes)
+
+v23 adds the container's **classes**, the choice that a specialization's **chosen** sets need (`containerClasses` without `by`, specialization `formatVersion` 21; see [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Container classes (`formatVersion` 21)"): which platform or form factor the container shows. The sets **computed** from the size (`by: "width"` or `"height"`) are not stored: they follow the container's size in units (size ÷ `density`) every time they are read.
+
+- **`containers[].classes`** (object, optional): `set id → class id`, e.g. `{ "platform": "android", "formFactor": "tablet" }`. Absent, `null` and `{}` mean no choice, and a read project never holds an empty map; the writer leaves the key out. It is written after `density`. The same key goes on a container of a proposal (see [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md), `formatVersion` 11).
+- **Shape of the ids:** every set id and every class id must match `[a-z0-9-]+`; outside that, reading the file fails with a schema error, and the model's `setContainerClass` and the MCP refuse the write with the error code `container-class`. The model does **not** check the choice against the specializations: a set or a class that no applied specialization declares is **kept** (the specialization may be removed or updated later, and the choice comes back when it is declared again); `undeclaredContainerClasses` lists them, but no screen shows them yet. A choice stored in a **computed** set also counts as undeclared and is ignored. The MCP is stricter when writing (`invalid-arguments` with the chosen sets and their classes).
+- **Effective classes of a container:** the stored choice of the chosen sets plus the class each computed set gives for the container's size in units. The union of the sets is by set id (the first declaration gives the name and the kind; chosen sets merge their classes by id, in order of appearance; a computed set keeps the thresholds of its first declaration).
+- **Nothing else changes:** the marking, the layer and the annotation do not carry classes, and the specialization keeps its own format.
+
+An earlier app rejects the v23 file as a "newer version" (read-only), instead of discarding the classes when writing.
+
+### Migration v22 → v23
+
+Only `schemaVersion` changes to 23; no data is altered (no class is created). As in every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
+
 ## Migration
 
 v1 files are migrated on opening: every image gets `name: null` and every annotation gets
@@ -1228,7 +1243,7 @@ image and each marking. v5 files get `revision: 0`. v6 files get `platformRepos:
 v7 files get `source: null` on each image and each marking. v8 files lose the values of the
 `codeRef` fields, by the type declared in the specialization copy (see "Fields of v9"). v9 files
 get `background: null` on each image (see "Fields of v10"). v10 files lose the `urlTemplate` of
-each `platformRepos` entry, and an entry that only had it goes away (see "Fields of v11"). v11 files swap `images` for `containers` and `imageId` for `containerId` (see "Fields of v12"). v12 files lose `inherit` from each annotation and gain `floating: false` on each marking, `parentId: null` on each container and `arrows: []` at the root (see "Fields of v13"). v13 files gain `parentRole: null` on each annotation and `docRepos: {}` at the root (see "Fields of v14"). v14 files only get the number bumped (see "Fields of v15"). v15 files gain `project.id` (a new UUID), `perspectives: []` and `arrivals: []` (see "Fields of v16"). v16 files only get the number bumped (see "Fields of v17"). v17 files only get the number bumped (see "Fields of v18"). v18 files only get the number bumped (see "Fields of v19"). v19 files only get the number bumped (see "Fields of v20"). v20 files gain `pages` (one page) and the `pageId` of each container and canvas marking (see "Fields of v21"). v21 files only get the number bumped (see "Fields of v22"). On save, the
-file becomes v22 (and, in folder mode, the original goes first to `backups/`, as in any
+each `platformRepos` entry, and an entry that only had it goes away (see "Fields of v11"). v11 files swap `images` for `containers` and `imageId` for `containerId` (see "Fields of v12"). v12 files lose `inherit` from each annotation and gain `floating: false` on each marking, `parentId: null` on each container and `arrows: []` at the root (see "Fields of v13"). v13 files gain `parentRole: null` on each annotation and `docRepos: {}` at the root (see "Fields of v14"). v14 files only get the number bumped (see "Fields of v15"). v15 files gain `project.id` (a new UUID), `perspectives: []` and `arrivals: []` (see "Fields of v16"). v16 files only get the number bumped (see "Fields of v17"). v17 files only get the number bumped (see "Fields of v18"). v18 files only get the number bumped (see "Fields of v19"). v19 files only get the number bumped (see "Fields of v20"). v20 files gain `pages` (one page) and the `pageId` of each container and canvas marking (see "Fields of v21"). v21 files only get the number bumped (see "Fields of v22"). v22 files only get the number bumped (see "Fields of v23"). On save, the
+file becomes v23 (and, in folder mode, the original goes first to `backups/`, as in any
 migration).
 Files of a newer version open read-only.

@@ -982,6 +982,7 @@ export const ptBR: Dictionary = {
     'O slot {slot} tem conteúdo: este campo não desenha nem entra no código',
   'typed.roleLabel': 'Papel',
   'issue.type-not-applicable': 'o tipo não se aplica a este item (marcação ou seta)',
+  'issue.outside-container-class': 'Não é para {set}: {class} (serve em: {allowed})',
   'issue.broken-ref': 'referência quebrada',
   'issue.ref-not-accepted': 'alvo não aceito (perdeu a etiqueta ou deixou de ser livre)',
   'issue.component-overflow': 'O componente não cabe',
@@ -1293,6 +1294,16 @@ export const ptBR: Dictionary = {
   'diagnostics.drawingModeHint':
     'O modo continua gravado; sem uma especialização que o declare, o desenho usa o primeiro modo dela.',
   'diagnostics.modeUndeclared': 'modo {mode} não declarado',
+  'containerClass.none': 'Nenhuma',
+  'containerClass.chosenHint':
+    'Escolhida para este container; um tipo feito para outras classes aparece como incompleto. Nenhuma não verifica nada.',
+  'containerClass.byWidth': '{class} ({units} unidades de largura)',
+  'containerClass.byHeight': '{class} ({units} unidades de altura)',
+  'diagnostics.containerClasses': 'Classes do container',
+  'diagnostics.containerClassesHint':
+    'A escolha continua gravada; sem uma especialização que declare o conjunto e a classe, o container fica sem classe ali.',
+  'diagnostics.containerClassUndeclared':
+    '{container}: a classe {class} do conjunto {set} não está declarada',
   'direction.title': 'Direção de leitura',
   'direction.intro':
     'Escolhe para que lado a leitura corre no desenho dos componentes: da esquerda para a direita (o padrão) ou da direita para a esquerda. Nenhuma marcação muda de lugar.',

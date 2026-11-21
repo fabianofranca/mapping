@@ -26,9 +26,15 @@ const files = listDisk(ROOT)
 const text = (path: string): string => files.find((f) => f.path === path)?.text ?? '';
 
 describe('example analytics library', () => {
-  it('has the specialization, one component and one document per type', () => {
+  it('has the specialization, one component, one document per type and the conventions', () => {
     expect(files.map((f) => f.path)).toEqual(
-      [SPEC_FILE, 'components/event.json', 'docs/event.md', 'docs/transition.md'].sort(),
+      [
+        SPEC_FILE,
+        'components/event.json',
+        'docs/conventions.md',
+        'docs/event.md',
+        'docs/transition.md',
+      ].sort(),
     );
   });
 
@@ -38,14 +44,15 @@ describe('example analytics library', () => {
     // No warning: the preview fits even at the minimum size.
     expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
-    expect(report.summary).toMatchObject({ level: 3, types: 2, components: 1, docs: 2 });
+    // The conventions (`documents`) count with the two documents of the types.
+    expect(report.summary).toMatchObject({ level: 3, types: 2, components: 1, docs: 3 });
   });
 
-  it('the specialization is formatVersion 7: floating Event with a component and arrow-only Transition', () => {
+  it('the specialization is formatVersion 21: floating Event with a component and arrow-only Transition', () => {
     const parsed = parseSpecText(text(SPEC_FILE));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.spec).toMatchObject({ formatVersion: 7, id: 'analytics', version: 2 });
+    expect(parsed.spec).toMatchObject({ formatVersion: 21, id: 'analytics', version: 3 });
     const [layer] = parsed.spec.layers;
     expect(layer).toMatchObject({ id: 'analytics', name: 'Analytics' });
     const [event, transition] = layer?.annotationTypes ?? [];
@@ -65,6 +72,25 @@ describe('example analytics library', () => {
     expect(transition?.component).toBeUndefined();
     expect(transition?.floating).toBeUndefined();
     expect(transition?.fields.map((f) => f.key)).toEqual(['condition', 'event']);
+  });
+
+  it('declares its conventions as a library document (stage #1901, decision 28)', () => {
+    const parsed = parseSpecText(text(SPEC_FILE));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.spec.documents).toEqual([
+      { id: 'conventions', name: 'Event conventions', doc: 'docs/conventions.md' },
+    ]);
+    // The `.md` is a cited package file: the validator does not call it unreferenced.
+    const report = validateLibrary({ files, specPath: SPEC_FILE });
+    expect(report.warnings.map((w) => w.message)).not.toContain(
+      'file not referenced by the specialization',
+    );
+    expect(findEntry(buildCatalog(files), 'event')).toBeDefined();
+    expect(buildCatalog(files).documents.map((d) => [d.id, d.docText])).toEqual([
+      ['conventions', text('docs/conventions.md')],
+    ]);
+    expect(text('docs/conventions.md')).toMatch(/snake_case/);
   });
 
   it('the documents say how the event and the transition link by arrow', () => {
