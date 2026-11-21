@@ -131,6 +131,7 @@ export const specMessages = {
   'spec.urlInvalid': 'must start with http:// or https://, without spaces',
   'spec.urlTemplateNeedsPath': 'must contain {path}',
   'spec.repoIdInvalid': 'invalid repository id; use [a-z0-9-]+',
+  'spec.documentIdInvalid': 'invalid document id; use [a-z0-9-]+',
   'spec.mustBeNumber': 'must be a number',
   'spec.mustBeInteger': 'must be an integer',
   'spec.minOne': 'must be >= 1',

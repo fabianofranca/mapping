@@ -235,7 +235,7 @@ Owner decision of 2026-11-08 (stage #954, item 38): the `<button>` of a **common
 | `src/ui/TypedFields.tsx`, `src/ui/RefCell.tsx` | `ref` field and cell | reference field with a select look (`.ref-control`) |
 | `src/ui/TypedForm.tsx`, `src/ui/TableField.tsx` | disabled `ref` field (type form and table column without a picker) | the same `.ref-control` |
 | `src/ui/TableField.tsx` | row handle | drag handle (`.grid-grip`) |
-| `src/ui/catalog/CatalogView.tsx` | type in the list | list option (`.catalog-entry`) |
+| `src/ui/catalog/CatalogView.tsx` | type or document in the list | list option (`.catalog-entry`) |
 | `src/ui/review/ChangeMark.tsx` | change marker | opens the change popover and carries the shortcuts A, R and Backspace (`.change-mark`) |
 | `src/ui/review/ReviewBar.tsx` | "N invalid set(s)" | clickable problem badge (`.flag.flag-danger`) |
 | `src/app/Home.tsx` | side strip items ("Projects", "Help", "Settings") | navigation item, with `aria-current="page"` on the current one (`.home-nav-item`) |

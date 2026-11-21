@@ -83,6 +83,7 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 - The type that only applies to an arrow (`appliesTo: arrow`): the **Transition** only shows up when an arrow is selected, with the **Condition** and **Event** fields. No other library has an arrow-only type.
 - The **Event** is a floating marking with a component: a purple header with the event name and one row per property, drawn by the `repeat` node (the `properties` field).
 - One document per type (`docs/event.md`, `docs/transition.md`) and one named example on each.
+- A library document (`documents`, `docs/conventions.md`, `formatVersion` 21): the event conventions, listed under **Documents** in the Catalog and read by the MCP with `get_library_document`.
 
 **Scripts.** R12.19 and R12.20.
 

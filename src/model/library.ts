@@ -504,6 +504,7 @@ function level1(
   }
   signatureChecks(pkg, referenced, out);
   fileFormatChecks(pkg, referenced, out);
+  documentChecks(pkg, referenced, out);
 
   for (const file of files) {
     const lower = file.path.toLowerCase();
@@ -516,6 +517,24 @@ function level1(
     }
   }
   return pkg;
+}
+
+/**
+ * Level 1 (formatVersion 21): a text document of `documents` is a cited package file (it exists, is
+ * not empty, is not "unreferenced"); a `{ repo, path }` one is not a package file and is not read.
+ */
+function documentChecks(pkg: Package, referenced: Set<string>, out: Collector): void {
+  (pkg.spec.documents ?? []).forEach((document, i) => {
+    if (typeof document.doc !== 'string') return;
+    const path = pkg.resolve(document.doc);
+    referenced.add(path);
+    const file = pkg.byPath.get(path);
+    if (file === undefined) {
+      out.fileNotFound(pkg.specPath, `documents[${i}].doc`, path);
+    } else if ((file.text ?? '').trim() === '') {
+      out.warning(path, '', 'library.emptyDoc');
+    }
+  });
 }
 
 /** Level 1 (formatVersion 16): the cited signature sheets exist, are valid and are those of the same code. */
@@ -1286,6 +1305,13 @@ function iconOptionChecks(pkg: Package): LibraryIssue[] {
 // Entry
 // ---------------------------------------------------------------------------------------
 
+/** The library documents (`documents`) enter the count of distinct documents. */
+function addLibraryDocuments(spec: Spec, pkg: Package, docs: Set<string>): void {
+  for (const { doc } of spec.documents ?? []) {
+    docs.add(typeof doc === 'string' ? pkg.resolve(doc) : `${doc.repo}\u0000${doc.path}`);
+  }
+}
+
 function summarize(
   spec: Spec | undefined,
   pkg: Package | undefined,
@@ -1307,6 +1333,7 @@ function summarize(
     examples += type.examples?.length ?? 0;
   });
   for (const origin of spec.origins ?? []) examples += origin.examples?.length ?? 0;
+  addLibraryDocuments(spec, pkg, docs);
   return {
     level,
     types,

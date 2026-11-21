@@ -269,6 +269,7 @@ export const templatePtBR: {
   'model.spec.urlInvalid': 'deve começar com http:// ou https://, sem espaços',
   'model.spec.urlTemplateNeedsPath': 'deve conter {path}',
   'model.spec.repoIdInvalid': 'id de repositório inválido; use [a-z0-9-]+',
+  'model.spec.documentIdInvalid': 'id de documento inválido; use [a-z0-9-]+',
   'model.spec.mustBeNumber': 'deve ser um número',
   'model.spec.mustBeInteger': 'deve ser inteiro',
   'model.spec.minOne': 'deve ser >= 1',

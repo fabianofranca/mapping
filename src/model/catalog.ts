@@ -28,6 +28,7 @@ import {
   type FieldType,
   type Spec,
   type SpecAnnotationType,
+  type SpecDocRef,
   type SpecColumn,
   type SpecField,
   type SpecNotice,
@@ -144,6 +145,16 @@ export interface CatalogEntry {
   readonly previewValues: FieldValues | null;
 }
 
+/** A general document of the library (`documents`, v21): the text read from the package or the external reference. */
+export interface CatalogDocument {
+  readonly id: string;
+  readonly name: string;
+  /** Text of the package's `.md`; `null` for an external document or with the file missing. */
+  readonly docText: string | null;
+  /** `{ repo, path }` document: the `.md` lives in a `docRepos` repository; `null` for a package file. */
+  readonly docExternal: CatalogDocExternal | null;
+}
+
 export interface CatalogLayer {
   readonly id: string;
   readonly name: string;
@@ -155,6 +166,8 @@ export interface Catalog {
   readonly spec: Spec | null;
   readonly report: LibraryReport;
   readonly layers: readonly CatalogLayer[];
+  /** The library's general documents, in the order of the specialization (v21); empty without any. */
+  readonly documents: readonly CatalogDocument[];
   /** The engine's library (origins for external-system examples); `null` if it was not built. */
   readonly library: Library | null;
 }
@@ -256,8 +269,10 @@ function codeOf(spec: Spec, type: SpecAnnotationType): CatalogCode[] {
   return out;
 }
 
-function docExternalOf(spec: Spec, type: SpecAnnotationType): CatalogDocExternal | null {
-  const doc = type.doc;
+function docExternalOf(
+  spec: Spec,
+  doc: string | SpecDocRef | undefined,
+): CatalogDocExternal | null {
   if (doc === undefined || typeof doc === 'string') return null;
   const repo = spec.docRepos?.find((r) => r.id === doc.repo);
   return {
@@ -309,7 +324,8 @@ function locateSpecPath(texts: ReadonlyMap<string, unknown>, spec: Spec): string
 export function buildCatalog(files: readonly LibraryFile[]): Catalog {
   const report = validateLibrary({ files });
   const spec = report.spec ?? null;
-  if (spec === null) return { spec: null, report, layers: [], library: null };
+  if (spec === null)
+    return { spec: null, report, layers: [], documents: [], library: null };
 
   const texts = new Map<string, string>();
   for (const file of files) if (file.text !== undefined) texts.set(file.path, file.text);
@@ -390,7 +406,7 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
         container: component !== null && hasSlotComponent(component),
         docText:
           typeof type.doc === 'string' ? (texts.get(resolve(type.doc)) ?? null) : null,
-        docExternal: docExternalOf(spec, type),
+        docExternal: docExternalOf(spec, type.doc),
         fields: type.fields.map(fieldOf),
         code: codeOf(spec, type),
         sources: sourcesOf(type),
@@ -402,7 +418,16 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
       };
     }),
   }));
-  return { spec, report, layers: withResolvedComponents(built), library };
+  const documents = (spec.documents ?? []).map((document): CatalogDocument => ({
+    id: document.id,
+    name: document.name,
+    docText:
+      typeof document.doc === 'string'
+        ? (texts.get(resolve(document.doc)) ?? null)
+        : null,
+    docExternal: docExternalOf(spec, document.doc),
+  }));
+  return { spec, report, layers: withResolvedComponents(built), documents, library };
 }
 
 /**
