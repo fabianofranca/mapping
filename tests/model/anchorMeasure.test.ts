@@ -50,9 +50,28 @@ function hugTip(id: string, anchor: Record<string, unknown> | undefined) {
   };
 }
 
+/** The height comes from `sizing` itself, by the side (decision 6 of #1893): 90 on `bottom`, 30 on the others. */
+function sizedBySide(id: string) {
+  return {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id,
+    name: id,
+    size: { width: 100, height: 40 },
+    minSize: { width: 10, height: 10 },
+    sizing: { height: { $switch: '$anchor.side', cases: { bottom: 90 }, default: 30 } },
+    template: {
+      type: 'frame',
+      layout: { type: 'column', padding: 0 },
+      children: [{ type: 'rect', width: 100, height: 20, fill: '#ffffff' }],
+    },
+  };
+}
+
 const COMPONENTS: Record<string, unknown> = {
   hug: hugTip('hug', undefined),
   'hug-bottom': hugTip('hug-bottom', { side: 'bottom' }),
+  'sized-by-side': sizedBySide('sized-by-side'),
 };
 
 const SPEC_JSON = {
@@ -210,5 +229,30 @@ describe('the new anchored instance is born at the size the drawing uses', () =>
     );
     expect(marking(p, 'B').rect.height).toBe(90);
     expect(drawnBodyHeight(p)).toBe(90);
+  });
+});
+
+describe('a `sizing` that reads $anchor.side (decision 6 of #1893)', () => {
+  it('fitMarking and the creation give the height of the anchor side', () => {
+    const fit = (side: 'top' | 'bottom') =>
+      marking(
+        fitMarking(
+          withB('sized-by-side', { to: 'T', side }),
+          catalog,
+          'B',
+          approximateMeasurer,
+        ),
+        'B',
+      ).rect.height;
+    expect(fit('bottom')).toBe(90);
+    expect(fit('top')).toBe(30);
+    const created = addComponentMarking(
+      project(),
+      catalog,
+      args('sized-by-side', { anchor: { to: 'T', side: 'bottom' } }),
+      approximateMeasurer,
+    );
+    expect(marking(created, 'B').rect.height).toBe(90);
+    expect(fitMarking(created, catalog, 'B', approximateMeasurer)).toBe(created);
   });
 });

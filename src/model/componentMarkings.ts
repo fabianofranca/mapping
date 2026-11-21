@@ -34,13 +34,15 @@ import { componentForDrawing, drawOptions } from './drawingMode';
 import {
   anchoredRect,
   clampedInto,
+  outsideWarning,
   resolveMarkingAnchor,
   type AnchorDefaultsUnits,
 } from './anchorPlacement';
 import { checkAnchorTarget, setNewMarkingAnchor } from './anchors';
 import { effectiveDirection } from './direction';
+import { mirrorX } from './components/direction';
 import { fail, ModelError } from './errors';
-import { modelMessage, type ModelMessage } from './modelMessage';
+import type { ModelMessage } from './modelMessage';
 import {
   MIN_STORED_MARKING_SIZE,
   clamp,
@@ -635,9 +637,10 @@ function wantedSize(
   // Component with a slot and an axis that follows the content: the content is the children, which do not
   // exist yet (born at `size`; Arrange adjusts it after they come in). With no such axis (the Material 3
   // top app bar's height by `style`) nothing depends on them and the component is measured as always.
-  if (hasSlotComponent(component) && sizingFollowsContent(component, values))
-    return nominal;
   const drawn = componentForDrawing(p, component, args.containerId);
+  const reserved = { anchor: args.instanceAnchor, direction: drawn.direction };
+  if (hasSlotComponent(component) && sizingFollowsContent(component, values, reserved))
+    return nominal;
   const fitted = fitComponentSize(
     drawn.component,
     values,
@@ -864,14 +867,14 @@ const flowExtent = (axes: GridAxes, r: Rect): number =>
   axes.vertical ? r.height : r.width;
 
 /**
- * In `rtl`, the rectangle mirrored inside the slot's content area (`x' = 2·left + usable width
- * − x − w`), as Arrange mirrors the grid (`mirrorInContent`); in `ltr`, the rectangle itself.
+ * In `rtl`, the rectangle mirrored inside the slot's content area (`mirrorX`), as Arrange mirrors
+ * the grid; in `ltr`, the rectangle itself.
  */
 function mirroredInSlot(slot: SlotBox, rect: Rect): Rect {
   if (slot.direction !== 'rtl') return rect;
   const left = slot.area.x + slot.padding.left;
   const content = slot.area.width - slot.padding.left - slot.padding.right;
-  return { ...rect, x: Math.round(2 * left + content - rect.x - rect.width) };
+  return { ...rect, x: Math.round(mirrorX(rect.x, rect.width, left, content)) };
 }
 
 /**
@@ -1111,11 +1114,16 @@ function applyPreview(
   return next;
 }
 
+/** How many times the creation measures with the anchor before it stops (decision 7 of #1893). */
+const ANCHOR_MEASURES = 3;
+
 /**
  * The rectangle of a new anchored instance, without creating anything (the MCP and `addComponentMarking`): the
  * measured size (`componentSize`, with the `values`) attached to the anchor (`anchoredRect`, with the
  * defaults of `anchorDefaults` and the space's density and direction), clamped to the container's image
- * with a warning (`arrange.outside`). The anchor is checked as in `setMarkingAnchor`.
+ * with a warning (`arrange.outside`). The size is measured with the `$anchor.*` read at the box it ends up
+ * in (it repeats until the size repeats, at most 3 measures with the anchor). The anchor is checked as in
+ * `setMarkingAnchor`.
  */
 export function componentAnchoredPlacement(
   p: Project,
@@ -1145,45 +1153,43 @@ export function componentAnchoredPlacement(
   const density = effectiveDensity(p, args.containerId);
   const direction = effectiveDirection(p, args.containerId);
   const resolved = resolveMarkingAnchor(args.anchor, args.anchorDefaults, density);
-  // The `$anchor.*` enters the measure (a `hug` that depends on the side measures on the branch it draws). The
-  // instance's `rect` does not exist yet: `$anchor.side`, `.width` and `.height` are exact; `.x` and
-  // `.y` (the anchor's center relative to the box) use the box estimated by the size WITHOUT an anchor,
-  // attached as it will be. A size that depends on `.x`/`.y` may differ slightly from the drawn one
-  // (`snap_to_anchor` and `fit_marking` after the creation measure with the real `rect`).
-  const estimate = anchoredRect(
-    target.rect,
-    componentSize(p, catalog, args, measure),
-    resolved,
-    direction,
-  );
-  const instanceAnchor = anchorValues({
-    rect: estimate,
-    anchorRect: target.rect,
-    side: resolved.side,
-    defaults: { side: resolved.side },
-    density,
-  });
-  const size = componentSize(p, catalog, { ...args, instanceAnchor }, measure);
-  const wanted = anchoredRect(target.rect, size, resolved, direction);
   const container =
     args.containerId === null
       ? undefined
       : projectIndex(p).containers.get(args.containerId);
-  if (container === undefined) return { rect: wanted, warnings: [] };
-  const { rect, clamped } = clampedInto(wanted, imagePixelRect(container));
-  if (!clamped) return { rect, warnings: [] };
+  /** The size attached to the anchor, clamped to the container's image (and whether it had to be). */
+  const snap = (size: Size): { readonly rect: Rect; readonly clamped: boolean } => {
+    const wanted = anchoredRect(target.rect, size, resolved, direction);
+    return container === undefined
+      ? { rect: wanted, clamped: false }
+      : clampedInto(wanted, imagePixelRect(container));
+  };
+  // The `$anchor.*` enters the measure (a size that depends on the anchor measures on the branch it draws).
+  // The instance's `rect` does not exist yet: it measures once without the anchor, snaps that size, and then
+  // repeats (reads the anchor at the last snapped and clamped box, measures, snaps) until the size repeats,
+  // at most `ANCHOR_MEASURES` times (decision 7 of #1893). A size that depends on `$anchor.side`, `.width` and
+  // `.height` converges at once; one that depends on `.x`/`.y` is born at the box it draws at, or, if it
+  // never settles, at the box of the last measure.
+  let size = componentSize(p, catalog, args, measure);
+  let placed = snap(size);
+  for (let measured = 0; measured < ANCHOR_MEASURES; measured++) {
+    const instanceAnchor = anchorValues({
+      rect: placed.rect,
+      anchorRect: target.rect,
+      side: resolved.side,
+      defaults: { side: resolved.side },
+      density,
+    });
+    const next = componentSize(p, catalog, { ...args, instanceAnchor }, measure);
+    if (next.width === size.width && next.height === size.height) break;
+    size = next;
+    placed = snap(size);
+  }
+  const { rect, clamped } = placed;
+  if (container === undefined || !clamped) return { rect, warnings: [] };
   const label = args.name ?? args.markingId;
   const where = container.name ?? container.id;
-  return {
-    rect,
-    warnings: [
-      modelMessage(
-        'arrange.outside',
-        { label, where },
-        `${label}: does not fit in ${where}`,
-      ),
-    ],
-  };
+  return { rect, warnings: [outsideWarning(label, where)] };
 }
 
 /**
