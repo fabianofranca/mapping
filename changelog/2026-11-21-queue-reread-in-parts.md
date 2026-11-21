@@ -1,4 +1,4 @@
-# Queue skill rereads `SKILL.md` in consecutive parts — [Não lançado] (épico `epic/queue-reread-in-parts`, PR #2441, MCP unchanged, schema v22 unchanged)
+# Queue skill rereads `SKILL.md` in consecutive parts — 2026-11-21 (épico `epic/queue-reread-in-parts`, PR #2443, MCP unchanged, schema v22 unchanged)
 
 ## Corrigido
 

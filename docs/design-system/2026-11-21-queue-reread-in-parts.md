@@ -1,4 +1,4 @@
-# Queue skill rereads `SKILL.md` in consecutive parts — [Não lançado] (épico `epic/queue-reread-in-parts`)
+# Queue skill rereads `SKILL.md` in consecutive parts — 2026-11-21 (épico `epic/queue-reread-in-parts`)
 
 ## Pendências
 
