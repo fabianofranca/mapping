@@ -378,14 +378,14 @@ describe('early start in the same cycle and the `toca=` note rule (#2427)', () =
     expect(ficha).toMatch(/never[^.]*item of its own/);
   });
 
-  it('the rule is what `painel.py conflito` does: a standalone `(novo)` item conflicts on its own, a note after its path does not', () => {
+  it('the rule is what `painel.py conflito` does: neither a standalone `(novo)` item nor a note after its path conflicts (#2428)', () => {
     const conflito = (a: string, b: string) =>
       spawnSync('python3', [SCRIPT, 'conflito', a, '--com', `#1=${b}`], {
         encoding: 'utf8',
       });
     const standalone = conflito('src/a.ts,(novo)', 'src/b.ts,(novo)');
-    expect(standalone.status).toBe(1);
-    expect(standalone.stdout).toContain('(novo) com #1');
+    expect(standalone.status).toBe(0);
+    expect(standalone.stdout.trim()).toBe('livre');
     const note = conflito('src/a.ts (novo)', 'src/b.ts (novo)');
     expect(note.status).toBe(0);
     expect(note.stdout.trim()).toBe('livre');
