@@ -33,7 +33,8 @@ import {
 } from './libraryComponentNodes';
 import { libraryIssue } from './libraryIssue';
 import { checkSignatures } from './librarySignature';
-import { FILE_FORMATS_VERSION, MAX_PLUGIN_BYTES } from './fileFormats';
+import { FILE_FORMATS_VERSION } from './fileFormats';
+import { MAX_PLUGIN_BYTES } from './formatPlugin';
 import type { ModelMessageTemplateCode } from './messages';
 import type { ModelMessage } from './modelMessage';
 

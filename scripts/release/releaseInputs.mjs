@@ -17,6 +17,7 @@ export const RELEASE_INPUTS = [
   'docs/COMMENT-FORMAT.md',
   'docs/COMPONENT-FORMAT.md',
   'docs/FORMAT.md',
+  'docs/PLUGIN-FORMAT.md',
   'docs/SIGNATURE-FORMAT.md',
   'docs/SPEC-FORMAT.md',
   // Embedded notes library.
