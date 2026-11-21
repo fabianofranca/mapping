@@ -81,7 +81,7 @@ describe('HarfBuzz face (mcp/image/harfbuzz.ts)', () => {
     });
   });
 
-  it('reads a .woff like the .ttf it came from, and gives null for .woff2', async () => {
+  it('reads a .woff like the .ttf it came from, and gives null for a corrupt .woff2', async () => {
     await initShaper();
     const woff = loadFace(makeWoff(new Uint8Array(sansBytes)));
     expect(woff).not.toBeNull();
