@@ -378,6 +378,9 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     /** Container density (v19); `null` goes back to 1. One undo entry. */
     setContainerDensity: (containerId: string, density: number | null) =>
       store.apply((p) => model.setContainerDensity(p, containerId, density)),
+    /** Chosen class of one container class set (v23); `null` removes the set. One undo entry. */
+    setContainerClass: (containerId: string, set: string, classId: string | null) =>
+      store.apply((p) => model.setContainerClass(p, containerId, set, classId)),
     /** Project reading direction (v20); `null` goes back to `ltr`. One undo entry. */
     setProjectDirection: (direction: ReadingDirection | null) =>
       store.apply((p) => model.setProjectDirection(p, direction)),

@@ -1,5 +1,10 @@
+import { effectiveDensity } from './density';
+import { fail } from './errors';
 import { isRecord } from './isRecord';
+import { updateById } from './project';
+import { projectIndex } from './projectIndex';
 import { addSpecIssue, specMsg, type SpecMsg } from './specIssueCode';
+import type { Project, ProjectContainer, ProjectSpecialization } from './types';
 import type { z } from 'zod';
 
 // Container classes (`formatVersion` 21, stage #1901, decisions 1 to 8): named **sets** of classes
@@ -66,9 +71,177 @@ export function computedClassOf(
   );
 }
 
+// ---- In the project: the choice of a container and its effective classes (stage #1901, CX2) ----
+
+/** One choice stored on a container whose set or class no applied specialization declares as chosen. */
+export interface UndeclaredContainerClass {
+  readonly containerId: string;
+  readonly set: string;
+  readonly class: string;
+}
+
+function mergeClasses(
+  into: SpecContainerClass[],
+  from: readonly SpecContainerClass[],
+): SpecContainerClass[] {
+  const seen = new Set(into.map((c) => c.id));
+  return [...into, ...from.filter((c) => !seen.has(c.id))];
+}
+
+/**
+ * The sets of every applied specialization, merged by id in order of appearance (decision 4): the first
+ * declaration gives the name and the kind (computed or chosen); chosen sets merge their classes by id,
+ * a computed set keeps the thresholds of the first declaration. A specialization without a readable
+ * file declares nothing.
+ */
+function mergeSets(
+  specializations: readonly ProjectSpecialization[],
+): SpecContainerClassSet[] {
+  const merged = new Map<string, SpecContainerClassSet>();
+  for (const { spec } of specializations) {
+    for (const set of spec?.containerClasses ?? []) {
+      const known = merged.get(set.id);
+      if (known === undefined) merged.set(set.id, { ...set, classes: [...set.classes] });
+      else if (!isComputedSet(known) && !isComputedSet(set)) {
+        merged.set(set.id, {
+          ...known,
+          classes: mergeClasses(known.classes, set.classes),
+        });
+      }
+    }
+  }
+  return [...merged.values()];
+}
+
+const setsBySpecializations = new WeakMap<
+  readonly ProjectSpecialization[],
+  SpecContainerClassSet[]
+>();
+
+/**
+ * The container class sets the project's specializations declare (decision 4), the **union** by set id.
+ * Memoized by the `specializations` list: it only recomputes when a specialization is applied, removed
+ * or updated.
+ */
+export function containerClassSets(
+  p: Pick<Project, 'specializations'>,
+): SpecContainerClassSet[] {
+  const known = setsBySpecializations.get(p.specializations);
+  if (known !== undefined) return known;
+  const sets = mergeSets(p.specializations);
+  setsBySpecializations.set(p.specializations, sets);
+  return sets;
+}
+
+const sizeOf = (set: SpecContainerClassSet, c: ProjectContainer): number =>
+  set.by === 'height' ? c.height : c.width;
+
+/**
+ * The classes a container has, set id → class id (decisions 2, 3 and 12): a computed set follows the
+ * container's width (or height) ÷ its effective density; a chosen set is only what the container
+ * stores, and no choice (or an undeclared one) gives no class. A canvas marking's container (`null`)
+ * and an unknown id have none.
+ */
+export function effectiveContainerClasses(
+  p: Project,
+  containerId: string | null,
+): Record<string, string> {
+  const container =
+    containerId === null ? undefined : projectIndex(p).containers.get(containerId);
+  if (container === undefined) return {};
+  const density = effectiveDensity(p, container.id);
+  const result: Record<string, string> = {};
+  for (const set of containerClassSets(p)) {
+    const found = isComputedSet(set)
+      ? computedClassOf(set, unitsOf(sizeOf(set, container), density))?.id
+      : set.classes.find((c) => c.id === container.classes?.[set.id])?.id;
+    if (found !== undefined) result[set.id] = found;
+  }
+  return result;
+}
+
+/**
+ * The stored choices that no applied specialization declares as chosen (a set nobody declares, a
+ * computed set or a class the set does not have): they are kept in the file, give no class and
+ * Diagnostics lists them.
+ */
+export function undeclaredContainerClasses(p: Project): UndeclaredContainerClass[] {
+  const chosen = new Map(
+    containerClassSets(p)
+      .filter((s) => !isComputedSet(s))
+      .map((s) => [s.id, new Set(s.classes.map((c) => c.id))] as const),
+  );
+  return p.containers.flatMap((c) =>
+    Object.entries(c.classes ?? {})
+      .filter(([set, classId]) => chosen.get(set)?.has(classId) !== true)
+      .map(([set, classId]) => ({ containerId: c.id, set, class: classId })),
+  );
+}
+
+/** Refuses a set or class id outside `[a-z0-9-]+` with `container-class`. */
+function checkClassName(value: string, what: 'set' | 'class'): void {
+  if (!CONTAINER_CLASS_ID_RE.test(value)) {
+    fail('container-class', `${what} "${value}"`, { [what]: value });
+  }
+}
+
+/**
+ * A container's choice map checked and cleaned: every key and value follows `[a-z0-9-]+` (otherwise
+ * `container-class`); `null`, `undefined` and an empty map give `undefined` (the key is not written).
+ */
+export function normalizedContainerClasses(
+  classes: Readonly<Record<string, string>> | null | undefined,
+): Record<string, string> | undefined {
+  const entries = Object.entries(classes ?? {});
+  for (const [set, classId] of entries) {
+    checkClassName(set, 'set');
+    checkClassName(classId, 'class');
+  }
+  return entries.length === 0 ? undefined : Object.fromEntries(entries);
+}
+
+/** The container with `classes` replaced; an empty map leaves the key out. */
+function withClasses(
+  container: ProjectContainer,
+  classes: Readonly<Record<string, string>>,
+): ProjectContainer {
+  const { classes: previous, ...rest } = container;
+  void previous;
+  return Object.keys(classes).length === 0 ? rest : { ...container, classes };
+}
+
+/**
+ * Changes one set of the container's choice (decision 12); `null` removes it, and the key leaves with
+ * the last set. It does not check the set against the specializations (an earlier or later one may
+ * declare it): the MCP does, and an undeclared choice is kept and listed. A name outside
+ * `[a-z0-9-]+` fails with `container-class`, an unknown container with `not-found`.
+ */
+export function setContainerClass(
+  p: Project,
+  containerId: string,
+  set: string,
+  classId: string | null,
+): Project {
+  const container = projectIndex(p).containers.get(containerId);
+  if (container === undefined) return fail('not-found', containerId);
+  checkClassName(set, 'set');
+  if (classId !== null) checkClassName(classId, 'class');
+  const current = container.classes ?? {};
+  if ((current[set] ?? null) === classId) return p;
+  const { [set]: removed, ...others } = current;
+  void removed;
+  const next = classId === null ? others : { ...current, [set]: classId };
+  return {
+    ...p,
+    containers: updateById(p.containers, containerId, (c) => withClasses(c, next)),
+  };
+}
+
 // ---- Validation (`parseSpec`) -----------------------------------------------------------------
 
-const ID_RE = /^[a-z0-9-]+$/;
+/** Shape of a set id and of a class id (`[a-z0-9-]+`), in the declaration and in a container's choice. */
+export const CONTAINER_CLASS_ID_RE = /^[a-z0-9-]+$/;
+const ID_RE = CONTAINER_CLASS_ID_RE;
 /** Ids that `$container.width` and `$container.height` read (decision 1): not usable as a set id. */
 const RESERVED_IDS: ReadonlySet<string> = new Set(CONTAINER_CLASS_AXES);
 const SET_KEYS = new Set(['id', 'name', 'by', 'classes']);

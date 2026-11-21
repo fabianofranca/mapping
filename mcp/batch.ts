@@ -146,6 +146,7 @@ import {
   type ItemRef,
 } from '../src/model';
 import type { LibraryIssue } from '../src/model/library';
+import { applyClassChoices } from './containerClassOps';
 import { ToolError, type ToolErrorCode } from './errors';
 import {
   checkUpdate,
@@ -1927,6 +1928,14 @@ class Batch {
         description: `${result.description}, density ${op.density}x`,
       };
     }
+    if (op.classes != null) {
+      const classes = applyClassChoices(result.project, id, op.classes);
+      result = {
+        ...result,
+        project: classes.project,
+        description: `${result.description}${classes.changes.map((c) => `, ${c}`).join('')}`,
+      };
+    }
     return result;
   }
 
@@ -2104,6 +2113,11 @@ class Batch {
     if (op.density !== undefined) {
       project = setContainerDensity(project, id, op.density);
       changes.push(op.density === null ? 'density 1x' : `density ${op.density}x`);
+    }
+    if (op.classes !== undefined) {
+      const classes = applyClassChoices(project, id, op.classes);
+      project = classes.project;
+      changes.push(...classes.changes);
     }
     if (op.locked === true) {
       project = setImageLocked(project, id, true);

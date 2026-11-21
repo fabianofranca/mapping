@@ -1,5 +1,6 @@
 import { HEX_COLOR_RE } from './hexColor';
 import { z } from 'zod';
+import { CONTAINER_CLASS_ID_RE } from './containerClasses';
 import { PLATFORM_ID_RE } from './spec';
 import {
   ANCHOR_ALIGNS,
@@ -22,6 +23,7 @@ const id = z.string().min(1);
 const hexColor = z.string().regex(HEX_COLOR_RE);
 const finite = z.number().finite();
 const readingDirection = z.enum(READING_DIRECTIONS);
+const containerClassName = z.string().regex(CONTAINER_CLASS_ID_RE);
 export const anchorSchema = z.object({
   to: id,
   side: z.enum(ANCHOR_SIDES).optional(),
@@ -101,6 +103,17 @@ export const containerSchema = z.object({
   direction: readingDirection.nullable().optional(),
   /** Container density (v19); the 0.5 to 8 range is the `container-density` invariant. */
   density: z.number().nullable().optional(),
+  /**
+   * Chosen container classes (v23): set id → class id (`[a-z0-9-]+` both). An empty map and `null` are
+   * read as absent and never written.
+   */
+  classes: z
+    .record(containerClassName, containerClassName)
+    .nullable()
+    .optional()
+    .transform((classes) =>
+      classes == null || Object.keys(classes).length === 0 ? undefined : classes,
+    ),
 });
 
 export const markingSchema = z.object({

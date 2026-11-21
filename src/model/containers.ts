@@ -1,4 +1,5 @@
 import { arrowIdsAttachedTo, withoutArrows } from './arrows';
+import { normalizedContainerClasses } from './containerClasses';
 import { MAX_DENSITY, MIN_DENSITY, withoutDensity } from './density';
 import { fail } from './errors';
 import { HEX_COLOR_RE } from './hexColor';
@@ -431,12 +432,15 @@ export function addContainer(
     readonly beside?: string;
     /** Page of the new container (default: the page of `beside`, else the first page). */
     readonly pageId?: string;
+    /** Chosen container classes (v23): set id → class id; an empty map writes no key. */
+    readonly classes?: Readonly<Record<string, string>> | null;
   },
   options?: SettleOptions,
 ): Project {
   if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   checkDimensions(args);
   const pageId = newContainerPage(p, args);
+  const classes = normalizedContainerClasses(args.classes);
   if (p.containers.some((i) => i.file !== null && sameFile(i.file, args.file))) {
     fail('duplicate-file');
   }
@@ -453,6 +457,7 @@ export function addContainer(
     width: args.width,
     height: args.height,
     placement: newContainerPlacement(p, args, args, pageId),
+    ...(classes === undefined ? {} : { classes }),
   };
   return settleFrom(p, { ...p, containers: [...p.containers, image] }, options);
 }
@@ -476,12 +481,15 @@ export function addBackgroundContainer(
     readonly beside?: string;
     /** Page of the new container (default: the page of `beside`, else the first page). */
     readonly pageId?: string;
+    /** Chosen container classes (v23): set id → class id; an empty map writes no key. */
+    readonly classes?: Readonly<Record<string, string>> | null;
   },
   options?: SettleOptions,
 ): Project {
   if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   checkBackgroundDimensions(args);
   const pageId = newContainerPage(p, args);
+  const classes = normalizedContainerClasses(args.classes);
   const background = checkBackground(args.background);
   const name = normalizeOptionalName(args.name ?? null);
   const image: ProjectContainer = {
@@ -497,6 +505,7 @@ export function addBackgroundContainer(
     width: args.width,
     height: args.height,
     placement: newContainerPlacement(p, args, args, pageId),
+    ...(classes === undefined ? {} : { classes }),
   };
   return settleFrom(p, { ...p, containers: [...p.containers, image] }, options);
 }

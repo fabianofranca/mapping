@@ -15,6 +15,7 @@ export type ModelErrorCode =
   | 'container-without-file'
   | 'container-has-file'
   | 'container-density'
+  | 'container-class'
   | 'aspect-change-not-confirmed'
   | 'image-too-small'
   | 'rect-not-integer'
