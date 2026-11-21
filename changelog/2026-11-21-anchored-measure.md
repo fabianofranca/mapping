@@ -1,4 +1,4 @@
-# Anchored markings are measured with the anchor they draw with — [Não lançado] (épico `epic/anchored-measure`, PR #2412, MCP 0.50.3, schema v22 unchanged)
+# Anchored markings are measured with the anchor they draw with — 2026-11-21 (épico `epic/anchored-measure`, PR #2412, MCP 0.51.1, schema v22 unchanged)
 
 ## Alterado
 

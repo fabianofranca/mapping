@@ -3,7 +3,15 @@
     "mapping": {
       "type": "stdio",
       "command": "node",
-      "args": ["tools/mapping-mcp.js", "--root", "projects", "--root", "specializations"]
+      "args": [
+        "tools/mapping-mcp.js",
+        "--root",
+        "projects",
+        "--root",
+        "specializations",
+        "--scratch",
+        "scratch"
+      ]
     }
   }
 }

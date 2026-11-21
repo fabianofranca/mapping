@@ -19,6 +19,7 @@ import { spawn, spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { serverArgs } from './serverArgs.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const server = join(here, 'tools', 'mapping-mcp.js')
@@ -48,17 +49,11 @@ if (process.env.CLAUDE_CODE_REMOTE === 'true' || !existsSync(server)) {
   }
 }
 
-const child = spawn(
-  process.execPath,
-  [
-    server,
-    '--root',
-    join(here, 'projects'),
-    '--root',
-    join(here, 'specializations'),
-  ],
-  { stdio: 'inherit' },
-)
+// An installed server older than 0.51.0 rejects --scratch and exits: ask it for its version first.
+const probe = spawnSync(process.execPath, [server, '--version'], { encoding: 'utf8', timeout: 5000 })
+const version = probe.status === 0 ? probe.stdout : ''
+
+const child = spawn(process.execPath, [server, ...serverArgs(here, version)], { stdio: 'inherit' })
 child.on('error', (err) => {
   process.stderr.write(`could not start the MCP server: ${err.message}\n`)
   process.exit(1)

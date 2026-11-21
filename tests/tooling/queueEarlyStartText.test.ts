@@ -328,3 +328,66 @@ describe('early start text (EA2, #2373): the terms come from the real output of 
     expect(sub).toContain("`phase '#<stage>' SM<k>=ok`");
   });
 });
+
+// Stage #2427: the early start must not wait for the hourly check, and a note in a ficha's `toca=` stays after its path.
+describe('early start in the same cycle and the `toca=` note rule (#2427)', () => {
+  const per = section(SKILL, '3. Per stage');
+  const rule = per.slice(per.indexOf('**Early start in the same cycle**'));
+
+  it('"3. Per stage" says `show` (not `apply`) lists `começar agora:`, and to run it in the cycle of each of the four transitions', () => {
+    expect(per).toContain('**Early start in the same cycle**');
+    const paragraph = rule.slice(0, rule.indexOf('\n\n'));
+    for (const term of [
+      '`apply` does not print `começar agora:`',
+      '`painel.py show`',
+      '`stage: Testador`',
+      '`stage: Correção`',
+      '`stage: Fechamento`',
+      '`status="esperando entrega"`',
+      'step 2b',
+      '`#E (cedo: #S)`',
+      'same cycle',
+      'hourly check',
+    ]) {
+      expect(paragraph).toContain(term);
+    }
+  });
+
+  it('each transition step points at that rule: 2b (frees a slot), 3 (Testador), 4 (Correção) and 5 (Fechamento)', () => {
+    const lineOf = (needle: string): string =>
+      per.split('\n').find((l) => l.includes(needle)) ?? '';
+    for (const needle of [
+      '2b. **Early stage: main before the tester**',
+      '▸ `stage: Testador`.',
+      '▸ `stage: Correção` and a new phase in `phases`.',
+      '▸ `stage: Fechamento`.',
+    ]) {
+      expect(lineOf(needle), needle).toContain('Early start in the same cycle');
+    }
+  });
+
+  it('"Stage ficha" says a note stays right after its path, with a space, and is never an item of its own', () => {
+    const ficha = SKILL.slice(
+      SKILL.indexOf('### Stage ficha'),
+      SKILL.indexOf('## 1. Start'),
+    );
+    expect(ficha).toMatch(
+      /note in parentheses[^.]*right after its path[^.]*separated by a space/,
+    );
+    expect(ficha).toContain('`x.ts (novo)`');
+    expect(ficha).toMatch(/never[^.]*item of its own/);
+  });
+
+  it('the rule is what `painel.py conflito` does: a standalone `(novo)` item conflicts on its own, a note after its path does not', () => {
+    const conflito = (a: string, b: string) =>
+      spawnSync('python3', [SCRIPT, 'conflito', a, '--com', `#1=${b}`], {
+        encoding: 'utf8',
+      });
+    const standalone = conflito('src/a.ts,(novo)', 'src/b.ts,(novo)');
+    expect(standalone.status).toBe(1);
+    expect(standalone.stdout).toContain('(novo) com #1');
+    const note = conflito('src/a.ts (novo)', 'src/b.ts (novo)');
+    expect(note.status).toBe(0);
+    expect(note.stdout.trim()).toBe('livre');
+  });
+});
