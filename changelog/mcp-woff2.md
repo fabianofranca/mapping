@@ -1,4 +1,4 @@
-# The MCP server reads `.woff2` library fonts — [Não lançado] (épico `epic/mcp-woff2`, PR #2459, MCP 0.54.0, schema v22 unchanged)
+# The MCP server reads `.woff2` library fonts — [Não lançado] (épico `epic/mcp-woff2`, PR #2459, MCP 0.55.0, schema v22 unchanged)
 
 ## Alterado
 
