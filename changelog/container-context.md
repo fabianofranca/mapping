@@ -1,4 +1,4 @@
-# Container context — [Não lançado] (épico `epic/container-context`, PR #0, MCP 0.56.0, schema v22, specialization formatVersion 21)
+# Container context — [Não lançado] (épico `epic/container-context`, PR #0, MCP 0.56.0, schema v23, specialization formatVersion 21, proposal formatVersion 11)
 
 ## Adicionado
 
@@ -7,8 +7,12 @@
 - Model API `computedClassOf(set, units)` (the class of a computed set for a size in units), `unitsOf(pixels, density)` and `isComputedSet`, pure and tested (`src/model/containerClasses.ts`). Nothing calls them in the app yet (#2036).
 - Example package `examples/libraries/sdui-backend/` (`version` 4): the `platform` (chosen) and `window` (by width: `compact` below 600, `medium` below 840, `expanded`) sets, the new Web desktop size (1440 × 900), `classes` on the Phone size and `appliesIn` on `sdui-sheet` and `sdui-fab` (#2036).
 - `docs/SPEC-FORMAT.md` (sections "Container classes (`formatVersion` 21)" and "Container classes a type is meant for"), `docs/spec.schema.json`, Help › Specializations, the `spec-author` skill (step "12c. Container classes"), `docs/AGENT-GUIDE.md` and the MCP descriptions of `get_specialization`, `validate_specialization` and the `spec-format` resource (#2036).
+- Project schema v23: the container's **`classes`** (`set id → class id`, optional) holds the choice of the specialization's chosen sets. The model has `effectiveContainerClasses` (chosen plus computed from the size in units), `containerClassSets` (the union of the applied specializations' sets) and `undeclaredContainerClasses`, the store action `setContainerClass`, and the error code `container-class` (an id outside `[a-z0-9-]+`); a choice that no specialization declares is kept in the file and left out of the effective classes (#2037).
+- Proposal `formatVersion` 11: the container's `classes` field and the `classes` inside a created or removed container; the review text shows the choice by the specializations' names (#2037).
+- MCP: `add_container` and `update_container` accept `classes` (`null` removes a set or all of them); `get_container`, `get_project` and `get_marking` return `classes` and `effectiveClasses`; a computed, undeclared or unknown choice is `invalid-arguments` with the `chosenSets` (#2037).
 
 ## Alterado
 
 - The current specialization format version is 21 (the MCP server, `docs/SPEC-FORMAT.md`, Help, `spec-author` skill and `docs/AGENT-GUIDE.md`) (#2036).
 - The `dist/index.html` ceiling went up 16 KiB, from 2,375,680 to 2,392,064 bytes, by the budget rule (the formatVersion 21 help text in both languages and the validation); above the limits, `bug` #2465 for the owner to review.
+- Project schema v23 (only the number changes in the migration): an earlier app opens a file with `classes` read-only. The example projects and the invalid-file fixtures were rewritten to v23 (#2037).

@@ -298,6 +298,15 @@ The stage `epic/format-plugins` lets a specialization (`formatVersion` 20) carry
 
 The stage `epic/container-context` starts with `formatVersion` 21 of the specialization: `containerClasses` at the root (named sets of classes, computed from a container's size with `by` and `below`, or chosen per container), `classes` on a ready-made size of `containers` and `appliesIn` on a type. No tool, operation or argument is new; `get_specialization` returns the keys as they are and `validate_specialization` and `validate_library` accept and check them (the error paths are in `docs/SPEC-FORMAT.md`, "Container classes (`formatVersion` 21)"). The three keys are outside the version contract. **Update the MCP first:** an earlier version refuses a specialization of `formatVersion` 21.
 
+### Container classes in the project (stage #1901, 0.56.0)
+
+Schema v23 and proposal `formatVersion` 11: a container stores the classes of the specialization's **chosen** sets (`containerClasses` without `by`). No tool is new.
+
+- **Operations.** `add_container` and `update_container` accept `classes`, a map `set id → class id` (`null` for a set removes it; `classes: null` removes them all; in `update_container` a set not named stays as it is, and absent does not change). A set or class id outside `[a-z0-9-]+` is `invalid-arguments`, like the one below.
+- **Reading.** `get_container`, `get_project` (each container) and the `container` of `get_marking` return `classes` (the stored choice, `null` when none) and `effectiveClasses` (every class that applies: the chosen ones that an applied specialization declares and the ones the computed sets give for the container's size ÷ `density`; a stored choice that no applied specialization declares stays in `classes` only).
+- **Refusal.** A set that is computed (`by`), one no applied specialization declares, or a class the set does not declare is `invalid-arguments` with `chosenSets: [{ id, name, classes: [{ id, name }] }]` next to the message, so the agent can choose again without another read. The model itself only checks the format of the ids; a choice the specializations do not declare is kept and listed as undeclared.
+- **Proposal.** A proposal that sets `classes` is written in `formatVersion` 11; an earlier app or MCP rejects it. **Update the MCP first.**
+
 ### Change in 0.50.2 — density follows an image replacement (stage #1891)
 
 A change in 0.50.2, patch: no new tool, operation or argument; schema and formats unchanged. The stage `epic/density-free-space-preview` is the source of these items.

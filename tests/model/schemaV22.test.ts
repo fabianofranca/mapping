@@ -42,7 +42,7 @@ function open(raw: Raw) {
 
 describe('schema v22', () => {
   it('the current version is 22 and the registry has the v21 → v22 migration', () => {
-    expect(SCHEMA_VERSION).toBe(22);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(22);
     expect(migrations.get(21)).toBe(migrateFrom21To22);
   });
 

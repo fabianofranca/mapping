@@ -1,9 +1,9 @@
 import type { Spec } from './spec';
 
-// Types of the `mapping.json` (schema v22). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
+// Types of the `mapping.json` (schema v23). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
 // the operations always return a new project.
 
-export const SCHEMA_VERSION = 22;
+export const SCHEMA_VERSION = 23;
 /** The reading directions the file accepts (v20): single source of the type and the schemas (zod, MCP). */
 export const READING_DIRECTIONS = ['ltr', 'rtl'] as const;
 /** Reading direction (v20): left to right or right to left. */
@@ -106,6 +106,12 @@ export interface ProjectContainer {
    * to the drawing of components (rows, grids, `start`/`end`, `mirror`).
    */
   readonly direction?: ReadingDirection | null;
+  /**
+   * Chosen container classes (v23): set id → class id, only of the sets a specialization declares as
+   * chosen (`containerClasses` without `by`). Absent or `null` = no choice; an empty map is never
+   * written. A set or class that no applied specialization declares is kept (it gives no class).
+   */
+  readonly classes?: Readonly<Record<string, string>> | null;
 }
 
 import {

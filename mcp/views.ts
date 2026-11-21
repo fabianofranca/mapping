@@ -1,5 +1,6 @@
 import {
   drawingModesOf,
+  effectiveContainerClasses,
   effectiveDirection,
   effectiveDrawingMode,
   arrowsOf,
@@ -569,6 +570,10 @@ function containerSummary(refs: Refs, image: ProjectContainer): Json {
     effectiveDirection: effectiveDirection(refs.project, image.id),
     // Image pixels per component unit (1 = the default, also when absent).
     density: image.density ?? 1,
+    // Chosen container classes (set → class; `null` = none stored) and the ones the container has
+    // (computed sets from its size ÷ density, chosen sets from the stored choice).
+    classes: image.classes ?? null,
+    effectiveClasses: effectiveContainerClasses(refs.project, image.id),
     // Canvas marking that contains the container (derived from the geometry), or `null`.
     parent: image.parentId === null ? null : refs.ref('m', image.parentId),
   };

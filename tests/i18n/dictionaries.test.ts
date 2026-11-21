@@ -104,6 +104,8 @@ describe('dictionaries', () => {
       'page.count.itemsOne',
       'page.move.refusedArrow',
       'language.en-US',
+      // Container classes: "Classes" is the same word in both languages.
+      'review.field.classes',
       'image.dimensions',
       // Only {parameters}: the text comes from the parser.
       'model.catalog.invalidProblem',
