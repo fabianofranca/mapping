@@ -26,3 +26,4 @@
 - The current specialization format version is 21 (the MCP server, `docs/SPEC-FORMAT.md`, Help, `spec-author` skill and `docs/AGENT-GUIDE.md`) (#2036).
 - The `dist/index.html` ceiling went up 16 KiB, from 2,375,680 to 2,392,064 bytes, by the budget rule (the formatVersion 21 help text in both languages and the validation); above the limits, `bug` #2465 for the owner to review.
 - Project schema v23 (only the number changes in the migration): an earlier app opens a file with `classes` read-only. The example projects and the invalid-file fixtures were rewritten to v23 (#2037).
+- Teto do `dist/index.html` subiu 16 KiB, de 2392064 para 2408448, pela regra do orçamento; acima dos limites, `bug` #2476 para o dono revisar.
