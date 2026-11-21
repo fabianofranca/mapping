@@ -12,7 +12,7 @@ import {
   type ParityCase,
 } from '../support/shapingParity';
 
-// Stage #2121 (HB3, decision 13): the server's widths for Mapping Sans and the `--calt` font at size 100, spaced and
+// Stage #2121 (HB3, decision 13): the server's widths for Mapping Sans, the `--calt` font and Roboto Regular (`.woff2`, #2126) at size 100, spaced and
 // not. `tests/e2e/shapingParity.spec.ts` measures the same cases in Chromium against the same fixture.
 
 const FIXTURE = 'tests/fixtures/shaping-parity.json';
@@ -26,7 +26,7 @@ function measured(): ParityCase[] {
       family: name,
       weight: '400',
       style: 'normal' as const,
-      path: `fonts/${name}.ttf`,
+      path: `fonts/${name}.${name === 'roboto' ? 'woff2' : 'ttf'}`,
       bytes: buffer(bytes[name]),
     })),
   );
