@@ -330,7 +330,10 @@ function checkGradientKeys(type: string, v: Rec, p: string, out: Ctx): void {
 const checkFill = tokenCheck('color', (v, p, out) => {
   if (typeof v === 'string') return checkColor(v, p, out);
   if (!isRecord(v)) return add(out, p, 'expected a color or gradient');
-  const type = typeof v.type === 'string' && v.type in GRADIENT_KEYS ? v.type : undefined;
+  const type =
+    typeof v.type === 'string' && Object.hasOwn(GRADIENT_KEYS, v.type)
+      ? v.type
+      : undefined;
   checkKeys(v, ['type', 'stops', ...(GRADIENT_KEYS[type ?? 'linear'] ?? [])], p, out);
   if (type === undefined)
     add(out, join(p, 'type'), 'expected "linear", "radial" or "angular"');

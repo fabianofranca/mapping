@@ -614,6 +614,13 @@ describe('component.schema.json — arcs on ellipse (FG6)', () => {
         { type: 'angular', stops },
         { type: 'angular', center: [0, 0.5], angle: -90, stops },
         { $if: { $field: 'on' }, then: { type: 'radial', stops }, else: 'none' },
+        {
+          type: 'angular',
+          stops: [
+            { offset: 0, color: { $field: 'from', default: '#fff' } },
+            { offset: 1, color: { $token: 'brand' } },
+          ],
+        },
       ]) {
         const c = withFill(fill);
         expect(checkSchema(schema, c), JSON.stringify(fill)).toEqual([]);

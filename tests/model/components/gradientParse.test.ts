@@ -144,6 +144,20 @@ describe('the stops of the three types', () => {
 });
 
 describe('the type', () => {
+  it('reports (and does not throw on) a type named like an Object.prototype member', () => {
+    for (const type of [
+      'toString',
+      'constructor',
+      'valueOf',
+      'hasOwnProperty',
+      '__proto__',
+    ]) {
+      expect(validateComponent(withFill({ type, stops: STOPS }))).toEqual([
+        `${FILL}.type: expected "linear", "radial" or "angular"`,
+      ]);
+    }
+  });
+
   it('refuses a type outside the set, with the three names', () => {
     expect(validateComponent(withFill({ type: 'conic', stops: STOPS }))).toEqual([
       `${FILL}.type: expected "linear", "radial" or "angular"`,

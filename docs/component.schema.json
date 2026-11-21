@@ -2204,7 +2204,7 @@
             "maximum": 1
           },
           "color": {
-            "$ref": "#/$defs/lit_color"
+            "$ref": "#/$defs/expr_color"
           }
         }
       }

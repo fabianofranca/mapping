@@ -34,6 +34,7 @@ import {
   type CornerRadius,
   type Matrix,
   type Paint,
+  type Point,
   type Scene,
   type SceneNode,
   type SceneTextRun,
@@ -458,26 +459,31 @@ class Renderer {
   /** Applies a fill to a shape; an image becomes the shape itself (`KonvaImage`). */
   private fillShape(shape: ShapeWithFill, paint: Paint, box: Box): Konva.Shape[] {
     shape.opacity(paint.opacity ?? 1);
+    // The gradient points are in the node's box (top-left origin); an ellipse's Konva origin is its center.
+    const local = (p: Point): Point =>
+      shape instanceof KonvaEllipse
+        ? { x: p.x - box.width / 2, y: p.y - box.height / 2 }
+        : p;
     switch (paint.type) {
       case 'solid':
         shape.fill(paint.color);
         return [shape];
       case 'linear':
         shape.fillPriority('linear-gradient');
-        shape.fillLinearGradientStartPoint(paint.start);
-        shape.fillLinearGradientEndPoint(paint.end);
+        shape.fillLinearGradientStartPoint(local(paint.start));
+        shape.fillLinearGradientEndPoint(local(paint.end));
         shape.fillLinearGradientColorStops(flattenStops(paint.stops));
         return [shape];
       case 'radial':
         shape.fillPriority('radial-gradient');
-        shape.fillRadialGradientStartPoint(paint.center);
-        shape.fillRadialGradientEndPoint(paint.center);
+        shape.fillRadialGradientStartPoint(local(paint.center));
+        shape.fillRadialGradientEndPoint(local(paint.center));
         shape.fillRadialGradientStartRadius(0);
         shape.fillRadialGradientEndRadius(paint.radius);
         shape.fillRadialGradientColorStops(flattenStops(paint.stops));
         return [shape];
       case 'angular':
-        return this.angularFill(shape, paint);
+        return this.angularFill(shape, paint, local(paint.center));
       case 'image':
         return this.imageFill(shape, paint, box);
     }
@@ -491,8 +497,9 @@ class Renderer {
   private angularFill(
     shape: ShapeWithFill,
     paint: Paint & { type: 'angular' },
+    center: Point,
   ): Konva.Shape[] {
-    const gradient = conicGradient(paint);
+    const gradient = conicGradient(paint, center);
     if (gradient) shape.fill(gradient);
     else {
       this.warn('angular-gradient-unsupported');
@@ -1166,13 +1173,16 @@ function flattenStops(
  * The conic gradient of an angular paint (angle in degrees, 0 pointing right and growing
  * clockwise, as the canvas does), or `undefined` where the 2D context has no `createConicGradient`.
  */
-function conicGradient(paint: Paint & { type: 'angular' }): CanvasGradient | undefined {
+function conicGradient(
+  paint: Paint & { type: 'angular' },
+  center: Point,
+): CanvasGradient | undefined {
   const context = document.createElement('canvas').getContext('2d');
   if (!context || typeof context.createConicGradient !== 'function') return undefined;
   const gradient = context.createConicGradient(
     (paint.angle * Math.PI) / 180,
-    paint.center.x,
-    paint.center.y,
+    center.x,
+    center.y,
   );
   for (const stop of paint.stops) gradient.addColorStop(stop.offset, stop.color);
   return gradient;

@@ -35,6 +35,25 @@ function sceneWith(fill: Paint): Scene {
   return { root: node, warnings: [] };
 }
 
+/** A 100 × 40 ellipse (a Konva ellipse has its origin at its center) with `fill`. */
+function ellipseWith(fill: Paint): Konva.Shape {
+  const frame: FrameNode = {
+    ...baseNode({ id: 'r', name: 'r', width: 100, height: 40 }),
+    type: 'frame',
+    clip: false,
+    cornerRadius: 0,
+    children: [
+      {
+        ...baseNode({ id: 'e', name: 'e', width: 100, height: 40, fills: [fill] }),
+        type: 'ellipse',
+      },
+    ],
+  };
+  return renderScene({ root: frame, warnings: [] }).root.find(
+    'Ellipse',
+  )[0] as Konva.Shape;
+}
+
 function draw(fill: Paint) {
   const result = renderScene(sceneWith(fill));
   const shape = result.root.find('Shape')[0] as Konva.Rect;
@@ -102,6 +121,35 @@ describe('angular gradient', () => {
     });
     expect(shape.fill()).toBe('#ff0000');
     expect(warnings).toEqual([{ code: 'angular-gradient-unsupported' }]);
+  });
+});
+
+describe('on an ellipse (whose Konva origin is its center)', () => {
+  it('the gradients keep their coordinates in the box, as the raster reads them', () => {
+    const radial = ellipseWith({
+      type: 'radial',
+      center: { x: 50, y: 20 },
+      radius: 20,
+      stops: STOPS,
+    });
+    expect(radial.fillRadialGradientStartPoint()).toEqual({ x: 0, y: 0 });
+    expect(radial.fillRadialGradientEndPoint()).toEqual({ x: 0, y: 0 });
+    const angular = ellipseWith({
+      type: 'angular',
+      center: { x: 50, y: 20 },
+      angle: 0,
+      stops: STOPS,
+    });
+    const gradient = angular.fill() as unknown as { conic: { x: number; y: number } };
+    expect(gradient.conic).toMatchObject({ x: 0, y: 0 });
+    const linear = ellipseWith({
+      type: 'linear',
+      start: { x: 0, y: 0 },
+      end: { x: 100, y: 0 },
+      stops: STOPS,
+    });
+    expect(linear.fillLinearGradientStartPoint()).toEqual({ x: -50, y: -20 });
+    expect(linear.fillLinearGradientEndPoint()).toEqual({ x: 50, y: -20 });
   });
 });
 

@@ -136,7 +136,11 @@ const swatch = (fill: object): object[] => [
 const TOLERANCE = 8;
 const OUTLIERS = 0.01;
 
-function expectParity(konvaRgb: number[], rasterRgb: number[]): void {
+function expectParity(
+  konvaRgb: number[],
+  rasterRgb: number[],
+  outlierLimit = OUTLIERS,
+): void {
   expect(konvaRgb.length).toBe(rasterRgb.length);
   let outliers = 0;
   for (let i = 0; i < konvaRgb.length; i += 3) {
@@ -145,7 +149,7 @@ function expectParity(konvaRgb: number[], rasterRgb: number[]): void {
     );
     if (far) outliers++;
   }
-  expect(outliers / (konvaRgb.length / 3)).toBeLessThan(OUTLIERS);
+  expect(outliers / (konvaRgb.length / 3)).toBeLessThan(outlierLimit);
 }
 
 const GRADIENTS: { name: string; fill: object }[] = [
@@ -172,6 +176,28 @@ for (const zoom of [1, 4.2]) {
       expect(drawn.at(60 * zoom, 35 * zoom)).not.toEqual([255, 255, 255]);
     });
   }
+
+  test(`parity with the raster at ${Math.round(zoom * 100)}%: radial and angular gradients on an ellipse`, async ({
+    page,
+  }) => {
+    for (const fill of [
+      { type: 'radial', stops: STOPS },
+      { type: 'angular', angle: 30, stops: STOPS },
+    ]) {
+      const scene = sceneOf([
+        {
+          type: 'ellipse',
+          width: 100,
+          height: 50,
+          anchors: { left: 10, top: 10 },
+          fill,
+        },
+      ]);
+      const drawn = await drawBoth(page, scene, 120, 70, zoom);
+      // The ellipse's curved edge antialiases differently in the raster (a 64-step polygon): more outliers.
+      expectParity(drawn.rgb, drawn.raster, 0.04);
+    }
+  });
 
   test(`at ${Math.round(zoom * 100)}% the radial gradient starts with its first stop at the center`, async ({
     page,
