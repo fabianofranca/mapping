@@ -1,4 +1,4 @@
-# Container context — [Não lançado] (épico `epic/container-context`, PR #0, MCP 0.56.0, schema v23, specialization formatVersion 21, proposal formatVersion 11)
+# Container context — 2026-11-21 (épico `epic/container-context`, PR #2485, MCP 0.56.0, schema v23, specialization formatVersion 21, proposal formatVersion 11)
 
 ## Adicionado
 
