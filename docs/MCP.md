@@ -333,7 +333,7 @@ The stage `epic/mcp-woff2` makes the server read a library's `.woff2` fonts with
 - **Phase 1 (the decoder).** `mcp/image/woff2.ts` (`decodeWoff2`) turns a WOFF2 into a plain sfnt with `node:zlib`'s Brotli and rebuilds the transformed `glyf`/`loca` and `hmtx`. It never throws: a malformed file gives `null`.
 - **Phase 2 (one dispatch).** `fontSfnt` (`mcp/image/woff.ts`) is the single place that turns a font file into an sfnt (`wOFF` inflated, `wOF2` decoded, anything else as it is); `loadFace`, hence the measurer and `validate_library`, go through it. `validate_library` reads each `.woff2` the specialization cites (up to 8 MB) and adds the "cannot lay out" warning for one that does not decode or is not usable (a collection, `ttcf`, is not read). Material 3 validates with no font warning.
 - **What moves.** Material 3 text is measured and drawn in Roboto instead of the embedded font: sizes (`fit_marking`, `create_marking` without `rect`, `measure_component`), line counts and PNG text move towards the app's, and the Material 3 `component-overflow` items no longer carry `approximate`. The same project with the `.woff` of the same release gives the same sizes and overflow set, and Chromium measures Roboto Regular within 0.1 px of the server. Embedded-font measurements and rasters do not change.
-- **Size.** `dist-mcp/mapping-mcp.js` grew from 6,805,123 to 6,807,105 bytes (+1,982; the stage's limit is +30 kB).
+- **Size.** `dist-mcp/mapping-mcp.js` grew from 7,674,431 to 7,693,658 bytes (+19,227; the stage's limit is +30 kB).
 
 ### `fill` on the main axis of a `hug` frame (stage #2164, 0.50.0)
 
