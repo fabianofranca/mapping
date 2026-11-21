@@ -140,7 +140,7 @@ describe('hug-fill.mjs (R25: fill inside hug)', () => {
   it('one label: creation without rect and fit_marking give 96, the content and 136', async () => {
     for (const mode of ['create', 'fit'] as const) {
       expect((await widthOf('m3-hug-p', { label: 'Ok' }, mode)).width).toBe(96);
-      expect((await widthOf('m3-hug-p', { label: 'Settings' }, mode)).width).toBe(107);
+      expect((await widthOf('m3-hug-p', { label: 'Settings' }, mode)).width).toBe(108);
       expect((await widthOf('m3-hug-p', { label: LONG }, mode)).width).toBe(136);
     }
   });
@@ -150,9 +150,9 @@ describe('hug-fill.mjs (R25: fill inside hug)', () => {
       widthOf('m3-hug2-p', { label, leadingIconDescription }, 'create').then(
         (r) => r.width,
       );
-    expect(await width('Ok', 'Ok')).toBe(100);
-    expect(await width('Open', 'Edit')).toBe(133);
-    expect(await width('Open', 'Ok')).toBe(133);
+    expect(await width('Ok', 'Ok')).toBe(98);
+    expect(await width('Open', 'Edit')).toBe(130);
+    expect(await width('Open', 'Ok')).toBe(130);
     expect(await width('Settings', 'Ok')).toBe(136);
     expect(await width('Ok', 'Settings')).toBe(136);
     expect(await width(LONG, 'Ok')).toBe(136);
@@ -177,7 +177,7 @@ describe('hug-fill.mjs (R25: fill inside hug)', () => {
 
   it('render_container does not cut a label by less than a pixel or two: the app draws it whole (CL1)', async () => {
     // The app, with the system font, measures these chips a few pixels narrower (98, 130 and 136: the
-    // MCP's measurer gives 100, 133 and 136). The same project drawn by the MCP keeps `Ok`, `Open` and
+    // MCP's measurer gave 100, 133 and 136 with the embedded font, and gives the same 98, 130 and 136 with Roboto, #2126). The same project drawn by the MCP keeps `Ok`, `Open` and
     // `Edit` whole in the halves the narrower box leaves, and `Settings` is still cut at the 136 cap.
     const widths = [98, 130, 136];
     const pairs = [

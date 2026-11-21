@@ -118,5 +118,65 @@
     "text": "Hamburgefonstiv",
     "letterSpacing": 4,
     "width": 815.908203125
+  },
+  {
+    "font": "roboto",
+    "text": "fit",
+    "letterSpacing": 0,
+    "width": 88.134765625
+  },
+  {
+    "font": "roboto",
+    "text": "fit",
+    "letterSpacing": 4,
+    "width": 103.796875
+  },
+  {
+    "font": "roboto",
+    "text": "ii",
+    "letterSpacing": 0,
+    "width": 48.6328125
+  },
+  {
+    "font": "roboto",
+    "text": "ii",
+    "letterSpacing": 4,
+    "width": 56.6328125
+  },
+  {
+    "font": "roboto",
+    "text": "fi ii",
+    "letterSpacing": 0,
+    "width": 128.857421875
+  },
+  {
+    "font": "roboto",
+    "text": "fi ii",
+    "letterSpacing": 4,
+    "width": 152.51953125
+  },
+  {
+    "font": "roboto",
+    "text": "AV To Ty",
+    "letterSpacing": 0,
+    "width": 385.693359375
+  },
+  {
+    "font": "roboto",
+    "text": "AV To Ty",
+    "letterSpacing": 4,
+    "width": 417.693359375
+  },
+  {
+    "font": "roboto",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "width": 770.947265625
+  },
+  {
+    "font": "roboto",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 4,
+    "width": 830.947265625
   }
 ]

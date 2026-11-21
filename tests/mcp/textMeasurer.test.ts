@@ -212,14 +212,44 @@ describe('library font formats', () => {
     );
   });
 
-  it('a .woff2 (signature wOF2) is not read: hasLibraryFonts stays false and the embedded font applies', () => {
-    const woff2 = new Uint8Array(sansBytes.subarray(0, 2048));
-    woff2.set([0x77, 0x4f, 0x46, 0x32]);
-    const book = createFontBook([entry(woff2, 'fonts/Acme.woff2')]);
-    expect(book.hasLibraryFonts).toBe(false);
-    expect(createMeasurer([entry(woff2, 'fonts/Acme.woff2')])('Pay', inAcme).width).toBe(
-      createMeasurer()('Pay', font).width,
+  const robotoWoff2 = new Uint8Array(
+    readFileSync('libraries/material3-compose/fonts/Roboto-Regular.woff2'),
+  );
+  const robotoWoff = new Uint8Array(
+    readFileSync('tests/fixtures/fonts/roboto-latin-400-normal.woff'),
+  );
+  const inRoboto = { ...font, family: 'Roboto, sans-serif' };
+  const robotoEntry = (bytes: Uint8Array, path: string) => ({
+    ...entry(bytes, path),
+    family: 'Roboto',
+  });
+
+  it('a .woff2 library font (Roboto Regular) counts and measures as the .woff of the same release', () => {
+    const book = createFontBook([robotoEntry(robotoWoff2, 'fonts/Roboto-Regular.woff2')]);
+    expect(book.hasLibraryFonts).toBe(true);
+    const asWoff2 = createMeasurer([
+      robotoEntry(robotoWoff2, 'fonts/Roboto-Regular.woff2'),
+    ]);
+    const asWoff = createMeasurer([robotoEntry(robotoWoff, 'fonts/Roboto-Regular.woff')]);
+    const text = 'Hamburgefonstiv';
+    expect(
+      Math.abs(asWoff2(text, inRoboto).width - asWoff(text, inRoboto).width),
+    ).toBeLessThan(1e-6);
+    expect(asWoff2(text, inRoboto).width).not.toBeCloseTo(
+      createMeasurer()(text, font).width,
+      1,
     );
+  });
+
+  it('a corrupt .woff2 (the signature and random bytes) leaves hasLibraryFonts false and the embedded font applies', () => {
+    const corrupt = new Uint8Array(2048);
+    for (let i = 0; i < corrupt.length; i++) corrupt[i] = (i * 2654435761) % 251;
+    corrupt.set([0x77, 0x4f, 0x46, 0x32]);
+    const book = createFontBook([entry(corrupt, 'fonts/Acme.woff2')]);
+    expect(book.hasLibraryFonts).toBe(false);
+    expect(
+      createMeasurer([entry(corrupt, 'fonts/Acme.woff2')])('Pay', inAcme).width,
+    ).toBe(createMeasurer()('Pay', font).width);
   });
 
   it('a corrupt font leaves hasLibraryFonts false', () => {

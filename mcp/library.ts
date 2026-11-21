@@ -284,8 +284,8 @@ async function docWarningsOf(
   return externalDocWarnings(spec, specPath ?? '', check);
 }
 
-/** The font files the server reads (`loadFontBook` reads the same ones; `.woff2` it does not). */
-const isReadableFont = (path: string): boolean => /\.(ttf|otf|woff)$/i.test(path);
+/** The font files the server reads (`loadFontBook` reads the same ones). */
+const isReadableFont = (path: string): boolean => /\.(ttf|otf|woff2?)$/i.test(path);
 
 /** The specialization file of a package: the one the request names, or the only `mapping-spec` JSON. */
 function specFileOf(pkg: ReadPackage): string {
@@ -333,8 +333,8 @@ export function fontWarningText(file: string, usable: boolean): string | null {
 
 /**
  * One warning per library font the MCP server cannot lay out (decision 3 of #2089, decisions 8 and 9 of #2121): it
- * loads each `.ttf`/`.otf`/`.woff` the specialization declares with HarfBuzz. A missing, unreadable or larger font,
- * and a `.woff2`, is not checked here.
+ * loads each `.ttf`/`.otf`/`.woff`/`.woff2` the specialization declares with HarfBuzz. A missing, unreadable or larger
+ * font is not checked here.
  */
 async function fontLayoutWarnings(
   roots: Roots,
