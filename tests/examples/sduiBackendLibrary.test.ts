@@ -358,3 +358,28 @@ describe('file format sdui (stage #1923, FP6)', () => {
     expect(readProject(dir).containers).toHaveLength(1);
   });
 });
+
+describe('accessibility variants (stage CX6; decision 27)', () => {
+  const parsed = parseSpecText(text(SPEC_FILE));
+  const button = parsed.ok
+    ? parsed.spec.layers
+        .flatMap((l) => l.annotationTypes)
+        .find((t) => t.id === 'sdui-button')
+    : undefined;
+
+  it('the button declares the link case of its `mode` field: role link over the base button', () => {
+    expect(button?.accessibility?.role).toBe('button');
+    expect(button?.accessibility?.variants).toEqual({
+      field: 'mode',
+      cases: {
+        link: { role: 'link', label: { fields: ['label'], required: true } },
+      },
+    });
+    const mode = button?.fields.find((f) => f.key === 'mode');
+    expect(mode?.type === 'enum' && mode.options.includes('link')).toBe(true);
+  });
+
+  it('the library still validates with no error', () => {
+    expect(validateLibrary({ files, specPath: SPEC_FILE }).errors).toEqual([]);
+  });
+});

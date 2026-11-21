@@ -249,7 +249,7 @@ function typeSlotsField(refs: Refs, resolved: ResolvedType | null): Json {
   return slots === null ? {} : { slots };
 }
 
-/** `accessibility` of the annotation's type, resolved (role, label, touch target and parts), when it declares one. */
+/** `accessibility` of the annotation's type, resolved (role, label, touch target, parts and variants), when it declares one. */
 function typeAccessibilityField(resolved: ResolvedType | null): Json {
   const accessibility =
     resolved === null ? null : typeAccessibility(resolved.spec, resolved.type);

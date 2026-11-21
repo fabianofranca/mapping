@@ -303,7 +303,7 @@ function slotsField(
   return slots === null ? {} : { slots };
 }
 
-/** `accessibility` of the type resolved (role, label, touch target and parts), only when it declares one. */
+/** `accessibility` of the type resolved (role, label, touch target, parts and variants), only when it declares one. */
 function accessibilityField(spec: Spec, type: SpecAnnotationType): Json {
   const accessibility = typeAccessibility(spec, type);
   return accessibility === null ? {} : { accessibility };

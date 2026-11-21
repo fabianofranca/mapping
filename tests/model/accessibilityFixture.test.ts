@@ -1,10 +1,11 @@
 // The test library of the accessibility stage (`tests/fixtures/accessibility`): the specialization
-// (`formatVersion` 18) parses and the whole package passes `validateLibrary` with no errors.
+// (`formatVersion` 21) parses and the whole package passes `validateLibrary` with no errors.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { validateLibrary, type LibraryFile } from '../../src/model/library';
 import { parseSpecText } from '../../src/model/spec';
+import { typeAccessibility } from '../../src/model';
 
 const DIR = 'tests/fixtures/accessibility';
 const SPEC = 'accessibility.spec.json';
@@ -20,11 +21,11 @@ function pack(): LibraryFile[] {
 }
 
 describe('accessibility test library', () => {
-  it('the specialization parses as formatVersion 18 with its accessibility keys', () => {
+  it('the specialization parses as formatVersion 21 with its accessibility keys', () => {
     const result = parseSpecText(read(SPEC));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.spec.formatVersion).toBe(18);
+    expect(result.spec.formatVersion).toBe(21);
     expect(result.spec.accessibility?.touchTarget).toEqual({
       width: 44,
       height: 44,
@@ -51,5 +52,18 @@ describe('accessibility test library', () => {
     expect(report.warnings.every((i) => /not used by the drawing/.test(i.message))).toBe(
       true,
     );
+  });
+
+  it('the chip resolves its role per case of `kind` (accessibility.variants)', () => {
+    const result = parseSpecText(read(SPEC));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const chip = result.spec.layers[0]!.annotationTypes.find((t) => t.id === 'chip')!;
+    const resolved = typeAccessibility(result.spec, chip);
+    expect(resolved?.role).toBe('button');
+    expect(resolved?.variants?.field).toBe('kind');
+    expect(resolved?.variants?.cases.filter?.role).toBe('checkbox');
+    expect(resolved?.variants?.cases.input?.role).toBe('checkbox');
+    expect(resolved?.variants?.cases.assist).toBeUndefined();
   });
 });

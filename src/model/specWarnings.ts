@@ -3,6 +3,7 @@ import {
   REMOVED_FIELD_TYPE,
   type IgnoredSpecField,
   type Spec,
+  type SpecAnnotationType,
   type SpecCode,
 } from './spec';
 import { isAudited } from './accessibility';
@@ -148,21 +149,41 @@ function codePathCount(entry: SpecCode): number {
   );
 }
 
-/** `label` on a type that the audit does not read (no role, or `none`): valid, but with no effect. */
+/** `label` of a case of `accessibility.variants` whose resolved role (its own, else the base's) the audit does not read. */
+function labelWithoutRoleCaseWarnings(
+  type: SpecAnnotationType,
+  path: string,
+): SpecWarning[] {
+  const a = type.accessibility;
+  return Object.entries(a?.variants?.cases ?? {}).flatMap(([value, kase]) =>
+    kase.label === undefined || isAudited(kase.role ?? a?.role)
+      ? []
+      : [
+          warning(
+            'label-without-role',
+            `${path}.variants.cases.${value}.label`,
+            'versions.labelWithoutRoleCase',
+            { typeId: type.id, value },
+          ),
+        ],
+  );
+}
+
+/** `label` on a type (or on a case of its `variants`) that the audit does not read (no role, or `none`): valid, but with no effect. */
 function labelWithoutRoleWarnings(spec: Spec): SpecWarning[] {
   const found: SpecWarning[] = [];
   spec.layers.forEach((layer, li) => {
     layer.annotationTypes.forEach((type, ti) => {
       const a = type.accessibility;
-      if (a?.label === undefined || isAudited(a.role)) return;
-      found.push(
-        warning(
-          'label-without-role',
-          `layers[${li}].annotationTypes[${ti}].accessibility.label`,
-          'versions.labelWithoutRole',
-          { typeId: type.id },
-        ),
-      );
+      const path = `layers[${li}].annotationTypes[${ti}].accessibility`;
+      if (a?.label !== undefined && !isAudited(a.role)) {
+        found.push(
+          warning('label-without-role', `${path}.label`, 'versions.labelWithoutRole', {
+            typeId: type.id,
+          }),
+        );
+      }
+      found.push(...labelWithoutRoleCaseWarnings(type, path));
     });
   });
   return found;

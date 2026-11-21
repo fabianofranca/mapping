@@ -96,7 +96,22 @@ function warningSpecs(): { spec: Spec; ignored: Ignored }[] {
       },
     ]),
   );
-  return [legacy, platforms, ignored, v11, grouped, labelled];
+  const labelledCase = parsed(
+    spec({ formatVersion: 21 }, [
+      {
+        id: 't',
+        name: 'T',
+        fields: [
+          { key: 'k', type: 'string' },
+          { key: 'e', type: 'enum', options: ['x'] },
+        ],
+        accessibility: {
+          variants: { field: 'e', cases: { x: { label: { fields: ['k'] } } } },
+        },
+      },
+    ]),
+  );
+  return [legacy, platforms, ignored, v11, grouped, labelled, labelledCase];
 }
 
 const PORTUGUESE = /[ãõçáéíóúâêô]/i;
@@ -213,6 +228,7 @@ describe('specialization version messages (MB3)', () => {
       'versions.unusedGroup',
       'versions.unusedDocRepo',
       'versions.labelWithoutRole',
+      'versions.labelWithoutRoleCase',
     ]) {
       expect(codes, code).toContain(code);
     }

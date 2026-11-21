@@ -113,6 +113,7 @@ export const specMessages = {
   'spec.groupRepeated': 'group "{group}" repeated',
   'spec.slotIdInvalid': 'invalid slot id; use [a-z][a-zA-Z0-9_-]*',
   'spec.accessibilityRoleInvalid': 'role "{value}" is invalid; use {roles}',
+  'spec.accessibilityVariantEmptyCase': 'empty case: declare role or label',
   'spec.accessibilityTouchNeedsRole': 'touchTarget: only valid with an interactive role',
   'spec.accessibilityLabelFieldMissing': 'label: field does not exist: {key}',
   'spec.accessibilityLabelFieldType': 'label: field {key} must be string or enum',

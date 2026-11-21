@@ -1,6 +1,6 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 18,
+  "formatVersion": 21,
   "id": "accessibility",
   "name": "Test accessibility",
   "version": 1,
@@ -22,6 +22,31 @@
             "label": { "fields": ["label"] }
           },
           "fields": [{ "key": "label", "type": "string", "default": "Button" }]
+        },
+        {
+          "id": "chip",
+          "name": "Chip",
+          "component": "components/chip.json",
+          "accessibility": {
+            "role": "button",
+            "label": { "fields": ["label"] },
+            "variants": {
+              "field": "kind",
+              "cases": {
+                "filter": { "role": "checkbox" },
+                "input": { "role": "checkbox" }
+              }
+            }
+          },
+          "fields": [
+            {
+              "key": "kind",
+              "type": "enum",
+              "options": ["assist", "filter", "input"],
+              "default": "assist"
+            },
+            { "key": "label", "type": "string" }
+          ]
         },
         {
           "id": "bar",
