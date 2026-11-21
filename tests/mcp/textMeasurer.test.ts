@@ -140,6 +140,55 @@ describe('measurer with a library font that has chaining and contextual GSUB', (
   });
 });
 
+// Stage #2121 (HB3, decisions 12 and 14): contextual chaining (`fi` → `wi` under `calt`) and letter spacing, which
+// turns `liga`, `clig` and `calt` off as Chromium does (the parity pair showed `calt` goes too).
+describe('measurer with the --calt test font', () => {
+  let dir: string;
+  let bytes: ArrayBuffer;
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'mapping-calt-'));
+    execFileSync('node', [
+      'scripts/testing/gsub-font.mjs',
+      join(dir, 'calt.ttf'),
+      '--calt',
+    ]);
+    const file = new Uint8Array(readFileSync(join(dir, 'calt.ttf')));
+    bytes = file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength);
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  const measure = (): ReturnType<typeof createMeasurer> =>
+    createMeasurer([
+      { family: 'Calt', weight: '400', style: 'normal', path: 'fonts/Calt.ttf', bytes },
+    ]);
+  const inCalt = { ...font, family: 'Calt, sans-serif' };
+
+  it('`fi` measures as `wi` (the chaining context applies)', () => {
+    expect(measure()('fi', inCalt).width).toBeCloseTo(sans.advance('wi', 14), 6);
+  });
+
+  it('with letter spacing, `ii` is no longer `m` (liga off) and `fi` is no longer `wi` (calt off, as Chromium)', () => {
+    const m = measure();
+    const spaced = { ...inCalt, letterSpacing: 4 };
+    expect(m('ii', spaced).width).toBeCloseTo(sans.advance('ii', 14) + 8, 6);
+    expect(m('ii', spaced).width).not.toBeCloseTo(sans.advance('m', 14) + 8, 3);
+    expect(m('fi', spaced).width).toBeCloseTo(sans.advance('fi', 14) + 8, 6);
+    expect(m('fi', spaced).width).not.toBeCloseTo(sans.advance('wi', 14) + 8, 3);
+  });
+
+  it('the width is the advance plus the spacing for each code point', () => {
+    const m = measure();
+    expect(m('ii', { ...inCalt, letterSpacing: 0 }).width).toBeCloseTo(
+      sans.advance('m', 14),
+      6,
+    );
+    expect(m('abc', { ...inCalt, letterSpacing: 4 }).width).toBeCloseTo(
+      sans.advance('abc', 14) + 12,
+      6,
+    );
+  });
+});
+
 // Stage #2121 (HB2, decisions 7 and 8): the library's font formats and what makes a font usable.
 describe('library font formats', () => {
   const entry = (bytes: Uint8Array, path: string) => ({

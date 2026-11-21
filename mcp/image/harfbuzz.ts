@@ -4,8 +4,10 @@ import {
   DrawFuncs,
   Font,
   Face as HbFace,
+  Feature,
   MetricsTag,
   initHarfBuzz,
+  Variation,
   shape,
 } from 'harfbuzzjs';
 import wasmBytes from 'wasm:harfbuzz';
@@ -30,8 +32,38 @@ export interface PathCommand {
 
 /** How a text is laid out; HarfBuzz's default features apply, as in Chromium. */
 export interface FaceStyle {
-  /** Extra space after each character (px). Not zero: each character is shaped on its own, as `textPolygons` draws it. */
+  /**
+   * Extra space after each cluster (px). Not zero: the text is shaped once without the optional ligatures (`liga`,
+   * `clig`) and the contextual alternates (`calt`), as Chromium does for letter-spaced text.
+   */
   readonly letterSpacing?: number;
+  /** CSS weight; a variable font follows it on its `wght` axis (default 400). */
+  readonly weight?: number;
+}
+
+/** The range of a variation axis, in the font's user units. */
+export interface AxisRange {
+  readonly min: number;
+  readonly default: number;
+  readonly max: number;
+}
+
+/**
+ * The variation settings a text asks for (decision 11): `wght` is the weight and `opsz` the size in px (Chromium's
+ * `font-optical-sizing: auto`), each clamped to the axis. Other axes stay at their defaults, so they are left out.
+ */
+export function variationsFor(
+  axes: Readonly<Record<string, AxisRange>>,
+  weight: number,
+  size: number,
+): { tag: string; value: number }[] {
+  const wanted: Record<string, number> = { wght: weight, opsz: size };
+  return Object.entries(wanted).flatMap(([tag, value]) => {
+    const axis = axes[tag];
+    return axis === undefined
+      ? []
+      : [{ tag, value: Math.min(axis.max, Math.max(axis.min, value)) }];
+  });
 }
 
 export interface Face {
@@ -42,8 +74,13 @@ export interface Face {
   readonly descender: number;
   /** Capital height at `size` (px): `OS/2.sCapHeight`, else the top of `H`, else 0.7 of the size. */
   capHeight(size: number): number;
-  /** Width of the one-line text shaped as a whole (kerning included, no letter spacing), at `size` (px). */
-  advance(text: string, size: number): number;
+  /** The variation axes of the font (empty for a static font). */
+  readonly axes: Readonly<Record<string, AxisRange>>;
+  /**
+   * Width of the one-line text shaped as a whole (kerning included, no letter spacing), at `size` (px) and CSS
+   * `weight`. `spaced` shapes it as letter-spaced text is: without `liga`, `clig` and `calt`.
+   */
+  advance(text: string, size: number, weight?: number, spaced?: boolean): number;
   /** The outlines of the text with the baseline origin at (`x`, `baseline`), at `size` (px). */
   path(
     text: string,
@@ -148,19 +185,35 @@ interface Placed {
   readonly id: number;
   readonly x: number;
   readonly y: number;
+  readonly advance: number;
+  readonly cluster: number;
 }
+
+/**
+ * What Chromium turns off for letter-spaced text (decision 12, checked by the parity pair): the optional ligatures
+ * and the contextual alternates. The parity test showed `calt` goes too (`fi` → `wi` does not apply when spaced).
+ */
+const SPACED_FEATURES = [
+  new Feature('liga', 0),
+  new Feature('clig', 0),
+  new Feature('calt', 0),
+];
 
 class HarfBuzzFace implements Face {
   readonly unitsPerEm: number;
   readonly ascender: number;
   readonly descender: number;
+  readonly axes: Readonly<Record<string, AxisRange>>;
   private readonly font: Font;
   private readonly buffer = new ShapeBuffer();
-  /** Widths in font units, by text (the default features; a feature set would be part of the key). */
+  /** Widths in font units, by text, variation settings and feature set. */
   private readonly widths = new Map<string, number>();
+  /** The variation key set on the font now. */
+  private applied = '';
 
   constructor(face: HbFace) {
     this.unitsPerEm = face.upem;
+    this.axes = face.getAxisInfos();
     this.font = new Font(face);
     this.font.setScale(face.upem * SCALE_SUBDIVISIONS, face.upem * SCALE_SUBDIVISIONS);
     const extents = this.font.hExtents();
@@ -180,13 +233,17 @@ class HarfBuzzFace implements Face {
     return top > 0 ? top * k : CAP_HEIGHT_RATIO * size;
   }
 
-  advance(text: string, size: number): number {
-    let units = this.widths.get(text);
+  advance(text: string, size: number, weight = 400, spaced = false): number {
+    const key = `${this.variationKey(weight, size)}|${spaced ? 's' : ''}|${text}`;
+    let units = this.widths.get(key);
     if (units === undefined) {
-      units = this.shaped(text).reduce((sum, glyph) => sum + glyph.advance, 0);
+      units = this.shaped(text, weight, size, spaced).reduce(
+        (sum, glyph) => sum + glyph.advance,
+        0,
+      );
       units /= SCALE_SUBDIVISIONS;
       if (this.widths.size >= MEASURE_CACHE_LIMIT) this.widths.clear();
-      this.widths.set(text, units);
+      this.widths.set(key, units);
     }
     return (units * size) / this.unitsPerEm;
   }
@@ -200,46 +257,11 @@ class HarfBuzzFace implements Face {
   ): PathCommand[] {
     const commands: PathCommand[] = [];
     const spacing = style.letterSpacing ?? 0;
-    if (spacing === 0) {
-      this.drawRun(text, x, baseline, size, commands);
-      return commands;
-    }
-    // With letter spacing each character is shaped on its own (no substitution applies), as it is drawn today.
-    let at = x;
-    for (const char of text) {
-      this.drawRun(char, at, baseline, size, commands);
-      at += this.advance(char, size) + spacing;
-    }
-    return commands;
-  }
-
-  /** Shapes `text` as a whole; one entry per glyph with its advance and offsets (font scale units). */
-  private shaped(text: string): (Placed & { advance: number })[] {
-    const buffer = this.buffer;
-    buffer.clearContents();
-    buffer.addText(text);
-    buffer.guessSegmentProperties();
-    shape(this.font, buffer);
-    const infos = buffer.getGlyphInfos();
-    const positions = buffer.getGlyphPositions();
-    return infos.map((info, i) => ({
-      id: info.codepoint,
-      x: positions[i]!.xOffset,
-      y: positions[i]!.yOffset,
-      advance: positions[i]!.xAdvance,
-    }));
-  }
-
-  private drawRun(
-    text: string,
-    x: number,
-    baseline: number,
-    size: number,
-    commands: PathCommand[],
-  ): void {
+    const glyphs = this.shaped(text, style.weight ?? 400, size, spacing !== 0);
     const k = size / (this.unitsPerEm * SCALE_SUBDIVISIONS);
+    const gap = spacing / k;
     let pen = 0;
-    for (const glyph of this.shaped(text)) {
+    glyphs.forEach((glyph, i) => {
       this.font.drawGlyph(glyph.id, drawFunctions(), {
         commands,
         ox: x + (pen + glyph.x) * k,
@@ -247,7 +269,45 @@ class HarfBuzzFace implements Face {
         k,
       } satisfies Pen);
       pen += glyph.advance;
-    }
+      if (glyphs[i + 1]?.cluster !== glyph.cluster) pen += gap;
+    });
+    return commands;
+  }
+
+  /** The variation settings of (`weight`, `size`) as a key; `''` for a font without the axes. */
+  private variationKey(weight: number, size: number): string {
+    return variationsFor(this.axes, weight, size)
+      .map((v) => `${v.tag}=${v.value}`)
+      .join(',');
+  }
+
+  /** Sets the variations on the font when they differ from the ones set last. */
+  private applyVariations(weight: number, size: number): void {
+    const key = this.variationKey(weight, size);
+    if (key === this.applied) return;
+    this.font.setVariations(
+      variationsFor(this.axes, weight, size).map((v) => new Variation(v.tag, v.value)),
+    );
+    this.applied = key;
+  }
+
+  /** Shapes `text` as a whole; one entry per glyph with its advance and offsets (font scale units). */
+  private shaped(text: string, weight: number, size: number, spaced: boolean): Placed[] {
+    this.applyVariations(weight, size);
+    const buffer = this.buffer;
+    buffer.clearContents();
+    buffer.addText(text);
+    buffer.guessSegmentProperties();
+    shape(this.font, buffer, spaced ? SPACED_FEATURES : undefined);
+    const infos = buffer.getGlyphInfos();
+    const positions = buffer.getGlyphPositions();
+    return infos.map((info, i) => ({
+      id: info.codepoint,
+      x: positions[i]!.xOffset,
+      y: positions[i]!.yOffset,
+      advance: positions[i]!.xAdvance,
+      cluster: info.cluster,
+    }));
   }
 }
 

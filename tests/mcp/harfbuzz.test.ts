@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-import { initShaper, loadFace } from '../../mcp/image/harfbuzz';
+import { initShaper, loadFace, variationsFor } from '../../mcp/image/harfbuzz';
 import { makeWoff } from '../support/woffFile';
 
 const sansBytes = readFileSync(
@@ -118,5 +118,37 @@ describe('HarfBuzz face (mcp/image/harfbuzz.ts)', () => {
     expect(() => fresh.loadFace(sansBytes)).toThrow('HarfBuzz is not initialized');
     await fresh.initShaper();
     expect(fresh.loadFace(sansBytes)).not.toBeNull();
+  });
+});
+
+// Stage #2121 (HB3, decision 11): the variable axes a text asks for.
+describe('variationsFor', () => {
+  const axis = (min: number, def: number, max: number) => ({ min, default: def, max });
+
+  it('wght follows the weight, clamped to the axis range', () => {
+    const axes = { wght: axis(100, 400, 900) };
+    expect(variationsFor(axes, 600, 14)).toEqual([{ tag: 'wght', value: 600 }]);
+    expect(variationsFor(axes, 950, 14)).toEqual([{ tag: 'wght', value: 900 }]);
+    expect(variationsFor(axes, 50, 14)).toEqual([{ tag: 'wght', value: 100 }]);
+  });
+
+  it('opsz follows the size, clamped to the axis range', () => {
+    const axes = { opsz: axis(14, 14, 32) };
+    expect(variationsFor(axes, 400, 12)).toEqual([{ tag: 'opsz', value: 14 }]);
+    expect(variationsFor(axes, 400, 20)).toEqual([{ tag: 'opsz', value: 20 }]);
+    expect(variationsFor(axes, 400, 40)).toEqual([{ tag: 'opsz', value: 32 }]);
+  });
+
+  it('a font without axes gets no variations', () => {
+    expect(variationsFor({}, 700, 20)).toEqual([]);
+  });
+
+  it('an unknown axis is left out, so it stays at its default', () => {
+    expect(variationsFor({ wdth: axis(75, 100, 125) }, 700, 20)).toEqual([]);
+  });
+
+  it('a static face has no axes', async () => {
+    await initShaper();
+    expect(variationsFor(sansFace().axes, 700, 20)).toEqual([]);
   });
 });
