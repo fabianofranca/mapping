@@ -1,6 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { t } from '../../i18n';
 import {
+  canConcludeProposal,
   canRemoveProposal,
   proposalListStatus,
   type ProposalListFlag,
@@ -35,6 +36,7 @@ const FLAG_TONES: Record<ProposalListFlag, FlagTone> = {
   superseded: 'warn',
   applied: 'ok',
   withdrawn: 'neutral',
+  rejected: 'neutral',
 };
 
 /**
@@ -61,6 +63,13 @@ export function leftBehindText(row: ProposalRowData): string | null {
   if (undecided === 0) return t('proposals.leftBehindAccepted', { accepted });
   if (accepted === 0) return t('proposals.leftBehindUndecided', { undecided });
   return t('proposals.leftBehind', { accepted, undecided });
+}
+
+/** "N changes rejected" (with the singular): the count of a concluded proposal with nothing applied. */
+export function rejectedText(count: number): string {
+  return count === 1
+    ? t('proposals.rejectedCountOne')
+    : t('proposals.rejectedCount', { count });
 }
 
 /** "N accepted awaiting application" (with the singular). */
@@ -136,6 +145,11 @@ interface ProposalRowProps {
   readonly onRemove?: (row: ProposalRowData) => void;
   /** The ⋯ menu is disabled (read-only project). */
   readonly removeDisabled?: boolean;
+  /**
+   * "Conclude review" of the ⋯ menu (stage #2085). Only on an open row whose review is complete,
+   * and only if the window passes the callback.
+   */
+  readonly onConclude?: (row: ProposalRowData) => void;
 }
 
 export function ProposalRow({
@@ -145,6 +159,7 @@ export function ProposalRow({
   onOpenNewer,
   onRemove,
   removeDisabled = false,
+  onConclude,
 }: ProposalRowProps) {
   const { proposal: p, progress } = row;
   const status = proposalStatus(row);
@@ -159,6 +174,20 @@ export function ProposalRow({
   // Who superseded it comes from the new one's `supersedes`, not from this one's status: an already
   // applied proposal is history and stays "Applied · superseded by …" (finding 13).
   const newer = row.supersededBy;
+  const menuItems = [
+    ...(onConclude && canConcludeProposal(p, progress)
+      ? [{ label: t('review.concludeLabel'), onSelect: () => onConclude(row) }]
+      : []),
+    ...(onRemove && canRemoveProposal(p)
+      ? [
+          {
+            label: t('proposals.remove'),
+            danger: true,
+            onSelect: () => onRemove(row),
+          },
+        ]
+      : []),
+  ];
   return (
     <div class="proposal-row" role="listitem" data-proposal={p.id} data-status={p.status}>
       <div class="proposal-row-main">
@@ -203,6 +232,9 @@ export function ProposalRow({
               : t('proposals.appliedCount', { count: progress.applied })}
           </span>
         )}
+        {p.status === 'rejected' && (
+          <span class="muted">{rejectedText(progress.rejected)}</span>
+        )}
         {p.status === 'withdrawn' && (
           <span class="muted">
             {t('proposals.withdrawnCount', { count: progress.total })}
@@ -239,17 +271,11 @@ export function ProposalRow({
         >
           {actionLabel}
         </Button>
-        {onRemove && canRemoveProposal(p) && (
+        {menuItems.length > 0 && (
           <ActionMenu
             label={t('proposals.rowActions', { title: p.title })}
             disabled={removeDisabled}
-            items={[
-              {
-                label: t('proposals.remove'),
-                danger: true,
-                onSelect: () => onRemove(row),
-              },
-            ]}
+            items={menuItems}
           />
         )}
       </div>

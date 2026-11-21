@@ -10,6 +10,7 @@ import { useEditor } from '../EditorContext';
 import { Icon } from '../icons';
 import { Notice } from '../Notice';
 import { ProposalRow } from './ProposalRow';
+import { concludedText } from './useReview';
 import { useReviewCommands } from './useReviewCommands';
 
 // Proposals window outside review mode (HANDOFF-PROPOSALS 5.1): open and closed
@@ -108,6 +109,12 @@ export function ProposalList({ onHelp, onScan }: ProposalListProps) {
     return emptyFocus.current ?? rowsRef.current;
   };
 
+  const onConclude = async (row: ProposalRowData) => {
+    const result = await review.concludeProposal(row.proposal.id);
+    if (result.ok) showToast(ui, concludedText(result.status));
+    else report(result.error);
+  };
+
   const confirmRemoval = async (row: ProposalRowData) => {
     setRemoving(true);
     try {
@@ -179,6 +186,7 @@ export function ProposalList({ onHelp, onScan }: ProposalListProps) {
             onAction={onAction}
             onOpenNewer={openReview}
             onRemove={onRemove}
+            onConclude={(r) => void onConclude(r)}
             removeDisabled={store.locked.value || removing}
           />
         ))}

@@ -13,9 +13,9 @@ import { noticeProject } from '../noticeFixtures';
 import { openReviewHarness, renderInEditor } from './reviewHarness';
 import { ReviewPanel } from '../../../src/ui/review/ReviewPanel';
 
-// Specialization notices in proposal review (stage #486, AV3, decision 10): the change
-// that creates an annotation of a type with a notice, swaps the type or writes a value in a
-// field with a notice shows the notice in its popover, without removing Accept or Apply.
+// Specialization notices left the review (stage #2085, decision 5): the change popover of an
+// annotation of a type with a notice, or of a field with a notice, carries no notice line;
+// Accept and Apply work as before.
 
 beforeEach(() => {
   locale.value = 'en-US';
@@ -39,19 +39,18 @@ function openMark(name: RegExp) {
   return screen.getByRole('dialog');
 }
 
-describe('notice in the change popover', () => {
-  it('writing a value in a field with a notice shows the notice and keeps Accept enabled', async () => {
+describe('no notice in the change popover (stage #2085)', () => {
+  it('writing a value in a field with a notice shows no notice and keeps Accept enabled', async () => {
     const base = noticeProject();
     await openPanel(base, setFieldValue(base, 'AA', 'legacyStyle', 'new'));
     const pop = openMark(/^legacyStyle · Alert: changed/);
-    expect(
-      within(pop).getByRole('note', { name: 'Notice Deprecated: Use variant.' }),
-    ).toBeTruthy();
+    expect(within(pop).queryByRole('note')).toBeNull();
+    expect(pop.querySelector('.notice-line, .change-notices')).toBeNull();
     const accept = within(pop).getByRole('button', { name: /^Accept/ });
     expect((accept as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('creating an annotation of a type with a notice shows the notice', async () => {
+  it('creating an annotation of a type with a notice shows no notice', async () => {
     const base = noticeProject();
     const after = addTypedAnnotation(base, {
       id: 'AN',
@@ -62,13 +61,10 @@ describe('notice in the change popover', () => {
     });
     await openPanel(base, after);
     const pop = openMark(/^Annotation Gone created/);
-    // pt-BR kept: shared fixture data (notice messages of noticeFixtures) asserted by tests/components and tests/model
-    expect(
-      within(pop).getByRole('note', { name: 'Notice Removed: Saiu do contrato.' }),
-    ).toBeTruthy();
+    expect(within(pop).queryByRole('note')).toBeNull();
   });
 
-  it('swapping the type to one with a notice shows the notice', async () => {
+  it('swapping the type to one with a notice shows no notice', async () => {
     const base = noticeProject();
     const after: Project = {
       ...base,
@@ -78,15 +74,6 @@ describe('notice in the change popover', () => {
     };
     await openPanel(base, after);
     const pop = openMark(/^Type · Gone: changed/);
-    expect(
-      within(pop).getByRole('note', { name: 'Notice Removed: Saiu do contrato.' }),
-    ).toBeTruthy();
-  });
-
-  it('without a notice on the type or field, the popover carries no notice', async () => {
-    const base = noticeProject();
-    await openPanel(base, setFieldValue(base, 'AP', 'name', 'new'));
-    const pop = openMark(/^name · Plain: changed/);
     expect(within(pop).queryByRole('note')).toBeNull();
   });
 });

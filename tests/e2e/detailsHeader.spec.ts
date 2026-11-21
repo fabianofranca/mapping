@@ -80,7 +80,7 @@ async function placeholderFits(page: Page): Promise<{
 }
 
 test.describe('annotation header in Details', () => {
-  test('at 360 px, the placeholder fits whole in the Card and the Simple (with badge)', async ({
+  test('at 360 px, the placeholder fits whole in the Card and the Simple', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 860 });

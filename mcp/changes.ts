@@ -320,7 +320,7 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
       result.before,
       audits,
     ),
-    notices: noticeChanges(refs, result.before, prepared.changes()),
+    notices: noticeChanges(refs, prepared.changes()),
     ...(membership.length > 0 ? { membership } : {}),
     ...(warnings.length > 0 ? { warnings } : {}),
     created: createdRefs(refs, result),

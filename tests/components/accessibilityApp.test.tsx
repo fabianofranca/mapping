@@ -199,33 +199,32 @@ describe('the Accessibility section of the Notices window', () => {
     expect(onGo).toHaveBeenCalledWith(expect.objectContaining({ id: 'A' }));
   });
 
-  it('is not affected by the kind filter or "Only notices in use", but follows "Only visible layers"', async () => {
+  it('shows only the Accessibility section, with "Only visible layers" as its single filter', async () => {
     const harness = createHarness(world());
     withContext(harness, <NoticesView onGoToAnnotation={vi.fn()} />);
     const count = () =>
       screen.getAllByRole('row').filter((r) => r.classList.contains('list-row')).length;
-    act(() => {
-      harness.ui.noticeKind.value = 'removed';
-      harness.ui.noticesInUseOnly.value = false;
-    });
     expect(count()).toBe(1);
-    expect(screen.queryByText(t('notices.empty'))).toBeNull();
-    expect(screen.queryByText(t('notices.emptyFiltered'))).toBeNull();
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1);
+    expect(screen.getByRole('checkbox', { name: t('notices.visibleOnly') })).toBeTruthy();
+    expect(document.querySelector('.notices-kinds')).toBeNull();
+    expect(screen.queryByRole('group')).toBeNull();
     act(() => {
       harness.ui.noticesVisibleOnly.value = true;
       harness.ui.hiddenLayers.value = new Set(harness.project().layers.map((l) => l.id));
     });
     expect(screen.queryByText(t('notices.accessibility.title'))).toBeNull();
     expect(screen.getByText(t('notices.emptyFiltered'))).toBeTruthy();
+    expect(t('notices.emptyFiltered')).toBe('No warnings in the visible layers.');
   });
 
-  it('does not appear without warnings', () => {
+  it('shows the empty state without warnings', () => {
     const harness = createHarness(
       a11yPut(a11yWorld(3), 'button', 'A', undefined, { label: 'Buy' }),
     );
     withContext(harness, <NoticesView onGoToAnnotation={vi.fn()} />);
     expect(screen.queryByText(t('notices.accessibility.title'))).toBeNull();
-    expect(screen.getByText(t('notices.empty'))).toBeTruthy();
+    expect(screen.getByText('No accessibility warnings.')).toBeTruthy();
   });
 });
 
@@ -234,6 +233,10 @@ describe('the status bar count and the Details line', () => {
     const harness = createHarness(world());
     withContext(harness, <StatusBar />);
     const item = screen.getByRole('button', { name: t('notices.status', { count: 1 }) });
+    expect(item.getAttribute('title')).toBe(
+      'Open the Notices window (1 annotation(s) with an accessibility warning)',
+    );
+    expect(harness.context.derived.auditedCount.value).toBe(1);
     await userEvent.click(item);
     expect(isToolWindowOpen('notices')).toBe(true);
     // The warning is not an incomplete annotation: only the bar's pending item is.

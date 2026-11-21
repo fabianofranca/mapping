@@ -148,10 +148,10 @@ function ProposalsItem() {
   );
 }
 
-/** Specialization warnings (stage #486): how many annotations have a warning; opens the Warnings window. */
+/** Accessibility warnings (stage #2085): how many annotations have one; opens the Notices window. */
 function NoticesItem() {
   const { derived } = useEditor();
-  const count = derived.noticedCount.value;
+  const count = derived.auditedCount.value;
   if (count === 0) return null;
   return (
     /* Exception to Button: status bar segment (docs/DESIGN-SYSTEM.md, "Loose buttons") */

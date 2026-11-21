@@ -1371,21 +1371,10 @@ button.layer-group-label:hover {
   overflow-wrap: anywhere;
 }
 
-.notice-label-icon {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  background: transparent;
-}
-
 .notice-badge .icon,
 .notice-block .icon,
 .notice-line .icon {
   flex: none;
-}
-
-.table-field > .notice-line {
-  margin-top: var(--space-1);
 }
 
 .type-option-head {
