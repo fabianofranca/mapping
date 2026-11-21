@@ -22,7 +22,12 @@ import {
   type Shadow,
   type TextNode,
 } from '../../src/model/components/scene';
-import { MAX_SHADOW_PIXELS, compositeShadow, dashPaths } from './effects';
+import {
+  MAX_SHADOW_PIXELS,
+  compositeInnerShadow,
+  compositeShadow,
+  dashPaths,
+} from './effects';
 import { gradientShader, type Shader } from './gradientShader';
 import { createRaster, type PixelRect, type Raster } from './raster';
 import { textBars, type TextBar } from './textBars';
@@ -919,6 +924,7 @@ class Painter {
         );
       }
     }
+    this.innerShadows(node, shapes, matrix, alpha, clip);
     this.strokeNode(node, shapes, matrix, alpha, clip);
     if (node.type === 'text') this.text(node, matrix, alpha, clip);
 
@@ -1069,6 +1075,83 @@ class Painter {
       const rule = node.type === 'path' ? node.fillRule : 'nonzero';
       this.shadow(casting, shadow, matrix, { rule, color, alpha, clip });
     }
+  }
+
+  /**
+   * The inner shadows (CSS `inset`) of a `frame`, `rect` or `ellipse`, above the fill and below the
+   * stroke: the first of the list stays on top, so the last one is painted first.
+   */
+  private innerShadows(
+    node: SceneNode,
+    shapes: Subpath[],
+    matrix: Matrix,
+    alpha: number,
+    clip: PixelRect,
+  ): void {
+    const boxed =
+      node.type === 'frame' || node.type === 'rect' || node.type === 'ellipse';
+    if (!boxed || shapes.length === 0) return;
+    for (const shadow of [...node.effects].reverse()) {
+      const color = parseColor(shadow.color);
+      if (!shadow.inner || color === null) continue;
+      this.innerShadow(node, shapes, shadow, matrix, { color, alpha, clip });
+    }
+  }
+
+  /**
+   * One inner shadow: the inverted mask of the hole (the shape shrunk by `spread`, shifted by the
+   * offset), blurred and multiplied by the shape's coverage.
+   */
+  private innerShadow(
+    node: SceneNode,
+    shapes: Subpath[],
+    shadow: Shadow,
+    matrix: Matrix,
+    paint: { color: Color; alpha: number; clip: PixelRect },
+  ): void {
+    const [a, b, c, d] = matrix;
+    const ratio = Math.sqrt(Math.abs(a * d - b * c)) / this.scale;
+    const nodeScale = Math.abs(ratio - 1) < 1e-9 || !Number.isFinite(ratio) ? 1 : ratio;
+    const scale = this.scale * nodeScale;
+    const sigma = (shadow.blur * scale) / 2;
+    const margin = Math.ceil(sigma * 3) + 2;
+    const outline = shapes.map((sub) => this.toRaster(sub.points, matrix));
+    const hole = spreadShapes(node, shapes, -(shadow.spread ?? 0)).map((sub) =>
+      this.toRaster(
+        sub.points.map((p) => ({ x: p.x + shadow.offset.x, y: p.y + shadow.offset.y })),
+        matrix,
+      ),
+    );
+    const edge = bounds(outline.flat());
+    const box: PixelRect = {
+      x: Math.floor(edge.x) - margin,
+      y: Math.floor(edge.y) - margin,
+      width: Math.ceil(edge.width) + 2 * margin,
+      height: Math.ceil(edge.height) + 2 * margin,
+    };
+    if (box.width * box.height > MAX_SHADOW_PIXELS) return;
+    const whole: PixelRect = { x: 0, y: 0, width: box.width, height: box.height };
+    const coverage = (polygons: Polygon[]): Float32Array => {
+      const temp = createRaster(box.width, box.height);
+      fillPolygons(
+        temp,
+        polygons.map((poly) => poly.map((p) => ({ x: p.x - box.x, y: p.y - box.y }))),
+        'nonzero',
+        { rgb: [0, 0, 0], alpha: 1 },
+        whole,
+      );
+      const mask = new Float32Array(box.width * box.height);
+      for (let i = 0; i < mask.length; i++) mask[i] = temp.data[i * 4 + 3]! / 255;
+      return mask;
+    };
+    compositeInnerShadow(
+      this.raster,
+      { hole: coverage(hole), inside: coverage(outline) },
+      box,
+      sigma,
+      { rgb: paint.color.rgb, alpha: paint.color.alpha * paint.alpha },
+      paint.clip,
+    );
   }
 
   /** One shadow: the shape's mask (`casting`), blurred and shifted, composed onto the raster. */

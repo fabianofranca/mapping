@@ -544,6 +544,8 @@ export const templatePtBR: {
     'esperava nome da cor oferecida (texto não vazio)',
   'model.component.gapNotWithSides': 'gap não vale com sides',
   'model.component.expectedShadowCount': 'esperava de 1 a {max} sombras',
+  'model.component.expectedTrueOrFalse': 'esperava true ou false',
+  'model.component.innerShadowNodes': 'válido apenas em frame, rect e ellipse',
   'model.component.gapNodeNotFound': 'nó não encontrado: {name}',
   'model.component.gapNotInRepeat': 'stroke.gap não pode ser usado dentro de um repeat',
   'model.component.gapNotSelf': 'stroke.gap.node não pode citar o próprio nó: {name}',

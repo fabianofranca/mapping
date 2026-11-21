@@ -281,8 +281,8 @@ describe('renderScene', () => {
     expect(rect.shadowOffset()).toEqual({ x: 1, y: 2 });
   });
 
-  it('inner shadow is ignored with a warning', () => {
-    const node: SceneNode = {
+  it('inner shadow on a node that is not frame, rect or ellipse is ignored with a warning', () => {
+    const node = {
       ...baseNode({
         id: 'r',
         name: 'r',
@@ -290,14 +290,16 @@ describe('renderScene', () => {
         height: 5,
         effects: [{ color: '#000', offset: { x: 0, y: 0 }, blur: 2, inner: true }],
       }),
-      type: 'rect',
-      cornerRadius: 0,
-      fills: [{ type: 'solid', color: '#f00' }],
-    };
-    const { warnings, byId } = renderScene(scene(node));
+      type: 'line',
+      points: [
+        { x: 0, y: 0 },
+        { x: 5, y: 5 },
+      ],
+      closed: false,
+      fills: [],
+    } as unknown as SceneNode;
+    const { warnings } = renderScene(scene(node));
     expect(warnings).toContainEqual({ code: 'inner-shadow' });
-    expect((byId.get('r')?.getChildren()[0] as Konva.Rect).shadowEnabled()).toBe(true);
-    expect((byId.get('r')?.getChildren()[0] as Konva.Rect).shadowBlur()).toBe(0);
   });
 
   describe('"only the first shadow" warning (extra-shadows)', () => {

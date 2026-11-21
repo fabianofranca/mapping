@@ -437,6 +437,38 @@ describe('component.schema.json', () => {
       }
     });
 
+    it('accepts shadow.inner as a boolean, alone and in a list, and rejects anything else (the parser too)', () => {
+      const ok = [
+        v4({
+          type: 'rect',
+          width: 10,
+          height: 10,
+          shadow: { color: '#000', inner: true },
+        }),
+        v4({
+          type: 'ellipse',
+          width: 10,
+          height: 10,
+          shadow: [
+            { color: '#000', blur: 2 },
+            { color: '#111', spread: 1, inner: true },
+          ],
+        }),
+      ];
+      for (const c of ok) {
+        expect(checkSchema(schema, c), JSON.stringify(c)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(c)).toBe(true);
+      }
+      const bad = v4({
+        type: 'rect',
+        width: 10,
+        height: 10,
+        shadow: { color: '#000', inner: 'yes' },
+      });
+      expect(checkSchema(schema, bad)).not.toEqual([]);
+      expect(parseComponent(bad).ok).toBe(false);
+    });
+
     it('rejects alpha outside 0..1, negative offset and unknown justify', () => {
       const bad = [
         v4({ type: 'rect', width: 1, height: 1, fill: t('x', { alpha: 2 }) }),

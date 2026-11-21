@@ -102,6 +102,8 @@ export const SCENE_ID_ATTR = 'sceneId';
 
 /** Shape that exists only to receive the pointer: it neither paints nor receives a shadow. */
 const HIT_ONLY_ATTR = 'hitOnly';
+/** Marks the shadow-only shape of an inner shadow: it never owns an outer shadow. */
+const INNER_SHADOW_ATTR = 'innerShadow';
 
 interface Box {
   readonly width: number;
@@ -145,6 +147,16 @@ class Renderer {
     // (e.g. `filter` on a group that wraps the shape) passes the shadow to the first descendant
     // shape.
     const shadows = this.outerShadows([...pendingShadows, ...node.effects]);
+    const boxed =
+      node.type === 'frame' || node.type === 'rect' || node.type === 'ellipse';
+    const innerShadows = boxed ? node.effects.filter((s) => s.inner) : [];
+    // An inner shadow that no frame, rect or ellipse can draw (a scene from another source, or one
+    // handed down by a group): ignored, with a warning.
+    if (
+      pendingShadows.some((s) => s.inner) ||
+      (!boxed && node.effects.some((s) => s.inner))
+    )
+      this.warn('inner-shadow');
 
     if (node.type === 'frame' && node.clip) {
       const { width, height, cornerRadius, clipBox } = node;
@@ -169,11 +181,13 @@ class Renderer {
       });
     }
 
-    const shapes = this.shapesOf(node);
-    // The invisible clickable area of a transparent frame does not paint: it does not own the
-    // shadow.
+    const shapes = this.shapesOf(node, innerShadows);
+    // The invisible clickable area of a transparent frame does not paint, and the inner shadow's
+    // shapes only carry their own shadow: neither owns the outer shadow.
     const shadowOwner =
-      shadows.length > 0 ? shapes.find((s) => !s.getAttr(HIT_ONLY_ATTR)) : undefined;
+      shadows.length > 0
+        ? shapes.find((s) => !s.getAttr(HIT_ONLY_ATTR) && !s.getAttr(INNER_SHADOW_ATTR))
+        : undefined;
     // Several shadows (or `spread`) on a rectangle or ellipse: one shadow-only shape per shadow,
     // below the node's shapes, the last of the list first (the first stays on top).
     const casters = shadowOwner !== undefined && castsShadows(node, shadows);
@@ -230,17 +244,13 @@ class Renderer {
     return shape;
   }
 
-  /**
-   * The outer shadows, in order; the inner one does not exist in canvas 2D: ignored, with a
-   * warning.
-   */
+  /** The outer shadows, in order; the inner ones have their own shapes (`innerShadowShapes`). */
   private outerShadows(shadows: readonly Shadow[]): Shadow[] {
-    if (shadows.some((s) => s.inner)) this.warn('inner-shadow');
     return shadows.filter((s) => !s.inner);
   }
 
-  /** The node's own shapes (without the children). */
-  private shapesOf(node: SceneNode): Konva.Shape[] {
+  /** The node's own shapes (without the children): fills, inner shadows, stroke. */
+  private shapesOf(node: SceneNode, innerShadows: readonly Shadow[] = []): Konva.Shape[] {
     const box: Box = { width: node.width, height: node.height };
     const shapes: Konva.Shape[] = [];
     switch (node.type) {
@@ -260,6 +270,7 @@ class Renderer {
               : new KonvaRect(config);
           shapes.push(...this.fillShape(shape, paint, box));
         }
+        shapes.push(...innerShadowShapes(node, innerShadows));
         if (node.stroke) {
           if (node.stroke.sides) shapes.push(...this.sideStrokes(node.stroke, box));
           else {
@@ -295,6 +306,7 @@ class Renderer {
         for (const paint of node.fills) {
           shapes.push(...this.fillShape(new KonvaEllipse(geometry), paint, box));
         }
+        shapes.push(...innerShadowShapes(node, innerShadows));
         if (node.stroke) {
           const inset = strokeAlignInset(node.stroke) - (node.stroke.offset ?? 0);
           const shape = new KonvaEllipse({
@@ -1124,6 +1136,86 @@ function castShadow(
     roundedRectPath(native, width, height, spreadRadius(node.cornerRadius, spread));
   native.fillStyle = '#000000';
   native.fill();
+  native.restore();
+}
+
+/**
+ * One shadow-only shape per inner shadow (CSS `inset`), the last of the list first so the first one
+ * stays on top; they go above the fills and below the stroke and the children.
+ */
+function innerShadowShapes(node: SceneNode, shadows: readonly Shadow[]): Konva.Shape[] {
+  return [...shadows]
+    .reverse()
+    .filter((shadow) => !isInvisibleShadow(shadow))
+    .map((shadow) => {
+      const shape = new KonvaShape({
+        width: node.width,
+        height: node.height,
+        listening: false,
+        sceneFunc: (ctx) => castInnerShadow(ctx._context, node, shadow),
+      });
+      shape.setAttr(INNER_SHADOW_ATTR, true);
+      return shape;
+    });
+}
+
+/** The outline of a frame, rect or ellipse (`grow` > 0 enlarges it on every side), at the origin. */
+function outlinePath(
+  native: CanvasRenderingContext2D,
+  node: SceneNode,
+  grow: number,
+): void {
+  const width = node.width + 2 * grow;
+  const height = node.height + 2 * grow;
+  if (node.type === 'ellipse') {
+    native.beginPath();
+    native.ellipse(width / 2, height / 2, width / 2, height / 2, 0, 0, Math.PI * 2);
+  } else if (node.type === 'frame' || node.type === 'rect')
+    roundedRectPath(native, width, height, spreadRadius(node.cornerRadius, grow));
+}
+
+/**
+ * Draws only an inner shadow: clips to the outline, and then a ring (a big rectangle with the
+ * outline, shrunk by `spread`, as the hole) far from the screen, bringing its blurred shadow back
+ * by the shadow offset, as `castShadow` does. The ring never shows, only the shadow inside.
+ */
+function castInnerShadow(
+  native: CanvasRenderingContext2D,
+  node: SceneNode,
+  shadow: Shadow,
+): void {
+  const spread = shadow.spread ?? 0;
+  native.save();
+  outlinePath(native, node, 0);
+  native.clip();
+  const m = native.getTransform();
+  const sx = Math.hypot(m.a, m.b) || 1;
+  const sy = Math.hypot(m.c, m.d) || 1;
+  const margin =
+    2 * shadow.blur + Math.abs(shadow.offset.x) + Math.abs(shadow.offset.y) + 4;
+  const reach =
+    native.canvas.width +
+    native.canvas.height +
+    Math.hypot(node.width * sx, node.height * sy) +
+    2 * shadow.blur * Math.max(sx, sy) +
+    1000;
+  const away = reach / sx;
+  native.shadowColor = shadow.color;
+  native.shadowBlur = shadow.blur * Math.min(sx, sy);
+  native.shadowOffsetX = shadow.offset.x * sx + away * m.a;
+  native.shadowOffsetY = shadow.offset.y * sy + away * m.b;
+  native.translate(-away, 0);
+  const holeW = node.width - 2 * spread;
+  const holeH = node.height - 2 * spread;
+  if (holeW > 0 && holeH > 0) {
+    native.translate(spread, spread);
+    outlinePath(native, node, -spread);
+    native.translate(-spread, -spread);
+  } else native.beginPath();
+  const grow = margin + Math.max(0, spread);
+  native.rect(-grow, -grow, node.width + 2 * grow, node.height + 2 * grow);
+  native.fillStyle = '#000000';
+  native.fill('evenodd');
   native.restore();
 }
 

@@ -241,6 +241,8 @@ export interface ShadowSpec {
   readonly blur?: number | { readonly $token: string };
   /** Grows (or, if negative, shrinks) the shadow's shape on each side (v4, px; literal or `$token`). */
   readonly spread?: number | { readonly $token: string };
+  /** CSS `inset` (v4): drawn inside the shape; only on `frame`, `rect` and `ellipse`. Literal boolean. */
+  readonly inner?: boolean;
 }
 
 export interface FontSpec {

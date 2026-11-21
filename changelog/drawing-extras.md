@@ -1,7 +1,8 @@
-# Component drawing extras — [Não lançado] (épico `epic/drawing-extras`, PR #2483, MCP 0.57.0, schema v22)
+# Component drawing extras — [Não lançado] (épico `epic/drawing-extras`, PR #2486, MCP 0.57.0, schema v22)
 
 ## Adicionado
 
 - A component's `fill` accepts the `radial` gradient (`center`, `radius`, `stops`; always a circle) and the `angular` gradient (`center`, `angle`, `stops`; a sweep that starts at `angle`, clockwise), literally or as the result of `$switch`/`$if`. The app draws them with Konva's radial fill and the canvas `createConicGradient` (without it, the first stop's color and the `angular-gradient-unsupported` warning).
 - The MCP raster (`render_marking`, `render_container` and `get_marking_image`) now paints linear, radial and angular gradients per pixel instead of using the first stop's color; a stroke or a text still use the first color. An MCP before 0.57.0 rejects the new types at their path.
+- A component's `shadow` accepts `inner: true` (a literal boolean, only on `frame`, `rect` and `ellipse`) for an inner shadow, like CSS `inset`: drawn inside the shape, clipped by its outline, above the fill and below the stroke and the children, alone or mixed with outer shadows in a list (the limit of 4 counts both). The app, the viewer and the MCP PNG draw it, and the root's clip ignores it. On any other node type it is a validation error (`shadow.inner: only valid on frame, rect and ellipse`). The `drawing-extras` example gains the Inner shadow type.
 - Component format 4, the specialization format and the project schema (v22) do not change: the new types enter `formatVersion` 4 without bumping it, and a `formatVersion` 1 to 3 component that uses them is `only allowed with formatVersion 4`.

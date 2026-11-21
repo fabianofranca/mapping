@@ -137,7 +137,7 @@ describe('drawing warnings carry code and parameters', () => {
     ]);
   });
 
-  it('inner shadow warns; several outer shadows no longer warn', () => {
+  it('inner shadow on a rect draws without a warning; several outer shadows do not warn', () => {
     const node: SceneNode = {
       ...baseNode({
         id: 'r',
@@ -155,8 +155,7 @@ describe('drawing warnings carry code and parameters', () => {
       fills: [{ type: 'solid', color: '#f00' }],
     };
     const { warnings } = renderScene(scene(node));
-    expect(warnings).toContainEqual({ code: 'inner-shadow' });
-    expect(warnings).toEqual([{ code: 'inner-shadow' }]);
+    expect(warnings).toEqual([]);
   });
 
   it('the same warning is not repeated', () => {

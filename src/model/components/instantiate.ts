@@ -3017,7 +3017,7 @@ function createEngine(
     return sides.length > 0 && sides.length < STROKE_SIDES.length ? sides : undefined;
   };
 
-  /** One shadow of the list (or the only one): color `none` gives no shadow; `spread` only enters when it is not 0. */
+  /** One shadow of the list (or the only one): color `none` gives no shadow; `spread` only enters when it is not 0 and `inner` when it is true. */
   const shadowOf = (shadow: ShadowSpec, scale: number): Shadow[] => {
     const color = str(shadow.color, 'none');
     if (isNone(color)) return [];
@@ -3033,6 +3033,7 @@ function createEngine(
         },
         blur: Math.max(0, blur) / scale,
         ...(spread !== 0 ? { spread } : {}),
+        ...(shadow.inner === true ? { inner: true } : {}),
       },
     ];
   };

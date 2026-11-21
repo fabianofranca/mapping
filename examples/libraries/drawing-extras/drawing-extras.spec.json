@@ -4,7 +4,7 @@
   "id": "drawing-extras",
   "name": "Drawing extras",
   "version": 1,
-  "description": "Example of the drawing extras of the component format: radial and angular gradients in a node's fill, next to the linear one, and a gradient chosen by a $switch. The Gradients component draws four swatches that read their two colors from fields.",
+  "description": "Example of the drawing extras of the component format: radial and angular gradients in a node's fill, next to the linear one, a gradient chosen by a $switch, and the inner shadow of a node's shadow. The Gradients component draws four swatches that read their two colors from fields; the Inner shadow component draws a sunken field and two buttons.",
   "layers": [
     {
       "id": "ui",
@@ -48,6 +48,38 @@
                 "kind": "angular",
                 "from": "#22C55E",
                 "to": "#2563EB"
+              }
+            }
+          ]
+        },
+        {
+          "id": "inner-shadow",
+          "name": "Inner shadow",
+          "description": "A sunken text field, a raised button and a pressed button: the inner shadow (CSS inset) of a rect, alone and in a list.",
+          "component": "components/inner-shadow.json",
+          "doc": "docs/inner-shadow.md",
+          "fields": [
+            {
+              "key": "text",
+              "label": "Text",
+              "description": "The text inside the sunken field.",
+              "type": "string",
+              "default": "Search"
+            },
+            {
+              "key": "accent",
+              "label": "Accent",
+              "description": "The color of the raised and the pressed button.",
+              "type": "string",
+              "default": "#2563EB"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Green accent",
+              "values": {
+                "text": "Filter",
+                "accent": "#16A34A"
               }
             }
           ]

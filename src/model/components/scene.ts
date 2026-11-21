@@ -191,7 +191,7 @@ export interface Shadow {
   readonly offset: Point;
   readonly blur: number;
   readonly spread?: number;
-  /** Inner shadow: the 2D canvas does not have it; the renderer ignores it and warns. */
+  /** Inner shadow (CSS `inset`): drawn inside the shape (frame, rect, ellipse), clipped by it. */
   readonly inner?: boolean;
 }
 
