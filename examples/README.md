@@ -167,9 +167,9 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 ### `examples/libraries/drawing-extras/`
 
-**What it is.** The example of the **drawing extras** of the component format: radial and angular gradients in a node's `fill`. One type, **Gradients** (fields `kind`, `from` and `to`), that draws four swatches: the main one changes its gradient type with `kind`, and the other three always show a radial, an angular and a linear gradient side by side.
+**What it is.** The example of the **drawing extras** of the component format: radial and angular gradients in a node's `fill` and the inner shadow of `shadow`. Two types. **Gradients** (fields `kind`, `from` and `to`) draws four swatches: the main one changes its gradient type with `kind`, and the other three always show a radial, an angular and a linear gradient side by side. **Inner shadow** (fields `text` and `accent`) draws a sunken text field, a raised button and a pressed button.
 
-**How to open.** **Specializations** › **Apply folder…** and pick the folder. Mark a Gradients and change `kind`, `from` and `to`.
+**How to open.** **Specializations** › **Apply folder…** and pick the folder. Mark a Gradients and change `kind`, `from` and `to`; mark an Inner shadow and change `text` and `accent`.
 
 **What you can see.**
 
@@ -177,6 +177,7 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 - The angular gradient (`type: "angular"`, `center`, `angle`): a clockwise sweep that starts at `angle` degrees (0 is to the right).
 - The linear gradient next to them, to compare the three types.
 - A gradient as the result of a `$switch` in `fill` (the main swatch), with the stop colors read from fields (`$field`).
+- The inner shadow (`shadow.inner: true`, like CSS `inset`): a sunken field with one inner shadow and a pressed button with a list of two, clipped by the rounded outline, next to a raised button with an ordinary outer shadow.
 
 ## Single-file specializations (`examples/specs/`)
 
@@ -366,6 +367,7 @@ When one exists, the example is from `libraries/`. The features of the executabl
 | `scale` (drawing only, composes with an embedded `component`)         | Pressed button (`drawing-keys`)                                                                                                                   |
 | `filter.grayscale`                                                    | Flag (`drawing-keys`)                                                                                                                             |
 | Radial and angular gradients in `fill`, and a gradient from `$switch` | Gradients (`drawing-extras`)                                                                                                                      |
+| Inner shadow (`shadow.inner`), alone and in a list                    | Inner shadow (`drawing-extras`)                                                                                                                   |
 | Arc on `ellipse` (`startAngle`, `sweepAngle`)                         | Spinner (`drawing-keys`)                                                                                                                          |
 | Screen anchors and scrim                                              | `sdui-scrim` and the roots with `anchor` and `margin` (`sdui-backend`)                                                                            |
 | Expressions `$field`, `$if`, `$switch`                                | `kotlin` and `material3-compose`; `$field` with `default` in both                                                                                 |

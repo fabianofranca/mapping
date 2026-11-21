@@ -802,9 +802,14 @@ function checkGap(
 }
 
 /** A shadow (object): `color`, `x`, `y`, `blur` and `spread`. */
-function checkShadowItem(value: unknown, path: string, out: Ctx): void {
+function checkShadowItem(
+  value: unknown,
+  path: string,
+  out: Ctx,
+  nodeType?: string,
+): void {
   if (!isRecord(value)) return add(out, path, 'expected an object');
-  checkKeys(value, ['color', 'x', 'y', 'blur', 'spread'], path, out);
+  checkKeys(value, ['color', 'x', 'y', 'blur', 'spread', 'inner'], path, out);
   if (!('color' in value)) add(out, join(path, 'color'), 'required field');
   else checkExpr(value.color, join(path, 'color'), checkColor, out);
   if ('x' in value) checkLiteralOrToken(value.x, join(path, 'x'), checkNumber, out);
@@ -813,14 +818,31 @@ function checkShadowItem(value: unknown, path: string, out: Ctx): void {
     checkLiteralOrToken(value.blur, join(path, 'blur'), checkNonNegative, out);
   if ('spread' in value)
     checkLiteralOrToken(value.spread, join(path, 'spread'), checkNumber, out);
+  if ('inner' in value) checkInner(value.inner, join(path, 'inner'), nodeType, out);
 }
 
+/** `shadow.inner`: a literal boolean, `true` only on frame, rect and ellipse (v4). */
+function checkInner(
+  value: unknown,
+  path: string,
+  nodeType: string | undefined,
+  out: Ctx,
+): void {
+  if (typeof value !== 'boolean') return add(out, path, 'expected true or false');
+  if (value && nodeType !== undefined && !INNER_SHADOW_TYPES.includes(nodeType))
+    add(out, path, 'only valid on frame, rect and ellipse');
+}
+
+const INNER_SHADOW_TYPES: readonly string[] = ['frame', 'rect', 'ellipse'];
+
 /** `shadow`: one shadow or, in v4, a list of 1 to 4 (the version is checked separately). */
-function checkShadow(value: unknown, path: string, out: Ctx): void {
-  if (!Array.isArray(value)) return checkShadowItem(value, path, out);
+function checkShadow(value: unknown, path: string, out: Ctx, nodeType?: string): void {
+  if (!Array.isArray(value)) return checkShadowItem(value, path, out, nodeType);
   if (value.length < 1 || value.length > MAX_SHADOWS)
     return add(out, path, `expected 1 to ${MAX_SHADOWS} shadows`);
-  value.forEach((item: unknown, i) => checkShadowItem(item, `${path}[${i}]`, out));
+  value.forEach((item: unknown, i) =>
+    checkShadowItem(item, `${path}[${i}]`, out, nodeType),
+  );
 }
 
 /** `font.maxLines`: an integer greater than or equal to 1. */
@@ -1274,7 +1296,7 @@ function checkNode(
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
   if ('fill' in value) checkExpr(value.fill, join(path, 'fill'), checkFill, out);
   if ('stroke' in value) checkStroke(value.stroke, join(path, 'stroke'), out, type);
-  if ('shadow' in value) checkShadow(value.shadow, join(path, 'shadow'), out);
+  if ('shadow' in value) checkShadow(value.shadow, join(path, 'shadow'), out, type);
   if ('cornerRadius' in value)
     checkExpr(value.cornerRadius, join(path, 'cornerRadius'), checkCornerRadius, out);
 
@@ -1653,6 +1675,31 @@ function shadowListVersionIssues(version: unknown, template: unknown): Component
   const walk = (node: unknown, at: string): void => {
     if (!isRecord(node)) return;
     if (Array.isArray(node.shadow)) addIssue(out, join(at, 'shadow'), V4_ONLY_MESSAGE);
+    if (Array.isArray(node.children))
+      node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'));
+  };
+  walk(template, 'template');
+  return out;
+}
+
+/** `shadow.inner` (v4) in a version before 4: `only allowed with formatVersion 4`, at the key's path. */
+function innerShadowVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return out;
+  const walk = (node: unknown, at: string): void => {
+    if (!isRecord(node)) return;
+    const shadows = Array.isArray(node.shadow) ? node.shadow : [node.shadow];
+    const list = Array.isArray(node.shadow);
+    shadows.forEach((item: unknown, i) => {
+      if (isRecord(item) && 'inner' in item)
+        addIssue(
+          out,
+          join(list ? `${join(at, 'shadow')}[${i}]` : join(at, 'shadow'), 'inner'),
+          V4_ONLY_MESSAGE,
+        );
+    });
     if (Array.isArray(node.children))
       node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
     if (node.type === 'repeat') walk(node.template, join(at, 'template'));
@@ -2366,6 +2413,7 @@ function collectIssues(
       ),
     );
     issues.push(...shadowListVersionIssues(version, template));
+    issues.push(...innerShadowVersionIssues(version, template));
     issues.push(...gradientVersionIssues(version, template));
     issues.push(...noneAlignVersionIssues(version, template));
     issues.push(...tokenVersionIssues(version, template));

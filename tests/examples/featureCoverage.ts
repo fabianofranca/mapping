@@ -391,7 +391,7 @@ const ANCHOR_KEYS = [
 const LAYOUT_KEYS = ['gap', 'padding', 'align', 'justify'] as const;
 const STROKE_KEYS = ['color', 'width', 'align', 'dash', 'scale'] as const;
 const FILTER_KEYS = ['grayscale'] as const;
-const SHADOW_KEYS = ['color', 'x', 'y', 'blur'] as const;
+const SHADOW_KEYS = ['color', 'x', 'y', 'blur', 'inner'] as const;
 const FONT_KEYS = [
   'family',
   'size',
@@ -571,6 +571,11 @@ function recordKeys(
   keys: readonly string[],
   out: Set<string>,
 ) {
+  // A list (a `shadow` list) counts each item.
+  if (Array.isArray(value)) {
+    for (const item of value) recordKeys(prefix, item, keys, out);
+    return;
+  }
   if (!isRec(value)) return;
   for (const key of keys) if (key in value) out.add(`${prefix}.${key}`);
 }

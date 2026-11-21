@@ -1,4 +1,4 @@
-// Example library `drawing-extras`: radial and angular gradients in a node's `fill`.
+// Example library `drawing-extras`: radial and angular gradients in a node's `fill` and the inner shadow.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -21,9 +21,15 @@ const files = listDisk(ROOT)
 const text = (path: string): string => files.find((f) => f.path === path)?.text ?? '';
 
 describe('example library drawing-extras', () => {
-  it('has the specialization, one component and one document', () => {
+  it('has the specialization, two components and two documents', () => {
     expect(files.map((f) => f.path)).toEqual(
-      [SPEC_FILE, 'components/gradients.json', 'docs/gradients.md'].sort(),
+      [
+        SPEC_FILE,
+        'components/gradients.json',
+        'components/inner-shadow.json',
+        'docs/gradients.md',
+        'docs/inner-shadow.md',
+      ].sort(),
     );
   });
 
@@ -32,7 +38,7 @@ describe('example library drawing-extras', () => {
     expect(report.errors).toEqual([]);
     expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
-    expect(report.summary).toMatchObject({ types: 1, components: 1, docs: 1 });
+    expect(report.summary).toMatchObject({ types: 2, components: 2, docs: 2 });
   });
 
   it('draws the three gradient types, one of them from a $switch', () => {
@@ -41,5 +47,13 @@ describe('example library drawing-extras', () => {
       expect(json).toContain(`"type": "${type}"`);
     }
     expect(json).toContain('"$switch": "kind"');
+  });
+
+  it('draws a sunken field, a pressed button with two inner shadows and a raised one', () => {
+    const json = text('components/inner-shadow.json');
+    expect(json.match(/"inner": true/g)).toHaveLength(3);
+    expect(json).toContain('"name": "field"');
+    expect(json).toContain('"name": "pressed"');
+    expect(json).toContain('"name": "raised"');
   });
 });
