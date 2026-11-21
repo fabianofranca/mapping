@@ -563,6 +563,7 @@ There are three different questions: **how big the instance is** (the root), **h
   - **`"min-content"`** and **`"max-content"`** (`formatVersion` 4): the content measured **without the parent's space limit**. In `sizing.width`, `max-content` is the size without wrapping (the `maxWidth` limit of the fit measurement does not apply) and `min-content` is the largest unbreakable piece (the widest word); in `sizing.height` both are worth `hug`. An axis measured this way counts as "follows the content", like `hug`. See "Intrinsic size" below;
   - **missing axis** (or missing `sizing`): the px of `size` on that axis;
   - **expression** (`formatVersion` 4): `$switch` by style, `$if` by a field… evaluated with the instance's values, which gives px (≥ 0), `"fill"` or `"hug"`; a number `{ "$token": … }` is also valid in `sizing.width` and `sizing.height` (resolved with the table of the drawing mode, so a token that changes by mode changes the size). A value that is none of those (or an expression with no value) falls back to that axis's `size` with the warning `invalid value in sizing.height: <value>`. `$size` and `$lines` are not valid in `sizing` (the `sizing` is evaluated before measuring): they are a validation error (`sizing.height: $size is not valid in sizing`).
+  - **`$anchor.*` and `$direction` in `sizing`** (`formatVersion` 4): an expression in `sizing` reads the five `$anchor.*` pseudo-fields and the `{ "$direction": … }` condition like the template does, with the same values the instance draws with: `fitComponentSize` (the creation and `fit_marking`), Arrange and `layoutScreen` pass the marking's anchor and the reading direction. Without an anchor the five are empty (the `$switch` takes its `default`); without a direction it is `ltr`. See "The `$anchor.*` pseudo-fields" and "Reading direction".
 
 ```json
 "size": { "width": 360, "height": 200 },
@@ -904,6 +905,7 @@ The final position remains **physical**: each node's rectangle carries the `x` m
 - **`reverse` composes with the direction.** In an `rtl` `row`, `reverse` runs left to right again, like `row-reverse` with `direction: rtl` in CSS: the two together cancel out.
 - **Asymmetric indentation that follows the direction** comes from a condition, because the `padding` is physical: `"padding": { "$if": { "$direction": "rtl" }, "then": [0, 8, 0, 16], "else": [0, 16, 0, 8] }`.
 - **In `ltr` nothing changes.** A component without `direction`, without `$direction` and without `mirror` draws exactly as before; `font.align` `start` in `ltr` is the usual `left`.
+- **`$direction` also in `sizing`.** The `{ "$direction": "rtl" }` condition in an axis of `sizing` sees the instance's direction, in the measures (`fit_marking`, the creation, Arrange) and in `layoutScreen` (the screen's direction), so a component whose width depends on the direction is measured on the branch it draws.
 
 ### Logical anchors: `anchors.start` and `anchors.end`
 
@@ -1028,6 +1030,10 @@ The `$anchor.side` is the **logical** side (`start`/`end`), not the physical one
 ```
 
 Whoever instantiates hands the anchor to the engine through the `anchor` option (`InstantiateOptions`; `anchorValues`, in `componentValues.ts`, builds it from the rectangles and the density); `instantiate` and `measureComponent` read it.
+
+**The measures read the anchor too.** Whoever measures an anchored marking passes the same anchor the drawing receives, so the size is the drawn one, in `sizing` as in the template: `fit_marking`, Arrange (from the rectangles it is arranging, in units) and the creation without `rect`. The creation measures once without the anchor, attaches that size to the anchor and then repeats (reads the anchor at the box it ended up in, measures, attaches again) until the size repeats, at most three measurements with the anchor; a size that depends on `$anchor.side`, `$anchor.width`, `$anchor.height` or the direction converges at once, and one that depends on `$anchor.x`/`$anchor.y` is born at the box it draws at (a size that never settles stops at the last measurement).
+
+**Known limit.** A size that depends on `$anchor.x`/`$anchor.y` is measured at the box the marking has when it is measured. When something moves the marking afterwards (the snap that follows the app's Arrange on an anchored marking, the MCP batch's refit to the table rows, or a slot that places the child), the drawing reads the new box and the next Arrange measures there. A size that depends on `$anchor.side`, `$anchor.width`, `$anchor.height` or on the direction is exact.
 
 ## Expressions and conditions
 

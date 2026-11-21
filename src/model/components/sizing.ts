@@ -14,6 +14,7 @@ import { type InstantiateOptions, instantiate, measureComponent } from './instan
 import { intrinsicModeOf, isIntrinsicSize } from './layoutValues';
 
 export {
+  type ReservedValues,
   type ResolvedAxis,
   type ResolvedSizing,
   type SizingAxis,
@@ -21,6 +22,7 @@ export {
   resolveSizing,
 } from './sizingResolve';
 import {
+  type ReservedValues,
   type ResolvedAxis,
   type ResolvedSizing,
   type SizingAxis,
@@ -64,8 +66,9 @@ export function followedAxes(resolved: ResolvedSizing): Record<SizingAxis, boole
 export function sizingFollowsContent(
   component: ComponentFile,
   values: FieldValues,
+  reserved?: ReservedValues,
 ): boolean {
-  const resolved = resolveSizing(component, values);
+  const resolved = resolveSizing(component, values, undefined, reserved);
   return [resolved.width, resolved.height].some(
     (axis) => axis.spec === 'hug' || isIntrinsicSize(axis.spec),
   );
@@ -95,7 +98,10 @@ export function fitComponentSize(
   options: InstantiateOptions,
   fit: FitOptions = {},
 ): { width: number; height: number; messages: readonly ModelMessage[] } | undefined {
-  const resolved = resolveSizing(component, values, options.tokens);
+  const resolved = resolveSizing(component, values, options.tokens, {
+    anchor: options.anchor,
+    direction: options.direction,
+  });
   const auto = { ...followedAxes(resolved), ...fit.auto };
   const kinds = {
     width: axisKind(resolved.width, auto.width),

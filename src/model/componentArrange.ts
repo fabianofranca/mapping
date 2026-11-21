@@ -40,13 +40,19 @@ import { typeSlots } from './specSlots';
 import {
   anchoredRect,
   clampedInto,
+  outsideWarning,
   resolveMarkingAnchor,
   type AnchorDefaultsUnits,
   type AnchorDefaultsSource,
 } from './anchorPlacement';
 import { withAnchoredFollowers } from './anchors';
 import { drawingValues } from './componentValues';
-import { componentForDrawing, drawOptions, measuringAnchor } from './drawingMode';
+import {
+  componentForDrawing,
+  drawOptions,
+  instanceAnchorOf,
+  measuringAnchor,
+} from './drawingMode';
 import { effectiveDirection } from './direction';
 import { fail } from './errors';
 import {
@@ -123,7 +129,9 @@ function kidsBySlot(
   catalog: ComponentCatalog,
   marking: Marking,
   mc: MarkingComponent,
-  drawn: ReturnType<typeof componentForDrawing>,
+  drawn: ReturnType<typeof componentForDrawing> & {
+    readonly anchor?: InstanceAnchor | undefined;
+  },
   values: FieldValues,
   kids: readonly Marking[],
   measure: TextMeasurer,
@@ -174,7 +182,10 @@ function containerOf(
   if (mc === null) return null;
   const marking = projectIndex(p).markings.get(markingId);
   if (marking === undefined) return null;
-  const drawn = componentForDrawing(p, mc.component, marking.containerId);
+  const drawn = {
+    ...componentForDrawing(p, mc.component, marking.containerId),
+    anchor: measuringAnchor(p, marking, mc.component),
+  };
   const templates = componentSlots(drawn.component);
   if (templates.length === 0) return null;
   const kids = projectIndex(p).children.get(markingId) ?? [];
@@ -379,6 +390,32 @@ function paddedContent(
 }
 
 /**
+ * The `$anchor.*` of a marking of the arranged subtree as the drawing will read it, from the WORKING
+ * rectangles (units, density 1: both are already in units); the target outside the subtree keeps its
+ * stored `rect` (`fallback`, in units). `undefined` without an anchor or without the target
+ * (decision 5 of #1893).
+ */
+function workingAnchor(
+  marking: Marking,
+  component: ComponentFile,
+  rects: ReadonlyMap<string, Rect>,
+  fallback: (id: string) => Rect | undefined,
+): InstanceAnchor | undefined {
+  const { anchor } = marking;
+  const rect = rects.get(marking.id);
+  if (anchor == null || rect === undefined) return undefined;
+  const anchorRect = rects.get(anchor.to) ?? fallback(anchor.to);
+  if (anchorRect === undefined) return undefined;
+  return instanceAnchorOf({
+    rect,
+    anchorRect,
+    side: anchor.side,
+    component,
+    density: 1,
+  });
+}
+
+/**
  * Arranges the chosen component with a slot and the components with a slot inside it (the
  * subtree). From the deepest to the shallowest, each component with a slot positions the children
  * in the slot's box (the order is the array's; the size on the main axis stays (minus that of the
@@ -436,6 +473,16 @@ export function arrangeMarking(
     if (!containers.has(id)) containers.set(id, containerOf(p, catalog, id, measure));
     return containers.get(id) ?? null;
   };
+  /** The anchor of a marking of the subtree, from the working rectangles (decision 5 of #1893). */
+  const anchorOf = (id: string): InstanceAnchor | undefined => {
+    const mc = markingComponent(p, catalog, id);
+    return mc === null
+      ? undefined
+      : workingAnchor(index.markings.get(id) as Marking, mc.component, rects, (to) => {
+          const target = index.markings.get(to);
+          return target === undefined ? undefined : rectToUnits(target.rect, density);
+        });
+  };
   const labelOf = (id: string): string => {
     const marking = index.markings.get(id) as Marking;
     return marking.name ?? markingComponent(p, catalog, id)?.type.name ?? marking.id;
@@ -473,8 +520,11 @@ export function arrangeMarking(
       const mc = markingComponent(p, catalog, kid.id);
       if (mc === null || mc.component.sizing === undefined) continue;
       const values = drawingValues(p, mc.annotation, mc.type).values;
-      const drawn = componentForDrawing(p, mc.component, kid.containerId);
-      const sizing = resolveSizing(mc.component, values, drawn.tokens);
+      const drawn = {
+        ...componentForDrawing(p, mc.component, kid.containerId),
+        anchor: anchorOf(kid.id),
+      };
+      const sizing = resolveSizing(mc.component, values, drawn.tokens, drawn);
       sizing.messages.forEach(warn);
       const rect = rects.get(kid.id) as Rect;
       const fitted = applySizing(
@@ -500,7 +550,10 @@ export function arrangeMarking(
     const mc = markingComponent(p, catalog, kid.id);
     if (mc === null) return undefined;
     const values = drawingValues(p, mc.annotation, mc.type).values;
-    const drawn = componentForDrawing(p, mc.component, kid.containerId);
+    const drawn = {
+      ...componentForDrawing(p, mc.component, kid.containerId),
+      anchor: anchorOf(kid.id),
+    };
     return instantiate(drawn.component, values, rects.get(kid.id) as Rect, {
       measure,
       idPrefix: kid.id,
@@ -540,12 +593,14 @@ export function arrangeMarking(
       info.slots.filter((slot) => isPlainNone(slot.layout)).map((slot) => slot.id),
     );
     const contents = new Map(work.map((w) => [w.slot.id, w.content]));
+    // The marking's own anchor, at its working rectangle at the moment of each use (the fit moves it).
+    const drawnNow = () => ({ ...info, anchor: anchorOf(id) });
     const slotOptions = (): InstantiateOptions => ({
       measure,
       idPrefix: id,
       slotContent: contents,
       filledSlots: filled,
-      ...drawOptions(info),
+      ...drawOptions(drawnNow()),
     });
     if (work.some((w) => needsAvailable(w.slot.layout))) {
       const { root } = instantiate(
@@ -569,7 +624,8 @@ export function arrangeMarking(
     }
 
     let rect = rects.get(id) as Rect;
-    const sizing = resolveSizing(component, values, info.tokens);
+    const measuring = drawnNow();
+    const sizing = resolveSizing(component, values, info.tokens, measuring);
     sizing.messages.forEach(warn);
     const fitted = applySizing(
       rect,
@@ -581,7 +637,7 @@ export function arrangeMarking(
           measure,
           slotContent: contents,
           filledSlots: filled,
-          ...drawOptions(info),
+          ...drawOptions(measuring),
         }),
     );
     const hugW = fitted?.hugW ?? false;
@@ -659,13 +715,7 @@ export function arrangeMarking(
     if (sameRect(rect, fixed)) continue;
     rects.set(id, fixed);
     translate(id, fixed.x - rect.x, fixed.y - rect.y);
-    warn(
-      modelMessage(
-        'arrange.outside',
-        { label: labelOf(id), where },
-        `${labelOf(id)}: does not fit in ${where}`,
-      ),
-    );
+    warn(outsideWarning(labelOf(id), where));
   }
 
   const changed = topDownIds.filter(
@@ -721,14 +771,20 @@ function fitTargetOf(
   if (hasKids && componentSlots(mc.component).length > 0) return null;
   const values = drawingValues(p, mc.annotation, mc.type).values;
   const drawn = componentForDrawing(p, mc.component, marking.containerId);
-  const followed = followedAxes(resolveSizing(mc.component, values, drawn.tokens));
+  const anchor = measuringAnchor(p, marking, mc.component);
+  const followed = followedAxes(
+    resolveSizing(mc.component, values, drawn.tokens, {
+      anchor,
+      direction: drawn.direction,
+    }),
+  );
   if (!followed.width && !followed.height) return null;
   return {
     marking,
     component: drawn.component,
     tokens: drawn.tokens,
     direction: drawn.direction,
-    anchor: measuringAnchor(p, marking, mc.component),
+    anchor,
     values,
     parent: marking.parentId === null ? null : containerOf(p, catalog, marking.parentId),
   };
@@ -915,11 +971,7 @@ function clampedWarning(p: Project, marking: Marking): ModelMessage {
       ? undefined
       : projectIndex(p).containers.get(marking.containerId);
   const where = container?.name ?? marking.containerId ?? '';
-  return modelMessage(
-    'arrange.outside',
-    { label, where },
-    `${label}: does not fit in ${where}`,
-  );
+  return outsideWarning(label, where);
 }
 
 /**
