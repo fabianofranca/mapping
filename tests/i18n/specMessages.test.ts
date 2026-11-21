@@ -523,6 +523,10 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
       ]),
   ],
   ['spec.repoIdInvalid', (s) => (s.docRepos = [{ id: 'A b', url: 'https://a.b' }])],
+  [
+    'spec.documentIdInvalid',
+    (s) => (s.documents = [{ id: 'A b', name: 'N', doc: 'docs/a.md' }]),
+  ],
   ['spec.mustBeNumber', (s) => (s.containers = [container({ width: 'x' })])],
   ['spec.mustBeInteger', (s) => (s.containers = [container({ width: 1.5 })])],
   ['spec.minOne', (s) => (s.containers = [container({ width: 0 })])],

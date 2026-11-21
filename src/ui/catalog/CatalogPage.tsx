@@ -418,7 +418,13 @@ export interface DocumentBodyProps {
 }
 
 /** Text of a document (type or library): external reference, package markdown or the empty message. */
-export function DocumentBody({ external, text, emptyKey, access, onLink }: DocumentBodyProps) {
+export function DocumentBody({
+  external,
+  text,
+  emptyKey,
+  access,
+  onLink,
+}: DocumentBodyProps) {
   if (external !== null) {
     return (
       <ExternalDoc
@@ -429,7 +435,8 @@ export function DocumentBody({ external, text, emptyKey, access, onLink }: Docum
       />
     );
   }
-  if (text !== null) return <Markdown text={text} {...(onLink === undefined ? {} : { onLink })} />;
+  if (text !== null)
+    return <Markdown text={text} {...(onLink === undefined ? {} : { onLink })} />;
   return <p class="muted">{t(emptyKey)}</p>;
 }
 

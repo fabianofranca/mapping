@@ -3,7 +3,8 @@ import { t } from '../../i18n';
 import {
   type Catalog,
   type CatalogDocument,
-  type CatalogEntry, type Project,
+  type CatalogEntry,
+  type Project,
   findEntry,
 } from '../../model';
 import { Button, TextField } from '../controls';
@@ -185,24 +186,25 @@ export function CatalogView({
     next.focus();
   };
 
-  const page = selectedDocument !== undefined ? (
-    <LibraryDocumentPage document={selectedDocument} onLink={onLink} />
-  ) : (
-    selected !== undefined && (
-      <CatalogPage
-      catalog={catalog}
-      entry={selected}
-      specId={specId}
-      version={version}
-      renderer={engine}
-      fontsEpoch={fontsEpoch}
-      project={project}
-      onLink={onLink}
-      {...(onAddToScreen === undefined ? {} : { onAddToScreen })}
-      {...(addDisabledReason === undefined ? {} : { addDisabledReason })}
-    />
-    )
-  );
+  const page =
+    selectedDocument !== undefined ? (
+      <LibraryDocumentPage document={selectedDocument} onLink={onLink} />
+    ) : (
+      selected !== undefined && (
+        <CatalogPage
+          catalog={catalog}
+          entry={selected}
+          specId={specId}
+          version={version}
+          renderer={engine}
+          fontsEpoch={fontsEpoch}
+          project={project}
+          onLink={onLink}
+          {...(onAddToScreen === undefined ? {} : { onAddToScreen })}
+          {...(addDisabledReason === undefined ? {} : { addDisabledReason })}
+        />
+      )
+    );
 
   return (
     <div class={layout === 'list' ? 'catalog catalog-list-layout' : 'catalog'}>
@@ -288,8 +290,10 @@ export function CatalogView({
                             class="catalog-entry"
                             data-type-id={entry.type.id}
                             aria-current={
-                              selectedDocument === undefined && selected?.type.id === entry.type.id
-                                ? 'true' : undefined
+                              selectedDocument === undefined &&
+                              selected?.type.id === entry.type.id
+                                ? 'true'
+                                : undefined
                             }
                             onClick={() => select(entry.type.id)}
                           >
@@ -319,28 +323,30 @@ export function CatalogView({
         )}
       </div>
 
-      {layout === 'list' && dialogOpen && (selectedDocument ?? selected) !== undefined && (
-        <Dialog
-          title={selectedDocument?.name ?? selected?.type.name ?? ''}
-          size="lg"
-          returnFocus={() => openerRef.current}
-          onCancel={() => setDialogOpen(false)}
-          actions={
-            <Button onClick={() => setDialogOpen(false)}>
-              {t('catalog.view.close')}
-            </Button>
-          }
-        >
-          <div class="catalog-dialog-content" ref={dialogContentRef}>
-            {notice !== null && (
-              <p class="catalog-notice muted" role="status">
-                {notice}
-              </p>
-            )}
-            {page}
-          </div>
-        </Dialog>
-      )}
+      {layout === 'list' &&
+        dialogOpen &&
+        (selectedDocument ?? selected) !== undefined && (
+          <Dialog
+            title={selectedDocument?.name ?? selected?.type.name ?? ''}
+            size="lg"
+            returnFocus={() => openerRef.current}
+            onCancel={() => setDialogOpen(false)}
+            actions={
+              <Button onClick={() => setDialogOpen(false)}>
+                {t('catalog.view.close')}
+              </Button>
+            }
+          >
+            <div class="catalog-dialog-content" ref={dialogContentRef}>
+              {notice !== null && (
+                <p class="catalog-notice muted" role="status">
+                  {notice}
+                </p>
+              )}
+              {page}
+            </div>
+          </Dialog>
+        )}
     </div>
   );
 }

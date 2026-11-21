@@ -55,7 +55,10 @@ function view(documents: readonly CatalogDocument[]) {
       specId="material3"
       version={1}
       layout="split"
-      renderer={createCatalogRenderer(approximateMeasurer, () => 'data:image/png;base64,x')}
+      renderer={createCatalogRenderer(
+        approximateMeasurer,
+        () => 'data:image/png;base64,x',
+      )}
     />,
   );
   return { user };
@@ -69,10 +72,11 @@ describe('Documents group', () => {
   it('sits above the layers and lists the documents by name', () => {
     view(DOCS);
     const group = within(list()).getByRole('region', { name: t('catalog.documents') });
-    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual([
-      'Getting started',
-      'Motion guide',
-    ]);
+    expect(
+      within(group)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Getting started', 'Motion guide']);
     const firstLayer = base.layers[0];
     const layerSection = within(list()).getByRole('region', { name: firstLayer?.name });
     expect(
@@ -85,17 +89,23 @@ describe('Documents group', () => {
     const search = screen.getByRole('searchbox', { name: t('catalog.view.search') });
     await user.type(search, 'motion');
     const group = within(list()).getByRole('region', { name: t('catalog.documents') });
-    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual([
-      'Motion guide',
-    ]);
+    expect(
+      within(group)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Motion guide']);
     await user.clear(search);
     await user.type(search, 'button');
-    expect(within(list()).queryByRole('region', { name: t('catalog.documents') })).toBeNull();
+    expect(
+      within(list()).queryByRole('region', { name: t('catalog.documents') }),
+    ).toBeNull();
   });
 
   it('does not exist without documents', () => {
     view([]);
-    expect(within(list()).queryByRole('region', { name: t('catalog.documents') })).toBeNull();
+    expect(
+      within(list()).queryByRole('region', { name: t('catalog.documents') }),
+    ).toBeNull();
     expect(screen.queryByText(t('catalog.documents'))).toBeNull();
   });
 });
@@ -122,4 +132,3 @@ describe('document page', () => {
     expect(links.some((a) => a.getAttribute('href') === URL_FILE)).toBe(true);
   });
 });
-
