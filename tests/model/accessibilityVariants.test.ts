@@ -422,4 +422,12 @@ describe('accessibility.variants: the warning', () => {
     });
     expect(warns(noRoleAnywhere).map((w) => w.path)).toEqual([`${ACC}.label`]);
   });
+
+  it('a case with its own label does not read the base label: the base label still warns', () => {
+    const ownLabel = specOf((a) => {
+      delete a.role;
+      a.variants.cases = { filter: { role: 'link', label: { fields: ['text'] } } };
+    });
+    expect(warns(ownLabel).map((w) => w.path)).toEqual([`${ACC}.label`]);
+  });
 });

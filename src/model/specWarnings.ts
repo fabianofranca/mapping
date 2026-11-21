@@ -169,11 +169,16 @@ function labelWithoutRoleCaseWarnings(
   );
 }
 
-/** The base label is read when the type has an audited role, or when some case of its `variants` gives one. */
+/**
+ * The base label is read when the type has an audited role, or when some case of its `variants` gives
+ * one and has no `label` of its own (a case `label` replaces the base one).
+ */
 function baseLabelRead(a: NonNullable<SpecAnnotationType['accessibility']>): boolean {
   return (
     isAudited(a.role) ||
-    Object.values(a.variants?.cases ?? {}).some((kase) => isAudited(kase.role))
+    Object.values(a.variants?.cases ?? {}).some(
+      (kase) => isAudited(kase.role) && kase.label === undefined,
+    )
   );
 }
 
