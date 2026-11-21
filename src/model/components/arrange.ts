@@ -17,6 +17,7 @@ import type {
   LayoutWrap,
   SlotTemplate,
 } from './componentFormat';
+import { mirrorX } from './direction';
 import { evaluate, evaluateBoolean } from './expressions';
 import {
   LAYOUT_ALIGNS,
@@ -477,7 +478,7 @@ export function layoutChildren(
 
 /**
  * In `rtl`, the already arranged boxes (as in `ltr`) mirrored inside the slot's content area
- * (`x' = left + usable width − (x − left) − w`): it applies at once to `row`, `column`,
+ * (`mirrorX`): it applies at once to `row`, `column`,
  * `none`, grid and `wrap`, and `reverse` composes. The `padding` stays physical (the area is the same).
  */
 function mirrorInContent(
@@ -487,7 +488,10 @@ function mirrorInContent(
 ): Box[] {
   const left = slot.x + padding.left;
   const content = slot.width - padding.left - padding.right;
-  return boxes.map((b) => ({ ...b, x: Math.round(2 * left + content - b.x - b.width) }));
+  return boxes.map((b) => ({
+    ...b,
+    x: Math.round(mirrorX(b.x, b.width, left, content)),
+  }));
 }
 
 function layoutPhysical(

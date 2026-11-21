@@ -74,7 +74,6 @@ function TypedFormField({ field, value, readOnly, onChange }: FieldProps) {
       required={field.required}
       hint={field.description}
       focusKey={field.key}
-      notices={field.notices}
     >
       {field.type === 'ref' ? (
         /* Exception to Button: reference field (select look), disabled (docs/DESIGN-SYSTEM.md, "Loose buttons") */

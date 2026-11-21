@@ -21,6 +21,7 @@ import { encodePng, quadrants } from './images';
 import {
   acceptAllAndApply,
   applyAcceptedOnDisk,
+  concludeOnDisk,
   errorOf,
   hashOf,
   ok,
@@ -622,6 +623,84 @@ describe('reads after the revision', () => {
     );
     expect(review.revisable).toBe(false);
     expect(review.hint).toContain('supersedes');
+  });
+});
+
+describe('a rejected proposal (stage #2085): the user rejected everything and concluded the review', () => {
+  /** A proposal with every change rejected and the review concluded by the app. */
+  async function rejected() {
+    const t = await open();
+    reviewDecide(dir(), t.id, { level: 'proposal', id: null }, 'rejected');
+    reviewNote(dir(), t.id, { level: 'proposal', id: null }, 'Not this way.');
+    const written = concludeOnDisk(dir(), t.id);
+    expect(written.status).toBe('rejected');
+    return t;
+  }
+
+  it('list_proposals filters by rejected', async () => {
+    const t = await rejected();
+    const listed = ok(
+      await mcp.call<{ proposals: { id: string; status: string }[] }>('list_proposals', {
+        project: 'loja',
+        status: 'rejected',
+      }),
+    );
+    expect(listed.proposals.map((r) => r.id)).toContain(t.id);
+    expect(listed.proposals.every((r) => r.status === 'rejected')).toBe(true);
+    const open = ok(
+      await mcp.call<{ proposals: { id: string }[] }>('list_proposals', {
+        project: 'loja',
+        status: 'open',
+      }),
+    );
+    expect(open.proposals.map((r) => r.id)).not.toContain(t.id);
+  });
+
+  it('revise_proposal and withdraw_proposal refuse it and the file does not change', async () => {
+    const t = await rejected();
+    const hash = hashOf(proposalPath(t.id));
+    expect(errorOf(await revise(t.ref, { drop: [t.extra] })).code).toBe('not-open');
+    expect(
+      errorOf(await mcp.call('withdraw_proposal', { project: 'loja', ref: t.ref })),
+    ).toMatchObject({ code: 'not-open', status: 'rejected' });
+    expect(hashOf(proposalPath(t.id))).toBe(hash);
+  });
+
+  it('get_proposal and get_proposal_review show rejected, with the new hint', async () => {
+    const t = await rejected();
+    const proposal = ok(
+      await mcp.call<{ proposal: { status: string } }>('get_proposal', {
+        project: 'loja',
+        ref: t.ref,
+      }),
+    );
+    expect(proposal.proposal.status).toBe('rejected');
+    const review = ok(
+      await mcp.call<{ revisable: boolean; hint: string }>('get_proposal_review', {
+        project: 'loja',
+        ref: t.ref,
+      }),
+    );
+    expect(review.revisable).toBe(false);
+    expect(review.hint).toBe(
+      'the user rejected every change and concluded the review: to propose again, send a new proposal (propose_changes with supersedes) that takes the notes into account',
+    );
+  });
+
+  it('propose_changes with supersedes keeps it rejected, with the note', async () => {
+    const t = await rejected();
+    const before = readProposal(dir(), t.id);
+    const next = await propose(mcp, 'loja', [rename('Title', 'Second try')], {
+      title: 'Second try',
+      supersedes: t.ref,
+    });
+    expect(next.superseded).toEqual({
+      ref: t.ref,
+      status: 'rejected',
+      revision: before.revision,
+      note: expect.stringMatching(/previous proposal was rejected and stays `rejected`/),
+    });
+    expect(readProposal(dir(), t.id)).toEqual(before);
   });
 });
 

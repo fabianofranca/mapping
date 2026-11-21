@@ -10,7 +10,7 @@ import { connect, type Connection } from './workspace';
 // with the notices the batch creates. A notice only informs: nothing is blocked.
 
 interface NoticeEntry {
-  annotation: string;
+  annotations: number;
   type: string;
   kind: string;
   message: string;
@@ -152,7 +152,8 @@ describe('plan_changes: the notices key', () => {
         message: 'Left the contract.',
       }),
     ]);
-    expect(result.notices!.new[0]!.annotation).toMatch(/^mapping:\/\/avisos\/a\//);
+    expect(result.notices!.new[0]!.annotations).toBe(1);
+    expect(result.notices!.new[0]).not.toHaveProperty('annotation');
     expect(result.notices!.new[0]).not.toHaveProperty('key');
   });
 
@@ -177,6 +178,42 @@ describe('plan_changes: the notices key', () => {
       column: 'c',
       message: 'Sources disagree.',
     });
+  });
+
+  it('three annotations of the same type: one entry with annotations 3', async () => {
+    const result = await plan([
+      ...marking({ type: 'avisos/old' }).map((o) => ({
+        ...o,
+        as: '$m1',
+        annotationAs: '$a1',
+      })),
+      ...marking({ type: 'avisos/old' }).map((o) => ({
+        ...o,
+        as: '$m2',
+        annotationAs: '$a2',
+      })),
+      ...marking({ type: 'avisos/old' }).map((o) => ({
+        ...o,
+        as: '$m3',
+        annotationAs: '$a3',
+      })),
+    ]);
+    expect(result.notices!.new).toEqual([
+      { type: 'old', kind: 'removed', message: 'Left the contract.', annotations: 3 },
+    ]);
+  });
+
+  it('two notices of the same field: two entries, by severity then first appearance', async () => {
+    const result = await plan(
+      marking({ type: 'avisos/box', values: { style: 'a', rows: [{ c: '1' }] } }),
+    );
+    expect(
+      result.notices!.new.map((n) => [n.kind, n.key, n.column, n.annotations]),
+    ).toEqual([
+      ['deprecated', 'style', undefined, 1],
+      ['diverges', 'rows', 'c', 1],
+      ['pending', undefined, undefined, 1],
+    ]);
   });
 
   it('a batch that touches nothing with a notice: empty new, issues intact', async () => {

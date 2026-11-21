@@ -2737,6 +2737,12 @@ export const ANNOTATED_FILES: readonly PathException[] = [
       'shared fixture data asserted by tests/components and tests/model (spec id, names and notice messages)',
   },
   {
+    path: 'tests/components/review/concludeReview.test.tsx',
+    annotated: true,
+    reason:
+      'the test checks the pt-BR text of the Conclude review button, toast and notice',
+  },
+  {
     path: 'tests/components/review/details.test.tsx',
     annotated: true,
     reason:

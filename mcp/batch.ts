@@ -3212,41 +3212,49 @@ export function issueChanges(refs: Refs, before: Project): Record<string, unknow
 
 /**
  * The specialization notices that the annotations created or changed by the batch come to have
- * (stage #486, decision 11), from the same changes that the proposal review shows
- * (`changeNotices`), from the most serious to the least and, within the same `kind`, in the order they appear.
+ * (stage #486, decision 11), read with `changeNotices` (the proposal review no longer shows them),
+ * grouped per notice (stage #2085, decision 7): one entry per specialization, type, place (`key`,
+ * `column`), `kind` and `message`, with the number of distinct annotations of the batch that have it.
+ * From the most serious to the least and, within the same `kind`, in the order they first appear.
  */
 export function noticeChanges(
   refs: Refs,
-  before: Project,
   changes: readonly Change[],
 ): Record<string, unknown> {
   const after = refs.project;
-  const seen = new Set<string>();
-  const entries: { kind: SpecNotice['kind']; view: Record<string, unknown> }[] = [];
+  const groups = new Map<
+    string,
+    { kind: SpecNotice['kind']; view: Record<string, unknown>; ids: Set<string> }
+  >();
   for (const change of changes) {
     for (const usage of changeNotices(after, change, change.field ?? '')) {
       const id = JSON.stringify([
-        change.entityId,
+        usage.specId,
+        usage.typeId,
         usage.key,
         usage.column,
         usage.notice.kind,
         usage.notice.message,
       ]);
-      if (seen.has(id)) continue;
-      seen.add(id);
-      entries.push({
-        kind: usage.notice.kind,
-        view: {
-          annotation: refs.ref('a', change.entityId),
-          type: usage.typeId,
+      let group = groups.get(id);
+      if (!group) {
+        group = {
           kind: usage.notice.kind,
-          message: usage.notice.message,
-          ...(usage.key ? { key: usage.key } : {}),
-          ...(usage.column ? { column: usage.column } : {}),
-        },
-      });
+          ids: new Set(),
+          view: {
+            type: usage.typeId,
+            kind: usage.notice.kind,
+            message: usage.notice.message,
+            ...(usage.key ? { key: usage.key } : {}),
+            ...(usage.column ? { column: usage.column } : {}),
+          },
+        };
+        groups.set(id, group);
+      }
+      group.ids.add(change.entityId);
     }
   }
+  const entries = [...groups.values()];
   entries.sort((a, b) => NOTICE_KINDS.indexOf(a.kind) - NOTICE_KINDS.indexOf(b.kind));
-  return { new: entries.map((e) => e.view) };
+  return { new: entries.map((e) => ({ ...e.view, annotations: e.ids.size })) };
 }

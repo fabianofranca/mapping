@@ -428,7 +428,7 @@ function TogetherNotice({
   );
 }
 
-/** Applied proposal (view only) or superseded (with "Open the new one"). */
+/** Applied or rejected proposal (view only) or superseded (with "Open the new one"). */
 function ProposalStatusNotice({ names }: { readonly names: ReviewNames }) {
   const { review } = useEditor();
   const p = names.proposal;
@@ -444,6 +444,13 @@ function ProposalStatusNotice({ names }: { readonly names: ReviewNames }) {
             date: at ? formatFullDate(at, locale.value) : '',
           })}
         </span>
+      </Notice>
+    );
+  }
+  if (p.status === 'rejected') {
+    return (
+      <Notice tone="info" size="sm">
+        <span>{t('review.panel.rejectedNotice')}</span>
       </Notice>
     );
   }

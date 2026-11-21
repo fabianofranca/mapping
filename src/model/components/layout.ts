@@ -56,6 +56,7 @@ import {
   justifySpacing,
   mirrorMain,
 } from './layoutValues';
+import { mirrorX } from './direction';
 import { lineExtents } from './gridPlan';
 import { type ResolvedSizing, resolveSizing } from './sizing';
 import type { Library } from './library';
@@ -384,7 +385,9 @@ export function layoutScreen(
         const prepared = prepare(child);
         if (prepared) kidsOf.get(slotOfChild(node, child, ids))?.push(prepared);
       }
-    const sizing = resolveSizing(component, node.values);
+    // The screen's direction is the effective one of every node (no node fixes its own); no anchor: the screen
+    // has no geometry between the instances (decision 6 of #1893).
+    const sizing = resolveSizing(component, node.values, undefined, { direction });
     for (const m of sizing.messages) warn(m.code as ModelMessageTemplateCode, m.params);
     return {
       node,
@@ -803,7 +806,7 @@ export function layoutScreen(
 
   /**
    * In `rtl`, the already arranged rectangles mirrored within the content area
-   * (`x' = content − x − w`): it applies at once to `row`, `column`, `none`, grid and `wrap`. The
+   * (`mirrorX` with `left` 0): it applies at once to `row`, `column`, `none`, grid and `wrap`. The
    * slot's `padding` stays physical, because the content origin is added afterwards. In `ltr`,
    * the same ones.
    */
@@ -813,7 +816,7 @@ export function layoutScreen(
   ): readonly KidRect[] => {
     if (direction === 'ltr') return arranged.rects;
     const width = content ?? arranged.usedW;
-    return arranged.rects.map((r) => ({ ...r, x: width - r.x - r.w }));
+    return arranged.rects.map((r) => ({ ...r, x: mirrorX(r.x, r.w, 0, width) }));
   };
 
   /** `arrangeKids` of `row`, `column`, `none` and of those that wrap into lines (`wrap`). */

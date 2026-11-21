@@ -228,20 +228,20 @@ describe('derived.auditFindings and the counts', () => {
       { label: 'Big' },
     );
     const { derived, actions } = setup(p);
-    expect(derived.noticedCount.value).toBe(2);
+    expect(derived.auditedCount.value).toBe(2);
     // B has both the pending item and the warning: still one annotation, and only the pending one is incomplete.
     expect(derived.incompleteCount.value).toBe(1);
     actions.setFieldValue('B', 'label', 'Sell');
-    expect(derived.noticedCount.value).toBe(2);
+    expect(derived.auditedCount.value).toBe(2);
     expect(derived.incompleteCount.value).toBe(0);
   });
 
-  it('R5: the All filter counts what the status bar counts, an annotation whose only finding is touch-target-small', () => {
+  it('the count is the annotations with a touch-target-small warning', () => {
     const p = a11yPut(a11yWorld(3), 'button', 'A', small, { label: 'Buy' });
     const { derived } = setup(p);
-    expect(derived.noticedCount.value).toBe(1);
+    expect(derived.auditedCount.value).toBe(1);
     expect(derived.auditList.value).toHaveLength(1);
-    expect(derived.noticeCounts.value.total).toBe(derived.noticedCount.value);
+    expect(derived.auditedCount.value).toBe(derived.auditList.value.length);
   });
 
   it('keeps the same map while the findings do not change', () => {
@@ -274,7 +274,7 @@ describe('the audit costs nothing in pan and zoom', () => {
         derived.issues.value.size +
           derived.auditFindings.value.size +
           derived.incompleteCount.value +
-          derived.noticedCount.value,
+          derived.auditedCount.value,
       );
     });
     const audit = vi.mocked(model.accessibilityAudit);

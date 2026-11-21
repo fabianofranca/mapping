@@ -44,7 +44,7 @@ import {
   type ReviewShortcut,
   type Shortcut,
 } from './shortcuts';
-import { useApplyAccepted, useDecide } from '../ui/review/useReview';
+import { useApplyAccepted, useConcludeReview, useDecide } from '../ui/review/useReview';
 import {
   closeReviewLegendOnEscape,
   toggleReviewLegend,
@@ -131,7 +131,10 @@ export function useEditorShortcuts(
   const shown = review.derived.shownProject;
   // Review: deciding and applying report errors like the buttons do.
   const decide = useDecide();
-  const apply = useApplyAccepted();
+  const applyAccepted = useApplyAccepted();
+  const conclude = useConcludeReview();
+  // The apply shortcut concludes the review when it is decided (the button changes its label, not its key).
+  const apply = () => (review.derived.canConclude.peek() ? conclude() : applyAccepted());
   const reviewRef = useRef({ decide, apply });
   reviewRef.current = { decide, apply };
   const dialogsRef = useRef(dialogs);

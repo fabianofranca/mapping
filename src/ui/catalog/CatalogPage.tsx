@@ -10,11 +10,13 @@ import {
   type Project,
   codeLink,
   exampleDrawing,
+  sortNotices,
 } from '../../model';
 import { docFolderAccess, type DocFolderAccess } from '../../storage/docRepoFolders';
 import { ContainerMark } from '../ContainerMark';
 import { Button } from '../controls';
 import { messageText } from '../modelMessage';
+import { NoticeBlock, NoticeLines } from '../NoticeBadge';
 import { Markdown } from '../markdown/Markdown';
 import { ExternalDoc } from './ExternalDoc';
 import { Playground } from './Playground';
@@ -94,7 +96,10 @@ function PropertiesTable({ fields }: { readonly fields: readonly CatalogField[] 
                 {field.accepts?.free === true && t('catalog.page.refFree')}
               </td>
               <td>{field.default === undefined ? '' : String(field.default)}</td>
-              <td>{field.description}</td>
+              <td>
+                {field.description}
+                <NoticeLines notices={field.notices} />
+              </td>
             </tr>
           ))}
         </tbody>
@@ -442,6 +447,9 @@ export function CatalogPage({
           {layer !== undefined && <> · {layer.name}</>}
         </p>
         {entry.type.description !== undefined && <p>{entry.type.description}</p>}
+        {sortNotices(entry.type.notices ?? []).map((notice, index) => (
+          <NoticeBlock key={`${notice.kind}-${index}`} notice={notice} />
+        ))}
         {entry.componentProblem !== undefined && (
           <p class="field-error" role="alert">
             {t('catalog.page.componentProblem', {
