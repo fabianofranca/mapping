@@ -46,6 +46,19 @@ function base(): Raw {
 
 const layer = (s: Raw): Raw => s.layers[0];
 const type = (s: Raw, i = 0): Raw => layer(s).annotationTypes[i];
+
+/** A declared file format (formatVersion 20) and the helper that puts a `fileFormats` value in the spec. */
+const fmt = {
+  id: 'csv',
+  name: 'CSV',
+  extension: 'csv',
+  plugin: 'plugins/csv.js',
+  contract: 1,
+};
+const ff = (s: Raw, value: unknown): void => {
+  s.formatVersion = 20;
+  s.fileFormats = value;
+};
 const field = (s: Raw, i = 0): Raw => type(s).fields[i];
 
 const container = (extra: Raw): Raw => ({
@@ -715,6 +728,14 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
     'spec.ownerOnlySelf',
     (s) => ((type(s).allowedChildren = ['t']), (type(s).requiresOwner = true)),
   ],
+  // File formats (formatVersion 20)
+  ['spec.fileFormatsShape', (s) => ff(s, 'x')],
+  ['spec.fileFormatExamplesShape', (s) => ff(s, [{ ...fmt, examples: 'x' }])],
+  ['spec.fileFormatKeyUnknown', (s) => ff(s, [{ ...fmt, zz: 1 }])],
+  ['spec.fileFormatIdInvalid', (s) => ff(s, [{ ...fmt, id: 'A b' }])],
+  ['spec.fileFormatExtensionInvalid', (s) => ff(s, [{ ...fmt, extension: '.csv' }])],
+  ['spec.fileFormatContractInvalid', (s) => ff(s, [{ ...fmt, contract: 2 }])],
+  ['spec.fileFormatScopeInvalid', (s) => ff(s, [{ ...fmt, scope: 'layer' }])],
   // Tokens and icons
   ['spec.tokensShape', (s) => (s.tokens = 'x')],
   ['spec.tokenKeyUnknown', (s) => (s.tokens = { modes: ['a'], values: {}, zz: 1 })],

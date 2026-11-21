@@ -768,3 +768,78 @@ describe('font warning texts (#2089, #2121)', () => {
     expect(fontWarningText('fonts/A.ttf', true)).toBeNull();
   });
 });
+
+describe('validate_library with file formats (formatVersion 20)', () => {
+  const FORMAT = {
+    id: 'csv',
+    name: 'CSV',
+    extension: 'csv',
+    plugin: 'plugins/csv.js',
+    contract: 1,
+    examples: [{ name: 'Small', file: 'examples/small.csv' }],
+  };
+
+  /** A Material 3 copy turned into a 20 that declares one format; the files are the caller's. */
+  function formatPackage(name: string): string {
+    const dir = join(root, 'formats', name);
+    cpSync(MATERIAL3, dir, { recursive: true });
+    const specPath = join(dir, 'material3.spec.json');
+    const raw = JSON.parse(readFileSync(specPath, 'utf8')) as Record<string, unknown>;
+    writeFileSync(
+      specPath,
+      JSON.stringify({ ...raw, formatVersion: 20, fileFormats: [FORMAT] }),
+    );
+    return `formats/${name}`;
+  }
+
+  function addFiles(dir: string, plugin: string | null): void {
+    mkdirSync(join(root, dir, 'plugins'), { recursive: true });
+    mkdirSync(join(root, dir, 'examples'), { recursive: true });
+    if (plugin !== null) writeFileSync(join(root, dir, 'plugins', 'csv.js'), plugin);
+    writeFileSync(join(root, dir, 'examples', 'small.csv'), 'a,b\n1,2\n');
+  }
+
+  it('level 1 reads the .js as a package file (it only runs from level 2) and the summary counts fileFormats', async () => {
+    const dir = formatPackage('ok');
+    // Code that would throw if it ran: level 1 only reads it as text.
+    addFiles(dir, 'throw new Error("boom");\n');
+    const result = ok(
+      await mcp.call<Validated>('validate_library', { path: dir, level: 1 }),
+    );
+    expect(result.errors).toEqual([]);
+    expect(result.valid).toBe(true);
+    expect(result.spec).toMatchObject({ formatVersion: 20, fileFormats: 1 });
+  });
+
+  it('a missing plugin is a file error at fileFormats[0].plugin', async () => {
+    const dir = formatPackage('no-plugin');
+    addFiles(dir, null);
+    const result = ok(await mcp.call<Validated>('validate_library', { path: dir }));
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        path: 'fileFormats[0].plugin',
+        message: 'file not found: plugins/csv.js',
+      }),
+    );
+  });
+
+  it('a plugin over 1 MiB is an error at fileFormats[0].plugin, counted in the package limits', async () => {
+    const dir = formatPackage('big');
+    addFiles(dir, 'a'.repeat(1024 * 1024 + 1));
+    const result = ok(await mcp.call<Validated>('validate_library', { path: dir }));
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        path: 'fileFormats[0].plugin',
+        message: 'the plugin is larger than 1048576 bytes (1048577 bytes)',
+      }),
+    );
+  });
+
+  it('a package without fileFormats has no fileFormats in the summary', async () => {
+    const result = ok(
+      await mcp.call<Validated>('validate_library', { path: 'lib/material3' }),
+    );
+    expect(result.spec).not.toHaveProperty('fileFormats');
+  });
+});

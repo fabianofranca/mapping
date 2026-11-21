@@ -1,0 +1,12 @@
+class,attribute,type,required,example
+Customer,id,Long,yes,1001
+Customer,name,String,yes,"Doe, Jane"
+Customer,email,String,no,
+Customer,birthDate,Date,no,1990-05-17
+Order,id,Long,yes,5001
+Order,total,Double,yes,59.90
+Order,quantity,Int,yes,2
+Order,paid,Boolean,yes,false
+Order,items,List,no,
+NewOrder,customerId,Long,yes,1001
+NewOrder,note,String,no,O'Brien's gift

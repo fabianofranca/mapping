@@ -91,3 +91,26 @@ describe('readPackageFromDirectory: package limit', () => {
     expect(reads).toEqual(['ok.json']);
   });
 });
+
+describe('a format plugin (.js) travels as text in the package (formatVersion 20)', () => {
+  it('the zip gives the plugin as text and the example (not text) as a blob', async () => {
+    const result = await readPackageFromZip(
+      await zipOf({ 'plugins/csv.js': 'export {};', 'examples/a.csv': 'a,b' }),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.files.get('plugins/csv.js')).toBe('export {};');
+    expect(result.files.get('examples/a.csv')).toBeInstanceOf(Blob);
+  });
+
+  it('the folder gives the plugin as text (read with text(), not arrayBuffer())', async () => {
+    const reads: string[] = [];
+    const result = await readPackageFromDirectory(
+      folderOf([fileHandle('csv.js', 10, reads), fileHandle('a.csv', 5, reads)]),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.files.get('csv.js')).toBe('x'.repeat(10));
+    expect(result.files.get('a.csv')).toBeInstanceOf(Blob);
+  });
+});
