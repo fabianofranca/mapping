@@ -1534,7 +1534,7 @@
           "enum": ["project", "container"],
           "description": "What the plugin sees: the whole project (default) or one container."
         },
-        "description": { "type": "string" },
+        "description": { "type": "string", "minLength": 1 },
         "examples": {
           "type": "array",
           "items": { "$ref": "#/$defs/fileFormatExample" }

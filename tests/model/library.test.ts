@@ -1211,6 +1211,26 @@ describe('validateLibrary: fileFormats (formatVersion 20)', () => {
     ]);
   });
 
+  it('a .js outside a version 20 specialization is ignored as before (no warning)', () => {
+    const files = [...miniPackage(), { path: 'scripts/demo.js', text: PLUGIN }];
+    const report = validate(files, { level: 1 });
+    expect(report.warnings.map(brief)).toEqual([]);
+  });
+
+  it('a plugin whose content was not read is a notRead error, not a silent pass', () => {
+    const files = v20Package().map((f) =>
+      f.path === 'plugins/csv.js' ? { path: f.path, binary: true as const } : f,
+    );
+    expect(validate(files, { level: 1 }).errors.map(brief)).toEqual([
+      [
+        'error',
+        'plugins/csv.js',
+        '',
+        'the file content was not read (expected the text)',
+      ],
+    ]);
+  });
+
   it('a version 19 specialization with fileFormats stops at the parser error', () => {
     const files = patch(v20Package(), SPEC, ['formatVersion'], 19);
     expect(validate(files, { level: 1 }).errors.map(brief)).toEqual([

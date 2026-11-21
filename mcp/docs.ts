@@ -36,7 +36,7 @@ export const DOC_RESOURCES: readonly DocResource[] = [
     name: 'spec-format',
     uri: 'mapping-docs://SPEC-FORMAT.md',
     title: 'Specialization format',
-    description: `Format of the specialization file (formatVersion 1 to ${SPEC_FORMAT_VERSION}): layers, annotation types, fields, references, platforms, sources and, in v4, the library package (components, documents, examples, sources, executable sources and version contract) and, in v8, suggestions in text fields; in v16, the signature sheets, fieldModels, calls and formats; in v17, the slots of a type (accepts, max) and code.slots; in v18, accessibility (role, label, touch target and parts of a type); in v19, the copy-field migration step.`,
+    description: `Format of the specialization file (formatVersion 1 to ${SPEC_FORMAT_VERSION}): layers, annotation types, fields, references, platforms, sources and, in v4, the library package (components, documents, examples, sources, executable sources and version contract) and, in v8, suggestions in text fields; in v16, the signature sheets, fieldModels, calls and formats; in v17, the slots of a type (accepts, max) and code.slots; in v18, accessibility (role, label, touch target and parts of a type); in v19, the copy-field migration step; in v20, fileFormats (the file formats the specialization handles through a plugin of the package).`,
     text: specFormat,
   },
   {

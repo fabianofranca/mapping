@@ -33,7 +33,7 @@ import {
 } from './libraryComponentNodes';
 import { libraryIssue } from './libraryIssue';
 import { checkSignatures } from './librarySignature';
-import { MAX_PLUGIN_BYTES } from './fileFormats';
+import { FILE_FORMATS_VERSION, MAX_PLUGIN_BYTES } from './fileFormats';
 import type { ModelMessageTemplateCode } from './messages';
 import type { ModelMessage } from './modelMessage';
 
@@ -480,7 +480,10 @@ function level1(
   for (const file of files) {
     const lower = file.path.toLowerCase();
     if (referenced.has(file.path)) continue;
-    if (lower.endsWith('.json') || lower.endsWith('.md') || lower.endsWith('.js')) {
+    // A `.js` is a plugin candidate only where `fileFormats` exists (v20); before it, it is ignored as before.
+    const plugin =
+      lower.endsWith('.js') && pkg.spec.formatVersion >= FILE_FORMATS_VERSION;
+    if (lower.endsWith('.json') || lower.endsWith('.md') || plugin) {
       out.warning(file.path, '', 'library.notReferenced');
     }
   }
@@ -506,6 +509,21 @@ function signatureChecks(pkg: Package, referenced: Set<string>, out: Collector):
 /** Bytes of the UTF-8 text (what the plugin file weighs on disk). */
 const utf8Bytes = (text: string): number => new TextEncoder().encode(text).length;
 
+/** The plugin was read (`library.notRead` otherwise) and has at most `MAX_PLUGIN_BYTES`. */
+function checkPluginText(
+  plugin: LibraryFile,
+  path: string,
+  specPath: string,
+  out: Collector,
+): void {
+  if (plugin.text === undefined)
+    return void out.error(plugin.path, '', 'library.notRead');
+  const size = utf8Bytes(plugin.text);
+  if (size > MAX_PLUGIN_BYTES) {
+    out.error(specPath, path, 'library.pluginTooLarge', { max: MAX_PLUGIN_BYTES, size });
+  }
+}
+
 /**
  * Level 1 (formatVersion 20): each declared format has its plugin in the package (at most
  * `MAX_PLUGIN_BYTES`) and each example its `file` and `input`. Running them is level 2 and 3 (MCP).
@@ -521,12 +539,8 @@ function fileFormatChecks(pkg: Package, referenced: Set<string>, out: Collector)
       return file;
     };
     const plugin = cite(format.plugin, `${base}.plugin`);
-    if (plugin?.text !== undefined && utf8Bytes(plugin.text) > MAX_PLUGIN_BYTES) {
-      out.error(pkg.specPath, `${base}.plugin`, 'library.pluginTooLarge', {
-        max: MAX_PLUGIN_BYTES,
-        size: utf8Bytes(plugin.text),
-      });
-    }
+    if (plugin !== undefined)
+      checkPluginText(plugin, `${base}.plugin`, pkg.specPath, out);
     (format.examples ?? []).forEach((example, ei) => {
       const path = `${base}.examples[${ei}]`;
       cite(example.file, `${path}.file`);
