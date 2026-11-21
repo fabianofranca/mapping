@@ -1,4 +1,4 @@
-# Closing brings main in when the epic PR cannot merge — [Não lançado] (épico `epic/closing-mergeable`, PR #2489, MCP unchanged, schema v22 unchanged)
+# Closing brings main in when the epic PR cannot merge — 2026-11-21 (épico `epic/closing-mergeable`, PR #2492, MCP unchanged, schema v22 unchanged)
 
 ## Corrigido
 
