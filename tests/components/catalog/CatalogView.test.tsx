@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { signal } from '@preact/signals';
 import {
   act,
@@ -779,5 +781,56 @@ describe('validation', () => {
   it('a package with no readable specialization renders empty without throwing', () => {
     view({}, buildCatalog([{ path: 'x.json', text: '{}' }]));
     expect(screen.getByText(t('catalog.view.empty'))).toBeTruthy();
+  });
+});
+
+describe('library notices on the component page (stage #2085)', () => {
+  const avisos = buildCatalog([
+    {
+      path: 'avisos-demo.json',
+      text: readFileSync(
+        join(__dirname, '../../e2e/fixtures/avisos-demo.spec.json'),
+        'utf8',
+      ),
+    },
+  ]);
+  const open = async (name: string) => {
+    const utils = view({ specId: 'avisos-demo' }, avisos);
+    await utils.user.click(entryButton(name));
+    return utils;
+  };
+
+  it('the Card page shows the type block with since and the source, and the field and column lines', async () => {
+    await open('Card');
+    const page = screen.getByRole('article', { name: 'Card' });
+    const block = within(page).getByRole('note', {
+      name: 'Notice Pending: The contract accepts avatar; the SDK does not yet.',
+    });
+    expect(block.textContent).toContain('2026-11-04');
+    expect(block.querySelector('.notice-ref')?.textContent).toBe('contract/card.md');
+    const row = (key: string) =>
+      within(page).getByText(key, { selector: 'code' }).closest('tr') as HTMLElement;
+    expect(
+      within(row('style')).getByRole('note', { name: 'Notice Deprecated: Use variant.' }),
+    ).toBeTruthy();
+    expect(
+      within(row('variant')).getByRole('note', {
+        name: 'Notice Diverges: The sources disagree on the default.',
+      }),
+    ).toBeTruthy();
+    // The column row already is the column: no "Column x:" prefix.
+    const label = within(row('label')).getByRole('note', {
+      name: 'Notice Pending: Column not in the SDK yet.',
+    });
+    expect(label.textContent).not.toContain('label:');
+    expect(within(row('items')).queryByRole('note')).toBeNull();
+  });
+
+  it('the Simple page shows only the line on draft', async () => {
+    await open('Simple');
+    const page = screen.getByRole('article', { name: 'Simple' });
+    const notes = within(page).getAllByRole('note');
+    expect(notes).toHaveLength(1);
+    expect(notes[0]!.closest('tr')?.textContent).toContain('draft');
   });
 });

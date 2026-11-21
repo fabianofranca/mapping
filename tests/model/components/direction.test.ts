@@ -3,6 +3,7 @@
 // `font.align`; `direction` per node; `$direction`; `mirror` of the icon and of the path.
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
+import { mirrorX } from '../../../src/model/components/direction';
 import type { IconSet } from '../../../src/model/components/icons';
 import {
   approximateMeasurer,
@@ -418,5 +419,27 @@ describe('mirror: icon and path with mirror', () => {
     const t = host({ type: 'row' }, [pathNode({ mirror: true, direction: 'ltr' })]);
     const rtl = build(t, 'rtl').find('p') as unknown as { transform: number[] };
     expect(rtl.transform[0]).toBe(2);
+  });
+});
+
+describe('mirrorX', () => {
+  it("mirrors inside a content area that starts at 0: x' = content − x − width", () => {
+    expect(mirrorX(10, 40, 0, 200)).toBe(150);
+    expect(mirrorX(0, 200, 0, 200)).toBe(0);
+  });
+
+  it('mirrors inside a content area that starts at `left`: 2·left + content − x − width', () => {
+    // area 100..300 (left 100, content 200): a box at 110 wide 40 ends at 300 − 10 − 40 = 250
+    expect(mirrorX(110, 40, 100, 200)).toBe(250);
+    expect(mirrorX(100, 200, 100, 200)).toBe(100);
+  });
+
+  it('does not round: the caller does', () => {
+    expect(mirrorX(10.5, 20.25, 0, 100)).toBe(69.25);
+  });
+
+  it('is its own inverse', () => {
+    const once = mirrorX(37, 52, 14, 180);
+    expect(mirrorX(once, 52, 14, 180)).toBe(37);
   });
 });

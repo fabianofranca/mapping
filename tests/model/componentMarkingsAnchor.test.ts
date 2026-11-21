@@ -3,19 +3,25 @@
 import { describe, expect, it } from 'vitest';
 import {
   addComponentMarking,
+  addContainer,
+  applySpecialization,
   approximateMeasurer,
   componentAnchoredPlacement,
   componentSize,
   createMarking,
+  fitMarking,
   imageCanvasRect,
+  loadSpecComponents,
+  parseSpec,
   setContainerDensity,
   snapToAnchor,
+  type ComponentCatalog,
   type NewComponentArgs,
   validateProject,
   type Project,
 } from '../../src/model';
 import { FIT_SPEC_ID, LONG_LABEL, fitCatalog, fitProject } from './fitFixtures';
-import { marking } from './fixtures';
+import { emptyProject, marking } from './fixtures';
 
 const catalog = fitCatalog();
 const T = { x: 400, y: 300, width: 200, height: 100 };
@@ -157,5 +163,126 @@ describe('settling takes the new instance to a different space than the target',
     expect(() =>
       addComponentMarking(p, catalog, canvasArgs({ to: 'nothing' }), approximateMeasurer),
     ).toThrowError(/^anchor-missing/);
+  });
+});
+
+// AM2 (#2150, decision 7 of #1893): the creation measures at the box it snaps to, repeating until the size
+// repeats (at most 3 measurements with the anchor), so a size that depends on `$anchor.x` is born at the box
+// it draws at.
+describe('a size that depends on $anchor.x is born at the box it draws at', () => {
+  const STEP_SPEC = 'step';
+
+  /** A width by steps of `$anchor.x`; no anchor (the first measure) is the `else` of the comparisons. */
+  const stepComponent = (id: string, width: unknown) => ({
+    format: 'mapping-component',
+    formatVersion: 4,
+    id,
+    name: id,
+    size: { width: 100, height: 40 },
+    minSize: { width: 10, height: 10 },
+    sizing: { width },
+    template: {
+      type: 'frame',
+      layout: { type: 'column', padding: 0 },
+      children: [{ type: 'rect', width: 'fill', height: 20, fill: '#ffffff' }],
+    },
+  });
+  const COMPONENTS: Record<string, unknown> = {
+    // x > 40: 60, x > 20: 80, else 100. From the top-centered box: 100 (x 50) → 60 (x 30) → 80 (x 40) → 80.
+    converges: stepComponent('converges', {
+      $if: { $gt: [{ $field: '$anchor.x' }, 40] },
+      then: 60,
+      else: { $if: { $gt: [{ $field: '$anchor.x' }, 20] }, then: 80, else: 100 },
+    }),
+    // x > 40: 60, else 100. 100 (x 50) → 60 (x 30) → 100 (x 50) → 60: it never settles.
+    oscillates: stepComponent('oscillates', {
+      $if: { $gt: [{ $field: '$anchor.x' }, 40] },
+      then: 60,
+      else: 100,
+    }),
+  };
+  const specJson = {
+    format: 'mapping-spec',
+    formatVersion: 4,
+    id: STEP_SPEC,
+    name: 'Step',
+    version: 1,
+    layers: [
+      {
+        id: 'components',
+        name: 'Components',
+        color: '#6750A4',
+        annotationTypes: Object.keys(COMPONENTS).map((id) => ({
+          id,
+          name: id,
+          component: `components/${id}.json`,
+          fields: [],
+        })),
+      },
+    ],
+  };
+  const parsed = parseSpec(specJson);
+  if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+  const stepSpec = parsed.spec;
+  const stepCatalog: ComponentCatalog = (() => {
+    const texts = new Map(
+      Object.entries(COMPONENTS).map(([id, c]) => [
+        `specs/step/components/${id}.json`,
+        JSON.stringify(c),
+      ]),
+    );
+    const loaded = loadSpecComponents(stepSpec, 'specs/step/step.spec.json', 1, (path) =>
+      texts.get(path),
+    );
+    if (loaded.problems.length > 0) throw new Error(loaded.problems.join('\n'));
+    return new Map([[STEP_SPEC, loaded]]);
+  })();
+
+  function stepProject(): Project {
+    let p = applySpecialization(emptyProject(), stepSpec, {
+      newId: (() => {
+        let n = 0;
+        return () => `ST${++n}`;
+      })(),
+      packageSpecName: 'step.spec.json',
+    });
+    p = addContainer(p, {
+      id: 'I1',
+      file: 'images/screen.png',
+      width: 1000,
+      height: 800,
+    });
+    return createMarking(p, { id: 'T', containerId: 'I1', rect: T });
+  }
+
+  const born = (typeId: string): Project =>
+    addComponentMarking(
+      stepProject(),
+      stepCatalog,
+      {
+        markingId: 'B',
+        annotationId: 'A_B',
+        containerId: 'I1',
+        parentId: null,
+        specId: STEP_SPEC,
+        typeId,
+        anchor: { to: 'T', side: 'top', align: 'center' },
+      },
+      approximateMeasurer,
+    );
+
+  it('a size that converges is born at the size the box it draws at asks for', () => {
+    const p = born('converges');
+    expect(marking(p, 'B').rect.width).toBe(80);
+    // What the drawing reads at that box gives the same size: the measures after the creation change nothing.
+    expect(fitMarking(p, stepCatalog, 'B', approximateMeasurer)).toBe(p);
+    expect(snapToAnchor(p, 'B').project).toBe(p);
+  });
+
+  it('a size that does not converge stops after 3 measurements with the anchor, deterministically', () => {
+    const p = born('oscillates');
+    // measures with the anchor: 60, 100, 60: the third is the result (a fourth would give 100).
+    expect(marking(p, 'B').rect.width).toBe(60);
+    expect(marking(born('oscillates'), 'B').rect).toEqual(marking(p, 'B').rect);
   });
 });

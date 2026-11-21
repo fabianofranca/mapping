@@ -9,7 +9,6 @@ import {
   type Project,
   type ProjectContainer,
   type Space,
-  type SpecNoticeKind,
   type ThreadAnchor,
   type ThreadStatusFilter,
 } from '../model';
@@ -76,11 +75,7 @@ export interface EditorUi {
   readonly listIncompleteOnly: Signal<boolean>;
   /** Incomplete window: only the pending items of the visible layers (B5). */
   readonly incompleteVisibleOnly: Signal<boolean>;
-  /** Warnings window: only the warnings of one `kind` (`null` = all). */
-  readonly noticeKind: Signal<SpecNoticeKind | null>;
-  /** Warnings window: only the warnings some annotation uses (unchecked shows the unused ones). */
-  readonly noticesInUseOnly: Signal<boolean>;
-  /** Warnings window: only the annotations of the visible layers. */
+  /** Notices window (accessibility warnings): only the annotations of the visible layers. */
   readonly noticesVisibleOnly: Signal<boolean>;
   /** Annotation to scroll to (and focus) in the panel as soon as it appears. */
   readonly focusAnnotation: Signal<string | null>;
@@ -198,8 +193,6 @@ function buildEditorUi(): EditorUi {
     listShowEmpty: signal<boolean>(false),
     listIncompleteOnly: signal<boolean>(false),
     incompleteVisibleOnly: signal<boolean>(false),
-    noticeKind: signal<SpecNoticeKind | null>(null),
-    noticesInUseOnly: signal<boolean>(true),
     noticesVisibleOnly: signal<boolean>(false),
     focusAnnotation: signal<string | null>(null),
     refPreview: signal<RefPreviewTarget | null>(null),

@@ -10,7 +10,6 @@ import {
   acceptedPending,
   buildIncompleteList,
   buildListing,
-  buildNoticeList,
   changeStatus,
   changeType,
   checkRemoteImageUrl,
@@ -25,14 +24,14 @@ import {
   markingLockStates,
   markingVisibility,
   memoByProject,
-  noticeCountsWithAudit,
-  noticedCountWithAudit,
+  auditedCount,
   previewProject,
   projectIndex,
   structuralMarkingIds,
   suggestDensities,
   projectIssues,
   reviewKey,
+  canConcludeProposal,
   reviewProgress,
   reviewTree,
   sceneRemoteImageUrls,
@@ -64,8 +63,6 @@ import {
   type Marking,
   type MarkingLockState,
   type MarkingVisibility,
-  type NoticeCounts,
-  type NoticeGroup,
   type PatchResult,
   type Project,
   type ProjectContainer,
@@ -140,15 +137,11 @@ export interface EditorDerived {
   readonly incompleteList: ReadonlySignal<readonly IncompleteImage[]>;
   /** How many annotations are incomplete in the project (all layers). */
   readonly incompleteCount: ReadonlySignal<number>;
-  /** Specialization notices with the affected annotations, for the Notices window (stage #486). */
-  readonly noticeList: ReadonlySignal<readonly NoticeGroup[]>;
-  /** Counts of annotations with a notice (by `kind` and in total), with the window's filters. */
-  readonly noticeCounts: ReadonlySignal<NoticeCounts>;
   /**
-   * How many annotations have some notice or a `touch-target-small` warning (window tab and status
-   * bar; without filters).
+   * How many annotations have a `touch-target-small` warning (Notices window tab and status bar;
+   * without filters).
    */
-  readonly noticedCount: ReadonlySignal<number>;
+  readonly auditedCount: ReadonlySignal<number>;
   /**
    * The accessibility audit's warnings (`touch-target-small`) by marking (stage #1127); only the
    * markings with a warning appear. The same map while the warnings do not change. The pending
@@ -792,21 +785,8 @@ export function createEditorDerived(
 
   const incompleteCount = computed(() => issues.value.size);
 
-  // Specialization notices (stage #486): read from `model/noticeList.ts`, memoized by the project
-  // version; only the choice of filters and visible layers is recomputed, never pan or zoom.
-  const noticeFilters = computed(() => ({
-    inUseOnly: ui.noticesInUseOnly.value,
-    onlyLayers: ui.noticesVisibleOnly.value ? visible.value : undefined,
-  }));
-  const noticeList = computed((): readonly NoticeGroup[] => {
-    const p = project.value;
-    if (!p) return [];
-    return buildNoticeList(p, { ...noticeFilters.value, kind: ui.noticeKind.value });
-  });
-  const noticedCountSignal = computed(() => {
-    const p = project.value;
-    return p ? noticedCountWithAudit(p, audit.value) : 0;
-  });
+  // The Notices window's count (stage #2085): the annotations with an accessibility warning.
+  const auditedCountSignal = computed(() => auditedCount(audit.value));
   // The Accessibility section: only the "Only visible layers" filter applies to it.
   let lastAuditRows = NO_AUDIT_ROWS;
   const auditList = computed((): readonly AuditRow[] => {
@@ -824,17 +804,6 @@ export function createEditorDerived(
     if (same) return lastAuditRows;
     lastAuditRows = next;
     return next;
-  });
-  const noticeCountsSignal = computed((): NoticeCounts => {
-    const p = project.value;
-    if (!p)
-      return {
-        unit: 'annotations',
-        total: 0,
-        byKind: { removed: 0, deprecated: 0, diverges: 0, pending: 0 },
-        present: [],
-      };
-    return noticeCountsWithAudit(p, noticeFilters.value, auditList.value);
   });
 
   let lastOrigins = NO_IMAGE_ORIGINS;
@@ -978,9 +947,7 @@ export function createEditorDerived(
     listing,
     incompleteList,
     incompleteCount,
-    noticeList,
-    noticeCounts: noticeCountsSignal,
-    noticedCount: noticedCountSignal,
+    auditedCount: auditedCountSignal,
     auditFindings,
     auditList,
     threads: createThreadDerived(project, ui, threadSources),
@@ -1203,6 +1170,11 @@ export interface ReviewDerived {
    * read-only and no apply of this proposal is in progress.
    */
   readonly canApply: ReadonlySignal<boolean>;
+  /**
+   * The review can be concluded (stage #2085): the open proposal has nothing undecided and nothing
+   * accepted but unapplied. The button becomes **Conclude review**.
+   */
+  readonly canConclude: ReadonlySignal<boolean>;
   /** An apply of the open proposal is in progress (`hold`): the review does not reevaluate. */
   readonly applying: ReadonlySignal<boolean>;
   /**
@@ -1556,6 +1528,17 @@ export function createReviewDerived(
     return v !== null && v.ok && v.changeIds.length > 0 && !store.readOnly.value;
   });
 
+  const canConclude = computed(() => {
+    const p = proposal.value;
+    const progressNow = progress.value;
+    return (
+      p !== null &&
+      progressNow !== null &&
+      canConcludeProposal(p, progressNow) &&
+      !applying.value
+    );
+  });
+
   const preview = computed((): PatchResult | null => {
     const p = proposal.value;
     const current = project.value;
@@ -1661,6 +1644,7 @@ export function createReviewDerived(
     validation,
     invalid,
     canApply,
+    canConclude,
     applying,
     hold,
     preview,

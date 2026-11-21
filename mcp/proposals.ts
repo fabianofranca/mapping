@@ -106,7 +106,7 @@ export class Proposals {
 
     // Files in `images/` that other proposals can still apply: do not reuse the name. The
     // open previous one counts as `superseded` (the state it will have): its accepted ones stay
-    // reserved, the pending ones are released. An applied or withdrawn previous one does not change.
+    // reserved, the pending ones are released. An applied, rejected or withdrawn previous one does not change.
     const reserved = new Set<string>();
     const reservedSpace: ProjectContainer[] = [];
     for (const stored of all.proposals) {
@@ -280,6 +280,12 @@ export class Proposals {
         ...(updated.status === 'applied'
           ? {
               note: `the previous proposal was already applied and stays \`applied\` (it is history and does not change status); the app shows on it "Applied · superseded by ${next.title}", with the link Open the new one`,
+            }
+          : {}),
+        // The rejected one is history too: the user concluded the review with nothing applied.
+        ...(updated.status === 'rejected'
+          ? {
+              note: 'the previous proposal was rejected and stays `rejected` (the user rejected every change and concluded the review; it is history and does not change status)',
             }
           : {}),
       };

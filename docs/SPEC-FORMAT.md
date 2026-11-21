@@ -1064,7 +1064,7 @@ The four `kind` values have a **fixed severity**, in the order `removed` > `depr
 | `pending`    | Pendente / Pending    | One source already has it and the other does not yet; the name of the platform or source opens the `message`, as in `compose: …` (the app core carries no platform name). |
 
 - `notices`: a list (it may be empty) on the type (`layers[n].annotationTypes[m].notices`), on the field (`…fields[k].notices`), and on the `table` column (`…fields[k].columns[j].notices`). Two notices with the same `kind` and the same `message` in the list are the error `repeated notice`, at the path of the second one. A `kind` outside the four, an empty or whitespace-only `message`, a `since` that is not a real date, an empty `ref`, and any other property are errors. In a version earlier than 10 the error is `only allowed with formatVersion 10`, at the exact path.
-- **The notice only informs.** No notice, not even `removed`, prevents importing the specialization, applying it, creating an annotation of the type, or accepting a proposal that uses it. The notice is also not a pending item: the **Incomplete** window and the problem codes of the annotations do not change. The Details show the field's notice even when the field is empty; the Notices window and the count only count the field with a value.
+- **The notice only informs.** No notice, not even `removed`, prevents importing the specialization, applying it, creating an annotation of the type, or accepting a proposal that uses it. The notice is also not a pending item: the **Incomplete** window and the problem codes of the annotations do not change. The Catalog page shows the type's, the field's and the column's notices whether or not any annotation uses them; the annotation Details and the proposal review show none; the Notices window and its count do not show library notices (the window has only accessibility).
 - **Outside the version contract:** adding, changing, or removing `notices` is compatible and never requires a migration (see "Version contract"). `diffSpecs` ignores `notices` and produces no difference, so whoever generates the specialization rewrites all the notices from its source (the same `ref`; see "Fidelity notices and notice sources"), and the notice disappears by itself when the difference between the sources disappears. Updating the specialization only because of notices shows no impact.
 
 ### Fidelity notices and notice sources
@@ -1089,10 +1089,9 @@ The four `kind` values have a **fixed severity**, in the order `removed` > `depr
 - A fidelity notice does not repeat what a tool-generated `pending` already says.
 - **Accessibility audit:** the `accessible-label-missing` pending item and the `touch-target-small` warning come from the `accessibility` keys of the type, not from `notices`; a fidelity notice does not repeat them (see "Accessibility (`accessibility`)").
 
-**How the app shows the two (no new control):**
+**How the app shows the two (no new control):** the **Notices** window has only accessibility warnings, so the `kind` of a library notice (`diverges`, `pending`) is not filtered anywhere; the notices are read on the Catalog page.
 
-- **Notices window:** fidelity notices and tool-generated ones are `notices` of the specialization and go into the **same list**, grouped by notice and sorted by severity. The `kind` filter separates `diverges` from `pending`, but it does **not** separate the curated `pending` (from a doc) from the generated `pending` (from a sheet): both are `pending`. The group header shows the badge, the place, the message, the `since`, and the count, **not the `ref`**.
-- **The source only appears in the Details:** `Source: <ref>`, on the type's notice (`NoticeBlock`, at the top of the annotation) and on the field's and the column's (`NoticeLine`, below the control). Choosing a group's row in the window opens the annotation's Details, where the source is.
+- **The source shows on the Catalog page:** `Source: <ref>`, on the type's notice (`NoticeBlock`, under the type's description) and on the field's and the column's (`NoticeLine`, in the **Description** cell of the properties table). The annotation's Details carry no notices; the Catalog page is where the source is.
 
 ## Sources (sources)
 

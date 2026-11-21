@@ -31,7 +31,6 @@ import {
   type SimpleEditorProps,
 } from './FieldEditors';
 import { linkedCellTargets, type LinkedTargets } from './linkedRef';
-import { NoticeLines } from './NoticeBadge';
 import { RefCell } from './RefCell';
 import type { ActionResult } from '../store/history';
 import { issueMessage, refButtonName } from './typedText';
@@ -515,10 +514,6 @@ export function TableEditor({
         </div>
       )}
       {extra?.note && <p class="muted table-field-note">{extra.note}</p>}
-      <NoticeLines notices={field.notices} />
-      {field.columns.map((column) => (
-        <NoticeLines key={column.key} notices={column.notices} column={column.key} />
-      ))}
       {confirm && confirmRow && (
         <Dialog
           title={t('ref.deleteTitle')}

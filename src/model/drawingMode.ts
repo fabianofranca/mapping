@@ -1,13 +1,13 @@
 import { anchorValues } from './componentValues';
 import { componentAnchorDefaults, type InstanceAnchor } from './components/anchor';
-import type { ComponentFile } from './components/componentFormat';
+import type { AnchorSide, ComponentFile } from './components/componentFormat';
 import { applyTokens, type ResolvedTokens } from './components/tokens';
 import { effectiveDensity } from './density';
 import { effectiveDirection } from './direction';
 import { fail } from './errors';
 import { updateById } from './project';
 import { projectIndex } from './projectIndex';
-import type { Marking, Project, ReadingDirection } from './types';
+import type { Marking, Project, ReadingDirection, Rect } from './types';
 
 // Drawing mode (schema v18, "faithful components" stage): picks the mode of the specializations'
 // `tokens` (`light`, `dark`…). It belongs to the project; the container can pin its own. It does
@@ -118,6 +118,31 @@ export function componentForDrawing(
 }
 
 /**
+ * The `$anchor.*` of an instance (`anchorValues` with the component's defaults at the space's
+ * density): the one builder the drawing (`componentDrawings`) and the measurements
+ * (`measuringAnchor`) share, so the measured size is the drawn one.
+ */
+export function instanceAnchorOf(input: {
+  /** The marking's `rect` (pixels of its own space). */
+  readonly rect: Rect;
+  /** The `rect` of the anchor marking, in the same space. */
+  readonly anchorRect: Rect;
+  /** The `side` declared on `marking.anchor`, if any. */
+  readonly side: AnchorSide | undefined;
+  readonly component: ComponentFile;
+  /** The density of the marking's space (`effectiveDensity`). */
+  readonly density: number;
+}): InstanceAnchor {
+  return anchorValues({
+    rect: input.rect,
+    anchorRect: input.anchorRect,
+    side: input.side,
+    defaults: componentAnchorDefaults(input.component, input.density),
+    density: input.density,
+  });
+}
+
+/**
  * The anchor of an existing marking in the form the instance reads (`$anchor.*`), for the
  * MEASUREMENTS (`fitMarking`, the arranging): the same one the drawing receives
  * (`componentDrawings`), with the marking's current `rect`, the stored side or, without it, the
@@ -133,13 +158,12 @@ export function measuringAnchor(
   if (anchor == null) return undefined;
   const target = projectIndex(p).markings.get(anchor.to);
   if (target === undefined) return undefined;
-  const density = effectiveDensity(p, marking.containerId);
-  return anchorValues({
+  return instanceAnchorOf({
     rect: marking.rect,
     anchorRect: target.rect,
     side: anchor.side,
-    defaults: componentAnchorDefaults(component, density),
-    density,
+    component,
+    density: effectiveDensity(p, marking.containerId),
   });
 }
 

@@ -275,7 +275,7 @@ export function stepChange(
 
 /** The row's badge in the Proposals window (`null` without a badge); the interface translates it. */
 export type ProposalListFlag =
-  'new' | 'inReview' | 'superseded' | 'applied' | 'withdrawn';
+  'new' | 'inReview' | 'superseded' | 'applied' | 'withdrawn' | 'rejected';
 
 export interface ProposalListStatus {
   readonly flag: ProposalListFlag | null;
@@ -287,7 +287,7 @@ export interface ProposalListStatus {
 
 /**
  * Can the proposal be deleted (phase 9.2)? Only those that are not open (withdrawn,
- * superseded, applied): an open one still awaits the owner's decision, and its file is what
+ * superseded, applied, rejected): an open one still awaits the owner's decision, and its file is what
  * the agent and the review read.
  */
 export function canRemoveProposal(p: Pick<Proposal, 'status'>): boolean {
@@ -318,7 +318,20 @@ export function proposalListStatus(
       return { flag: 'applied', action: 'view', primary: false };
     case 'withdrawn':
       return { flag: 'withdrawn', action: 'view', primary: false };
+    case 'rejected':
+      return { flag: 'rejected', action: 'view', primary: false };
   }
+}
+
+/**
+ * Can the review be concluded (stage #2085)? Only an open proposal whose review is complete:
+ * nothing undecided and nothing accepted but unapplied. The same check as `concludeProposal`.
+ */
+export function canConcludeProposal(
+  p: Pick<Proposal, 'status'>,
+  progress: Pick<ReviewProgress, 'complete'>,
+): boolean {
+  return p.status === 'open' && progress.complete;
 }
 
 /**

@@ -6,6 +6,7 @@ import {
   addTypedAnnotation,
   changeStatus,
   changeStatuses,
+  concludeProposal,
   createMarking,
   decide,
   editNote,
@@ -524,5 +525,59 @@ describe('progress, notes and proposal state', () => {
     );
     expect(stateOf(next, changeOf(p, 'annotation', 'AB2').id)).toBe('accepted');
     expect(stateOf(next, changeOf(p, 'marking', 'MB').id)).toBe('accepted');
+  });
+});
+
+describe('concludeProposal (stage #2085)', () => {
+  it('refuses an incomplete review and a proposal that is not open', () => {
+    const { base, p } = creations();
+    expect(concludeProposal(p)).toEqual({ ok: false, reason: 'incomplete' });
+    const accepted = decided(p, base, { level: 'proposal', id: null }, 'accepted');
+    // Accepted but not applied yet: the review is not complete.
+    expect(concludeProposal(accepted)).toEqual({ ok: false, reason: 'incomplete' });
+    const rejected = decided(p, base, { level: 'proposal', id: null }, 'rejected');
+    for (const status of ['applied', 'rejected', 'superseded', 'withdrawn'] as const) {
+      expect(concludeProposal({ ...rejected, status })).toEqual({
+        ok: false,
+        reason: 'not-open',
+      });
+    }
+  });
+
+  it('closes a fully rejected proposal as rejected, keeping decisions, notes and applied', () => {
+    const { base, p } = creations();
+    const withNote = addNote(p, { level: 'proposal', id: null }, 'No.', AT, 'n1');
+    const rejected = decided(withNote, base, { level: 'proposal', id: null }, 'rejected');
+    const result = concludeProposal(rejected);
+    expect(result).toEqual({
+      ok: true,
+      status: 'rejected',
+      proposal: { ...rejected, status: 'rejected' },
+    });
+  });
+
+  it('closes as applied when some change was applied earlier', () => {
+    const { base, p } = creations();
+    const accepted = decided(p, base, { level: 'item', id: 'N1' }, 'accepted');
+    const appliedIds = accepted.changes
+      .filter((c) => accepted.decisions[c.id]?.state === 'accepted')
+      .map((c) => c.id);
+    expect(appliedIds.length).toBeGreaterThan(0);
+    // N1 (and what it requires) was applied; everything else was rejected.
+    const withApplied: Proposal = {
+      ...accepted,
+      applied: Object.fromEntries(appliedIds.map((id) => [id, { at: AT }])),
+    };
+    const rest = withApplied.changes
+      .map((c) => c.id)
+      .filter((id) => !appliedIds.includes(id));
+    const decisions = { ...withApplied.decisions };
+    for (const id of rest) decisions[id] = { state: 'rejected', at: AT };
+    const final = { ...withApplied, decisions };
+    const result = concludeProposal(final);
+    expect(result).toMatchObject({ ok: true, status: 'applied' });
+    if (result.ok) {
+      expect(result.proposal).toEqual({ ...final, status: 'applied' });
+    }
   });
 });

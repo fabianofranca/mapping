@@ -213,8 +213,9 @@ describe('reservedImages', () => {
     expect(reservedImages(withImages(), 'superseded')).toEqual(['images/accepted.webp']);
   });
 
-  it('applied or withdrawn: nothing', () => {
-    for (const status of ['applied', 'withdrawn'] as const) {
+  it('applied, withdrawn or rejected: nothing', () => {
+    // `rejected` (stage #2085): the review finished with nothing applied, so nothing is reserved.
+    for (const status of ['applied', 'withdrawn', 'rejected'] as const) {
       expect(reservedImages({ ...withImages(), status })).toEqual([]);
     }
   });
