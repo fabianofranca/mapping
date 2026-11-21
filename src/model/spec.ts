@@ -19,6 +19,7 @@ import {
   type SpecTypeAccessibility,
 } from './specAccessibility';
 import { checkSignatureKeys } from './specSignature';
+import { checkFileFormats, type SpecFileFormat } from './fileFormats';
 import type { ModelMessageTemplateCode } from './messages';
 import {
   addSpecIssue,
@@ -50,7 +51,7 @@ function onlyFormat(version: number): SpecMsg {
   return specMsg('spec.onlyFormat', { version: String(version) });
 }
 
-// Specialization format (`formatVersion` 1 to 18), see docs/SPEC-FORMAT.md. Version 2 adds
+// Specialization format (`formatVersion` 1 to 20), see docs/SPEC-FORMAT.md. Version 2 adds
 // `platforms` and `code`; version 1 is 2 without platforms and without `code`; version 3 is 2 plus
 // `sources` (external origins on types and fields, including `table` columns); version 4 is 3
 // plus the library: the package (the specialization's folder) with `component`, `doc` and
@@ -88,7 +89,9 @@ function onlyFormat(version: number): SpecMsg {
 // `label`, `touchTarget`, `parts`), outside the version contract too (see `specAccessibility.ts`);
 // version 19 is 18 plus the `copy-field` migration step in `migrations` (`{ type, from, to, when? }`:
 // it copies a field into another on the annotations that match `when`; it covers no break, see
-// `specVersions.ts`).
+// `specVersions.ts`); version 20 is 19 plus `fileFormats` at the root (stage #1923: the file
+// formats the specialization reads and writes, each one handled by an isolated `.js` plugin of the
+// package; see `fileFormats.ts`), outside the version contract too.
 // The zod here is the source of truth; `docs/spec.schema.json` mirrors it for those who do not
 // use TypeScript. No browser APIs: reusable by the MCP server.
 //
@@ -101,10 +104,10 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Value used before the product rename: import still accepts it. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Current format version (the one that the documentation and new examples use). */
-export const SPEC_FORMAT_VERSION = 19;
+export const SPEC_FORMAT_VERSION = 20;
 /** Versions accepted on import. */
 export const SPEC_FORMAT_VERSIONS = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
 ] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
@@ -556,6 +559,8 @@ export interface Spec {
   fieldModels?: SpecFieldModels;
   /** Minimum touch target of the interactive types (`formatVersion` 18 only). */
   accessibility?: SpecAccessibility;
+  /** File formats handled by a plugin of the package (`formatVersion` 20 only). */
+  fileFormats?: SpecFileFormat[];
 }
 
 const KEY_RE = /^[A-Za-z0-9_]+$/;
@@ -3000,6 +3005,8 @@ export const specSchema = z
     fieldModels: z.unknown().optional(),
     // `formatVersion` 18 only (`checkAccessibilityKeys`, which also does the type's).
     accessibility: accessibilityShape.optional(),
+    // Validated by `checkFileFormats` (the version, the shapes and the cross checks), in superRefine.
+    fileFormats: z.unknown().optional(),
   })
   .strict()
   .superRefine((spec, ctx) => {
@@ -3158,6 +3165,7 @@ export const specSchema = z
     checkAcceptsAnnotations(spec, typeLayer, ctx);
     checkSlotKeys(spec, typeLayer, ctx);
     checkAccessibilityKeys(spec, ctx);
+    checkFileFormats(spec, ctx);
     if (spec.formatVersion >= 11) {
       checkLayerGroups(spec.layers, ctx);
       checkDocRepos(spec, ctx);

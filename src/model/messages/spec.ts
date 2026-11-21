@@ -156,6 +156,15 @@ export const specMessages = {
   'spec.formatVersionInvalid': 'must be {versions} or {last}',
   // Format version, external sources and fonts (typefaces)
   'spec.onlyFormat': 'only allowed with formatVersion {version}',
+  // File formats (`fileFormats`, formatVersion 20)
+  'spec.fileFormatsShape': 'must be a list of file formats',
+  'spec.fileFormatExamplesShape': 'must be a list of examples',
+  'spec.fileFormatKeyUnknown': 'unknown key: {key}',
+  'spec.fileFormatIdInvalid': 'invalid id; use [a-z0-9][a-z0-9-]*',
+  'spec.fileFormatExtensionInvalid':
+    'invalid extension; use [a-z0-9]+ (lowercase, without the dot)',
+  'spec.fileFormatContractInvalid': 'must be 1',
+  'spec.fileFormatScopeInvalid': 'invalid scope; use "project" or "container"',
   'spec.sourceOnlyOrigins': 'only allowed in a system declared in origins',
   'spec.sourceIgnoreOriginsOrSignature':
     'only allowed in a system declared in origins or next to signature',

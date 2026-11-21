@@ -36,6 +36,9 @@ describe('package paths', () => {
   it('.json and .md are text; the rest is binary', () => {
     expect(isTextPackageFile('components/a.json')).toBe(true);
     expect(isTextPackageFile('docs/A.MD')).toBe(true);
+    expect(isTextPackageFile('plugins/csv.js')).toBe(true);
+    expect(isTextPackageFile('plugins/CSV.JS')).toBe(true);
+    expect(isTextPackageFile('examples/small.csv')).toBe(false);
     expect(isTextPackageFile('fonts/Roboto.ttf')).toBe(false);
     expect(isTextPackageFile('fonts/README.txt')).toBe(false);
   });
@@ -184,6 +187,21 @@ describe('usesPackageFiles', () => {
         ]),
     );
     expect(usesPackageFiles(fonts)).toBe(true);
+  });
+
+  it('fileFormats (v20) requires the package; an empty list does not', () => {
+    const format = {
+      id: 'csv',
+      name: 'CSV',
+      extension: 'csv',
+      plugin: 'plugins/csv.js',
+      contract: 1,
+    };
+    expect(usesPackageFiles(sduiAs(20, (raw) => (raw.fileFormats = [format])))).toBe(
+      true,
+    );
+    expect(usesPackageFiles(sduiAs(20, (raw) => (raw.fileFormats = [])))).toBe(false);
+    expect(usesPackageFiles(sduiAs(20))).toBe(false);
   });
 
   it('material3 (package) uses package files', () => {

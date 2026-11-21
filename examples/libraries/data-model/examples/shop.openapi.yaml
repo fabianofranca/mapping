@@ -1,0 +1,103 @@
+openapi: 3.0.3
+info:
+  title: Shop
+  version: 1.0.0
+paths:
+  /orders:
+    get:
+      x-timeout-ms: 10000
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+    post:
+      x-timeout-ms: 15000
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewOrder'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+  /customers/{id}:
+    get:
+      x-timeout-ms: 10000
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+components:
+  schemas:
+    Customer:
+      type: object
+      description: A person who buys from the shop
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: '1001'
+        name:
+          type: string
+          example: 'Doe, Jane'
+        email:
+          type: string
+        birthDate:
+          type: string
+          format: date
+          example: '1990-05-17'
+    Order:
+      type: object
+      description: A purchase made by a customer
+      required:
+        - id
+        - total
+        - quantity
+        - paid
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: '5001'
+        total:
+          type: number
+          format: double
+          example: '59.90'
+        quantity:
+          type: integer
+          format: int32
+          example: '2'
+        paid:
+          type: boolean
+          example: 'false'
+        items:
+          type: array
+          items:
+            type: string
+    NewOrder:
+      type: object
+      description: Data needed to place an order
+      required:
+        - customerId
+      properties:
+        customerId:
+          type: integer
+          format: int64
+          example: '1001'
+        note:
+          type: string
+          example: 'O''Brien''s gift'

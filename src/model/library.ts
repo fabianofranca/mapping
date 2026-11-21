@@ -33,6 +33,8 @@ import {
 } from './libraryComponentNodes';
 import { libraryIssue } from './libraryIssue';
 import { checkSignatures } from './librarySignature';
+import { FILE_FORMATS_VERSION } from './fileFormats';
+import { MAX_PLUGIN_BYTES } from './formatPlugin';
 import type { ModelMessageTemplateCode } from './messages';
 import type { ModelMessage } from './modelMessage';
 
@@ -474,11 +476,15 @@ function level1(
     readIcons(pkg, out);
   }
   signatureChecks(pkg, referenced, out);
+  fileFormatChecks(pkg, referenced, out);
 
   for (const file of files) {
     const lower = file.path.toLowerCase();
     if (referenced.has(file.path)) continue;
-    if (lower.endsWith('.json') || lower.endsWith('.md')) {
+    // A `.js` is a plugin candidate only where `fileFormats` exists (v20); before it, it is ignored as before.
+    const plugin =
+      lower.endsWith('.js') && pkg.spec.formatVersion >= FILE_FORMATS_VERSION;
+    if (lower.endsWith('.json') || lower.endsWith('.md') || plugin) {
       out.warning(file.path, '', 'library.notReferenced');
     }
   }
@@ -499,6 +505,49 @@ function signatureChecks(pkg: Package, referenced: Set<string>, out: Collector):
       else out.passWarning(problem.file, problem.path, problem.message, coding);
     }
   }
+}
+
+/** Bytes of the UTF-8 text (what the plugin file weighs on disk). */
+const utf8Bytes = (text: string): number => new TextEncoder().encode(text).length;
+
+/** The plugin was read (`library.notRead` otherwise) and has at most `MAX_PLUGIN_BYTES`. */
+function checkPluginText(
+  plugin: LibraryFile,
+  path: string,
+  specPath: string,
+  out: Collector,
+): void {
+  if (plugin.text === undefined)
+    return void out.error(plugin.path, '', 'library.notRead');
+  const size = utf8Bytes(plugin.text);
+  if (size > MAX_PLUGIN_BYTES) {
+    out.error(specPath, path, 'library.pluginTooLarge', { max: MAX_PLUGIN_BYTES, size });
+  }
+}
+
+/**
+ * Level 1 (formatVersion 20): each declared format has its plugin in the package (at most
+ * `MAX_PLUGIN_BYTES`) and each example its `file` and `input`. Running them is level 2 and 3 (MCP).
+ */
+function fileFormatChecks(pkg: Package, referenced: Set<string>, out: Collector): void {
+  (pkg.spec.fileFormats ?? []).forEach((format, fi) => {
+    const base = `fileFormats[${fi}]`;
+    const cite = (ref: string, path: string): LibraryFile | undefined => {
+      const target = pkg.resolve(ref);
+      referenced.add(target);
+      const file = pkg.byPath.get(target);
+      if (file === undefined) out.fileNotFound(pkg.specPath, path, target);
+      return file;
+    };
+    const plugin = cite(format.plugin, `${base}.plugin`);
+    if (plugin !== undefined)
+      checkPluginText(plugin, `${base}.plugin`, pkg.specPath, out);
+    (format.examples ?? []).forEach((example, ei) => {
+      const path = `${base}.examples[${ei}]`;
+      cite(example.file, `${path}.file`);
+      if (example.input !== undefined) cite(example.input, `${path}.input`);
+    });
+  });
 }
 
 /** Level 1: the `icons` file exists and is a valid `mapping-icons`. */

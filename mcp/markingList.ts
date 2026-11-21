@@ -94,7 +94,7 @@ function matchContainerCode(refs: Refs, query: string) {
   return matchShortCode(refs.project, 'i', parsed.code);
 }
 
-function findContainer(refs: Refs, query: string): ProjectContainer {
+export function findContainer(refs: Refs, query: string): ProjectContainer {
   const p = refs.project;
   const index = projectIndex(p);
   const direct = index.containers.get(query);

@@ -705,6 +705,7 @@ export function projectDetail(refs: Refs, pageQuery?: string): Json {
   }
   const warnings = new Map(loaded.specWarnings.map((w) => [w.specId, w]));
 
+  const fileFormats = listFileFormats(p);
   const platforms = projectPlatforms(p).map((platform) => ({
     id: platform.id,
     name: platform.name,
@@ -754,6 +755,7 @@ export function projectDetail(refs: Refs, pageQuery?: string): Json {
       repos: r.repos.map((x) => ({ specId: x.specId, ...x.repo })),
       localPath: docRepoOf(p, r.id)?.localPath ?? null,
     })),
+    ...(fileFormats.length > 0 ? { fileFormats } : {}),
     perspectives: perspectiveSummaries(refs),
     arrivals: arrivalsView(refs),
     lockedMarkings: p.markings.filter((m) => m.locked).length,
@@ -765,6 +767,18 @@ export function projectDetail(refs: Refs, pageQuery?: string): Json {
       ...(issues.size > LIST_LIMIT ? { truncated: true } : {}),
     },
   };
+}
+
+/** `{ format, name, extension, scope }` per declared format of the applied specializations. */
+export function listFileFormats(project: Project): Json[] {
+  return project.specializations.flatMap((applied) =>
+    (applied.spec?.fileFormats ?? []).map((format) => ({
+      format: `${applied.id}/${format.id}`,
+      name: format.name,
+      extension: format.extension,
+      scope: format.scope ?? 'project',
+    })),
+  );
 }
 
 /** An applied specialization, with the full content (`get_specialization`). */

@@ -1,6 +1,6 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 9,
+  "formatVersion": 20,
   "id": "sdui-backend",
   "name": "Backend SDUI",
   "version": 3,
@@ -12,6 +12,23 @@
       "width": 412,
       "height": 917,
       "background": "#FEF7FF"
+    }
+  ],
+  "fileFormats": [
+    {
+      "id": "sdui",
+      "name": "SDUI screen",
+      "extension": "json",
+      "plugin": "plugins/sdui.js",
+      "contract": 1,
+      "scope": "container",
+      "description": "The JSON screen of the SDUI backend: a container is one screen, its components are the nodes, and the JSON creates the screen back (the modal and its scrim are left out).",
+      "examples": [
+        {
+          "name": "Home",
+          "file": "examples/home.sdui.json"
+        }
+      ]
     }
   ],
   "origins": [

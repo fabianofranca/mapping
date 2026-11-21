@@ -1021,6 +1021,7 @@ describe('resources and instructions', () => {
       'mapping-docs://COMMENT-FORMAT.md',
       'mapping-docs://COMPONENT-FORMAT.md',
       'mapping-docs://FORMAT.md',
+      'mapping-docs://PLUGIN-FORMAT.md',
       'mapping-docs://SIGNATURE-FORMAT.md',
       'mapping-docs://SPEC-FORMAT.md',
     ]);
@@ -1029,6 +1030,7 @@ describe('resources and instructions', () => {
       'COMMENT-FORMAT.md',
       'COMPONENT-FORMAT.md',
       'FORMAT.md',
+      'PLUGIN-FORMAT.md',
       'SIGNATURE-FORMAT.md',
       'SPEC-FORMAT.md',
     ]) {
@@ -1044,6 +1046,7 @@ describe('resources and instructions', () => {
     const { tools } = await mcp.client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
       'create_project',
+      'export_format',
       'find_by_code',
       'find_by_source',
       'find_types_by_source',

@@ -32,12 +32,14 @@ function spec(formatVersion: number, floating?: unknown): unknown {
 }
 
 describe('formatVersion 7: floating on the type', () => {
-  it('the current version is 19 and the earlier ones are still accepted', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(19);
+  it('the current version is 20 and the earlier ones are still accepted', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(20);
     expect(SPEC_FORMAT_VERSIONS).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     ]);
-    for (const v of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
+    for (const v of [
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    ])
       expect(parseSpec(spec(v)).ok).toBe(true);
   });
 

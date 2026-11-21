@@ -1,0 +1,55 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 20,
+  "id": "format-lib",
+  "name": "Format library",
+  "version": 1,
+  "layers": [
+    {
+      "id": "items",
+      "name": "Items",
+      "color": "#43A047",
+      "annotationTypes": [
+        {
+          "id": "item",
+          "name": "Item",
+          "fields": [
+            {
+              "key": "title",
+              "type": "string"
+            },
+            {
+              "key": "tags",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "key",
+                  "type": "string"
+                },
+                {
+                  "key": "value",
+                  "type": "string"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "fileFormats": [
+    {
+      "id": "notes",
+      "name": "Notes",
+      "extension": "txt",
+      "plugin": "plugins/notes.js",
+      "contract": 1,
+      "examples": [
+        {
+          "name": "basic",
+          "file": "examples/notes.txt"
+        }
+      ]
+    }
+  ]
+}

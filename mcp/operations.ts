@@ -621,6 +621,36 @@ export const operationSchema = z.discriminatedUnion('op', [
       .describe('Multiplier of the measured rectangles (default 1; 2 for a 2× capture).'),
   }),
   z.object({
+    op: z.literal('import_format'),
+    format: z
+      .string()
+      .describe(
+        'The file format to read, `<specId>/<formatId>` of an applied specialization (see `fileFormats` in get_project).',
+      ),
+    text: z
+      .string()
+      .optional()
+      .describe(
+        'The content of the file, inline. Use `text` OR `file`, never both. In the proposal the inline text is stored as `(omitted: N characters)`.',
+      ),
+    file: z
+      .string()
+      .optional()
+      .describe(
+        "A file inside the roots (relative to the project folder or to a root, or absolute) with the format's extension; any other extension or a path outside the roots is `invalid-path`, before it is read. Use `file` OR `text`.",
+      ),
+    container: item('Container')
+      .optional()
+      .describe(
+        'Container the file is about (reference, id, name or alias `$name`): required by a format with scope `container`, ignored with a warning by one with scope `project`.',
+      ),
+    page: page
+      .optional()
+      .describe(
+        'Page of the containers the plugin creates (id or name; the page may come from an `add_page` earlier in the batch). Required when the project has more than one page and the plugin names none (`page-required`); a page the plugin names itself wins.',
+      ),
+  }),
+  z.object({
     op: z.literal('wrap_items'),
     as: alias,
     items: z

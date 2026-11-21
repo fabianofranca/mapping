@@ -7,6 +7,8 @@ export interface CliOptions {
   readonly scratch: readonly string[];
   readonly help: boolean;
   readonly version: boolean;
+  /** Runs a built-in plugin through the QuickJS executor, prints the result and exits (a self-check). */
+  readonly checkPluginRunner: boolean;
   /** Local HTTP image server (default: on; `--no-http` turns it off). */
   readonly http: boolean;
 }
@@ -25,6 +27,7 @@ Mapping MCP server (stdio). Reads and writes projects in folders inside the root
   --root <folder>  folder that contains projects (repeat for more than one)
   --scratch <folder>  read-only folder for the batch's temporary files (operationsFile and images); never scanned for projects (repeatable)
   --no-http        do not start the local HTTP server (127.0.0.1) that delivers the tools' images by URL
+  --check-plugin-runner  run a built-in plugin in the QuickJS executor and exit (checks the embedded WebAssembly)
   --version        show the version
   --help           show this help
 `;
@@ -57,12 +60,14 @@ export function parseArgs(argv: readonly string[]): CliOptions {
   const scratch: string[] = [];
   let help = false;
   let version = false;
+  let checkPluginRunner = false;
   let http = true;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]!;
     if (arg === '--help' || arg === '-h') help = true;
     else if (arg === '--version' || arg === '-v') version = true;
     else if (arg === '--no-http') http = false;
+    else if (arg === '--check-plugin-runner') checkPluginRunner = true;
     else {
       const root = folderOption('root', arg, argv, i);
       const folder = root ?? folderOption('scratch', arg, argv, i);
@@ -71,8 +76,8 @@ export function parseArgs(argv: readonly string[]): CliOptions {
       i = folder.next;
     }
   }
-  if (!help && !version && roots.length === 0) {
+  if (!help && !version && !checkPluginRunner && roots.length === 0) {
     throw new UsageError('provide at least one root with --root <folder>');
   }
-  return { roots, scratch, help, version, http };
+  return { roots, scratch, help, version, checkPluginRunner, http };
 }
