@@ -15,7 +15,12 @@
 import Konva from 'konva/lib/Core';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
-import { type RemoteImageResult, renderScene } from './renderScene';
+import {
+  type RenderOptions,
+  type PackageImageResult,
+  type RemoteImageResult,
+  renderScene,
+} from './renderScene';
 import { DEFAULT_PALETTE, type RenderPalette } from './palette';
 import type { RenderWarning } from './renderWarnings';
 import { slotsOfScene } from '../../model/components/arrange';
@@ -76,6 +81,14 @@ export interface ScreenRendererOptions {
    * every remote image is the placeholder.
    */
   readonly remoteImage?: (url: string) => RemoteImageResult;
+  /**
+   * The specialization of the library the screen's types come from: it names the package images
+   * (`RenderOptions.specId`). Without it, a package image is the placeholder. A function is read
+   * on every drawing, for a host whose library can change after the renderer is created.
+   */
+  readonly specId?: string | (() => string | undefined);
+  /** Resolves a package image `(specId, asset)`; see `RenderOptions.packageImage`. */
+  readonly packageImage?: (specId: string, asset: string) => PackageImageResult;
   /** The result will be read back (`toDataURL`): an `opaque` image becomes the placeholder. */
   readonly pixelSafe?: boolean;
 }
@@ -102,6 +115,8 @@ interface Mounted {
   label: string | undefined;
   /** Remote URLs that the instance's last drawing requested. */
   imageUrls: readonly string[];
+  /** Keys (`packageImageKey`) of the package images that the last drawing used. */
+  packageKeys: readonly string[];
   /** Inherited color: the values offered by the ancestors that the last drawing read. */
   provided: ProvidedValues;
   /** What the instance's slot offers its children in the last drawing (`provide`). */
@@ -287,6 +302,7 @@ export class ScreenRenderer {
       node,
       label: undefined,
       imageUrls: [],
+      packageKeys: [],
       provided: NO_PROVIDED,
       offers: undefined,
       slotClips: new Map(),
@@ -385,12 +401,42 @@ export class ScreenRenderer {
     return changed;
   }
 
+  /**
+   * Redraws the instances that use the package image `key` (`packageImageKey`: it finished decoding
+   * or failed). Returns true if any was redrawn.
+   */
+  refreshPackageImage(key: string): boolean {
+    let changed = false;
+    for (const entry of this.mounted.values()) {
+      if (!entry.packageKeys.includes(key)) continue;
+      this.renderInto(entry, entry.instance);
+      changed = true;
+    }
+    return changed;
+  }
+
   /** Destroys the instances' groups (the received group is left to the caller). */
   dispose(): void {
     for (const { node } of this.mounted.values()) node.destroy();
     this.mounted.clear();
     this.warningsById.clear();
     this.order = [];
+  }
+
+  /** The specialization of the drawn library (the option may be a function; see `ScreenRendererOptions.specId`). */
+  private specId(): string | undefined {
+    const { specId } = this.options;
+    return typeof specId === 'function' ? specId() : specId;
+  }
+
+  /** The render options of the package images: the specialization and the resolver, when there are. */
+  private packageImageOptions(): Pick<RenderOptions, 'specId' | 'packageImage'> {
+    const specId = this.specId();
+    const { packageImage } = this.options;
+    return {
+      ...(specId === undefined ? {} : { specId }),
+      ...(packageImage ? { packageImage } : {}),
+    };
   }
 
   private renderInto(
@@ -401,6 +447,7 @@ export class ScreenRenderer {
     const { node } = entry;
     entry.instance = instance;
     entry.imageUrls = [];
+    entry.packageKeys = [];
     entry.provided = provided;
     entry.offers = undefined;
     entry.slotClips = new Map();
@@ -456,11 +503,13 @@ export class ScreenRenderer {
       { root: result.root, warnings: [] },
       {
         remoteImage: this.options.remoteImage,
+        ...this.packageImageOptions(),
         pixelSafe: this.options.pixelSafe,
         palette: this.palette,
       },
     );
     entry.imageUrls = rendered.imageUrls;
+    entry.packageKeys = rendered.packageImages;
     rendered.root.listening(true);
     node.add(rendered.root);
     // Whole click area (even with a transparent background).

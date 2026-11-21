@@ -28,3 +28,12 @@ export function isPackageImagePath(text: string): boolean {
     return false;
   return isImagePath(text);
 }
+
+/**
+ * The key that identifies a package image: the specialization and the package path. The renderers
+ * record it for each image a drawing uses, and the app's image cache notifies with it, so a
+ * finished image redoes only the drawings that cite it.
+ */
+export function packageImageKey(specId: string, asset: string): string {
+  return `${specId}\0${asset}`;
+}

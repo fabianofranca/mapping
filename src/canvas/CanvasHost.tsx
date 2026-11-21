@@ -27,13 +27,14 @@ export function CanvasHost() {
       review,
       perspective,
       page,
+      packageImages: session.components.images,
     });
     canvas.current = controller;
     return () => {
       canvas.current = null;
       controller.destroy();
     };
-  }, [store, actions, display, ui, derived, canvas, view, review, perspective, page]);
+  }, [store, actions, display, ui, derived, canvas, view, review, perspective, page, session]);
 
   return <div ref={ref} class="canvas-host" />;
 }

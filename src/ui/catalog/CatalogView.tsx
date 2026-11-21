@@ -7,7 +7,11 @@ import { TypeNoticeBadge } from '../NoticeBadge';
 import { Dialog } from '../Dialog';
 import { LibraryIssueList } from '../LibraryIssueList';
 import { CatalogPage } from './CatalogPage';
-import { type CatalogRenderer, defaultCatalogRenderer } from './renderer';
+import {
+  type CatalogImages,
+  type CatalogRenderer,
+  defaultCatalogRenderer,
+} from './renderer';
 
 // Catalog of a library: validation at the top, list of components by layer (with search)
 // and the component page. `split`: list and page side by side (home screen); `list`: only the
@@ -19,6 +23,8 @@ export interface CatalogViewProps {
   readonly specId: string;
   readonly version: number;
   readonly fontsEpoch?: number;
+  /** The library's package images (absent = every package image is the placeholder). */
+  readonly images?: CatalogImages;
   /** Open project: with it the code `path` becomes a repository link. */
   readonly project?: Project | null;
   readonly layout: 'split' | 'list';
@@ -66,6 +72,7 @@ export function CatalogView({
   specId,
   version,
   fontsEpoch = 0,
+  images,
   project = null,
   layout,
   onAddToScreen,
@@ -165,6 +172,7 @@ export function CatalogView({
       version={version}
       renderer={engine}
       fontsEpoch={fontsEpoch}
+      {...(images === undefined ? {} : { images })}
       project={project}
       onLink={onLink}
       {...(onAddToScreen === undefined ? {} : { onAddToScreen })}

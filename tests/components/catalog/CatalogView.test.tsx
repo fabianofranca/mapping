@@ -504,6 +504,46 @@ describe('gallery', () => {
     expect(after).not.toEqual(before);
   });
 
+  it('a package image that finishes decoding (its epoch) rasterizes the gallery again, with the resolver and the specialization', () => {
+    const resolve = vi.fn(() => ({ state: 'loading' as const }));
+    const source = {
+      resolve,
+      subscribe: () => () => undefined,
+      drop: () => undefined,
+      clear: () => undefined,
+      size: 0,
+      bytes: 0,
+    };
+    const engine = createCatalogRenderer(approximateMeasurer, rasterize);
+    const { rerender } = view({
+      initialTypeId: 'm3-button',
+      renderer: engine,
+      images: { source, epoch: 0 },
+    });
+    const options = rasterize.mock.calls.at(-1) as unknown as [
+      unknown,
+      { specId?: string; packageImage?: (spec: string, asset: string) => unknown },
+    ];
+    expect(options[1].specId).toBe('material3');
+    expect(options[1].packageImage?.('material3', 'images/a.png')).toEqual({
+      state: 'loading',
+    });
+    expect(resolve).toHaveBeenCalledWith('material3', 'images/a.png');
+    const calls = rasterize.mock.calls.length;
+    rerender(
+      <CatalogView
+        catalog={base}
+        specId="material3"
+        version={1}
+        layout="split"
+        renderer={engine}
+        initialTypeId="m3-button"
+        images={{ source, epoch: 1 }}
+      />,
+    );
+    expect(rasterize.mock.calls.length).toBeGreaterThan(calls);
+  });
+
   it('an example that does not draw shows the reason', () => {
     const catalog = patched(base, 'm3-button', {
       examples: [{ name: 'Broken', mode: 'system', system: 'none', file: 'x.json' }],

@@ -20,6 +20,7 @@ import {
   sharedRemoteImageSource,
   type RemoteImageSource,
 } from './components/remoteImages';
+import type { PackageImages } from '../storage/packageImages';
 import { cancelFrame, requestFrame, visibleArea, type Frame } from './frame';
 import { previewSelection, previewViewport } from './previewFrame';
 import { ArrowRenderer } from './renderers/arrows';
@@ -39,6 +40,8 @@ export interface PreviewControllerOptions {
   /** Drawings of the cut project (the host computes them with its own cache). */
   readonly drawings: ComponentDrawings;
   readonly remoteImages?: RemoteImageSource;
+  /** The package images of the applied libraries (decision 18 of stage #1903); absent = placeholder. */
+  readonly packageImages?: PackageImages;
 }
 
 const NO_ITEMS: readonly SelectionItem[] = [];
@@ -49,6 +52,9 @@ export class PreviewController {
   private readonly container: HTMLElement;
   private readonly display: DisplayImages<ImageBitmap>;
   private readonly remoteImages: RemoteImageSource;
+  private readonly packageImages: PackageImages | null;
+  /** Keys of the package images that finished since the last frame. */
+  private readonly changedPackageKeys = new Set<string>();
   private project: Project;
   private itemId: string;
   private drawings: ComponentDrawings;
@@ -87,6 +93,7 @@ export class PreviewController {
     this.container = options.container;
     this.display = options.display;
     this.remoteImages = options.remoteImages ?? sharedRemoteImageSource();
+    this.packageImages = options.packageImages ?? null;
     this.project = options.project;
     this.itemId = options.itemId;
     this.drawings = options.drawings;
@@ -150,6 +157,11 @@ export class PreviewController {
         this.changedImageUrls.add(url);
         this.requestRender();
       }),
+      this.packageImages?.subscribe((key) => {
+        if (this.destroyed) return;
+        this.changedPackageKeys.add(key);
+        this.requestRender();
+      }) ?? (() => undefined),
       this.observeSize(),
     );
     this.ensureBitmaps();
@@ -199,6 +211,12 @@ export class PreviewController {
         if (!this.destroyed) this.requestRender();
       },
       remoteImage: (url) => this.remoteImages.resolve(url),
+      ...(this.packageImages
+        ? {
+            packageImage: (specId: string, asset: string) =>
+              this.packageImages?.resolve(specId, asset) ?? { state: 'loading' as const },
+          }
+        : {}),
     });
   }
 
@@ -298,6 +316,7 @@ export class PreviewController {
     this.stage.size({ width: size.width, height: size.height });
     this.stage.setAttrs({ x: v.x, y: v.y, scaleX: v.scale, scaleY: v.scale });
     this.refreshRemoteImages();
+    this.refreshPackageImages();
 
     const placements = this.images.render(frame);
     this.rebuildOnThemeChange(frame);
@@ -334,6 +353,14 @@ export class PreviewController {
     this.componentPalette = frame.tokens.component;
     this.componentLayer = this.newComponentLayer(this.layers.components);
     this.floatingLayer = this.newComponentLayer(this.floatingDrawings);
+  }
+
+  private refreshPackageImages(): void {
+    if (this.changedPackageKeys.size === 0) return;
+    const keys = new Set(this.changedPackageKeys);
+    this.changedPackageKeys.clear();
+    this.componentLayer.refreshPackageImages(keys);
+    this.floatingLayer.refreshPackageImages(keys);
   }
 
   private refreshRemoteImages(): void {

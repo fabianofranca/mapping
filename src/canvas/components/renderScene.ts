@@ -46,6 +46,7 @@ import {
   nodeMatrix,
 } from '../../model/components/scene';
 import { imageFit } from '../../model/components/imageFit';
+import { packageImageKey } from '../../model/components/imagePath';
 import type { RunLayout, RunPiece } from '../../model/components/richText';
 import { textBoxLimits } from './textLimits';
 import { wordSafeText } from './wordWidth';
@@ -74,6 +75,17 @@ export interface RenderOptions {
    */
   readonly remoteImage?: (url: string) => RemoteImageResult;
   /**
+   * The specialization the scene's component belongs to: with a package image's path it names the
+   * file, `(specId, asset)`. Without it a package image is the placeholder.
+   */
+  readonly specId?: string;
+  /**
+   * Resolves a package image (stage #1903, decision 18): the app decodes the bytes of the file in
+   * the library package and answers with the state (and the ready bitmap). Package images skip the
+   * consent and the URL policy: the bytes are local. Without it, the placeholder.
+   */
+  readonly packageImage?: (specId: string, asset: string) => PackageImageResult;
+  /**
    * `true` when the result will be read back (`toDataURL`, `toBlob`, `getImageData`):
    * an `opaque` image (loaded without CORS) is not drawn, the placeholder takes its place.
    */
@@ -96,7 +108,20 @@ export interface RenderResult {
   readonly warnings: readonly RenderWarning[];
   /** Remote URLs (`url` of the `image` fill) that the scene uses, without repeats. */
   readonly imageUrls: readonly string[];
+  /** Keys (`packageImageKey`) of the package images the scene cites, without repeats. */
+  readonly packageImages: readonly string[];
 }
+
+/** What the host knows about a package image: still decoding, failed, or the decoded bitmap. */
+export type PackageImageResult =
+  | { readonly state: 'loading' }
+  | { readonly state: 'failed' }
+  | {
+      readonly state: 'ready';
+      readonly image: CanvasImageSource;
+      readonly width: number;
+      readonly height: number;
+    };
 
 /** The `fit` arithmetic lives in the model (the MCP raster uses it too); the canvas keeps the name. */
 export { imageFit };
@@ -119,6 +144,7 @@ class Renderer {
   readonly byId = new Map<string, Konva.Group>();
   private readonly warned = new Map<string, RenderWarning>();
   readonly imageUrls = new Set<string>();
+  readonly packageKeys = new Set<string>();
 
   private readonly palette: RenderPalette;
 
@@ -524,17 +550,67 @@ class Renderer {
   }
 
   /**
-   * A package image (`asset`) is not loaded here yet: the placeholder, with no warning (it is a
-   * known state, not a defect of the component). `undefined` for any other paint.
+   * A package image (`asset`): the placeholder while the host decodes it (a known state, no warning)
+   * and when it cannot be drawn (`image-decode-failed`); the bitmap on a rect once it is ready.
+   * `undefined` for any other paint.
    */
   private packageImageFill(
     shape: ShapeWithFill,
     paint: Paint & { type: 'image' },
     box: Box,
   ): Konva.Shape[] | undefined {
-    return !paint.src && paint.asset !== undefined
-      ? placeholder(shape, box, this.palette)
-      : undefined;
+    const { asset } = paint;
+    if (paint.src || asset === undefined) return undefined;
+    const specId = this.options.specId;
+    if (specId === undefined) return placeholder(shape, box, this.palette);
+    this.packageKeys.add(packageImageKey(specId, asset));
+    return this.packageViewFill(
+      shape,
+      paint,
+      box,
+      this.resolvePackageImage(specId, asset),
+    );
+  }
+
+  /** The drawing of one package image for the state the host reported. */
+  private packageViewFill(
+    shape: ShapeWithFill,
+    paint: Paint & { type: 'image' },
+    box: Box,
+    view: PackageImageResult,
+  ): Konva.Shape[] {
+    if (
+      view.state === 'ready' &&
+      view.width > 0 &&
+      view.height > 0 &&
+      shape instanceof KonvaRect
+    ) {
+      const image = new KonvaImage({
+        image: view.image,
+        ...imageFit(paint.fit ?? 'cover', box, {
+          width: view.width,
+          height: view.height,
+        }),
+        cornerRadius: shape.cornerRadius(),
+        opacity: paint.opacity ?? 1,
+        listening: true,
+      });
+      grayscaleImage(image, paint.grayscale, 'loaded');
+      return [image];
+    }
+    if (view.state === 'failed') this.warn('image-decode-failed');
+    return placeholder(shape, box, this.palette);
+  }
+
+  /** The resolver may be absent or throw: neither breaks the drawing. */
+  private resolvePackageImage(specId: string, asset: string): PackageImageResult {
+    const resolve = this.options.packageImage;
+    if (!resolve) return { state: 'loading' };
+    try {
+      return resolve(specId, asset);
+    } catch {
+      return { state: 'loading' };
+    }
   }
 
   private imageFill(shape: ShapeWithFill, paint: Paint & { type: 'image' }, box: Box) {
@@ -1279,6 +1355,7 @@ export function renderScene(scene: Scene, options: RenderOptions = {}): RenderRe
     byId: renderer.byId,
     warnings: renderer.warnings,
     imageUrls: [...renderer.imageUrls],
+    packageImages: [...renderer.packageKeys],
   };
 }
 
