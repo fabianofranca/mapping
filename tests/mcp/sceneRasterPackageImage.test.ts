@@ -327,6 +327,28 @@ describe('package image: what stays the placeholder', () => {
     near(rgb(out, 10, 10), PLACEHOLDER, 2);
   });
 
+  it('an image paint on a node that is not a rect (the app draws a rect only)', () => {
+    const size = { width: 80, height: 40 };
+    const fills = [asset('contain')];
+    const ellipse = {
+      ...baseNode({ id: 'e', name: 'e', ...size, fills }),
+      type: 'ellipse',
+    } as SceneNode;
+    const frame = {
+      ...baseNode({ id: 'f', name: 'f', ...size, fills }),
+      type: 'frame',
+      clip: false,
+      cornerRadius: 0,
+      children: [],
+    } as SceneNode;
+    // The margin the `contain` image leaves empty must not get the image's edge pixels smeared on it.
+    const out = draw(frame, size, { images: withQ });
+    near(rgb(out, 5, 20), PLACEHOLDER, 2);
+    near(rgb(out, 40, 20), PLACEHOLDER, 2);
+    const round = draw(ellipse, size, { images: withQ });
+    near(rgb(round, 40, 20), PLACEHOLDER, 2);
+  });
+
   it('the image of another specialization', () => {
     const size = { width: 20, height: 20 };
     const out = draw(rect(size, [asset('cover')]), size, {

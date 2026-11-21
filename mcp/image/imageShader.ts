@@ -63,22 +63,27 @@ export function imageShader(
     const xb = clamp(x0 + 1, maxX);
     const ya = clamp(y0, maxY);
     const yb = clamp(y0 + 1, maxY);
-    let r = 0;
-    let g = 0;
-    let bl = 0;
-    let alpha = 0;
-    const tap = (x: number, y: number, weight: number) => {
-      const at = (y * width + x) * 4;
-      const texelAlpha = data[at + 3]! * weight;
-      r += data[at]! * texelAlpha;
-      g += data[at + 1]! * texelAlpha;
-      bl += data[at + 2]! * texelAlpha;
-      alpha += texelAlpha;
-    };
-    tap(xa, ya, (1 - fx) * (1 - fy));
-    tap(xb, ya, fx * (1 - fy));
-    tap(xa, yb, (1 - fx) * fy);
-    tap(xb, yb, fx * fy);
+    // The four taps, premultiplied by their alpha, with no closure or array per pixel.
+    const i00 = (ya * width + xa) * 4;
+    const i10 = (ya * width + xb) * 4;
+    const i01 = (yb * width + xa) * 4;
+    const i11 = (yb * width + xb) * 4;
+    const w00 = (1 - fx) * (1 - fy) * data[i00 + 3]!;
+    const w10 = fx * (1 - fy) * data[i10 + 3]!;
+    const w01 = (1 - fx) * fy * data[i01 + 3]!;
+    const w11 = fx * fy * data[i11 + 3]!;
+    const alpha = w00 + w10 + w01 + w11;
+    const r = data[i00]! * w00 + data[i10]! * w10 + data[i01]! * w01 + data[i11]! * w11;
+    const g =
+      data[i00 + 1]! * w00 +
+      data[i10 + 1]! * w10 +
+      data[i01 + 1]! * w01 +
+      data[i11 + 1]! * w11;
+    const bl =
+      data[i00 + 2]! * w00 +
+      data[i10 + 2]! * w10 +
+      data[i01 + 2]! * w01 +
+      data[i11 + 2]! * w11;
     if (alpha <= 0) return { rgb: [0, 0, 0], alpha: 0 };
     const rgb =
       gray > 0

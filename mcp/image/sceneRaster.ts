@@ -924,7 +924,7 @@ class Painter {
     const fillable = node.type !== 'line' || node.closed;
     if (fillable && node.type !== 'text') {
       for (const paint of node.fills) {
-        if (this.packageImage(node, shapes, paint, matrix, alpha, clip)) continue;
+        if (this.packageImage(node, paint, matrix, alpha, clip)) continue;
         const source = fillSource(paint, matrix, alpha);
         if (source === null) continue;
         this.fill(
@@ -1268,18 +1268,20 @@ class Painter {
 
   /**
    * Paints an `image` paint with a package `asset` whose pixels the view holds: the image is sampled
-   * into its own box (`fit`), rounded by the node's radius like the app's image. `false` = not a package
-   * image the view holds (the caller paints the placeholder).
+   * into its own box (`fit`), rounded by the node's radius like the app's image. Only a `rect` takes the
+   * image (as in the app, where any other shape draws the placeholder). `false` = not a package image
+   * the view holds (the caller paints the placeholder).
    */
   private packageImage(
     node: SceneNode,
-    shapes: readonly Subpath[],
     paint: Paint,
     matrix: Matrix,
     opacity: number,
     clip: PixelRect,
   ): boolean {
-    if (paint.type !== 'image' || paint.asset === undefined) return false;
+    if (node.type !== 'rect' || paint.type !== 'image' || paint.asset === undefined) {
+      return false;
+    }
     const raster = this.images?.(paint.asset);
     if (raster === undefined) return false;
     const source = imageShader(
@@ -1291,16 +1293,10 @@ class Painter {
     );
     if (source === null) return true;
     const { placed } = source;
-    const polygons =
-      node.type === 'rect'
-        ? [
-            roundedRect(placed.width, placed.height, node.cornerRadius).map((p) => ({
-              x: p.x + placed.x,
-              y: p.y + placed.y,
-            })),
-          ]
-        : shapes.map((shape) => shape.points);
-    this.fill(polygons, matrix, 'nonzero', source.shader, opacity, clip);
+    const outline = roundedRect(placed.width, placed.height, node.cornerRadius).map(
+      (p) => ({ x: p.x + placed.x, y: p.y + placed.y }),
+    );
+    this.fill([outline], matrix, 'nonzero', source.shader, opacity, clip);
     return true;
   }
 
