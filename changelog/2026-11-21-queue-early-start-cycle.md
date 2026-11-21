@@ -1,4 +1,4 @@
-# Early start in the same cycle, and the `toca=` note rule — [Não lançado] (épico `epic/queue-early-start-cycle`, PR #0, MCP unchanged, schema v22 unchanged)
+# Early start in the same cycle, and the `toca=` note rule — 2026-11-21 (épico `epic/queue-early-start-cycle`, PR #2429, MCP unchanged, schema v22 unchanged)
 
 ## Corrigido
 
