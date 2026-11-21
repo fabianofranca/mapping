@@ -334,12 +334,12 @@ describe('early start in the same cycle and the `toca=` note rule (#2427)', () =
   const per = section(SKILL, '3. Per stage');
   const rule = per.slice(per.indexOf('**Early start in the same cycle**'));
 
-  it('"3. Per stage" says `show` (not `apply`) lists `começar agora:`, and to run it in the cycle of each of the four transitions', () => {
+  it('"3. Per stage" says the write output (`apply`) carries `começar agora:`, and to start it in the cycle of each of the four transitions', () => {
     expect(per).toContain('**Early start in the same cycle**');
     const paragraph = rule.slice(0, rule.indexOf('\n\n'));
     for (const term of [
-      '`apply` does not print `começar agora:`',
-      '`painel.py show`',
+      '`apply` prints `começar agora:`',
+      '`show`',
       '`stage: Testador`',
       '`stage: Correção`',
       '`stage: Fechamento`',
