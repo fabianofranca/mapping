@@ -151,6 +151,7 @@ describe('file format sdui (stage #1923, FP6)', () => {
     errors?: { code: string; message: string }[];
     created: { kind: string }[];
     imports?: { created: string[]; updated: string[]; warnings: string[] }[];
+    issues?: { new?: { issues: { code: string; node?: string }[] }[] };
   }
 
   async function makeProject(name: string): Promise<string> {
@@ -208,6 +209,19 @@ describe('file format sdui (stage #1923, FP6)', () => {
     // content + 2 buttons, bottom bar + 1 button, the FAB.
     expect(planned.created.filter((c) => c.kind === 'marking')).toHaveLength(6);
     expect(planned.imports![0]!.warnings).toEqual([]);
+  });
+
+  it('the imported screen draws with no component-overflow under the server measurer (R32-F3)', async () => {
+    // The app, which measures with the real font, may still warn "Button content larger than the box"
+    // on the slot buttons (sized by the server's embedded font): `docs/MCP.md`, "(approximate)".
+    await makeProject('draws');
+    const planned = await plan('draws', [
+      { op: 'import_format', format: SDUI, text: HOME },
+    ]);
+    const overflows = (planned.issues?.new ?? []).flatMap((e) =>
+      e.issues.filter((i) => i.code === 'component-overflow'),
+    );
+    expect(overflows).toEqual([]);
   });
 
   it('the created container has the screen size and background, the buttons sit in the column slot and the bar is at the bottom', async () => {
