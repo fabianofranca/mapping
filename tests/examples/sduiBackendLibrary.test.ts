@@ -68,11 +68,11 @@ describe('example library sdui-backend', () => {
     expect(report.summary).toMatchObject({ level: 3, types: 6, components: 5, docs: 6 });
   });
 
-  it('is version 3, with a migration from 1 (the six steps) and one from 2', () => {
+  it('is version 4, with a migration from 1 (the six steps) and one from 2', () => {
     const parsed = parseSpecText(text(SPEC_FILE));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.spec.version).toBe(3);
+    expect(parsed.spec.version).toBe(4);
     expect(parsed.spec.migrations).toHaveLength(2);
     const steps = parsed.spec.migrations?.[0]?.steps ?? [];
     expect([...new Set(steps.map((s) => s.op))].sort()).toEqual([
@@ -85,6 +85,55 @@ describe('example library sdui-backend', () => {
     ]);
     const modes = steps.flatMap((s) => (s.op === 'remove-type' ? [s.mode] : []));
     expect(modes.sort()).toEqual(['convert', 'delete']);
+  });
+});
+
+describe('container classes (stage #1901, CX1; decision 27)', () => {
+  const parsed = parseSpecText(text(SPEC_FILE));
+  const spec = parsed.ok ? parsed.spec : undefined;
+  const typeOf = (id: string) =>
+    spec?.layers.flatMap((l) => l.annotationTypes).find((t) => t.id === id);
+
+  it('is at formatVersion 21 and parses with no issue', () => {
+    expect(parsed.ok).toBe(true);
+    expect(spec?.formatVersion).toBe(21);
+  });
+
+  it('declares the two sets: platform (chosen) and window (by width: 600 and 840)', () => {
+    expect(spec?.containerClasses).toEqual([
+      {
+        id: 'platform',
+        name: 'Platform',
+        classes: [
+          { id: 'android', name: 'Android' },
+          { id: 'ios', name: 'iOS' },
+          { id: 'web', name: 'Web' },
+        ],
+      },
+      {
+        id: 'window',
+        name: 'Window',
+        by: 'width',
+        classes: [
+          { id: 'compact', name: 'Compact', below: 600 },
+          { id: 'medium', name: 'Medium', below: 840 },
+          { id: 'expanded', name: 'Expanded' },
+        ],
+      },
+    ]);
+  });
+
+  it('the Phone size chooses android and the new web-desktop size (1440 x 900) chooses web', () => {
+    expect(spec?.containers?.map((c) => [c.id, c.width, c.height, c.classes])).toEqual([
+      ['phone', 412, 917, { platform: 'android' }],
+      ['web-desktop', 1440, 900, { platform: 'web' }],
+    ]);
+  });
+
+  it('sdui-sheet is meant for android and ios, sdui-fab for the compact and medium windows', () => {
+    expect(typeOf('sdui-sheet')?.appliesIn).toEqual({ platform: ['android', 'ios'] });
+    expect(typeOf('sdui-fab')?.appliesIn).toEqual({ window: ['compact', 'medium'] });
+    expect(typeOf('sdui-button')?.appliesIn).toBeUndefined();
   });
 });
 

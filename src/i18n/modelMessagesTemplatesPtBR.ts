@@ -301,6 +301,26 @@ export const templatePtBR: {
     'extensão inválida; use [a-z0-9]+ (minúsculas, sem o ponto)',
   'model.spec.fileFormatContractInvalid': 'deve ser 1',
   'model.spec.fileFormatScopeInvalid': 'escopo inválido; use "project" ou "container"',
+  'model.spec.containerClassSetsShape':
+    'deve ser uma lista de conjuntos de classes de contêiner',
+  'model.spec.containerClassListShape': 'deve ser uma lista de classes',
+  'model.spec.containerClassKeyUnknown': 'chave desconhecida: {key}',
+  'model.spec.containerClassIdInvalid': 'id inválido; use [a-z0-9-]+',
+  'model.spec.containerClassIdReserved':
+    'nome reservado: width e height são lidos por $container.width e $container.height',
+  'model.spec.containerClassByInvalid': 'deve ser "width" ou "height"',
+  'model.spec.containerClassBelowInvalid': 'deve ser um número maior que 0',
+  'model.spec.containerClassBelowRequired':
+    'below é obrigatório em todas as classes, menos na última',
+  'model.spec.containerClassLastBelow': 'a última classe não tem below',
+  'model.spec.containerClassBelowIncrease': 'below deve crescer ao longo da lista',
+  'model.spec.containerClassBelowNotComputed': 'below só em um conjunto com by',
+  'model.spec.containerClassSetMissing': 'o conjunto "{set}" não existe',
+  'model.spec.containerClassSetComputed':
+    'o conjunto "{set}" é calculado por {by}: não é escolhido',
+  'model.spec.containerClassNotInSet': '"{class}" não é uma classe de "{set}"',
+  'model.spec.appliesInNotInContainer':
+    'appliesIn só em um tipo que se aplica a marcações em um contêiner',
   'model.spec.sourceOnlyOrigins': 'só é permitido em sistema declarado em origins',
   'model.spec.sourceIgnoreOriginsOrSignature':
     'só é permitido em sistema declarado em origins ou ao lado de signature',
