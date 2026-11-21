@@ -90,9 +90,11 @@ export interface GlyphStyle {
   readonly size: number;
   readonly letterSpacing: number;
   readonly italic: boolean;
+  /** CSS weight, for a variable font's `wght` axis (default 400). */
+  readonly weight?: number;
 }
 
-/** The outlines of the text laid out by `face` (shaped as a whole, or character by character with letter spacing). */
+/** The outlines of the text laid out by `face` (shaped as a whole; with letter spacing, without the optional ligatures and contextual alternates). */
 function laidOut(
   face: Face,
   text: string,
@@ -101,7 +103,10 @@ function laidOut(
   style: GlyphStyle,
 ) {
   return pathPolygons(
-    face.path(text, x, baseline, style.size, { letterSpacing: style.letterSpacing }),
+    face.path(text, x, baseline, style.size, {
+      letterSpacing: style.letterSpacing,
+      weight: style.weight,
+    }),
   );
 }
 
@@ -133,7 +138,7 @@ export function textWidth(
   const advance = guardedLayout(
     face,
     () => book.embeddedFor(font.family, font.weight),
-    (f) => f.advance(text, font.size),
+    (f) => f.advance(text, font.size, font.weight, font.letterSpacing !== 0),
   );
   return Math.max(0, advance + font.letterSpacing * [...text].length);
 }
