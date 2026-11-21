@@ -3212,7 +3212,7 @@ export function issueChanges(refs: Refs, before: Project): Record<string, unknow
 
 /**
  * The specialization notices that the annotations created or changed by the batch come to have
- * (stage #486, decision 11), from the same changes that the proposal review shows (`changeNotices`),
+ * (stage #486, decision 11), read with `changeNotices` (the proposal review no longer shows them),
  * grouped per notice (stage #2085, decision 7): one entry per specialization, type, place (`key`,
  * `column`), `kind` and `message`, with the number of distinct annotations of the batch that have it.
  * From the most serious to the least and, within the same `kind`, in the order they first appear.

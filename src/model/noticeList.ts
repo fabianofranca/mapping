@@ -140,7 +140,8 @@ export function buildAuditRows(
  * project with the change applied (the preview): creating the annotation (empty `field`) brings
  * all those it comes to have; changing the type (`type`), those of the type; a field's value
  * (`values.<key>`), those of the field and of its columns. Removals, other entities and other
- * fields bring none.
+ * fields bring none. Only the MCP batch report reads it now: the review no longer shows notices
+ * (stage #2085, decision 5).
  */
 export function changeNotices(
   p: Project,

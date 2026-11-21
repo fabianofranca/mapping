@@ -327,7 +327,7 @@ The agent fixes the **open** proposal in the proposal itself, without creating a
 - root with all the fields; valid `format`, `formatVersion`, `status` and ISO 8601 dates; non-empty `title`; `supersedes` different from the proposal's own `id`;
 - unique change and note ids;
 - each change consistent with its `kind` (creation with `from: null`, removal with `to: null`, change with a `field` of the entity), with the values in the `mapping.json` format (the specialization is validated as in `SPEC-FORMAT.md`), the whole entity's id equal to `entityId`, `imageId` (the container) filled in on the image and null only in the Project group and in canvas markings, `markingId` filled in on markings and annotations;
-- `status` is one of `open`, `applied`, `superseded`, `withdrawn` and `rejected`; a `rejected` proposal has no change in `applied`;
+- `status` is one of `open`, `applied`, `superseded`, `withdrawn` and `rejected`; the app writes `rejected` only when nothing was applied (the reader does not check it);
 - `decisions` and `applied` only cite existing changes, and `applied` only accepted changes;
 - the notes' `target` with `id` `null` in `proposal`, `project` and `canvas`, and citing an existing change in `change`.
 
