@@ -1,4 +1,4 @@
-# `painel.py` prints `começar agora:` after a write — [Não lançado] (épico `epic/apply-starts-now`, MCP unchanged, schema v22 unchanged)
+# `painel.py` prints `começar agora:` after a write — [Não lançado] (épico `epic/apply-starts-now`, PR #PRNUM, MCP unchanged, schema v22 unchanged)
 
 ## Corrigido
 

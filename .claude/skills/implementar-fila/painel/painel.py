@@ -2,7 +2,7 @@
 """Maintains the 3 data sets of the "Fila de desenvolvimento" panel.
 
 Files in one folder: queue.json, meta.json, log.json (JSON lists).
-Each command prints, at the end, `alterados: <files written>`; `apply`, a lone `row` that writes `stage` or `status` and `merged` then print the
+Each command prints, at the end, `alterados: <files written>`; `apply`, a lone `row` that writes `stage` or `status` and `merged` then print, after `alterados:`, the
 `começar agora:` line of `show` (stage #2480, computed on the state just written), only when it is not `nenhuma`.
 The note "Vagas k/N" (meta.vagas) is recalculated on every write, from the fichas (`plan`),
 from `meta.paralelo` (`start --paralelo N`) and from `meta.merged` (`merged`); `context` keeps the coordinator's
