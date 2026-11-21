@@ -2,7 +2,7 @@
 
 ## Pendências
 
-nenhuma (só processo)
+None (process only).
 
 ## Sincronização
 
@@ -10,4 +10,4 @@ Sem impacto on the Claude Design Mapping artifact: the epic changes only the que
 
 ## Ficou sem gravar
 
-Nada.
+Nothing.
