@@ -135,6 +135,20 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 **Scripts.** R39 in `docs/TESTING.md` ("Icon fill rule, SVG import and drawing keys"): it copies the package and the SVGs, runs `import_icons` (`dryRun`, for real, `replace` and the refusals), applies the package in a folder project and checks the five components with pixel probes in the app and in the `render_marking` PNG.
 
+### `examples/libraries/data-model/`
+
+**What it is.** The example of the **file formats** (`fileFormats`, `formatVersion` 20) for a specialization **without components**: the data model of a service. Two types, **Class** (the `attributes` table: name, type, required, example) and **Endpoint** (method, path, request, response, timeout), and two formats, each one a plugin with `generate` and `parse`: **OpenAPI** (`yaml`, OpenAPI 3.0.3: the classes become `components.schemas`, the endpoints become `paths`) and **Attributes CSV** (`csv`, one line per attribute of each class).
+
+**How to open.** **Specializations** › **Apply folder…** and pick the folder (the app only reads the declaration and copies the plugins with the package; running a plugin is in the MCP). With the MCP server, apply the folder to a project and call `export_format` (`data-model/openapi` or `data-model/attributes-csv`) to get the text, or the `import_format` operation with `examples/shop.openapi.yaml` or `examples/shop.attributes.csv` to create the classes and endpoints.
+
+**What you can see.**
+
+- The format declaration (`fileFormats`): `id`, `name`, `extension`, `plugin`, `contract`, `description` and `examples`, scope `project`, and the plugins as classic scripts with the YAML reader and writer written inside (no dependency).
+- Both directions: `export_format` writes the project as OpenAPI YAML or CSV, and `import_format` reads the file back. New items go to a container with no image named after `info.title` (the CSV: "Data model"); re-reading a file updates the annotations it matches (classes by `name`, endpoints by `method` and `path`) and never deletes.
+- One example per format (`examples/shop.openapi.yaml`, `examples/shop.attributes.csv`) that round-trips: `validate_library` reads each one into an empty project and generates it back, and the text must be the same. The CSV has a quoted comma (`"Doe, Jane"`).
+
+**Scripts.** R32.
+
 ### `examples/libraries/measured/`
 
 **What it is.** The example of the **measured** origin (`origins[].kind: "measured"`): the rectangle tree of a page (measured in a browser) becomes markings, matching each node to a type through the `sources`. Two types: **Card** and **Button** (fields `label` and `tone`). The example tree is `examples/page.measured.json`, next to the library folder.

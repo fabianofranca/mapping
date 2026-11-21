@@ -26,3 +26,7 @@ mappings-workspace
 
 # Cena de antes da MF4 (etapa #899), gravada em uma linha por tests/model/material3Mf4Regression.test.ts
 tests/fixtures/material3-mf4-before.json
+
+# Format plugin examples (stage #1923): their bytes are the external system's
+examples/libraries/data-model/examples/shop.openapi.yaml
+examples/libraries/data-model/examples/shop.attributes.csv
