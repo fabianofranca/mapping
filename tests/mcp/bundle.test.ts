@@ -1,6 +1,15 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
+import {
+  copyFileSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+} from 'node:fs';
+import { createRequire } from 'node:module';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { describe, expect, it } from 'vitest';
@@ -18,9 +27,39 @@ describe('dist-mcp/mapping-mcp.js (single file, over stdio)', () => {
     expect(notices.startsWith('THIRD-PARTY NOTICES')).toBe(true);
     // Image codec (Apache-2.0), MCP SDK and zod (MIT): each one's license text.
     expect(notices).toContain('@jsquash/png');
+    // The QuickJS executor of the format plugins (MIT) and its core.
+    expect(notices).toContain('@jitl/quickjs-wasmfile-release-sync');
+    expect(notices).toContain('quickjs-emscripten-core');
     expect(notices).toContain('Apache License');
     expect(notices).toContain('@modelcontextprotocol/sdk');
     expect(notices).toContain('Permission is hereby granted, free of charge');
+  });
+
+  it('embeds the QuickJS .wasm of the format plugins (bytes in the file, no .wasm beside it)', () => {
+    const wasm = readFileSync(
+      createRequire(import.meta.url).resolve('@jitl/quickjs-wasmfile-release-sync/wasm'),
+    );
+    // The first 48 bytes of the module as base64 (64 characters, no padding): how esbuild embeds it.
+    const start = wasm.subarray(0, 48).toString('base64');
+    expect(readFileSync(bundle, 'utf8')).toContain(start);
+    expect(readdirSync('dist-mcp').filter((name) => name.endsWith('.wasm'))).toEqual([]);
+  });
+
+  it('runs a plugin in QuickJS from the bundle alone, with no node_modules around it', () => {
+    const folder = mkdtempSync(join(tmpdir(), 'mapping-bundle-'));
+    try {
+      copyFileSync(bundle, join(folder, 'mapping-mcp.js'));
+      const out = execFileSync(
+        process.execPath,
+        [join(folder, 'mapping-mcp.js'), '--check-plugin-runner'],
+        {
+          cwd: folder,
+        },
+      ).toString();
+      expect(out).toMatch(/^plugin runner: ok \(QuickJS, \d+ ms\)\n$/);
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
   });
 
   it('starts over stdio and answers list_projects', async () => {

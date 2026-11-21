@@ -46,6 +46,21 @@ const fontModules = {
   },
 };
 
+// QuickJS, the executor of the specialization's format plugins (`mcp/pluginRunner.ts`): esbuild
+// resolves an `import` (and the `import()` inside the package) through the `import` condition of the
+// package, the `.mjs` files, which find their own folder with `import.meta.url` (empty in a
+// CommonJS bundle). The `require` condition, the `.js` and `.cjs` files, works in the bundle; the
+// `.wasm` goes in as bytes (`wasm:quickjs`).
+const quickJsVariant = {
+  name: 'quickjs-variant',
+  setup(esbuild) {
+    esbuild.onResolve(
+      { filter: /^@jitl\/quickjs-wasmfile-release-sync(\/emscripten-module)?$/ },
+      (args) => ({ path: require.resolve(args.path) }),
+    );
+  },
+};
+
 // `import text from './file.md?raw'` embeds the file's text (the documentation served as a resource).
 const rawText = {
   name: 'raw-text',
@@ -73,7 +88,7 @@ if (suffix !== '' && !/^-(snapshot\.pr\d+\+[0-9a-f]{7,}|rc\.\d+)$/.test(suffix))
 
 const result = await build({
   entryPoints: ['mcp/main.ts'],
-  plugins: [rawText, wasmModules, fontModules],
+  plugins: [rawText, wasmModules, fontModules, quickJsVariant],
   // The minified version of opentype.js (245 kB instead of 495 kB): the server's limit is +500 kB.
   alias: { 'opentype.js': 'opentype.js/dist/opentype.min.mjs' },
   outfile: 'dist-mcp/mapping-mcp.js',
