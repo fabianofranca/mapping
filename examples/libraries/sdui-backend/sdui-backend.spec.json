@@ -1,9 +1,9 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 20,
+  "formatVersion": 21,
   "id": "sdui-backend",
   "name": "Backend SDUI",
-  "version": 3,
+  "version": 4,
   "description": "Example of the executable origin: a fictional external system (an SDUI backend) describes screens in JSON and the origins declaration translates them into components. It shows sources, slot, anchors, scrim, examples of the external system and the version contract.",
   "containers": [
     {
@@ -11,7 +11,60 @@
       "name": "Phone",
       "width": 412,
       "height": 917,
-      "background": "#FEF7FF"
+      "background": "#FEF7FF",
+      "classes": {
+        "platform": "android"
+      }
+    },
+    {
+      "id": "web-desktop",
+      "name": "Web desktop",
+      "width": 1440,
+      "height": 900,
+      "classes": {
+        "platform": "web"
+      }
+    }
+  ],
+  "containerClasses": [
+    {
+      "id": "platform",
+      "name": "Platform",
+      "classes": [
+        {
+          "id": "android",
+          "name": "Android"
+        },
+        {
+          "id": "ios",
+          "name": "iOS"
+        },
+        {
+          "id": "web",
+          "name": "Web"
+        }
+      ]
+    },
+    {
+      "id": "window",
+      "name": "Window",
+      "by": "width",
+      "classes": [
+        {
+          "id": "compact",
+          "name": "Compact",
+          "below": 600
+        },
+        {
+          "id": "medium",
+          "name": "Medium",
+          "below": 840
+        },
+        {
+          "id": "expanded",
+          "name": "Expanded"
+        }
+      ]
     }
   ],
   "fileFormats": [
@@ -378,7 +431,10 @@
                 "color": "secondary"
               }
             }
-          ]
+          ],
+          "appliesIn": {
+            "window": ["compact", "medium"]
+          }
         },
         {
           "id": "sdui-sheet",
@@ -437,7 +493,10 @@
                 "footer": "Cancel"
               }
             }
-          ]
+          ],
+          "appliesIn": {
+            "platform": ["android", "ios"]
+          }
         },
         {
           "id": "sdui-scrim",

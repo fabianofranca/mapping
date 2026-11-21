@@ -232,6 +232,7 @@ Only when the origin shows **ready-made sizes** for the canvas's top-level objec
 - Example: `"containers": [ { "id": "phone", "name": "Phone", "width": 360, "height": 800 } ]`.
 - The ready-made sizes are in **units** (dp, pt, px at 1x), at 1x: they do not get a density (the density belongs to the project's container). The app suggests a screenshot's density from the image's width ÷ the ready-made size's width (1080 ÷ 360 = 3x); do not write 1080 × 2400 as the ready-made size of a 360 dp phone.
 - Vocabulary: **container** is the canvas's top-level object (with an image file or only with a size and background color); in the project (`mapping.json`, schema v12) it lives in `containers[]` and the marking points to it by `containerId`. The specialization never cites the project: `containers` here are only the ready-made sizes. "Image" is left for the container's image file.
+- A ready-made size may also carry `classes` (`formatVersion` 21): the class it chooses in a chosen set (see "12c. Container classes").
 - Copy the numbers from the origin, do not invent them. Without evidence, omit `containers` (and stay at the `formatVersion` that the rest requires): it is optional and 5 is still accepted.
 - In a version before 6, `containers` is an error (`only allowed with formatVersion 6`). The list is outside the version contract: changing sizes is not a break.
 
@@ -493,6 +494,17 @@ Write a **plugin** when the project has to produce or consume a file of an exter
 - **Limits.** 5 s per call, 64 MiB of memory, 1 MiB for the plugin file, 4 MiB of text, 5,000 operations; a plugin that loops or builds a huge string is `plugin-timeout` or `plugin-limit`.
 - **Version.** `fileFormats` is outside the version contract (no `version` raise, no migration), but it makes the specialization a package and needs `formatVersion` 20.
 
+### 12c. Container classes (`formatVersion` 21)
+
+Declare **container classes** when the origin groups sizes or platforms into named classes that change what is allowed or how a screen is built (Material's window size classes, an "android / ios / web" choice, a form factor). The format knows no breakpoint and no platform: the library names the sets and the classes, copied from the origin.
+
+- `containerClasses` at the root: a list of sets `{ id, name, by?, classes }`; `classes` is a non-empty list of `{ id, name, below? }`. `id` in `[a-z0-9-]+`, unique (in the list, and in the set for the classes); `width` and `height` are reserved ids.
+- **Computed set** (`by: "width"` or `"height"`): the class comes from the container's size in units; every class but the last has `below` (a number above 0, increasing), and the last has none (`compact` below 600, `medium` below 840, `expanded`). **Chosen set** (no `by`): the person picks the class for each container; no class has `below`.
+- `classes` on a ready-made size of `containers`: `{ "<chosen set>": "<class>" }`, the choice the size carries (the Phone size chooses `android`). Only for a chosen set of the specialization.
+- `appliesIn` on a type: `{ "<set>": ["<class>", …] }`, the classes the type is meant for (a bottom sheet for `android` and `ios`; any of the listed ones inside a set, all the sets together). Only on a type that applies to markings in a container (not an arrow, not `floating`). Without evidence of the restriction, omit it.
+- Copy the sets and the thresholds from the origin; do not invent breakpoints. Without evidence, omit all three keys.
+- **Version.** The three keys are outside the version contract (no `version` raise, no migration) and need `formatVersion` 21. The example is `examples/libraries/sdui-backend/` (`platform` chosen, `window` by width). The reference is "Container classes (`formatVersion` 21)" in `docs/SPEC-FORMAT.md`.
+
 ### 13. Version
 
 `formatVersion` is the **minimum** for what the specialization uses. What each version adds:
@@ -517,8 +529,9 @@ Write a **plugin** when the project has to produce or consume a file of an exter
 - `formatVersion` 18: `accessibility` at the root (`touchTarget`) or on a type (`role`, `label`, `touchTarget` or `parts`).
 - `formatVersion` 19: a `copy-field` step in `migrations`.
 - `formatVersion` 20: `fileFormats` at the root.
+- `formatVersion` 21: `containerClasses` at the root, `classes` on a ready-made size of `containers`, or `appliesIn` on a type.
 
-The current format version is 20. **Only raise to 9 if some type uses `variants`, to 10 if some type, field or column uses `notices`, to 11 if something uses a key from the list above (the text `doc` does not count), to 12 only if it declares a role step, to 13 only if a type accepts children of its own layer, to 14 only if a `ref` uses `accepts.annotations`, to 15 only if it declares `tokens`, `icons`, `structural` or `kind: "measured"`, to 16 only if it declares `fieldModels`, `signature`, `ignore`, `calls`, `formats` or a path or positional in `params`, to 17 only if it declares `slots` on a type or in a `code`, to 18 only if it declares `accessibility`, to 19 only if it declares a `copy-field` step, and to 20 only if it declares `fileFormats`**: the rest of the library stays at the version that the content requires (the notes library stays at 7 and the Kotlin one at 8; the Material 3 one is at 18, because it declares `accessibility`). The **component** has its own version, 1 to 4: `formatVersion` 1, 2 when it uses `repeat`, 3 when it uses `image`, or 4 for the fidelity features (`let`, `runs`, `grid`, `$token`, `icon`, `screen`, `anchor`, named slots and reading direction, which this skill itself uses; 1 is still accepted; `repeat` in a 1 is an error). The current component format version is 4. A version greater than necessary prevents importing into old apps with no gain.
+The current format version is 21. **Only raise to 9 if some type uses `variants`, to 10 if some type, field or column uses `notices`, to 11 if something uses a key from the list above (the text `doc` does not count), to 12 only if it declares a role step, to 13 only if a type accepts children of its own layer, to 14 only if a `ref` uses `accepts.annotations`, to 15 only if it declares `tokens`, `icons`, `structural` or `kind: "measured"`, to 16 only if it declares `fieldModels`, `signature`, `ignore`, `calls`, `formats` or a path or positional in `params`, to 17 only if it declares `slots` on a type or in a `code`, to 18 only if it declares `accessibility`, to 19 only if it declares a `copy-field` step, to 20 only if it declares `fileFormats`, and to 21 only if it declares `containerClasses`, `classes` on a ready-made size or `appliesIn`**: the rest of the library stays at the version that the content requires (the notes library stays at 7 and the Kotlin one at 8; the Material 3 one is at 18, because it declares `accessibility`). The **component** has its own version, 1 to 4: `formatVersion` 1, 2 when it uses `repeat`, 3 when it uses `image`, or 4 for the fidelity features (`let`, `runs`, `grid`, `$token`, `icon`, `screen`, `anchor`, named slots and reading direction, which this skill itself uses; 1 is still accepted; `repeat` in a 1 is an error). The current component format version is 4. A version greater than necessary prevents importing into old apps with no gain.
 
 - `version` is an integer ≥ 1. New specialization: `1`. Update of an already applied one: one more than the applied one (`update_specialization` requires a greater version). Never change the `id` in an update: it is the identity.
 
@@ -649,7 +662,7 @@ The prompt only needs to specify. Template:
 
 > /spec-author
 >
-> Specialization **`<id>`** ("<Name>") for Mapping, `formatVersion` <1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20>.
+> Specialization **`<id>`** ("<Name>") for Mapping, `formatVersion` <1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21>.
 >
 > **Origin:** <repository, folder or design system>, reading <what to read: components folder, exported catalog, document>. Ignore <what to ignore>.
 >

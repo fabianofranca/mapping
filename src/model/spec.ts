@@ -20,6 +20,12 @@ import {
 } from './specAccessibility';
 import { checkSignatureKeys } from './specSignature';
 import { checkFileFormats, type SpecFileFormat } from './fileFormats';
+import {
+  checkContainerClasses,
+  type SpecAppliesIn,
+  type SpecContainerChoice,
+  type SpecContainerClassSet,
+} from './containerClasses';
 import type { ModelMessageTemplateCode } from './messages';
 import {
   addSpecIssue,
@@ -51,7 +57,7 @@ function onlyFormat(version: number): SpecMsg {
   return specMsg('spec.onlyFormat', { version: String(version) });
 }
 
-// Specialization format (`formatVersion` 1 to 20), see docs/SPEC-FORMAT.md. Version 2 adds
+// Specialization format (`formatVersion` 1 to 21), see docs/SPEC-FORMAT.md. Version 2 adds
 // `platforms` and `code`; version 1 is 2 without platforms and without `code`; version 3 is 2 plus
 // `sources` (external origins on types and fields, including `table` columns); version 4 is 3
 // plus the library: the package (the specialization's folder) with `component`, `doc` and
@@ -91,7 +97,10 @@ function onlyFormat(version: number): SpecMsg {
 // it copies a field into another on the annotations that match `when`; it covers no break, see
 // `specVersions.ts`); version 20 is 19 plus `fileFormats` at the root (stage #1923: the file
 // formats the specialization reads and writes, each one handled by an isolated `.js` plugin of the
-// package; see `fileFormats.ts`), outside the version contract too.
+// package; see `fileFormats.ts`), outside the version contract too; version 21 is 20 plus container
+// classes (stage #1901: `containerClasses` at the root, `classes` on a ready-made size of
+// `containers` and `appliesIn` on the type; see `containerClasses.ts`), outside the version contract
+// too.
 // The zod here is the source of truth; `docs/spec.schema.json` mirrors it for those who do not
 // use TypeScript. No browser APIs: reusable by the MCP server.
 //
@@ -104,10 +113,10 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Value used before the product rename: import still accepts it. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Current format version (the one that the documentation and new examples use). */
-export const SPEC_FORMAT_VERSION = 20;
+export const SPEC_FORMAT_VERSION = 21;
 /** Versions accepted on import. */
 export const SPEC_FORMAT_VERSIONS = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
 ] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
@@ -479,6 +488,11 @@ export interface SpecAnnotationType {
    * not show the name header and the outline only appears on hover or when selected. Absent = `false`.
    */
   structural?: boolean;
+  /**
+   * The container classes the type is meant for, set id → class ids (`formatVersion` 21 only);
+   * checked as a pending item (OR inside a set, AND across sets).
+   */
+  appliesIn?: SpecAppliesIn;
 }
 
 /** Items an annotation type applies to (ME4, decision 14). */
@@ -506,6 +520,8 @@ export interface SpecContainer {
   height: number;
   /** `#RRGGBB`; absent = white. */
   background?: string;
+  /** The choice the size carries, set id → class id, chosen sets only (`formatVersion` 21 only). */
+  classes?: SpecContainerChoice;
 }
 
 export interface SpecLayer {
@@ -561,6 +577,8 @@ export interface Spec {
   accessibility?: SpecAccessibility;
   /** File formats handled by a plugin of the package (`formatVersion` 20 only). */
   fileFormats?: SpecFileFormat[];
+  /** Sets of container classes, computed by size or chosen per container (`formatVersion` 21 only). */
+  containerClasses?: SpecContainerClassSet[];
 }
 
 const KEY_RE = /^[A-Za-z0-9_]+$/;
@@ -1479,6 +1497,8 @@ const annotationTypeShape = z
       .optional(),
     notices: noticesShape.optional(),
     structural: z.boolean({ error: 'must be true or false' }).optional(),
+    // `formatVersion` 21 only: validated by `checkContainerClasses`, which knows the sets.
+    appliesIn: z.unknown().optional(),
   })
   .strict()
   .superRefine((type, ctx) => {
@@ -1648,6 +1668,8 @@ const containerShape = z
     width: containerSide,
     height: containerSide,
     background: color.optional(),
+    // `formatVersion` 21 only: validated by `checkContainerClasses`, which knows the sets.
+    classes: z.unknown().optional(),
   })
   .strict();
 
@@ -3007,6 +3029,8 @@ export const specSchema = z
     accessibility: accessibilityShape.optional(),
     // Validated by `checkFileFormats` (the version, the shapes and the cross checks), in superRefine.
     fileFormats: z.unknown().optional(),
+    // Validated by `checkContainerClasses` (the version, the shapes and the cross checks).
+    containerClasses: z.unknown().optional(),
   })
   .strict()
   .superRefine((spec, ctx) => {
@@ -3166,6 +3190,7 @@ export const specSchema = z
     checkSlotKeys(spec, typeLayer, ctx);
     checkAccessibilityKeys(spec, ctx);
     checkFileFormats(spec, ctx);
+    checkContainerClasses(spec, ctx);
     if (spec.formatVersion >= 11) {
       checkLayerGroups(spec.layers, ctx);
       checkDocRepos(spec, ctx);
