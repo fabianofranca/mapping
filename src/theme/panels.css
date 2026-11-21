@@ -633,9 +633,15 @@ button.tree-toggle:hover {
 }
 
 @container bottom-window (max-width: 470px) {
+  /* The layer column collapses to zero width instead of display: none: the image rows span four
+     columns, and a table with a missing fourth column gives the Reasons half of the leftover width. */
   .incomplete-table .list-col-layer,
   .incomplete-table .list-cell-layer {
-    display: none;
+    width: 0;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    visibility: hidden;
   }
 
   .incomplete-layer-line {
@@ -644,11 +650,11 @@ button.tree-toggle:hover {
   }
 
   .incomplete-table .list-col-marking {
-    width: 30%;
+    width: 26%;
   }
 
   .incomplete-table .list-col-annotation {
-    width: 25%;
+    width: 30%;
   }
 }
 
@@ -966,6 +972,16 @@ button.tree-toggle:hover {
 .density-control > * {
   flex: 1;
   min-width: 0;
+}
+
+/* With the custom field beside it, the select keeps the width of its longest option (the field takes
+   the leftover); half and half clipped "Custom" in the narrow Details. */
+.density-control > .select:not(:only-child) {
+  flex: 0 0 auto;
+}
+
+.density-control > .select:not(:only-child) .select-control {
+  flex: 0 0 auto;
 }
 
 /* The density suggestion and the Apply button, below the field. */
