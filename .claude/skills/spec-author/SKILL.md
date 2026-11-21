@@ -269,7 +269,7 @@ Put an image in the package (`images/logo.png`, next to the specialization) when
 
 - `src` is a literal package path (relative to the specialization's folder, `/`, no `..`, no leading `/`, ending in `.png`, `.jpg`, `.jpeg` or `.webp`), a `{ "$field" }` whose value is such a path (or an `https://` URL), or a `$switch`/`$if` whose every result is a literal package path (a `$switch` over an `enum` field that picks the picture; otherwise `src: in $switch and $if every result must be a package image path`). Never `$concat`, `http:` or `data:`.
 - Formats PNG, JPEG and WebP, the content matching the extension. Each cited image up to 1 MB and 2048 px on each side; the cited images add up to 8 MB. Shrink or re-encode before copying; an image file that no component cites is not checked and not warned about.
-- Package images need component `formatVersion` 4. The specialization does not change. For now the MCP's PNG draws the placeholder for both.
+- Package images need component `formatVersion` 4. The specialization does not change. The MCP's PNG draws the package images (a missing, corrupt or oversized file is the placeholder, with a `warning` in the response) and the placeholder for a remote image.
 
 #### Compute instead of enumerating (component `formatVersion` 4)
 

@@ -25,7 +25,7 @@ interface Stop {
 const TURN = Math.PI * 2;
 
 /** The inverse of `m` (local → raster), or `null` when it collapses the plane. */
-function invert(m: Matrix): Matrix | null {
+export function invert(m: Matrix): Matrix | null {
   const [a, b, c, d, e, f] = m;
   const det = a * d - b * c;
   if (!Number.isFinite(det) || Math.abs(det) < 1e-12) return null;
