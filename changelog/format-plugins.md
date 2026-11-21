@@ -9,3 +9,4 @@
 
 - File formats of the specialization are handled by an isolated plugin running in QuickJS (formatVersion 20) (#1923).
 - `docs/SPEC-FORMAT.md`, Help › Specializations, `spec-author` skill and `docs/AGENT-GUIDE.md`: the current format version is 20 and the code coming from a specialization only runs isolated.
+- The `dist/index.html` ceiling went up 16 KiB, from 2,359,296 to 2,375,680 bytes, by the budget rule (the formatVersion 20 help text in both languages and the `fileFormats` validation); above the limits, `bug` for the owner to review.
