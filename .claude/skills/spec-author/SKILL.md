@@ -260,8 +260,16 @@ A specialization **does not cite another**: the notes library already brings the
 Use `image` when the drawing shows a photo whose URL comes from the data (avatar, photo, logo). Bind the `src` to a `string` field of the type, `{ "$field": "photo" }` (in `repeat`, the `string` column of the `table`). Rules:
 
 - `src` is only the literal (an absolute `https://...`) or the bare `$field`: **never `$concat`**, `$switch` or `$if`; never `http:`, `data:` or a relative path.
-- `fit`: `cover` (default), `contain` or `fill`; in `formatVersion` 4 also `fill-width`, `fill-height` (occupy the width or the height, centered and cropped), `scale-down` (like `contain`, without enlarging) and `none` (natural size). In a lower version: `template.children[0].fit: only allowed with formatVersion 4`. The MCP's PNG still draws the placeholder. Give it a fixed size, `fill` or `%`; **never `hug`** (it is an error). `fill` (color) serves as a background behind the image and `cornerRadius` makes a round avatar.
+- `fit`: `cover` (default), `contain` or `fill`; in `formatVersion` 4 also `fill-width`, `fill-height` (occupy the width or the height, centered and cropped), `scale-down` (like `contain`, without enlarging) and `none` (natural size). In a lower version: `template.children[0].fit: only allowed with formatVersion 4`. For now the MCP's PNG draws the placeholder for a package image and for a remote one. Give it a fixed size, `fill` or `%`; **never `hug`** (it is an error). `fill` (color) serves as a background behind the image and `cornerRadius` makes a round avatar.
 - A component with an `image` node uses `formatVersion` 3 of the component. The specialization does not change (no declaring an origin) and the `preview` brings an `https://` URL only if you saw it in the origin.
+
+#### Package image: a picture inside the library (component `formatVersion` 4)
+
+Put an image in the package (`images/logo.png`, next to the specialization) when the drawing needs a fixed picture that belongs to the design (a logo, an illustration, an empty-state graphic) and that the source gives as a file. Keep it remote (above) only when the URL comes from the data. Rules:
+
+- `src` is a literal package path (relative to the specialization's folder, `/`, no `..`, no leading `/`, ending in `.png`, `.jpg`, `.jpeg` or `.webp`), a `{ "$field" }` whose value is such a path (or an `https://` URL), or a `$switch`/`$if` whose every result is a literal package path (a `$switch` over an `enum` field that picks the picture; otherwise `src: in $switch and $if every result must be a package image path`). Never `$concat`, `http:` or `data:`.
+- Formats PNG, JPEG and WebP, the content matching the extension. Each cited image up to 1 MB and 2048 px on each side; the cited images add up to 8 MB. Shrink or re-encode before copying; an image file that no component cites is not checked and not warned about.
+- Package images need component `formatVersion` 4. The specialization does not change. For now the MCP's PNG draws the placeholder for both.
 
 #### Compute instead of enumerating (component `formatVersion` 4)
 
@@ -548,6 +556,8 @@ The validation is the same as the app's import, with the exact path of the error
 ### Validate the library
 
 Generate, `validate_library`, fix, repeat until **zero errors**. An error prevents use; a **warning lets it be used**, but each one is either fixed or explained in the delivery (a font missing from the package and content larger than the box are expected when the drawing is faithful to the origin). The **font warning** (`fonts[<i>].file`: `the MCP server cannot lay out <file>: it measures and draws with its embedded font; the app is not affected`) (it covers `.woff2` too) means the file is corrupt, is a collection or has no usable tables: it is not fixed by editing the font. Check the file, or keep it and say in the delivery that the MCP server's `render_*` use its embedded font for that family while the app uses the real one. The three levels are always the same: (1) each file, (2) the coherence between them (and the version contract, with the previous version) and (3) the drawing proof, which instantiates each component and passes the external-system examples through the declaration. Each problem comes with `file`, `path`, `message` and `severity`.
+
+The **image messages** (errors at the `image` node's path, the total at the package): `file not found: <path>`, `image is not PNG, JPEG or WebP: <path>`, `image larger than 1 MB: <path>`, `image larger than 2048 px: <path> (<w>×<h>)` and `the package images exceed 8 MB`; at level 3, the warning `package image not found: <path>` for a `preview` or example `$field` value that names a package image the package lacks. `summary.images` counts the distinct cited images.
 
 1. **With the MCP server:** `validate_library({ path: "<folder>" })`, with `previous: "<previous version's file>"` in an update. The folder must be inside the roots. Use `level: 1` or `2` to iterate and close with the default (3).
 2. **Without MCP, with the Mapping repository within reach:** a disposable test in `tests/model/`, run with `npx vitest run tests/model/library-draft.test.ts` and deleted afterward. It calls the same `validateLibrary` function as the app.

@@ -24,11 +24,6 @@
       "count": 1
     }
   },
-  "mcp/image/formats.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "mcp/image/raster.ts": {
     "complexity": {
       "count": 1
@@ -300,6 +295,11 @@
     }
   },
   "src/model/exif.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/imageHeader.ts": {
     "complexity": {
       "count": 1
     }

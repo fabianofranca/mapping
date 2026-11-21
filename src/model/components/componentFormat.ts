@@ -658,18 +658,24 @@ export const IMAGE_FITS_V4: readonly ImageFit[] = [
 ];
 
 /**
- * Remote image (`formatVersion` 3). `src` is the image's `https://` URL and is **restricted**: only
- * a literal text or exactly `{ "$field": "<field>" }` (a `string` field of the type, or a `string`
- * column inside a `repeat`). No other expression (`$concat`, `$switch`, `$if`) is valid, so the
+ * Image of the `image` node (`formatVersion` 3; the package file, 4). `src` is **restricted** by
+ * validation, not by the type (`Expr<string>` models the forms): the image's `https://` URL (a
+ * literal text), exactly `{ "$field": "<field>" }` (a `string` field of the type, or a `string`
+ * column inside a `repeat`) or, in formatVersion 4, an image file of the library package: a
+ * literal path (relative to the package root, with `/`, no `..`, ending in `.png`, `.jpg`,
+ * `.jpeg` or `.webp`), or a `$switch` or `$if` whose every result is such a literal path. No
+ * other expression (`$concat`, a `$field` with `default`, a `$switch` with a URL) is valid, so the
  * component does not build the URL with data from other fields and send it to the server of whoever
- * wrote the specialization. `fit` (default `cover`) says how the image fills the box. The node's
+ * wrote the specialization. When drawing, a `$field` value that is a package path draws the
+ * package image (`asset` in the scene), an `https://` value the remote one (`url`), anything else
+ * the placeholder. `fit` (default `cover`) says how the image fills the box. The node's
  * `fill` is the **background** behind the image. `width`/`height` do not accept `hug`: the layout
- * never depends on the downloaded image. The model never downloads the image; whoever draws
- * decides (the placeholder appears while there is no ready or allowed image).
+ * never depends on the downloaded image. The model never downloads or reads the image; whoever
+ * draws decides (the placeholder appears while there is no ready or allowed image).
  */
 export interface ImageTemplate extends TemplateNodeBase {
   readonly type: 'image';
-  readonly src: string | { readonly $field: string };
+  readonly src: Expr<string>;
   readonly fit?: ImageFit;
 }
 

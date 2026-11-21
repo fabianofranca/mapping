@@ -80,6 +80,8 @@ export const componentMessages = {
   'component.expectedNodes': 'expected a list of nodes',
   'component.expectedHttps': 'expected an absolute https:// URL ({reason})',
   'component.srcOnlyLiteral': 'src only accepts literal text or { "$field": "<field>" }',
+  'component.imageSrcResults':
+    'in $switch and $if every result must be a package image path',
   'component.expectedInteger0': 'expected an integer greater than or equal to 0',
   'component.countOrField': 'use count or field, not both',
   'component.repeatTemplateFrame': 'the template of a row must be of type "frame"',

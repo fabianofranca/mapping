@@ -1,4 +1,5 @@
 // Library: the design system fonts declared in the specialization (the bytes come from the folder).
+import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import { loadLibrary } from '../../../src/model/components/library';
 import { M3_FILES } from '../../../viewer/samples/samplesMaterial3';
@@ -42,5 +43,20 @@ describe('fonts', () => {
     });
     expect(lib.fonts[1]?.bytes).toBeUndefined();
     expect(lib.problems).toEqual(['fonts[2]: needs family and file']);
+  });
+});
+
+describe('font bytes from another realm', () => {
+  it('an ArrayBuffer made in another realm (not instanceof this one) is kept as the font bytes', () => {
+    const spec = JSON.parse(M3_FILES[0]!.text!) as Record<string, unknown>;
+    spec.fonts = [{ family: 'Roboto', file: 'fonts/Roboto-VF.ttf', weight: '400' }];
+    const foreign = runInNewContext('new ArrayBuffer(4)') as ArrayBuffer;
+    expect(foreign instanceof ArrayBuffer).toBe(false);
+    const lib = loadLibrary([
+      { path: 'material3.spec.json', text: JSON.stringify(spec) },
+      ...M3_FILES.slice(1),
+      { path: 'fonts/Roboto-VF.ttf', bytes: foreign },
+    ]);
+    expect(lib.fonts[0]?.bytes?.byteLength).toBe(4);
   });
 });

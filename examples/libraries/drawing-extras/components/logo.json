@@ -1,0 +1,167 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "logo",
+  "name": "Logo",
+  "description": "Three images of the library package: a fixed logo, an image chosen by the variant field with a $switch of package paths, and an image whose package path comes from the source field.",
+  "size": {
+    "width": 360,
+    "height": 160
+  },
+  "minSize": {
+    "width": 300,
+    "height": 120
+  },
+  "preview": {
+    "variant": "jpeg",
+    "source": "images/pattern.webp"
+  },
+  "template": {
+    "type": "frame",
+    "name": "logo",
+    "layout": {
+      "type": "column",
+      "gap": 8,
+      "padding": 12
+    },
+    "cornerRadius": 12,
+    "fill": "#FFFFFF",
+    "stroke": {
+      "color": "#D1D5DB",
+      "width": 1
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "title",
+        "text": "Package images",
+        "font": {
+          "size": 14,
+          "weight": 600,
+          "lineHeight": 20
+        },
+        "color": "#111827"
+      },
+      {
+        "type": "frame",
+        "name": "row",
+        "width": "fill",
+        "layout": {
+          "type": "row",
+          "gap": 12,
+          "align": "start"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "fixed",
+            "width": "fill",
+            "layout": {
+              "type": "column",
+              "gap": 6,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "image",
+                "name": "fixed-image",
+                "src": "images/logo.png",
+                "width": 80,
+                "height": 80,
+                "fit": "cover",
+                "cornerRadius": 8
+              },
+              {
+                "type": "text",
+                "name": "label",
+                "text": "Fixed",
+                "font": {
+                  "size": 12,
+                  "weight": 500,
+                  "lineHeight": 16
+                },
+                "color": "#374151"
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "by-variant",
+            "width": "fill",
+            "layout": {
+              "type": "column",
+              "gap": 6,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "image",
+                "name": "variant-image",
+                "src": {
+                  "$switch": "variant",
+                  "cases": {
+                    "png": "images/logo.png",
+                    "jpeg": "images/photo.jpg",
+                    "webp": "images/pattern.webp"
+                  },
+                  "default": "images/logo.png"
+                },
+                "width": 80,
+                "height": 80,
+                "fit": "contain",
+                "cornerRadius": 40,
+                "fill": "#F3F4F6"
+              },
+              {
+                "type": "text",
+                "name": "label",
+                "text": "Variant",
+                "font": {
+                  "size": 12,
+                  "weight": 500,
+                  "lineHeight": 16
+                },
+                "color": "#374151"
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "by-field",
+            "width": "fill",
+            "layout": {
+              "type": "column",
+              "gap": 6,
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "image",
+                "name": "source-image",
+                "src": {
+                  "$field": "source"
+                },
+                "width": 80,
+                "height": 80,
+                "fit": "cover",
+                "cornerRadius": 8,
+                "fill": "#F3F4F6"
+              },
+              {
+                "type": "text",
+                "name": "label",
+                "text": "Source",
+                "font": {
+                  "size": 12,
+                  "weight": 500,
+                  "lineHeight": 16
+                },
+                "color": "#374151"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

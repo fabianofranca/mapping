@@ -14,6 +14,9 @@ import { isIntrinsicSize } from './components/layoutValues';
 import { expressionPx, fitComponentSize, resolveSizing } from './components/sizing';
 import { type ResolvedTokens, resolveTokens } from './components/tokens';
 import type { LibraryIssue } from './library';
+import { isRecord } from './isRecord';
+import { imageFieldRefs } from './libraryImages';
+import { isPackageImagePath } from './components/imagePath';
 import { libraryIssue } from './libraryIssue';
 import { modelMessage, rawMessage, type ModelMessage } from './modelMessage';
 import {
@@ -66,6 +69,8 @@ export interface DrawingContext {
   readonly textFiles: readonly TextFile[];
   /** The specialization's icon set (`icons`), when the file is valid. */
   readonly icons?: IconSet;
+  /** Is the file (resolved path) in the package? Without it, no package image is reported missing. */
+  readonly hasFile?: (path: string) => boolean;
 }
 
 const messageOf = (error: unknown): string =>
@@ -499,6 +504,61 @@ function nestedComponents(ctx: DrawingContext): ReadonlyMap<string, ComponentFil
   return out;
 }
 
+/** A string that names a package image, from a value of the case (trimmed like the engine does). */
+const imagePathOf = (value: unknown): string | undefined =>
+  typeof value === 'string' && isPackageImagePath(value.trim())
+    ? value.trim()
+    : undefined;
+
+/** The texts a field value offers to an image `src` bound to `ref`: its own, or a column of the table's rows. */
+function imageValueTexts(
+  values: Readonly<Record<string, unknown>>,
+  ref: { readonly key: string; readonly table: string | undefined },
+  prefix: string,
+): { path: string; text: string }[] {
+  const out: { path: string; text: string }[] = [];
+  const own = imagePathOf(values[ref.key]);
+  if (own !== undefined) out.push({ path: `${prefix}.${ref.key}`, text: own });
+  const rows = ref.table === undefined ? undefined : values[ref.table];
+  if (Array.isArray(rows)) {
+    rows.forEach((row: unknown, index) => {
+      const text = isRecord(row) ? imagePathOf(row[ref.key]) : undefined;
+      if (text !== undefined)
+        out.push({ path: `${prefix}.${ref.table}[${index}].${ref.key}`, text });
+    });
+  }
+  return out;
+}
+
+/**
+ * Warning for each value of a case (`preview` or an example) that an image `src` reads, names a
+ * package image and is not in the package: the drawing shows the placeholder.
+ */
+function missingImageValues(
+  ctx: DrawingContext,
+  component: ComponentFile,
+  values: Readonly<Record<string, unknown>> | undefined,
+  at: { readonly file: string; readonly prefix: string },
+): LibraryIssue[] {
+  const { hasFile } = ctx;
+  if (hasFile === undefined || values === undefined) return [];
+  const out: LibraryIssue[] = [];
+  const seen = new Set<string>();
+  for (const ref of imageFieldRefs(component.template)) {
+    for (const { path, text } of imageValueTexts(values, ref, at.prefix)) {
+      const target = ctx.resolve(text);
+      if (hasFile(target) || seen.has(path)) continue;
+      seen.add(path);
+      out.push(
+        libraryIssue('warning', at.file, path, 'library.imageValueMissing', {
+          path: target,
+        }),
+      );
+    }
+  }
+  return out;
+}
+
 export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
   const { spec, specPath } = ctx;
   const out: LibraryIssue[] = [];
@@ -533,6 +593,20 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
       const component =
         ctx.icons === undefined ? loaded : { ...loaded, resolvedIcons: ctx.icons };
       typeDrawing(type, component, componentPath, specPath, basePath, modes, out);
+      out.push(
+        ...missingImageValues(ctx, component, component.preview, {
+          file: componentPath,
+          prefix: 'preview',
+        }),
+      );
+      (type.examples ?? []).forEach((example, index) => {
+        out.push(
+          ...missingImageValues(ctx, component, example.values, {
+            file: specPath,
+            prefix: `${basePath}.examples[${index}].values`,
+          }),
+        );
+      });
 
       (type.examples ?? []).forEach((example, index) => {
         if (example.system === undefined || example.file === undefined) return;
