@@ -78,6 +78,10 @@ const MISSING_TODAY: string[] = [
   // carry no migrations with it in this stage; covered by tests/model/specCopyField.test.ts.
   'spec:migrations[].steps[].op=copy-field',
   'spec:migrations[].steps[].when',
+  // `fileFormats` (formatVersion 20, stage #1923, FP1): no example or library declares a format yet; `sdui-backend`
+  // gets the SDUI plugin and the `data-model` package is created in FP5 (this item leaves here then); covered by
+  // tests/model/specV20.test.ts.
+  'spec:fileFormats',
   // Component layout v4 (stage #747, CF2): the distributed libraries do not migrate to
   // format 4 in this stage ('Out' decision of #747); covered by
   // tests/model/components/layoutFidelity.test.ts, layoutV4Parse.test.ts and by script R25.

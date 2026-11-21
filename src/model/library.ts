@@ -33,6 +33,7 @@ import {
 } from './libraryComponentNodes';
 import { libraryIssue } from './libraryIssue';
 import { checkSignatures } from './librarySignature';
+import { MAX_PLUGIN_BYTES } from './fileFormats';
 import type { ModelMessageTemplateCode } from './messages';
 import type { ModelMessage } from './modelMessage';
 
@@ -474,11 +475,12 @@ function level1(
     readIcons(pkg, out);
   }
   signatureChecks(pkg, referenced, out);
+  fileFormatChecks(pkg, referenced, out);
 
   for (const file of files) {
     const lower = file.path.toLowerCase();
     if (referenced.has(file.path)) continue;
-    if (lower.endsWith('.json') || lower.endsWith('.md')) {
+    if (lower.endsWith('.json') || lower.endsWith('.md') || lower.endsWith('.js')) {
       out.warning(file.path, '', 'library.notReferenced');
     }
   }
@@ -499,6 +501,38 @@ function signatureChecks(pkg: Package, referenced: Set<string>, out: Collector):
       else out.passWarning(problem.file, problem.path, problem.message, coding);
     }
   }
+}
+
+/** Bytes of the UTF-8 text (what the plugin file weighs on disk). */
+const utf8Bytes = (text: string): number => new TextEncoder().encode(text).length;
+
+/**
+ * Level 1 (formatVersion 20): each declared format has its plugin in the package (at most
+ * `MAX_PLUGIN_BYTES`) and each example its `file` and `input`. Running them is level 2 and 3 (MCP).
+ */
+function fileFormatChecks(pkg: Package, referenced: Set<string>, out: Collector): void {
+  (pkg.spec.fileFormats ?? []).forEach((format, fi) => {
+    const base = `fileFormats[${fi}]`;
+    const cite = (ref: string, path: string): LibraryFile | undefined => {
+      const target = pkg.resolve(ref);
+      referenced.add(target);
+      const file = pkg.byPath.get(target);
+      if (file === undefined) out.fileNotFound(pkg.specPath, path, target);
+      return file;
+    };
+    const plugin = cite(format.plugin, `${base}.plugin`);
+    if (plugin?.text !== undefined && utf8Bytes(plugin.text) > MAX_PLUGIN_BYTES) {
+      out.error(pkg.specPath, `${base}.plugin`, 'library.pluginTooLarge', {
+        max: MAX_PLUGIN_BYTES,
+        size: utf8Bytes(plugin.text),
+      });
+    }
+    (format.examples ?? []).forEach((example, ei) => {
+      const path = `${base}.examples[${ei}]`;
+      cite(example.file, `${path}.file`);
+      if (example.input !== undefined) cite(example.input, `${path}.input`);
+    });
+  });
 }
 
 /** Level 1: the `icons` file exists and is a valid `mapping-icons`. */

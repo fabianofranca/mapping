@@ -1117,3 +1117,104 @@ describe('validateLibrary: Material 3', () => {
     ]);
   });
 });
+
+// ---------------------------------------------------------------------------------------
+// fileFormats (formatVersion 20, stage #1923 FP1): level 1 checks the declared files
+// ---------------------------------------------------------------------------------------
+
+describe('validateLibrary: fileFormats (formatVersion 20)', () => {
+  const FORMATS = [
+    {
+      id: 'csv',
+      name: 'CSV',
+      extension: 'csv',
+      plugin: 'plugins/csv.js',
+      contract: 1,
+      examples: [
+        { name: 'Small', file: 'examples/small.csv' },
+        { name: 'Generated', input: 'examples/in.json', file: 'examples/out.csv' },
+      ],
+    },
+  ];
+  const PLUGIN = 'export function parse() { return []; }\n';
+
+  function v20Package(): LibraryFile[] {
+    let files: LibraryFile[] = patch(miniPackage(), SPEC, ['formatVersion'], 20);
+    files = patch(files, SPEC, ['fileFormats'], FORMATS);
+    return [
+      ...files,
+      { path: 'plugins/csv.js', text: PLUGIN },
+      { path: 'examples/small.csv', binary: true },
+      { path: 'examples/in.json', text: '{}' },
+      { path: 'examples/out.csv', binary: true },
+    ];
+  }
+
+  it('a package with the plugin, the examples and the input present has no error', () => {
+    const report = validate(v20Package(), { level: 1 });
+    expect(report.errors.map(brief)).toEqual([]);
+    expect(report.warnings.map(brief)).toEqual([]);
+  });
+
+  it('a missing plugin is a file not found at fileFormats[i].plugin', () => {
+    const report = validate(without(v20Package(), 'plugins/csv.js'), { level: 1 });
+    expect(report.errors.map(brief)).toEqual([
+      ['error', SPEC, 'fileFormats[0].plugin', 'file not found: plugins/csv.js'],
+    ]);
+  });
+
+  it('a missing example file and a missing input are errors at their own paths', () => {
+    const files = without(
+      without(v20Package(), 'examples/small.csv'),
+      'examples/in.json',
+    );
+    expect(validate(files, { level: 1 }).errors.map(brief)).toEqual([
+      [
+        'error',
+        SPEC,
+        'fileFormats[0].examples[0].file',
+        'file not found: examples/small.csv',
+      ],
+      [
+        'error',
+        SPEC,
+        'fileFormats[0].examples[1].input',
+        'file not found: examples/in.json',
+      ],
+    ]);
+  });
+
+  it('a plugin of exactly 1 MiB passes and one byte more is an error at the plugin path', () => {
+    const exact = withText(v20Package(), 'plugins/csv.js', 'a'.repeat(1024 * 1024));
+    expect(validate(exact, { level: 1 }).errors.map(brief)).toEqual([]);
+    const big = withText(v20Package(), 'plugins/csv.js', 'a'.repeat(1024 * 1024 + 1));
+    expect(validate(big, { level: 1 }).errors.map(brief)).toEqual([
+      [
+        'error',
+        SPEC,
+        'fileFormats[0].plugin',
+        'the plugin is larger than 1048576 bytes (1048577 bytes)',
+      ],
+    ]);
+  });
+
+  it('the size counts bytes, not characters', () => {
+    const text = '\u00e9'.repeat(600 * 1024);
+    const report = validate(withText(v20Package(), 'plugins/csv.js', text), { level: 1 });
+    expect(report.errors.map((e) => e.path)).toEqual(['fileFormats[0].plugin']);
+  });
+
+  it('a plugin that no format cites is a file not referenced (warning)', () => {
+    const files = [...v20Package(), { path: 'plugins/other.js', text: PLUGIN }];
+    expect(validate(files, { level: 1 }).warnings.map(brief)).toEqual([
+      ['warning', 'plugins/other.js', '', 'file not referenced by the specialization'],
+    ]);
+  });
+
+  it('a version 19 specialization with fileFormats stops at the parser error', () => {
+    const files = patch(v20Package(), SPEC, ['formatVersion'], 19);
+    expect(validate(files, { level: 1 }).errors.map(brief)).toEqual([
+      ['error', SPEC, 'fileFormats', 'only allowed with formatVersion 20'],
+    ]);
+  });
+});

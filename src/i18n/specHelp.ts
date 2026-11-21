@@ -586,6 +586,28 @@ const PACKAGE_TREE = `sdui-backend/
   examples/settings.sdui.json  an example screen of an external system
   fonts/Roboto-Regular.woff2   the design fonts (optional)`;
 
+/** Excerpt of the file formats (`fileFormats`, v20). */
+const FILE_FORMATS_EXCERPT = `{
+  "fileFormats": [
+    {
+      "id": "openapi",
+      "name": "OpenAPI",
+      "extension": "yaml",
+      "plugin": "formats/openapi.js",
+      "contract": 1,
+      "scope": "project",
+      "description": "Reads and writes the schemas of an OpenAPI document.",
+      "examples": [
+        {
+          "name": "Pets",
+          "file": "examples/pets.openapi.yaml",
+          "input": "examples/pets.input.json"
+        }
+      ]
+    }
+  ]
+}`;
+
 /** Excerpt of the version contract (`migrations`, v4). */
 const MIGRATIONS_EXCERPT = `{
   "migrations": [
@@ -758,6 +780,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 17 adds the named slots: slots on the type (id, name, description, accepts and max, one entry per slot of the component) and slots on the code of each platform and of each variants case (slot id → parameter name), which the signature sheet checks (section "Slots of the type (slots)"). Only whoever uses one of them moves to 17; versions 1 to 16 stay accepted, and the key in an earlier version is the usual error only allowed with formatVersion 17.',
           'formatVersion 18 adds accessibility: accessibility at the root (touchTarget, the minimum touch area in component units) and on the type (role, label, touchTarget and parts), which the audit reads to report the pending item accessible-label-missing and the warning touch-target-small (section "Accessibility (accessibility)"). Only whoever uses it moves to 18; versions 1 to 17 stay accepted, and the key in an earlier version is the usual error only allowed with formatVersion 18.',
           'formatVersion 19 adds the copy-field migration step: in migrations, it copies the value of a field (or of a table column) into another one, only on the annotations that match when, so a library update can split a field into two without losing values (section "Version contract"). from keeps its value, to is only filled when empty, and nothing is ever lost. It covers no break. Only a specialization that declares the step goes up to 19. Versions 1 to 18 are still accepted.',
+          'formatVersion 20 adds the file formats: fileFormats at the root, the list of file formats that the specialization reads and writes, each one handled by a plugin, a .js file of the package (section "Library: the package"). It makes the specialization a package. The key is outside the version contract: adding, changing or removing a format needs no version raise and no migration. Before 20 it is the error only allowed with formatVersion 20, at fileFormats. Only a specialization that declares fileFormats goes up to 20. Versions 1 to 19 are still accepted, and origins stays as it was.',
           'formatVersion 4 adds the library: components that draw the types, documents, examples, fonts, executable origins and the version contract (sections "Library: the package", "Version contract" and "Library validation").',
           'formatVersion 5 is 4 plus repo on the platforms: the library repository on each platform, where the link and the revision of the file of each symbol come from (section "Platforms and code").',
           'formatVersion 6 is 5 plus containers: the ready-made sizes the New container dialog offers when the specialization is applied (section "Containers (ready-made sizes)"). The core only has Custom and Selection size; versions 1 to 5 are still accepted.',
@@ -776,7 +799,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 19), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 20), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -1386,8 +1409,17 @@ const enUS: readonly HelpSection[] = [
             term: 'migrations',
             text: 'At the root: the version contract (next section).',
           },
+          {
+            term: 'fileFormats',
+            text: 'formatVersion 20, at the root: list of { id, name, extension, plugin, contract, scope?, description?, examples? }. id ([a-z0-9][a-z0-9-]*, unique) is cited as <specId>/<formatId>; plugin is a .js file of the package (at most 1 MiB); contract is required and only 1; scope is project (default) or container; each example has a unique name, a file in the format and, optionally, input (a .json projection, for a plugin that only has generate). The files must exist in the package. Outside the version contract.',
+          },
         ],
       },
+      {
+        kind: 'p',
+        text: 'A fileFormats plugin is a text file of the package, read by the app and by the MCP server and copied with the package to specs/<id>/. It only ever runs isolated: it sees only its input, returns text or operations (which become a proposal for review), has no disk, network or storage, and has a time limit. In this stage nothing runs a plugin yet: the declaration and the package files are only validated.',
+      },
+      { kind: 'code', code: FILE_FORMATS_EXCERPT },
       {
         kind: 'p',
         text: 'In the app, Specializations › Apply folder… (Chrome and Edge) or Apply zip… checks the package through the three levels: errors block, warnings let you apply. Applying copies the whole folder to specs/<id>/ in the project; Update from folder… or from zip… rewrites the copy and Remove deletes it. A v4 or v5 specialization that cites no package file (no component, doc, examples, fonts or origins) works as a lone .json file; one that does is refused as a .json: the library needs the whole folder. The repository ships complete libraries in libraries/ (for example material3-compose, with 50 Material 3 types for Jetpack Compose and the Roboto font) and, in examples/libraries/sdui-backend/, the example of the executable origin.',
@@ -1545,7 +1577,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 to 19), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 to 20), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types, in another layer (from formatVersion 13, also in the owner’s own layer);',
           'every type with requiresOwner: true appears in the allowedChildren of some type (in formatVersion 11, in the resolved set of children of some owner: by id, by whole layer or by group);',
@@ -1563,6 +1595,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 18, accessibility at the root and on the type: only in version 18 (before it the error is only allowed with formatVersion 18, at the path of each key); role is one of the listed roles; touchTarget has width and height above 0 and mode visual or expanded, and on a type it needs an interactive role; label.fields are string or enum fields of the type; the id of a part is unique and its when is a field, a table or table.column that exists; a part has no touchTarget.',
           'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) from formatVersion 3 on;',
           'formatVersion 11, children by layer and group: version 11 only (before it the error is only allowed with formatVersion 11, at the exact path); each allowedChildren item is a type id or a strict { layer, groups } clause (any other property is an error, and so is an empty groups); errors: a layer that is not a layer of the specialization or is the owner’s own before formatVersion 13 (children must be in another layer) and a group that does not exist in the clause’s layer; requiresOwner is checked against the resolved set; layer groups with a non-empty id unique in the layer and a non-empty name; type groups non-empty, without repetition and only from its own layer; warnings: 20 ids or more in text in the same allowedChildren and a group no type uses;',
+          'formatVersion 20, fileFormats: version 20 only (before it the error is only allowed with formatVersion 20, at fileFormats); a list of strict objects (another key is unknown key: <key>, at its exact path); id is [a-z0-9][a-z0-9-]* and unique, name is not empty, extension is [a-z0-9]+, plugin is a package path ending in .js, contract is required and only 1, scope is project or container; each example has a non-empty name, unique in the format, a file that is a package path and an optional input that is a .json package path; level 1 of the library validator checks that the plugin, the example files and the input exist in the package and that the plugin has at most 1 MiB (error at fileFormats[i].plugin); nothing here runs a plugin;',
           'formatVersion 19, copy-field step in migrations: version 19 only (before it the error is only allowed with formatVersion 19, at migrations[i].steps[j].op); strict keys type, from, to and when; type is a type of this version and to is a field or column of it; from may not exist; from and to are both fields or both columns of the same table, never a table field and never the same; when is not empty, its keys are top-level fields of the type that are not table or ref, each value is text, a number or a non-empty list of them and in an enum each value is an option; warning: a from that was not a field of the type in the previous version;',
           'formatVersion 12, role steps in migrations: rename-role, remove-role and set-role in version 12 only (from 4 to 11 the error is only allowed with formatVersion 12, at migrations[i].steps[j].op); strict keys; rename-role: type is a type of this version with childRoles, to is one of its roles and from is not; remove-role: type is a type of this version, role is not one of its roles and mode is clear or unlink; set-role: type has childRoles, role is one of its roles and childType only checks the id format; warning: a rename-role.from or remove-role.role that was not a role of the type in the previous version;',
           'formatVersion 11, childRoles and childRolesLabel: version 11 only; childRoles non-empty, of strict { id, name, description? }, with a non-empty id unique in the type and a non-empty name; only on a type with allowedChildren; childRolesLabel non-empty text and only with childRoles; without it the app uses "Role";',
@@ -1626,6 +1659,7 @@ const ptBR: readonly HelpSection[] = [
           'A formatVersion 17 acrescenta os slots nomeados: slots no tipo (id, name, description, accepts e max, uma entrada por slot do componente) e slots no code de cada plataforma e de cada caso de variants (id do slot → nome do parâmetro), que a ficha de assinatura confere (seção "Slots do tipo (slots)"). Só sobe para a 17 quem usa algum deles; as versões 1 a 16 continuam aceitas, e a chave numa versão anterior é o erro só é permitido com formatVersion 17.',
           'A formatVersion 18 acrescenta a acessibilidade: accessibility na raiz (touchTarget, a área mínima de toque em unidades do componente) e no tipo (role, label, touchTarget e parts), que a auditoria lê para apontar a pendência accessible-label-missing e o aviso touch-target-small (seção "Acessibilidade (accessibility)"). Só sobe para a 18 quem a usa; as versões 1 a 17 continuam aceitas, e a chave numa versão anterior é o erro só é permitido com formatVersion 18.',
           'A formatVersion 19 acrescenta o passo de migração copy-field: em migrations, copia o valor de um campo (ou de uma coluna de table) para outro, só nas anotações que casam com when, para que a atualização de uma biblioteca possa dividir um campo em dois sem perder valores (seção "Contrato de versão"). O from guarda o valor, o to só é preenchido quando vazio e nunca há perda. Ele não cobre nenhuma quebra. Só sobe para a 19 quem declara o passo. As versões 1 a 18 continuam aceitas.',
+          'A formatVersion 20 acrescenta os formatos de arquivo: fileFormats na raiz, a lista de formatos de arquivo que a especialização lê e escreve, cada um tratado por um plugin, um arquivo .js do pacote (seção "Biblioteca: o pacote"). Ela faz da especialização um pacote. A chave fica fora do contrato de versão: incluir, mudar ou tirar um formato não pede subir a versão nem migração. Antes da 20 o erro é só é permitido com formatVersion 20, em fileFormats. Só sobe para a 20 quem declara fileFormats. As versões 1 a 19 continuam aceitas, e origins continua como era.',
           'A formatVersion 4 acrescenta a biblioteca: componentes que desenham os tipos, documentos, exemplos, fontes, origens executáveis e o contrato de versão (seções "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca").',
           'A formatVersion 5 é a 4 mais o repo nas plataformas: o repositório da biblioteca em cada plataforma, de onde vêm o link e a revisão do arquivo de cada symbol (seção "Plataformas e code").',
           'A formatVersion 6 é a 5 mais containers: os tamanhos prontos que o diálogo Novo container oferece quando a especialização está aplicada (seção "Containers (tamanhos prontos)"). O núcleo só tem Personalizado e Tamanho da seleção; as versões 1 a 5 continuam aceitas.',
@@ -1644,7 +1678,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 19), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 20), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -2251,8 +2285,17 @@ const ptBR: readonly HelpSection[] = [
             term: 'migrations',
             text: 'Na raiz: o contrato de versão (próxima seção).',
           },
+          {
+            term: 'fileFormats',
+            text: 'formatVersion 20, na raiz: lista de { id, name, extension, plugin, contract, scope?, description?, examples? }. O id ([a-z0-9][a-z0-9-]*, único) é citado como <specId>/<formatId>; plugin é um arquivo .js do pacote (no máximo 1 MiB); contract é obrigatório e só 1; scope é project (padrão) ou container; cada exemplo tem name único, um file no formato e, opcionalmente, input (uma projeção .json, para um plugin que só tem generate). Os arquivos precisam existir no pacote. Fora do contrato de versão.',
+          },
         ],
       },
+      {
+        kind: 'p',
+        text: 'Um plugin de fileFormats é um arquivo de texto do pacote, lido pelo app e pelo servidor MCP e copiado com o pacote para specs/<id>/. Ele só roda isolado: vê apenas a sua entrada, devolve texto ou operações (que viram uma proposta para revisão), não tem disco, rede nem armazenamento e tem tempo limite. Nesta etapa nada executa um plugin ainda: a declaração e os arquivos do pacote são apenas validados.',
+      },
+      { kind: 'code', code: FILE_FORMATS_EXCERPT },
       {
         kind: 'p',
         text: 'No app, Especializações › Aplicar pasta… (Chrome e Edge) ou Aplicar zip… confere o pacote pelos três níveis: erros bloqueiam, avisos deixam aplicar. Aplicar copia a pasta inteira para specs/<id>/ no projeto; Atualizar de pasta… ou de zip… regrava a cópia e Remover a apaga. Uma especialização v4 ou v5 que não cita nenhum arquivo do pacote (sem component, doc, examples, fonts nem origins) vale como arquivo .json isolado; a que cita é recusada em .json: a biblioteca precisa da pasta inteira. O repositório traz bibliotecas completas em libraries/ (por exemplo, a material3-compose, com 50 tipos do Material 3 para Jetpack Compose e a fonte Roboto) e, em examples/libraries/sdui-backend/, o exemplo da origem executável.',
@@ -2410,7 +2453,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 a 19), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 a 20), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes, em outra camada (a partir da formatVersion 13, também na camada do próprio dono);',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo (na formatVersion 11, no conjunto resolvido dos filhos de algum dono: por id, por camada inteira ou por grupo);',
@@ -2428,6 +2471,7 @@ const ptBR: readonly HelpSection[] = [
           'formatVersion 18, accessibility na raiz e no tipo: só na versão 18 (antes dela o erro é só é permitido com formatVersion 18, no caminho de cada chave); role é um dos papéis listados; touchTarget tem width e height maiores que 0 e mode visual ou expanded, e no tipo exige um role interativo; label.fields são campos string ou enum do tipo; o id de uma parte é único e o when dela é um campo, uma tabela ou tabela.coluna que existe; uma parte não tem touchTarget.',
           'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) a partir da formatVersion 3;',
           'formatVersion 11, filhos por camada e grupo: só na versão 11 (antes dela o erro é só é permitido com formatVersion 11, no caminho exato); cada item de allowedChildren é um id de tipo ou uma cláusula { layer, groups } estrita (outra propriedade é erro, e groups vazio também); erros: layer que não é camada da especialização ou é a do próprio dono antes da formatVersion 13 (filhos devem estar em outra camada) e grupo inexistente na camada da cláusula; requiresOwner conferido no conjunto resolvido; groups da camada com id não vazio e único na camada e name não vazio; groups do tipo não vazio, sem repetição e só da própria camada; avisos: 20 ids ou mais em texto no mesmo allowedChildren e grupo que nenhum tipo usa;',
+          'formatVersion 20, fileFormats: só na versão 20 (antes dela o erro é só é permitido com formatVersion 20, em fileFormats); uma lista de objetos estritos (outra chave é unknown key: <key>, no caminho exato dela); id é [a-z0-9][a-z0-9-]* e único, name não é vazio, extension é [a-z0-9]+, plugin é um caminho do pacote que termina em .js, contract é obrigatório e só 1, scope é project ou container; cada exemplo tem name não vazio, único no formato, um file que é caminho do pacote e um input opcional que é caminho .json do pacote; o nível 1 do validador da biblioteca confere que o plugin, os arquivos dos exemplos e o input existem no pacote e que o plugin tem no máximo 1 MiB (erro em fileFormats[i].plugin); nada aqui executa um plugin;',
           'formatVersion 19, passo copy-field em migrations: só na versão 19 (antes dela o erro é só é permitido com formatVersion 19, em migrations[i].steps[j].op); chaves estritas type, from, to e when; type é tipo desta versão e to é campo ou coluna dele; from pode não existir; from e to são ambos campos ou ambos colunas da mesma tabela, nunca um campo table e nunca o mesmo; when não é vazio, suas chaves são campos de primeiro nível do tipo que não são table nem ref, cada valor é texto, número ou lista não vazia deles e em um enum cada valor é uma option; aviso: um from que não era campo do tipo na versão anterior;',
           'formatVersion 12, passos de papel em migrations: rename-role, remove-role e set-role só na versão 12 (de 4 a 11 o erro é só é permitido com formatVersion 12, no caminho migrations[i].steps[j].op); chaves estritas; rename-role: type é tipo desta versão com childRoles, to é papel dele e from não é; remove-role: type é tipo desta versão, role não é papel dele e mode é clear ou unlink; set-role: type tem childRoles, role é papel dele e childType só confere o formato de id; aviso: rename-role.from ou remove-role.role que não era papel do tipo na versão anterior;',
           'formatVersion 11, childRoles e childRolesLabel: só na versão 11; childRoles não vazia, de { id, name, description? } estritos, com id não vazio e único no tipo e name não vazio; só em tipo com allowedChildren; childRolesLabel texto não vazio e só com childRoles; sem ele a app usa "Papel";',
