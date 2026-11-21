@@ -25,6 +25,8 @@ import {
   COMPARISON_OPS,
   NUMERIC_OPS,
   isAnchorFieldName,
+  isContainerFieldName,
+  isContainerFieldShape,
   isNumericOp,
   referencedFields,
 } from './expressions';
@@ -1927,6 +1929,37 @@ function anchorFieldIssues(version: unknown, template: unknown): ComponentIssue[
   return out;
 }
 
+/**
+ * `$container.*` (the container's pseudo-fields, decision 17 of #1901): before 4 `only allowed with formatVersion
+ * 4`; in 4, a name that cannot be `width`, `height` or a set id is `field does not exist` (the library validator
+ * checks the sets the specialization declares). Walks the template and the `sizing` (valid there too).
+ */
+function containerFieldIssues(
+  version: unknown,
+  root: unknown,
+  rootPath: string,
+): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  const v4 = typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY;
+  const walk = (node: unknown, at: string): void => {
+    if (Array.isArray(node)) return node.forEach((n, i) => walk(n, `${at}[${i}]`));
+    if (!isRecord(node)) return;
+    for (const [key, value] of Object.entries(node)) {
+      const here = join(at, key);
+      const cited = citedField(key, value);
+      if (cited !== undefined && isContainerFieldName(cited.name)) {
+        const where = `${here}${cited.suffix}`;
+        if (!v4) addIssue(out, where, V4_ONLY_MESSAGE);
+        else if (!isContainerFieldShape(cited.name))
+          addIssue(out, where, `field does not exist: ${cited.name}`);
+      }
+      walk(value, here);
+    }
+  };
+  walk(root, rootPath);
+  return out;
+}
+
 /** The `component` node in a version before 4: `only allowed with formatVersion 4`, at the `type`'s path. */
 function componentNodeVersionIssues(
   version: unknown,
@@ -2236,13 +2269,12 @@ function collectIssues(
       add(out, 'minSize', 'cannot be greater than size');
   }
 
-  if ('sizing' in input)
-    checkSizing(
-      input.sizing,
-      'sizing',
-      typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY,
-      out,
-    );
+  if ('sizing' in input) {
+    const v4 = typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY;
+    checkSizing(input.sizing, 'sizing', v4, out);
+    // Before 4 the expression itself is already refused; from 4 the container names are checked in it too.
+    if (v4) issues.push(...containerFieldIssues(version, input.sizing, 'sizing'));
+  }
 
   if ('screen' in input) {
     checkScreen(input.screen, 'screen', out);
@@ -2308,6 +2340,7 @@ function collectIssues(
     issues.push(...linesIssues(template));
     issues.push(...indexIssues(version, template));
     issues.push(...anchorFieldIssues(version, template));
+    issues.push(...containerFieldIssues(version, template, 'template'));
     if (version === 1 || version === 2) {
       for (const node of nodesOfTypes(template, 'template', ['image'])) {
         add(out, node.path, 'the image node only exists in formatVersion 3');

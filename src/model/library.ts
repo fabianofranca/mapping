@@ -1,7 +1,7 @@
 import type { ComponentFile } from './components/componentFormat';
 import { componentSlots, slotKey } from './components/slots';
 import { resolvePath, type TextFile } from './components/library';
-import { INDEX_FIELD, isAnchorFieldName } from './components/expressions';
+import { isReservedFieldName } from './components/expressions';
 import {
   collectFieldKeys,
   parseComponent,
@@ -190,14 +190,12 @@ function fieldReferences(
       (key === '$field' || key === '$has' || key === '$switch' || key === '$rows') &&
       typeof value === 'string'
     ) {
-      // `$index` is the row index of a `repeat` and `$anchor.*` come from the anchor: they are not fields of the type.
-      if (
-        !out.has(value) &&
-        (key === '$rows' || (value !== INDEX_FIELD && !isAnchorFieldName(value)))
-      )
+      // `$index` is the row index of a `repeat`, `$anchor.*` come from the anchor and `$container.*` from the
+      // container: they are not fields of the type.
+      if (!out.has(value) && (key === '$rows' || !isReservedFieldName(value)))
         out.set(value, at);
     } else if (key === '$eq' && Array.isArray(value) && typeof value[0] === 'string') {
-      if (!out.has(value[0]) && value[0] !== INDEX_FIELD && !isAnchorFieldName(value[0]))
+      if (!out.has(value[0]) && !isReservedFieldName(value[0]))
         out.set(value[0], `${at}[0]`);
     } else {
       fieldReferences(value, at, out);
