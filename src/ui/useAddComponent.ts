@@ -2,6 +2,7 @@ import { useComputed } from '@preact/signals';
 import { useState } from 'preact/hooks';
 import { t } from '../i18n';
 import type { ComponentDrawings } from '../model';
+import { showToast } from '../store/ui';
 import { useEditor, type EditorContextValue } from './EditorContext';
 import { addLabel, componentTarget, type ComponentTarget } from './componentTarget';
 import { libraryErrorMessage } from './labels';
@@ -99,7 +100,8 @@ export function useAddComponent(): AddComponent {
       return false;
     }
     setError(null);
-    ui.selection.value = { kind: 'marking', id: result.value };
+    ui.selection.value = { kind: 'marking', id: result.value.markingId };
+    if (!result.value.free) showToast(ui, t('library.noFreeSpace'));
     // New marking outside the visible area: minimal pan to it (already in view, the view does not move).
     editor.canvas.current?.revealSelection();
     return true;

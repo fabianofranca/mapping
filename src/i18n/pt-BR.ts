@@ -1199,6 +1199,8 @@ export const ptBR: Dictionary = {
   'library.addToCanvas': 'Adicionar no canvas',
   'library.dragHint': 'Arraste até o canvas para criar onde soltar',
   'library.noScreen': 'Selecione ou centralize uma tela',
+  'library.noFreeSpace':
+    'Sem lugar livre: o componente novo ficou sobre outras marcações.',
   'library.readOnly': 'O projeto está somente leitura.',
   'library.error.generic': 'Não foi possível adicionar o componente.',
   'library.error.rect-out-of-image': 'O componente não cabe nessa tela.',

@@ -123,6 +123,17 @@ describe('specializations help: version and structure', () => {
   }
 
   it.each(['pt-BR', 'en-US'] as const)(
+    '%s: the formatVersion 4 rule says ignore also applies next to signature (formatVersion 16)',
+    (locale) => {
+      const row = sectionText(locale, 'validation')
+        .split('\n')
+        .find((line) => line.startsWith('formatVersion 4:'));
+      expect(row).toBeDefined();
+      expect(row).toMatch(/ignore[^;]*signature[^;]*16/);
+    },
+  );
+
+  it.each(['pt-BR', 'en-US'] as const)(
     '%s: the root and the rules cite the current range',
     (locale) => {
       const format = sectionText(locale, 'format');

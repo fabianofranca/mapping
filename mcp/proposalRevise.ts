@@ -58,8 +58,8 @@ const CODES: Record<ReviseError['code'], McpErrorCode | 'not-open' | 'no-changes
   'no-changes': 'no-changes',
 };
 
-function toToolError(error: ReviseError): ToolError {
-  const hint = HINTS[error.code];
+export function toToolError(error: ReviseError, hints: typeof HINTS = HINTS): ToolError {
+  const hint = hints[error.code];
   return new ToolError(CODES[error.code], error.message, {
     ...(error.changeIds.length > 0 ? { changeIds: error.changeIds } : {}),
     ...(error.problems ? { problems: error.problems } : {}),

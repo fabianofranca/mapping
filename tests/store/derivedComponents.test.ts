@@ -237,7 +237,7 @@ describe('derived: drawn markings', () => {
       typeId: 'text',
     });
     if (!created.ok) throw new Error('addComponent');
-    expect([...derived.drawnMarkings.value]).toEqual([created.value]);
+    expect([...derived.drawnMarkings.value]).toEqual([created.value.markingId]);
     expect(store.project.value?.markings).toHaveLength(3);
   });
 
@@ -303,8 +303,8 @@ describe('derived: drawn markings', () => {
     if (!other) throw new Error('layer');
     setMarkingDisplay('hide');
     showOnly(ui, store.project.value, other.id);
-    expect(derived.markingVisibility.value.get(created.value)).toBe('full');
-    expect([...derived.drawnMarkings.value]).toEqual([created.value]);
+    expect(derived.markingVisibility.value.get(created.value.markingId)).toBe('full');
+    expect([...derived.drawnMarkings.value]).toEqual([created.value.markingId]);
   });
 
   it('keeps the same set when nothing changes', () => {
@@ -327,8 +327,10 @@ describe('derived: drawn markings', () => {
     });
     if (!created.ok) throw new Error('addComponent');
     // T1 and T2 are on photo I1 (hidden); the canvas one shows.
-    expect([...derived.drawnMarkings.value]).toEqual([created.value]);
-    expect(derived.componentScenes.value.get(created.value)?.containerId).toBeNull();
+    expect([...derived.drawnMarkings.value]).toEqual([created.value.markingId]);
+    expect(
+      derived.componentScenes.value.get(created.value.markingId)?.containerId,
+    ).toBeNull();
   });
 });
 
@@ -350,9 +352,9 @@ describe('derived: floating markings', () => {
     if (!note.ok) throw new Error('addComponent');
     // Plain on the canvas: not floating yet.
     expect(derived.floatingMarkings.value.size).toBe(0);
-    expect(actions.setMarkingFloating(note.value, true).ok).toBe(true);
+    expect(actions.setMarkingFloating(note.value.markingId, true).ok).toBe(true);
     const floating = derived.floatingMarkings.value;
-    expect([...floating]).toEqual([note.value]);
+    expect([...floating]).toEqual([note.value.markingId]);
     actions.renameProject('Yet another');
     expect(derived.floatingMarkings.value).toBe(floating);
   });
@@ -456,13 +458,14 @@ describe('derived: floating note over a photo', () => {
       center: { x: photo.placement.x + 100, y: photo.placement.y + 100 },
     });
     if (!created.ok) throw new Error('addComponent');
-    const note = store.project.value?.markings.find((m) => m.id === created.value);
+    const createdId = created.value.markingId;
+    const note = store.project.value?.markings.find((m) => m.id === createdId);
     expect(note).toMatchObject({ floating: true, containerId: null });
-    expect([...derived.drawnMarkings.value]).toEqual([created.value]);
-    expect(derived.componentScenes.value.get(created.value)).toBeDefined();
-    expect(derived.floatingMarkings.value.has(created.value)).toBe(true);
+    expect([...derived.drawnMarkings.value]).toEqual([createdId]);
+    expect(derived.componentScenes.value.get(createdId)).toBeDefined();
+    expect(derived.floatingMarkings.value.has(createdId)).toBe(true);
     // Turning the option on changes nothing for the floating one.
     setShowComponentsOnPhotos(true);
-    expect([...derived.drawnMarkings.value]).toEqual([created.value]);
+    expect([...derived.drawnMarkings.value]).toEqual([createdId]);
   });
 });

@@ -22,6 +22,7 @@ import {
   projectIndex,
   projectIssues,
   type Rect,
+  rectsOverlap,
   refsOf,
   removeItems,
   serialize,
@@ -454,6 +455,46 @@ describe('placement in free space (#1087)', () => {
         componentPlacement(p, catalog, args, approximateMeasurer),
       );
       expect(value).not.toEqual({ x: 450, y: 380, width: 100, height: 40 });
+      expect(
+        placementIsFree(p, catalog, { ...args, rect: value }, approximateMeasurer),
+      ).toBe(true);
+      expectBelow(ms, 50);
+    },
+  );
+
+  budgetIt(
+    'a new piece with 100 siblings that fill P, going up to the image, in under 50 ms',
+    BUDGET_OPTIONS,
+    () => {
+      // P (a slotless marking, 400 × 400) is tiled by a 10 × 10 grid of 40×40 children: R0 falls in it, no
+      // spot exists inside P, so the search goes up to the image and the piece is born outside P (decision 4 of #1891).
+      const pRect = { x: 300, y: 200, width: 400, height: 400 };
+      let p = createMarking(componentProject(), {
+        id: 'P',
+        containerId: 'I1',
+        rect: pRect,
+      });
+      for (let i = 0; i < 10; i++) {
+        for (let j = 0; j < 10; j++) {
+          p = createMarking(p, {
+            id: `S${i}_${j}`,
+            containerId: 'I1',
+            rect: { x: 300 + i * 40, y: 200 + j * 40, width: 40, height: 40 },
+          });
+        }
+      }
+      const catalog = testCatalog();
+      const args = {
+        containerId: 'I1',
+        parentId: null,
+        specId: SPEC_ID,
+        typeId: 'text',
+      } as const;
+      componentPlacement(p, catalog, args, approximateMeasurer);
+      const { value, ms } = time(() =>
+        componentPlacement(p, catalog, args, approximateMeasurer),
+      );
+      expect(rectsOverlap(value, pRect)).toBe(false);
       expect(
         placementIsFree(p, catalog, { ...args, rect: value }, approximateMeasurer),
       ).toBe(true);

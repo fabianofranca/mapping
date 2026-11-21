@@ -329,7 +329,7 @@ describe('Details — Main only', () => {
         typeId,
       });
       if (!result.ok) throw new Error(result.error);
-      return result.value;
+      return result.value.markingId;
     };
     const column = add('m3-column', null);
     add('m3-button', column);

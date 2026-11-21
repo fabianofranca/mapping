@@ -16,7 +16,8 @@ import {
   parseSpecText,
   serialize,
 } from '../../src/model';
-import { runBatch, type BatchResult } from '../../mcp/batch';
+import { issueChanges, runBatch, type BatchResult } from '../../mcp/batch';
+import { Refs } from '../../mcp/items';
 import type { Operation } from '../../mcp/operations';
 import { Roots } from '../../mcp/paths';
 import { findProject, loadProject, type LoadedProject } from '../../mcp/projects';
@@ -120,8 +121,8 @@ describe('create_marking without rect: the size includes the rows of the batch i
   }, 30_000);
 });
 
-// CL1, finding 3.2 (#1890): the server fills in what the batch does not provide with the component's
-// `preview` (like the app's Palette; documented in `create_marking`). The guide (R17.22 and R17.31)
+// CL1, finding 3.2 (#1890), decision 8 of #1891: the server fills from the component's `preview` only the required
+// fields without a `default` that the batch does not provide (documented in `create_marking`). The guide (R17.22 and R17.31)
 // provides an empty value for what the step does not want, and then nothing beyond the request stays on the annotation.
 describe('create_marking: the preview only fills in what the batch does not provide', () => {
   const valuesOf = (r: BatchResult, alias: string): Record<string, unknown> => {
@@ -142,10 +143,48 @@ describe('create_marking: the preview only fills in what the batch does not prov
       annotation: { type: `material3-compose/${type}`, values },
     }) as Operation;
 
-  it('the preview fills in the field the batch does not provide (open decision: owner bug)', async () => {
+  it('an optional field the batch does not give stays empty (the snackbar has no "Desfazer")', async () => {
     const r = await runBatch(loaded, [make('$sn', 'snackbar', { message: 'Hi' })], io);
     expect(r.errors).toEqual([]);
-    expect(valuesOf(r, '$sn').actionLabel).toBe('Desfazer');
+    expect(valuesOf(r, '$sn').actionLabel ?? '').toBe('');
+  }, 30_000);
+
+  it('a required field without a default that the batch does not give still comes from the preview', async () => {
+    const r = await runBatch(
+      loaded,
+      [make('$sn', 'snackbar', { actionLabel: 'Undo' })],
+      io,
+    );
+    expect(r.errors).toEqual([]);
+    expect(valuesOf(r, '$sn').message).toBe('Message archived');
+  }, 30_000);
+
+  it('the alert-dialog of R17.31 without icon fits in 312 × 248, with no component-overflow', async () => {
+    const r = await runBatch(
+      loaded,
+      [
+        {
+          ...make('$ad', 'alert-dialog', {
+            title: 'Discard draft?',
+            text: 'The draft will be deleted.',
+            confirmButton: 'Discard the draft right now',
+            dismissButton: 'Cancel',
+          }),
+          rect: { x: 10, y: 270, width: 312, height: 248 },
+        } as Operation,
+      ],
+      io,
+    );
+    expect(r.errors).toEqual([]);
+    expect(valuesOf(r, '$ad').icon ?? '').toBe('');
+    const changes = issueChanges(
+      new Refs({ ...loaded, project: r.project }),
+      r.before,
+    ) as {
+      new: { issues: { code: string }[] }[];
+    };
+    const codes = changes.new.flatMap((entry) => entry.issues.map((i) => i.code));
+    expect(codes).not.toContain('component-overflow');
   }, 30_000);
 
   it('with the field provided empty (as in R17.31), nothing beyond the request goes in', async () => {

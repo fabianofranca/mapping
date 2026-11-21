@@ -585,7 +585,7 @@ export const operationSchema = z.discriminatedUnion('op', [
       })
       .optional()
       .describe(
-        "Creates, together with the marking, a typed annotation (an instance of the type). When the type has a component, the fields start with the component's `preview` (like the app's palette) and `values` overrides only the fields given, also after `apply_specialization` or `update_specialization` in the same batch (the batch already sees the components of the new version). If the type declares a component and the batch cannot find it, the step warns (`ignored-argument`) that the annotation was created without the preview and without the minimum size.",
+        "Creates, together with the marking, a typed annotation (an instance of the type). When the type has a component, only the required fields without a `default` that `values` does not give start with the component's `preview`; the others keep the `default` or stay empty (the app's palette, unlike this, uses the whole `preview`), and `values` overrides only the fields given, also after `apply_specialization` or `update_specialization` in the same batch (the batch already sees the components of the new version). If the type declares a component and the batch cannot find it, the step warns (`ignored-argument`) that the annotation was created without the preview and without the minimum size.",
       ),
   }),
   z.object({
