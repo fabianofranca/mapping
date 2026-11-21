@@ -766,11 +766,13 @@ describe('validate_library with file formats (formatVersion 20)', () => {
     writeFileSync(join(root, dir, 'examples', 'small.csv'), 'a,b\n1,2\n');
   }
 
-  it('reads the .js as a package file (never runs it) and the summary counts fileFormats', async () => {
+  it('level 1 reads the .js as a package file (it only runs from level 2) and the summary counts fileFormats', async () => {
     const dir = formatPackage('ok');
-    // Code that would throw if it ran: it is only read as text.
-    addFiles(dir, 'throw new Error("must never run");\n');
-    const result = ok(await mcp.call<Validated>('validate_library', { path: dir }));
+    // Code that would throw if it ran: level 1 only reads it as text.
+    addFiles(dir, 'throw new Error("boom");\n');
+    const result = ok(
+      await mcp.call<Validated>('validate_library', { path: dir, level: 1 }),
+    );
     expect(result.errors).toEqual([]);
     expect(result.valid).toBe(true);
     expect(result.spec).toMatchObject({ formatVersion: 20, fileFormats: 1 });

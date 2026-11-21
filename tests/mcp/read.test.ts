@@ -1046,6 +1046,7 @@ describe('resources and instructions', () => {
     const { tools } = await mcp.client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
       'create_project',
+      'export_format',
       'find_by_code',
       'find_by_source',
       'find_types_by_source',

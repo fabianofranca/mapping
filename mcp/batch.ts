@@ -146,7 +146,7 @@ import {
   type ItemRef,
 } from '../src/model';
 import type { LibraryIssue } from '../src/model/library';
-import { ToolError } from './errors';
+import { ToolError, type ToolErrorCode } from './errors';
 import {
   checkUpdate,
   packageFileEntries,
@@ -173,6 +173,13 @@ import {
   MODEL_ERROR_HINTS,
 } from './modelErrors';
 import { measuredTree, planMeasured } from './importMeasured';
+import { importText, pluginOperations } from './formatImport';
+import {
+  findFileFormat,
+  formatProjection,
+  parseFormat,
+  type PluginReader,
+} from './formatTools';
 import { findPage, hasSeveralPages } from './pages';
 import type { Operation } from './operations';
 import type { LoadedProject } from './projects';
@@ -191,6 +198,12 @@ export interface BatchIo {
    * or the folder of a v4 package (also from the specialization file inside it).
    */
   readSpecInput(path: string): Promise<SpecInput>;
+  /**
+   * Reads a text file of the project by its path in the project (`specs/<id>/plugins/a.js`): the
+   * plugin of a format of an applied specialization. Absent = no plugin can be read (`import_format`
+   * fails with `plugin-failed`); the files a batch itself brings are looked up first.
+   */
+  readProjectText?(path: string): Promise<string | null>;
   /** Files that already exist in `images/` on disk (`images/…`), so they are not overwritten. */
   readonly takenImageFiles: ReadonlySet<string>;
   /**
@@ -254,10 +267,20 @@ export interface BatchResult {
   }[];
   /** Roles that an owner change cleared without the step asking for it (`role-cleared` warning). */
   readonly rolesCleared: readonly RoleCleared[];
+  /** What each `import_format` step changed (the created items are in `created`). */
+  readonly formatImports: readonly FormatImportResult[];
   /** Cross-collection rules violated by the result (should not happen). */
   readonly invariantIssues: readonly string[];
   /** Component catalog after the batch (with the specializations it applied, updated or removed). */
   readonly catalog: ComponentCatalog;
+}
+
+/** What an `import_format` step updated and the warnings of its plugin. */
+export interface FormatImportResult {
+  readonly index: number;
+  readonly format: string;
+  readonly updated: readonly { readonly kind: CreatedKind; readonly id: string }[];
+  readonly warnings: readonly string[];
 }
 
 /** Role cleared by the owner change in `update_annotation`: becomes the `role-cleared` warning. */
@@ -304,6 +327,8 @@ interface Step {
   readonly created?: readonly { kind: CreatedKind; id: string }[];
   readonly rowAliases?: readonly [string, AliasTarget][];
   readonly imageFiles?: readonly [string, Uint8Array][];
+  /** The `import_format` step: what it updated and the warnings of the plugin. */
+  readonly imported?: Omit<FormatImportResult, 'index'>;
 }
 
 const KIND_LABEL: Record<CreatedKind, string> = {
@@ -483,9 +508,27 @@ type CreateMarkingValues = NonNullable<
   Extract<Operation, { op: 'create_marking' }>['annotation']
 >['values'];
 
+/** The items an import changed that it did not create itself, each once. */
+function onlyExisting(
+  touched: readonly { kind: CreatedKind; id: string }[],
+  created: readonly { kind: CreatedKind; id: string }[],
+): { kind: CreatedKind; id: string }[] {
+  const seen = new Set(created.map((c) => `${c.kind}:${c.id}`));
+  return touched.filter((t) => {
+    const key = `${t.kind}:${t.id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 class Batch {
   private p: Project;
-  private readonly aliases = new Map<string, AliasTarget>();
+  /** Aliases of the batch; an `import_format` step swaps in its own while its operations run. */
+  private aliases = new Map<string, AliasTarget>();
+  /** Index of the operation being applied (the paths of an `import_format` error). */
+  private current = 0;
+  private readonly formatImports: FormatImportResult[] = [];
   /** Count of the first 8 characters (normalized) of the marking and arrow ids, for the version in `project`. */
   private prefixCounts: { project: Project; counts: Map<string, number> } | null = null;
 
@@ -496,7 +539,7 @@ class Batch {
   } | null = null;
 
   /** Aliases of operations that failed: the ones that depend on them say why. */
-  private readonly failedAliases = new Map<string, number>();
+  private failedAliases = new Map<string, number>();
   private readonly imageFiles = new Map<string, Uint8Array>();
   private readonly packageFiles = new Map<string, Uint8Array>();
   private readonly libraryWarnings: LibraryWarning[] = [];
@@ -533,6 +576,7 @@ class Batch {
 
   async run(operations: readonly Operation[]): Promise<BatchResult> {
     for (const [index, op] of operations.entries()) {
+      this.current = index;
       const alias = 'as' in op ? op.as : undefined;
       // Alias of the operation's second creation (the annotation of create_marking).
       const secondAlias = op.op === 'create_marking' ? op.annotationAs : undefined;
@@ -590,6 +634,7 @@ class Batch {
           });
         }
         if (step.roleCleared) this.rolesCleared.push({ index, ...step.roleCleared });
+        this.takeImport(index, op.op, step);
         for (const note of step.notes ?? []) {
           this.deprecations.push({
             index,
@@ -634,6 +679,7 @@ class Batch {
       libraryWarnings: this.libraryWarnings,
       deprecations: this.deprecations,
       rolesCleared: this.rolesCleared,
+      formatImports: this.formatImports,
       invariantIssues,
       catalog: this.catalog,
     };
@@ -648,6 +694,15 @@ class Batch {
           `alias repeated in the batch: ${rowAlias}`,
         );
       }
+    }
+  }
+
+  /** The `import_format` step's record, and its plugin's warnings as warnings of the report. */
+  private takeImport(index: number, op: string, step: Step): void {
+    if (step.imported === undefined) return;
+    this.formatImports.push({ index, ...step.imported });
+    for (const message of step.imported.warnings) {
+      this.deprecations.push({ index, op, message, code: 'format-warning' });
     }
   }
 
@@ -1540,6 +1595,8 @@ class Batch {
         return this.wrapItemsOp(op);
       case 'import_measured':
         return this.importMeasuredOp(op);
+      case 'import_format':
+        return this.importFormatOp(op);
       case 'move_marking': {
         const id = this.item(op.marking, 'm');
         const before = siblingPosition(p, id);
@@ -2426,6 +2483,168 @@ class Batch {
         plan.markings.length > made ? `, ${plan.markings.length - made} not created` : ''
       }`,
     };
+  }
+
+  /** The plugin text: a file the batch itself brings (a specialization applied in it) or the project's copy. */
+  private readonly readPlugin: PluginReader = async (path) => {
+    const staged = this.packageFiles.get(path);
+    if (staged !== undefined) return new TextDecoder().decode(staged);
+    return (await this.io.readProjectText?.(path)) ?? null;
+  };
+
+  /**
+   * `import_format`: `parse` runs on the projection of the project as it is at this step, and the
+   * operations it returns (already checked) are applied inside the step, with aliases of their own.
+   * The step is atomic: a failure leaves the project as the step found it.
+   */
+  private async importFormatOp(
+    op: Extract<Operation, { op: 'import_format' }>,
+  ): Promise<Step> {
+    const found = findFileFormat(this.p, op.format);
+    const notes: string[] = [];
+    const containerId = this.formatTarget(op, found.format.scope ?? 'project', notes);
+    const text = await importText(op, found.format.extension, this.io);
+    const input = formatProjection(
+      { ...this.loaded, project: this.p, catalog: this.catalog },
+      found,
+      containerId,
+    );
+    const result = await parseFormat(found, text, input, this.readPlugin);
+    const applied = await this.applyPluginOperations(pluginOperations(result.operations));
+    const made = (kind: CreatedKind) =>
+      applied.created.filter((c) => c.kind === kind).length;
+    return {
+      project: applied.project,
+      notes: [...notes, ...applied.notes],
+      created: applied.created,
+      imported: {
+        format: found.ref,
+        updated: applied.updated,
+        warnings: result.warnings ?? [],
+      },
+      description: `Import ${found.ref} (${found.format.name}): ${made('i')} container(s), ${made('m')} marking(s) and ${made('a')} annotation(s) created, ${applied.updated.length} updated`,
+    };
+  }
+
+  /** The target container of a format with scope `container`; a `container` given to scope `project` is ignored with a note. */
+  private formatTarget(
+    op: Extract<Operation, { op: 'import_format' }>,
+    scope: 'project' | 'container',
+    notes: string[],
+  ): string | undefined {
+    if (scope === 'container') {
+      if (op.container === undefined) {
+        throw new ToolError(
+          'invalid-arguments',
+          `${op.format} has scope container: pass \`container\``,
+        );
+      }
+      return this.containerItem(op.container);
+    }
+    if (op.container !== undefined) {
+      notes.push(`\`container\` was ignored: ${op.format} has scope project`);
+    }
+    return undefined;
+  }
+
+  /**
+   * Applies the plugin's operations in order, with aliases of their own (the plugin cites the
+   * references of its input and the aliases it created, never the batch's). A refused operation fails
+   * the whole step with the batch error at `operations[i].result[j]`.
+   */
+  private async applyPluginOperations(operations: readonly Operation[]): Promise<{
+    project: Project;
+    created: { kind: CreatedKind; id: string }[];
+    updated: { kind: CreatedKind; id: string }[];
+    notes: string[];
+  }> {
+    const saved = { p: this.p, aliases: this.aliases, failed: this.failedAliases };
+    this.aliases = new Map();
+    this.failedAliases = new Map();
+    const created: { kind: CreatedKind; id: string }[] = [];
+    const touched: { kind: CreatedKind; id: string }[] = [];
+    const notes: string[] = [];
+    const clearedBefore = this.rolesCleared.length;
+    try {
+      for (const [j, sub] of operations.entries()) {
+        try {
+          touched.push(...this.updatedBy(sub));
+          const step = await this.applyLocal(sub);
+          created.push(...(step.created ?? []));
+          notes.push(...(step.notes ?? []));
+        } catch (error) {
+          // The step is undone: so are the roles it cleared.
+          this.rolesCleared.length = clearedBefore;
+          throw this.refusedByModel(error, sub.op, j);
+        }
+      }
+      return { project: this.p, created, updated: onlyExisting(touched, created), notes };
+    } finally {
+      this.p = saved.p;
+      this.aliases = saved.aliases;
+      this.failedAliases = saved.failed;
+    }
+  }
+
+  /** One operation of a plugin result, with the local alias bookkeeping of `run`. */
+  private async applyLocal(sub: Operation): Promise<Step> {
+    const names = [
+      'as' in sub ? sub.as : undefined,
+      sub.op === 'create_marking' ? sub.annotationAs : undefined,
+    ];
+    for (const name of names) {
+      if (name !== undefined && this.aliases.has(name)) {
+        throw new ToolError(
+          'duplicate-alias',
+          `alias repeated in the plugin result: ${name}`,
+        );
+      }
+    }
+    const step = await this.apply(sub);
+    this.checkRowAliases(step, names);
+    this.p = step.project;
+    if (step.roleCleared) {
+      this.rolesCleared.push({ index: this.current, ...step.roleCleared });
+    }
+    this.registerLocalAliases(step, names);
+    return step;
+  }
+
+  /** The row aliases of the step and the operation's own aliases (the first item created, then the second). */
+  private registerLocalAliases(step: Step, names: readonly (string | undefined)[]): void {
+    for (const [name, target] of step.rowAliases ?? []) this.aliases.set(name, target);
+    for (const [n, item] of (step.created ?? []).entries()) {
+      const named = names[n];
+      if (named !== undefined) this.aliases.set(named, item);
+    }
+  }
+
+  /** The existing item an update of the plugin result changes (resolved before the operation runs). */
+  private updatedBy(sub: Operation): { kind: CreatedKind; id: string }[] {
+    if (sub.op === 'update_annotation')
+      return [{ kind: 'a', id: this.item(sub.annotation, 'a') }];
+    if (sub.op === 'update_marking')
+      return [{ kind: 'm', id: this.item(sub.marking, 'm') }];
+    return [];
+  }
+
+  /** The error of operation `j` of the result as the step's error: the model's own code, at `operations[i].result[j]`. */
+  private refusedByModel(error: unknown, op: string, j: number): ToolError {
+    if (!(error instanceof ToolError || error instanceof ModelError)) throw error;
+    const described = this.describeError(this.current, op, error);
+    const { code, message } = described;
+    const details = Object.fromEntries(
+      Object.entries(described).filter(
+        ([key]) => !['index', 'op', 'code', 'message'].includes(key),
+      ),
+    );
+    return new ToolError(code as ToolErrorCode, message, {
+      ...details,
+      // A `path` of the original error (the bad file, for example) is kept as `itemPath`.
+      ...(typeof details.path === 'string' ? { itemPath: details.path } : {}),
+      path: `operations[${this.current}].result[${j}]`,
+      resultOp: op,
+    });
   }
 
   private createMarkingOp(op: Extract<Operation, { op: 'create_marking' }>): Step {

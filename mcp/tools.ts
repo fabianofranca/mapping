@@ -32,6 +32,8 @@ import { getComponent, listComponents } from './componentTools';
 import { measureComponent } from './measureComponent';
 import { importIcons } from './iconImport';
 import { listPackageFiles, validateLibraryTool } from './library';
+import { exportFormat } from './formatTools';
+import { pluginIssues } from './pluginChecks';
 import { planLibraryUpdate } from './libraryUpdate';
 import { planSignatureImportTool } from './signatureImport';
 import { summary as specSummary, validateSpecialization } from './specValidation';
@@ -309,7 +311,7 @@ export function registerTools(
     'get_project',
     {
       description:
-        "Project summary: containers (with `file`, `background` and `parent`), layers, specializations (with the state of the copy), code platforms (`platforms`, each with the `repos` the specializations declare and the `localPath` of the local clone; with `codeHint`: the `code` of the types is the instantiation code, not the generated code), the local clone per platform (`platformRepos`), the specializations' document repositories (`docRepos`: `id`, the `repos` each specialization declares and the `localPath` of the project's clone, `null` without a clone), the project's drawing mode (`drawingMode`, `null` without a mode; each container carries its own pinned `drawingMode` and the `effectiveDrawingMode`), the project's reading direction (`direction`: `ltr` or `rtl`, `ltr` when none is saved; each container carries its own pinned `direction`, `null` = follows the project, and the `effectiveDirection`), counts (`counts`: containers, markings, `canvasMarkings`, `floatingMarkings`, `arrows`, annotations, layers), the pages (`pages`: `id`, `name` and how many `roots`, `containers`, `markings` and `arrows` each holds) and pending items (incomplete annotations). In a project with several pages `containers` comes empty, with a `hint`, unless you pass `page` (id or name, see `pages`): then only the containers of that page are listed and `page` echoes it. A project with one page lists all its containers.",
+        "Project summary: containers (with `file`, `background` and `parent`), layers, specializations (with the state of the copy), code platforms (`platforms`, each with the `repos` the specializations declare and the `localPath` of the local clone; with `codeHint`: the `code` of the types is the instantiation code, not the generated code), the local clone per platform (`platformRepos`), the specializations' document repositories (`docRepos`: `id`, the `repos` each specialization declares and the `localPath` of the project's clone, `null` without a clone), the project's drawing mode (`drawingMode`, `null` without a mode; each container carries its own pinned `drawingMode` and the `effectiveDrawingMode`), the project's reading direction (`direction`: `ltr` or `rtl`, `ltr` when none is saved; each container carries its own pinned `direction`, `null` = follows the project, and the `effectiveDirection`), counts (`counts`: containers, markings, `canvasMarkings`, `floatingMarkings`, `arrows`, annotations, layers), the pages (`pages`: `id`, `name` and how many `roots`, `containers`, `markings` and `arrows` each holds) and pending items (incomplete annotations); `fileFormats` (absent when none) lists the file formats of the applied specializations (`format` as `<specId>/<formatId>`, `name`, `extension`, `scope`): read one with export_format, write one with `import_format` in plan_changes. In a project with several pages `containers` comes empty, with a `hint`, unless you pass `page` (id or name, see `pages`): then only the containers of that page are listed and `page` echoes it. A project with one page lists all its containers.",
       inputSchema: {
         project: projectArg,
         page: z
@@ -627,7 +629,7 @@ export function registerTools(
     'get_specialization',
     {
       description:
-        "The full JSON of a specialization applied to the project (layers, types, fields, descriptions and guidance, and the code platforms with each one's `repo`; with platforms, `codeHint` says what the `code` of the types is (the instantiation code: `symbol` is what you call to create an instance, `path` the file that defines it, to read the signature)), to learn the annotation types before reading or writing typed annotations. In formatVersion 4 it also carries `component`, `doc`, `examples`, `fonts`, `origins` and `migrations` and, when the copy is a package, `package: { dir, files }` (see list_components and get_component to read the components). In formatVersion 10 the `table` types, fields and columns may carry `notices` (notices `{ kind, message, since?, ref? }`, with `kind` `removed`, `deprecated`, `diverges` or `pending`): read them before creating an annotation or saving a value; a notice only informs and blocks nothing, but do not use anything `removed` or `deprecated` without telling the user. In formatVersion 11 the JSON comes as it is: `allowedChildren` may mix type ids and CLAUSES `{ layer, groups? }` (the whole layer, or only the types of the listed groups; the types an owner accepts are the union, in order; the server already resolves this for you in the views and in validation, so do not build the list by hand), layers declare `groups` and types say which ones they belong to, `childRoles` (+ `childRolesLabel`) on the owner list the ROLES in which a child links to it (use `role` in create_annotation/update_annotation) and `docRepos` + the `doc` object `{ repo, path }` point to the type's document in an external repository (get_component reads it through the project's clone). In formatVersion 12 `migrations` gains the role steps `rename-role` (`type`, `from`, `to`), `remove-role` (`type`, `role`, `mode`: `clear` or `unlink`) and `set-role` (`type`, `role`, `childType`?): renaming or removing a role from `childRoles`, or giving roles to a type that had none, is a BREAKING change of the version contract and requires the step; a role step in a version before 12 is an error (`only allowed with formatVersion 12`).",
+        "The full JSON of a specialization applied to the project (layers, types, fields, descriptions and guidance, and the code platforms with each one's `repo`; with platforms, `codeHint` says what the `code` of the types is (the instantiation code: `symbol` is what you call to create an instance, `path` the file that defines it, to read the signature)), to learn the annotation types before reading or writing typed annotations. In formatVersion 4 it also carries `component`, `doc`, `examples`, `fonts`, `origins` and `migrations` and, when the copy is a package, `package: { dir, files }` (see list_components and get_component to read the components). In formatVersion 10 the `table` types, fields and columns may carry `notices` (notices `{ kind, message, since?, ref? }`, with `kind` `removed`, `deprecated`, `diverges` or `pending`): read them before creating an annotation or saving a value; a notice only informs and blocks nothing, but do not use anything `removed` or `deprecated` without telling the user. In formatVersion 11 the JSON comes as it is: `allowedChildren` may mix type ids and CLAUSES `{ layer, groups? }` (the whole layer, or only the types of the listed groups; the types an owner accepts are the union, in order; the server already resolves this for you in the views and in validation, so do not build the list by hand), layers declare `groups` and types say which ones they belong to, `childRoles` (+ `childRolesLabel`) on the owner list the ROLES in which a child links to it (use `role` in create_annotation/update_annotation) and `docRepos` + the `doc` object `{ repo, path }` point to the type's document in an external repository (get_component reads it through the project's clone). In formatVersion 12 `migrations` gains the role steps `rename-role` (`type`, `from`, `to`), `remove-role` (`type`, `role`, `mode`: `clear` or `unlink`) and `set-role` (`type`, `role`, `childType`?): renaming or removing a role from `childRoles`, or giving roles to a type that had none, is a BREAKING change of the version contract and requires the step; a role step in a version before 12 is an error (`only allowed with formatVersion 12`). In formatVersion 20 `fileFormats` (at the root) lists the file formats the specialization handles through a plugin of its package (`id`, `name`, `extension`, `plugin`, `contract`, `scope`, `examples`): the plugin text is in `package.files` (`plugins/*.js`), and export_format and `import_format` run it isolated; read `mapping-docs://PLUGIN-FORMAT.md` for the contract.",
       inputSchema: {
         project: projectArg,
         specId: z
@@ -644,6 +646,28 @@ export function registerTools(
         const pkg = await listPackageFiles(roots, loaded.location.dir, String(view.file));
         return pkg === null ? view : { ...view, package: pkg };
       }),
+  );
+
+  server.registerTool(
+    'export_format',
+    {
+      description:
+        "Generates the text of a file format of a specialization (`fileFormats`, formatVersion 20) from the project: the specialization's plugin, run isolated (never code from the mapped repository), reads the typed annotations of that specialization and returns `{ text, fileName, warnings }`. `format` is `<specId>/<formatId>` (see `fileFormats` in get_project). With scope `container` the format needs `container` (a container reference, code or name; without it `invalid-arguments`); with scope `project` the whole project is exported and a `container` is ignored with a warning. Read-only: the server never writes the file, so save `text` as `fileName` yourself. Errors: `format-not-found` (`formats` lists the available ones), `plugin-failed`, `plugin-timeout`, `plugin-limit`, `plugin-output-invalid`. To read a file of the format back into the project, use `import_format` in plan_changes/propose_changes.",
+      inputSchema: {
+        project: projectArg,
+        format: z
+          .string()
+          .describe('The format, as `<specId>/<formatId>` (e.g. `data-model/openapi`).'),
+        container: z
+          .string()
+          .optional()
+          .describe(
+            'Container to export (reference `mapping://project/i/code`, code, id or name). Required with scope `container`; ignored, with a warning, with scope `project`.',
+          ),
+      },
+      annotations: READ_ONLY,
+    },
+    (args) => respond(() => exportFormat(roots, args)),
   );
 
   /** The container marking of an `m` reference (an arrow and a canvas marking have no image). */
@@ -1127,7 +1151,7 @@ export function registerTools(
       },
       annotations: READ_ONLY,
     },
-    (args) => respond(() => validateLibraryTool(roots, args, specSummary)),
+    (args) => respond(() => validateLibraryTool(roots, args, specSummary, pluginIssues)),
   );
 
   server.registerTool(
