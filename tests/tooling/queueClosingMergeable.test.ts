@@ -34,10 +34,17 @@ describe('#2488 — closing brings main in when the epic PR cannot merge', () =>
     );
   });
 
-  it('a closing session that ends with no CI run notifies the coordinator', () => {
-    expect(closing).toMatch(
-      /ends with no CI run on the epic PR.*notifies the coordinator/s,
-    );
+  it('when the coordinator runs the closing itself it tells the owner, not itself', () => {
+    expect(closing).toMatch(/coordinator itself.*`esperando dono`.*`PushNotification`/s);
+  });
+
+  it('acts on dirty only and reads an unknown state again', () => {
+    expect(closing).toMatch(/`mergeable_state: dirty`.*`unknown`.*again/s);
+    expect(noRun).toMatch(/`unknown`.*read.*again/);
+  });
+
+  it('a closing session that still ends with no CI run notifies the coordinator', () => {
+    expect(closing).toMatch(/still ends with no CI run.*notifies the coordinator/s);
   });
 });
 

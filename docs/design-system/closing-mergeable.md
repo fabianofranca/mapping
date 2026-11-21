@@ -2,4 +2,4 @@
 
 ## Pendências
 
-nenhuma (só processo)
+Nenhuma. DS impact none: process only.
