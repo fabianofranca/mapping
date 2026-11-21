@@ -85,7 +85,7 @@ export interface FontBook {
 }
 
 /**
- * Reads a library font (`.ttf`, `.otf` or `.woff`). `null` when the bytes are not a usable font (`.woff2`, a corrupt
+ * Reads a library font (`.ttf`, `.otf`, `.woff` or `.woff2`). `null` when the bytes are not a usable font (a corrupt
  * file, a font without `head`, `hhea` or code points): the embedded font applies to its family.
  */
 export function loadLibraryFont(bytes: ArrayBuffer): Face | null {

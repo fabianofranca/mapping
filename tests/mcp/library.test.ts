@@ -169,6 +169,22 @@ beforeAll(async () => {
 
   writeFileSync(join(root, 'font-corrupt', 'fonts', 'Acme.ttf'), Buffer.alloc(4096, 7));
 
+  // The Material 3 package with its Regular `.woff2` cut in half (#2126).
+  cpSync('libraries/material3-compose', join(root, 'woff2-cut', 'material3-compose'), {
+    recursive: true,
+  });
+  const regular = join(
+    root,
+    'woff2-cut',
+    'material3-compose',
+    'fonts',
+    'Roboto-Regular.woff2',
+  );
+  writeFileSync(
+    regular,
+    readFileSync(regular).subarray(0, readFileSync(regular).length / 2),
+  );
+
   mkdirSync(join(root, 'empty'));
   writeFileSync(join(root, 'empty', 'LEIA-ME.md'), 'nothing here');
 
@@ -706,6 +722,30 @@ describe('validate_library: the font warning (#2089, #2121)', () => {
     );
     expect(result.valid).toBe(true);
     expect(result.warnings.map((w) => w.path)).toEqual(['fonts[0].file']);
+  });
+
+  it('the Material 3 package (Roboto in .woff2) gets no font warning (#2126)', async () => {
+    const result = ok(
+      await mcp.call<Validated>('validate_library', {
+        path: 'compose/material3-compose',
+      }),
+    );
+    expect(result.valid).toBe(true);
+    expect(result.warnings.filter((w) => w.path.startsWith('fonts['))).toEqual([]);
+  });
+
+  it('a .woff2 cut in half warns that the server cannot lay out that file, and stays valid (#2126)', async () => {
+    const result = ok(
+      await mcp.call<Validated>('validate_library', {
+        path: 'woff2-cut/material3-compose',
+      }),
+    );
+    expect(result.valid).toBe(true);
+    const fonts = result.warnings.filter((w) => w.path.startsWith('fonts['));
+    expect(fonts).toHaveLength(1);
+    expect(fonts[0]!.message).toBe(
+      'the MCP server cannot lay out `fonts/Roboto-Regular.woff2`: it measures and draws with its embedded font; the app is not affected',
+    );
   });
 
   it('a library with Mapping Sans has no warning', async () => {
