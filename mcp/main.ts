@@ -4,6 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { USAGE, UsageError, parseArgs } from './args';
 import { MAX_MESSAGE_BYTES } from './image/formats';
 import { ImageServer } from './imageServer';
+import { runPlugin } from './pluginRunner';
 import { createServer } from './server';
 import { BUILD_VERSION } from './version';
 
@@ -28,6 +29,26 @@ function keepStdoutForProtocol(): void {
   console.debug = toStderr;
 }
 
+/** The plugin of the self-check: answers with the text it gets, so the output proves the round trip. */
+const SELF_CHECK_PLUGIN =
+  'function generate(input) { return "self-check:" + input.word; }';
+
+/** `--check-plugin-runner`: runs a built-in plugin in QuickJS (the `.wasm` embedded in this file). */
+async function checkPluginRunner(): Promise<number> {
+  const started = Date.now();
+  const run = await runPlugin(SELF_CHECK_PLUGIN, 'generate', [{ word: 'ok' }]);
+  const ms = Date.now() - started;
+  if (run.ok && run.value === 'self-check:ok') {
+    process.stdout.write(`plugin runner: ok (QuickJS, ${ms} ms)\n`);
+    return 0;
+  }
+  const why = run.ok
+    ? `unexpected value ${JSON.stringify(run.value)}`
+    : run.failure.message;
+  process.stderr.write(`mapping-mcp: plugin runner: ${why}\n`);
+  return 1;
+}
+
 // The protocol uses stdout: any human-readable message goes to stderr.
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
@@ -37,6 +58,10 @@ async function main(): Promise<void> {
   }
   if (options.version) {
     process.stdout.write(`${BUILD_VERSION}\n`);
+    return;
+  }
+  if (options.checkPluginRunner) {
+    process.exitCode = await checkPluginRunner();
     return;
   }
   keepStdoutForProtocol();

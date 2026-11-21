@@ -1372,6 +1372,15 @@ Failures come back as `isError` with a JSON `{"error": {"code", "message", …}}
 
 Concurrent writing of a conversation uses the usual `revision-conflict` (call again). The server never resolves, reopens or deletes a conversation: there is no error for that because there is no tool.
 
+**File format plugins** (the code of a specialization's `fileFormats`, which only runs isolated in QuickJS; the contract is in `mapping-docs://PLUGIN-FORMAT.md`). No plugin error brings the server down, and nothing is written when one happens.
+
+| `code`                  | Meaning                                                                                                                                                                                                                                                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `plugin-failed`         | The plugin threw, is not a valid classic script (an `export`, for example) or does not define the function that was called. The `message` carries the plugin's error, its path and the `line:column`; `details` brings `plugin`, `function`, `line` and `column`.                                                  |
+| `plugin-timeout`        | The call went past the time limit (5 s; `details.timeoutMs`). The plugin loops or does too much work: fix the plugin, not the project.                                                                                                                                                                             |
+| `plugin-limit`          | The plugin went past a limit: the memory (64 MiB), the stack, or a size (the plugin file, the text to read, the projection or the generated text). `details.limit` says which (`memoryBytes`, `stackBytes`, `pluginBytes`, `parseTextBytes`, `projectionBytes`, `generatedTextBytes`) and `details.max` the value. |
+| `plugin-output-invalid` | The plugin returned something that does not fit the contract: a `Promise`, a value that is not JSON, a `generate` that does not return a string, or a `parse` result the checker refuses (the `message` carries the path inside the result).                                                                       |
+
 **Unexpected**: `internal-error` is a failure the server did not foresee (the stack goes to the server's stderr). Retry once; if it persists, report it with the message.
 
 **Warnings** (they come in `warnings`, without `isError`: the operation was done; `plan_changes`/`propose_changes` put them in the response, and the read tools, in their own response):

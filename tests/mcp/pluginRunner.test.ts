@@ -26,7 +26,8 @@ const input = {
 
 /** A run that must have failed: the failure, with the code it was expected to have. */
 function failure(run: PluginRun, code: PluginFailure['code']): PluginFailure {
-  if (run.ok) throw new Error(`expected ${code}, the plugin returned ${JSON.stringify(run.value)}`);
+  if (run.ok)
+    throw new Error(`expected ${code}, the plugin returned ${JSON.stringify(run.value)}`);
   expect(run.failure.code).toBe(code);
   return run.failure;
 }
@@ -37,8 +38,12 @@ function value(run: PluginRun): unknown {
   return run.value;
 }
 
-const run = (source: string, fn: PluginFunction, args: readonly unknown[], options = {}) =>
-  runPlugin(source, fn, args, options);
+const run = (
+  source: string,
+  fn: PluginFunction,
+  args: readonly unknown[],
+  options = {},
+) => runPlugin(source, fn, args, options);
 
 describe('runPlugin: the values go in and come out', () => {
   it('echo.js: generate returns its input', async () => {
@@ -54,7 +59,8 @@ describe('runPlugin: the values go in and come out', () => {
   });
 
   it('a plugin that uses globalThis.generate = … is found', async () => {
-    const source = 'globalThis.generate = function (input) { return "from globalThis"; };';
+    const source =
+      'globalThis.generate = function (input) { return "from globalThis"; };';
     expect(value(await run(source, 'generate', [input]))).toBe('from globalThis');
   });
 
@@ -91,7 +97,9 @@ describe('runPlugin: the plugin fails', () => {
 
   it('module.js: an ES module is a syntax error, plugin-failed', async () => {
     const result = failure(
-      await run(fixture('module.js'), 'generate', [input], { pluginPath: 'plugins/csv.js' }),
+      await run(fixture('module.js'), 'generate', [input], {
+        pluginPath: 'plugins/csv.js',
+      }),
       'plugin-failed',
     );
     expect(result.message).toContain('SyntaxError');
@@ -110,7 +118,10 @@ describe('runPlugin: the plugin fails', () => {
   });
 
   it('a name that is not a function is plugin-failed too', async () => {
-    const result = failure(await run('var generate = 3;', 'generate', [input]), 'plugin-failed');
+    const result = failure(
+      await run('var generate = 3;', 'generate', [input]),
+      'plugin-failed',
+    );
     expect(result.message).toBe('the plugin does not define generate');
   });
 
@@ -130,7 +141,10 @@ describe('runPlugin: the output does not fit the contract', () => {
       'plugin-output-invalid',
     );
     expect(generate.message).toContain('Promise');
-    failure(await run(fixture('promise.js'), 'parse', ['text', input]), 'plugin-output-invalid');
+    failure(
+      await run(fixture('promise.js'), 'parse', ['text', input]),
+      'plugin-output-invalid',
+    );
   });
 
   it('an async function is plugin-output-invalid', async () => {
@@ -141,13 +155,16 @@ describe('runPlugin: the output does not fit the contract', () => {
   });
 
   it.each([
-    ['undefined', 'function generate() {}'],
-    ['a function', 'function generate() { return function () {}; }'],
-    ['a cycle', 'function generate() { var a = {}; a.self = a; return a; }'],
-    ['a BigInt', 'function generate() { return { n: 10n }; }'],
-  ])('an output that is not JSON (%s) is plugin-output-invalid', async (_name, source) => {
-    failure(await run(source, 'parse', ['text', input]), 'plugin-output-invalid');
-  });
+    ['undefined', 'function parse() {}'],
+    ['a function', 'function parse() { return function () {}; }'],
+    ['a cycle', 'function parse() { var a = {}; a.self = a; return a; }'],
+    ['a BigInt', 'function parse() { return { n: 10n }; }'],
+  ])(
+    'an output that is not JSON (%s) is plugin-output-invalid',
+    async (_name, source) => {
+      failure(await run(source, 'parse', ['text', input]), 'plugin-output-invalid');
+    },
+  );
 
   it('generate must return a text', async () => {
     const result = failure(
@@ -197,9 +214,7 @@ describe('runPlugin: the limits', () => {
 
   it('memory.js: plugin-limit (memory) without taking the process down', async () => {
     const result = failure(
-      await run(fixture('memory.js'), 'generate', [input], {
-        limits: { timeoutMs: 20000 },
-      }),
+      await run(fixture('memory.js'), 'generate', [input]),
       'plugin-limit',
     );
     expect(result.message).toContain('memory');
@@ -207,14 +222,16 @@ describe('runPlugin: the limits', () => {
       limit: 'memoryBytes',
       max: FORMAT_PLUGIN_LIMITS.memoryBytes,
     });
-    expect(value(await run('function generate() { return "alive"; }', 'generate', [input]))).toBe(
-      'alive',
-    );
+    expect(
+      value(await run('function generate() { return "alive"; }', 'generate', [input])),
+    ).toBe('alive');
   }, 30000);
 
   it('a text too long for QuickJS is plugin-limit (memory)', async () => {
     const result = failure(
-      await run('function generate() { var s = "x"; for (;;) s += s; }', 'generate', [input]),
+      await run('function generate() { var s = "x"; for (;;) s += s; }', 'generate', [
+        input,
+      ]),
       'plugin-limit',
     );
     expect(result.details).toMatchObject({ limit: 'memoryBytes' });
@@ -222,16 +239,18 @@ describe('runPlugin: the limits', () => {
 
   it('a recursion without end is plugin-limit (stack) and the next call works', async () => {
     const result = failure(
-      await run('function generate() { function f() { return f() + 1; } return f(); }', 'generate', [
-        input,
-      ]),
+      await run(
+        'function generate() { function f() { return f() + 1; } return f(); }',
+        'generate',
+        [input],
+      ),
       'plugin-limit',
     );
     expect(result.message).toContain('stack');
     expect(result.details).toMatchObject({ limit: 'stackBytes' });
-    expect(value(await run('function generate() { return "alive"; }', 'generate', [input]))).toBe(
-      'alive',
-    );
+    expect(
+      value(await run('function generate() { return "alive"; }', 'generate', [input])),
+    ).toBe('alive');
   });
 
   it('a structure nested deeper than the stack lets the host throw: plugin-limit (stack) too', async () => {
@@ -243,9 +262,9 @@ describe('runPlugin: the limits', () => {
       '}',
     ].join('\n');
     failure(await run(source, 'generate', [input]), 'plugin-limit');
-    expect(value(await run('function generate() { return "alive"; }', 'generate', [input]))).toBe(
-      'alive',
-    );
+    expect(
+      value(await run('function generate() { return "alive"; }', 'generate', [input])),
+    ).toBe('alive');
   });
 
   it('big-output.js: plugin-limit (size) for a text over 4 MiB', async () => {
@@ -273,13 +292,19 @@ describe('runPlugin: the limits', () => {
 
   it('a text for parse over 4 MiB is plugin-limit', async () => {
     const text = 'x'.repeat(FORMAT_PLUGIN_LIMITS.parseTextBytes + 1);
-    const result = failure(await run(fixture('echo.js'), 'parse', [text, input]), 'plugin-limit');
+    const result = failure(
+      await run(fixture('echo.js'), 'parse', [text, input]),
+      'plugin-limit',
+    );
     expect(result.details).toMatchObject({ limit: 'parseTextBytes' });
   });
 
   it('a projection over 16 MiB is plugin-limit', async () => {
     const big = { ...input, filler: 'x'.repeat(FORMAT_PLUGIN_LIMITS.projectionBytes) };
-    const result = failure(await run(fixture('echo.js'), 'generate', [big]), 'plugin-limit');
+    const result = failure(
+      await run(fixture('echo.js'), 'generate', [big]),
+      'plugin-limit',
+    );
     expect(result.details).toMatchObject({ limit: 'projectionBytes' });
   });
 
@@ -297,7 +322,11 @@ describe('runPlugin: the limits', () => {
 describe('runPlugin: the sandbox', () => {
   it('escape.js finds none of fetch, require, import(), process, setTimeout and the like', async () => {
     const text = value(await run(fixture('escape.js'), 'generate', [input])) as string;
-    const report = JSON.parse(text) as { found: string[]; imported: string; console: string[] };
+    const report = JSON.parse(text) as {
+      found: string[];
+      imported: string;
+      console: string[];
+    };
     expect(report.found).toEqual([]);
     expect(report.imported).not.toBe('loaded');
     expect(report.console).toEqual(['function', 'function', 'function']);
@@ -310,7 +339,8 @@ describe('runPlugin: the sandbox', () => {
   });
 
   it('a plugin that tampers with JSON.stringify still cannot forge the result', async () => {
-    const source = 'JSON.stringify = function () { return "not json {"; }; function generate() { return "x"; }';
+    const source =
+      'JSON.stringify = function () { return "not json {"; }; function generate() { return "x"; }';
     failure(await run(source, 'generate', [input]), 'plugin-output-invalid');
   });
 });

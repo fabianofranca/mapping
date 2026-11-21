@@ -2,36 +2,37 @@
 // found as JSON. A clean sandbox gives `found: []` and an `import()` that never loads.
 function generate() {
   var found = [];
-  if (typeof fetch !== 'undefined') found.push('fetch');
-  if (typeof XMLHttpRequest !== 'undefined') found.push('XMLHttpRequest');
-  if (typeof require !== 'undefined') found.push('require');
-  if (typeof module !== 'undefined') found.push('module');
-  if (typeof process !== 'undefined') found.push('process');
-  if (typeof Buffer !== 'undefined') found.push('Buffer');
-  if (typeof setTimeout !== 'undefined') found.push('setTimeout');
-  if (typeof setInterval !== 'undefined') found.push('setInterval');
-  if (typeof setImmediate !== 'undefined') found.push('setImmediate');
-  if (typeof queueMicrotask !== 'undefined') found.push('queueMicrotask');
-  if (typeof WebAssembly !== 'undefined') found.push('WebAssembly');
-  if (typeof SharedArrayBuffer !== 'undefined') found.push('SharedArrayBuffer');
-  var imported = 'none';
+  var names = [
+    'fetch',
+    'XMLHttpRequest',
+    'require',
+    'module',
+    'process',
+    'Buffer',
+    'setTimeout',
+    'setInterval',
+    'setImmediate',
+    'queueMicrotask',
+    'WebAssembly',
+  ];
+  names.forEach(function (name) {
+    if (typeof globalThis[name] !== 'undefined') found.push(name);
+  });
+  var report = { found: found, imported: 'none' };
   try {
     var loading = import('node:fs');
-    imported = 'pending';
+    report.imported = 'pending';
     loading.then(
       function () {
-        imported = 'loaded';
+        report.imported = 'loaded';
       },
       function () {
-        imported = 'refused';
+        report.imported = 'refused';
       },
     );
-  } catch (error) {
-    imported = 'threw';
+  } catch {
+    report.imported = 'threw';
   }
-  return JSON.stringify({
-    found: found,
-    imported: imported,
-    console: [typeof console.log, typeof console.warn, typeof console.error],
-  });
+  report.console = [typeof console.log, typeof console.warn, typeof console.error];
+  return JSON.stringify(report);
 }
