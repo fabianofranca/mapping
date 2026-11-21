@@ -22,7 +22,7 @@ import {
   instantiate,
 } from '../../../src/model/components/instantiate';
 import { parseComponent } from '../../../src/model/components/parseComponent';
-import { resolveSizing } from '../../../src/model/components/sizing';
+import { fitComponentSize, resolveSizing } from '../../../src/model/components/sizing';
 import { walk } from '../../../src/model/components/scene';
 import { setContainerClass } from '../../../src/model';
 import { validateLibrary } from '../../../src/model/library';
@@ -244,6 +244,15 @@ describe('sizing reads $container.*', () => {
     expect(resolved.messages).toEqual([]);
   });
 
+  it('the fit (creation, fit_marking, Arrange) reads the container too: the measured size is the drawn one', () => {
+    if (!sized.ok) throw new Error(sized.errors.join('\n'));
+    const options = { measure: approximateMeasurer, container: compact };
+    expect(fitComponentSize(sized.component, {}, options)?.width).toBe(360);
+    expect(
+      fitComponentSize(sized.component, {}, { measure: approximateMeasurer }),
+    ).toBeUndefined();
+  });
+
   it('without a container the expression is empty: the axis keeps the size and warns', () => {
     if (!sized.ok) throw new Error(sized.errors.join('\n'));
     const resolved = resolveSizing(sized.component, {});
@@ -360,6 +369,13 @@ describe('the library validator', () => {
     const found = validate({ $field: '$container.foo', default: 1 }).join('\n');
     expect(found).toContain('field does not exist: $container.foo');
     expect(found).not.toContain('does not declare');
+  });
+
+  it('a malformed name is reported once (the parser already refused it)', () => {
+    const found = validate({ $field: '$container.Window', default: 1 }).filter((m) =>
+      m.includes('field does not exist'),
+    );
+    expect(found).toHaveLength(1);
   });
 
   it('a set the specialization does not declare is also unknown', () => {

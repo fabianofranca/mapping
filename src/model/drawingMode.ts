@@ -1,5 +1,9 @@
 import { anchorValues, containerValues } from './componentValues';
-import { readContainer, type InstanceContainer } from './components/container';
+import {
+  readContainer,
+  readsContainer,
+  type InstanceContainer,
+} from './components/container';
 import { componentAnchorDefaults, type InstanceAnchor } from './components/anchor';
 import type { AnchorSide, ComponentFile } from './components/componentFormat';
 import { applyTokens, type ResolvedTokens } from './components/tokens';
@@ -91,6 +95,20 @@ export function undeclaredDrawingMode(p: Project, declared: readonly string[]): 
 }
 
 /**
+ * The part of the container the component reads (`readContainer`), without building the container's
+ * context at all for a component that reads none (the common case: nothing is paid for).
+ */
+export function readContainerOf(
+  p: Project,
+  component: ComponentFile,
+  containerId: string | null,
+): InstanceContainer | undefined {
+  return readsContainer(component)
+    ? readContainer(component, containerValues(p, containerId))
+    : undefined;
+}
+
+/**
  * The component as the drawing uses it: with each `$token` replaced by the table of the space's
  * effective mode (`resolvedTokensByMode[mode]`; with no mode or no such table, the one in
  * `resolvedTokens`). Arranging, positioning and measuring go through here before reading the slot,
@@ -117,7 +135,7 @@ export function componentForDrawing(
     tokens,
     direction: effectiveDirection(p, containerId),
     // Only a component that reads `$container.*` pays for the container's size and classes.
-    container: readContainer(component, containerValues(p, containerId)),
+    container: readContainerOf(p, component, containerId),
   };
 }
 

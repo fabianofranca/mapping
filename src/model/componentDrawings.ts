@@ -43,9 +43,8 @@ import {
   type ComponentCatalog,
   type MarkingComponent,
 } from './componentCatalog';
-import { containerValues, drawingValues } from './componentValues';
+import { drawingValues } from './componentValues';
 import {
-  readContainer,
   withContainer,
   sameContainer,
   type InstanceContainer,
@@ -54,7 +53,7 @@ import type { ModelMessage } from './modelMessage';
 import { DEFAULT_LABEL_TEXTS } from './refs';
 import { effectiveDensity, unitSpaceOf, type UnitSpace } from './density';
 import { effectiveDirection } from './direction';
-import { effectiveDrawingMode, instanceAnchorOf } from './drawingMode';
+import { effectiveDrawingMode, instanceAnchorOf, readContainerOf } from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
 import {
@@ -1132,10 +1131,7 @@ export function createDrawingCache(): DrawingCache {
       const density = effectiveDensity(p, marking.containerId);
       const direction = effectiveDirection(p, marking.containerId);
       const anchor = anchorOfMarking(marking, markingsById);
-      const container = readContainer(
-        mc.component,
-        containerValues(p, marking.containerId),
-      );
+      const container = readContainerOf(p, mc.component, marking.containerId);
       const before = entries.get(marking.id);
       if (
         before !== undefined &&

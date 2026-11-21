@@ -1,7 +1,11 @@
 import type { ComponentFile } from './components/componentFormat';
 import { componentSlots, slotKey } from './components/slots';
 import { resolvePath, type TextFile } from './components/library';
-import { isReservedFieldName } from './components/expressions';
+import {
+  CONTAINER_PREFIX,
+  isContainerFieldShape,
+  isReservedFieldName,
+} from './components/expressions';
 import { citedContainerNames } from './components/container';
 import {
   collectFieldKeys,
@@ -221,7 +225,9 @@ function containerNameChecks(
   const sets = new Set((pkg.spec.containerClasses ?? []).map((set) => set.id));
   for (const where of ['template', 'sizing'] as const) {
     for (const name of citedContainerNames(raw[where])) {
+      // A name that cannot be `width`, `height` or a set id was already refused by the parser, at its own path.
       if (name === 'width' || name === 'height' || sets.has(name)) continue;
+      if (!isContainerFieldShape(`${CONTAINER_PREFIX}${name}`)) continue;
       out.error(path, where, 'library.containerFieldUnknown', { name, typeId: type.id });
     }
   }
