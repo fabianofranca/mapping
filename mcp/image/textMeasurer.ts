@@ -1,20 +1,10 @@
-import { parse, type Font } from 'opentype.js';
-import { fontExtents } from './glyphs';
-import {
-  guardedLayout,
-  inspectFont,
-  substitutionsEpoch,
-  type FontInspection,
-} from './fontSubstitutions';
+import { fontExtents, textWidth } from './glyphs';
+import { loadFace, type Face } from './harfbuzz';
 import monoBold from 'font:mono-bold';
 import mono from 'font:mono';
 import sansBold from 'font:sans-bold';
 import sans from 'font:sans';
-import {
-  measureLines,
-  type MeasureFont,
-  type TextMeasurer,
-} from '../../src/model/components/instantiate';
+import { measureLines, type TextMeasurer } from '../../src/model/components/instantiate';
 import type { LoadedFont } from '../../src/model/components/library';
 import { SERVER_ELLIPSIS_SLACK } from '../../src/model/components/textWrap';
 import {
@@ -22,10 +12,14 @@ import {
   MEASURE_CACHE_LIMIT,
 } from '../../src/model/components/measureCache';
 
-// Server measurer (decision 31): measures with opentype.js and an embedded free font (Mapping
+// Server measurer (decision 31): measures with HarfBuzz (stage #2121) and an embedded free font (Mapping
 // Sans/Mono, a subset of Liberation, OFL; see mcp/fonts/LICENSE.txt). The library's `fonts`
 // (with bytes) apply in place of the embedded one when the text's family cites them. The drawing (sceneRaster)
-// uses the same fonts for the glyphs, so measuring and drawing go together.
+// uses the same fonts for the glyphs, so measuring and drawing go together. This is the only module of the
+// text pipeline that reaches the HarfBuzz runtime (`./harfbuzz`): `glyphs.ts` and `textLayout.ts` import only types
+// from here, so the scene rasterizer stays free of it.
+
+export { textWidth };
 
 /** Weight from which the bold font kicks in. */
 const BOLD_FROM = 600;
@@ -33,18 +27,13 @@ const BOLD_FROM = 600;
 const MONO_FAMILY =
   /^(monospace|ui-monospace|mono|courier|courier new|consolas|menlo|monaco|sf mono|cascadia mono|cascadia code|source code pro|fira code|jetbrains mono|roboto mono|dejavu sans mono|liberation mono)$/i;
 
-function toBuffer(bytes: Uint8Array): ArrayBuffer {
-  return bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength,
-  ) as ArrayBuffer;
+function embedded(bytes: Uint8Array): Face {
+  const face = loadFace(bytes);
+  if (face === null) throw new Error('an embedded font cannot be read');
+  return face;
 }
 
-function embedded(bytes: Uint8Array): Font {
-  return parse(toBuffer(bytes));
-}
-
-let builtin: { sans: Font; sansBold: Font; mono: Font; monoBold: Font } | undefined;
+let builtin: { sans: Face; sansBold: Face; mono: Face; monoBold: Face } | undefined;
 
 function builtinFonts() {
   builtin ??= {
@@ -69,7 +58,7 @@ interface Candidate {
   readonly low: number;
   readonly high: number;
   readonly italic: boolean;
-  readonly font: Font;
+  readonly font: Face;
 }
 
 function weightRange(weight: string): [number, number] {
@@ -88,43 +77,32 @@ const gap = (weight: number, c: Candidate) =>
 /** A font reader: the embedded one and the library's (`fonts` with bytes). */
 export interface FontBook {
   /** The font that draws/measures `family` with the requested weight and style. */
-  fontFor(family: string, weight: number, italic: boolean): Font;
+  fontFor(family: string, weight: number, italic: boolean): Face;
   /** The embedded font for `family` and `weight`: where a text goes when its library font cannot lay it out. */
-  embeddedFor(family: string, weight: number): Font;
+  embeddedFor(family: string, weight: number): Face;
   /** Whether any library font (`fonts`) was read; otherwise everything is measured with the embedded one. */
   readonly hasLibraryFonts: boolean;
 }
 
-/** A library font, parsed, with what loading it skipped and how the probe ended. */
-export interface LibraryFont extends FontInspection {
-  readonly font: Font;
-}
-
 /**
- * Parses a library font, skips the GSUB subtables `opentype.js` cannot apply and probes it with a
- * sample text (`mcp/image/fontSubstitutions.ts`). `null` when the bytes cannot be read as a font
- * (`woff2`, for example); a font whose probe is `unusable` comes back and the book leaves it out.
+ * Reads a library font (`.ttf`, `.otf` or `.woff`). `null` when the bytes are not a usable font (`.woff2`, a corrupt
+ * file, a font without `head`, `hhea` or code points): the embedded font applies to its family.
  */
-export function loadLibraryFont(bytes: ArrayBuffer): LibraryFont | null {
-  try {
-    const font = parse(bytes);
-    return { font, ...inspectFont(font) };
-  } catch {
-    return null;
-  }
+export function loadLibraryFont(bytes: ArrayBuffer): Face | null {
+  return loadFace(new Uint8Array(bytes));
 }
 
 function candidateOf(entry: LoadedFont): Candidate | null {
   if (entry.bytes === undefined) return null;
-  const loaded = loadLibraryFont(entry.bytes);
-  if (loaded === null || loaded.probe === 'unusable') return null;
+  const font = loadLibraryFont(entry.bytes);
+  if (font === null) return null;
   const [low, high] = weightRange(entry.weight);
   return {
     family: entry.family.toLowerCase(),
     low,
     high,
     italic: entry.style === 'italic',
-    font: loaded.font,
+    font,
   };
 }
 
@@ -134,7 +112,7 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
     const candidate = candidateOf(entry);
     if (candidate !== null) candidates.push(candidate);
   }
-  const fromLibrary = (name: string, weight: number, italic: boolean): Font | null => {
+  const fromLibrary = (name: string, weight: number, italic: boolean): Face | null => {
     const same = candidates.filter((c) => c.family === name.toLowerCase());
     const best = [...same].sort(
       (a, b) =>
@@ -145,8 +123,8 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
   };
   const isLibraryFamily = (name: string): boolean =>
     candidates.some((c) => c.family === name.toLowerCase());
-  const resolved = new Map<string, Font>();
-  const resolve = (family: string, weight: number, italic: boolean): Font => {
+  const resolved = new Map<string, Face>();
+  const resolve = (family: string, weight: number, italic: boolean): Face => {
     const names = familyNames(family);
     for (const name of names) {
       const hit = fromLibrary(name, weight, italic);
@@ -184,21 +162,6 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
   };
 }
 
-/** Width of a one-line text with the font and the letter spacing. */
-export function textWidth(
-  book: FontBook,
-  text: string,
-  font: Pick<MeasureFont, 'family' | 'size' | 'weight' | 'italic' | 'letterSpacing'>,
-): number {
-  const face = book.fontFor(font.family, font.weight, font.italic);
-  const advance = guardedLayout(
-    face,
-    () => book.embeddedFor(font.family, font.weight),
-    (f) => f.getAdvanceWidth(text, font.size, { kerning: true }),
-  );
-  return Math.max(0, advance + font.letterSpacing * [...text].length);
-}
-
 const measurers = new WeakMap<FontBook, TextMeasurer>();
 
 /** The server's `TextMeasurer`, over a font reader (the same one for the same reader). */
@@ -218,7 +181,7 @@ export function measurerFor(book: FontBook): TextMeasurer {
           fontExtents(book.fontFor(font.family, font.weight, font.italic), font.size),
           SERVER_ELLIPSIS_SLACK,
         ),
-      { limit: MEASURE_CACHE_LIMIT, epoch: substitutionsEpoch },
+      { limit: MEASURE_CACHE_LIMIT },
     );
     measurers.set(book, measure);
   }

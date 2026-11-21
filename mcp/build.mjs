@@ -49,7 +49,7 @@ const fontModules = {
 
 // `harfbuzzjs` (the text shaper, WebAssembly): its wrapper ends with a top-level await, which a CommonJS bundle cannot
 // hold, and its glue reads `import.meta.url`. `mcp/harfbuzzFiles.mjs` has the patch (and throws if the package no longer
-// matches it); the wrapper is minified here, like the minified `opentype.js` below, because the server's size is limited.
+// matches it); the wrapper is minified here, because the server's size is limited.
 const harfbuzzModule = {
   name: 'harfbuzz-module',
   setup(esbuild) {
@@ -95,8 +95,6 @@ if (suffix !== '' && !/^-(snapshot\.pr\d+\+[0-9a-f]{7,}|rc\.\d+)$/.test(suffix))
 const result = await build({
   entryPoints: ['mcp/main.ts'],
   plugins: [rawText, wasmModules, fontModules, harfbuzzModule],
-  // The minified version of opentype.js (245 kB instead of 495 kB): the server's limit is +500 kB.
-  alias: { 'opentype.js': 'opentype.js/dist/opentype.min.mjs' },
   outfile: 'dist-mcp/mapping-mcp.js',
   bundle: true,
   platform: 'node',

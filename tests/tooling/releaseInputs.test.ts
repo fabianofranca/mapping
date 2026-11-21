@@ -27,7 +27,6 @@ async function bundleInputs(): Promise<string[]> {
     write: false,
     metafile: true,
     logLevel: 'silent',
-    alias: { 'opentype.js': 'opentype.js/dist/opentype.min.mjs' },
     define: { __MCP_BUILD_SUFFIX__: '""' },
     plugins: [
       {

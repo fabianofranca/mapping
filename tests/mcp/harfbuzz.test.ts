@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs';
-import { parse } from 'opentype.js';
 import { describe, expect, it, vi } from 'vitest';
 import { initShaper, loadFace } from '../../mcp/image/harfbuzz';
 import { makeWoff } from '../support/woffFile';
@@ -29,20 +28,17 @@ describe('HarfBuzz face (mcp/image/harfbuzz.ts)', () => {
     expect(sansFace().unitsPerEm).toBe(2048);
   });
 
-  it('measures like opentype.js, with kerning', async () => {
+  it('measures with kerning (widths pinned from the former opentype.js measurer)', async () => {
     await initShaper();
     const face = sansFace();
-    const font = parse(
-      sansBytes.buffer.slice(
-        sansBytes.byteOffset,
-        sansBytes.byteOffset + sansBytes.byteLength,
-      ),
-    );
-    // Strings with no pair that `opentype.js` misses: it does not apply this font's `AV`, `To` or `Ty` kerning (HarfBuzz does).
-    for (const text of ['Pay invoice', 'Hamburgefonstiv', 'st ti iv on']) {
-      const expected = font.getAdvanceWidth(text, 14, { kerning: true });
-      expect(Math.abs(face.advance(text, 14) - expected)).toBeLessThan(1e-6);
-    }
+    // Strings with no pair that `opentype.js` missed: it did not apply this font's `AV`, `To` or `Ty` kerning (HarfBuzz does).
+    const expected: Record<string, number> = {
+      'Pay invoice': 71.5927734375,
+      Hamburgefonstiv: 105.8271484375,
+      'st ti iv on': 55.2412109375,
+    };
+    for (const [text, width] of Object.entries(expected))
+      expect(Math.abs(face.advance(text, 14) - width)).toBeLessThan(1e-6);
     expect(face.advance('', 14)).toBe(0);
   });
 

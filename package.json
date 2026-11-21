@@ -61,7 +61,6 @@
     "globals": "^17.13.0",
     "harfbuzzjs": "1.6.4",
     "jsdom": "^30.1.2",
-    "opentype.js": "^2.0.0",
     "prettier": "^3.9.9",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
