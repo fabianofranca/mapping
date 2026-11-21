@@ -1,9 +1,12 @@
-import type { Font, PathCommand } from 'opentype.js';
+import type { MeasureFont } from '../../src/model/components/instantiate';
 import type { Point } from '../../src/model/components/scene';
-import { CAP_HEIGHT_RATIO } from '../../src/model/components/baseline';
 import { guardedLayout } from './fontSubstitutions';
+import type { Face, PathCommand } from './harfbuzz';
+import type { FontBook } from './textMeasurer';
 
-// Glyph outlines (opentype.js) as polygons, for the rasterizer to fill.
+// Glyph outlines and text widths over a HarfBuzz `Face`, as polygons for the rasterizer to fill. Only types come
+// from `./harfbuzz` and `./textMeasurer`, so the scene rasterizer (which the e2e specs bundle for Chromium) pulls in
+// no HarfBuzz runtime.
 
 export type Polygon = readonly Point[];
 
@@ -52,7 +55,7 @@ function step(cmd: PathCommand, from: Point, out: Point[]): Point {
   return to;
 }
 
-/** The closed outlines of an opentype.js path (curves become segments). */
+/** The closed outlines of a glyph path (curves become segments). */
 export function pathPolygons(commands: readonly PathCommand[]): Polygon[] {
   const polygons: Point[][] = [];
   let current: Point[] = [];
@@ -87,36 +90,33 @@ export interface GlyphStyle {
   readonly size: number;
   readonly letterSpacing: number;
   readonly italic: boolean;
+  /** CSS weight, for a variable font's `wght` axis (default 400). */
+  readonly weight?: number;
 }
 
-/** The outlines of the text laid out by `face` (kerning, or character by character with letter spacing). */
+/** The outlines of the text laid out by `face` (shaped as a whole; with letter spacing, without the optional ligatures and contextual alternates). */
 function laidOut(
-  face: Font,
+  face: Face,
   text: string,
   x: number,
   baseline: number,
   style: GlyphStyle,
 ) {
-  if (style.letterSpacing === 0)
-    return pathPolygons(
-      face.getPath(text, x, baseline, style.size, { kerning: true }).commands,
-    );
-  const polygons: Polygon[] = [];
-  let at = x;
-  for (const char of text) {
-    polygons.push(...pathPolygons(face.getPath(char, at, baseline, style.size).commands));
-    at += face.getAdvanceWidth(char, style.size) + style.letterSpacing;
-  }
-  return polygons;
+  return pathPolygons(
+    face.path(text, x, baseline, style.size, {
+      letterSpacing: style.letterSpacing,
+      weight: style.weight,
+    }),
+  );
 }
 
 /**
- * Outlines of the text with the baseline origin at (`x`, `baseline`). A font that cannot lay the
- * text out loses its glyph substitutions; if it still cannot, the embedded `fallback` draws it.
+ * Outlines of the text with the baseline origin at (`x`, `baseline`). A shaping that throws is laid out with the
+ * embedded `fallback` font.
  */
 export function textPolygons(
-  face: Font,
-  fallback: () => Font,
+  face: Face,
+  fallback: () => Face,
   text: string,
   x: number,
   baseline: number,
@@ -128,22 +128,32 @@ export function textPolygons(
   return style.italic ? slant(polygons, baseline) : polygons;
 }
 
+/** Width of a one-line text with the font and the letter spacing. */
+export function textWidth(
+  book: FontBook,
+  text: string,
+  font: Pick<MeasureFont, 'family' | 'size' | 'weight' | 'italic' | 'letterSpacing'>,
+): number {
+  const face = book.fontFor(font.family, font.weight, font.italic);
+  const advance = guardedLayout(
+    face,
+    () => book.embeddedFor(font.family, font.weight),
+    (f) => f.advance(text, font.size, font.weight, font.letterSpacing !== 0),
+  );
+  return Math.max(0, advance + font.letterSpacing * [...text].length);
+}
+
 /**
  * Capital height at the given size (px, positive), for `cap-middle`. It is the only place that reads it:
  * `OS/2.sCapHeight`; without it, the top of the glyph box of `H`; without `H`, 0.7 of the body.
  */
-export function capHeightOf(face: Font, size: number): number {
-  const k = size / face.unitsPerEm;
-  const declared = face.tables?.os2?.sCapHeight;
-  if (typeof declared === 'number' && declared > 0) return declared * k;
-  const glyph = face.charToGlyph('H');
-  const top = glyph.index > 0 ? glyph.getBoundingBox().y2 : 0;
-  return top > 0 ? top * k : CAP_HEIGHT_RATIO * size;
+export function capHeightOf(face: Face, size: number): number {
+  return face.capHeight(size);
 }
 
 /** Ascent and descent of the font at the given size (px, both positive). */
 export function fontExtents(
-  face: Font,
+  face: Face,
   size: number,
 ): { ascent: number; descent: number } {
   const k = size / face.unitsPerEm;

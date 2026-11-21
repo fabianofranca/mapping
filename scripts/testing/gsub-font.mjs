@@ -1,4 +1,4 @@
-// gsub-font.mjs: node gsub-font.mjs <out.ttf>
+// gsub-font.mjs: node gsub-font.mjs <out.ttf> [--calt]
 // Writes a test font: a copy of `mcp/fonts/MappingSans-Regular.ttf` whose GSUB table is replaced by
 // one the MCP server's `opentype.js` 2.0.0 cannot fully apply (stage #2089, "A library font never
 // makes the server fail"). No binary font is kept in the repository: tests and the tester build it.
@@ -13,6 +13,11 @@
 // Without the fix, measuring or drawing Latin text with this font throws. With it, the server skips
 // lookups 0 and 1 (skip list `{6,2,1}` and `{3,1,1}`) and `ii` measures as `m`.
 //
+// With `--calt` (stage #2121, decision 14) the font also has lookup 3 (type 1 format 2, `f` → the glyph of `w`) and
+// lookup 0 carries one rule, `f` followed by `i` → lookup 3, under the feature `calt` (the features are then `calt` →
+// lookup 0, `ccmp` → lookup 1 and `liga` → lookup 2): `fi` measures as `wi` with the chaining context that
+// `opentype.js` could not apply, and the ligature `ii` → `m` stays under `liga`. Without the flag the font is #2089's.
+//
 // The table directory is rewritten: tables sorted by tag, offsets aligned to 4, checksums recomputed
 // (`head.checkSumAdjustment` too).
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -20,6 +25,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const out = process.argv[2];
+const withCalt = process.argv.includes('--calt', 3);
 if (out === undefined) {
   process.stderr.write('usage: node gsub-font.mjs <out.ttf>\n');
   process.exit(2);
@@ -95,37 +101,53 @@ function table(head, children) {
   return Buffer.concat([u16(...fields), ...children]);
 }
 
-function buildGsub(f, a, i, m) {
+function buildGsub(f, a, i, m, w, calt) {
   const coverage = (glyph) => u16(1, 1, glyph);
   const emptyClassDef = u16(2, 0);
   const lookup = (type, subtable) => table([type, 0, 1, null], [subtable]);
 
-  const lookups = [
-    // Type 6 format 2: coverage `f`, three empty class definitions, one empty chain class set.
-    lookup(
-      6,
-      table(
+  // Type 6 format 2. Without `--calt`: coverage `f`, three empty class definitions, one empty chain class set.
+  // With it: class 1 is `f` as the input and `i` as the lookahead, and its rule applies lookup 3 to the first glyph.
+  const chaining = calt
+    ? table(
+        [2, null, null, null, null, 2, 0, null],
+        [
+          coverage(f),
+          emptyClassDef,
+          u16(2, 1, f, f, 1),
+          u16(2, 1, i, i, 1),
+          table([1, null], [u16(0, 1, 1, 1, 1, 0, 3)]),
+        ],
+      )
+    : table(
         [2, null, null, null, null, 1, null],
         [coverage(f), emptyClassDef, emptyClassDef, emptyClassDef, u16(0)],
-      ),
-    ),
+      );
+  const lookups = [
+    lookup(6, chaining),
     // Type 3 format 1: `a` has the alternates [`a`].
     lookup(3, table([1, null, 1, null], [coverage(a), u16(1, a)])),
     // Type 4 format 1: `i` `i` → `m`.
     lookup(4, table([1, null, 1, null], [coverage(i), table([1, null], [u16(m, 2, i)])])),
   ];
-  const lookupList = table([3, null, null, null], lookups);
+  // Type 1 format 2: `f` → `w`, reached only through lookup 0's rule.
+  if (calt) lookups.push(lookup(1, table([2, null, 1, w], [coverage(f)])));
+  const lookupList = table([lookups.length, ...lookups.map(() => null)], lookups);
 
-  // `opentype.js` applies `ccmp` of the DFLT script to any text of two or more characters, whatever
-  // features the caller asks for: it is what makes the unsupported subtables throw. `liga` is
+  // `opentype.js` applied `ccmp` of the DFLT script to any text of two or more characters, whatever
+  // features the caller asked for: it is what made the unsupported subtables throw. `liga` is
   // applied only when a call asks for it.
-  const feature = u16(0, 3, 0, 1, 2);
+  const feature = (...indexes) => u16(0, indexes.length, ...indexes);
+  const tags = calt ? ['calt', 'ccmp', 'liga'] : ['ccmp', 'liga'];
+  const features = calt
+    ? [feature(0), feature(1), feature(2)]
+    : [feature(0, 1, 2), feature(0, 1, 2)];
   const featureList = table(
-    [2, ...tagWord('ccmp'), null, ...tagWord('liga'), null],
-    [feature, feature],
+    [tags.length, ...tags.flatMap((tag) => [...tagWord(tag), null])],
+    features,
   );
 
-  const langSys = u16(0, 0xffff, 2, 0, 1);
+  const langSys = u16(0, 0xffff, tags.length, ...tags.map((_, n) => n));
   const script = table([null, 0], [langSys]);
   const scriptList = table(
     [2, ...tagWord('DFLT'), null, ...tagWord('latn'), null],
@@ -160,6 +182,8 @@ tables.set(
     glyphOf(cmap, 'a'),
     glyphOf(cmap, 'i'),
     glyphOf(cmap, 'm'),
+    glyphOf(cmap, 'w'),
+    withCalt,
   ),
 );
 tables.get('head').writeUInt32BE(0, 8);

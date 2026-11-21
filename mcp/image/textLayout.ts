@@ -2,9 +2,15 @@ import { lineBaseline, type CapMetrics } from '../../src/model/components/baseli
 import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { RunLayout, RunPiece } from '../../src/model/components/richText';
 import type { SceneTextRun, TextNode } from '../../src/model/components/scene';
-import { capHeightOf, fontExtents, textPolygons, type Polygon } from './glyphs';
+import {
+  capHeightOf,
+  fontExtents,
+  textPolygons,
+  textWidth,
+  type Polygon,
+} from './glyphs';
 import { blockTop, lineHeightOf, lineLeft, plainLines, richShift } from './textBars';
-import { textWidth, type FontBook } from './textMeasurer';
+import type { FontBook } from './textMeasurer';
 
 // Layout of a scene's text with a real font: the glyph outlines of each line and run
 // (and the chips' background), measured with the same font that draws them.

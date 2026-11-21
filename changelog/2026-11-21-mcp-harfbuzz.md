@@ -1,0 +1,9 @@
+# The MCP server shapes text with HarfBuzz — 2026-11-21 (épico `epic/mcp-harfbuzz`, PR #2398, MCP 0.53.0, schema v22 unchanged)
+
+## Alterado
+
+- The MCP server measures and draws text with HarfBuzz, so library fonts are shaped like in the browser (contextual alternates, every GPOS lookup, the variable weight, the spacing without ligatures). Sizes measured with a library font can change by fractions of a pixel, towards the app's (#2121).
+- `opentype.js` leaves the server and the bundle: measuring, drawing, the ascent and descent and the capital height come from the HarfBuzz face, and a `.woff` library font is read like its `.ttf`. Every embedded-font number and raster stays the same, except where the font kerns a pair that `opentype.js` did not apply (`AV`, `To`, `Ty`, `Ti` in Mapping Sans): the pair is a little narrower, as in Chromium (the default "Title" of the Material 3 `top-app-bar` is 0.82 px narrower at 22 px) (#2121).
+- The pruning of GSUB subtables and the "substitutions off" fallback of #2089 are gone: HarfBuzz applies every lookup. What stays is the last resort: a text whose shaping throws is measured and drawn with the embedded font, and `validate_library` warns about a font the server cannot lay out (a corrupt file, or no `head`/`hhea` table or no code point); the `.woff2` is still not read (#2121).
+- Removed: the two "skipped substitution" warnings of `validate_library` (`without <n> substitution subtable(s) it cannot apply (…)` and `without any glyph substitution`) (#2121).
+- Variable library fonts follow the weight (`wght`) and the optical size (`opsz`) of the text, as Chromium does; letter-spaced text is shaped as a whole and drops the optional ligatures and the contextual alternates (`liga`, `clig`, `calt`), as in the browser, instead of being shaped one character at a time. The widths match Chromium's text layout within 0.1 px in a parity test (#2121).

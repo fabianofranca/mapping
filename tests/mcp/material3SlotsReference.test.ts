@@ -1,6 +1,14 @@
 // SL7 of #1080 (decision 17): without child markings the six types that gain named slots draw exactly as
 // before. The reference was recorded from the library of the previous version (see
 // `tests/support/material3SlotsReference.ts`) and is not updated: the `fallback` is today's drawing.
+// One exception (stage #2121, HB2): the two hashes of `top-app-bar/small-empty` (the default title "Title") moved when the
+// server began to shape with HarfBuzz, which applies the font's `Ti` pair kerning (-0.82 px at 22 px) that `opentype.js`
+// 2.0.0 did not. The advance and the outline of every glyph are the same; only the position of what follows `T` changed,
+// towards what Chromium draws.
+// Second exception (stage #2121, HB3, authorized by the owner): the ten hashes of the five `swipe-to-dismiss` cases moved when
+// letter-spaced text began to be shaped as a whole (its `body-large` tracking is 0.5): the kerned pairs `Te` of "Team meeting"
+// and `To` of "Today, 2 pm" are narrower (102.27 → 100.49 and 88.93 → 85.97 px at 16 px), as Chromium lays them out
+// (`tests/e2e/shapingParity.spec.ts`). The glyphs are the same.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
