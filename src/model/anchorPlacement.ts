@@ -1,4 +1,5 @@
 import { bottom, clamp, right } from './geometry';
+import type { AnchorDefaultsUnits, ResolvedMarkingAnchor } from './components/anchor';
 import { modelMessage, type ModelMessage } from './modelMessage';
 import type {
   AnchorAlign,
@@ -8,30 +9,16 @@ import type {
   Rect,
 } from './types';
 
+// The two anchor types live in `components/anchor.ts` (so the viewer's declarations do not reach
+// the spec schema through this file); they are re-exported here, where they were.
+export type { AnchorDefaultsUnits, ResolvedMarkingAnchor } from './components/anchor';
+
 // Geometry of the anchor snap (R3, decision 12). Pure: it receives the rectangles and returns the
 // rectangle; whoever writes (`snapToAnchor`, the instance creation) lives in the other modules.
-
-/**
- * Anchor defaults coming from the component, as the file declares them: the `offset` is in UNITS
- * (× density when used) and everything is optional. The complete pixel counterpart is
- * `ResolvedMarkingAnchor`.
- */
-export interface AnchorDefaultsUnits {
-  readonly side?: AnchorSide;
-  readonly align?: AnchorAlign;
-  readonly offset?: { readonly main: number; readonly cross: number };
-}
 
 /** The component defaults of a marking: an object or a function from whoever can read them. */
 export type AnchorDefaultsSource<M> =
   AnchorDefaultsUnits | ((marking: M) => AnchorDefaultsUnits | undefined);
-
-/** The complete anchor: side, alignment and offset in pixels of the space. */
-export interface ResolvedMarkingAnchor {
-  readonly side: AnchorSide;
-  readonly align: AnchorAlign;
-  readonly offset: { readonly main: number; readonly cross: number };
-}
 
 /** What the anchor does not state comes from the defaults (offset in units × `density`), then from `top`/`center`/0. */
 export function resolveMarkingAnchor(

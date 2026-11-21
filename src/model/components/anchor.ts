@@ -1,13 +1,33 @@
-import {
-  resolveMarkingAnchor,
-  type AnchorDefaultsUnits,
-  type ResolvedMarkingAnchor,
-} from '../anchorPlacement';
-import type { AnchorSide, ComponentFile, FieldValues } from './componentFormat';
+import { resolveMarkingAnchor } from '../anchorPlacement';
+import type {
+  AnchorAlign,
+  AnchorSide,
+  ComponentFile,
+  FieldValues,
+} from './componentFormat';
 import { ANCHOR_FIELDS } from './expressions';
 
 // Anchor in the component engine (stage #1096, R3): the defaults of the `anchor` at the root of
 // the file and the `$anchor.*` pseudo-fields that the instance receives. Pure functions, no DOM.
+
+/**
+ * Anchor defaults coming from the component, as the file declares them: the `offset` is in UNITS
+ * (× density when used) and everything is optional. The complete pixel counterpart is
+ * `ResolvedMarkingAnchor`. Defined here, with the reader of the root `anchor`, and re-exported by
+ * `anchorPlacement.ts`.
+ */
+export interface AnchorDefaultsUnits {
+  readonly side?: AnchorSide;
+  readonly align?: AnchorAlign;
+  readonly offset?: { readonly main: number; readonly cross: number };
+}
+
+/** The complete anchor: side, alignment and offset in pixels of the space. */
+export interface ResolvedMarkingAnchor {
+  readonly side: AnchorSide;
+  readonly align: AnchorAlign;
+  readonly offset: { readonly main: number; readonly cross: number };
+}
 
 /**
  * The component root's `anchor` as `AnchorDefaultsUnits` (the `offset` in component UNITS, whoever
