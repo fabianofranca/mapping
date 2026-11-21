@@ -146,7 +146,7 @@ Each DS component and its origin in the code. A DS name can cover several files,
 | `CodeDefinitions` | `src/ui/CodeDefinitions.tsx` | Resolves the variant by `typeCodeDefinitions` (`src/model/codeVariants.ts`). |
 | `SpecsDialog` | `src/ui/SpecsDialog.tsx` | Also `specPackageImport.ts`. |
 | `LibraryIssueList` | `src/ui/LibraryIssueList.tsx` |  |
-| `NoticesView` | `src/ui/NoticesView.tsx`, `src/ui/BottomTabs.tsx` | Notices window (`Ctrl+Shift+8`): filters, groups by notice and the tab with a count. |
+| `NoticesView` | `src/ui/NoticesView.tsx`, `src/ui/BottomTabs.tsx` | Notices window (`Ctrl+Shift+8`): only the Accessibility section with **Only visible layers**, and the tab with the count of annotations with an accessibility warning. |
 | `Janela Comentários` | `src/ui/toolWindowMeta.ts`, `src/store/toolWindows.ts` | Tab of the bottom window, the last one (`WINDOW_NUMBER.comments = 0`, shortcut `Ctrl+Shift+0`, icon `chat`). |
 | `SettingsDialog` | `src/ui/SettingsDialog.tsx` | Also `SettingsBar.tsx`, `PlatformRepos.tsx` and `PrivacySettings.tsx`. |
 

@@ -876,20 +876,10 @@ export const enUS = {
   'notice.ref': 'Source:',
   'notice.column': 'Column {column}: {message}',
   'notices.title': 'Notices',
-  'notices.kindFilter': 'Filter by notice kind',
-  'notices.kindFilterNotices': 'Filter by notice kind (numbers count notices)',
-  'notices.all': 'All',
-  'notices.inUseOnly': 'Only notices in use',
   'notices.visibleOnly': 'Only visible layers',
-  'notices.empty': 'No applied specialization has notices.',
-  'notices.emptyFiltered': 'No notices match the current filters.',
-  'notices.unused': 'No annotation uses this notice',
-  'notices.count': '{count} annotation(s)',
-  'notices.scope.type': '(type)',
-  'notices.scope.field': '(field)',
-  'notices.scope.column': '(column)',
-  'notices.col.value': 'Value',
-  'notices.go': 'Go to the annotation with a notice in {name}',
+  'notices.empty': 'No accessibility warnings.',
+  'notices.emptyFiltered': 'No warnings in the visible layers.',
+  'notices.col.warning': 'Warning',
   'notices.accessibility.title': 'Accessibility',
   'notices.accessibility.go':
     'Go to the annotation with an accessibility warning in {name}',
@@ -897,7 +887,8 @@ export const enUS = {
   'audit.touchTargetSmall':
     '{width} × {height}; minimum {minWidth} × {minHeight} units ({pxWidth} × {pxHeight} px at {density}x)',
   'notices.status': 'Notices: {count}',
-  'notices.statusTip': 'Open the Notices window ({count} annotation(s) with a notice)',
+  'notices.statusTip':
+    'Open the Notices window ({count} annotation(s) with an accessibility warning)',
   'typed.chooseTypeTitle': 'New annotation in {layer}',
   'typed.chooseTypeHint':
     'Pick the type. The fields are predefined; just fill in the values.',
