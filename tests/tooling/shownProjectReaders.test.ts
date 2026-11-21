@@ -56,6 +56,8 @@ const ALLOWLIST = [
   'src/ui/DiagnosticsView.tsx',
   // "Drawing mode" field of the container (CF6): reads the applied specializations of the real project (like the ContainerDialog); disabled in the review.
   'src/ui/ContainerDrawingModeField.tsx',
+  // "Container classes" of the container (CX3): reads the applied specializations and the real project's density to show the computed classes (like the drawing mode field); disabled in the review.
+  'src/ui/ContainerClassField.tsx',
   // New container: reads the applied specializations and the selection of the real project, to create in it.
   'src/ui/ContainerDialog.tsx',
   // Details in the review (phase 9.5): the panel reads the shown project; the current one is the other side
