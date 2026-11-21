@@ -20,6 +20,7 @@ import { readSetting, writeSetting } from '../utils/safeStorage';
 import { createReviewDerived, type ReviewDerived, type ReviewView } from './derived';
 import type {
   ApplyResult,
+  ConcludeActionResult,
   DecisionResult,
   NoteResult,
   RemoveResult,
@@ -194,6 +195,20 @@ export interface ReviewState {
   removeNote(noteId: string): Promise<NoteResult | null>;
   /** "Apply accepted". */
   apply(): Promise<ApplyResult | null>;
+  /**
+   * "Conclude review" of the open proposal (stage #2085): closes it as `rejected` (nothing applied)
+   * or `applied`. The review stays open, view only. `null` outside the review.
+   */
+  conclude(): Promise<ConcludeActionResult | null>;
+  /**
+   * Concludes a proposal by id (⋯ menu of the list, outside the review). `unknown-proposal` if it
+   * does not exist; the same refusals as `conclude` otherwise.
+   */
+  concludeProposal(
+    id: string,
+  ): Promise<
+    ConcludeActionResult | { readonly ok: false; readonly error: 'unknown-proposal' }
+  >;
   /**
    * Deletes a closed proposal (⋯ menu of the list) and forgets what this copy kept about it
    * (`seen` and the point where it stopped). Only outside the review.
@@ -568,6 +583,13 @@ export function createReviewState(session: ProjectSession): ReviewState {
     return result;
   };
 
+  /** Concludes the proposal and, when it is the open one, drops the batch "Undo" (it no longer applies). */
+  const concludeById = async (id: string): Promise<ConcludeActionResult> => {
+    const result = await proposalActions.concludeProposal(id);
+    if (result.ok && proposalId.peek() === id) undoable.value = null;
+    return result;
+  };
+
   const withOpen = <T>(run: (id: string) => Promise<T>): Promise<T | null> => {
     const id = proposalId.peek();
     return id === null ? Promise.resolve(null) : run(id);
@@ -785,6 +807,12 @@ export function createReviewState(session: ProjectSession): ReviewState {
           release();
         }
       }),
+
+    conclude: () => withOpen((id) => concludeById(id)),
+    async concludeProposal(id) {
+      if (!proposals.get(id)) return { ok: false, error: 'unknown-proposal' };
+      return concludeById(id);
+    },
 
     async removeProposal(id) {
       // Inside the review the list does not even appear; the guard is for whoever calls through another path.

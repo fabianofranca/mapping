@@ -17,8 +17,7 @@ import {
 } from '../src/model/libraryPackage';
 import { docClonesChecker, externalDocWarnings } from './docFiles';
 import { ToolError } from './errors';
-import { type SkippedSubtable } from './image/fontSubstitutions';
-import { loadLibraryFont, type LibraryFont } from './image/textMeasurer';
+import { loadLibraryFont } from './image/textMeasurer';
 import { hasParentSegment, isWithin, type Roots } from './paths';
 import { MAX_FONT_BYTES } from './projects';
 
@@ -331,30 +330,18 @@ async function readFontFile(
   }
 }
 
-/** "lookup type 6 format 2 ×3, lookup type 3 format 1 ×1": what the server skipped, by kind. */
-const skippedList = (skipped: readonly SkippedSubtable[]): string =>
-  skipped
-    .map((s) => `lookup type ${s.lookupType} format ${s.substFormat} ×${s.count}`)
-    .join(', ');
-
-/** The warning text of a font the server could not use as it is (`null` when nothing was skipped). */
-export function fontWarningText(file: string, font: LibraryFont): string | null {
-  if (font.probe === 'unusable')
-    return `the MCP server cannot lay out \`${file}\`: it measures and draws with its embedded font; the app is not affected`;
-  const { skipped, probe } = font;
-  if (probe === 'gsub-off')
-    return `the MCP server measures and draws \`${file}\` without any glyph substitution${skipped.length > 0 ? ` (it also cannot apply ${skippedList(skipped)})` : ''}: a layout still failed after skipping the subtables it cannot apply; the app is not affected`;
-  if (skipped.length === 0) return null;
-  const count = skipped.reduce((sum, s) => sum + s.count, 0);
-  return `the MCP server measures and draws \`${file}\` without ${count} substitution subtable(s) it cannot apply (${skippedList(skipped)}): their alternates are not drawn by the server; the app is not affected`;
+/** The warning text of a font the server cannot lay out (`null` when it can). */
+export function fontWarningText(file: string, usable: boolean): string | null {
+  if (usable) return null;
+  return `the MCP server cannot lay out \`${file}\`: it measures and draws with its embedded font; the app is not affected`;
 }
 
 /**
- * One warning per library font the MCP server cannot use as it is (decision 3 of #2089): it
- * applies the server's pruning and probe to each `.ttf`/`.otf`/`.woff` the specialization
- * declares. A missing, unreadable or larger font, and a `.woff2`, is not checked here.
+ * One warning per library font the MCP server cannot lay out (decision 3 of #2089, decisions 8 and 9 of #2121): it
+ * loads each `.ttf`/`.otf`/`.woff` the specialization declares with HarfBuzz. A missing, unreadable or larger font,
+ * and a `.woff2`, is not checked here.
  */
-async function fontSubstitutionWarnings(
+async function fontLayoutWarnings(
   roots: Roots,
   pkg: ReadPackage,
   spec: Spec | undefined,
@@ -368,8 +355,10 @@ async function fontSubstitutionWarnings(
     const path = resolvePath(specFile, entry.file);
     if (!isReadableFont(path) || !present.has(path)) continue;
     const bytes = await readFontFile(roots, pkg.dir, path);
-    const font = bytes === null ? null : loadLibraryFont(bytes);
-    const message = font === null ? null : fontWarningText(entry.file, font);
+    const message =
+      bytes === null
+        ? null
+        : fontWarningText(entry.file, loadLibraryFont(bytes) !== null);
     if (message === null) continue;
     issues.push({
       file: specFile,
@@ -469,7 +458,7 @@ export async function validateLibraryTool(
     pkg.specPath,
     args.docClones,
   );
-  const fontWarnings = await fontSubstitutionWarnings(roots, pkg, report.spec);
+  const fontWarnings = await fontLayoutWarnings(roots, pkg, report.spec);
   const warnings = [
     ...report.warnings,
     ...docWarnings,

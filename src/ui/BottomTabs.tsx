@@ -7,14 +7,14 @@ import { openToolWindow } from './toolWindowLayout';
 import { toolWindowMeta, windowBadge, windowsOfSide } from './toolWindowMeta';
 
 /**
- * Tabs of the bottom window (List | Incomplete | Warnings | Diagnostics | Proposals | Comments).
- * Incomplete shows how many annotations are pending; Warnings, how many have a specialization
+ * Tabs of the bottom window (List | Incomplete | Notices | Diagnostics | Proposals | Comments).
+ * Incomplete shows how many annotations are pending; Notices, how many have an accessibility
  * warning; Diagnostics, the new-error alert dot (B4).
  */
 export function BottomTabs({ active }: { readonly active: ToolWindowId }) {
   const { derived, review } = useEditor();
   const incomplete = derived.incompleteCount.value;
-  const noticed = derived.noticedCount.value;
+  const audited = derived.auditedCount.value;
   const fresh = review.derived.freshIds.value.length;
   const openThreads = derived.threads.openCount.value;
   const unseen = diagnosticsUnseen.value;
@@ -33,7 +33,7 @@ export function BottomTabs({ active }: { readonly active: ToolWindowId }) {
       ...(iconOnly ? { icon: meta.icon, ariaLabel: title } : {}),
       ...(compact ? { icon: meta.icon, compact } : {}),
       title,
-      ...windowBadge(id, incomplete, fresh, noticed, openThreads),
+      ...windowBadge(id, incomplete, fresh, audited, openThreads),
       alert: id === 'diagnostics' && unseen,
     };
   });

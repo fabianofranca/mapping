@@ -371,6 +371,100 @@ print(once, n["c"])
   });
 });
 
+describe('painel.py — standalone notes in toca (TN1, #2428)', () => {
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'toca-'));
+    run('init', dir);
+    run('start', dir, '--paralelo', '9');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it(
+    'two waiting fichas that share only a standalone note both start, with the note in any position',
+    () => {
+      for (const [first, second] of [
+        ['a.ts,(novo),b.ts', 'c.ts,(novo)'],
+        ['(novo),a.ts', 'c.ts,(novo)'],
+        ['x.ts, (novo) ,y.ts', 'c.ts,(novo)'],
+      ] as const) {
+        run('init', dir, '--force');
+        run('start', dir, '--paralelo', '9');
+        stage('#1', ficha('nenhuma', first));
+        stage('#2', ficha('nenhuma', second));
+        expect(reasons().slice(0, 2), `${first} | ${second}`).toEqual([
+          '#1 começa',
+          '#2 começa',
+        ]);
+        expect(run('show', dir)).toContain('começar agora: #1 #2');
+      }
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it('a started stage with a standalone note does not hold a candidate; both rows are listed in fichas a refazer', () => {
+    stage('#1', ficha('nenhuma', 'a.ts,(novo),b.ts'), 'status=em andamento');
+    stage('#2', ficha('nenhuma', 'c.ts,(novo)'));
+    expect(reasons()[0]).toBe('#2 começa');
+    const out = run('show', dir);
+    expect(out).toContain('começar agora: #2');
+    expect(out).toContain('fichas a refazer: #1 #2');
+  });
+
+  it('a real file in common with a started stage still holds the candidate', () => {
+    stage('#1', ficha('nenhuma', 'a.ts,(novo),b.ts'), 'status=em andamento');
+    stage('#2', ficha('nenhuma', '(novo),b.ts'));
+    expect(reasons()[0]).toBe('#2 arquivo b.ts com #1');
+  });
+
+  it('a note after its path keeps both citations (also with a comma inside) and is not listed', () => {
+    stage('#1', ficha('nenhuma', 'x.ts (new, helper),y.ts'), 'status=em andamento');
+    stage('#2', ficha('nenhuma', 'y.ts'));
+    stage('#3', ficha('nenhuma', 'x.ts'));
+    expect(reasons().slice(0, 2)).toEqual([
+      '#2 arquivo y.ts com #1',
+      '#3 arquivo x.ts com #1',
+    ]);
+    expect(run('show', dir)).toContain('fichas a refazer: nenhuma');
+  });
+
+  it('concluída and recusada rows with a standalone note are not listed; waiting and started ones are', () => {
+    stage('#1', ficha('nenhuma', 'a.ts,(novo)'), 'status=concluída');
+    stage('#2', ficha('nenhuma', 'b.ts,(novo)'), 'status=recusada');
+    stage('#3', ficha('nenhuma', 'c.ts,(novo)'), 'status=esperando dono');
+    stage('#4', ficha('nenhuma', 'd.ts,(novo)'));
+    expect(run('show', dir)).toContain('fichas a refazer: #3 #4');
+  });
+
+  it('a standalone note does not make the ficha incomplete', () => {
+    stage('#1', ficha('nenhuma', 'a.ts,(novo),b.ts'));
+    expect(reasons()[0]).toBe('#1 começa');
+  });
+
+  it('painel.py toca prints ok and conflito does not report the standalone note', () => {
+    const r = runRaw('toca', 'a.ts,(novo),b.ts');
+    expect(r.status).toBe(0);
+    expect(r.stdout).toBe('ok\n');
+    const c = runRaw('conflito', '(novo)', '--com', '#9=a.ts,(novo)');
+    expect(c.status).toBe(0);
+    expect(c.stdout).toBe('livre\n');
+  });
+});
+
+describe('the texts of the standalone note (TN1, #2428, decision 7)', () => {
+  const queue = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+
+  it('the "Parallel" and the "Panel" say fichas a refazer and carry the example ,(novo),', () => {
+    for (const heading of ['## Parallel', '## Panel']) {
+      const text = section(queue, heading);
+      expect(text, heading).toContain('fichas a refazer');
+      expect(text, heading).toContain(',(novo),');
+    }
+  });
+});
+
 describe('the texts of the toca rule (TA2, #1812, decision 12)', () => {
   const queue = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const detail = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');

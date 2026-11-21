@@ -50,20 +50,20 @@ export function windowsOfSide(side: ToolWindowSide): readonly ToolWindowId[] {
 }
 
 /**
- * Counter of a window's tab: the pending items in Incomplete, the annotations with a notice in
- * Notices, the new proposals (informational, highlighted) in Proposals and the open threads in
+ * Counter of a window's tab: the pending items in Incomplete, the annotations with an accessibility
+ * warning in Notices, the new proposals (informational, highlighted) in Proposals and the open threads in
  * Comments.
  */
 export function windowBadge(
   id: ToolWindowId,
   incomplete: number,
   freshProposals: number,
-  noticed = 0,
+  audited = 0,
   openThreads = 0,
 ): { readonly badge?: string; readonly badgeTone?: 'muted' | 'info' } {
   const counts: Partial<Record<ToolWindowId, number>> = {
     incomplete,
-    notices: noticed,
+    notices: audited,
     comments: openThreads,
   };
   const count = counts[id] ?? 0;

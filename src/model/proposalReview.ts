@@ -607,6 +607,27 @@ export function withdrawProposal(p: Proposal): Proposal {
   return p.status === 'open' ? { ...p, status: 'withdrawn' } : p;
 }
 
+export type ConcludeResult =
+  | {
+      readonly ok: true;
+      /** `applied` when something was applied earlier, otherwise `rejected`. */
+      readonly status: 'applied' | 'rejected';
+      readonly proposal: Proposal;
+    }
+  | { readonly ok: false; readonly reason: 'not-open' | 'incomplete' };
+
+/**
+ * The person concludes a finished review: only an `open` proposal whose review is complete
+ * (nothing undecided, nothing accepted but unapplied). It becomes `applied` when some change
+ * was applied earlier, otherwise `rejected`; decisions, notes and `applied` do not change.
+ */
+export function concludeProposal(p: Proposal): ConcludeResult {
+  if (p.status !== 'open') return { ok: false, reason: 'not-open' };
+  if (!reviewProgress(p).complete) return { ok: false, reason: 'incomplete' };
+  const status = Object.keys(p.applied).length > 0 ? 'applied' : 'rejected';
+  return { ok: true, status, proposal: { ...p, status } };
+}
+
 /** Marks the proposal as superseded (the decisions and notes stay stored). */
 export function supersedeProposal(p: Proposal): Proposal {
   return p.status === 'open' ? { ...p, status: 'superseded' } : p;

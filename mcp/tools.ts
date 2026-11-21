@@ -871,7 +871,7 @@ export function registerTools(
     'plan_changes',
     {
       description:
-        'Preview of a batch of changes: validates against the Mapping rules and returns whether it is valid, the errors per operation, a readable summary, the counts, the new pending items (`issues`), the new specialization notices (`notices.new`: the type, field or column notices that the created or changed annotations come to have; a notice blocks nothing), the references of the items that will be created and how many changes the user would have to review. It does NOT write anything (not even a proposal). ' +
+        'Preview of a batch of changes: validates against the Mapping rules and returns whether it is valid, the errors per operation, a readable summary, the counts, the new pending items (`issues`), the new specialization notices (`notices.new`: one entry per notice that the created or changed annotations come to have, `{ type, kind, message, key?, column?, annotations }`, with `annotations` the number of annotations of the batch it affects; a notice blocks nothing), the references of the items that will be created and how many changes the user would have to review. It does NOT write anything (not even a proposal). ' +
         'The operations are applied in order; a created item can be cited in the following ones by its `as` alias (e.g. "$door"). Locked items cannot be moved, resized or deleted. The rectangle does not follow the content on its own: after changing a value that alters it (text, a field that turns a part on or off) in a component whose `sizing` is `hug` or an expression, include `fit_marking` on the same marking. A marking with `anchor` (`create_marking`/`update_marking`) is only linked to the target: to snap it against the target (after anchoring it or changing its size) include `snap_to_anchor`; moving the target already carries the anchored ones along. To send the change to the user, use propose_changes (the agent never writes the project directly).',
       inputSchema: {
         project: projectArg,
@@ -905,7 +905,7 @@ export function registerTools(
     {
       description:
         'Sends a change to the user as a PROPOSAL for review: validates the batch like plan_changes, computes the changes (creations, field-by-field alterations, removals) and writes `proposals/<id>/proposal.json` (new images in `proposals/<id>/images/`). The `mapping.json` is NOT changed: the user reviews in the app, accepts or rejects at any level (proposal, container, item, change), leaves notes and applies what they accepted. ' +
-        'Returns the reference `mapping://<project>/p/<code>`, a summary per level and the final references of the created items, with the new pending items (`issues`) and the new specialization notices (`notices.new`, as in plan_changes; a notice does not block the proposal). Then, tell the user and wait for the review to finish (get_proposal: nothing pending or accepted without being applied); read the result with get_proposal_review and, to correct it, use revise_proposal on the same proposal (while nothing has been applied) or, afterwards, send another proposal with `supersedes` containing only the corrections. Re-exports: use `source` on containers and markings and find_by_source to propose only what changed.',
+        'Returns the reference `mapping://<project>/p/<code>`, a summary per level and the final references of the created items, with the new pending items (`issues`) and the new specialization notices (`notices.new`, grouped per notice with `annotations`, as in plan_changes; a notice does not block the proposal). Then, tell the user and wait for the review to finish (get_proposal: nothing pending or accepted without being applied); read the result with get_proposal_review and, to correct it, use revise_proposal on the same proposal (while nothing has been applied) or, afterwards, send another proposal with `supersedes` containing only the corrections. Re-exports: use `source` on containers and markings and find_by_source to propose only what changed.',
       inputSchema: {
         project: projectArg,
         title: z
@@ -1000,13 +1000,15 @@ export function registerTools(
     'list_proposals',
     {
       description:
-        "Lists the project's proposals (open and closed): reference, title, origin, author, date, status, review progress (pending, accepted without being applied, rejected, applied), conflicts and the supersede relation.",
+        "Lists the project's proposals (open and closed): reference, title, origin, author, date, status (`open`, `applied`, `superseded`, `withdrawn` or `rejected`), review progress (pending, accepted without being applied, rejected, applied), conflicts and the supersede relation.",
       inputSchema: {
         project: projectArg,
         status: z
-          .enum(['open', 'applied', 'superseded', 'withdrawn'])
+          .enum(['open', 'applied', 'superseded', 'withdrawn', 'rejected'])
           .optional()
-          .describe('Only the proposals in this status.'),
+          .describe(
+            'Only the proposals in this status. `rejected`: the user rejected every change and concluded the review (closed, nothing applied; to propose again, send a new proposal with `supersedes`).',
+          ),
       },
       annotations: READ_ONLY,
     },
@@ -1017,7 +1019,7 @@ export function registerTools(
     'get_proposal',
     {
       description:
-        'A proposal: review progress (`progress.complete` = nothing pending or accepted without being applied), summary per level (Project and containers), the changes with the state of each one (pending, accepted, rejected, applied), conflicts (the project changed after the proposal), locked-item warning and the notes. Use it to know whether the review has finished.',
+        'A proposal: review progress (`progress.complete` = nothing pending or accepted without being applied), summary per level (Project and containers), the changes with the state of each one (pending, accepted, rejected, applied), conflicts (the project changed after the proposal), locked-item warning and the notes. Use it to know whether the review has finished. The status `rejected` means the user rejected every change and concluded the review: the proposal is closed and nothing of it was applied (revise_proposal and withdraw_proposal refuse it; send a new proposal with `supersedes`).',
       inputSchema: {
         ref: proposalRefArg,
         project: optionalProjectArg,

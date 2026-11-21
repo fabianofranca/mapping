@@ -112,6 +112,17 @@ describe('proposal card in the thread', () => {
     expect(within(el).queryByText(/to review/)).toBeNull();
   });
 
+  it('rejected proposal (stage #2085): the state as text and View', async () => {
+    const { proposal } = richScenario();
+    const thread = proposalThread('tp1', 'P1', 'Proposal:');
+    const h = await open([{ ...proposal, status: 'rejected' }], [thread]);
+    renderInEditor(h, <ThreadView thread={thread} />);
+    const el = card() as HTMLElement;
+    expect(within(el).getByText(t('proposals.status.rejected'))).toBeTruthy();
+    expect(within(el).queryByText(/to review/)).toBeNull();
+    expect(within(el).getByRole('button', { name: /^View:/ })).toBeTruthy();
+  });
+
   it('proposal that no longer exists: "Proposal removed", no button', async () => {
     const thread = proposalThread('tp1', 'P9', 'Proposal:');
     const h = await open([], [thread]);

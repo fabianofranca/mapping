@@ -1,9 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { useId, useLayoutEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
-import type { SpecNotice } from '../model';
 import { HelpTip } from './controls';
-import { NoticeLabelIcon, NoticeLines } from './NoticeBadge';
 
 // DS 2.0 PropertyGrid: label on the left (`--size-label-col` column) and control on the
 // right. The states come from the controls.
@@ -47,8 +45,6 @@ interface PropertyProps {
   readonly mark?: ComponentChildren;
   /** Row below the control (the change note, in the review), via the extension point. */
   readonly below?: ComponentChildren;
-  /** Warnings from the field's specialization: the icon on the label and a row below the control. */
-  readonly notices?: readonly SpecNotice[];
   readonly children: ComponentChildren;
 }
 
@@ -92,17 +88,15 @@ interface LabelProps {
   readonly mark?: ComponentChildren;
   readonly menu?: ComponentChildren;
   readonly fieldKey?: string;
-  readonly notices?: readonly SpecNotice[];
 }
 
-/** Is there something next to the label (explanation, review marker or field warning)? */
+/** Is there something next to the label (explanation or review marker)? */
 function hasLabelExtras(
   hint: string | undefined,
   extras: readonly ComponentChildren[],
-  notices: readonly SpecNotice[] | undefined,
 ): boolean {
   const present = extras.some((x) => x !== undefined && x !== null && x !== false);
-  return Boolean(hint) || present || (notices?.length ?? 0) > 0;
+  return Boolean(hint) || present;
 }
 
 /** The label cell: the text, the explanation `HelpTip` and the review marker. */
@@ -116,7 +110,6 @@ function LabelCell({
   mark,
   menu,
   fieldKey,
-  notices,
 }: LabelProps) {
   const text = (
     <>
@@ -139,7 +132,7 @@ function LabelCell({
   ) : (
     <span class="props-label">{text}</span>
   );
-  if (!hasLabelExtras(hint, [mark, menu], notices)) return labelCell;
+  if (!hasLabelExtras(hint, [mark, menu])) return labelCell;
   return (
     <div class="props-label-cell" data-field={fieldKey}>
       {labelCell}
@@ -150,7 +143,6 @@ function LabelCell({
           descriptionId={descriptionId}
         />
       )}
-      <NoticeLabelIcon notices={notices} />
       {mark}
       {menu}
     </div>
@@ -172,7 +164,6 @@ export function Property({
   menu,
   mark,
   below,
-  notices,
   children,
 }: PropertyProps) {
   const descriptionId = useId();
@@ -196,7 +187,6 @@ export function Property({
         mark={mark}
         menu={menu}
         fieldKey={fieldKey}
-        notices={notices}
       />
       <div class="props-value" data-focus={focusKey} data-field={fieldKey} ref={valueRef}>
         {children}
@@ -207,7 +197,6 @@ export function Property({
         )}
         {issue && !error && <p class="field-error">{issue}</p>}
         {status && <small class="props-status">{status}</small>}
-        <NoticeLines notices={notices} />
         {below}
       </div>
     </>

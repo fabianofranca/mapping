@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
-import { fontBytes, wasmBytes } from './tests/support/mcpVitePlugins';
+import { fontBytes, harfbuzzModule, wasmBytes } from './tests/support/mcpVitePlugins';
 
 /**
  * Scale tests (#881): they prove that the large project grows linearly (n and 4n markings, ratio < 6×, n and 4n interleaved; the same helper and the same ceiling apply to the growth cases of `npm run test:perf`).
@@ -38,10 +38,11 @@ export default defineConfig({
       },
       {
         // The MCP read tools in process (createServer + InMemoryTransport), in Node.
-        plugins: [wasmBytes(), fontBytes()],
+        plugins: [wasmBytes(), fontBytes(), harfbuzzModule()],
         test: {
           name: 'scale-mcp',
           environment: 'node',
+          setupFiles: ['tests/support/shaperSetup.ts'],
           include: ['tests/scale/mcp/**/*.scale.ts'],
           fileParallelism: false,
           execArgv: ['--expose-gc', '--max-semi-space-size=128'],

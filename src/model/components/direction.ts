@@ -107,3 +107,13 @@ export function resolveDirections<T extends TemplateNode>(
   if (root === 'ltr' && !usesDirection(template)) return template;
   return resolveNode(template, root) as T;
 }
+
+/**
+ * The mirrored left edge of a box of `width` that sits at `x` inside a content area that starts at
+ * `left` and is `content` wide: `2·left + content − x − width`. The one formula of the `rtl`
+ * mirror (Arrange, `layoutScreen` and the placement in a slot). Unrounded: whoever needs whole
+ * pixels rounds. In `ltr` the box stays where it is, which is the caller's to decide.
+ */
+export function mirrorX(x: number, width: number, left: number, content: number): number {
+  return 2 * left + content - x - width;
+}

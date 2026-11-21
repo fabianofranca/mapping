@@ -7,7 +7,7 @@ import type { BuildChannel } from './pwa/build';
 import { contentSecurityPolicy, serviceWorker } from './pwa/buildPlugins';
 import { tokensCss } from './pwa/tokensCss';
 import { resolveBuildId } from './src/utils/build';
-import { fontBytes, wasmBytes } from './tests/support/mcpVitePlugins';
+import { fontBytes, harfbuzzModule, wasmBytes } from './tests/support/mcpVitePlugins';
 import TimedSequencer from './tests/support/timedSequencer';
 
 /** `VITE_CHANNEL=preview` in the build of the branch published at /preview/ (deploy.yml). */
@@ -121,12 +121,13 @@ export default defineConfig({
       },
       {
         // MCP batch budget, on its own and last (see `perfModelFiles`): the same environment as the `mcp` project.
-        plugins: [wasmBytes(), fontBytes()],
+        plugins: [wasmBytes(), fontBytes(), harfbuzzModule()],
         test: {
           name: 'perf-mcp',
           environment: 'node',
           env: testEnv,
           include: perfMcpFiles,
+          setupFiles: ['tests/support/shaperSetup.ts'],
           fileParallelism: false,
           sequence: { groupOrder: perfGroupOrder },
         },
@@ -143,12 +144,14 @@ export default defineConfig({
         },
       },
       {
-        plugins: [wasmBytes(), fontBytes()],
+        plugins: [wasmBytes(), fontBytes(), harfbuzzModule()],
         // MCP server (stage 3a): also on pure Node.
         test: {
           name: 'mcp',
           environment: 'node',
           env: testEnv,
+          // HarfBuzz starts from the embedded bytes before each file, as `mcp/main.ts` does at startup.
+          setupFiles: ['tests/support/shaperSetup.ts'],
           include: ['tests/mcp/**/*.test.ts'],
           exclude: perfMcpFiles,
           // Generates dist-mcp/mapping-mcp.js once: the integration tests start that file over stdio.

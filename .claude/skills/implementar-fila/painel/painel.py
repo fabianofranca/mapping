@@ -210,7 +210,7 @@ without `cedo`, and every write rewrites its step to `espera merge de #S para te
 `esperando merge para testar: #E (espera #S); …` and `pode sincronizar: #E (#S mesclada; #T falhou); …` (the rows with every holder resolved, with each outcome:
 `mesclada`, `falhou`, `recusada`, `fora da fila`), each `nenhuma` when empty; the `em andamento` line of a row with `cedo` ends in ` · cedo: #S`. Once
 `cedo` is cleared the stage is an ordinary started one and opens the early start for another (the second level). `fichas a refazer:` also lists the
-non-final rows whose ficha has no `formato=` at all (it does not make the ficha incomplete and holds nothing; `formato=?` is a written value). The
+non-final rows whose ficha has no `formato=` at all (it does not make the ficha incomplete and holds nothing; `formato=?` is a written value). A standalone note in `toca=` (a comma item that is only a parenthesized note, `a.ts,(novo),b.ts`; decision 4 of #2428) is dropped and also lists the row there, holding nothing; a note after its path (`x.ts (new, helper)`) is not one of them. The
 session kind `sincronização` (`SESSION_KINDS`) has no ruler, signals or context ceiling, and `sinal` refuses it. Graph: `estado` `entrega` (reason =
 the step) for `esperando entrega`, `cedo` on every node (the holders still open, `#S, #T`, or "") and an arrow `{de: #S, para: #E, tipo: entrega}` for
 each open holder of a started row with `cedo`; a `começa cedo` candidate is in wave 0 like `começa`.
@@ -2477,10 +2477,27 @@ def norm_path(x):
     return x
 
 
+# A comma item that is only a parenthesized note (`a.ts,(novo),b.ts`; decisions 2 and 3 of #2428). The group keeps the comma before it.
+LOOSE_NOTE = re.compile(r"(^|,)\s*\([^)]*\)\s*(?=,|$)")
+
+
+def loose_notes(raw):
+    """The standalone parenthesized notes of a raw `toca=` (a list; empty when there is none, also for `None`, `""` and `?`).
+
+    Read by `norm_toca` (which drops them) and by `redo_rows` (which lists the ficha): there is no second regex. A note after its
+    path (`x.ts (new, helper)`) is not one of them."""
+    if raw is None:
+        return []
+    return [m.group(0).lstrip(",").strip() for m in LOOSE_NOTE.finditer(raw)]
+
+
 def norm_toca(raw):
     """Citations of a `toca=` already normalized, without the ones that do not count; `?` if it says nothing."""
     if raw is None or raw.strip() in ("", "?"):
         return ["?"]
+    # A note written as an item of its own ("a.ts,(novo),b.ts") is not a citation (decision 2 of #2428): drop it, keeping the comma,
+    # before the strip below, so a note with a comma inside it after a path ("x.ts (new, helper)") stays that path's note.
+    raw = LOOSE_NOTE.sub(r"\1", raw)
     # A parenthesized note after the path ("x.ts (new method)") is not part of it.
     raw = re.sub(r"\s+\([^)]*\)", "", raw)
     out = []
@@ -2726,13 +2743,19 @@ def row_incomplete(r):
     return incomplete_fields(r.get("plan", ""), r.get("exclusive") == "sim")
 
 
+def needs_redo(r):
+    """Does the row's ficha have to be redone: incomplete, no `formato=` field at all, or a standalone note in `toca=`?"""
+    plan = r.get("plan", "")
+    return bool(row_incomplete(r) or plan_field(plan, "formato") is None or loose_notes(plan_field(plan, "toca")))
+
+
 def redo_rows(q):
-    """Non-final rows whose ficha is incomplete or has no `formato=` field at all (the ficha is redone in the cycle).
+    """Non-final rows whose ficha is incomplete, has no `formato=` field at all or has a standalone note in `toca=` (the ficha is redone in the cycle).
 
     Decision 8 of #2373: the missing `formato=` does not make the ficha incomplete (`row_incomplete`), so it never holds the normal
-    start, and `formato=?` is a written value that is not listed again."""
-    return [r for r in q if r["status"] not in ("concluída", "recusada")
-            and (row_incomplete(r) or plan_field(r.get("plan", ""), "formato") is None)]
+    start, and `formato=?` is a written value that is not listed again. Decision 4 of #2428: the same for a standalone parenthesized
+    note in `toca=` (`a.ts,(novo),b.ts`): `norm_toca` drops it, the row is listed here, nothing is held."""
+    return [r for r in q if r["status"] not in ("concluída", "recusada") and needs_redo(r)]
 
 
 def format_families(plan):

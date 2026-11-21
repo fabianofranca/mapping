@@ -1,16 +1,13 @@
 import type { AccessibilityAudit, AuditFinding } from './accessibility';
-import { noticeUsage, NOTICE_KINDS, type NoticeUsage } from './notices';
+import { noticeUsage, type NoticeUsage } from './notices';
 import { memoByProject, projectIndex } from './projectIndex';
 import { VALUES_FIELD_PREFIX, type Change } from './proposal';
-import { tableRows } from './refs';
-import type { SpecNoticeKind } from './spec';
 import { groupRootsByContainer } from './listing';
-import { isEmptyValue } from './typed';
-import type { Annotation, Arrow, JsonValue, Layer, Marking, Project } from './types';
+import type { Annotation, Arrow, Layer, Marking, Project } from './types';
 
-// List of the Notices window (stage #486, AV3): each specialization notice with the project
-// annotations it affects, and the counts of the tab and the status bar. Pure and without
-// browser APIs; the reactive derivation lives in `store/derived.ts`.
+// Notices of the project's annotations (stage #486, AV3) and the Notices window's rows and count (stage
+// #2085: the window shows only the accessibility audit). Pure and without browser APIs; the reactive
+// derivation lives in `store/derived.ts`.
 
 /** Where the annotation is: the marking (or the arrow's source one), the path to it and the layer. */
 interface Place {
@@ -88,209 +85,14 @@ export function annotationNotices(
   return noticesByAnnotation(p).get(annotationId) ?? [];
 }
 
-/** An annotation affected by a notice, with the context to find it and the value in the field. */
-export interface NoticeRow {
-  readonly annotation: Annotation;
-  /** The marking; for an arrow annotation, the arrow's source marking. */
-  readonly marking: Marking;
-  /** From the root marking down to itself (the last item is `marking`). */
-  readonly path: readonly Marking[];
-  readonly layer: Layer;
-  readonly arrow?: Arrow;
-  /**
-   * The annotation value the notice applies to: the field's (field notice); the non-empty cells
-   * of the column (column notice); `undefined` for a type notice.
-   */
-  readonly value: JsonValue | undefined;
-}
-
-/** A notice (window group) with the annotations it affects. */
-export interface NoticeGroup {
-  readonly usage: NoticeUsage;
-  /** How many annotations the notice affects (the rows that pass the filters). */
-  readonly count: number;
-  readonly rows: readonly NoticeRow[];
-}
-
-export interface NoticeFilters {
-  /** Only notices of this kind; without it, all. */
-  readonly kind?: SpecNoticeKind | null;
-  /** Only notices with an affected annotation (default `true`); `false` includes those no annotation uses. */
-  readonly inUseOnly?: boolean;
-  /** Only the annotations of these layers (the visible ones); without it, all. */
-  readonly onlyLayers?: readonly Layer[];
-}
-
-function usageValue(usage: NoticeUsage, a: Annotation): JsonValue | undefined {
-  if (usage.scope === 'field') return a.values?.[usage.key ?? ''];
-  if (usage.scope !== 'column') return undefined;
-  const cells = tableRows(a.values?.[usage.key ?? ''])
-    .map((row) => row[usage.column ?? ''])
-    .filter((cell): cell is JsonValue => cell !== undefined && !isEmptyValue(cell));
-  return cells;
-}
-
-/** Places of the annotations the notice affects (and that pass the layer filter), in window order. */
-function placesOf(
-  usage: NoticeUsage,
-  places: ReadonlyMap<string, Place>,
-  allowed?: Set<string>,
-): Place[] {
-  const found: Place[] = [];
-  for (const id of usage.annotationIds) {
-    const place = places.get(id);
-    if (!place || (allowed && !allowed.has(place.layer.id))) continue;
-    found.push(place);
-  }
-  return found.sort((a, b) => a.order - b.order);
-}
-
-function rowsOf(
-  usage: NoticeUsage,
-  places: ReadonlyMap<string, Place>,
-  allowed?: Set<string>,
-): NoticeRow[] {
-  return placesOf(usage, places, allowed).map(
-    ({ annotation, marking, path, layer, arrow }) => ({
-      annotation,
-      marking,
-      path,
-      layer,
-      arrow,
-      value: usageValue(usage, annotation),
-    }),
-  );
-}
-
-/** Prefers severity; within the `kind`, file order (the sort is stable). */
-function byKind(a: NoticeUsage, b: NoticeUsage): number {
-  return NOTICE_KINDS.indexOf(a.notice.kind) - NOTICE_KINDS.indexOf(b.notice.kind);
-}
-
 /**
- * The groups of the Notices window: one per notice, from most to least severe (`removed`,
- * `deprecated`, `diverges`, `pending`) and, within the same `kind`, in the order of
- * specializations, layers and types. The rows follow Incomplete order (containers, markings
- * depth-first).
+ * How many annotations have an accessibility warning (stage #2085: the tab and the status bar of the
+ * Notices window). An annotation with several warnings counts once; one with only a pending item
+ * (no `findings`) does not count.
  */
-export function buildNoticeList(p: Project, filters: NoticeFilters): NoticeGroup[] {
-  const { kind = null, inUseOnly = true, onlyLayers } = filters;
-  const places = annotationPlaces(p);
-  const allowed = onlyLayers && new Set(onlyLayers.map((l) => l.id));
-  const groups: NoticeGroup[] = [];
-  for (const usage of [...noticeUsage(p)].sort(byKind)) {
-    if (kind && usage.notice.kind !== kind) continue;
-    const rows = rowsOf(usage, places, allowed);
-    if (inUseOnly && rows.length === 0) continue;
-    groups.push({ usage, count: rows.length, rows });
-  }
-  return groups;
-}
-
-export interface NoticeCounts {
-  /** What the numbers count: annotations with a notice, or listed notices (`inUseOnly` unchecked). */
-  readonly unit: 'annotations' | 'notices';
-  /** Total of `unit` (does not depend on the `kind` filter). */
-  readonly total: number;
-  /** The same, for each `kind`. */
-  readonly byKind: Readonly<Record<SpecNoticeKind, number>>;
-  /** The `kind`s that have a notice in the specialization (with an annotation or not, per `inUseOnly`). */
-  readonly present: readonly SpecNoticeKind[];
-}
-
-/**
- * Counts by `kind` and in total, with the same filters as `buildNoticeList` (the `kind` does not
- * count: the `Segmented` buttons show all of them). With `inUseOnly` checked, annotations with a
- * notice are counted; unchecked, the list brings one group per notice (even without an
- * annotation), and the button counts those groups.
- */
-export function noticeCounts(p: Project, filters: NoticeFilters): NoticeCounts {
-  const inUseOnly = filters.inUseOnly ?? true;
-  const tally = tallyNotices(p, filters);
-  const count = (k: SpecNoticeKind) =>
-    (inUseOnly ? tally.annotationsByKind.get(k)?.size : tally.groupsByKind.get(k)) ?? 0;
-  return {
-    unit: inUseOnly ? 'annotations' : 'notices',
-    total: inUseOnly ? tally.annotations.size : tally.groups,
-    byKind: {
-      removed: count('removed'),
-      deprecated: count('deprecated'),
-      diverges: count('diverges'),
-      pending: count('pending'),
-    },
-    present: NOTICE_KINDS.filter((k) => tally.annotationsByKind.has(k)),
-  };
-}
-
-/**
- * `noticeCounts` for the "All" filter of the Notices window, with the Accessibility section's rows: the section
- * shows under every kind, so "All" also counts the annotations whose only finding is a warning (an annotation with
- * a notice and a warning counts once, the unit of `noticedCountWithAudit`). Without the unit of annotations (the
- * listed notices), each row is one more.
- */
-export function noticeCountsWithAudit(
-  p: Project,
-  filters: NoticeFilters,
-  rows: readonly AuditRow[],
-): NoticeCounts {
-  const counts = noticeCounts(p, filters);
-  if (rows.length === 0) return counts;
-  const known =
-    counts.unit === 'annotations' ? tallyNotices(p, filters).annotations : null;
-  const extra = rows.filter((row) => !known?.has(row.annotation.id)).length;
-  return { ...counts, total: counts.total + extra };
-}
-
-interface Tally {
-  readonly annotations: Set<string>;
-  readonly annotationsByKind: Map<SpecNoticeKind, Set<string>>;
-  readonly groupsByKind: Map<SpecNoticeKind, number>;
-  groups: number;
-}
-
-/** The annotations and groups (listed notices) that pass the filters, in total and by `kind`. */
-function tallyNotices(p: Project, filters: NoticeFilters): Tally {
-  const { inUseOnly = true, onlyLayers } = filters;
-  const places = annotationPlaces(p);
-  const allowed = onlyLayers && new Set(onlyLayers.map((l) => l.id));
-  const tally: Tally = {
-    annotations: new Set(),
-    annotationsByKind: new Map(),
-    groupsByKind: new Map(),
-    groups: 0,
-  };
-  for (const usage of noticeUsage(p)) {
-    const found = placesOf(usage, places, allowed);
-    if (inUseOnly && found.length === 0) continue;
-    const kind = usage.notice.kind;
-    const set = tally.annotationsByKind.get(kind) ?? new Set<string>();
-    for (const place of found) {
-      set.add(place.annotation.id);
-      tally.annotations.add(place.annotation.id);
-    }
-    tally.annotationsByKind.set(kind, set);
-    tally.groupsByKind.set(kind, (tally.groupsByKind.get(kind) ?? 0) + 1);
-    tally.groups += 1;
-  }
-  return tally;
-}
-
-/** How many project annotations have some notice (window tab and status bar). */
-export function noticedCount(p: Project): number {
-  return noticesByAnnotation(p).size;
-}
-
-/**
- * The same count with the audit's warnings (stage #1127): the annotations with a notice plus those with
- * a `touch-target-small` that have none, so an annotation with both counts once (the same unit as
- * `noticedCount`).
- */
-export function noticedCountWithAudit(p: Project, audit: AccessibilityAudit): number {
-  const notices = noticesByAnnotation(p);
-  let count = notices.size;
-  for (const [id, entry] of audit) {
-    if (entry.findings.length > 0 && !notices.has(id)) count += 1;
-  }
+export function auditedCount(audit: AccessibilityAudit): number {
+  let count = 0;
+  for (const entry of audit.values()) if (entry.findings.length > 0) count += 1;
   return count;
 }
 
@@ -338,7 +140,8 @@ export function buildAuditRows(
  * project with the change applied (the preview): creating the annotation (empty `field`) brings
  * all those it comes to have; changing the type (`type`), those of the type; a field's value
  * (`values.<key>`), those of the field and of its columns. Removals, other entities and other
- * fields bring none.
+ * fields bring none. Only the MCP batch report reads it now: the review no longer shows notices
+ * (stage #2085, decision 5).
  */
 export function changeNotices(
   p: Project,

@@ -38,6 +38,7 @@ export const reviewEnUS = {
   'proposals.status.superseded': 'Superseded',
   'proposals.status.applied': 'Applied',
   'proposals.status.withdrawn': 'Withdrawn',
+  'proposals.status.rejected': 'Rejected',
   'proposals.progressLabel':
     '{accepted} accepted, {rejected} rejected, {undecided} undecided',
   'proposals.today': 'today {time}',
@@ -51,6 +52,8 @@ export const reviewEnUS = {
   'proposals.leftBehindNone': 'Nothing was left behind',
   'proposals.appliedCountOne': '1 change applied',
   'proposals.appliedCount': '{count} changes applied',
+  'proposals.rejectedCountOne': '1 change rejected',
+  'proposals.rejectedCount': '{count} changes rejected',
   'proposals.supersededBy': 'superseded by {title}',
   'proposals.withdrawnCount': '{count} changes, withdrawn by the agent',
   'proposals.withdrawnInfo':
@@ -112,9 +115,14 @@ export const reviewEnUS = {
   'review.applyCount': 'Apply accepted · {count}',
   'review.applyTip': 'Apply the accepted changes',
   'review.applyShort': 'Apply',
+  'review.concludeShort': 'Conclude',
   'review.applyNone': 'Nothing accepted yet',
   'review.applyBlocked': 'Apply is blocked: the accepted set is invalid',
   'review.applying': 'Applying the accepted changes…',
+  'review.concludeLabel': 'Conclude review',
+  'review.concludeTip': 'Nothing left to decide or apply: close the proposal',
+  'review.concluded.rejected': 'Review concluded: proposal rejected.',
+  'review.concluded.applied': 'Review concluded: proposal applied.',
   'review.applied': '{count} change(s) applied. Undo (Ctrl+Z) reverts them all at once.',
   'review.appliedReason': 'Already applied to the project',
   'review.closedReason': 'This proposal no longer takes decisions',
@@ -389,6 +397,7 @@ export const reviewEnUS = {
   'review.panel.together.cleared': '{count} decision(s) cleared together: {names}',
   'review.panel.closedNotice':
     "Proposal applied on {date}. View only: decisions can't change.",
+  'review.panel.rejectedNotice': "Proposal rejected. View only: decisions can't change.",
   'review.panel.blocksApply': 'Blocks applying',
   'review.issue.acceptOne': 'Accept: {title}',
   'review.issue.rejectOne': 'Reject: {title}',
@@ -498,6 +507,7 @@ export const reviewEnUS = {
     'Leaving the review loses nothing: decisions and notes stay in the proposal and the review returns to the same spot. If the project changed between sessions, new conflicts are flagged; a proposal superseded by another one shows what was left behind.',
   'proposal.error.revised':
     'The agent revised this proposal while you were looking. Check it before deciding.',
+  'proposal.error.incomplete': 'The proposal changed: there is something new to decide.',
   'review.revised.mark': 'Revised',
   'review.revised.markHint': 'The agent revised this change. Check it before deciding.',
   'review.revised.markAdded': 'New in the revision',
@@ -555,6 +565,7 @@ export const reviewPtBR: Record<keyof typeof reviewEnUS, string> = {
   'proposals.status.superseded': 'Substituída',
   'proposals.status.applied': 'Aplicada',
   'proposals.status.withdrawn': 'Retirada',
+  'proposals.status.rejected': 'Rejeitada',
   'proposals.progressLabel':
     '{accepted} aceitas, {rejected} rejeitadas, {undecided} sem decisão',
   'proposals.today': 'hoje {time}',
@@ -568,6 +579,8 @@ export const reviewPtBR: Record<keyof typeof reviewEnUS, string> = {
   'proposals.leftBehindNone': 'Nada ficou para trás',
   'proposals.appliedCountOne': '1 mudança aplicada',
   'proposals.appliedCount': '{count} mudanças aplicadas',
+  'proposals.rejectedCountOne': '1 mudança rejeitada',
+  'proposals.rejectedCount': '{count} mudanças rejeitadas',
   'proposals.supersededBy': 'substituída por {title}',
   'proposals.withdrawnCount': '{count} mudanças, retirada pelo agente',
   'proposals.withdrawnInfo':
@@ -629,9 +642,14 @@ export const reviewPtBR: Record<keyof typeof reviewEnUS, string> = {
   'review.applyCount': 'Aplicar aceitas · {count}',
   'review.applyTip': 'Aplicar as aceitas',
   'review.applyShort': 'Aplicar',
+  'review.concludeShort': 'Concluir',
   'review.applyNone': 'Nada aceito ainda',
   'review.applyBlocked': 'Aplicar bloqueado: o conjunto aceito é inválido',
   'review.applying': 'Aplicando as aceitas…',
+  'review.concludeLabel': 'Concluir revisão',
+  'review.concludeTip': 'Nada a decidir nem aplicar: fecha a proposta',
+  'review.concluded.rejected': 'Revisão concluída: proposta rejeitada.',
+  'review.concluded.applied': 'Revisão concluída: proposta aplicada.',
   'review.applied':
     '{count} mudança(s) aplicada(s). Desfazer (Ctrl+Z) volta tudo de uma vez.',
   'review.appliedReason': 'Já aplicada ao projeto',
@@ -906,6 +924,8 @@ export const reviewPtBR: Record<keyof typeof reviewEnUS, string> = {
   'review.panel.together.cleared': '{count} decisão(ões) desfeita(s) junto: {names}',
   'review.panel.closedNotice':
     'Proposta aplicada em {date}. Só para ver: as decisões não mudam mais.',
+  'review.panel.rejectedNotice':
+    'Proposta rejeitada. Só visualização: as decisões não mudam.',
   'review.panel.blocksApply': 'Bloqueia aplicar',
   'review.issue.acceptOne': 'Aceitar: {title}',
   'review.issue.rejectOne': 'Rejeitar: {title}',
@@ -1016,6 +1036,7 @@ export const reviewPtBR: Record<keyof typeof reviewEnUS, string> = {
     'Sair da revisão não perde nada: decisões e notas ficam na proposta e a revisão volta ao mesmo ponto. Se o projeto mudou entre sessões, os conflitos novos são avisados; uma proposta substituída por outra mostra o que ficou para trás.',
   'proposal.error.revised':
     'O agente revisou esta proposta enquanto você olhava. Confira antes de decidir.',
+  'proposal.error.incomplete': 'A proposta mudou: há algo novo para decidir.',
   'review.revised.mark': 'Revisada',
   'review.revised.markHint': 'O agente revisou esta mudança. Confira antes de decidir.',
   'review.revised.markAdded': 'Nova na revisão',

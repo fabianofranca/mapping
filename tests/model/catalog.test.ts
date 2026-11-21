@@ -423,3 +423,46 @@ describe('catalog: external document (formatVersion 11)', () => {
     expect(build(undefined)?.docExternal).toBeNull();
   });
 });
+
+describe('catalog: notices of the fields and columns (stage #2085)', () => {
+  const avisos = buildCatalog([
+    {
+      path: 'avisos-demo.json',
+      text: readFileSync(
+        join(__dirname, '../e2e/fixtures/avisos-demo.spec.json'),
+        'utf8',
+      ),
+    },
+  ]);
+  const entry = (id: string) =>
+    avisos.layers.flatMap((l) => l.entries).find((e) => e.type.id === id)!;
+
+  it('the field carries its notices, in file order', () => {
+    const fields = entry('card').fields;
+    expect(fields.find((f) => f.key === 'style')?.notices).toEqual([
+      { kind: 'deprecated', message: 'Use variant.' },
+    ]);
+    expect(fields.find((f) => f.key === 'variant')?.notices).toEqual([
+      { kind: 'diverges', message: 'The sources disagree on the default.' },
+    ]);
+  });
+
+  it('the column carries its notices and the table field has none', () => {
+    const items = entry('card').fields.find((f) => f.key === 'items')!;
+    expect('notices' in items).toBe(false);
+    const label = items.columns?.find((c) => c.key === 'label');
+    expect(label?.notices).toEqual([
+      { kind: 'pending', message: 'Column not in the SDK yet.' },
+    ]);
+    expect('notices' in items.columns!.find((c) => c.key === 'value')!).toBe(false);
+  });
+
+  it('a field without a notice has no key', () => {
+    expect('notices' in entry('simple').fields.find((f) => f.key === 'text')!).toBe(
+      false,
+    );
+    expect(entry('simple').fields.find((f) => f.key === 'draft')?.notices).toEqual([
+      { kind: 'removed', message: 'Field outside the contract.' },
+    ]);
+  });
+});

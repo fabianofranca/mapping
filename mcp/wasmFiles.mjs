@@ -1,5 +1,5 @@
-// WebAssembly modules, by virtual name (`import bytes from 'wasm:png'`): the image codecs (@jsquash) and
-// QuickJS, which runs the specialization's format plugins (`mcp/pluginRunner.ts`).
+// WebAssembly modules, by virtual name (`import bytes from 'wasm:png'`): the image codecs (@jsquash), HarfBuzz (the text shaper)
+// and QuickJS, which runs the specialization's format plugins (`mcp/pluginRunner.ts`).
 // Shared by the server build (mcp/build.mjs) and by Vitest (vite.config.ts).
 export const wasmFiles = {
   'wasm:png': '@jsquash/png/codec/pkg/squoosh_png_bg.wasm',
@@ -8,4 +8,6 @@ export const wasmFiles = {
   'wasm:webp-decoder': '@jsquash/webp/codec/dec/webp_dec.wasm',
   'wasm:webp-encoder': '@jsquash/webp/codec/enc/webp_enc.wasm',
   'wasm:quickjs': '@jitl/quickjs-wasmfile-release-sync/wasm',
+  // HarfBuzz, the text shaper (harfbuzzjs); `harfbuzz-subset.wasm` is not used.
+  'wasm:harfbuzz': 'harfbuzzjs/dist/harfbuzz.wasm',
 };

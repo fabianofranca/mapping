@@ -61,6 +61,36 @@ describe('applied proposal', () => {
   });
 });
 
+/** The whole richScenario rejected and concluded (stage #2085). */
+function rejectedScenario() {
+  const { base, proposal } = richScenario();
+  const rejected = decided(proposal, base, { level: 'proposal', id: null }, 'rejected');
+  return { ...rejected, status: 'rejected' as const } satisfies Proposal;
+}
+
+describe('rejected proposal (stage #2085)', () => {
+  it('view only like the applied one: notice, decisions disabled and a popover without buttons', async () => {
+    await showReviewPanel(
+      { proposals: [rejectedScenario()] },
+      { level: 'item', id: 'M1' },
+    );
+    expect(
+      screen.getByText("Proposal rejected. View only: decisions can't change."),
+    ).toBeTruthy();
+    const header = screen.getByRole('region', { name: 'Decision' });
+    const accept = within(header).getByRole('button', {
+      name: /^Accept marking: Porta$/,
+    });
+    expect((accept as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: /^Name: changed, rejected/ }));
+    const pop = screen.getByRole('dialog');
+    expect(within(pop).getByText('Decision: Rejected')).toBeTruthy();
+    expect(within(pop).queryByRole('button', { name: /^Accept/ })).toBeNull();
+    expect(within(pop).queryByRole('button', { name: /^Reject/ })).toBeNull();
+  });
+});
+
 describe('superseded proposal', () => {
   async function superseded() {
     const { base, after } = richScenario();

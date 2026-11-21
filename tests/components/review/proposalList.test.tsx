@@ -468,3 +468,90 @@ describe('delete proposal from the ⋯ menu (phase 9.2)', () => {
     expect(menuOf('P2')?.hasAttribute('disabled')).toBe(true);
   });
 });
+
+// Stage #2085: a rejected proposal is closed (view only, can be deleted); an open row whose review
+// is complete has ⋯ › Conclude review.
+describe('rejected proposals and Conclude review in the list (stage #2085)', () => {
+  async function listWith(rows: readonly Proposal[]) {
+    const h = await openReviewHarness({
+      proposals: rows,
+      files: { 'proposals/P1/images/nova.webp': 'W1' },
+    });
+    renderInEditor(h, <ProposalList onHelp={noop} onScan={noop} />);
+    return h;
+  }
+
+  const rowOf = (id: string) => {
+    const row = screen
+      .getAllByRole('listitem')
+      .find((r) => r.getAttribute('data-proposal') === id);
+    if (!row) throw new Error(`row ${id}`);
+    return row;
+  };
+
+  it('a rejected row: Rejected badge, "N changes rejected", View, and ⋯ › Delete proposal…', async () => {
+    const { base, proposal } = richScenario('P1');
+    const rejected: Proposal = {
+      ...decided(proposal, base, { level: 'proposal', id: null }, 'rejected'),
+      title: 'Nothing wanted',
+      status: 'rejected',
+    };
+    const user = userEvent.setup();
+    await listWith([rejected]);
+    const row = rowOf('P1');
+    expect(within(row).getByText('Rejected')).toBeTruthy();
+    expect(within(row).getByText('5 changes rejected')).toBeTruthy();
+    expect(
+      within(row).getByRole('button', { name: 'View: Nothing wanted' }),
+    ).toBeTruthy();
+    // It sits with the closed rows.
+    expect(screen.getByText('Closed')).toBeTruthy();
+    await user.click(within(row).getByRole('button', { name: /^Proposal actions:/ }));
+    expect(screen.getByRole('menuitem', { name: 'Delete proposal…' })).toBeTruthy();
+    expect(screen.queryByRole('menuitem', { name: 'Conclude review' })).toBeNull();
+  });
+
+  it('the count says "1 change rejected" in the singular', async () => {
+    const { proposal } = richScenario('P1');
+    const [only] = proposal.changes;
+    if (!only) throw new Error('no change');
+    const one: Proposal = {
+      ...proposal,
+      changes: [only],
+      decisions: { [only.id]: { state: 'rejected', at: AT } },
+      status: 'rejected',
+    };
+    await listWith([one]);
+    expect(within(rowOf('P1')).getByText('1 change rejected')).toBeTruthy();
+  });
+
+  it('an open row with a complete review has ⋯ › Conclude review, which closes it as rejected', async () => {
+    const { base, proposal } = richScenario('P1');
+    const decidedAll = decided(
+      proposal,
+      base,
+      { level: 'proposal', id: null },
+      'rejected',
+    );
+    const user = userEvent.setup();
+    const h = await listWith([{ ...decidedAll, title: 'All rejected' }]);
+    const trigger = within(rowOf('P1')).getByRole('button', {
+      name: 'Proposal actions: All rejected',
+    });
+    await user.click(trigger);
+    const item = screen.getByRole('menuitem', { name: 'Conclude review' });
+    expect(item.className).not.toContain('danger');
+    await user.click(item);
+    await waitFor(() => expect(rowOf('P1').getAttribute('data-status')).toBe('rejected'));
+    expect((await diskProposal(h.root)).status).toBe('rejected');
+    expect(h.ui.toast.value).toBe('Review concluded: proposal rejected.');
+  });
+
+  it('an open row that cannot be concluded has no ⋯ menu', async () => {
+    const { proposal } = richScenario('P1');
+    await listWith([proposal]);
+    expect(
+      within(rowOf('P1')).queryByRole('button', { name: /^Proposal actions:/ }),
+    ).toBeNull();
+  });
+});
