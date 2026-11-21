@@ -1,7 +1,8 @@
 // Stage #2121 (HB3, decision 13): Chromium measures the parity cases within 0.1 px of the widths the MCP server gives
 // (`tests/fixtures/shaping-parity.json`, checked by `tests/mcp/shapingParity.test.ts`). It does not open the app: it
 // loads the same fonts with `FontFace` from the bytes on a blank page and reads the width of a one-line `<span>`
-// (Chromium's own text layout, with the CSS `letter-spacing` rules: no `liga`/`clig` when spaced).
+// (Chromium's own text layout, with the CSS `letter-spacing` rules: no `liga`/`clig`/`calt` when spaced). The span uses
+// `text-rendering: geometricPrecision`: without it a Linux Chromium rounds each advance to a whole pixel (CI, #2420).
 //
 // The app's `konvaMeasurer` is reported next to it, not asserted: it reads `measureText` without the canvas
 // `letterSpacing` and adds `spacing × length`, so it keeps `liga` when spaced (`ii` → `m`), and the canvas measures
@@ -26,7 +27,7 @@ window.measureParity = async (fonts, cases, size) => {
   }
   const dom = (c) => {
     const span = document.body.appendChild(document.createElement('span'));
-    span.style.cssText = 'position:absolute;white-space:pre;font:' + size + 'px Parity' + c.font + ';letter-spacing:' + c.letterSpacing + 'px';
+    span.style.cssText = 'position:absolute;white-space:pre;text-rendering:geometricPrecision;font:' + size + 'px Parity' + c.font + ';letter-spacing:' + c.letterSpacing + 'px';
     span.textContent = c.text;
     const width = span.getBoundingClientRect().width;
     span.remove();
