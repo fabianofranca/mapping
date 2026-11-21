@@ -71,6 +71,11 @@ export interface ComponentDrawing {
   readonly containerId: string | null;
   readonly annotationId: string;
   /**
+   * Id of the specialization the component belongs to: with a path in the scene (an image
+   * `Paint`'s `asset`) it names the package file to draw, `(specId, asset)`.
+   */
+  readonly specId: string;
+  /**
    * Layer (of the project) of the annotation that draws: the view mode removes the drawing by
    * it.
    */
@@ -968,6 +973,7 @@ function draw(input: DrawInput): Drawn {
     markingId,
     containerId,
     annotationId: mc.annotation.id,
+    specId: mc.specId,
     layerId: mc.annotation.layerId,
     root: withRootMatrix(instantiated.root, rect, space.density),
     warnings: [...messages, ...valueWarnings],

@@ -64,6 +64,11 @@ export const templatePtBR: {
     'o src da imagem lê "{key}", que é um campo {fieldType} do tipo "{typeId}", não string',
   'model.library.fontMissing':
     'arquivo da fonte "{family}" não encontrado: {path}; o desenho usa a fonte do sistema',
+  'model.library.imageBadFormat': 'a imagem não é PNG, JPEG nem WebP: {path}',
+  'model.library.imageTooHeavy': 'imagem maior que 1 MB: {path}',
+  'model.library.imageTooWide': 'imagem maior que 2048 px: {path} ({width}×{height})',
+  'model.library.imagesTooHeavy': 'as imagens do pacote passam de 8 MB',
+  'model.library.imageValueMissing': 'imagem do pacote não encontrada: {path}',
   'model.library.scrimMissing': 'o tipo "{typeId}" não existe na especialização',
   'model.library.tokenMissing':
     'o token "{name}" não existe nos tokens da especialização',

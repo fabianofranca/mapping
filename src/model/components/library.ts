@@ -25,6 +25,8 @@ import { parseComponent } from './parseComponent';
 import { resolveTokens, type HostFonts, type SpecTokens } from './tokens';
 import { isRecord } from '../isRecord';
 
+import { isImagePath } from './imagePath';
+
 export { IMAGE_EXTENSIONS, isImagePath } from './imagePath';
 
 export interface TextFile {
@@ -32,8 +34,11 @@ export interface TextFile {
   readonly path: string;
   /** Content of the `.json` files (absent in binary files). */
   readonly text?: string;
-  /** Bytes of the font files (`.ttf`, `.otf`, `.woff`, `.woff2`). */
-  readonly bytes?: ArrayBuffer;
+  /**
+   * Bytes of the font files (`.ttf`, `.otf`, `.woff`, `.woff2`) and of the image files (`.png`,
+   * `.jpg`, `.jpeg`, `.webp`; `Library.images`).
+   */
+  readonly bytes?: ArrayBuffer | Uint8Array;
 }
 
 /** Extensions read as bytes (design system fonts). */
@@ -92,6 +97,8 @@ export interface Library {
   readonly types: readonly TypeDef[];
   /** Fonts declared by the specialization (`fonts`), with bytes when the file exists. */
   readonly fonts: readonly LoadedFont[];
+  /** Package image files that came with their bytes, by path relative to the root (no decoding here). */
+  readonly images?: ReadonlyMap<string, Uint8Array>;
   /** Declared executable origins (`origins`): how to read an external JSON as a screen. */
   readonly origins: readonly Origin[];
   /** `tokens` of the specialization (read without validating; the library validator checks them). */
@@ -367,6 +374,7 @@ export function loadLibrary(
       specPath,
       types,
       fonts,
+      images: readImages(files),
       origins,
       tokens: readTokens(spec.tokens),
       icons: readIcons(spec.icons, specPath, parsed, problems, resolve),
@@ -469,12 +477,14 @@ function readFonts(
     problems.push('fonts: expected a list');
     return [];
   }
-  const byPath = new Map(files.filter((f) => f.bytes).map((f) => [f.path, f.bytes]));
+  const withBytes = files.filter((f) => f.bytes);
+  const byPath = new Map(withBytes.map((f) => [f.path, arrayBufferOf(f.bytes)]));
   // Files chosen loose ("Open files…") arrive with only the name: the file name counts.
   const byName = new Map(
-    files
-      .filter((f) => f.bytes)
-      .map((f) => [f.path.slice(f.path.lastIndexOf('/') + 1), f.bytes]),
+    withBytes.map((f) => [
+      f.path.slice(f.path.lastIndexOf('/') + 1),
+      arrayBufferOf(f.bytes),
+    ]),
   );
   const out: LoadedFont[] = [];
   raw.forEach((entry, index) => {
@@ -501,6 +511,31 @@ function readFonts(
     const bytes = byPath.get(path) ?? byName.get(path.slice(path.lastIndexOf('/') + 1));
     out.push({ family: entry.family, weight, style, path, bytes });
   });
+  return out;
+}
+
+/** The bytes as an `ArrayBuffer` (a view over part of a buffer is copied). */
+function arrayBufferOf(
+  bytes: ArrayBuffer | Uint8Array | undefined,
+): ArrayBuffer | undefined {
+  if (bytes === undefined || bytes instanceof ArrayBuffer) return bytes;
+  return bytes.buffer instanceof ArrayBuffer &&
+    bytes.byteOffset === 0 &&
+    bytes.byteLength === bytes.buffer.byteLength
+    ? bytes.buffer
+    : bytes.slice().buffer;
+}
+
+/** The image files that came with bytes (only image extensions), by path. */
+function readImages(files: readonly TextFile[]): Map<string, Uint8Array> {
+  const out = new Map<string, Uint8Array>();
+  for (const file of files) {
+    if (file.bytes === undefined || !isImagePath(file.path)) continue;
+    out.set(
+      file.path,
+      file.bytes instanceof Uint8Array ? file.bytes : new Uint8Array(file.bytes),
+    );
+  }
   return out;
 }
 

@@ -32,6 +32,13 @@ import {
   type NestingEnv,
 } from './libraryComponentNodes';
 import { libraryIssue } from './libraryIssue';
+import {
+  MAX_IMAGES_TOTAL_BYTES,
+  citedImages,
+  imageNodes,
+  imageProblems,
+  imageSize,
+} from './libraryImages';
 import { checkSignatures } from './librarySignature';
 import { FILE_FORMATS_VERSION } from './fileFormats';
 import { MAX_PLUGIN_BYTES } from './formatPlugin';
@@ -74,8 +81,15 @@ export interface LibraryFile {
   readonly path: string;
   /** Content of the `.json` and `.md` files. */
   readonly text?: string;
-  /** `true` for a present binary (font); the content is not read. */
+  /** `true` for a present binary (font, image); the content is not read here (see `bytes`). */
   readonly binary?: boolean;
+  /**
+   * Content of a package image (an image extension: PNG, JPEG, WebP). Without it the validator
+   * only checks that the file exists (and `size`, when given).
+   */
+  readonly bytes?: Uint8Array;
+  /** Byte length of an image read without content (an image over 1 MB is not read, only measured). */
+  readonly size?: number;
 }
 
 export interface LibraryIssue {
@@ -128,6 +142,8 @@ export interface LibraryReport {
     readonly examples: number;
     /** Declared fonts. */
     readonly fonts: number;
+    /** Distinct package images cited by the components' `image` nodes. */
+    readonly images: number;
   };
 }
 
@@ -254,28 +270,21 @@ function imageFieldNodes(
   node: unknown,
   path: string,
   repeat: Record<string, unknown> | undefined,
-  out: {
+): { srcPath: string; key: string; repeat: Record<string, unknown> | undefined }[] {
+  const out: {
     srcPath: string;
     key: string;
     repeat: Record<string, unknown> | undefined;
-  }[] = [],
-): { srcPath: string; key: string; repeat: Record<string, unknown> | undefined }[] {
-  if (Array.isArray(node)) {
-    node.forEach((item, i) => imageFieldNodes(item, `${path}[${i}]`, repeat, out));
-    return out;
-  }
-  if (!isRecord(node)) return out;
-  if (node.type === 'image') {
-    const src = node.src;
+  }[] = [];
+  for (const image of imageNodes(node, path, repeat)) {
+    const src = image.src;
     if (isRecord(src) && typeof src.$field === 'string') {
-      out.push({ srcPath: `${path}.src.$field`, key: src.$field, repeat });
+      out.push({
+        srcPath: `${image.path}.src.$field`,
+        key: src.$field,
+        repeat: image.repeat,
+      });
     }
-    return out;
-  }
-  for (const [key, value] of Object.entries(node)) {
-    // `repeat`: the `template` reads columns of the row; the nodes inside have the `repeat` as context.
-    const inner = node.type === 'repeat' && key === 'template' ? node : repeat;
-    imageFieldNodes(value, `${path}.${key}`, inner, out);
   }
   return out;
 }
@@ -395,6 +404,8 @@ interface Package {
   readonly componentRewrite: Map<string, (path: string) => string>;
   /** The `$token`s of each valid component, by resolved path. */
   readonly tokenRefs: Map<string, readonly TokenRef[]>;
+  /** Resolved paths of the distinct package images cited by the components (present or not). */
+  readonly citedImages: Set<string>;
   /** The icon set (`icons`), when the file exists and is valid. */
   icons?: IconSet;
   /** Resolved path of the declared icons file (`icons`). */
@@ -436,6 +447,7 @@ function level1(
     componentJson: new Map(),
     componentRewrite: new Map(),
     tokenRefs: new Map(),
+    citedImages: new Set(),
   };
   const referenced = new Set<string>([specPath]);
   const readComponents = new Set<string>();
@@ -477,6 +489,7 @@ function level1(
   }
   signatureChecks(pkg, referenced, out);
   fileFormatChecks(pkg, referenced, out);
+  packageImageChecks(pkg, referenced, out);
 
   for (const file of files) {
     const lower = file.path.toLowerCase();
@@ -489,6 +502,36 @@ function level1(
     }
   }
   return pkg;
+}
+
+/**
+ * Level 1: the package images the components cite (`image` nodes with a literal package path, or
+ * a `$switch`/`$if` of them) exist and, with their bytes, match the extension's format and the
+ * limits (1 MB and 2048 px each); the distinct cited images fit in 8 MB all together. Each
+ * problem is on the component file, at the path of the literal; the total is the package's.
+ */
+function packageImageChecks(pkg: Package, referenced: Set<string>, out: Collector): void {
+  const sizes = new Map<string, number>();
+  for (const [componentPath, json] of pkg.componentJson) {
+    const template = isRecord(json) ? json.template : undefined;
+    for (const cited of citedImages(template)) {
+      const target = pkg.resolve(cited.ref);
+      referenced.add(target);
+      pkg.citedImages.add(target);
+      const file = pkg.byPath.get(target);
+      if (file === undefined) {
+        out.fileNotFound(componentPath, cited.path, target);
+        continue;
+      }
+      for (const problem of imageProblems(target, file))
+        out.error(componentPath, cited.path, problem.code, problem.params);
+      const size = imageSize(file);
+      if (size !== undefined) sizes.set(target, size);
+    }
+  }
+  let total = 0;
+  for (const size of sizes.values()) total += size;
+  if (total > MAX_IMAGES_TOTAL_BYTES) out.error('', '', 'library.imagesTooHeavy');
 }
 
 /** Level 1 (formatVersion 16): the cited signature sheets exist, are valid and are those of the same code. */
@@ -1264,7 +1307,7 @@ function summarize(
   level: 1 | 2 | 3,
 ): LibraryReport['summary'] {
   if (spec === undefined || pkg === undefined) {
-    return { level, types: 0, components: 0, docs: 0, examples: 0, fonts: 0 };
+    return { level, types: 0, components: 0, docs: 0, examples: 0, fonts: 0, images: 0 };
   }
   const components = new Set<string>();
   const docs = new Set<string>();
@@ -1286,6 +1329,7 @@ function summarize(
     docs: docs.size,
     examples,
     fonts: spec.fonts?.length ?? 0,
+    images: pkg.citedImages.size,
   };
 }
 
@@ -1351,6 +1395,7 @@ export function validateLibrary(input: LibraryInput): LibraryReport {
           jsonOf: (path) => jsons.get(path),
           textFiles,
           icons: pkg.icons,
+          hasFile: (path) => byPath.has(path),
         }),
         ...iconOptionChecks(pkg),
       );
