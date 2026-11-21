@@ -1,4 +1,4 @@
-# Container context — [Não lançado] (épico `epic/container-context`, PR #<n>, MCP 0.56.0, schema v22, specialization formatVersion 21)
+# Container context — [Não lançado] (épico `epic/container-context`, PR #0, MCP 0.56.0, schema v22, specialization formatVersion 21)
 
 ## Adicionado
 
