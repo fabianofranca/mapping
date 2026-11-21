@@ -408,4 +408,18 @@ describe('accessibility.variants: the warning', () => {
     });
     expect(warns(noBase).map((w) => w.path)).toEqual([`${VAR}.cases.input.label`]);
   });
+
+  it('the base label is read through any case that gives a role, so it does not warn', () => {
+    const roleOnlyCases = specOf((a) => {
+      delete a.role;
+      a.variants.cases = { filter: { role: 'checkbox' }, assist: { role: 'button' } };
+    });
+    expect(warns(roleOnlyCases)).toEqual([]);
+    // No case gives a role (or only `none`): the base label is read by nothing, as before.
+    const noRoleAnywhere = specOf((a) => {
+      delete a.role;
+      a.variants.cases = { filter: { role: 'none' }, input: { role: 'none' } };
+    });
+    expect(warns(noRoleAnywhere).map((w) => w.path)).toEqual([`${ACC}.label`]);
+  });
 });

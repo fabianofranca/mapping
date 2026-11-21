@@ -169,6 +169,14 @@ function labelWithoutRoleCaseWarnings(
   );
 }
 
+/** The base label is read when the type has an audited role, or when some case of its `variants` gives one. */
+function baseLabelRead(a: NonNullable<SpecAnnotationType['accessibility']>): boolean {
+  return (
+    isAudited(a.role) ||
+    Object.values(a.variants?.cases ?? {}).some((kase) => isAudited(kase.role))
+  );
+}
+
 /** `label` on a type (or on a case of its `variants`) that the audit does not read (no role, or `none`): valid, but with no effect. */
 function labelWithoutRoleWarnings(spec: Spec): SpecWarning[] {
   const found: SpecWarning[] = [];
@@ -176,7 +184,7 @@ function labelWithoutRoleWarnings(spec: Spec): SpecWarning[] {
     layer.annotationTypes.forEach((type, ti) => {
       const a = type.accessibility;
       const path = `layers[${li}].annotationTypes[${ti}].accessibility`;
-      if (a?.label !== undefined && !isAudited(a.role)) {
+      if (a?.label !== undefined && !baseLabelRead(a)) {
         found.push(
           warning('label-without-role', `${path}.label`, 'versions.labelWithoutRole', {
             typeId: type.id,
