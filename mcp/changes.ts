@@ -192,6 +192,7 @@ export async function prepareBatch(
   const io: BatchIo = {
     readSource: (path) => readSource(roots, location.dir, path),
     readSpecInput: (path) => readSpec(roots, location.dir, path),
+    readProjectText: (path) => readText(roots, location.dir, path),
     takenImageFiles: taken,
     diskProject: loaded.project,
     now: () => new Date(options.now()),
@@ -276,6 +277,26 @@ function libraryWarningViews(result: BatchResult): Record<string, unknown>[] {
     : views;
 }
 
+/**
+ * What each `import_format` step did: the references it created and the ones it updated, and the
+ * warnings of its plugin (they are also in `warnings`, with the code `format-warning`).
+ */
+function formatImportViews(
+  refs: Refs,
+  result: BatchResult,
+  created: readonly Record<string, unknown>[],
+): Record<string, unknown>[] {
+  return result.formatImports.map((step) => ({
+    op: step.index,
+    format: step.format,
+    created: created.filter((c) => c.op === step.index).map((c) => c.ref ?? c.id),
+    updated: step.updated
+      .filter((item) => item.kind === 'm' || item.kind === 'a' || item.kind === 'i')
+      .map((item) => refs.ref(item.kind as 'm' | 'a' | 'i', item.id)),
+    warnings: step.warnings,
+  }));
+}
+
 /** Common part of the `plan_changes` and `propose_changes` responses: the batch result. */
 export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
   const { result, location, loaded, refs } = prepared;
@@ -298,6 +319,7 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
     })),
     ...touchWarnings(refs, result.before, audits),
   ];
+  const created = createdRefs(refs, result);
   const membership = membershipView(
     result.before,
     new Refs({ ...loaded, project: result.before }),
@@ -323,7 +345,10 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
     notices: noticeChanges(refs, prepared.changes()),
     ...(membership.length > 0 ? { membership } : {}),
     ...(warnings.length > 0 ? { warnings } : {}),
-    created: createdRefs(refs, result),
+    created,
+    ...(result.formatImports.length > 0
+      ? { imports: formatImportViews(refs, result, created) }
+      : {}),
   };
 }
 

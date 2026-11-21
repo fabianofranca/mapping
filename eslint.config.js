@@ -303,6 +303,8 @@ export default tseslint.config(
       '.claude/worktrees',
       // Mapping workspace (project data and pipeline scripts, outside the app's code).
       'mappings-workspace',
+      // An ES module on purpose, to test that the executor refuses it: it must not parse as a script.
+      'tests/fixtures/plugins/module.js',
     ],
   },
   js.configs.recommended,
@@ -470,6 +472,22 @@ export default tseslint.config(
   },
   { files: ['tests/signature/**/*.ts'], languageOptions: { globals: globals.node } },
   { files: ['tests/mcp/**/*.ts'], languageOptions: { globals: globals.node } },
+  // Format plugins (stage #1923, decision 22): classic scripts (no `import`/`export`) that run in
+  // QuickJS, with only the ECMAScript built-ins and a silent `console`. `generate` and `parse` are
+  // top level and used by the executor, not by the file.
+  {
+    files: [
+      'examples/libraries/*/plugins/*.js',
+      'tests/fixtures/plugins/*.js',
+      'tests/fixtures/format-library/plugins/*.js',
+    ],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'script',
+      globals: { console: 'readonly' },
+    },
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { vars: 'local' }] },
+  },
   { files: ['pwa/**/*.js'], languageOptions: { globals: globals.serviceworker } },
   { files: ['*.config.{js,ts}'], languageOptions: { globals: globals.node } },
   // Phase 8.5: the disk hook of the MCP tests (`tests/mcp/fsHooks.mjs`) runs on Node.

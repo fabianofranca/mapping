@@ -9,6 +9,7 @@ export const libraryMessages = {
   'library.emptyDoc': 'empty document',
   'library.fileNotFound': 'file not found: {path}',
   'library.notRead': 'the file content was not read (expected the text)',
+  'library.pluginTooLarge': 'the plugin is larger than {max} bytes ({size} bytes)',
   'library.invalidJson': 'invalid JSON: {detail}',
   'library.specFileNotFound': 'specialization file not found: {path}',
   'library.specNotFound':

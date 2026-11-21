@@ -549,6 +549,41 @@ describe('plan_library_update', () => {
 });
 
 describe('propose_changes with the package folder', () => {
+  it('apply_specialization of a v20 package: the proposal carries plugins/*.js with the folder, and nothing runs it', async () => {
+    const source = join(root, 'lib', 'with-plugin');
+    cpSync(MATERIAL3, source, { recursive: true });
+    const specFile = join(source, 'material3.spec.json');
+    const raw = JSON.parse(readFileSync(specFile, 'utf8')) as Record<string, unknown>;
+    writeFileSync(
+      specFile,
+      JSON.stringify({
+        ...raw,
+        formatVersion: 20,
+        fileFormats: [
+          {
+            id: 'csv',
+            name: 'CSV',
+            extension: 'csv',
+            plugin: 'plugins/csv.js',
+            contract: 1,
+          },
+        ],
+      }),
+    );
+    mkdirSync(join(source, 'plugins'), { recursive: true });
+    const code = 'throw new Error("must never run");\n';
+    writeFileSync(join(source, 'plugins', 'csv.js'), code);
+
+    const dir = join(root, 'projetos', 'empty');
+    const result = await propose(mcp, 'empty', [
+      { op: 'apply_specialization', file: 'lib/with-plugin' },
+    ]);
+    expect(result.proposed).toBe(true);
+    const id = result.proposal.id;
+    const packaged = join(dir, 'proposals', id, 'specs', 'material3');
+    expect(readFileSync(join(packaged, 'plugins', 'csv.js'), 'utf8')).toBe(code);
+  });
+
   it('apply_specialization of a v4 package: the proposal carries the folder in proposals/<id>/specs/…', async () => {
     const dir = join(root, 'projetos', 'empty');
     const result = await propose(mcp, 'empty', [

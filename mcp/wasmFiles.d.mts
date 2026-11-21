@@ -4,5 +4,6 @@ export declare const wasmFiles: {
   readonly 'wasm:jpeg-encoder': string;
   readonly 'wasm:webp-decoder': string;
   readonly 'wasm:webp-encoder': string;
+  readonly 'wasm:quickjs': string;
   readonly 'wasm:harfbuzz': string;
 };

@@ -1,0 +1,68 @@
+{
+  "version": "1.0",
+  "screen": {
+    "id": "home",
+    "title": "Home",
+    "background": "surface",
+    "device": {
+      "width": 412,
+      "height": 917
+    }
+  },
+  "content": {
+    "type": "Column",
+    "props": {
+      "spacing": 16,
+      "padding": 16
+    },
+    "children": [
+      {
+        "type": "Button",
+        "props": {
+          "text": "Continue",
+          "style": "filled",
+          "mode": "normal",
+          "disabled": false
+        }
+      },
+      {
+        "type": "Button",
+        "props": {
+          "text": "Skip",
+          "style": "text",
+          "mode": "link",
+          "disabled": false
+        }
+      }
+    ]
+  },
+  "bottomBar": {
+    "type": "Column",
+    "props": {
+      "spacing": 8,
+      "padding": 16
+    },
+    "children": [
+      {
+        "type": "Button",
+        "props": {
+          "text": "Sign in",
+          "style": "tonal",
+          "mode": "normal",
+          "disabled": false
+        }
+      }
+    ]
+  },
+  "floating": [
+    {
+      "type": "FAB",
+      "anchor": "bottom-end",
+      "margin": 16,
+      "props": {
+        "icon": "add",
+        "color": "primary"
+      }
+    }
+  ]
+}
