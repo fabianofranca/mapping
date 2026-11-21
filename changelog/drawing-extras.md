@@ -1,4 +1,4 @@
-# Component drawing extras — [Não lançado] (épico `epic/drawing-extras`, PR #TBD, MCP 0.57.0, schema v22)
+# Component drawing extras — [Não lançado] (épico `epic/drawing-extras`, PR #2483, MCP 0.57.0, schema v22)
 
 ## Adicionado
 

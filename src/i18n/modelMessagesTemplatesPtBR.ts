@@ -471,7 +471,6 @@ export const templatePtBR: {
   'model.component.expectedFill': 'esperava cor ou gradiente',
   'model.component.expectedGradientType': 'esperava "linear", "radial" ou "angular"',
   'model.component.expectedGradientCenter': 'esperava dois números de 0 a 1',
-  'model.component.expectedGradientRadius': 'esperava um número maior que 0',
   'model.component.expectedStops': 'esperava lista de paradas',
   'model.component.expectedTwoStops': 'esperava ao menos 2 paradas',
   'model.component.expectedObject': 'esperava objeto',
