@@ -19,6 +19,7 @@ import {
   type ComponentFile,
 } from './componentFormat';
 import { checkRemoteImageUrl } from '../remoteImages';
+import { isPackageImagePath } from './imagePath';
 import { isValidFontFamily } from './fontFamily';
 import {
   ANCHOR_FIELDS,
@@ -1453,28 +1454,68 @@ function checkIconNode(value: Rec, path: string, out: Ctx): void {
 }
 
 /**
- * `image` (formatVersion 3): `src` required and restricted (a literal `https://` URL or exactly
- * `{ "$field": "<field>" }`), `fit` and no `hug` (checked in `checkNodeSizes`: the layout does
- * not depend on the downloaded image).
+ * The results of a `$switch` (`cases`, `default`) or `$if` (`then`, `else`) of `src`, or
+ * `undefined` when `src` is not one of those two. A missing `then` counts as a result that is
+ * not a path.
+ */
+function imageSrcResults(src: unknown): readonly unknown[] | undefined {
+  if (!isRecord(src)) return undefined;
+  if ('$switch' in src) {
+    const cases = isRecord(src.cases) ? Object.values(src.cases) : [undefined];
+    return 'default' in src ? [...cases, src.default] : cases;
+  }
+  if ('$if' in src) return 'else' in src ? [src.then, src.else] : [src.then];
+  return undefined;
+}
+
+/** Is `src` a `$switch` or `$if` whose every result is a literal package image path? */
+function isPathExpression(src: unknown): boolean {
+  const results = imageSrcResults(src);
+  return (
+    results !== undefined &&
+    results.every((r) => typeof r === 'string' && isPackageImagePath(r))
+  );
+}
+
+/** `src` as a `$switch` or `$if` of package paths: the keys of the expression (field, condition) are checked. */
+function checkImagePathExpression(src: Rec, at: string, out: Ctx): void {
+  if ('$switch' in src) {
+    checkKeys(src, ['$switch', 'cases', 'default'], at, out);
+    checkFieldKey(src.$switch, join(at, '$switch'), out);
+  } else {
+    checkKeys(src, ['$if', 'then', 'else'], at, out);
+    checkCondition(src.$if, join(at, '$if'), out);
+  }
+}
+
+/** `src` of the `image` node: see `checkImage`. */
+function checkImageSrc(src: unknown, at: string, out: Ctx): void {
+  if (typeof src === 'string') {
+    if (isPackageImagePath(src)) return;
+    const check = checkRemoteImageUrl(src, { allowHttp: false, allowLocalNetwork: true });
+    if (!check.ok) add(out, at, `expected an absolute https:// URL (${check.reason})`);
+  } else if (isRecord(src) && Object.keys(src).length === 1 && '$field' in src) {
+    checkFieldKey(src.$field, join(at, '$field'), out);
+  } else if (isRecord(src) && imageSrcResults(src) !== undefined) {
+    if (isPathExpression(src)) checkImagePathExpression(src, at, out);
+    else add(out, at, 'in $switch and $if every result must be a package image path');
+  } else {
+    add(out, at, 'src only accepts literal text or { "$field": "<field>" }');
+  }
+}
+
+/**
+ * `image` (formatVersion 3 and 4): `src` required and restricted: a literal `https://` URL, exactly
+ * `{ "$field": "<field>" }` or, in formatVersion 4, an image file of the package (a literal
+ * path, or a `$switch` or `$if` whose every result is a literal path), `fit` and no `hug`
+ * (checked in `checkNodeSizes`: the layout does not depend on the downloaded image). The package
+ * path before version 4 is flagged by `imageSrcVersionIssues`.
  * A local host is not a format error here: the app's policy decides at run time.
  */
 function checkImage(value: Rec, path: string, out: Ctx): void {
   const at = join(path, 'src');
   if (!('src' in value)) add(out, at, 'required field');
-  else {
-    const src = value.src;
-    if (typeof src === 'string') {
-      const check = checkRemoteImageUrl(src, {
-        allowHttp: false,
-        allowLocalNetwork: true,
-      });
-      if (!check.ok) add(out, at, `expected an absolute https:// URL (${check.reason})`);
-    } else if (isRecord(src) && Object.keys(src).length === 1 && '$field' in src) {
-      checkFieldKey(src.$field, join(at, '$field'), out);
-    } else {
-      add(out, at, 'src only accepts literal text or { "$field": "<field>" }');
-    }
-  }
+  else checkImageSrc(value.src, at, out);
   if ('fit' in value)
     oneOf(['cover', 'contain', 'fill', ...IMAGE_FITS_V4])(
       value.fit,
@@ -2051,6 +2092,26 @@ function componentNodeVersionIssues(
   );
 }
 
+/** A package image path in `src` (literal, or the results of a `$switch` or `$if`) in formatVersion 3: `only allowed with formatVersion 4`, at the `src` path. */
+function imageSrcVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  if (version !== 3) return [];
+  const out: ComponentIssue[] = [];
+  const walk = (node: unknown, at: string): void => {
+    if (!isRecord(node)) return;
+    if (node.type === 'image') {
+      const src = node.src;
+      const literal = typeof src === 'string' && isPackageImagePath(src);
+      if (literal || isPathExpression(src))
+        addIssue(out, join(at, 'src'), V4_ONLY_MESSAGE);
+    }
+    if (Array.isArray(node.children))
+      node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'));
+  };
+  walk(template, 'template');
+  return out;
+}
+
 /** The `icon` node in a version before 4: `only allowed with formatVersion 4`, at the `type`'s path. */
 function iconVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
   if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
@@ -2427,6 +2488,7 @@ function collectIssues(
         add(out, node.path, 'the image node only exists in formatVersion 3');
       }
     }
+    issues.push(...imageSrcVersionIssues(version, template));
     issues.push(...iconVersionIssues(version, template));
     issues.push(...componentNodeVersionIssues(version, template));
     issues.push(...slotVersionIssues(version, template));

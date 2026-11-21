@@ -25,6 +25,8 @@ import { parseComponent } from './parseComponent';
 import { resolveTokens, type HostFonts, type SpecTokens } from './tokens';
 import { isRecord } from '../isRecord';
 
+export { IMAGE_EXTENSIONS, isImagePath } from './imagePath';
+
 export interface TextFile {
   /** Path relative to the chosen root, with `/`. */
   readonly path: string;

@@ -3407,10 +3407,15 @@
         }
       }
     },
+    "package_image_path": {
+      "type": "string",
+      "description": "formatVersion 4. Image file of the library package: a path relative to the package root, with /, no leading /, no \\, no empty, . or .. segment, no scheme or drive letter (xxx:), ending in .png, .jpg, .jpeg or .webp (any case).",
+      "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)((?!\\.\\.?/)[^/\\\\]+/)*[^/\\\\]+\\.([pP][nN][gG]|[jJ][pP][eE]?[gG]|[wW][eE][bB][pP])$"
+    },
     "node_image": {
       "type": "object",
       "additionalProperties": false,
-      "description": "formatVersion 3. Remote image: src is an https:// literal or exactly { \"$field\": field } (without default, $concat, $if or $switch). The bound field must be a string; the schema does not check this, the library validator does. fill is the background behind the image.",
+      "description": "formatVersion 3. Image: src is an https:// literal or exactly { \"$field\": field } (without default or $concat) and, in formatVersion 4, an image file of the package (a literal path, or a $switch or $if whose every result is a literal path). The bound field must be a string; the schema does not check this, the library validator does. fill is the background behind the image.",
       "required": ["type", "src"],
       "properties": {
         "type": {
@@ -3486,10 +3491,14 @@
           "$ref": "#/$defs/expr_cornerRadius"
         },
         "src": {
+          "description": "An https:// literal, exactly { \"$field\": field } or, in formatVersion 4, an image file of the package: a literal path or a $switch or $if whose every result is a literal path (the schema does not check the version: that is parseComponent's job).",
           "oneOf": [
             {
               "type": "string",
               "pattern": "^https://"
+            },
+            {
+              "$ref": "#/$defs/package_image_path"
             },
             {
               "type": "object",
@@ -3498,6 +3507,41 @@
               "properties": {
                 "$field": {
                   "$ref": "#/$defs/fieldKey"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["$if", "then"],
+              "properties": {
+                "$if": {
+                  "$ref": "#/$defs/condition"
+                },
+                "then": {
+                  "$ref": "#/$defs/package_image_path"
+                },
+                "else": {
+                  "$ref": "#/$defs/package_image_path"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["$switch", "cases"],
+              "properties": {
+                "$switch": {
+                  "$ref": "#/$defs/fieldKey"
+                },
+                "cases": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/$defs/package_image_path"
+                  }
+                },
+                "default": {
+                  "$ref": "#/$defs/package_image_path"
                 }
               }
             }

@@ -161,7 +161,7 @@ describe('parseComponent: image', () => {
   });
 
   it.each([
-    ['relative', 'images/a.png', 'invalid'],
+    ['relative without a known image extension', 'images/a.txt', 'invalid'],
     ['http', 'http://cdn.example.com/a.png', 'insecure'],
     ['data', 'data:image/png;base64,AAAA', 'invalid'],
     ['with credentials', 'https://u:p@cdn.example.com/a.png', 'credentials'],
@@ -174,8 +174,6 @@ describe('parseComponent: image', () => {
 
   it.each([
     ['$concat', { $concat: ['https://x.com/', { $field: 'id' }] }],
-    ['$switch', { $switch: 'k', cases: { a: URL_A } }],
-    ['$if', { $if: { $has: 'photo' }, then: URL_A }],
     ['$field with default', { $field: 'photo', default: URL_A }],
     ['number', 5],
     ['object without operator', { url: URL_A }],
@@ -282,5 +280,153 @@ describe('instantiate: image', () => {
     const boxes = (values: FieldValues) =>
       [...absoluteBoxes(draw(withField, values).root)].map(([id, b]) => [id, b]);
     expect(boxes({ photo: URL_A, name: 'Ana' })).toEqual(boxes({ name: 'Ana' }));
+  });
+});
+
+describe('parseComponent: package image in src (formatVersion 4)', () => {
+  const at = 'template.children[0].src';
+  const ONLY_RESULTS = `${at}: in $switch and $if every result must be a package image path`;
+  const V4_ONLY = `${at}: only allowed with formatVersion 4`;
+  const v4 = (src: unknown, version = 4) => problems(raw(image({ src }), version));
+
+  it.each([
+    'images/a.png',
+    'a.jpg',
+    'deep/er/photo.JPEG',
+    'img/x.WebP',
+    'with space/a b.png',
+  ])('accepts the literal package path %s', (src) => {
+    expect(v4(src)).toEqual([]);
+  });
+
+  it.each([
+    ['a ".." segment', 'images/../a.png'],
+    ['a leading ".." segment', '../a.png'],
+    ['a leading slash', '/images/a.png'],
+    ['a drive letter', 'C:/images/a.png'],
+    ['a scheme', 'file:images/a.png'],
+    ['a backslash', 'images\\a.png'],
+    ['a wrong extension', 'images/a.gif'],
+    ['no extension', 'images/a'],
+  ])('rejects a path with %s', (_name, src) => {
+    expect(v4(src)).toEqual([
+      expect.stringMatching(
+        /^template\.children\[0\]\.src: expected an absolute https:\/\/ URL/,
+      ),
+    ]);
+  });
+
+  it.each([
+    ['http', 'http://cdn.example.com/a.png'],
+    ['data', 'data:image/png;base64,AAAA'],
+  ])('still rejects a %s literal', (_name, src) => {
+    expect(v4(src)).toHaveLength(1);
+  });
+
+  it('still rejects $concat', () => {
+    expect(v4({ $concat: ['images/', { $field: 'n' }, '.png'] })).toEqual([
+      `${at}: src only accepts literal text or { "$field": "<field>" }`,
+    ]);
+  });
+
+  it('accepts a $switch whose every result is a package path', () => {
+    expect(
+      v4({
+        $switch: 'kind',
+        cases: { a: 'img/a.png', b: 'img/b.webp' },
+        default: 'img/c.jpg',
+      }),
+    ).toEqual([]);
+    expect(v4({ $switch: 'kind', cases: { a: 'img/a.png' } })).toEqual([]);
+  });
+
+  it('accepts an $if whose then and else are package paths', () => {
+    expect(v4({ $if: { $has: 'x' }, then: 'img/a.png', else: 'img/b.png' })).toEqual([]);
+    expect(v4({ $if: { $has: 'x' }, then: 'img/a.png' })).toEqual([]);
+  });
+
+  it.each([
+    ['a URL in a case', { $switch: 'k', cases: { a: 'img/a.png', b: URL_A } }],
+    ['a URL in default', { $switch: 'k', cases: { a: 'img/a.png' }, default: URL_A }],
+    ['an expression in a case', { $switch: 'k', cases: { a: { $field: 'f' } } }],
+    ['a URL in then', { $if: { $has: 'x' }, then: URL_A }],
+    [
+      'an expression in else',
+      { $if: { $has: 'x' }, then: 'a.png', else: { $field: 'f' } },
+    ],
+    ['a bad path in then', { $if: { $has: 'x' }, then: '../a.png' }],
+  ])('rejects %s', (_name, src) => {
+    expect(v4(src)).toEqual([ONLY_RESULTS]);
+  });
+
+  it('accepts $field unchanged', () => {
+    expect(v4({ $field: 'photo' })).toEqual([]);
+  });
+
+  it('in formatVersion 3 a package path is only allowed with formatVersion 4', () => {
+    expect(v4('images/a.png', 3)).toEqual([V4_ONLY]);
+    expect(
+      v4({ $switch: 'k', cases: { a: 'img/a.png' }, default: 'img/b.png' }, 3),
+    ).toEqual([V4_ONLY]);
+    expect(v4(URL_A, 3)).toEqual([]);
+    expect(v4({ $field: 'photo' }, 3)).toEqual([]);
+  });
+});
+
+describe('instantiate: package image', () => {
+  const paintOf = (src: unknown, values: FieldValues = {}) => {
+    const node = firstRect(draw(component(raw(image({ src }), 4)), values).root);
+    const paints = node?.fills ?? [];
+    return paints[paints.length - 1];
+  };
+
+  it('a literal package path gives asset and no url', () => {
+    expect(paintOf('images/a.png')).toEqual({
+      type: 'image',
+      fit: 'cover',
+      asset: 'images/a.png',
+    });
+  });
+
+  it('a $field value that is a package path gives asset (trimmed; extension in any case)', () => {
+    expect(paintOf({ $field: 'p' }, { p: '  img/A.PNG ' })).toEqual({
+      type: 'image',
+      fit: 'cover',
+      asset: 'img/A.PNG',
+    });
+  });
+
+  it('an https $field value keeps url', () => {
+    expect(paintOf({ $field: 'p' }, { p: URL_A })).toEqual({
+      type: 'image',
+      fit: 'cover',
+      url: URL_A,
+    });
+  });
+
+  it('other text gives neither asset nor url', () => {
+    for (const p of ['banner', '../a.png', '/a.png', 'a.gif', 'file:a.png'])
+      expect(paintOf({ $field: 'p' }, { p }), p).toEqual({ type: 'image', fit: 'cover' });
+  });
+
+  it('a $switch result gives asset; without a match and without default, the placeholder', () => {
+    const src = { $switch: 'kind', cases: { a: 'img/a.png', b: 'img/b.webp' } };
+    expect(paintOf(src, { kind: 'b' })).toEqual({
+      type: 'image',
+      fit: 'cover',
+      asset: 'img/b.webp',
+    });
+    expect(paintOf(src, { kind: 'zzz' })).toEqual({ type: 'image', fit: 'cover' });
+    expect(paintOf({ ...src, default: 'img/d.png' }, { kind: 'zzz' })).toEqual({
+      type: 'image',
+      fit: 'cover',
+      asset: 'img/d.png',
+    });
+  });
+
+  it('an $if result gives asset', () => {
+    const src = { $if: { $has: 'x' }, then: 'img/yes.png', else: 'img/no.png' };
+    expect(paintOf(src, { x: 'v' })).toMatchObject({ asset: 'img/yes.png' });
+    expect(paintOf(src, {})).toMatchObject({ asset: 'img/no.png' });
   });
 });

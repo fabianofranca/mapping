@@ -161,6 +161,7 @@ import {
   type GridTracks,
 } from './gridPlan';
 import { breakLines, stackLines } from './wrapLines';
+import { isPackageImagePath } from './imagePath';
 import {
   layoutRuns,
   measureRichText,
@@ -3514,15 +3515,19 @@ function createEngine(
     h: number,
   ): SceneNode => {
     const raw = typeof node.src === 'string' ? node.src : ev<unknown>(node.src, '');
-    const url = typeof raw === 'string' ? raw.trim() : '';
+    const text = typeof raw === 'string' ? raw.trim() : '';
+    // A package file draws from the package; an http(s) text from the web (the policy is the
+    // renderer's); anything else, the placeholder.
+    const source = isPackageImagePath(text)
+      ? { asset: text }
+      : /^https?:\/\//i.test(text)
+        ? { url: text }
+        : {};
     const stroke = strokeOf(node.stroke, 'inside', 1);
     const base = common(node, id, x, y, w, h);
     return {
       ...base,
-      fills: [
-        ...base.fills,
-        { type: 'image', fit: node.fit ?? 'cover', ...(url === '' ? {} : { url }) },
-      ],
+      fills: [...base.fills, { type: 'image', fit: node.fit ?? 'cover', ...source }],
       ...(stroke ? { stroke } : {}),
       type: 'rect',
       cornerRadius: radiusOf(node),

@@ -203,6 +203,41 @@ describe('component.schema.json', () => {
       expect(parseComponent(c).ok).toBe(true);
     });
 
+    it('accepts a package image path, a $switch and an $if of package paths (formatVersion 4 in parseComponent)', () => {
+      for (const src of [
+        'images/a.png',
+        'deep/er/B.JPEG',
+        {
+          $switch: 'kind',
+          cases: { a: 'img/a.png', b: 'img/b.webp' },
+          default: 'img/c.jpg',
+        },
+        { $if: { $has: 'x' }, then: 'img/a.png', else: 'img/b.png' },
+      ]) {
+        const c = { ...withImage(image({ src })), formatVersion: 4 };
+        expect(checkSchema(schema, c), JSON.stringify(src)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(src)).toBe(true);
+      }
+    });
+
+    it('rejects a bad package path and a $switch or $if with a URL or expression result', () => {
+      for (const src of [
+        '../a.png',
+        'a/../b.png',
+        '/a.png',
+        'C:/a.png',
+        'file:a.png',
+        'a\\b.png',
+        { $switch: 'kind', cases: { a: 'https://exemplo.invalid/a.png' } },
+        { $switch: 'kind', cases: { a: { $field: 'f' } } },
+        { $if: { $has: 'x' }, then: 'a.png', else: { $field: 'f' } },
+      ])
+        expect(
+          checkSchema(schema, withImage(image({ src }))).length,
+          JSON.stringify(src),
+        ).toBeGreaterThan(0);
+    });
+
     it('rejects image without src', () => {
       const node = image();
       delete node.src;
@@ -214,7 +249,7 @@ describe('component.schema.json', () => {
         { $concat: ['https://', { $field: 'host' }] },
         { $field: 'foto', default: 'https://exemplo.invalid/a.png' },
         'http://exemplo.invalid/a.png',
-        'a.png',
+        'a.gif',
       ])
         expect(
           checkSchema(schema, withImage(image({ src }))).length,

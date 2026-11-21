@@ -130,6 +130,12 @@ export type Paint =
       readonly type: 'image';
       readonly src?: string;
       readonly url?: string;
+      /**
+       * Image file of the library package (formatVersion 4 `image` node), as the path from the
+       * package root with `/`, as written (the extension is checked case-insensitively). It does
+       * not mix with `url`. Whoever draws reads the file; without one, the placeholder.
+       */
+      readonly asset?: string;
       /** How the image fills the box (absent = `cover`). */
       readonly fit?: ImageFit;
       readonly opacity?: number;

@@ -529,6 +529,8 @@ export const templatePtBR: {
   'model.component.expectedHttps': 'esperava URL https:// absoluta ({reason})',
   'model.component.srcOnlyLiteral':
     'src só aceita texto literal ou { "$field": "<campo>" }',
+  'model.component.imageSrcResults':
+    'em $switch e $if todo resultado deve ser um caminho de imagem do pacote',
   'model.component.expectedInteger0': 'esperava inteiro maior ou igual a 0',
   'model.component.countOrField': 'use count ou field, não os dois',
   'model.component.repeatTemplateFrame':

@@ -33,6 +33,7 @@ export * from './direction';
 export * from './drawingMode';
 export * from './imageOptimization';
 export * from './exif';
+export { detectFormat, readSize, type ImageFormat } from './imageHeader';
 export * from './markings';
 export * from './arrows';
 export * from './anchors';
