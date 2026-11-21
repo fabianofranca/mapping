@@ -4,7 +4,7 @@
   "id": "drawing-extras",
   "name": "Drawing extras",
   "version": 1,
-  "description": "Example of the drawing extras of the component format: radial and angular gradients in a node's fill, next to the linear one, a gradient chosen by a $switch, and the inner shadow of a node's shadow. The Gradients component draws four swatches that read their two colors from fields; the Inner shadow component draws a sunken field and two buttons.",
+  "description": "Example of the drawing extras of the component format: radial and angular gradients in a node's fill, next to the linear one, a gradient chosen by a $switch, the inner shadow of a node's shadow, and images of the library package in an image node's src. The Gradients component draws four swatches that read their two colors from fields; the Inner shadow component draws a sunken field and two buttons; the Logo component draws three package images (PNG, JPEG and WebP from the images folder): a fixed one, one chosen by a $switch and one named by a field.",
   "layers": [
     {
       "id": "ui",
@@ -80,6 +80,39 @@
               "values": {
                 "text": "Filter",
                 "accent": "#16A34A"
+              }
+            }
+          ]
+        },
+        {
+          "id": "logo",
+          "name": "Logo",
+          "description": "Three images of the package: a fixed logo, an image chosen by the variant field and an image whose package path is the source field.",
+          "component": "components/logo.json",
+          "doc": "docs/logo.md",
+          "fields": [
+            {
+              "key": "variant",
+              "label": "Variant",
+              "description": "The image of the middle slot, chosen by a $switch: png, jpeg or webp.",
+              "type": "enum",
+              "options": ["png", "jpeg", "webp"],
+              "default": "png"
+            },
+            {
+              "key": "source",
+              "label": "Source",
+              "description": "A package image path (images/logo.png, images/photo.jpg or images/pattern.webp) drawn in the last slot.",
+              "type": "string",
+              "default": "images/logo.png"
+            }
+          ],
+          "examples": [
+            {
+              "name": "WebP pattern",
+              "values": {
+                "variant": "webp",
+                "source": "images/pattern.webp"
               }
             }
           ]

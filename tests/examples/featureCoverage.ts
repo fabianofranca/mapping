@@ -431,6 +431,8 @@ const ENUM_VALUES = {
   'image.fit': ['cover', 'contain', 'fill'],
   'repeat.direction': ['column', 'row'],
 } as const;
+/** A literal `image.src` that cites a package image: not a URL and ending in an image extension. */
+const PACKAGE_IMAGE_PATH = /^(?!https?:).*\.(png|jpe?g|webp)$/i;
 /** Shapes of a value: `size` (width/height of the node), `padding`, `fill`, `cornerRadius` etc. */
 const SHAPE_FEATURES = [
   'size=px',
@@ -457,6 +459,8 @@ const SHAPE_FEATURES = [
   'cornerRadius=quad',
   'image.src=literal',
   'image.src=$field',
+  'image.src=package',
+  'image.src=$switch',
   'root.preview=table',
   'root.anchor.align=corner-end',
   'expr.$field.default',
@@ -656,8 +660,15 @@ function nodeFeatures(node: unknown, out: Set<string>): void {
     }
   }
   if (type === 'image') {
-    if (typeof node.src === 'string') out.add('image.src=literal');
-    else if (isRec(node.src) && '$field' in node.src) out.add('image.src=$field');
+    if (typeof node.src === 'string') {
+      // a package image path (not an `https://` URL) is `package`; any other literal is a URL
+      out.add(
+        PACKAGE_IMAGE_PATH.test(node.src) ? 'image.src=package' : 'image.src=literal',
+      );
+    } else if (isRec(node.src) && '$field' in node.src) out.add('image.src=$field');
+    else if (isRec(node.src) && ('$switch' in node.src || '$if' in node.src)) {
+      out.add('image.src=$switch');
+    }
   }
   // expressions and conditions in the node attributes (not in the children, visited below)
   const { children, template, fallback, ...rest } = node;
