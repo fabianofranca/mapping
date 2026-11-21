@@ -1021,6 +1021,7 @@ describe('resources and instructions', () => {
       'mapping-docs://COMMENT-FORMAT.md',
       'mapping-docs://COMPONENT-FORMAT.md',
       'mapping-docs://FORMAT.md',
+      'mapping-docs://PLUGIN-FORMAT.md',
       'mapping-docs://SIGNATURE-FORMAT.md',
       'mapping-docs://SPEC-FORMAT.md',
     ]);
@@ -1029,6 +1030,7 @@ describe('resources and instructions', () => {
       'COMMENT-FORMAT.md',
       'COMPONENT-FORMAT.md',
       'FORMAT.md',
+      'PLUGIN-FORMAT.md',
       'SIGNATURE-FORMAT.md',
       'SPEC-FORMAT.md',
     ]) {

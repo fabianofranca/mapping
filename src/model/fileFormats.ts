@@ -1,3 +1,4 @@
+import { FORMAT_PLUGIN_CONTRACT } from './formatPlugin';
 import { isRecord } from './isRecord';
 import { isValidCodePath } from './codeLocations';
 import { packagePathError } from './packagePaths';
@@ -13,10 +14,7 @@ import type { z } from 'zod';
 
 /** First `formatVersion` of `fileFormats`. */
 export const FILE_FORMATS_VERSION = 20;
-/** The only plugin contract that exists (`fileFormats[].contract`). */
-export const FORMAT_PLUGIN_CONTRACT = 1;
-/** A plugin file larger than this is refused (level 1 of the library validator). */
-export const MAX_PLUGIN_BYTES = 1024 * 1024;
+// The contract and the limits (`FORMAT_PLUGIN_CONTRACT`, `MAX_PLUGIN_BYTES`) live in `formatPlugin.ts`.
 
 export type FileFormatScope = 'project' | 'container';
 

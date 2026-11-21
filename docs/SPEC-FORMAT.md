@@ -1345,6 +1345,8 @@ The object is strict: another key is the error `unknown key: <key>`, at its exac
 
 **Outside the version contract**, like `code` and `sources`: `diffSpecs` ignores it, so adding, changing or removing a format needs no `version` raise and no migration.
 
+The contract between Mapping and the plugin (the script shape, `generate` and `parse`, the projection the plugin receives, the result it may return, the limits and the errors) is in [`PLUGIN-FORMAT.md`](PLUGIN-FORMAT.md), which the MCP server also publishes as the resource `mapping-docs://PLUGIN-FORMAT.md`.
+
 **The plugin only ever runs isolated.** It sees only its input, returns text or operations (which become a proposal for the person to review), has no disk, network or storage, and has a time limit. In this stage nothing runs a plugin yet: the declaration and the package files are validated, and running a plugin, exporting and importing through a format, and the round trip of the examples come in later phases.
 
 ## Design tokens
