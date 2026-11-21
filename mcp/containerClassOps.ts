@@ -70,7 +70,9 @@ export function applyClassChoices(
   const changes: string[] = [];
   for (const [set, classId] of wanted(p, containerId, classes)) {
     if (classId !== null) checkChoice(p, set, classId);
-    project = setContainerClass(project, containerId, set, classId);
+    const next = setContainerClass(project, containerId, set, classId);
+    if (next === project) continue;
+    project = next;
     changes.push(classId === null ? `class ${set} removed` : `class ${set}=${classId}`);
   }
   return { project, changes };

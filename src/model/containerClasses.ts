@@ -227,7 +227,8 @@ export function setContainerClass(
   checkClassName(set, 'set');
   if (classId !== null) checkClassName(classId, 'class');
   const current = container.classes ?? {};
-  if ((current[set] ?? null) === classId) return p;
+  const stored = Object.hasOwn(current, set) ? current[set] : null;
+  if (stored === classId) return p;
   const { [set]: removed, ...others } = current;
   void removed;
   const next = classId === null ? others : { ...current, [set]: classId };

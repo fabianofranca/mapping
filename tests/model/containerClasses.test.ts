@@ -171,6 +171,15 @@ describe('effectiveContainerClasses', () => {
     expect(effectiveContainerClasses(p, 'c1')).toEqual({});
   });
 
+  it('removing a set that was never stored is a no-op, also for a name on Object.prototype', () => {
+    const p = projectWith(specWith('ds', [platformSet]));
+    expect(setContainerClass(p, 'c1', 'platform', null)).toBe(p);
+    expect(setContainerClass(p, 'c1', 'constructor', null)).toBe(p);
+    const chosen = setContainerClass(p, 'c1', 'platform', 'ios');
+    expect(setContainerClass(chosen, 'c1', 'constructor', null)).toBe(chosen);
+    expect(setContainerClass(chosen, 'c1', 'platform', 'ios')).toBe(chosen);
+  });
+
   it('combines computed and chosen sets', () => {
     const p = setContainerClass(
       setContainerDensity(projectWith(specWith('ds', [windowSet, platformSet])), 'c1', 3),
