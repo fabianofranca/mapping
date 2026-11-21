@@ -314,6 +314,21 @@ describe('import_format in plan_changes', () => {
     expect(neither.errors![0]!.code).toBe('invalid-arguments');
   });
 
+  it('in a project with several pages the new container goes to `page`; without it, page-required', async () => {
+    const withoutPage = await plan('import', [
+      { op: 'add_page', as: '$p', name: 'Second' },
+      importOp(),
+    ]);
+    expect(withoutPage.errors![0]).toMatchObject({ index: 1, code: 'page-required' });
+    const planned = await plan('import', [
+      { op: 'add_page', as: '$p', name: 'Second' },
+      importOp({ text: TEXT, page: 'Second' }),
+    ]);
+    expect(planned.errors).toBeUndefined();
+    expect(planned.valid).toBe(true);
+    expect(kinds(planned, 'container')).toHaveLength(1);
+  });
+
   it('an unknown format is format-not-found at the step', async () => {
     const planned = await plan('import', [
       { op: 'import_format', format: 'format-lib/nope', text: TEXT },

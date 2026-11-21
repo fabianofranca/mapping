@@ -644,6 +644,11 @@ export const operationSchema = z.discriminatedUnion('op', [
       .describe(
         'Container the file is about (reference, id, name or alias `$name`): required by a format with scope `container`, ignored with a warning by one with scope `project`.',
       ),
+    page: page
+      .optional()
+      .describe(
+        'Page of the containers the plugin creates (id or name; the page may come from an `add_page` earlier in the batch). Required when the project has more than one page and the plugin names none (`page-required`); a page the plugin names itself wins.',
+      ),
   }),
   z.object({
     op: z.literal('wrap_items'),

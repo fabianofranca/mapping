@@ -1417,7 +1417,7 @@ const enUS: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'A fileFormats plugin is a text file of the package, read by the app and by the MCP server and copied with the package to specs/<id>/. It only ever runs isolated: it sees only its input, returns text or operations (which become a proposal for review), has no disk, network or storage, and has a time limit. In this stage nothing runs a plugin yet: the declaration and the package files are only validated.',
+        text: 'A fileFormats plugin is a text file of the package, read by the app and by the MCP server and copied with the package to specs/<id>/. It only ever runs isolated: it sees only its input, returns text or operations (which become a proposal for review), has no disk, network or storage, and has a time limit. The MCP server runs it (export_format, import_format and validate_library); the app does not run plugins yet.',
       },
       { kind: 'code', code: FILE_FORMATS_EXCERPT },
       {
@@ -2293,7 +2293,7 @@ const ptBR: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'Um plugin de fileFormats é um arquivo de texto do pacote, lido pelo app e pelo servidor MCP e copiado com o pacote para specs/<id>/. Ele só roda isolado: vê apenas a sua entrada, devolve texto ou operações (que viram uma proposta para revisão), não tem disco, rede nem armazenamento e tem tempo limite. Nesta etapa nada executa um plugin ainda: a declaração e os arquivos do pacote são apenas validados.',
+        text: 'Um plugin de fileFormats é um arquivo de texto do pacote, lido pelo app e pelo servidor MCP e copiado com o pacote para specs/<id>/. Ele só roda isolado: vê apenas a sua entrada, devolve texto ou operações (que viram uma proposta para revisão), não tem disco, rede nem armazenamento e tem tempo limite. O servidor MCP o executa (export_format, import_format e validate_library); o app ainda não executa plugins.',
       },
       { kind: 'code', code: FILE_FORMATS_EXCERPT },
       {

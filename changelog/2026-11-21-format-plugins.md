@@ -20,3 +20,7 @@
 - File formats of the specialization are handled by an isolated plugin running in QuickJS (formatVersion 20) (#1923).
 - `docs/SPEC-FORMAT.md`, Help › Specializations, `spec-author` skill and `docs/AGENT-GUIDE.md`: the current format version is 20 and the code coming from a specialization only runs isolated.
 - The `dist/index.html` ceiling went up 16 KiB, from 2,359,296 to 2,375,680 bytes, by the budget rule (the formatVersion 20 help text in both languages and the `fileFormats` validation); above the limits, `bug` #2437 for the owner to review.
+
+## Corrigido
+
+- `import_format` in a project with several pages failed with `page-required` whenever the plugin created a container, because the plugin cannot name a page. The operation takes an optional `page` (id or name) that the containers the plugin creates without a page go to. The Help › Specializations text no longer says that nothing runs a plugin: the MCP server does (`export_format`, `import_format`, `validate_library`).

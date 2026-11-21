@@ -2511,7 +2511,9 @@ class Batch {
       true,
     );
     const result = await parseFormat(found, text, input, this.readPlugin);
-    const applied = await this.applyPluginOperations(pluginOperations(result.operations));
+    const applied = await this.applyPluginOperations(
+      withDefaultPage(pluginOperations(result.operations), op.page),
+    );
     const made = (kind: CreatedKind) =>
       applied.created.filter((c) => c.kind === kind).length;
     return {
@@ -3472,4 +3474,16 @@ export function noticeChanges(
   const entries = [...groups.values()];
   entries.sort((a, b) => NOTICE_KINDS.indexOf(a.kind) - NOTICE_KINDS.indexOf(b.kind));
   return { new: entries.map((e) => ({ ...e.view, annotations: e.ids.size })) };
+}
+
+/** The page the caller gave `import_format`, for the containers the plugin creates without naming one (`beside` already gives it). */
+function withDefaultPage(operations: Operation[], page: string | undefined): Operation[] {
+  if (page === undefined) return operations;
+  return operations.map((o) =>
+    (o.op === 'add_container' || o.op === 'add_image' || o.op === 'add_blank_image') &&
+    o.page === undefined &&
+    !('beside' in o && o.beside !== undefined)
+      ? { ...o, page }
+      : o,
+  );
 }
