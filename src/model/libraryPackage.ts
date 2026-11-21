@@ -41,12 +41,7 @@ export function isPackageFile(file: string): boolean {
  */
 export function usesPackageFiles(spec: Spec): boolean {
   if (spec.formatVersion < 4) return false;
-  if (spec.fonts !== undefined && spec.fonts.length > 0) return true;
-  if (spec.origins !== undefined && spec.origins.length > 0) return true;
-  if (spec.icons !== undefined) return true;
-  if (spec.fileFormats !== undefined && spec.fileFormats.length > 0) return true;
-  if ((spec.documents ?? []).some((document) => typeof document.doc === 'string'))
-    return true;
+  if (citesRootFiles(spec)) return true;
   return spec.layers.some((layer) =>
     layer.annotationTypes.some(
       (type) =>
@@ -56,6 +51,14 @@ export function usesPackageFiles(spec: Spec): boolean {
         citesSignature(type),
     ),
   );
+}
+
+/** Does the root cite package files (`fonts`, `origins`, `icons`, `fileFormats`, a text `documents` entry)? */
+function citesRootFiles(spec: Spec): boolean {
+  const lists = [spec.fonts, spec.origins, spec.fileFormats];
+  if (lists.some((list) => list !== undefined && list.length > 0)) return true;
+  if (spec.icons !== undefined) return true;
+  return (spec.documents ?? []).some((document) => typeof document.doc === 'string');
 }
 
 /** Does the type cite a signature sheet (in `code`, in a `variants` case or in `sources`)? */

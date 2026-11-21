@@ -1057,6 +1057,7 @@ describe('resources and instructions', () => {
       'get_container_file',
       'get_image',
       'get_image_file',
+      'get_library_document',
       'get_marking',
       'get_marking_image',
       'get_perspective',
