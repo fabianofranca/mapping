@@ -203,16 +203,26 @@ describe('implementar-fila: new skill on main (decision 11)', () => {
     expect(switching).toContain('skill <commit>: <regra> → <o que faço agora>');
   });
 
-  it('the reread uses Read without offset or limit, and the proof starts with "relido inteiro, <n> linhas" (RS1, decision 8)', () => {
+  it('the reread is a `Read` in consecutive parts that fits the tool limit, and the proof starts with "relido inteiro, <n> linhas" (RS1, decision 8; #2440)', () => {
     const small = switching.slice(switching.indexOf('**Small:**'));
     expect(small).toContain('`Read`');
-    expect(small).toContain('without `offset` or `limit`');
+    expect(small).toContain('consecutive parts');
+    expect(small).toContain('`offset`');
+    expect(small).toContain('`limit`');
+    expect(small).toContain('line 1 to the last line');
+    expect(small).toContain('`allow_large: true`');
+    // The file is over the `Read` limit (~25 thousand tokens): a whole-file `Read` is refused.
+    expect(small).toContain('over the `Read` limit');
+    expect(small).not.toContain('without `offset` or `limit`');
     expect(small).toContain('skill <commit>: relido inteiro, <n> linhas');
+    expect(small).toContain('`<n>` is the last line read');
     expect(small).toMatch(/`git diff --numstat` is only for classifying/);
     expect(small).toMatch(/`SKILL.md` diff is not opened before/);
     const fallback = between(queue, '**Fallback checks:**', '**Red CI');
     expect(fallback).toContain('`Read`');
-    expect(fallback).toContain('without `offset` or `limit`');
+    expect(fallback).toContain('consecutive parts');
+    expect(fallback).toContain('line 1 to the last line');
+    expect(fallback).not.toContain('without `offset` or `limit`');
   });
 
   it('the reread is an exception to the context economy: it is neither delegated nor summarized (RS1, decision 8)', () => {
