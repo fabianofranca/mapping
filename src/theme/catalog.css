@@ -161,6 +161,13 @@
   margin-top: var(--space-1);
 }
 
+/* A source path (`signatures/chip.filter.compose.json`) is one word: it never breaks in the middle;
+   the table scrolls sideways instead. */
+.catalog-table td .notice-ref {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
 .catalog-section h3 {
   margin: 0 0 var(--space-2);
   font: var(--t-text-heading);
