@@ -385,7 +385,9 @@ export function layoutScreen(
         const prepared = prepare(child);
         if (prepared) kidsOf.get(slotOfChild(node, child, ids))?.push(prepared);
       }
-    const sizing = resolveSizing(component, node.values);
+    // The screen's direction is the effective one of every node (no node fixes its own); no anchor: the screen
+    // has no geometry between the instances (decision 6 of #1893).
+    const sizing = resolveSizing(component, node.values, undefined, { direction });
     for (const m of sizing.messages) warn(m.code as ModelMessageTemplateCode, m.params);
     return {
       node,
