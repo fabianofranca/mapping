@@ -12,6 +12,8 @@ export interface ContainerPreset {
   readonly width: number;
   readonly height: number;
   readonly background: string;
+  /** Chosen container classes the ready-made size carries (set id → class id), absent without any. */
+  readonly classes?: Readonly<Record<string, string>>;
 }
 
 /** Presets of an applied specialization, shown under its name. */
@@ -47,6 +49,7 @@ export function presetGroups(
         width: c.width,
         height: c.height,
         background: c.background ?? DEFAULT_CONTAINER_BACKGROUND,
+        ...(c.classes ? { classes: c.classes } : {}),
       })),
     });
   }
@@ -106,4 +109,17 @@ export function readContainerForm(form: ContainerForm): ContainerResult {
   const background = parseContainerColor(form.background);
   if (background === null) return { ok: false, error: 'color' };
   return { ok: true, value: { name, width, height, background } };
+}
+
+/** The optional parts of a new container: density (1 is not written), the ready-made size's classes and the view center. */
+export function containerExtras(extras: {
+  readonly density: number;
+  readonly classes?: Readonly<Record<string, string>>;
+  readonly center?: { readonly x: number; readonly y: number };
+}) {
+  return {
+    ...(extras.density !== 1 ? { density: extras.density } : {}),
+    ...(extras.classes ? { classes: extras.classes } : {}),
+    ...(extras.center ? { center: extras.center } : {}),
+  };
 }

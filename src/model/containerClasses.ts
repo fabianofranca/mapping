@@ -137,6 +137,23 @@ const sizeOf = (set: SpecContainerClassSet, c: ProjectContainer): number =>
   set.by === 'height' ? c.height : c.width;
 
 /**
+ * The class a container has in ONE declaration of a set (decision 4: a type reads the set of its own
+ * specialization): computed by size with that declaration's thresholds, or the stored choice when
+ * the declaration lists it. `undefined` with no class (a chosen set with no choice, or an undeclared one).
+ */
+export function containerClassIn(
+  p: Project,
+  container: ProjectContainer,
+  set: SpecContainerClassSet,
+): SpecContainerClass | undefined {
+  if (!isComputedSet(set)) {
+    return set.classes.find((c) => c.id === container.classes?.[set.id]);
+  }
+  const density = effectiveDensity(p, container.id);
+  return computedClassOf(set, unitsOf(sizeOf(set, container), density));
+}
+
+/**
  * The classes a container has, set id → class id (decisions 2, 3 and 12): a computed set follows the
  * container's width (or height) ÷ its effective density; a chosen set is only what the container
  * stores, and no choice (or an undeclared one) gives no class. A canvas marking's container (`null`)

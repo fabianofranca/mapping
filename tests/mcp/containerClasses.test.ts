@@ -62,7 +62,7 @@ afterAll(async () => {
 });
 
 /** A project folder with `SPEC` applied (the container classes need a declaring specialization). */
-function newProject(): { name: string; dir: string } {
+function newProject(spec: Spec = SPEC): { name: string; dir: string } {
   const name = `classes-${++counter}`;
   const dir = join(root, 'projetos', name);
   let p = createProject({
@@ -71,7 +71,7 @@ function newProject(): { name: string; dir: string } {
     firstLayer: { id: 'l1', name: 'Layer 1', color: '#D32F2F' },
     firstPage: { id: 'pg1', name: 'Page 1' },
   });
-  p = applySpecialization(p, SPEC);
+  p = applySpecialization(p, spec);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
   for (const [file, content] of specFiles(p)) {
@@ -235,5 +235,90 @@ describe('proposal format (rises to 11 only when classes are used)', () => {
     expect(readProposal(dir, update.proposal.id).formatVersion).toBe(
       PROPOSAL_CONTAINER_CLASSES_FORMAT_VERSION,
     );
+  });
+});
+
+// Stage #1901, CX3 (decision 9): `outside-container-class` in the reads and in `issues.new`.
+const FAB_SPEC: Spec = {
+  ...SPEC,
+  layers: [
+    {
+      id: 'components',
+      name: 'Components',
+      color: '#1E88E5',
+      annotationTypes: [
+        {
+          id: 'fab',
+          name: 'FAB',
+          fields: [],
+          appliesIn: { window: ['compact'] },
+        },
+      ],
+    },
+  ],
+};
+
+const OUTSIDE = {
+  code: 'outside-container-class',
+  set: { id: 'window', name: 'Window' },
+  class: { id: 'expanded', name: 'Expanded' },
+  allowed: [{ id: 'compact', name: 'Compact' }],
+};
+
+interface IssueEntry {
+  annotation: string;
+  issues: { code: string }[];
+}
+
+describe('outside-container-class in the MCP', () => {
+  const marking = {
+    op: 'create_marking',
+    container: '$c',
+    rect: { x: 10, y: 10, width: 100, height: 100 },
+    annotation: { type: 'ds/fab' },
+  };
+
+  it('plan_changes carries the item in issues.new, with set, class and allowed', async () => {
+    const { name } = newProject(FAB_SPEC);
+    const reply = ok(
+      await mcp.call<{ issues: { new: IssueEntry[] } }>('plan_changes', {
+        project: name,
+        operations: [{ ...box }, marking],
+      }),
+    );
+    const items = reply.issues.new.flatMap((e) => e.issues);
+    expect(items).toContainEqual(OUTSIDE);
+  });
+
+  it('a class the type is meant for gives no item', async () => {
+    const { name } = newProject(FAB_SPEC);
+    const reply = ok(
+      await mcp.call<{ issues: { new: IssueEntry[] } }>('plan_changes', {
+        project: name,
+        operations: [{ ...box, density: 3 }, marking],
+      }),
+    );
+    expect(reply.issues.new.flatMap((e) => e.issues).map((i) => i.code)).not.toContain(
+      'outside-container-class',
+    );
+  });
+
+  it('get_marking and get_annotation carry it in issues', async () => {
+    const { name, dir } = newProject(FAB_SPEC);
+    const { proposed } = await apply(name, dir, [{ ...box }, marking]);
+    const ref = proposed.created.find((c) => c.kind === 'marking')!.ref!;
+    const got = ok(
+      await mcp.call<{
+        layers: { annotations: { ref: string; issues?: unknown[] }[] }[];
+      }>('get_marking', { ref }),
+    );
+    const annotations = got.layers.flatMap((l) => l.annotations);
+    expect(annotations[0]!.issues).toContainEqual(OUTSIDE);
+    const annotation = ok(
+      await mcp.call<{ issues: unknown[] }>('get_annotation', {
+        ref: annotations[0]!.ref,
+      }),
+    );
+    expect(annotation.issues).toContainEqual(OUTSIDE);
   });
 });

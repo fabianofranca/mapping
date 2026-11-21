@@ -510,6 +510,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       readonly center?: Point;
       /** Density (v19); absent or 1 does not write the key. In the same undo entry. */
       readonly density?: number;
+      /** Chosen container classes (v23), set id → class id. */
+      readonly classes?: Readonly<Record<string, string>>;
     }) => {
       const { density, ...rest } = args;
       return create((id) => (p) => {

@@ -181,6 +181,7 @@ import {
   parseFormat,
   type PluginReader,
 } from './formatTools';
+import { containerClassIssueView } from './views';
 import { findPage, hasSeveralPages } from './pages';
 import type { Operation } from './operations';
 import type { LoadedProject } from './projects';
@@ -3407,7 +3408,14 @@ export function changeCounts(before: Project, after: Project): Record<string, un
 
 /** What tells two pending items of an annotation apart (the same code on another field or slot is another item). */
 const issueKey = (i: AnnotationIssue): string =>
-  [i.code, i.key ?? '', i.slot?.id ?? '', i.rowId ?? '', i.column ?? ''].join('\u0000');
+  [
+    i.code,
+    i.key ?? '',
+    i.slot?.id ?? '',
+    i.rowId ?? '',
+    i.column ?? '',
+    i.set?.id ?? '',
+  ].join('\u0000');
 
 /** The items of `next` that `old` did not have. */
 function gainedIssues(
@@ -3433,7 +3441,11 @@ export function issueChanges(refs: Refs, before: Project): Record<string, unknow
     return [
       {
         annotation: refs.ref('a', id),
-        issues: gained.map((i) => ({ code: i.code, ...(i.key ? { key: i.key } : {}) })),
+        issues: gained.map((i) => ({
+          code: i.code,
+          ...(i.key ? { key: i.key } : {}),
+          ...containerClassIssueView(i),
+        })),
       },
     ];
   });

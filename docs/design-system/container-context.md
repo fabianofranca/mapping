@@ -2,4 +2,6 @@
 
 ## Pendências
 
-None so far. CX1 changes no interface: container classes are a format of the specialization (model, validation, example, MCP and docs), and the only app text that follows it is the Help › Specializations mirror of `docs/SPEC-FORMAT.md` (`src/i18n/specHelp.ts`), which has no design-system component.
+- **`ContainerClassField` (`src/ui/ContainerClassField.tsx`, CX3):** a new Details property of the container, next to density and direction. It is a composition of `Property` and the `Select` control (size `sm`) with no shape of its own, plus a read-only `props-text` line per computed set; it adds no token and no style. To map in the DS as part of the container Details, not as a component.
+- **Diagnostics section "Container classes" (`DiagnosticsContainerClasses` in `src/ui/DiagnosticsView.tsx`, CX3):** a new section with the same shape as the "Drawing mode" one (heading, hint, list), listing the undeclared stored choices. Same pattern as `DiagnosticsDrawingMode`; no new component.
+- The pending item `outside-container-class` is a text of the existing **Incomplete** list and Details alert: no visual change.

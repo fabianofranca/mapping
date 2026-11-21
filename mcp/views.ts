@@ -159,6 +159,21 @@ export function markingRow(refs: Refs, marking: Marking): Json {
   };
 }
 
+/** The `set`, `class` and `allowed` of an `outside-container-class` item (empty for any other). */
+export function containerClassIssueView(issue: AnnotationIssue): Json {
+  return {
+    ...(issue.set !== undefined
+      ? { set: { id: issue.set.id, name: issue.set.name } }
+      : {}),
+    ...(issue.class !== undefined
+      ? { class: { id: issue.class.id, name: issue.class.name } }
+      : {}),
+    ...(issue.allowed !== undefined
+      ? { allowed: issue.allowed.map((c) => ({ id: c.id, name: c.name })) }
+      : {}),
+  };
+}
+
 export function issueView(issue: AnnotationIssue): Json {
   return {
     code: issue.code,
@@ -173,6 +188,7 @@ export function issueView(issue: AnnotationIssue): Json {
       : {}),
     ...(issue.owner !== undefined ? { owner: issue.owner } : {}),
     ...(issue.max !== undefined ? { max: issue.max } : {}),
+    ...containerClassIssueView(issue),
   };
 }
 
