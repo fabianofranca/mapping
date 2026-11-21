@@ -150,9 +150,11 @@ export function formatProjection(
   loaded: LoadedProject,
   found: FoundFormat,
   container?: string,
+  targetOptional = false,
 ): FormatInput {
   return buildFormatInput(loaded.project, found.ref, {
     projectName: loaded.location.name,
+    ...(targetOptional ? { targetOptional } : {}),
     ...(container === undefined ? {} : { target: container }),
     ...(hasComponents(found.spec) ? { drawings: projectDrawings(loaded) } : {}),
   });

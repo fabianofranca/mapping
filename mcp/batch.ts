@@ -2508,6 +2508,7 @@ class Batch {
       { ...this.loaded, project: this.p, catalog: this.catalog },
       found,
       containerId,
+      true,
     );
     const result = await parseFormat(found, text, input, this.readPlugin);
     const applied = await this.applyPluginOperations(pluginOperations(result.operations));
@@ -2526,20 +2527,15 @@ class Batch {
     };
   }
 
-  /** The target container of a format with scope `container`; a `container` given to scope `project` is ignored with a note. */
+  /** The target container of a format with scope `container` (optional: without it `parse` creates one); a `container` given to scope `project` is ignored with a note. */
   private formatTarget(
     op: Extract<Operation, { op: 'import_format' }>,
     scope: 'project' | 'container',
     notes: string[],
   ): string | undefined {
     if (scope === 'container') {
-      if (op.container === undefined) {
-        throw new ToolError(
-          'invalid-arguments',
-          `${op.format} has scope container: pass \`container\``,
-        );
-      }
-      return this.containerItem(op.container);
+      // Without `container` the plugin gets `target: null` and creates the container it reads.
+      return op.container === undefined ? undefined : this.containerItem(op.container);
     }
     if (op.container !== undefined) {
       notes.push(`\`container\` was ignored: ${op.format} has scope project`);

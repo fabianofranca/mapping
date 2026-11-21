@@ -48,7 +48,7 @@ interface FormatInput {
   /** The format's specialization, as the project's copy stores it (`docs/SPEC-FORMAT.md`). */
   specialization: Specialization;
   project: { name: string };
-  /** Scope `container`: the container the call is about. `null` with scope `project`. */
+  /** Scope `container`: the container the call is about. `null` with scope `project`, and with scope `container` when `import_format` is called without `container` (`parse` creates the container it reads). */
   target: { container: string } | null;
   containers: {
     ref: string;
