@@ -986,7 +986,7 @@ button.tree-toggle:hover {
   margin: 0;
 }
 
-/* Warnings window (stage #486): header of each warning, with badge, place, message and count */
+/* Notices window (stage #486; #2085): header of the Accessibility section, with the place and the count */
 .notices-group-row th {
   height: var(--size-row);
   padding: var(--space-1) var(--space-3);
@@ -1002,26 +1002,12 @@ button.tree-toggle:hover {
   align-items: center;
 }
 
-.notices-message {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
 .notices-count {
   margin-left: auto;
 }
 
-.notices-unused-row {
-  border-bottom: 1px solid var(--color-border);
-}
-
-/* Notices window, narrow (stage #1783, CL1): the kind filters wrap into rows instead of spilling
-   out of the window, the headers end in an ellipsis and the annotation cell breaks at spaces. */
-.notices-kinds {
-  min-width: 0;
-  max-width: 100%;
-}
-
+/* Notices window, narrow (stage #1783, CL1): the headers end in an ellipsis and the annotation cell
+   breaks at spaces. */
 .notices-table thead th {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1033,19 +1019,6 @@ button.tree-toggle:hover {
 }
 
 @container bottom-window (max-width: 470px) {
-  .notices-kinds .segmented {
-    flex-wrap: wrap;
-    gap: var(--space-1);
-    border: none;
-    border-radius: 0;
-    overflow: visible;
-  }
-
-  .notices-kinds .segmented .segmented-item {
-    border: 1px solid var(--color-border-control);
-    border-radius: var(--control-radius);
-  }
-
   .notices-table .list-col-marking {
     width: 30%;
   }

@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import { avisosZip } from './avisosFixture';
+import { accessibilityZip } from './accessibilityFixture';
 
-// Notices window at the minimum width (stage #1783, CL1): the five filters stay inside the bottom
-// window, the headers end in an ellipsis (with a `title`) and no word breaks in the table cells.
+// Notices window at the minimum width (stage #1783, CL1; stage #2085): the filter stays inside the
+// bottom window, the headers end in an ellipsis (with a `title`) and no word breaks in the table cells.
 
 async function open(page: Page, width: number): Promise<void> {
   await page.setViewportSize({ width, height: 720 });
@@ -10,17 +10,15 @@ async function open(page: Page, width: number): Promise<void> {
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
-      name: 'avisos.zip',
+      name: 'accessibility.zip',
       mimeType: 'application/zip',
-      buffer: await avisosZip(),
+      buffer: await accessibilityZip(),
     });
   await expect(page.getByRole('main')).toBeVisible();
   await expect(page.locator('main canvas').first()).toBeVisible();
   for (const key of ['1', '2', '3', '8'])
     await page.keyboard.press(`Control+Shift+${key}`);
-  await expect(page.locator('.list-filters button').first()).toBeVisible();
-  // Every notice kind shows up as a filter, even those no annotation uses.
-  await page.locator('.list-filters input[type=checkbox]').first().uncheck();
+  await expect(page.locator('.list-filters input[type=checkbox]').first()).toBeVisible();
 }
 
 function panelOf(page: Page) {
@@ -33,13 +31,13 @@ async function checkFilters(page: Page): Promise<void> {
     .locator('.list-filters')
     .first()
     .evaluate((bar) =>
-      [...bar.querySelectorAll<HTMLElement>('button, [role="radio"]')].map((b) => ({
+      [...bar.querySelectorAll<HTMLElement>('label')].map((b) => ({
         text: b.textContent ?? '',
         right: b.getBoundingClientRect().right,
         cut: b.scrollWidth > b.clientWidth,
       })),
     );
-  expect(rights.length).toBeGreaterThanOrEqual(5);
+  expect(rights.length).toBeGreaterThanOrEqual(1);
   for (const r of rights) {
     expect(r.right, r.text).toBeLessThanOrEqual(edge);
     expect(r.cut, `${r.text} cut`).toBe(false);
@@ -59,16 +57,12 @@ async function checkTable(page: Page): Promise<void> {
   const cell = page
     .getByRole('table', { name: 'Notices' })
     .locator('.list-cell[data-label="Annotation"]')
-    .filter({ hasText: /^Legacy$|^Legacy / })
     .first();
   await expect(cell).toBeVisible();
   const lines = await cell.evaluate((e) => {
-    // The lines of the name's own text (not the badge before it).
-    const walker = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
+    // The lines of the annotation's name text.
     const range = document.createRange();
-    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-      if (n.textContent?.trim() === 'Legacy') range.selectNodeContents(n);
-    }
+    range.selectNodeContents(e.querySelector('.list-annotation-name') ?? e);
     const tops = new Set([...range.getClientRects()].map((r) => Math.round(r.top)));
     return { lines: tops.size, wrap: getComputedStyle(e).overflowWrap };
   });
@@ -77,7 +71,7 @@ async function checkTable(page: Page): Promise<void> {
 }
 
 for (const width of [900, 1280]) {
-  test(`${width}: the five filters stay inside the window`, async ({ page }) => {
+  test(`${width}: the filter stays inside the window`, async ({ page }) => {
     await open(page, width);
     await checkFilters(page);
   });
@@ -92,7 +86,7 @@ for (const width of [900, 1280]) {
 
 test.describe('pt-BR', () => {
   test.use({ locale: 'pt-BR' });
-  test('900: the filters stay inside the window', async ({ page }) => {
+  test('900: the filter stays inside the window', async ({ page }) => {
     await open(page, 900);
     await checkFilters(page);
   });
