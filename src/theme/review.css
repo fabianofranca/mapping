@@ -1709,13 +1709,6 @@ del.identity-name {
   white-space: nowrap;
 }
 
-/* Specialization warnings in the change popover (stage #486) */
-.change-notices {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
 /* Before the review: what the agent had proposed in the change it replaced (stage #644). */
 .revised-before {
   display: flex;

@@ -152,6 +152,15 @@
   margin-inline-start: auto;
 }
 
+/* Library notices on the page (stage #2085): the type block under the description, the lines under a field's description. */
+.catalog-page-header .notice-block {
+  align-self: flex-start;
+}
+
+.catalog-table td .notice-line {
+  margin-top: var(--space-1);
+}
+
 .catalog-section h3 {
   margin: 0 0 var(--space-2);
   font: var(--t-text-heading);

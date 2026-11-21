@@ -21,7 +21,7 @@ const ICONS: Record<SpecNoticeKind, IconName> = {
   pending: 'info',
 };
 
-/** The icon of the `kind` (the same on the badge, the block and the field label). */
+/** The icon of the `kind` (the same on the badge, the block and the line). */
 export function noticeIcon(kind: SpecNoticeKind): IconName {
   return ICONS[kind];
 }
@@ -147,20 +147,5 @@ export function NoticeLines({
         <NoticeLine key={`${notice.kind}-${index}`} notice={notice} column={column} />
       ))}
     </>
-  );
-}
-
-/** The icon of the most severe notice on the field label. */
-export function NoticeLabelIcon({
-  notices,
-}: {
-  readonly notices: readonly SpecNotice[] | undefined;
-}) {
-  const top = notices ? sortNotices(notices)[0] : undefined;
-  if (!top) return null;
-  return (
-    <span class={`notice-label-icon notice-${top.kind}`} aria-hidden="true">
-      <Icon name={ICONS[top.kind]} />
-    </span>
   );
 }

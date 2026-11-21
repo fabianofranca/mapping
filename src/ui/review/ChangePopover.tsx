@@ -15,7 +15,6 @@ import { Button, IconButton } from '../controls';
 import { useEditor } from '../EditorContext';
 import { Icon, type IconName } from '../icons';
 import { CHANGE_KIND_ICONS, ChangeKind } from './ChangeKind';
-import { ChangeNotices } from './ChangeNotices';
 import {
   changeTitle,
   partsText,
@@ -531,7 +530,6 @@ export function ChangePopover({
           <DiffValue rows={rows} />
         )}
       </div>
-      <ChangeNotices change={c} field={subject.field} />
       {!subject.part && <RevisedBefore change={c} />}
       {long && !all && (
         <Button size="sm" class="button-link" onClick={() => setAll(true)}>
