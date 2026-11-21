@@ -14,6 +14,7 @@ import { type InstantiateOptions, instantiate, measureComponent } from './instan
 import { intrinsicModeOf, isIntrinsicSize } from './layoutValues';
 
 export {
+  type ReservedValues,
   type ResolvedAxis,
   type ResolvedSizing,
   type SizingAxis,
@@ -95,7 +96,10 @@ export function fitComponentSize(
   options: InstantiateOptions,
   fit: FitOptions = {},
 ): { width: number; height: number; messages: readonly ModelMessage[] } | undefined {
-  const resolved = resolveSizing(component, values, options.tokens);
+  const resolved = resolveSizing(component, values, options.tokens, {
+    anchor: options.anchor,
+    direction: options.direction,
+  });
   const auto = { ...followedAxes(resolved), ...fit.auto };
   const kinds = {
     width: axisKind(resolved.width, auto.width),
