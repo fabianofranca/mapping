@@ -5,3 +5,6 @@ Thumbs.db
 
 # Watcher state (--state .mapping-watch/state.json).
 .mapping-watch/
+
+# Read-only scratch folder for temporary batches (operationsFile) and exported images.
+scratch/
