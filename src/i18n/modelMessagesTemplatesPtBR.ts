@@ -249,6 +249,7 @@ export const templatePtBR: {
   'model.spec.groupRepeated': 'grupo "{group}" repetido',
   'model.spec.slotIdInvalid': 'id de slot inválido; use [a-z][a-zA-Z0-9_-]*',
   'model.spec.accessibilityRoleInvalid': 'role "{value}" inválido; use {roles}',
+  'model.spec.accessibilityVariantEmptyCase': 'caso vazio: declare role ou label',
   'model.spec.accessibilityTouchNeedsRole':
     'touchTarget: só é válido com um role interativo',
   'model.spec.accessibilityLabelFieldMissing': 'label: o campo não existe: {key}',
@@ -425,6 +426,8 @@ export const templatePtBR: {
     'o repositório "{repo}" de docRepos é declarado, mas nenhum `doc` o usa',
   'model.versions.labelWithoutRole':
     'o tipo "{typeId}" declara `label` sem role: não tem efeito até o tipo ter um role diferente de `none`',
+  'model.versions.labelWithoutRoleCase':
+    'o tipo "{typeId}" declara `label` no caso "{value}" sem role: não tem efeito até o caso ter um role diferente de `none`',
   'model.versions.legacyFormat':
     '"{legacy}" é o nome antigo do formato; use "mapping-spec"',
   'model.versions.typeWithoutCode':

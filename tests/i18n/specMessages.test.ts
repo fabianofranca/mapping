@@ -138,6 +138,14 @@ function accessibilityCases(): readonly (readonly [string, (s: Raw) => void])[] 
   return [
     ['spec.accessibilityRoleInvalid', (s) => a(s, { role: 'x' })],
     ['spec.accessibilityTouchNeedsRole', (s) => a(s, { touchTarget: false })],
+    [
+      'spec.accessibilityVariantEmptyCase',
+      (s) => {
+        a(s, { variants: { field: 'e', cases: { x: {} } } });
+        s.formatVersion = 21;
+        type(s).fields.push({ key: 'e', type: 'enum', options: ['x'] });
+      },
+    ],
     ['spec.accessibilityLabelFieldMissing', (s) => a(s, { label: { fields: ['zz'] } })],
     ['spec.accessibilityLabelFieldType', (s) => a(s, { label: { fields: ['n'] } })],
     [

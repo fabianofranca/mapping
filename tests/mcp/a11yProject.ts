@@ -27,7 +27,7 @@ export const A11Y_FIXTURE = 'tests/fixtures/accessibility';
 export const A11Y_SPEC_ID = 'accessibility';
 export const A11Y_SCREEN = 'bbbbbbbb-0000-4000-8000-0000000000a1';
 const LAYER = 'cccccccc-0000-4000-8000-0000000000a1';
-export const A11Y_COMPONENTS = ['bar', 'button', 'icon-button', 'tabs'];
+export const A11Y_COMPONENTS = ['bar', 'button', 'chip', 'icon-button', 'tabs'];
 
 type Doc = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -166,6 +166,7 @@ export function withAndroid(spec: Doc): void {
     android: { symbol, params },
   });
   types.find((t) => t.id === 'button')!.code = code('ui.Button', { label: 'label' });
+  types.find((t) => t.id === 'chip')!.code = code('ui.Chip', { label: 'label' });
   types.find((t) => t.id === 'bar')!.code = {
     android: {
       symbol: 'ui.Bar',

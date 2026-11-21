@@ -274,6 +274,19 @@
           "name": "Button",
           "labelField": "label",
           "component": "components/sdui-button.json",
+          "accessibility": {
+            "role": "button",
+            "label": { "fields": ["label"] },
+            "variants": {
+              "field": "mode",
+              "cases": {
+                "link": {
+                  "role": "link",
+                  "label": { "fields": ["label"], "required": true }
+                }
+              }
+            }
+          },
           "doc": "docs/sdui-button.md",
           "sources": [
             {
