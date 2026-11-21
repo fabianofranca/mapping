@@ -35,7 +35,8 @@ describe('scratch folder in the workspace (stage #2090, BP3)', () => {
   it('mappings-workspace/serve.mjs passes --scratch only to a server that accepts it', async () => {
     expect(read('mappings-workspace/serve.mjs')).toMatch(/serverArgs\(here, version\)/);
     // @ts-expect-error plain .mjs helper with no type declarations
-    const { supportsScratch, serverArgs } = await import('../../mappings-workspace/serverArgs.mjs');
+    const { supportsScratch, serverArgs } =
+      await import('../../mappings-workspace/serverArgs.mjs');
     expect(supportsScratch('0.50.2')).toBe(false);
     expect(supportsScratch('0.51.0')).toBe(true);
     expect(supportsScratch('0.51.0-rc.1')).toBe(true);
