@@ -6,7 +6,7 @@ DS impact: none. The epic changes the component engine's model code (measures, t
 
 ## Sincronização
 
-Not yet written (the epic closing fills it in).
+No sync needed: DS impact is none, so nothing is written to the Mapping artifact (the epic closing confirms).
 
 ## Ficou sem gravar
 

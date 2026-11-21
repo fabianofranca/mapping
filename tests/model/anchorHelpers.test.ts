@@ -46,6 +46,24 @@ describe('componentAnchorDefaults', () => {
       offset: { main: 0, cross: 0 },
     });
   });
+
+  it("keeps today's literal values: the declared fields win and the offset (units) × density", () => {
+    const full = fileWith({
+      side: 'end',
+      align: 'start',
+      offset: { main: 6, cross: -2 },
+    });
+    expect(componentAnchorDefaults(full, 2)).toEqual({
+      side: 'end',
+      align: 'start',
+      offset: { main: 12, cross: -4 },
+    });
+    expect(componentAnchorDefaults(fileWith({ offset: { cross: 3 } }), 3.5)).toEqual({
+      side: 'top',
+      align: 'center',
+      offset: { main: 0, cross: 10.5 },
+    });
+  });
 });
 
 describe('fileAnchorDefaults', () => {
