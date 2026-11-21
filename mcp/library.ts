@@ -252,7 +252,7 @@ export function libraryCounts(spec: Spec): Json {
   const types = spec.layers.flatMap((layer) => layer.annotationTypes);
   return {
     components: types.filter((t) => t.component !== undefined).length,
-    docs: types.filter((t) => t.doc !== undefined).length,
+    docs: types.filter((t) => t.doc !== undefined).length + (spec.documents ?? []).length,
     examples:
       types.reduce((sum, t) => sum + (t.examples ?? []).length, 0) +
       (spec.origins ?? []).reduce((sum, o) => sum + (o.examples ?? []).length, 0),

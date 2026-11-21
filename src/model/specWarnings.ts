@@ -117,13 +117,16 @@ function unusedGroupWarnings(spec: Spec): SpecWarning[] {
   return warnings;
 }
 
-/** `unused-doc-repo`: `docRepos` repositories that no object `doc` cites. */
+/** `unused-doc-repo`: `docRepos` repositories that no object `doc` (of a type or of `documents`) cites. */
 function unusedDocRepoWarnings(spec: Spec): SpecWarning[] {
   const used = new Set<string>();
   for (const layer of spec.layers) {
     for (const type of layer.annotationTypes) {
       if (typeof type.doc === 'object') used.add(type.doc.repo);
     }
+  }
+  for (const document of spec.documents ?? []) {
+    if (typeof document.doc === 'object') used.add(document.doc.repo);
   }
   const warnings: SpecWarning[] = [];
   (spec.docRepos ?? []).forEach((repo, i) => {
