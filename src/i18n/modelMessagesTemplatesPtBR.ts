@@ -293,6 +293,8 @@ export const templatePtBR: {
   'model.spec.formatVersionInvalid': 'deve ser {versions} ou {last}',
   'model.spec.onlyFormat': 'só é permitido com formatVersion {version}',
   'model.spec.sourceOnlyOrigins': 'só é permitido em sistema declarado em origins',
+  'model.spec.sourceIgnoreOriginsOrSignature':
+    'só é permitido em sistema declarado em origins ou ao lado de signature',
   'model.spec.sourcePathRequired': 'obrigatório em sistema declarado em origins',
   'model.spec.sourceNameRequired': 'obrigatório em sistema que não está em origins',
   'model.spec.fieldPathEmptySegment': 'caminho inválido "{path}" (segmento vazio)',

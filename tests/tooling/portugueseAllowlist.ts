@@ -2216,16 +2216,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     source: 'docs/DESIGN-SYSTEM.md',
     group: 'record-titles',
   },
-  {
-    term: 'A versão atual do formato é a N',
-    source: 'docs/PROCESS.md',
-    group: 'script-output',
-  },
-  {
-    term: '13. Versão',
-    source: 'docs/PROCESS.md',
-    group: 'script-output',
-  },
   // ID10 sweep: terms added by area A2 (queue tests)
   { term: '<link do comentário>', source: 'docs/FLOW.md', group: 'session-notices' },
   {

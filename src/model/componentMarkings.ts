@@ -53,6 +53,7 @@ import {
 } from './geometry';
 import {
   crowdedRectIn,
+  freeRectGoingUp,
   freeRectIn,
   isFreeInLevel,
   placementLevel,
@@ -120,6 +121,9 @@ export function componentTypes(p: Project, catalog: ComponentCatalog): Component
   return result;
 }
 
+/** How much of the component's `preview` an instance takes (see `NewComponentArgs.preview`). */
+export type PreviewMode = 'all' | 'required';
+
 export interface NewComponentArgs {
   readonly markingId: string;
   readonly annotationId: string;
@@ -164,6 +168,12 @@ export interface NewComponentArgs {
    * the fields that do not come here start with the `preview`; absent = only the `preview`.
    */
   readonly values?: TypedValues;
+  /**
+   * Which `preview` fields start the instance: `'all'` (absent; the app's Palette) or `'required'` (the
+   * MCP): only the fields with `required: true` and no `default`; the others keep the `default` or stay
+   * empty. The size measured without `rect` follows the same choice.
+   */
+  readonly preview?: PreviewMode;
   readonly name?: string | null;
   /**
    * The app's drawings (`derived.drawingsOf`): the placement reads the slot of each child from the
@@ -488,6 +498,7 @@ type PlacementArgs = Pick<
   | 'center'
   | 'values'
   | 'pageId'
+  | 'preview'
 > & {
   /** The app's drawings: the slot of each child and the boxes come from them (the same result without them). */
   readonly drawings?: ComponentDrawings;
@@ -579,7 +590,14 @@ function initialValues(
     layerId: layer.id,
     type: { specId: args.specId, typeId: args.typeId },
   });
-  next = applyPreview(next, SCRATCH_ANNOTATION, space.type, space.component, args.values);
+  next = applyPreview(
+    next,
+    SCRATCH_ANNOTATION,
+    space.type,
+    space.component,
+    args.values,
+    args.preview,
+  );
   for (const [key, value] of Object.entries(args.values ?? {})) {
     try {
       next = setFieldValue(next, SCRATCH_ANNOTATION, key, value);
@@ -682,6 +700,7 @@ export function componentSize(
     | 'typeId'
     | 'size'
     | 'values'
+    | 'preview'
     | 'instanceAnchor'
   >,
   measure: TextMeasurer,
@@ -974,8 +993,10 @@ function componentPageId(
  *
  * If R0 is already free, it is the one. Otherwise it goes to the free place nearest to it (`placementLevel`:
  * inside the smallest marking that contains it and is different from it, or on the image, without covering or
- * coinciding with other markings), with the gap `PLACEMENT_GAP`. With no place in the area, it stays at R0 (clamped
- * to the component with a slot), without error. The floating type (outside the tree) returns R0 without searching.
+ * coinciding with other markings), with the gap `PLACEMENT_GAP`. With no place in the area, outside a component with a
+ * slot the search goes up a level at a time, up to the root (`freeRectGoingUp`); with no place at any level (and in a
+ * full slot) it stays at the origin level, clamped to the component with a slot, never contained in or equal to a
+ * sibling (`crowdedRectIn`), without error. The floating type (outside the tree) returns R0 without searching.
  */
 export function componentPlacement(
   p: Project,
@@ -989,9 +1010,12 @@ export function componentPlacement(
   if (parent === null || slot === null) {
     const r0 = centeredRect(space, size, args.center);
     if (space.floating) return r0;
+    // No spot at the level where it would be born: it goes up level by level; with none at any, it
+    // stays at the origin level, never contained in or equal to a sibling (decision 4 of #1891).
+    const level = placementLevel(p, args.containerId, r0, undefined, args.pageId);
     return (
-      freeRectIn(placementLevel(p, args.containerId, r0, undefined, args.pageId), r0) ??
-      r0
+      freeRectGoingUp(p, args.containerId, level, r0, args.pageId) ??
+      crowdedRectIn(level, r0)
     );
   }
   const placed = slotRect(p, parent, slot, size);
@@ -1009,7 +1033,8 @@ export function componentPlacement(
 }
 
 /**
- * The rectangle `rect` is free where `componentPlacement` would put it: it fits in the level's area (the image,
+ * The rectangle `rect` is free where `componentPlacement` would put it, at the level that contains it (the one it
+ * was found at, going up): it fits in the level's area (the image,
  * the marking that contains it or the box of the slot of `parentId`) and does not overlap any
  * non-floating marking (nor, on the canvas, any container) that crosses the area, except the parent and the ancestors.
  * It gives the test, and whoever wants to warn later, whether the chosen piece ended up free (decision 5).
@@ -1047,9 +1072,21 @@ function simplePreview(
   return simple ? preview : undefined;
 }
 
+/** Whether the field takes the `preview` in this mode (`'required'`: only a required field without a `default`). */
+function takesPreview(
+  field: SpecAnnotationType['fields'][number],
+  mode: PreviewMode,
+): boolean {
+  return (
+    mode === 'all' ||
+    (field.required === true && !('default' in field && field.default !== undefined))
+  );
+}
+
 /**
  * Puts the component's `preview` into the annotation fields that `given` does not specify (the `table`
  * and `ref` fields stay at the `default`). A `preview` that the field does not accept stays at the `default`.
+ * In `'required'` mode only the required fields without a `default` take it.
  */
 function applyPreview(
   p: Project,
@@ -1057,10 +1094,12 @@ function applyPreview(
   type: SpecAnnotationType,
   component: ComponentFile,
   given: TypedValues | undefined,
+  mode: PreviewMode = 'all',
 ): Project {
   let next = p;
   for (const field of type.fields) {
     if (given !== undefined && field.key in given) continue;
+    if (!takesPreview(field, mode)) continue;
     const preview = simplePreview(field, component);
     if (preview === undefined) continue;
     try {
@@ -1089,6 +1128,7 @@ export function componentAnchoredPlacement(
     | 'specId'
     | 'typeId'
     | 'values'
+    | 'preview'
     | 'name'
     | 'anchorDefaults'
     | 'pageId'
@@ -1187,6 +1227,7 @@ export function addComponentMarking(
         specId: args.specId,
         typeId: args.typeId,
         ...(args.values ? { values: args.values } : {}),
+        ...(args.preview ? { preview: args.preview } : {}),
       },
       measure,
     );
@@ -1214,6 +1255,7 @@ export function addComponentMarking(
         typeId: args.typeId,
         ...(args.center ? { center: args.center } : {}),
         ...(args.values ? { values: args.values } : {}),
+        ...(args.preview ? { preview: args.preview } : {}),
         ...(args.drawings ? { drawings: args.drawings } : {}),
       },
       measure,
@@ -1245,7 +1287,14 @@ export function addComponentMarking(
     type: { specId: args.specId, typeId: args.typeId },
   });
 
-  next = applyPreview(next, args.annotationId, type, component, args.values);
+  next = applyPreview(
+    next,
+    args.annotationId,
+    type,
+    component,
+    args.values,
+    args.preview,
+  );
   for (const [key, value] of Object.entries(args.values ?? {})) {
     next = setFieldValue(next, args.annotationId, key, value);
   }

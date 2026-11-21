@@ -320,18 +320,20 @@ export function hasSlotComponent(component: ComponentFile): boolean {
  * Minimum of the component that draws the marking, in image pixels: its `minSize` (in units) ×
  * the container density, rounded up, or, without `minSize`, 1×1 (a marking with a component
  * accepts from 1 px); `null` on an ordinary marking (the 8 px minimum of the gestures applies).
+ * `density` replaces the container's (the density a replaced image is about to store).
  */
 export function componentMinSize(
   p: Project,
   catalog: ComponentCatalog,
   markingId: string,
+  density?: number,
 ): { width: number; height: number } | null {
   const drawn = markingComponent(p, catalog, markingId);
   if (drawn === null) return null;
   const marking = projectIndex(p).markings.get(markingId);
   return componentFileMinSize(
     drawn.component,
-    effectiveDensity(p, marking?.containerId ?? null),
+    density ?? effectiveDensity(p, marking?.containerId ?? null),
   );
 }
 

@@ -17,7 +17,13 @@ import { listMarkings } from './markingList';
 import { modelToolError } from './modelErrors';
 import { findPerspective, perspectiveDetail } from './perspectives';
 import { operationSchema } from './operations';
-import { resolveOperations } from './operationsFile';
+import { resolveOperations, resolveOptionalOperations } from './operationsFile';
+import {
+  drawableMarking,
+  hasPreview,
+  previewContainer,
+  previewMarking,
+} from './renderPreview';
 import { Proposals } from './proposals';
 import { Threads, resolveExtended } from './threads';
 import { registerThreadTools } from './threadTools';
@@ -152,7 +158,7 @@ const operationsArg = z
 
 /**
  * Inline `operations` or `operationsFile` (decision 28): `plan_changes` and `propose_changes` accept
- * one of the two. Each is optional in the schema; `resolveOperations` refuses both together and neither.
+ * one of the two (`revise_proposal` too, with its own `operations`). Each is optional in the schema; `resolveOperations` refuses both together and neither.
  */
 const batchOperationsArgs = {
   operations: operationsArg
@@ -164,7 +170,7 @@ const batchOperationsArgs = {
     .string()
     .optional()
     .describe(
-      'Path of a `.json` inside the roots with the list of operations (the same as `operations`), for batches too large for the call (a measured screen has hundreds). Relative to a root or absolute inside one; outside the roots it is `outside-roots`, invalid JSON is `invalid-arguments` with the position. Both together, or neither, is `invalid-arguments`.',
+      'Path of a `.json` with the list of operations (the same as `operations`), for batches too large for the call (a measured screen has hundreds). Inside a root or the scratch folder (`--scratch`, read-only: the place for temporary batches): relative (roots first, then the scratch folder) or absolute inside one of them; anywhere else it is `outside-roots`, invalid JSON is `invalid-arguments` with the position. Both together, or neither, is `invalid-arguments`.',
     ),
 };
 
@@ -223,13 +229,14 @@ export function registerTools(
     'list_projects',
     {
       description:
-        'Lists the Mapping projects (folders with mapping.json) found in the configured roots: name, path, counts and applied specializations.',
+        'Lists the Mapping projects (folders with mapping.json) found in the configured roots: name, path, counts and applied specializations. Also shows the roots (and the ones that do not exist, `missingRoots`) and the read-only scratch folders (`scratch`, `missingScratch`): the place for the temporary `operationsFile` and image files of a batch, never scanned for projects.',
       annotations: READ_ONLY,
     },
     () =>
       respond(async () => {
         const locations = await discoverProjects(roots);
         const reals = await roots.realRoots();
+        const realScratch = await roots.realScratch();
         const projects = await Promise.all(
           locations.map(async (location) => {
             try {
@@ -252,6 +259,8 @@ export function registerTools(
         return {
           roots: roots.roots,
           missingRoots: roots.roots.filter((_, i) => reals[i] === null),
+          scratch: roots.scratch,
+          missingScratch: roots.scratch.filter((_, i) => realScratch[i] === null),
           projects,
         };
       }),
@@ -640,27 +649,7 @@ export function registerTools(
   /** The container marking of an `m` reference (an arrow and a canvas marking have no image). */
   const imageMarkingOf = async (ref: string, project: string | undefined) => {
     const item = await resolveItem(roots, ref, project, 'm');
-    if (projectIndex(item.refs.project).arrows.has(item.id)) {
-      throw new ToolError(
-        'arrow',
-        'an arrow has no image: it is a line between two markings',
-        {
-          hint: 'ask for the image of the source or target marking (`from`/`to` of get_marking on the arrow)',
-        },
-      );
-    }
-    const marking = projectIndex(item.refs.project).markings.get(item.id);
-    if (!marking) throw new ToolError('not-found', `marking not found: ${ref}`);
-    if (marking.containerId === null) {
-      throw new ToolError(
-        'canvas-marking',
-        'a canvas marking has no image: it does not belong to a container',
-        {
-          hint: 'use get_container_file of the containers under it (`members` of get_marking), or get_marking_image of a marking inside a container',
-        },
-      );
-    }
-    return { item, marking };
+    return { item, marking: drawableMarking(item.refs, item.id, ref) };
   };
 
   server.registerTool(
@@ -750,6 +739,17 @@ export function registerTools(
     .describe(
       '"image" (default): paints the container\'s file underneath (without a file, its background color); "none": transparent background, only the drawing of the components (png or webp).',
     );
+  const previewArgs = {
+    proposal: z
+      .string()
+      .optional()
+      .describe(
+        "Draws an OPEN proposal (reference `mapping://<project>/p/<code>`, as get_proposal takes it) as it would be, with nothing written: the proposal's whole proposed state (every change, the rejected ones too), the same state revise_proposal starts from. Cite its items by their final reference (the `created` of propose_changes). A proposal that is not open is `not-open`, one with an applied change is `proposal-applied` (draw without `proposal`: what was applied is in the project).",
+      ),
+    ...batchOperationsArgs,
+  };
+  const PREVIEW_NOTE =
+    'With `operations` or `operationsFile` (the plan_changes batch) it draws the result of the batch; with `proposal` an open proposal as it would be; with both, the batch applied over the proposal (see your fix before revise_proposal). Nothing is written. The items the batch creates are cited by their `$alias` (`as`; with `project`, which a `$alias` does not carry) and come back with `alias` and `provisional: true`; the response carries `preview`. An invalid batch is `invalid-batch` (nothing drawn: fix it with plan_changes). The fonts of a package that the batch or proposal applies count only after it is applied (`warning`). ';
   const RENDER_NOTE =
     "The drawing is the server's, with real text (bundled free font, or the library's `fonts` when declared), stroke with `align`/`cap`/`join`/`sides`/dashes, blurred shadow and icons; the gradient takes the first color and the remote image becomes a placeholder. It is not a capture of the app. The response carries `url` (local HTTP, only on this computer, valid while this server runs) and `markdown`: paste the `markdown` in the reply when the client does not show the `image` content in the chat.";
 
@@ -758,10 +758,12 @@ export function registerTools(
     {
       description:
         "Draws, as a PNG image, the component of a container marking and that of its whole subtree (the children), with `zoom`, `drawingMode`, `direction` and `background`. This is how the agent checks a component's drawing without opening the app. " +
+        PREVIEW_NOTE +
         RENDER_NOTE,
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
+        ...previewArgs,
         zoom: zoomArg,
         drawingMode: drawingModeArg,
         direction: directionArg,
@@ -777,8 +779,12 @@ export function registerTools(
       },
       annotations: READ_ONLY,
     },
-    ({ ref, project, ...options }) =>
+    ({ ref, project, proposal, operations, operationsFile, ...options }) =>
       respondWithImage(async () => {
+        const preview = { ref, project, proposal, operations, operationsFile };
+        if (hasPreview(preview)) {
+          return previewMarking(roots, Date.now, preview, options, images);
+        }
         const { item, marking } = await imageMarkingOf(ref, project);
         return renderMarking(roots, item.refs, marking, options, images);
       }),
@@ -789,10 +795,12 @@ export function registerTools(
     {
       description:
         'Draws, as a PNG image, the components of all the markings of a container (with or without a file), with `zoom`, `drawingMode`, `direction` and `background`. On a container without a file it is the same drawing get_marking_image shows. ' +
+        PREVIEW_NOTE +
         RENDER_NOTE,
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
+        ...previewArgs,
         zoom: zoomArg,
         drawingMode: drawingModeArg,
         direction: directionArg,
@@ -801,8 +809,12 @@ export function registerTools(
       },
       annotations: READ_ONLY,
     },
-    ({ ref, project, ...options }) =>
+    ({ ref, project, proposal, operations, operationsFile, ...options }) =>
       respondWithImage(async () => {
+        const preview = { ref, project, proposal, operations, operationsFile };
+        if (hasPreview(preview)) {
+          return previewContainer(roots, Date.now, preview, options, images);
+        }
         const { item, container } = await containerOf(ref, project);
         return renderContainer(roots, item.refs, container, options, images);
       }),
@@ -938,8 +950,9 @@ export function registerTools(
           .max(1000)
           .optional()
           .describe(
-            'Batch applied to the whole proposed state, with propose_changes validation (`$name` aliases work). A new or replaced library package does not fit here.',
+            'Batch applied to the whole proposed state, with propose_changes validation (`$name` aliases work). A new or replaced library package does not fit here. Use `operations` OR `operationsFile`, never both; neither is fine when `drop` is given.',
           ),
+        operationsFile: batchOperationsArgs.operationsFile,
         dryRun: z
           .boolean()
           .optional()
@@ -947,7 +960,16 @@ export function registerTools(
       },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
-    ({ ref, project, ...args }) => respond(() => proposals.revise(ref, project, args)),
+    ({ ref, project, operations, operationsFile, ...args }) =>
+      respond(async () =>
+        proposals.revise(ref, project, {
+          ...args,
+          operations: await resolveOptionalOperations(roots, {
+            operations,
+            operationsFile,
+          }),
+        }),
+      ),
   );
 
   server.registerTool(

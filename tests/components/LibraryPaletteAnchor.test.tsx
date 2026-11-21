@@ -57,7 +57,7 @@ function addFab(
     typeId,
   });
   if (!result.ok) throw new Error(result.error);
-  return result.value;
+  return result.value.markingId;
 }
 
 const marking = (harness: LibraryHarness, id: string) =>
