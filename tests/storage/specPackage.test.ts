@@ -113,6 +113,27 @@ describe('readSpecPackage', () => {
     expect(opened).toBeLessThanOrEqual(9 + FOLDER_CONCURRENCY);
   });
 
+  it('reads the .js plugin as text and a binary example only as present', async () => {
+    const counter = { texts: 0 };
+    const paths = [
+      'specs/dm/dm.spec.json',
+      'specs/dm/plugins/csv.js',
+      'specs/dm/examples/a.csv',
+    ];
+    const storage = {
+      listSpecDir: async () => paths,
+      readSpecFile: async () => fakeBlob(5, counter),
+    } as unknown as ProjectStorage;
+    expect(await readSpecPackage(storage, 'specs/dm')).toEqual({
+      entries: [
+        { path: 'specs/dm/dm.spec.json', text: 'x' },
+        { path: 'specs/dm/plugins/csv.js', text: 'x' },
+        { path: 'specs/dm/examples/a.csv' },
+      ],
+      bytes: 15,
+    });
+  });
+
   it('within the limit: entries in listing order, bytes summed, missing one skipped', async () => {
     const counter = { texts: 0 };
     const paths = [

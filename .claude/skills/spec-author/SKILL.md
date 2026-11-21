@@ -503,8 +503,9 @@ Declare the accessibility contract of the types: what a screen reader and a touc
 - `formatVersion` 17: `slots` on a type (what each slot of the component accepts and its `max`) or `slots` in the `code` of a platform (or in a case of `variants`).
 - `formatVersion` 18: `accessibility` at the root (`touchTarget`) or on a type (`role`, `label`, `touchTarget` or `parts`).
 - `formatVersion` 19: a `copy-field` step in `migrations`.
+- `formatVersion` 20: `fileFormats` at the root.
 
-The current format version is 19. **Only raise to 9 if some type uses `variants`, to 10 if some type, field or column uses `notices`, to 11 if something uses a key from the list above (the text `doc` does not count), to 12 only if it declares a role step, to 13 only if a type accepts children of its own layer, to 14 only if a `ref` uses `accepts.annotations`, to 15 only if it declares `tokens`, `icons`, `structural` or `kind: "measured"`, to 16 only if it declares `fieldModels`, `signature`, `ignore`, `calls`, `formats` or a path or positional in `params`, to 17 only if it declares `slots` on a type or in a `code`, to 18 only if it declares `accessibility`, and to 19 only if it declares a `copy-field` step**: the rest of the library stays at the version that the content requires (the notes library stays at 7 and the Kotlin one at 8; the Material 3 one is at 18, because it declares `accessibility`). The **component** has its own version, 1 to 4: `formatVersion` 1, 2 when it uses `repeat`, 3 when it uses `image`, or 4 for the fidelity features (`let`, `runs`, `grid`, `$token`, `icon`, `screen`, `anchor`, named slots and reading direction, which this skill itself uses; 1 is still accepted; `repeat` in a 1 is an error). The current component format version is 4. A version greater than necessary prevents importing into old apps with no gain.
+The current format version is 20. **Only raise to 9 if some type uses `variants`, to 10 if some type, field or column uses `notices`, to 11 if something uses a key from the list above (the text `doc` does not count), to 12 only if it declares a role step, to 13 only if a type accepts children of its own layer, to 14 only if a `ref` uses `accepts.annotations`, to 15 only if it declares `tokens`, `icons`, `structural` or `kind: "measured"`, to 16 only if it declares `fieldModels`, `signature`, `ignore`, `calls`, `formats` or a path or positional in `params`, to 17 only if it declares `slots` on a type or in a `code`, to 18 only if it declares `accessibility`, to 19 only if it declares a `copy-field` step, and to 20 only if it declares `fileFormats`**: the rest of the library stays at the version that the content requires (the notes library stays at 7 and the Kotlin one at 8; the Material 3 one is at 18, because it declares `accessibility`). The **component** has its own version, 1 to 4: `formatVersion` 1, 2 when it uses `repeat`, 3 when it uses `image`, or 4 for the fidelity features (`let`, `runs`, `grid`, `$token`, `icon`, `screen`, `anchor`, named slots and reading direction, which this skill itself uses; 1 is still accepted; `repeat` in a 1 is an error). The current component format version is 4. A version greater than necessary prevents importing into old apps with no gain.
 
 - `version` is an integer ≥ 1. New specialization: `1`. Update of an already applied one: one more than the applied one (`update_specialization` requires a greater version). Never change the `id` in an update: it is the identity.
 
@@ -629,7 +630,7 @@ The prompt only needs to specify. Template:
 
 > /spec-author
 >
-> Specialization **`<id>`** ("<Name>") for Mapping, `formatVersion` <1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19>.
+> Specialization **`<id>`** ("<Name>") for Mapping, `formatVersion` <1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20>.
 >
 > **Origin:** <repository, folder or design system>, reading <what to read: components folder, exported catalog, document>. Ignore <what to ignore>.
 >

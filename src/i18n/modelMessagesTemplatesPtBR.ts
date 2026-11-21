@@ -11,6 +11,7 @@ export const templatePtBR: {
   'model.library.emptyDoc': 'documento vazio',
   'model.library.fileNotFound': 'arquivo não encontrado: {path}',
   'model.library.notRead': 'o conteúdo do arquivo não foi lido (esperava o texto)',
+  'model.library.pluginTooLarge': 'o plugin é maior que {max} bytes ({size} bytes)',
   'model.library.invalidJson': 'JSON inválido: {detail}',
   'model.library.specFileNotFound': 'arquivo da especialização não encontrado: {path}',
   'model.library.specNotFound':
@@ -292,6 +293,14 @@ export const templatePtBR: {
   'model.spec.formatInvalid': 'deve ser "{format}"',
   'model.spec.formatVersionInvalid': 'deve ser {versions} ou {last}',
   'model.spec.onlyFormat': 'só é permitido com formatVersion {version}',
+  'model.spec.fileFormatsShape': 'deve ser uma lista de formatos de arquivo',
+  'model.spec.fileFormatExamplesShape': 'deve ser uma lista de exemplos',
+  'model.spec.fileFormatKeyUnknown': 'chave desconhecida: {key}',
+  'model.spec.fileFormatIdInvalid': 'id inválido; use [a-z0-9][a-z0-9-]*',
+  'model.spec.fileFormatExtensionInvalid':
+    'extensão inválida; use [a-z0-9]+ (minúsculas, sem o ponto)',
+  'model.spec.fileFormatContractInvalid': 'deve ser 1',
+  'model.spec.fileFormatScopeInvalid': 'escopo inválido; use "project" ou "container"',
   'model.spec.sourceOnlyOrigins': 'só é permitido em sistema declarado em origins',
   'model.spec.sourceIgnoreOriginsOrSignature':
     'só é permitido em sistema declarado em origins ou ao lado de signature',

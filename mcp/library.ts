@@ -22,7 +22,7 @@ import { MAX_FONT_BYTES } from './projects';
 
 // Library package (Library stage, B2): `validate_library` reads the package FOLDER and calls
 // `validateLibrary` (`src/model/library.ts`), the same function as the app and the skill. Here only
-// the disk is read: `.json`/`.md` texts, the rest becomes `binary: true` without reading the content.
+// the disk is read: `.json`/`.md`/`.js` texts (the `.js` is a format plugin, `formatVersion` 20; the server never runs it), the rest becomes `binary: true` without reading the content.
 // Symbolic links are never followed (the folder and the files must actually be inside the
 // roots). Read-only; nothing is applied to any project.
 
@@ -30,7 +30,7 @@ type Json = Record<string, unknown>;
 
 /** Files in a package folder; above this the request is refused. */
 export const MAX_PACKAGE_FILES = 2000;
-/** Sum of the texts read (`.json` and `.md`). */
+/** Sum of the texts read (`.json`, `.md` and `.js`). */
 export const MAX_PACKAGE_TEXT_BYTES = 32 * 1024 * 1024;
 /** A text larger than this does not belong to a reasonable package. */
 export const MAX_TEXT_FILE_BYTES = 8 * 1024 * 1024;
@@ -41,7 +41,7 @@ export const MAX_ISSUES = 100;
 /** An external-system example larger than this goes only by path (`get_component`). */
 export const MAX_EXAMPLE_JSON_BYTES = 16 * 1024;
 
-const isTextPath = (path: string): boolean => /\.(json|md)$/i.test(path);
+const isTextPath = (path: string): boolean => /\.(json|md|js)$/i.test(path);
 
 interface Walked {
   readonly path: string;
@@ -262,6 +262,9 @@ export function libraryCounts(spec: Spec): Json {
     origins: (spec.origins ?? []).length,
     migrations: (spec.migrations ?? []).length,
     ...(spec.icons === undefined ? {} : { icons: spec.icons }),
+    ...(spec.fileFormats === undefined || spec.fileFormats.length === 0
+      ? {}
+      : { fileFormats: spec.fileFormats.length }),
   };
 }
 
@@ -580,7 +583,7 @@ export function packageOfProject(
 /**
  * What a request of `apply_specialization`/`update_specialization`/`plan_library_update` points to:
  * a specialization file that does not cite package files (v1 to v3, or v4 and v5 without
- * `component`, `doc`, `examples`, `fonts`, `origins` or `icons`: only the file goes to `specs/<id>.json`) or a v4
+ * `component`, `doc`, `examples`, `fonts`, `origins`, `icons` or `fileFormats`: only the file goes to `specs/<id>.json`) or a v4
  * package (the whole folder, with the raw content of the files).
  */
 export type SpecInput =

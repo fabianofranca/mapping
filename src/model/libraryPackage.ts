@@ -32,10 +32,11 @@ export function isPackageFile(file: string): boolean {
 /**
  * Does the specialization cite package files? Only then does it need the whole folder. It cites
  * when it is `formatVersion` 4 or higher and has some type with `component`, a text `doc` or
- * `examples`, or `fonts`, `origins` or `icons` at the root, or some signature sheet (`signature`
+ * `examples`, or `fonts`, `origins`, `icons` or `fileFormats` at the root, or some signature sheet (`signature`
  * in `code`, in a `variants` case or in the type's `sources`; v16). `migrations` does not count
  * (it is only the version contract), nor does the object `doc` (`{ repo, path }`, the document
- * lives in another repository). v1 to v3 never cite. One that does not cite counts as a
+ * lives in another repository). `fileFormats` counts (the plugin is a package file; v20). v1 to v3
+ * never cite. One that does not cite counts as a
  * standalone file (`specs/<id>.json`), like v1 to v3.
  */
 export function usesPackageFiles(spec: Spec): boolean {
@@ -43,6 +44,7 @@ export function usesPackageFiles(spec: Spec): boolean {
   if (spec.fonts !== undefined && spec.fonts.length > 0) return true;
   if (spec.origins !== undefined && spec.origins.length > 0) return true;
   if (spec.icons !== undefined) return true;
+  if (spec.fileFormats !== undefined && spec.fileFormats.length > 0) return true;
   return spec.layers.some((layer) =>
     layer.annotationTypes.some(
       (type) =>
@@ -65,10 +67,10 @@ function citesSignature(type: SpecAnnotationType): boolean {
   );
 }
 
-/** `.json` and `.md` are text (read by the validator); the rest (fonts) is binary. */
+/** `.json`, `.md` and `.js` (the format plugin) are text (read by the validator); the rest (fonts) is binary. */
 export function isTextPackageFile(path: string): boolean {
   const lower = path.toLowerCase();
-  return lower.endsWith('.json') || lower.endsWith('.md');
+  return lower.endsWith('.json') || lower.endsWith('.md') || lower.endsWith('.js');
 }
 
 /** Does the package fit the limits (`MAX_PACKAGE_FILES` and `MAX_PACKAGE_BYTES`)? */

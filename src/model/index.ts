@@ -59,6 +59,7 @@ export * from './linkedByRole';
 export * from './listing';
 export * from './display';
 export * from './spec';
+export * from './fileFormats';
 export * from './notices';
 export * from './noticeList';
 export * from './specLookup';
