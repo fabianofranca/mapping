@@ -155,7 +155,10 @@ export function measureComponentSize(
     },
     density,
     follows: followedAxes(
-      resolveSizing(component, values, drawn.tokens, { direction: drawn.direction }),
+      resolveSizing(component, values, drawn.tokens, {
+        direction: drawn.direction,
+        container: drawn.container,
+      }),
     ),
     messages: [...warnings, ...(fitted?.messages ?? [])],
   };

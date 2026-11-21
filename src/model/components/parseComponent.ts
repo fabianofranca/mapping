@@ -2270,7 +2270,8 @@ function collectIssues(
   }
 
   if ('sizing' in input) {
-    const v4 = typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY;
+    const v4 =
+      typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY;
     checkSizing(input.sizing, 'sizing', v4, out);
     // Before 4 the expression itself is already refused; from 4 the container names are checked in it too.
     if (v4) issues.push(...containerFieldIssues(version, input.sizing, 'sizing'));

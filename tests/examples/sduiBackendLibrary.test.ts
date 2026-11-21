@@ -13,7 +13,11 @@ import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { approximateMeasurer } from '../../src/model/components/instantiate';
+import { resolveSlotLayout } from '../../src/model/components/arrange';
+import { withContainer } from '../../src/model/components/container';
 import { loadLibrary } from '../../src/model/components/library';
+import { parseComponentText } from '../../src/model/components/parseComponent';
+import { componentSlots } from '../../src/model/components/slots';
 import { screenFromSource } from '../../src/model/components/origin';
 import { validateLibrary } from '../../src/model/library';
 import { parseSpecText } from '../../src/model/spec';
@@ -134,6 +138,29 @@ describe('container classes (stage #1901, CX1; decision 27)', () => {
     expect(typeOf('sdui-sheet')?.appliesIn).toEqual({ platform: ['android', 'ios'] });
     expect(typeOf('sdui-fab')?.appliesIn).toEqual({ window: ['compact', 'medium'] });
     expect(typeOf('sdui-button')?.appliesIn).toBeUndefined();
+  });
+});
+
+describe('sdui-column reads the container (stage #1901, CX4; decision 27)', () => {
+  const parsed = parseComponentText(text('components/sdui-column.json'));
+  const slot = parsed.ok ? componentSlots(parsed.component)[0] : undefined;
+  const padding = (window: string | undefined, values = {}) =>
+    resolveSlotLayout(
+      slot!,
+      withContainer(values, window === undefined ? undefined : { classes: { window } }),
+    ).padding;
+  const all = (n: number) => ({ top: n, right: n, bottom: n, left: n });
+
+  it('pads 16 px in a compact container and 24 px in the others', () => {
+    expect(parsed.ok).toBe(true);
+    expect(padding('compact')).toEqual(all(16));
+    expect(padding('medium')).toEqual(all(24));
+    expect(padding('expanded')).toEqual(all(24));
+  });
+
+  it('keeps 24 px without a container class and the type padding wins when informed', () => {
+    expect(padding(undefined)).toEqual(all(24));
+    expect(padding('compact', { padding: 8 })).toEqual(all(8));
   });
 });
 

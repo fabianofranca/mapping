@@ -72,7 +72,9 @@ const changed = (
 describe('drawing cache with the container context', () => {
   it('chosen class: redraws the markings of that container that read the platform and nothing else', () => {
     let p = scene();
-    p = add(p, 'C1', 'chosen', 'I1', { rect: { x: 400, y: 300, width: 300, height: 120 } });
+    p = add(p, 'C1', 'chosen', 'I1', {
+      rect: { x: 400, y: 300, width: 300, height: 120 },
+    });
     const cache = createDrawingCache();
     const before = run(cache, p);
     const after = run(cache, setContainerClass(p, 'I1', 'platform', 'web'));
@@ -110,14 +112,13 @@ describe('drawing cache with the container context', () => {
     expect(after.get('P1')).toBe(before.get('P1'));
   });
 
-  it('a change of the container height that does not change anything the component reads still redraws a reader', () => {
-    // `pad` reads the `window` class only, but the context carries the height in units too: a reader of the
-    // container is compared as a whole.
+  it('a change of the container that does not touch what the component reads keeps its drawing object', () => {
+    // `pad` reads the `window` class only: another height in the same class is not a reason to redraw it.
     const p = scene();
     const cache = createDrawingCache();
     const before = run(cache, p);
     const after = run(cache, updateContainerSize(p, 'I1', { width: 1080, height: 1800 }));
-    expect(after.get('R1')).not.toBe(before.get('R1'));
+    expect(after.get('R1')).toBe(before.get('R1'));
     expect(after.get('P1')).toBe(before.get('P1'));
   });
 
@@ -127,7 +128,10 @@ describe('drawing cache with the container context', () => {
     const before = run(cache, p);
     const after = run(cache, setContainerClass(p, 'I1', 'platform', 'web'));
     expect(after.get('R2')).toBe(before.get('R2'));
-    const resized = run(cache, updateContainerSize(p, 'I1', { width: 2520, height: 1600 }));
+    const resized = run(
+      cache,
+      updateContainerSize(p, 'I1', { width: 2520, height: 1600 }),
+    );
     expect(resized.get('R2')).toBe(before.get('R2'));
   });
 
@@ -135,9 +139,10 @@ describe('drawing cache with the container context', () => {
     const p = scene();
     const cache = createDrawingCache();
     const narrow = run(cache, p).get('R1');
-    const wide = run(cache, updateContainerSize(p, 'I1', { width: 2520, height: 1600 })).get(
-      'R1',
-    );
+    const wide = run(
+      cache,
+      updateContainerSize(p, 'I1', { width: 2520, height: 1600 }),
+    ).get('R1');
     const widthOf = (drawing: typeof narrow) =>
       [...walk(drawing!.root)].find((n) => n.name === 'bar')?.width;
     expect(widthOf(narrow)).toBe(16);

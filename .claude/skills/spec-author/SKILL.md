@@ -505,6 +505,8 @@ Declare **container classes** when the origin groups sizes or platforms into nam
 - Copy the sets and the thresholds from the origin; do not invent breakpoints. Without evidence, omit all three keys.
 - **Version.** The three keys are outside the version contract (no `version` raise, no migration) and need `formatVersion` 21. The example is `examples/libraries/sdui-backend/` (`platform` chosen, `window` by width). The reference is "Container classes (`formatVersion` 21)" in `docs/SPEC-FORMAT.md`.
 
+- **Reading the class in a component (format 4).** When the origin changes a drawing by the window or platform class (compact padding, a layout per form factor), the component reads `{ "$field": "$container.window" }` (or `$container.platform`, `$container.width`, `$container.height` in units) in a `$switch`, `visible` or `layout`; the library proof then draws it once per class and prefixes a warning that only a class gives with `in container window=expanded:`. Without evidence in the origin, do not read the container. The example is `sdui-column`.
+
 ### 13. Version
 
 `formatVersion` is the **minimum** for what the specialization uses. What each version adds:

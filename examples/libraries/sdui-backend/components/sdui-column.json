@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "sdui-column",
   "name": "Column",
   "description": "Vertical container: the children stack in order, with spacing and padding.",
@@ -45,8 +45,19 @@
             "default": 8
           },
           "padding": {
-            "$field": "padding",
-            "default": 0
+            "$if": {
+              "$has": "padding"
+            },
+            "then": {
+              "$field": "padding"
+            },
+            "else": {
+              "$switch": "$container.window",
+              "cases": {
+                "compact": 16
+              },
+              "default": 24
+            }
           },
           "align": "start",
           "justify": "start"

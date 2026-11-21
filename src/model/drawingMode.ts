@@ -1,4 +1,5 @@
-import { anchorValues } from './componentValues';
+import { anchorValues, containerValues } from './componentValues';
+import { readContainer, type InstanceContainer } from './components/container';
 import { componentAnchorDefaults, type InstanceAnchor } from './components/anchor';
 import type { AnchorSide, ComponentFile } from './components/componentFormat';
 import { applyTokens, type ResolvedTokens } from './components/tokens';
@@ -105,6 +106,7 @@ export function componentForDrawing(
   readonly component: ComponentFile;
   readonly tokens: ResolvedTokens | undefined;
   readonly direction: ReadingDirection;
+  readonly container: InstanceContainer | undefined;
 } {
   const mode = effectiveDrawingMode(p, containerId);
   const tokens =
@@ -114,6 +116,8 @@ export function componentForDrawing(
     component: tokens === undefined ? component : applyTokens(component, tokens),
     tokens,
     direction: effectiveDirection(p, containerId),
+    // Only a component that reads `$container.*` pays for the container's size and classes.
+    container: readContainer(component, containerValues(p, containerId)),
   };
 }
 
@@ -168,18 +172,25 @@ export function measuringAnchor(
 }
 
 /**
- * The engine options that come from the space (`tokens`, `direction` and, on an anchored marking,
- * `anchor`): it only carries the key when there is something to pass (defined `tokens`, `rtl`
+ * The engine options that come from the space (`tokens`, `direction`, on an anchored marking
+ * `anchor` and, for a component that reads it, `container`): it only carries the key when there is something to pass (defined `tokens`, `rtl`
  * direction, anchor), so in `ltr` and without an anchor the options are the same as before.
  */
 export function drawOptions(drawn: {
   readonly tokens: ResolvedTokens | undefined;
   readonly direction: ReadingDirection;
   readonly anchor?: InstanceAnchor | undefined;
-}): { tokens?: ResolvedTokens; direction?: 'rtl'; anchor?: InstanceAnchor } {
+  readonly container?: InstanceContainer | undefined;
+}): {
+  tokens?: ResolvedTokens;
+  direction?: 'rtl';
+  anchor?: InstanceAnchor;
+  container?: InstanceContainer;
+} {
   return {
     ...(drawn.tokens === undefined ? {} : { tokens: drawn.tokens }),
     ...(drawn.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
     ...(drawn.anchor === undefined ? {} : { anchor: drawn.anchor }),
+    ...(drawn.container === undefined ? {} : { container: drawn.container }),
   };
 }

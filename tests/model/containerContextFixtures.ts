@@ -101,7 +101,9 @@ export function cxSpec(): Spec {
   return parsed.spec;
 }
 
-export function cxCatalog(components: Record<string, Json> = CX_COMPONENTS): ComponentCatalog {
+export function cxCatalog(
+  components: Record<string, Json> = CX_COMPONENTS,
+): ComponentCatalog {
   const texts = new Map(
     Object.entries(components).map(([id, c]) => [
       `specs/cx/components/${id}.json`,

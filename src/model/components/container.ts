@@ -36,6 +36,19 @@ export function containerFieldValues(
   return out;
 }
 
+/**
+ * The values of an instance with the container's pseudo-fields among them: for what the engine evaluates
+ * outside `instantiate` with the values alone (a slot's `layout`, which Arrange and the slot plan read).
+ */
+export function withContainer(
+  values: FieldValues,
+  container: InstanceContainer | undefined,
+): FieldValues {
+  return container === undefined
+    ? values
+    : { ...values, ...containerFieldValues(container) };
+}
+
 /** The same size and the same classes (the drawing cache compares the container context with it). */
 export function sameContainer(
   a: InstanceContainer | undefined,
@@ -46,7 +59,9 @@ export function sameContainer(
   const keys = Object.keys(a.classes);
   return (
     keys.length === Object.keys(b.classes).length &&
-    keys.every((set) => Object.hasOwn(b.classes, set) && a.classes[set] === b.classes[set])
+    keys.every(
+      (set) => Object.hasOwn(b.classes, set) && a.classes[set] === b.classes[set],
+    )
   );
 }
 
@@ -63,7 +78,10 @@ function citedName(key: string, value: unknown): string | undefined {
 }
 
 /** The names a JSON cites (`$container.<name>`), without the prefix. */
-export function citedContainerNames(node: unknown, out: Set<string> = new Set()): Set<string> {
+export function citedContainerNames(
+  node: unknown,
+  out: Set<string> = new Set(),
+): Set<string> {
   if (Array.isArray(node)) {
     for (const item of node) citedContainerNames(item, out);
     return out;
@@ -79,22 +97,49 @@ export function citedContainerNames(node: unknown, out: Set<string> = new Set())
   return out;
 }
 
-const readsCache = new WeakMap<ComponentFile, boolean>();
+const readsCache = new WeakMap<ComponentFile, ReadonlySet<string>>();
 
 /**
- * Does the component read `$container.*`: in its template, in its `sizing`, or through an inner
- * component of a `component` node (`resolvedComponents`) that does? Memoized per component object:
+ * The `$container.*` names a component reads (without the prefix): in its template, in its `sizing`, or
+ * through an inner component of a `component` node (`resolvedComponents`). Memoized per component object:
  * the drawing cache asks once per marking and per call.
  */
-export function readsContainer(component: ComponentFile): boolean {
+export function containerReads(component: ComponentFile): ReadonlySet<string> {
   const known = readsCache.get(component);
   if (known !== undefined) return known;
-  const reads =
-    citedContainerNames(component.template).size > 0 ||
-    citedContainerNames(component.sizing).size > 0 ||
-    Object.values(component.resolvedComponents ?? {}).some((inner) =>
-      readsContainer(inner.component),
-    );
+  const reads = citedContainerNames(component.template);
+  citedContainerNames(component.sizing, reads);
+  for (const inner of Object.values(component.resolvedComponents ?? {}))
+    for (const name of containerReads(inner.component)) reads.add(name);
   readsCache.set(component, reads);
   return reads;
+}
+
+/** Does the component read `$container.*` at all. */
+export function readsContainer(component: ComponentFile): boolean {
+  return containerReads(component).size > 0;
+}
+
+/**
+ * The part of the container that a component reads (`width`, `height` and the sets it cites): the drawing
+ * cache compares only this, so a change in a set the component does not read does not redraw it.
+ */
+export function readContainer(
+  component: ComponentFile,
+  container: InstanceContainer | undefined,
+): InstanceContainer | undefined {
+  if (container === undefined) return undefined;
+  const reads = containerReads(component);
+  if (reads.size === 0) return undefined;
+  return {
+    ...(reads.has('width') && container.width !== undefined
+      ? { width: container.width }
+      : {}),
+    ...(reads.has('height') && container.height !== undefined
+      ? { height: container.height }
+      : {}),
+    classes: Object.fromEntries(
+      Object.entries(container.classes).filter(([set]) => reads.has(set)),
+    ),
+  };
 }

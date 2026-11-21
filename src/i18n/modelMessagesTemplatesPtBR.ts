@@ -41,6 +41,7 @@ export const templatePtBR: {
     'o slot do componente {path} é "{slot}", não "{expected}"',
   'model.library.fieldUndeclared':
     'o desenho usa o campo "{key}", que o tipo "{typeId}" não declara',
+  'model.library.containerFieldUnknown': 'campo não existe: $container.{name}',
   'model.library.fieldUnused':
     'o campo "{key}" do tipo "{typeId}" não é usado pelo desenho do componente {path}',
   'model.library.previewNoField': 'o tipo "{typeId}" não tem o campo "{key}"',
@@ -725,4 +726,5 @@ export const templatePtBR: {
   'model.engine.screenTooTall': 'tela: conteúdo maior que a altura da tela',
   'model.engine.approximate': '{reason} (aproximado)',
   'model.engine.inRtl': 'em rtl: {reason}',
+  'model.engine.inContainer': 'no container {container}: {reason}',
 };

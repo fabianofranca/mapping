@@ -2,6 +2,7 @@ import type { ComponentFile } from './components/componentFormat';
 import { componentSlots, slotKey } from './components/slots';
 import { resolvePath, type TextFile } from './components/library';
 import { isReservedFieldName } from './components/expressions';
+import { citedContainerNames } from './components/container';
 import {
   collectFieldKeys,
   parseComponent,
@@ -202,6 +203,28 @@ function fieldReferences(
     }
   }
   return out;
+}
+
+/**
+ * `$container.<name>` in the template and in the `sizing`: a name that is neither `width`, `height` nor a
+ * set of the component's specialization (`containerClasses`) is `field does not exist` (stage #1901,
+ * decision 4). The name is not a field of the type, so it never reaches `library.fieldUndeclared`.
+ */
+function containerNameChecks(
+  pkg: Package,
+  type: SpecAnnotationType,
+  path: string,
+  raw: unknown,
+  out: Collector,
+): void {
+  if (!isRecord(raw)) return;
+  const sets = new Set((pkg.spec.containerClasses ?? []).map((set) => set.id));
+  for (const where of ['template', 'sizing'] as const) {
+    for (const name of citedContainerNames(raw[where])) {
+      if (name === 'width' || name === 'height' || sets.has(name)) continue;
+      out.error(path, where, 'library.containerFieldUnknown', { name, typeId: type.id });
+    }
+  }
 }
 
 /** Where the template's JSON uses `$rows` (the field's key and its path). */
@@ -775,6 +798,7 @@ function typeCoherence(
     });
   }
   remapIssues(pkg, path, out.issues, from);
+  containerNameChecks(pkg, type, path, raw, out);
   // The `tokenRefs` already come with the written file's path (`parseComponent`).
   tokenChecks(pkg, path, out);
   from = out.issues.length;

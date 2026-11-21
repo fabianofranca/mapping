@@ -15,7 +15,11 @@ Annotation type: `sdui-column` (Column).
 | Key       | Label   | Type   | Required | Options | Default |
 | --------- | ------- | ------ | -------- | ------- | ------- |
 | `spacing` | Spacing | number | no       |         | 8       |
-| `padding` | Padding | number | no       |         | 0       |
+| `padding` | Padding | number | no       |         |         |
+
+## Container
+
+Without a `padding`, the column reads the container's `window` class: 16 px in a compact container, 24 px in the others (`$container.window`).
 
 ## Slot
 

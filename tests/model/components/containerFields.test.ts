@@ -17,7 +17,10 @@ import {
   evaluateBoolean,
   referencedFields,
 } from '../../../src/model/components/expressions';
-import { approximateMeasurer, instantiate } from '../../../src/model/components/instantiate';
+import {
+  approximateMeasurer,
+  instantiate,
+} from '../../../src/model/components/instantiate';
 import { parseComponent } from '../../../src/model/components/parseComponent';
 import { resolveSizing } from '../../../src/model/components/sizing';
 import { walk } from '../../../src/model/components/scene';
@@ -103,9 +106,9 @@ describe('expressions with $container.*', () => {
 
   it('$field, $switch, $eq and $has read the pseudo-fields', () => {
     expect(evaluate({ $field: '$container.width' }, VALUES, 0)).toBe(840);
-    expect(evaluate({ $div: [{ $field: '$container.width' }, 2] } as never, VALUES, 0)).toBe(
-      420,
-    );
+    expect(
+      evaluate({ $div: [{ $field: '$container.width' }, 2] } as never, VALUES, 0),
+    ).toBe(420);
     expect(
       evaluate(
         { $switch: '$container.window', cases: { compact: 1, expanded: 2 }, default: 9 },
@@ -113,12 +116,12 @@ describe('expressions with $container.*', () => {
         0,
       ),
     ).toBe(2);
-    expect(evaluateBoolean({ $eq: ['$container.window', 'expanded'] }, VALUES, false)).toBe(
-      true,
-    );
-    expect(evaluateBoolean({ $eq: ['$container.window', 'compact'] }, VALUES, false)).toBe(
-      false,
-    );
+    expect(
+      evaluateBoolean({ $eq: ['$container.window', 'expanded'] }, VALUES, false),
+    ).toBe(true);
+    expect(
+      evaluateBoolean({ $eq: ['$container.window', 'compact'] }, VALUES, false),
+    ).toBe(false);
     expect(evaluateBoolean({ $has: '$container.window' }, VALUES, false)).toBe(true);
   });
 
@@ -126,11 +129,19 @@ describe('expressions with $container.*', () => {
     const none: FieldValues = {};
     expect(evaluate({ $field: '$container.width', default: 7 }, none, 0)).toBe(7);
     expect(
-      evaluate({ $switch: '$container.window', cases: { compact: 1 }, default: 9 }, none, 0),
+      evaluate(
+        { $switch: '$container.window', cases: { compact: 1 }, default: 9 },
+        none,
+        0,
+      ),
     ).toBe(9);
     expect(evaluateBoolean({ $has: '$container.window' }, none, true)).toBe(false);
     expect(
-      evaluateBoolean({ $has: '$container.window' }, containerFieldValues({ width: 1, height: 1, classes: {} }), true),
+      evaluateBoolean(
+        { $has: '$container.window' },
+        containerFieldValues({ width: 1, height: 1, classes: {} }),
+        true,
+      ),
     ).toBe(false);
   });
 
@@ -226,7 +237,9 @@ describe('sizing reads $container.*', () => {
 
   it('is valid in `sizing`: the axis follows the container width in units', () => {
     if (!sized.ok) throw new Error(sized.errors.join('\n'));
-    const resolved = resolveSizing(sized.component, {}, undefined, { container: compact });
+    const resolved = resolveSizing(sized.component, {}, undefined, {
+      container: compact,
+    });
     expect(resolved.width.spec).toBe(360);
     expect(resolved.messages).toEqual([]);
   });
@@ -335,7 +348,11 @@ describe('the library validator', () => {
 
   it('accepts width, height and the sets of the component specialization without a type field', () => {
     for (const name of ['width', 'height', 'window', 'platform']) {
-      expect(validate({ $field: `$container.${name}`, default: 1 })).toEqual([]);
+      // A class id is text, so the drawing proof (per class) may warn about the width: only the names matter here.
+      const names = validate({ $field: `$container.${name}`, default: 1 }).filter(
+        (m) => m.includes('does not exist') || m.includes('does not declare'),
+      );
+      expect(names, name).toEqual([]);
     }
   });
 
