@@ -101,6 +101,16 @@ describe('decodeWoff2 — synthetic (mcp/image/woff2.ts)', () => {
   });
 });
 
+describe('decodeWoff2 — checksums of a large table', () => {
+  it('stays exact past 2^53 (a 12 MB table of 0xFF words: n words sum to 2^32 - n mod 2^32)', () => {
+    const words = 3 * 1024 * 1024;
+    const data = new Uint8Array(words * 4).fill(0xff);
+    const sfnt = decoded(packWoff2(0x00010000, [{ tag: 'cvt ', data }]));
+    const view = new DataView(sfnt.buffer, sfnt.byteOffset, sfnt.byteLength);
+    expect(view.getUint32(12 + 4)).toBe(2 ** 32 - words);
+  });
+});
+
 describe('decodeWoff2 — a transformed glyf (tiny font)', () => {
   it('rebuilds the simple glyph as one flag byte per point, short and long deltas, padded to 4', () => {
     const sfnt = decoded(tinyWoff2());

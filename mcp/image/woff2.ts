@@ -661,7 +661,8 @@ function checksum(data: Uint8Array): number {
   const v = dataView(data);
   let sum = 0;
   const whole = data.length & ~3;
-  for (let i = 0; i < whole; i += 4) sum += v.getUint32(i);
+  // Reduced at each word: a running sum of a large table would pass 2^53 and lose bits.
+  for (let i = 0; i < whole; i += 4) sum = (sum + v.getUint32(i)) % 2 ** 32;
   for (let i = whole; i < data.length; i++)
     sum += (data[i] as number) * 2 ** (8 * (3 - (i - whole)));
   return sum % 2 ** 32;
