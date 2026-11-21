@@ -127,6 +127,7 @@ import { extendProvided, providingSlot } from './provided';
 import { resolveSizing } from './sizingResolve';
 import { slotKey } from './slots';
 import { anchorFieldValues, type InstanceAnchor } from './anchor';
+import { containerFieldValues, type InstanceContainer } from './container';
 import { ownDirection, resolveDirections } from './direction';
 import { createMessageSet, textsOf, type Params } from '../messages/collector';
 import type { ModelMessageTemplateCode } from '../messages';
@@ -298,6 +299,13 @@ export interface InstantiateOptions {
    */
   readonly anchor?: InstanceAnchor;
   /**
+   * The container the marking is in (v4), already in component units (see `containerValues`, in
+   * `componentValues.ts`): it is what the template and the `sizing` read through `$container.width`,
+   * `$container.height` and `$container.<set>`. Absent = no container (canvas, floating, preview): the
+   * fields stay empty. The inner instance of a `component` node and the `fallback` of a slot receive it.
+   */
+  readonly container?: InstanceContainer;
+  /**
    * Draw the slots hidden by their `visible` (and the frames of the template that hold one) as if they were
    * visible: the pass that tells where a hidden slot would be (#1978), so a child stays assigned to it. The
    * scene is only read for the slots' boxes, never drawn.
@@ -364,6 +372,7 @@ const nestedKey = (
     nestingDepthOf(options),
     options.direction ?? 'ltr',
     JSON.stringify(options.provided ?? null),
+    JSON.stringify(options.container ?? null),
     JSON.stringify(values),
     what,
   ].join('|');
@@ -724,6 +733,7 @@ function createEngine(
     ...sourceValues,
     [DIRECTION_FIELD]: rootDirection,
     ...anchorFieldValues(options.anchor),
+    ...containerFieldValues(options.container),
     ...providedFields(options.provided),
     [sizeKey('width')]: instanceSize.width,
     [sizeKey('height')]: instanceSize.height,
@@ -1597,6 +1607,7 @@ function createEngine(
       ...(icons === undefined ? {} : { icons }),
       provided: extendProvided(options.provided ?? {}, componentProvides(node)),
       direction: dirOf(node),
+      ...(options.container === undefined ? {} : { container: options.container }),
       nestingDepth: componentDepth + 1,
       nestedMemo,
     };
@@ -1612,6 +1623,7 @@ function createEngine(
       {
         ...plan.values,
         [DIRECTION_FIELD]: dirOf(node),
+        ...containerFieldValues(options.container),
         ...providedFields(
           extendProvided(options.provided ?? {}, componentProvides(node)),
         ),

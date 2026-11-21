@@ -41,6 +41,7 @@ export const libraryMessages = {
     'the slot of the component {path} is "{slot}", not "{expected}"',
   'library.fieldUndeclared':
     'the drawing uses the field "{key}", which the type "{typeId}" does not declare',
+  'library.containerFieldUnknown': 'field does not exist: $container.{name}',
   'library.fieldUnused':
     'the field "{key}" of the type "{typeId}" is not used by the drawing of the component {path}',
   'library.previewNoField': 'the type "{typeId}" has no field "{key}"',

@@ -129,6 +129,30 @@ export function isAnchorFieldName(name: string): boolean {
   return name.startsWith(ANCHOR_PREFIX);
 }
 
+/** The prefix of the container pseudo-fields (`$container.width`, `$container.window`…; v4, stage #1901). */
+export const CONTAINER_PREFIX = '$container.';
+
+/** The container's size in units, the two pseudo-fields that exist whatever the specializations declare. */
+export const CONTAINER_SIZE_FIELDS = ['$container.width', '$container.height'] as const;
+
+/** Is the name that of a container pseudo-field (valid or not: the prefix is enough)? */
+export function isContainerFieldName(name: string): boolean {
+  return name.startsWith(CONTAINER_PREFIX);
+}
+
+/**
+ * Can the name be a container pseudo-field: `$container.width`, `$container.height` or `$container.<set>` with a
+ * set id (`[a-z0-9-]+`)? Which sets exist is for the library validator (the specialization declares them).
+ */
+export function isContainerFieldShape(name: string): boolean {
+  return /^[a-z0-9-]+$/.test(name.slice(CONTAINER_PREFIX.length));
+}
+
+/** A name that is not a type field: the `repeat` index or a pseudo-field the engine delivers (`$anchor.*`, `$container.*`). */
+export function isReservedFieldName(name: string): boolean {
+  return name === INDEX_FIELD || isAnchorFieldName(name) || isContainerFieldName(name);
+}
+
 /** The rows of a `table` field (a value that is not a list counts 0). */
 function rowCount(value: FieldValue): number {
   return Array.isArray(value) ? value.length : 0;
@@ -414,11 +438,11 @@ export function referencedFields(
       (key === '$field' || key === '$has' || key === '$switch' || key === '$rows') &&
       typeof value === 'string'
     ) {
-      // `$index` is a `repeat` row's index and `$anchor.*` come from the anchor: they are not type fields.
-      if (key === '$rows' || (value !== INDEX_FIELD && !isAnchorFieldName(value)))
-        out.add(value);
+      // `$index` is a `repeat` row's index, `$anchor.*` come from the anchor and `$container.*` from the
+      // container: they are not type fields.
+      if (key === '$rows' || !isReservedFieldName(value)) out.add(value);
     } else if (key === '$eq' && Array.isArray(value) && typeof value[0] === 'string') {
-      if (value[0] !== INDEX_FIELD && !isAnchorFieldName(value[0])) out.add(value[0]);
+      if (!isReservedFieldName(value[0])) out.add(value[0]);
     } else {
       referencedFields(value, out);
     }
