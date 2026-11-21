@@ -1,4 +1,4 @@
-# File formats of the specialization via isolated plugin — [Não lançado] (épico `epic/format-plugins`, PR #0, MCP 0.53.0, schema unchanged)
+# File formats of the specialization via isolated plugin — [Não lançado] (épico `epic/format-plugins`, PR #2426, MCP 0.53.0, schema unchanged)
 
 ## Alterado
 
