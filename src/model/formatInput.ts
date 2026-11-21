@@ -92,6 +92,23 @@ interface Context {
   readonly drawings: FormatSlotDrawings | undefined;
   /** Ids of the markings and arrows that hold an included annotation. */
   readonly hosts: ReadonlySet<string>;
+  /** Row codes of each table (`<annotation id>\0<key>`), computed once: a `ref` cell may cite any row. */
+  readonly rowCodes: Map<string, ReadonlyMap<string, string>>;
+}
+
+/** The code of each row of the annotation's table `key`, among that table's rows. */
+function rowCodesOf(
+  ctx: Context,
+  annotation: Annotation,
+  key: string,
+): ReadonlyMap<string, string> {
+  const cacheKey = `${annotation.id}\0${key}`;
+  let codes = ctx.rowCodes.get(cacheKey);
+  if (codes === undefined) {
+    codes = shortCodesFor(tableRows(annotation.values?.[key]).map((r) => r._id));
+    ctx.rowCodes.set(cacheKey, codes);
+  }
+  return codes;
 }
 
 function refOf(ctx: Context, kind: ItemKind, id: string): string {
@@ -133,7 +150,7 @@ function includedAnnotations(
 /** A row of `owner`'s table `key`, by the code it has among the table's rows. */
 function rowRefText(ctx: Context, ref: Extract<RefValue, { rowId: string }>): string {
   const owner = projectIndex(ctx.project).annotations.get(ref.annotationId)!;
-  const codes = shortCodesFor(tableRows(owner.values?.[ref.key]).map((r) => r._id));
+  const codes = rowCodesOf(ctx, owner, ref.key);
   const row = codes.get(ref.rowId) ?? normalizeId(ref.rowId).slice(0, 8);
   const annotation = shortCode(ctx.project, 'a', owner.id);
   return formatAnyRef(ctx.name, { type: 'row', annotation, key: ref.key, row });
@@ -176,7 +193,7 @@ function rowsOf(
   field: Extract<SpecField, { type: 'table' }>,
 ): FormatInputRow[] {
   const rows = tableRows(annotation.values?.[field.key]);
-  const codes = shortCodesFor(rows.map((r) => r._id));
+  const codes = rowCodesOf(ctx, annotation, field.key);
   const code = shortCode(ctx.project, 'a', annotation.id);
   return rows.map((row) => ({
     ref: formatAnyRef(ctx.name, {
@@ -298,7 +315,7 @@ function containerOf(ctx: Context, container: ProjectContainer): FormatInputCont
 }
 
 /**
- * The projection of `project` for the format `formatRef` (`<specId>/<formatId>`): the typed
+ * The projection of `project` for the format `formatCite` (`<specId>/<formatId>`): the typed
  * annotations of the format's own specialization (the others and the free layers are left out), the
  * markings and arrows that hold them and the containers of those markings. With scope `container`
  * only the target container and what it holds. Fails with `not-found` for a format or a container
@@ -306,10 +323,10 @@ function containerOf(ctx: Context, container: ProjectContainer): FormatInputCont
  */
 export function buildFormatInput(
   project: Project,
-  formatRef: string,
+  formatCite: string,
   options: FormatInputOptions,
 ): FormatInput {
-  const { spec, format } = findFileFormat(project, formatRef);
+  const { spec, format } = findFileFormat(project, formatCite);
   const scope = format.scope ?? 'project';
   const target = scope === 'container' ? requireTarget(project, options.target) : null;
   const annotations = includedAnnotations(project, spec.id, target);
@@ -319,6 +336,7 @@ export function buildFormatInput(
     name: options.projectName,
     drawings: options.drawings,
     hosts,
+    rowCodes: new Map(),
   };
   const markings = project.markings.filter((m) => hosts.has(m.id));
   const containerIds = new Set(
@@ -327,7 +345,7 @@ export function buildFormatInput(
   return {
     contract: FORMAT_PLUGIN_CONTRACT,
     format: {
-      ref: formatRef,
+      ref: `${spec.id}/${format.id}`,
       id: format.id,
       specId: spec.id,
       name: format.name,

@@ -8,6 +8,7 @@ import {
 } from './formatPlugin';
 import { isRecord } from './isRecord';
 import { parseRef } from './itemRef';
+import { parseAnyRef } from './refGrammar';
 
 // Checking what a format plugin returned (stage #1923, decisions 9, 14 and 16): the shape, the
 // operations of the allowed subset and their keys, the local aliases, the references (they must
@@ -104,6 +105,32 @@ const ALIAS_KIND: Readonly<Partial<Record<FormatResultOperationName, Kind>>> = {
 const CREATE_MARKING_ANNOTATION_KEYS = new Set(['type', 'layer', 'name', 'values']);
 const REF_OBJECT_KEYS = new Set(['annotation', 'entry', 'key', 'row']);
 
+/**
+ * The codes of the items the projection names without listing them: the end of an arrow, the
+ * anchor target, the owner or a `ref` value may point at an item that holds no annotation of the
+ * format, so it is not in `markings` (it is still a reference the plugin was handed).
+ */
+function mentionedCodes(input: FormatInput): Record<'m' | 'i' | 'a', Set<string>> {
+  const found = { m: new Set<string>(), i: new Set<string>(), a: new Set<string>() };
+  const note = (text: string): void => {
+    if (!text.startsWith('mapping://')) return;
+    const ref = parseAnyRef(text)?.ref;
+    if (ref === undefined) return;
+    if (ref.type !== 'item') found.a.add(ref.annotation);
+    else if (ref.kind === 'm' || ref.kind === 'i' || ref.kind === 'a') {
+      found[ref.kind].add(ref.code);
+    }
+  };
+  const visit = (value: unknown, depth: number): void => {
+    if (depth > MAX_VALUES_DEPTH) return;
+    if (typeof value === 'string') note(value);
+    else if (Array.isArray(value)) value.forEach((v) => visit(v, depth + 1));
+    else if (isRecord(value)) Object.values(value).forEach((v) => visit(v, depth + 1));
+  };
+  visit([input.markings, input.annotations, input.arrows], 0);
+  return found;
+}
+
 /** What the check knows: the input's items by kind, the aliases created so far and the problems. */
 class Checker {
   readonly problems: FormatResultProblem[] = [];
@@ -113,12 +140,16 @@ class Checker {
 
   constructor(readonly input: FormatInput) {
     this.project = input.project.name;
+    const mentioned = mentionedCodes(input);
     this.codes = {
       m: new Set([...input.markings, ...input.arrows].map((x) => x.code)),
       i: new Set(input.containers.map((x) => x.code)),
       a: new Set(input.annotations.map((x) => x.code)),
       r: new Set(),
     };
+    for (const kind of ['m', 'i', 'a'] as const) {
+      mentioned[kind].forEach((code) => (this.codes[kind] as Set<string>).add(code));
+    }
   }
 
   add(
@@ -171,7 +202,8 @@ class Checker {
     if (parsed.kind !== null && !kinds.includes(parsed.kind)) {
       return this.add(path, `${KIND_NAME[parsed.kind]} reference, ${expected(kinds)}`);
     }
-    const known = kinds.some((k) => this.codes[k].has(parsed.code));
+    const searched = parsed.kind === null ? kinds : [parsed.kind];
+    const known = searched.some((k) => this.codes[k].has(parsed.code));
     const sameProject = parsed.project === null || parsed.project === this.project;
     if (!known || !sameProject) {
       this.add(path, `not in the input and not an alias created earlier: ${value}`);
@@ -286,6 +318,20 @@ function typeHasComponent(input: FormatInput, name: string): boolean | null {
   return null;
 }
 
+/** The `annotation` that `create_marking` creates with the marking has its own few keys. */
+function checkAnnotationKeys(
+  raw: { readonly [key: string]: unknown },
+  path: string,
+  check: Checker,
+): void {
+  if (!isRecord(raw.annotation)) return;
+  for (const key of Object.keys(raw.annotation)) {
+    if (!CREATE_MARKING_ANNOTATION_KEYS.has(key)) {
+      check.add(`${path}.annotation.${key}`, NOT_ALLOWED);
+    }
+  }
+}
+
 /**
  * A marking without `rect` exists only for a type with a component (the MCP rule today): for a
  * type without one the plugin computes the rectangle. A type of another specialization is left to
@@ -304,11 +350,6 @@ function checkRect(
       'required: without an annotation there is no component',
     );
   }
-  for (const key of Object.keys(annotation)) {
-    if (!CREATE_MARKING_ANNOTATION_KEYS.has(key)) {
-      check.add(`${path}.annotation.${key}`, NOT_ALLOWED);
-    }
-  }
   const type = annotation.type;
   const component = typeof type === 'string' ? typeHasComponent(check.input, type) : null;
   if (component === false) {
@@ -326,6 +367,14 @@ function defineAliases(
   if (raw.as !== undefined) check.define(`${path}.as`, raw.as, kind ?? 'm');
   if (raw.annotationAs !== undefined)
     check.define(`${path}.annotationAs`, raw.annotationAs, 'a');
+}
+
+/** The row aliases (`_as`) of the operation's `values`: a later row of the same table may cite them. */
+function defineRowAliases(
+  raw: { readonly [key: string]: unknown },
+  path: string,
+  check: Checker,
+): void {
   defineValuesAliases(raw.values, `${path}.values`, check);
   if (isRecord(raw.annotation)) {
     defineValuesAliases(raw.annotation.values, `${path}.annotation.values`, check);
@@ -345,8 +394,12 @@ function checkOperation(raw: unknown, index: number, check: Checker): void {
   if (!isAllowedOperation(op)) return check.add(`${path}.op`, `${NOT_ALLOWED}: ${op}`);
   checkKeys(raw, FORMAT_OPERATION_KEYS[op], path, check);
   checkRequired(op, raw, path, check);
+  defineRowAliases(raw, path, check);
   checkCites(op, raw, path, check);
-  if (op === 'create_marking') checkRect(raw, path, check);
+  if (op === 'create_marking') {
+    checkAnnotationKeys(raw, path, check);
+    checkRect(raw, path, check);
+  }
   defineAliases(op, raw, path, check);
 }
 

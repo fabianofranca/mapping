@@ -108,6 +108,9 @@ What enters:
 - **References** are `mapping://<project>/<letter>/<code>`, as in the MCP (`m` marking or arrow, `i` container, `a` annotation; a row is `…/a/<code>/f/<field>/r/<code>`). `code` is the last segment. Everything that names another item is a reference: `container`, `parent`, `host`, `owner`, `from`, `to` and `anchor.to`.
 - `values` holds the fields that are not tables, by `key`. A `ref` field holds the target's **reference** (or `null` when empty). `rows` holds each `table` field as a list of `{ ref, values }`; a `ref` column holds a reference too.
 
+- **Writing a reference back.** The projection hands a `ref` field as a reference text, but the operations take the MCP form of a `ref` value: an object. Wrap the reference: `{ "annotation": "mapping://shop/a/3f2a9c1e" }` for the whole annotation, `{ "annotation": …, "key": "attributes" }` for a field and `{ "annotation": …, "key": "attributes", "row": "<row code>" }` for a row (`/f/<field>` and `/r/<code>` of the text are the `key` and the `row`). `null` clears the value. A row created in the same operation is cited by its alias (`"row": "$row"`, the row has `_as`).
+- **What a plugin can cite.** The items of the input and the items the input mentions (the end of an arrow, an anchor target, an owner or a `ref` value may point at an item that holds nothing of the format, so it is not listed but is a valid reference). A container that holds nothing of the format is not in a scope `project` input: to write into an existing container, use scope `container` (the target is always there); otherwise `add_container` creates a new one.
+
 The order is the project's, so the output is deterministic. The serialized projection has at most 16 MiB (`projectionBytes`).
 
 ## The result of `parse`
@@ -135,7 +138,7 @@ Rules the core checks (`checkFormatResult`):
 
 - **Shape:** the result is an object with `operations` (a list) and, optionally, `warnings` (a list of texts); another key is refused. A non-object, or a `Promise` (or any object with a `then`), is refused.
 - **Aliases** (`as`, `annotationAs` and the `_as` of a table row in `values`) start with `$`, have letters, numbers, `_` or `-`, and are **local** to the import. An operation may cite an alias only after the operation that creates it (and never its own).
-- **References:** an operation cites the input's references and codes (`mapping://<project>/m/<code>`, `m/<code>` or just the `code`) and the aliases created before it. A reference that is not in the input is refused.
+- **References:** an operation cites the input's references and codes (`mapping://<project>/m/<code>`, `m/<code>` or just the `code`) and the aliases created before it. A reference that is neither in the input nor mentioned by it is refused.
 - **A marking without `rect`** exists only for a type with a component (the MCP rule): for a type without one, the plugin computes the `rect`.
 - The checked operations then go through the usual batch: the settle of the hierarchy, slots, roles and the other rules of the model apply as in any proposal, and a refusal comes as the batch's usual error at `operations[i].result[j]`.
 

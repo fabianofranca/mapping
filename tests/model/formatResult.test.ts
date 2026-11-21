@@ -7,11 +7,17 @@ import {
   FORMAT_RESULT_OPERATIONS,
   buildFormatInput,
   checkFormatResult,
+  createArrow,
+  createMarking,
   formatResultProblemText,
+  setMarkingAnchor,
   type FormatInput,
   type FormatResultCheck,
+  type Project,
+  addTypedAnnotation,
 } from '../../src/model';
-import { formatProject } from './formatFixtures';
+import { FORMAT_SPEC_ID, formatProject } from './formatFixtures';
+import { layerOf } from './specFixtures';
 
 const input: FormatInput = buildFormatInput(formatProject(), 'data-model/openapi', {
   projectName: 'shop',
@@ -359,5 +365,92 @@ describe('checkFormatResult: limits (decision 16)', () => {
     if (!out.ok) return;
     expect(out.result.warnings![0]).toHaveLength(500);
     expect(out.result.warnings![1]).toBe('short');
+  });
+});
+
+describe('checkFormatResult: what the input mentions', () => {
+  /** M4 is anchored to M2 and the arrow R2 ends in M7: neither holds an annotation of the format. */
+  function mentioning(): { project: Project; mentioned: FormatInput } {
+    let p = formatProject();
+    p = setMarkingAnchor(p, 'M4', { to: 'M2', side: 'bottom' });
+    p = createMarking(p, {
+      id: 'M7',
+      containerId: 'C1',
+      rect: { x: 600, y: 300, width: 40, height: 40 },
+    });
+    p = createArrow(p, { id: 'R2', from: 'M1', to: 'M7' });
+    p = addTypedAnnotation(p, {
+      id: 'A7',
+      markingId: 'R2',
+      layerId: layerOf(p, FORMAT_SPEC_ID, 'classes'),
+      type: { specId: FORMAT_SPEC_ID, typeId: 'flow' },
+    });
+    return {
+      project: p,
+      mentioned: buildFormatInput(p, 'data-model/openapi', { projectName: 'shop' }),
+    };
+  }
+
+  it('accepts the anchor target and the arrow ends that the projection hands out', () => {
+    const { mentioned } = mentioning();
+    expect(mentioned.markings.find((x) => x.ref === m('m4'))!.anchor!.to).toBe(m('m2'));
+    expect(mentioned.markings.some((x) => x.ref === m('m2'))).toBe(false);
+    const result = {
+      operations: [
+        { op: 'update_marking', marking: m('m4'), anchor: { to: m('m2') } },
+        { op: 'create_arrow', from: m('m1'), to: m('m7') },
+      ],
+    };
+    expect(checkFormatResult(result, mentioned).ok).toBe(true);
+  });
+
+  it('still refuses an item that the projection never mentions', () => {
+    const { mentioned } = mentioning();
+    const result = { operations: [{ op: 'update_marking', marking: m('m5') }] };
+    expect(checkFormatResult(result, mentioned).ok).toBe(false);
+  });
+});
+
+describe('checkFormatResult: review findings', () => {
+  it('checks the keys of `annotation` of create_marking with or without a rect', () => {
+    const marking = {
+      op: 'create_marking',
+      rect: { x: 0, y: 0, width: 50, height: 50 },
+      container: i('c1'),
+      annotation: { type: 'class', owner: 'x', as: '$a' },
+    };
+    expect(texts({ operations: [marking] })).toEqual([
+      'operations[0].annotation.owner: not allowed in a plugin result',
+      'operations[0].annotation.as: not allowed in a plugin result',
+    ]);
+  });
+
+  it('a row alias of a table can be cited by a later row of the same operation', () => {
+    const op = {
+      op: 'create_annotation',
+      marking: m('m4'),
+      type: 'class',
+      values: {
+        attributes: [
+          { _as: '$a', name: 'id' },
+          { name: 'owner', of: { annotation: a('a3'), key: 'attributes', row: '$a' } },
+        ],
+      },
+    };
+    expect(check({ operations: [op] }).ok).toBe(true);
+  });
+
+  it('looks a reference up under the kind it names', () => {
+    // `c1` is a container code: `m/c1` is not a marking.
+    const near = {
+      op: 'create_marking',
+      near: m('c1'),
+      rect: VALID.create_marking!.rect,
+    };
+    expect(texts({ operations: [near] })[0]).toMatch(
+      /^operations\[0\]\.near: not in the input/,
+    );
+    const container = { ...near, near: i('c1') };
+    expect(check({ operations: [container] }).ok).toBe(true);
   });
 });
