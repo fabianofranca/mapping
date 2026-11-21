@@ -632,7 +632,7 @@ export function packageOfProject(
 /**
  * What a request of `apply_specialization`/`update_specialization`/`plan_library_update` points to:
  * a specialization file that does not cite package files (v1 to v3, or v4 and v5 without
- * `component`, `doc`, `examples`, `fonts`, `origins`, `icons` or `fileFormats`: only the file goes to `specs/<id>.json`) or a v4
+ * `component`, `doc`, `examples`, `fonts`, `origins`, `icons`, `fileFormats` or a text `documents[].doc`: only the file goes to `specs/<id>.json`) or a v4
  * package (the whole folder, with the raw content of the files).
  */
 export type SpecInput =
