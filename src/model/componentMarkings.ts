@@ -34,13 +34,15 @@ import { componentForDrawing, drawOptions } from './drawingMode';
 import {
   anchoredRect,
   clampedInto,
+  outsideWarning,
   resolveMarkingAnchor,
   type AnchorDefaultsUnits,
 } from './anchorPlacement';
 import { checkAnchorTarget, setNewMarkingAnchor } from './anchors';
 import { effectiveDirection } from './direction';
+import { mirrorX } from './components/direction';
 import { fail, ModelError } from './errors';
-import { modelMessage, type ModelMessage } from './modelMessage';
+import type { ModelMessage } from './modelMessage';
 import {
   MIN_STORED_MARKING_SIZE,
   clamp,
@@ -864,14 +866,14 @@ const flowExtent = (axes: GridAxes, r: Rect): number =>
   axes.vertical ? r.height : r.width;
 
 /**
- * In `rtl`, the rectangle mirrored inside the slot's content area (`x' = 2·left + usable width
- * − x − w`), as Arrange mirrors the grid (`mirrorInContent`); in `ltr`, the rectangle itself.
+ * In `rtl`, the rectangle mirrored inside the slot's content area (`mirrorX`), as Arrange mirrors
+ * the grid; in `ltr`, the rectangle itself.
  */
 function mirroredInSlot(slot: SlotBox, rect: Rect): Rect {
   if (slot.direction !== 'rtl') return rect;
   const left = slot.area.x + slot.padding.left;
   const content = slot.area.width - slot.padding.left - slot.padding.right;
-  return { ...rect, x: Math.round(2 * left + content - rect.x - rect.width) };
+  return { ...rect, x: Math.round(mirrorX(rect.x, rect.width, left, content)) };
 }
 
 /**
@@ -1174,16 +1176,7 @@ export function componentAnchoredPlacement(
   if (!clamped) return { rect, warnings: [] };
   const label = args.name ?? args.markingId;
   const where = container.name ?? container.id;
-  return {
-    rect,
-    warnings: [
-      modelMessage(
-        'arrange.outside',
-        { label, where },
-        `${label}: does not fit in ${where}`,
-      ),
-    ],
-  };
+  return { rect, warnings: [outsideWarning(label, where)] };
 }
 
 /**
