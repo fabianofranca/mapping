@@ -13,7 +13,7 @@ import {
 import wasmBytes from 'wasm:harfbuzz';
 import { CAP_HEIGHT_RATIO } from '../../src/model/components/baseline';
 import { MEASURE_CACHE_LIMIT } from '../../src/model/components/measureCache';
-import { isWoff, woffToSfnt } from './woff';
+import { fontSfnt } from './woff';
 
 // HarfBuzz (WebAssembly) behind a synchronous face API: the shaping engine of the browser, for the server's measurer
 // and rasterizer. This is the only module that reaches the HarfBuzz runtime. The module is instantiated once, at
@@ -329,12 +329,12 @@ function usable(face: HbFace, sfnt: Uint8Array): boolean {
 }
 
 /**
- * The face of a font file (`.ttf`, `.otf` or `.woff`), or `null` when the bytes are not a usable font (`.woff2`
- * included). Throws before `initShaper()` resolves: that is a programming error, never a tool result.
+ * The face of a font file (`.ttf`, `.otf`, `.woff` or `.woff2`), or `null` when the bytes are not a usable font.
+ * Throws before `initShaper()` resolves: that is a programming error, never a tool result.
  */
 export function loadFace(bytes: Uint8Array): Face | null {
   requireInitialized();
-  const sfnt = isWoff(bytes) ? woffToSfnt(bytes) : bytes;
+  const sfnt = fontSfnt(bytes);
   if (sfnt === null || sfnt.length < 12) return null;
   const face = new HbFace(new Blob(sfnt), 0);
   return usable(face, sfnt) ? new HarfBuzzFace(face) : null;

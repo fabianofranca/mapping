@@ -1,9 +1,12 @@
 import { inflateSync } from 'node:zlib';
+import { decodeWoff2 } from './woff2';
 
 // WOFF 1.0 (`wOFF`) to a plain sfnt (`.ttf`/`.otf`): HarfBuzz reads only the latter. Each table is stored raw or
-// zlib-compressed; the sfnt has the same tables, byte for byte. `wOF2` (Brotli) is not read (#2126).
+// zlib-compressed; the sfnt has the same tables, byte for byte. `wOF2` goes through `./woff2` (#2126); `fontSfnt` is the one
+// dispatch every font reader uses.
 
 const WOFF_SIGNATURE = 0x774f4646; // 'wOFF'
+const WOFF2_SIGNATURE = 0x774f4632; // 'wOF2'
 const HEADER_BYTES = 44;
 const ENTRY_BYTES = 20;
 const SFNT_HEADER_BYTES = 12;
@@ -126,4 +129,24 @@ export function woffToSfnt(bytes: Uint8Array): Uint8Array | null {
   if (!FLAVORS.has(flavor)) return null;
   const tables = readTables(bytes, view, count);
   return tables === null ? null : buildSfnt(flavor, tables);
+}
+
+/** Whether the bytes start with the WOFF2 signature. */
+export function isWoff2(bytes: Uint8Array): boolean {
+  return (
+    bytes.length >= 4 &&
+    new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(0) ===
+      WOFF2_SIGNATURE
+  );
+}
+
+/**
+ * The plain sfnt of a font file: a `wOFF` is inflated, a `wOF2` is decoded, anything else is taken as the sfnt itself.
+ * `null` when a WOFF or WOFF2 does not decode. The measurer and `validate_library` both read fonts through it, so
+ * they never disagree about a file (decision 7 of #2126).
+ */
+export function fontSfnt(bytes: Uint8Array): Uint8Array | null {
+  if (isWoff(bytes)) return woffToSfnt(bytes);
+  if (isWoff2(bytes)) return decodeWoff2(bytes);
+  return bytes;
 }

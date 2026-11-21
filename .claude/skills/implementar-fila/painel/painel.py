@@ -2,7 +2,8 @@
 """Maintains the 3 data sets of the "Fila de desenvolvimento" panel.
 
 Files in one folder: queue.json, meta.json, log.json (JSON lists).
-Each command prints, at the end, `alterados: <files written>`.
+Each command prints, at the end, `alterados: <files written>`; `apply`, a lone `row` that writes `stage` or `status` and `merged` then print, after `alterados:`, the
+`começar agora:` line of `show` (stage #2480, computed on the state just written), only when it is not `nenhuma`.
 The note "Vagas k/N" (meta.vagas) is recalculated on every write, from the fichas (`plan`),
 from `meta.paralelo` (`start --paralelo N`) and from `meta.merged` (`merged`); `context` keeps the coordinator's
 context: `context --medir --max <n>` measures it with `scripts/ci/contextUsage.mjs` and writes the `pct` with the source
@@ -659,6 +660,8 @@ def cmd_row(a):
     close_final_questions(s, issue, pairs)
     s.touch("queue")
     s.commit()
+    if BATCH is None and ("stage" in pairs or "status" in pairs):
+        print_starting(s)  # a lone write that can free a start; inside an `apply` the batch prints once at the end
 
 
 REENTRA_KINDS = ["via-rapida", "etapa", "bug"]
@@ -1862,6 +1865,8 @@ def cmd_merged(a):
         merged.append(n)
     s.touch("meta")
     s.commit()
+    if BATCH is None:
+        print_starting(s)
 
 
 def parse_key_values(text):
@@ -2429,6 +2434,7 @@ def cmd_apply(a):
                 raise Erro(f"linha {n}: ajuda (-h) não entra no lote")
         BATCH.deferred = False
         BATCH.flush()
+        print_starting(BATCH)
     finally:
         BATCH = None
 
@@ -2827,6 +2833,13 @@ def starting_text(issue, reasons):
     """An item of `começar agora:`: `#E`, or `#E (cedo: #S, #T)` for a candidate that starts early (decision 2 of #2373)."""
     early = reasons.get(issue, ("", "", []))[2]
     return f"{issue} (cedo: {', '.join(early)})" if early else issue
+
+
+def print_starting(s):
+    """`começar agora:` after a write (#2480): the `slots_plan` calculation `show` uses, on the state just written; silent when `nenhuma`."""
+    _, agora, _, reasons, _ = slots_plan(s.get("queue"), s.get("meta")[0])
+    if agora:
+        print("começar agora: " + " ".join(starting_text(i, reasons) for i in agora))
 
 
 def waiting_delivery_text(q, meta):

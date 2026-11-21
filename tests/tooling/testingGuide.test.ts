@@ -1594,10 +1594,12 @@ describe('CL1 — script text of R3.19, R11.4, R17.32, R17.59 and R29.10 (#1134,
   const row = (code: string): string =>
     guide.split('\n').find((l) => l.startsWith(`| ${code} |`)) ?? '';
 
-  it('R17.59 counts the list-item annotations after R17.53 and R17.55', () => {
+  it('R17.59 expects no library notice in Details and Notices, only on the Catalog page (CL1, #2466)', () => {
     const r = row('R17.59');
-    expect(r).toContain('"4 annotation(s)"');
-    expect(r).not.toMatch(/with "2 annotation\(s\)"\./);
+    expect(r).toContain('No accessibility warnings.');
+    expect(r).toContain('Catalog component page of `list-item`');
+    expect(r).not.toContain('List item (type)');
+    expect(r).not.toContain('annotation(s)');
   });
 
   it('R17.32 tolerates x 17 or 18 for the text ink', () => {
