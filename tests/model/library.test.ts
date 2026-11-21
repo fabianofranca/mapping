@@ -276,6 +276,7 @@ describe('validateLibrary: valid package', () => {
       docs: 1,
       examples: 4, // 3 of the mini-button type + 1 example screen of the origin
       fonts: 1,
+      images: 0,
     });
   });
 
@@ -330,6 +331,7 @@ describe('validateLibrary: level 1 (each file)', () => {
       docs: 0,
       examples: 0,
       fonts: 0,
+      images: 0,
     });
   });
 
