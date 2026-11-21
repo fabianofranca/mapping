@@ -325,10 +325,18 @@ function checkAppliesInSet(
   if (!Array.isArray(value)) return add(path, specMsg('spec.containerClassListShape'));
   if (value.length === 0) return add(path, specMsg('spec.notEmpty'));
   if (new Set(value).size !== value.length) add(path, specMsg('spec.repeatedValues'));
-  for (const id of value) {
-    if (typeof id !== 'string') add(path, specMsg('spec.mustBeText'));
-    else if (set !== undefined && !set.classIds.has(id)) add(path, notAClass(setId, id));
-  }
+  for (const id of value) checkAppliesInClass(setId, set, id, path, add);
+}
+
+function checkAppliesInClass(
+  setId: string,
+  set: { readonly classIds: ReadonlySet<string> } | undefined,
+  id: unknown,
+  path: Path,
+  add: Add,
+): void {
+  if (typeof id !== 'string') add(path, specMsg('spec.mustBeText'));
+  else if (set !== undefined && !set.classIds.has(id)) add(path, notAClass(setId, id));
 }
 
 interface RawType {
