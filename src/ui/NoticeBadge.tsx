@@ -74,6 +74,19 @@ export function TypeNoticeBadge({ type }: { readonly type: SpecAnnotationType })
   return <NoticeBadge notice={top} tip={tip} />;
 }
 
+/**
+ * The `ref` as short pieces with a break opportunity after each `/` and `.`: a long path wraps
+ * between segments, never in the middle of one. The text content stays the `ref`.
+ */
+function refSegments(ref: string) {
+  return ref.split(/(?<=[/.])/).map((part, index) => (
+    <>
+      {index > 0 && <wbr />}
+      {part}
+    </>
+  ));
+}
+
 /** `since` and `ref` of the notice (the `ref` in a mono font). */
 function NoticeOrigin({ notice }: { readonly notice: SpecNotice }) {
   return (
@@ -83,7 +96,7 @@ function NoticeOrigin({ notice }: { readonly notice: SpecNotice }) {
       )}
       {notice.ref && (
         <span class="notice-origin">
-          {t('notice.ref')} <span class="notice-ref">{notice.ref}</span>
+          {t('notice.ref')} <span class="notice-ref">{refSegments(notice.ref)}</span>
         </span>
       )}
     </>
