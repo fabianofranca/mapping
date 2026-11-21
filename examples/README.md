@@ -88,12 +88,13 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 ### `examples/libraries/sdui-backend/`
 
-**What it is.** The example of the **executable origin**: a fictional external system (an SDUI backend) describes screens in JSON and the `origins` declaration translates them into components. Six types: **Column** (with a slot), **Button**, **FAB** (floating), **Bottom sheet** (modal), **Scrim** and **Endpoint** (a marking-only annotation, with no component). Version 3, no fonts.
+**What it is.** The example of the **executable origin**: a fictional external system (an SDUI backend) describes screens in JSON and the `origins` declaration translates them into components; since `formatVersion` 20 it also carries the same JSON as a **file format** (`fileFormats`), whose plugin creates the screen from the JSON and generates the JSON back from the screen. Six types: **Column** (with a slot), **Button**, **FAB** (floating), **Bottom sheet** (modal), **Scrim** and **Endpoint** (a marking-only annotation, with no component). Version 3, no fonts.
 
 **How to open.** **Specializations** › **Apply folder…** and pick the folder. Or **Open library** to only see the Catalog (no errors or warnings).
 
 **What you can see.**
 
+- The file format `sdui` (`fileFormats`, scope `container`): the plugin `plugins/sdui.js` reads an SDUI JSON into a container with the screen size and background, the components as markings, the children of a Column in its slot, a bottom bar anchored at the bottom and the FAB at its corner, and writes the container back as the same JSON. The example `examples/home.sdui.json` round-trips (`validate_library` checks it). A `modal` is left out with a warning (no sheet and no scrim). `origins` stays next to it, unchanged: two readers of the same JSON.
 - The origin (`origins`): `booleans`, `background.values`, screen roots with `anchor`, `margin` and `scrim` (the `sdui-scrim` type) and the example screen `examples/settings.sdui.json`.
 - The matches with the external system (`sources`): `slot` and `ignore` on the type, the `id` of a non-executable system (`figma`), `path` and `values` on the fields and on a table column, and the example of an external-system node (`examples/button.sdui.json`, in the Button gallery).
 - The version contract (`migrations`): a migration from version 1 to 2 with the six steps (`rename-type`, `rename-field`, `map-values`, `fill-field`, `remove-field`, `remove-type` in `convert` and in `delete`).
@@ -101,7 +102,7 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 - A container with `background` (`containers[].background`).
 - Component features: `font.decoration` (underline and strikethrough in the Button), `verticalAlign` `top` and `bottom` and `layout.align` `end` (Bottom sheet), `fillRule` `nonzero` and `evenodd` (FAB) and an image with a literal `src` (Bottom sheet).
 
-**Scripts.** R10.10 and R10.11.
+**Scripts.** R10.10, R10.11 and R32.
 
 ### `examples/libraries/composition/`
 

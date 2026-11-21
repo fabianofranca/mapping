@@ -355,21 +355,30 @@ async function formatIssues(
   return exampleIssues({ pkg, read, memory, found, defined }, format, fi);
 }
 
-/** The texts the checks read: each plugin and the files its examples cite, by package path. */
+/**
+ * The texts the checks read, by package path: each plugin, the files its examples cite and the
+ * components and icon set of the specialization (a `parse` result that puts a child in a slot is
+ * applied with the components drawn, as in a project).
+ */
 async function readTexts(
   pkg: FormatPackage,
   read: PackageReader,
   formats: readonly SpecFileFormat[],
 ): Promise<Map<string, string>> {
   const files = new Map<string, string>();
+  const refs: (string | undefined)[] = [pkg.spec.icons];
+  for (const layer of pkg.spec.layers) {
+    for (const type of layer.annotationTypes) refs.push(type.component);
+  }
   for (const format of formats) {
     const cited = (format.examples ?? []).flatMap((e) => [e.file, e.input]);
-    for (const ref of [format.plugin, ...cited]) {
-      if (ref === undefined) continue;
-      const path = resolvePath(pkg.specPath, ref);
-      const text = files.has(path) ? null : await read(path);
-      if (text !== null) files.set(path, text);
-    }
+    refs.push(format.plugin, ...cited);
+  }
+  for (const ref of refs) {
+    if (ref === undefined) continue;
+    const path = resolvePath(pkg.specPath, ref);
+    const text = files.has(path) ? null : await read(path);
+    if (text !== null) files.set(path, text);
   }
   return files;
 }

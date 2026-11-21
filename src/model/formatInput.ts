@@ -56,6 +56,11 @@ export interface FormatInputOptions {
   readonly projectName: string;
   /** Scope `container`: id of the container the call is about. Scope `project` ignores it. */
   readonly target?: string;
+  /**
+   * Scope `container` without a `target`: the projection is the whole project's, with `target` null
+   * (a `parse` that creates the container it reads, as the SDUI screen does). `generate` never asks.
+   */
+  readonly targetOptional?: boolean;
   readonly drawings?: FormatSlotDrawings;
 }
 
@@ -319,7 +324,7 @@ function containerOf(ctx: Context, container: ProjectContainer): FormatInputCont
  * annotations of the format's own specialization (the others and the free layers are left out), the
  * markings and arrows that hold them and the containers of those markings. With scope `container`
  * only the target container and what it holds. Fails with `not-found` for a format or a container
- * the project does not have and with `invalid-value` for scope `container` without a target.
+ * the project does not have and with `invalid-value` for scope `container` without a target (unless `targetOptional`).
  */
 export function buildFormatInput(
   project: Project,
@@ -328,7 +333,10 @@ export function buildFormatInput(
 ): FormatInput {
   const { spec, format } = findFileFormat(project, formatCite);
   const scope = format.scope ?? 'project';
-  const target = scope === 'container' ? requireTarget(project, options.target) : null;
+  const needsTarget =
+    scope === 'container' &&
+    (options.target !== undefined || options.targetOptional !== true);
+  const target = needsTarget ? requireTarget(project, options.target) : null;
   const annotations = includedAnnotations(project, spec.id, target);
   const hosts = new Set(annotations.map((a) => a.markingId));
   const ctx: Context = {
