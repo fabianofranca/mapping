@@ -1,4 +1,4 @@
-# Standalone notes in a ficha's toca — [Não lançado] (épico `epic/toca-loose-notes`, MCP unchanged, schema unchanged)
+# Standalone notes in a ficha's toca — [Não lançado] (MCP unchanged, schema v22)
 
 ## Corrigido
 
