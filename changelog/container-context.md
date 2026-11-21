@@ -11,4 +11,4 @@
 ## Alterado
 
 - The current specialization format version is 21 (the MCP server, `docs/SPEC-FORMAT.md`, Help, `spec-author` skill and `docs/AGENT-GUIDE.md`) (#2036).
-- Teto do `dist/index.html` subiu 16 KiB, de 2375680 para 2392064, pela regra do orçamento (the formatVersion 21 help text in both languages and the validation); acima dos limites, `bug` #2465 para o dono revisar.
+- The `dist/index.html` ceiling went up 16 KiB, from 2,375,680 to 2,392,064 bytes, by the budget rule (the formatVersion 21 help text in both languages and the validation); above the limits, `bug` #2465 for the owner to review.
