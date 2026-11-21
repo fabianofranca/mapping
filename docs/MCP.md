@@ -269,6 +269,7 @@ The stage `epic/review-close-notices` adds the proposal status `rejected` (the r
 - **`revise_proposal` and `withdraw_proposal`** refuse a `rejected` proposal with the "only an open proposal" message.
 - **`propose_changes` with `supersedes`** of a `rejected` proposal leaves it `rejected`; the response carries the note "the previous proposal was rejected and stays `rejected`".
 - **`get_proposal_review`** returns a hint for `rejected`: the user rejected every change and concluded the review, so to propose again send a new proposal (`propose_changes` with `supersedes`) that takes the notes into account.
+- **`notices.new` grouped per notice** (`plan_changes` and `propose_changes`): one entry `{ type, kind, message, key?, column?, annotations }` per specialization, type, place, `kind` and `message`, with `annotations` the number of distinct annotations of the batch that have it. The `annotation` field leaves the entry; the order is by severity, then by first appearance, and `{ new: [] }` when there is nothing. A preview with 126 buttons goes from 252 entries to 2. `get_code_hints` and `get_specialization` do not change. An agent that read `annotation` from an entry must read `annotations` now.
 - **Update the MCP first:** a version earlier than 0.52.0 lists a `rejected` proposal in `broken` (unknown `status`), never reads it wrong and never overwrites it.
 
 ### `fill` on the main axis of a `hug` frame (stage #2164, 0.50.0)

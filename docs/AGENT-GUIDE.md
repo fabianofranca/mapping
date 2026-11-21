@@ -119,7 +119,7 @@ In the text: `container` says which container the crop is from (`ref`, `file`, `
    - `summary`: one readable line per valid operation;
    - `changes`: how many items will be created, changed and deleted per collection, and `reviewChanges`: how many changes the user will have to review;
    - `issues`: pending items before and after, and the annotations that become incomplete (`new`). `new` lists, per annotation, **only the codes it gained** (an annotation that already had `invalid-value` and now also lacks a required value lists only `required-empty`). In `new` there also come the drawing pending items of the markings the batch created or changed (the mother or the child): **`slot-not-accepted`** (a child in a slot that does not accept its type) and **`slot-full`** (a child beyond the slot's `max`), each with `slot` (`{ id, name }`) and `owner` (the name of the mother's type), plus `max` on `slot-full` only (`slot-not-accepted` has no `max`), and **`component-overflow`** (`{ code, kind, node, missing, message, approximate? }`): the component of a marking that the batch created or changed **does not fit** in its rectangle and values (`kind` `text`, `content` or `slot`; `node` is the template node and `missing`, how much is lacking in px). It is a warning, it blocks nothing: enlarge the `rect`, shorten the text or adjust the `values` and run `plan_changes` again **before** `propose_changes`. With `approximate: true` (and `(approximate)` in the message) the text was measured without the library's `fonts`, with the embedded font: confirm with `render_marking`; `new` also lists **`accessible-label-missing`** (a type or part whose accessible label is empty; with `part` when it is a part) of the markings the batch created or changed.
-   - `notices`: the specialization warnings that the created or changed annotations come to have, `{ new: [{ annotation, type, kind, message, key?, column? }] }` (`new: []` if none). See "Specialization warnings";
+   - `notices`: the specialization warnings that the created or changed annotations come to have, `{ new: [{ type, kind, message, key?, column?, annotations }] }`, one entry per warning (not per annotation) with `annotations` the number of annotations of the batch it affects (`new: []` if none). See "Specialization warnings";
    - `membership` (only if any): who **already existed** and changes parent or space because of the geometry, `{ kind, ref, name, from, to, message }` ("Button leaves Top; now directly in Detail"). Check it instead of computing intersections (it describes the plan, and applying all the changes gives the same parents, also with `move_marking` in the batch; the rare exception is a tie between markings that already existed decided by an intermediate step of the batch, which the proposal does not record, #625: check with `get_marking` after applying);
    - `warnings` (only if any): warnings from the operations, like those of a library package's validator (`library-warning`), and the **`touch-target-small`** of the markings the batch created or changed (`{ code, annotation, marking, actual, min, minPx, density, message }`; see "Accessibility on the screen and in the code");
    - `created`: the `mapping://` references of the items that will be created (the final ones), with each one's alias.
@@ -1020,14 +1020,14 @@ It never **reads or writes code files**: it only builds the path and checks whet
 
 ### Specialization warnings
 
-A `formatVersion` 10 specialization can declare `notices` on the type, the field and the `table` column. Read them in `get_specialization` (inside `spec`) before creating annotations; `plan_changes` and `propose_changes` return in `notices.new` those that your batch creates. **A warning only informs**: nothing is blocked and it is not a pending item (`issues` does not change). What to do with each `kind`:
+A `formatVersion` 10 specialization can declare `notices` on the type, the field and the `table` column. Read them in `get_specialization` (inside `spec`) before creating annotations; `plan_changes` and `propose_changes` return in `notices.new` those that your batch creates, **one entry per warning** with `annotations` (how many annotations of the batch it affects), never one per annotation. **A warning only informs**: nothing is blocked and it is not a pending item (`issues` does not change). What to do with each `kind`:
 
 - `removed`: left the contract. **Do not create an annotation of that type nor write a value in that field or column without telling the user**; prefer what the message indicates.
 - `deprecated`: obsolete. Use what the message says in its place; if you really need the old one, tell the user.
 - `diverges`: the sources disagree. Read the message and confirm with the user which one applies.
 - `pending`: one source already has it, the other does not yet. You may use it; notify the user if the generated code depends on it.
 
-When proposing, cite the warnings that appear in `notices.new` in the message to the user: they see them in the proposal's review too.
+When proposing, cite the warnings that appear in `notices.new` in the message to the user, with the number of annotations each one affects: the user sees the library's warnings in the Catalog, not in the proposal's review.
 
 **Fidelity warnings when writing code.** A `diverges` says where the library approximates the platform and **changes what you write**: which parameter to pass, which composable or view to swap, what to check on the screen. Read the warnings of the types you are going to instantiate before writing and **tell the user** about each `diverges` that affects the solution (what differs and what you did about it). The criteria for what becomes a warning are in [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Fidelity notices and notice sources".
 
@@ -1171,7 +1171,7 @@ The batch accepts `{ "annotation": "<ref|id|$alias>" }` alone, without `entry`, 
 
 ### Change in version 0.15.0 (Warnings in the specialization)
 
-`get_specialization` shows the `notices` and `plan_changes`/`propose_changes` return the `notices` key. No new tool. See "Specialization warnings".
+`get_specialization` shows the `notices` and `plan_changes`/`propose_changes` return the `notices` key (grouped per warning with `annotations` since 0.52.0). No new tool. See "Specialization warnings".
 
 ### Change in version 0.12.0 (Material 3 library)
 
