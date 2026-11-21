@@ -29,6 +29,8 @@ import {
   dashPaths,
 } from './effects';
 import { gradientShader, type Shader } from './gradientShader';
+import { imageShader } from './imageShader';
+import type { PackageImages } from './packageImages';
 import { createRaster, type PixelRect, type Raster } from './raster';
 import { textBars, type TextBar } from './textBars';
 import { textInk } from './textLayout';
@@ -39,7 +41,7 @@ export { textBars, type TextBar };
 // Simplified drawing of a component scene, in pixels, for `get_marking_image` on a blank
 // screen. The server has no fonts or canvas: shapes become polygons filled by
 // scanline with (smoothed) coverage, the gradient is painted per pixel (a shader), the image becomes
-// a gray placeholder. With `view.fonts` the text is drawn with the font's glyphs (wrapping, `…`
+// a gray placeholder (a package image, with `view.images`, is sampled into the shape). With `view.fonts` the text is drawn with the font's glyphs (wrapping, `…`
 // and runs); without it, it becomes bars (one per line, in the text color). Stroke with `align`, dashes,
 // `cap`/`join` and `sides`, and blurred shadow. Pure: no disk.
 
@@ -50,6 +52,11 @@ export interface SceneView {
   readonly clip: PixelRect;
   /** Fonts for drawing the text; absent = the text becomes bars (the simplified drawing). */
   readonly fonts?: FontBook;
+  /**
+   * The decoded package images (an `image` paint's `asset`); absent, or an image it does not hold =
+   * the placeholder. The drawing's `specId` says which package an `asset` belongs to.
+   */
+  readonly images?: PackageImages;
   /** Where the image's origin (0, 0) sits in the raster, in raster pixels (default 0, 0). */
   readonly originX?: number;
   readonly originY?: number;
@@ -890,12 +897,17 @@ function cutStrip(node: TextNode): Polygon {
   ];
 }
 
+/** The decoded package image of an `asset` of one specialization's package. */
+type ImageLookup = (asset: string) => Raster | undefined;
+
 class Painter {
   constructor(
     private readonly raster: Raster,
     private readonly measure: TextMeasurer,
     private readonly scale: number,
     private readonly fonts?: FontBook,
+    /** The package image of an `asset` for the drawing's specialization (absent = the placeholder). */
+    private readonly images?: ImageLookup,
   ) {}
 
   paint(node: SceneNode, parent: Matrix, opacity: number, clip: PixelRect): void {
@@ -912,6 +924,7 @@ class Painter {
     const fillable = node.type !== 'line' || node.closed;
     if (fillable && node.type !== 'text') {
       for (const paint of node.fills) {
+        if (this.packageImage(node, paint, matrix, alpha, clip)) continue;
         const source = fillSource(paint, matrix, alpha);
         if (source === null) continue;
         this.fill(
@@ -1011,7 +1024,8 @@ class Painter {
     if (x1 <= x0 || y1 <= y0) return;
     const [width, height] = [x1 - x0, y1 - y0];
     const layer = createRaster(width, height);
-    draw(new Painter(layer, this.measure, this.scale, this.fonts), translate(-x0, -y0), {
+    const inner = new Painter(layer, this.measure, this.scale, this.fonts, this.images);
+    draw(inner, translate(-x0, -y0), {
       x: region.x - x0,
       y: region.y - y0,
       width: region.width,
@@ -1252,6 +1266,40 @@ class Painter {
     }
   }
 
+  /**
+   * Paints an `image` paint with a package `asset` whose pixels the view holds: the image is sampled
+   * into its own box (`fit`), rounded by the node's radius like the app's image. Only a `rect` takes the
+   * image (as in the app, where any other shape draws the placeholder). `false` = not a package image
+   * the view holds (the caller paints the placeholder).
+   */
+  private packageImage(
+    node: SceneNode,
+    paint: Paint,
+    matrix: Matrix,
+    opacity: number,
+    clip: PixelRect,
+  ): boolean {
+    if (node.type !== 'rect' || paint.type !== 'image' || paint.asset === undefined) {
+      return false;
+    }
+    const raster = this.images?.(paint.asset);
+    if (raster === undefined) return false;
+    const source = imageShader(
+      paint,
+      raster,
+      { width: node.width, height: node.height },
+      matrix,
+      opacity,
+    );
+    if (source === null) return true;
+    const { placed } = source;
+    const outline = roundedRect(placed.width, placed.height, node.cornerRadius).map(
+      (p) => ({ x: p.x + placed.x, y: p.y + placed.y }),
+    );
+    this.fill([outline], matrix, 'nonzero', source.shader, opacity, clip);
+    return true;
+  }
+
   private fill(
     polygons: readonly Polygon[],
     matrix: Matrix,
@@ -1426,6 +1474,8 @@ const ANCHOR_FRACTION: Record<ScreenAnchor, readonly [number, number]> = {
 /** Drawing (the instantiated scene of a marking) for `paintScene`. */
 export interface SceneDrawing {
   readonly root: SceneNode;
+  /** The specialization whose package the scene's `asset` images belong to (absent = no package images). */
+  readonly specId?: string;
   /**
    * Drawing in screen pixels (the component's `screen`): `root` measures the `size` at the origin and is
    * anchored at `anchor` in the marking's `rect` (image pixels). In the server's image one design pixel
@@ -1472,6 +1522,42 @@ function drawingBase(drawing: SceneDrawing, view: SceneView): Matrix {
   ];
 }
 
+/** The decoded images of `specId`'s package, as the painters look them up. */
+function imageLookup(
+  images: PackageImages | undefined,
+  specId: string | undefined,
+): ImageLookup | undefined {
+  if (images === undefined || specId === undefined) return undefined;
+  return (asset) => images.get(specId, asset);
+}
+
+/**
+ * The painters of one `paintScene`: one per specialization (each has its own package images) and per
+ * scale (the container's density, and 1 for a screen drawing), not one per drawing.
+ */
+class PainterPool {
+  private readonly pools = new Map<string, Map<number, Painter>>();
+
+  constructor(
+    private readonly raster: Raster,
+    private readonly measure: TextMeasurer,
+    private readonly view: SceneView,
+  ) {}
+
+  get(specId: string | undefined, scale: number): Painter {
+    const key = specId ?? '';
+    const byScale = this.pools.get(key) ?? new Map<number, Painter>();
+    this.pools.set(key, byScale);
+    let painter = byScale.get(scale);
+    if (painter === undefined) {
+      const lookup = imageLookup(this.view.images, specId);
+      painter = new Painter(this.raster, this.measure, scale, this.view.fonts, lookup);
+      byScale.set(scale, painter);
+    }
+    return painter;
+  }
+}
+
 /**
  * Paints the scenes onto `raster`, in order (the last ones end up on top), only within
  * `view.clip`. A scene whose box does not touch the region is ignored.
@@ -1483,10 +1569,7 @@ export function paintScene(
   view: SceneView,
 ): void {
   const scale = Math.sqrt(view.scaleX * view.scaleY);
-  const painter = new Painter(raster, measure, scale, view.fonts);
-  const screenPainter = new Painter(raster, measure, 1, view.fonts);
-  // One painter per root scale (the container's density), not one per drawing.
-  const scaled = new Map<number, Painter>();
+  const pool = new PainterPool(raster, measure, view);
   const clip = intersect(view.clip, {
     x: 0,
     y: 0,
@@ -1514,20 +1597,14 @@ export function paintScene(
       continue;
     }
     if (drawing.screen !== undefined) {
-      screenPainter.paint(root, base, 1, clip);
+      pool.get(drawing.specId, 1).paint(root, base, 1, clip);
       continue;
     }
     // The density (the scene root's scale) goes into the painter's scale: the shadow and the minimum stroke
     // are measured in output pixels, not in component units.
     const [a, b, c, d] = root.transform;
     const rootScale = Math.sqrt(Math.abs(a * d - b * c));
-    let drawer = painter;
-    if (rootScale !== 1) {
-      drawer =
-        scaled.get(rootScale) ??
-        new Painter(raster, measure, scale * rootScale, view.fonts);
-      scaled.set(rootScale, drawer);
-    }
+    const drawer = pool.get(drawing.specId, scale * rootScale);
     const region = slotClip(drawing.clip, base, clip);
     const shapes = shapePolygons(drawing, base);
     if (shapes.length === 0) drawer.paint(root, base, 1, region);
