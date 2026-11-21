@@ -218,8 +218,24 @@ function errorFailure(call: Call, phase: 'load' | 'call', error: JsError): Plugi
   });
 }
 
-/** A failure of the evaluation, in order: the time limit, a limit of the runtime, then the plugin's. */
+/** A failure of the evaluation, with the phase (`load` or `call`) in its `details`, so a caller can tell them apart. */
 function evalFailure(
+  call: Call,
+  phase: 'load' | 'call',
+  error: JsError,
+  timedOut: boolean,
+): PluginRun {
+  const run = evalFailureOf(call, phase, error, timedOut);
+  return run.ok
+    ? run
+    : {
+        ok: false,
+        failure: { ...run.failure, details: { ...run.failure.details, phase } },
+      };
+}
+
+/** A failure of the evaluation, in order: the time limit, a limit of the runtime, then the plugin's. */
+function evalFailureOf(
   call: Call,
   phase: 'load' | 'call',
   error: JsError,

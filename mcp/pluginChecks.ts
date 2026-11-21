@@ -148,7 +148,7 @@ async function definedFunctions(
   const generated = await runPlugin(source, 'generate', [input], options);
   const parsed = await runPlugin(source, 'parse', ['', input], options);
   for (const run of [generated, parsed]) {
-    if (!run.ok && /could not be loaded/.test(run.failure.message)) {
+    if (!run.ok && run.failure.details.phase === 'load') {
       return failureText(run.failure);
     }
   }

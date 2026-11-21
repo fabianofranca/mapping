@@ -3,7 +3,7 @@ import { basename, dirname, join } from 'node:path';
 import { NOTES_LIBRARY } from '../libraries/notas';
 import { parseSpecText, type BundledLibrary, type Spec } from '../src/model';
 import { resolvePath } from '../src/model/components/library';
-import { pluginIssues } from './pluginChecks';
+import type { pluginIssues as PluginIssues } from './pluginChecks';
 import {
   validateLibrary,
   type LibraryFile,
@@ -388,13 +388,14 @@ async function fontSubstitutionWarnings(
 async function formatIssuesOf(
   roots: Roots,
   pkg: ReadPackage,
+  formatChecks: typeof PluginIssues,
   report: LibraryReport,
 ): Promise<LibraryIssue[]> {
   const level = report.summary.level;
   if (!report.ok || report.spec === undefined || level < 2) return [];
   const specPath = pkg.specPath ?? specPathOf(pkg.files, report.spec);
   if (specPath === undefined) return [];
-  return pluginIssues(
+  return formatChecks(
     { spec: report.spec, specPath },
     (path) => readPackageFile(roots, pkg.dir, path),
     level === 2 ? 2 : 3,
@@ -405,9 +406,10 @@ async function formatIssuesOf(
 async function withFormatIssues(
   roots: Roots,
   pkg: ReadPackage,
+  formatChecks: typeof PluginIssues,
   report: LibraryReport,
 ): Promise<LibraryReport> {
-  const extra = await formatIssuesOf(roots, pkg, report);
+  const extra = await formatIssuesOf(roots, pkg, formatChecks, report);
   if (extra.length === 0) return report;
   return {
     ...report,
@@ -441,6 +443,7 @@ export async function validateLibraryTool(
     docClones?: Readonly<Record<string, string>> | undefined;
   },
   summarize: (spec: Spec) => Json,
+  formatChecks: typeof PluginIssues,
 ): Promise<Json> {
   const pkg = await readPackage(roots, args.path);
   const previous =
@@ -450,6 +453,7 @@ export async function validateLibraryTool(
   const report = await withFormatIssues(
     roots,
     pkg,
+    formatChecks,
     validateLibrary({
       files: pkg.files,
       ...(pkg.specPath === undefined ? {} : { specPath: pkg.specPath }),

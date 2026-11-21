@@ -33,6 +33,7 @@ import { measureComponent } from './measureComponent';
 import { importIcons } from './iconImport';
 import { listPackageFiles, validateLibraryTool } from './library';
 import { exportFormat } from './formatTools';
+import { pluginIssues } from './pluginChecks';
 import { planLibraryUpdate } from './libraryUpdate';
 import { planSignatureImportTool } from './signatureImport';
 import { summary as specSummary, validateSpecialization } from './specValidation';
@@ -1150,7 +1151,7 @@ export function registerTools(
       },
       annotations: READ_ONLY,
     },
-    (args) => respond(() => validateLibraryTool(roots, args, specSummary)),
+    (args) => respond(() => validateLibraryTool(roots, args, specSummary, pluginIssues)),
   );
 
   server.registerTool(

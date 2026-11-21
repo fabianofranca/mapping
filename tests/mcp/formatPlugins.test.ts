@@ -476,6 +476,50 @@ describe('a result the contract or the model refuses', () => {
   });
 });
 
+describe('the operations of a plugin result inside the step', () => {
+  const pluginWith = (operations: string) =>
+    `function parse() { return { operations: ${operations} }; }`;
+
+  it("keeps the placement notes of the plugin's operations as warnings", async () => {
+    await makeProject('notes-warn', (lib) =>
+      writeIn(
+        lib,
+        'plugins/notes.js',
+        pluginWith(`[
+          { op: 'add_container', as: '$c', name: 'X', width: 100, height: 100, background: '#FFFFFF' },
+          { op: 'create_marking', as: '$first', container: '$c', rect: { x: 0, y: 0, width: 10, height: 10 } },
+          { op: 'create_marking', container: '$c', near: '$first', rect: { x: 20, y: 0, width: 10, height: 10 } },
+        ]`),
+      ),
+    );
+    const planned = await plan('notes-warn', [importOp()]);
+    expect(planned.valid).toBe(true);
+    expect(planned.warnings).toContainEqual(
+      expect.objectContaining({ op: 0, code: 'ignored-argument' }),
+    );
+  });
+
+  it('lists as updated only what existed, once, never what the plugin created', async () => {
+    await makeProject('updated-once', (lib) =>
+      writeIn(
+        lib,
+        'plugins/notes.js',
+        pluginWith(`[
+          { op: 'add_container', as: '$c', name: 'X', width: 100, height: 100, background: '#FFFFFF' },
+          { op: 'create_marking', container: '$c', rect: { x: 0, y: 0, width: 10, height: 10 },
+            annotation: { type: 'format-lib/item' }, annotationAs: '$a' },
+          { op: 'update_annotation', annotation: '$a', name: 'one' },
+          { op: 'update_annotation', annotation: '$a', name: 'two' },
+        ]`),
+      ),
+    );
+    const planned = await plan('updated-once', [importOp()]);
+    expect(planned.valid).toBe(true);
+    expect(planned.imports![0]!.updated).toEqual([]);
+    expect(planned.imports![0]!.created).toHaveLength(3);
+  });
+});
+
 describe('propose_changes with import_format', () => {
   it('stores the op with `text` omitted, and the review reads the proposal as any other', async () => {
     const dir = await makeProject('proposal');
@@ -563,6 +607,18 @@ describe('validate_library with file formats', () => {
     expect(result.valid).toBe(false);
     expect(result.errors[0]).toMatchObject({ path: 'fileFormats[0]', severity: 'error' });
     expect(result.errors[0]!.message).toMatch(/boom/);
+  });
+
+  it('a plugin that goes past a limit while loading is an error at fileFormats[0]', async () => {
+    const result = await validate(
+      library('limit-on-load', (lib) =>
+        writeIn(lib, 'plugins/notes.js', "const big = 'x'.repeat(1e9);"),
+      ),
+      2,
+    );
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toMatchObject({ path: 'fileFormats[0]' });
+    expect(result.errors[0]!.message).toMatch(/plugin-limit/);
   });
 
   it('a plugin that defines neither function is an error at fileFormats[0]', async () => {

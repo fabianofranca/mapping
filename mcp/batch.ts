@@ -508,6 +508,20 @@ type CreateMarkingValues = NonNullable<
   Extract<Operation, { op: 'create_marking' }>['annotation']
 >['values'];
 
+/** The items an import changed that it did not create itself, each once. */
+function onlyExisting(
+  touched: readonly { kind: CreatedKind; id: string }[],
+  created: readonly { kind: CreatedKind; id: string }[],
+): { kind: CreatedKind; id: string }[] {
+  const seen = new Set(created.map((c) => `${c.kind}:${c.id}`));
+  return touched.filter((t) => {
+    const key = `${t.kind}:${t.id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 class Batch {
   private p: Project;
   /** Aliases of the batch; an `import_format` step swaps in its own while its operations run. */
@@ -2501,7 +2515,7 @@ class Batch {
       applied.created.filter((c) => c.kind === kind).length;
     return {
       project: applied.project,
-      notes,
+      notes: [...notes, ...applied.notes],
       created: applied.created,
       imported: {
         format: found.ref,
@@ -2542,23 +2556,29 @@ class Batch {
     project: Project;
     created: { kind: CreatedKind; id: string }[];
     updated: { kind: CreatedKind; id: string }[];
+    notes: string[];
   }> {
     const saved = { p: this.p, aliases: this.aliases, failed: this.failedAliases };
     this.aliases = new Map();
     this.failedAliases = new Map();
     const created: { kind: CreatedKind; id: string }[] = [];
-    const updated: { kind: CreatedKind; id: string }[] = [];
+    const touched: { kind: CreatedKind; id: string }[] = [];
+    const notes: string[] = [];
+    const clearedBefore = this.rolesCleared.length;
     try {
       for (const [j, sub] of operations.entries()) {
         try {
-          updated.push(...this.updatedBy(sub));
+          touched.push(...this.updatedBy(sub));
           const step = await this.applyLocal(sub);
           created.push(...(step.created ?? []));
+          notes.push(...(step.notes ?? []));
         } catch (error) {
+          // The step is undone: so are the roles it cleared.
+          this.rolesCleared.length = clearedBefore;
           throw this.refusedByModel(error, sub.op, j);
         }
       }
-      return { project: this.p, created, updated };
+      return { project: this.p, created, updated: onlyExisting(touched, created), notes };
     } finally {
       this.p = saved.p;
       this.aliases = saved.aliases;
@@ -2620,6 +2640,8 @@ class Batch {
     );
     return new ToolError(code as ToolErrorCode, message, {
       ...details,
+      // A `path` of the original error (the bad file, for example) is kept as `itemPath`.
+      ...(typeof details.path === 'string' ? { itemPath: details.path } : {}),
       path: `operations[${this.current}].result[${j}]`,
       resultOp: op,
     });
