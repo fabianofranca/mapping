@@ -29,10 +29,10 @@ function placeBar(harness: SlotsHarness): string {
     typeId: 'bar',
   });
   if (!bar.ok) throw new Error(`bar: ${bar.error}`);
-  const moved = harness.actions.setMarkingRect(bar.value, BAR_RECT);
+  const moved = harness.actions.setMarkingRect(bar.value.markingId, BAR_RECT);
   if (!moved.ok) throw new Error(`rect: ${moved.error}`);
-  harness.ui.selection.value = { kind: 'marking', id: bar.value };
-  return bar.value;
+  harness.ui.selection.value = { kind: 'marking', id: bar.value.markingId };
+  return bar.value.markingId;
 }
 
 const slotOf = (harness: SlotsHarness, barId: string, childId: string) =>

@@ -2,19 +2,23 @@
 import { describe, expect, it } from 'vitest';
 import {
   SCHEMA_VERSION,
+  addContainer,
+  createMarking,
   deserialize,
   effectiveDensity,
   migrateFrom18To19,
   migrations,
   rectFromUnits,
+  replaceContainer,
   serialize,
   setContainerDensity,
+  snapScale,
   suggestDensity,
   validateProject,
   type Project,
   type Spec,
 } from '../../src/model';
-import { sampleProject } from './fixtures';
+import { emptyProject, sampleProject } from './fixtures';
 
 type Raw = Record<string, unknown>;
 
@@ -260,5 +264,108 @@ describe('CL2: density 1 is absent', () => {
     const three = setContainerDensity(p, id, 3);
     const back = setContainerDensity(three, id, 1);
     expect('density' in first(back)).toBe(false);
+  });
+});
+
+describe('replaceContainer: the density follows the width (stage #1891, DL1)', () => {
+  const phone = (density: number | null, width = 1080): Project => {
+    let p = addContainer(emptyProject(), {
+      id: 'P',
+      file: 'images/phone.png',
+      width,
+      height: 2400,
+    });
+    if (density !== null) p = setContainerDensity(p, 'P', density);
+    return createMarking(p, {
+      id: 'B',
+      containerId: 'P',
+      rect: { x: 100, y: 200, width: 174, height: 120 },
+    });
+  };
+  const next = (width: number, height = 2400) => ({
+    file: 'images/new.png',
+    width,
+    height,
+  });
+  const densityOf = (p: Project) => p.containers.find((c) => c.id === 'P')?.density;
+  /** The button's minimum in pixels at a density: 58 × 40 units. */
+  const minSizeAt = (_id: string, density: number) => ({
+    width: Math.ceil(58 * density - 1e-9),
+    height: Math.ceil(40 * density - 1e-9),
+  });
+
+  it('1080 → 1440 with density 3 gives 4, and the button keeps 58 × 40 units', () => {
+    const after = replaceContainer(phone(3), 'P', next(1440, 3200));
+    expect(densityOf(after)).toBe(4);
+    const rect = after.markings.find((m) => m.id === 'B')!.rect;
+    expect(rect.width).toBe(232);
+    expect(rect.height).toBe(160);
+    expect(rect.width / 4).toBe(58);
+    expect(rect.height / 4).toBe(40);
+  });
+
+  it('with no density, 1080 → 2160 stores 2', () => {
+    expect(densityOf(replaceContainer(phone(null), 'P', next(2160, 4800)))).toBe(2);
+  });
+
+  it('1080 → 1000 with 3 gives snapScale(3 × 1000 ÷ 1080)', () => {
+    const after = replaceContainer(phone(3), 'P', next(1000, 2222));
+    expect(densityOf(after)).toBe(snapScale((3 * 1000) / 1080));
+  });
+
+  it('the same width does not change the density', () => {
+    expect(densityOf(replaceContainer(phone(3), 'P', next(1080, 2400)))).toBe(3);
+    const plain = replaceContainer(phone(null), 'P', next(1080, 2400));
+    expect('density' in plain.containers.find((c) => c.id === 'P')!).toBe(false);
+  });
+
+  it('when the result is 1, the key goes away', () => {
+    const after = replaceContainer(phone(2, 2160), 'P', next(1080, 1200));
+    expect('density' in after.containers.find((c) => c.id === 'P')!).toBe(false);
+  });
+
+  it('the result is clamped to 0.5 and 8', () => {
+    expect(densityOf(replaceContainer(phone(6), 'P', next(2160, 4800)))).toBe(8);
+    expect(densityOf(replaceContainer(phone(0.75), 'P', next(540, 1200)))).toBe(0.5);
+  });
+
+  it('with a different aspect ratio (`confirmAspectChange`), the ratio of the widths applies', () => {
+    const after = replaceContainer(phone(3), 'P', next(1440, 1440), {
+      confirmAspectChange: true,
+    });
+    expect(densityOf(after)).toBe(4);
+  });
+
+  it('is still one valid project', () => {
+    expect(validateProject(replaceContainer(phone(3), 'P', next(1440, 3200)))).toEqual(
+      [],
+    );
+  });
+
+  it('replacing back (1440 → 1080, density 4 → 3) does not grow the button at the minimum nor flag it', () => {
+    const at4 = replaceContainer(phone(3), 'P', next(1440, 3200), { minSizeAt });
+    expect(at4.markings.find((m) => m.id === 'B')!.rect).toMatchObject({
+      width: 232,
+      height: 160,
+    });
+    // `minSizeOf` is what the store passes: the minimum at the density from before the replacement (4).
+    const back = replaceContainer(at4, 'P', next(1080, 2400), {
+      minSizeOf: (id) => minSizeAt(id, 4),
+      minSizeAt,
+    });
+    expect(densityOf(back)).toBe(3);
+    const marking = back.markings.find((m) => m.id === 'B')!;
+    expect(marking.rect.width).toBe(174);
+    expect(marking.rect.height).toBe(120);
+    expect(marking.needsReview).toBe(false);
+  });
+
+  it('without `minSizeAt`, the minimum of `minSizeOf` (today) applies', () => {
+    const after = replaceContainer(phone(3), 'P', next(1440, 3200), {
+      minSizeOf: () => ({ width: 300, height: 300 }),
+    });
+    const marking = after.markings.find((m) => m.id === 'B')!;
+    expect(marking.rect.width).toBe(300);
+    expect(marking.needsReview).toBe(true);
   });
 });

@@ -125,12 +125,12 @@ The full round (R0 to R40) runs in **simultaneous sessions, one per block of the
 
 | Block | Scripts, in the order of the guide                                                      | Steps |
 | ----- | --------------------------------------------------------------------------------------- | ----- |
-| 1     | R0, R1, section 6, R3, R6.3 to R6.7, R6.12 to R6.14, R7, R5, R8, R14, R15 and R26       | 161   |
+| 1     | R0, R1, section 6, R3, R6.3 to R6.7, R6.12 to R6.14, R7, R5, R8, R14, R15 and R26       | 162   |
 | 2     | R0, section 6, R2 and R25                                                               | 148   |
 | 3     | R0, section 6, R12, R18 and R19                                                         | 147   |
 | 4     | R0, section 6, R4, R6.8a to R6.11, R9, R10, R13, R16, R22, R24, R28 and the visual pass | 171   |
 | 5     | R0, section 6, R11, R17, R20, R21 and R23                                               | 143   |
-| 6     | R0, section 6, R27, R29, R30, R38, R39 and R40                                          | 86    |
+| 6     | R0, section 6, R27, R29, R30, R37, R38, R39 and R40                                     | 94    |
 
 There are 6 blocks: 5 by decision of the owner (2026-11-09) and the 6th by #2024 (2026-11-17). The visual pass stays in block 4 (decision 6 of stage #841). The guide limit (`MAX_BLOCK_GUIDE_CHARS`), sizes, dependencies and baselines: `cloud.mjs secao consulta.historico`.
 

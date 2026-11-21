@@ -53,6 +53,7 @@ async function main(): Promise<void> {
   });
   const server = createServer({
     roots: options.roots.map((root) => resolve(root)),
+    scratch: options.scratch.map((folder) => resolve(folder)),
     images: options.http ? new ImageServer() : null,
   });
   // The read ceiling follows the `base64` one in the schema. Above it, the SDK transport warns

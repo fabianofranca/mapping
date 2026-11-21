@@ -1,4 +1,5 @@
 import { arrowIdsAttachedTo, withoutArrows } from './arrows';
+import { MAX_DENSITY, MIN_DENSITY, withoutDensity } from './density';
 import { fail } from './errors';
 import { HEX_COLOR_RE } from './hexColor';
 import { idInUse } from './projectIndex';
@@ -14,6 +15,7 @@ import {
   rectsOverlap,
   right,
   snapPlacement,
+  snapScale,
   type Size,
 } from './geometry';
 import { settleFrom, type SettleOptions } from './hierarchySettle';
@@ -814,6 +816,43 @@ function rescaleMarkings(
 export interface ReplaceContainerOptions extends SettleOptions {
   /** The user confirmed the replacement by an image with a different aspect ratio. */
   readonly confirmAspectChange?: boolean;
+  /**
+   * Minimum of a marking of the container at a given density, in image pixels. The rescale calls it
+   * with the density the replacement stores, so a component that keeps its size in units is not
+   * grown by the minimum of the old density. Without it, `minSizeOf` applies (stage #1891).
+   */
+  readonly minSizeAt?: (markingId: string, density: number) => Size | null;
+}
+
+/**
+ * Density after replacing the file: the ratio of the widths multiplies it (a component keeps its size
+ * in units), clamped to `MIN_DENSITY`–`MAX_DENSITY`; 1 is the absent key (`undefined`). The same width
+ * keeps what was stored.
+ */
+function replacedDensity(image: ProjectContainer, next: ImageFile): number | undefined {
+  if (next.width === image.width) return image.density ?? undefined;
+  const scaled = snapScale(((image.density ?? 1) * next.width) / image.width);
+  const density = clamp(scaled, MIN_DENSITY, MAX_DENSITY);
+  return density === 1 ? undefined : density;
+}
+
+/** The container with the replaced file's dimensions and the density that follows them. */
+function withReplacedFile(
+  image: ProjectContainer,
+  next: ImageFile,
+  placement: Placement,
+): ProjectContainer {
+  const density = replacedDensity(image, next);
+  const base = withoutDensity(image);
+  return {
+    ...base,
+    ...(density === undefined ? {} : { density }),
+    file: next.file,
+    background: null,
+    width: next.width,
+    height: next.height,
+    placement,
+  };
 }
 
 /**
@@ -848,7 +887,15 @@ export function replaceContainer(
   ) {
     fail('image-too-small');
   }
-  const rescaled = rescaleMarkings(own, image, next, !sameAspect, options.minSizeOf);
+  const { minSizeAt } = options;
+  const density = replacedDensity(image, next) ?? 1;
+  const rescaled = rescaleMarkings(
+    own,
+    image,
+    next,
+    !sameAspect,
+    minSizeAt === undefined ? options.minSizeOf : (id) => minSizeAt(id, density),
+  );
 
   const scale = (image.placement.scale * image.width) / next.width;
   let placement: Placement = snapPlacement({ ...image.placement, scale });
@@ -883,14 +930,7 @@ export function replaceContainer(
             : a,
         );
 
-  const updated: ProjectContainer = {
-    ...image,
-    file: next.file,
-    background: null,
-    width: next.width,
-    height: next.height,
-    placement,
-  };
+  const updated = withReplacedFile(image, next, placement);
   return settleFrom(
     p,
     {
