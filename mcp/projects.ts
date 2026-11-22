@@ -6,7 +6,9 @@ import {
   MAPPING_FILE,
   componentPaths,
   deserializeParsed,
+  hasLoadedPackage,
   loadSpecComponents,
+  projectIndex,
   referencedSpecFilesOf,
   type ComponentCatalog,
   type DeserializeError,
@@ -388,10 +390,12 @@ async function loadFontBook(
 export function packageImageResolver(roots: Roots, loaded: LoadedProject): ImageResolver {
   return async (refs) => {
     const needs: ImageNeed[] = [];
+    const specs = projectIndex(loaded.project).specializations;
     for (const { specId, asset } of refs) {
-      const applied = loaded.project.specializations.find((s) => s.id === specId);
+      const applied = specs.get(specId);
+      // Only a specialization with a loaded spec and a folder package has images, like the app.
       const found =
-        applied === undefined
+        applied === undefined || !hasLoadedPackage(applied)
           ? null
           : await fileStamp(roots, loaded.location.dir, resolvePath(applied.file, asset));
       const { real, size, stamp } = found ?? { real: '', size: 0, stamp: '' };
