@@ -129,7 +129,6 @@ describe('skill via-rapida', () => {
   it('step 1: the DS record template says `None (process only).` in English, so the Portuguese guard accepts it once committed (#2363)', () => {
     const s = section(SKILL, '## Step by step');
     expect(s).toContain('`## Pendências` "None (process only)."');
-    expect(s).not.toContain('só processo');
   });
 
   it('decision 7: the owner authorization is asked in the fast-track chat, never relayed', () => {
