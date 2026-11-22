@@ -58,6 +58,8 @@ describe('canvasTokensFrom', () => {
   it('the drawing of the components reads color, fill, slot opacity and font from the theme', () => {
     for (const theme of ['light', 'dark'] as const) {
       const { component } = canvasTokensFrom(reader(theme));
+      expect(component.failedLine).toBe(tokenValue('cv-component-image-failed', theme));
+      expect(component.failedLine).toBe('#d9480f');
       expect(component.unknownLine).toBe(tokenValue('cv-component-unknown', theme));
       expect(component.unknownFill).toBe(tokenValue('cv-component-unknown-fill', theme));
       expect(component.slotOpacity).toBe(Number(tokenValue('opacity-slot', theme)));

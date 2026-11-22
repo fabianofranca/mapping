@@ -18,6 +18,7 @@ import Konva from 'konva/lib/Core';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import type { FrameNode } from '../../model/components/scene';
 import {
+  type PackageImageResult,
   type RemoteImageResult,
   type RenderPalette,
   type RenderWarning,
@@ -36,6 +37,13 @@ export interface ExampleImageOptions {
    * is never drawn here.
    */
   readonly remoteImage?: (url: string) => RemoteImageResult;
+  /** The specialization of the drawn component: it names the package images (`RenderOptions.specId`). */
+  readonly specId?: string;
+  /**
+   * Resolves a package image `(specId, asset)` (the library's bytes, decoded); without it, the
+   * placeholder. The Catalog redraws when an image is ready (the images epoch of its cache key).
+   */
+  readonly packageImage?: (specId: string, asset: string) => PackageImageResult;
   /** Receives the drawing warnings (with code and parameters) right after the scene is drawn. */
   readonly onWarnings?: (warnings: readonly RenderWarning[]) => void;
 }
@@ -67,6 +75,10 @@ export const renderSceneToDataUrl: SceneRasterizer = (root, options = {}) => {
         ...(options.remoteImage === undefined
           ? {}
           : { remoteImage: options.remoteImage }),
+        ...(options.specId === undefined ? {} : { specId: options.specId }),
+        ...(options.packageImage === undefined
+          ? {}
+          : { packageImage: options.packageImage }),
       },
     );
     layer.add(rendered.root);

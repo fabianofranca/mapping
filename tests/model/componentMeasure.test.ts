@@ -117,6 +117,33 @@ describe('measureComponentSize', () => {
   });
 });
 
+describe('measureComponentSize: the empty-slot flag (decision 6 of #2267)', () => {
+  const p = fitProject();
+
+  it('a slot component with an axis that follows the content flags the empty slots, with the same units', () => {
+    const result = measure(p, 'fit-row-none');
+    expect(result.emptySlot).toBe(true);
+    expect(result.follows).toEqual({ width: false, height: true });
+    // The measure is what the childless instance gives: the flag changes nothing in the size.
+    const expected = fitComponentSize(
+      component('fit-row-none'),
+      { label: 'Ok', tall: null },
+      { measure: approximateMeasurer },
+    );
+    expect(expected).toBeDefined();
+    expect(result.units).toEqual({ width: expected!.width, height: expected!.height });
+  });
+
+  it('a slotless hug component does not flag', () => {
+    expect(measure(p, 'fit-hug').emptySlot).toBe(false);
+  });
+
+  it('a slot component with no axis that follows the content does not flag', () => {
+    expect(measure(p, 'fit-slot-px').emptySlot).toBe(false);
+    expect(measure(p, 'fit-row-stretch').emptySlot).toBe(false);
+  });
+});
+
 describe('measureComponentSize: a table field', () => {
   const p = fitProject();
   const rows = (n: number) => Array.from({ length: n }, (_, i) => ({ text: `Row ${i}` }));

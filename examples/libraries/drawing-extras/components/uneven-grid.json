@@ -1,0 +1,231 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "uneven-grid",
+  "name": "Uneven grid",
+  "description": "A list row whose columns have different sizes (a 56 px leading column, a 1fr text column and a hug trailing column) and a 12-column grid whose cells span several tracks.",
+  "size": {
+    "width": 360,
+    "height": 176
+  },
+  "minSize": {
+    "width": 300,
+    "height": 150
+  },
+  "preview": {
+    "title": "Weekly report",
+    "subtitle": "Updated 2 hours ago",
+    "trailing": "12:40",
+    "accent": "#7C3AED"
+  },
+  "template": {
+    "type": "frame",
+    "name": "uneven-grid",
+    "layout": {
+      "type": "column",
+      "gap": 16,
+      "padding": 12
+    },
+    "cornerRadius": 12,
+    "fill": "#F9FAFB",
+    "stroke": {
+      "color": "#D1D5DB",
+      "width": 1
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "list-row",
+        "width": "fill",
+        "height": "hug",
+        "layout": {
+          "type": "grid",
+          "columns": [56, "1fr", "hug"],
+          "gap": 12,
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "leading",
+            "width": 56,
+            "height": 56,
+            "cornerRadius": 12,
+            "fill": {
+              "$field": "accent"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "texts",
+            "width": "fill",
+            "height": "hug",
+            "layout": {
+              "type": "column",
+              "gap": 2
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "title",
+                "text": {
+                  "$field": "title"
+                },
+                "font": {
+                  "size": 16,
+                  "weight": 600,
+                  "lineHeight": 22
+                },
+                "color": "#111827",
+                "width": "fill"
+              },
+              {
+                "type": "text",
+                "name": "subtitle",
+                "text": {
+                  "$field": "subtitle"
+                },
+                "font": {
+                  "size": 13,
+                  "weight": 400,
+                  "lineHeight": 19
+                },
+                "color": "#6B7280",
+                "width": "fill"
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "name": "trailing",
+            "text": {
+              "$field": "trailing"
+            },
+            "font": {
+              "size": 13,
+              "weight": 500,
+              "lineHeight": 19
+            },
+            "color": "#374151"
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "twelve-columns",
+        "width": "fill",
+        "height": "hug",
+        "layout": {
+          "type": "grid",
+          "columns": [
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr"
+          ],
+          "gap": 4,
+          "lineGap": 4
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "wide",
+            "width": "fill",
+            "height": 24,
+            "cornerRadius": 4,
+            "fill": {
+              "$field": "accent"
+            },
+            "span": 8
+          },
+          {
+            "type": "rect",
+            "name": "narrow",
+            "width": "fill",
+            "height": 24,
+            "cornerRadius": 4,
+            "fill": "#C4B5FD",
+            "span": 4
+          },
+          {
+            "type": "rect",
+            "name": "third-1",
+            "width": "fill",
+            "height": 24,
+            "cornerRadius": 4,
+            "fill": "#C4B5FD",
+            "span": 4
+          },
+          {
+            "type": "rect",
+            "name": "third-2",
+            "width": "fill",
+            "height": 24,
+            "cornerRadius": 4,
+            "fill": {
+              "$field": "accent"
+            },
+            "span": 4
+          },
+          {
+            "type": "rect",
+            "name": "third-3",
+            "width": "fill",
+            "height": 24,
+            "cornerRadius": 4,
+            "fill": "#C4B5FD",
+            "span": 4
+          },
+          {
+            "type": "rect",
+            "name": "quarter-1",
+            "width": "fill",
+            "height": 24,
+            "cornerRadius": 4,
+            "fill": {
+              "$field": "accent"
+            },
+            "span": 3
+          },
+          {
+            "type": "rect",
+            "name": "quarter-2",
+            "width": "fill",
+            "height": 24,
+            "cornerRadius": 4,
+            "fill": "#C4B5FD",
+            "span": 3
+          },
+          {
+            "type": "rect",
+            "name": "quarter-3",
+            "width": "fill",
+            "height": 24,
+            "cornerRadius": 4,
+            "fill": {
+              "$field": "accent"
+            },
+            "span": 3
+          },
+          {
+            "type": "rect",
+            "name": "quarter-4",
+            "width": "fill",
+            "height": 24,
+            "cornerRadius": 4,
+            "fill": "#C4B5FD",
+            "span": 3
+          }
+        ]
+      }
+    ]
+  }
+}

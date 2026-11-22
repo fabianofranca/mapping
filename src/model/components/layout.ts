@@ -43,13 +43,7 @@ import {
   instantiate,
   measureComponent,
 } from './instantiate';
-import {
-  alignInCell,
-  placeCells,
-  trackCount,
-  trackOffset,
-  trackSize,
-} from './gridLayout';
+import { alignInCell, placeCells, trackCount } from './gridLayout';
 import {
   intrinsicModeOf,
   isIntrinsicSize,
@@ -57,7 +51,7 @@ import {
   mirrorMain,
 } from './layoutValues';
 import { mirrorX } from './direction';
-import { lineExtents } from './gridPlan';
+import { lineExtents, needsNaturals, slotTrackGeometry } from './gridPlan';
 import { type ResolvedSizing, resolveSizing } from './sizing';
 import type { Library } from './library';
 import type { Instance, Screen } from './screen';
@@ -306,7 +300,19 @@ const isVerticalGrid = (layout: ResolvedSlotLayout) =>
  */
 function gridContentWidth(layout: ResolvedSlotLayout, widths: readonly number[]): number {
   const count = trackCount(layout.grid ?? {}, null, layout.gap);
-  if (isVerticalGrid(layout)) return count * maxOf(widths) + layout.gap * (count - 1);
+  if (isVerticalGrid(layout)) {
+    const order = gridOrder(widths.length, layout.reverse);
+    return slotTrackGeometry(
+      layout.grid?.tracks,
+      placeCells(
+        order.map(() => 1),
+        count,
+      ).cells,
+      order.map((i) => widths[i] as number),
+      null,
+      { count, gap: layout.gap },
+    ).used;
+  }
   const { extents } = flowCells(widths, count);
   return sum(extents) + layout.lineGap * Math.max(0, extents.length - 1);
 }
@@ -730,18 +736,15 @@ export function layoutScreen(
   const placeGridCell = (
     layout: ResolvedSlotLayout,
     vertical: boolean,
-    size: number,
-    cell: { track: number },
+    track: { offset: number; extent: number },
     line: { top: number; extent: number },
     info: GridKid,
   ): KidRect => {
     const f = info.fFill ? Math.max(line.extent, info.f) : info.f;
     const alignF = layout.align === 'stretch' ? 'start' : layout.align;
-    const t = layout.justify === 'stretch' && info.hugT ? size : info.t;
+    const t = layout.justify === 'stretch' && info.hugT ? track.extent : info.t;
     const pos = {
-      t:
-        trackOffset(cell.track, size, layout.gap) +
-        alignInCell(layout.justify, size, info.t).pos,
+      t: track.offset + alignInCell(layout.justify, track.extent, info.t).pos,
       f: line.top + alignInCell(alignF, line.extent, f).pos,
     };
     return gridKidRect(vertical, pos, { t, f }, info);
@@ -758,12 +761,23 @@ export function layoutScreen(
     const content = vertical ? cw : ch;
     const count = trackCount(layout.grid ?? {}, content, layout.gap);
     const order = gridOrder(kids.length, layout.reverse);
-    const size =
-      content === null
-        ? maxOf(kids.map((kid) => gridNaturalTrack(kid, vertical)))
-        : trackSize(content, count, layout.gap);
+    const list = layout.grid?.tracks;
+    const tracks = slotTrackGeometry(
+      list,
+      placeCells(
+        order.map(() => 1),
+        count,
+      ).cells,
+      needsNaturals(list, content)
+        ? order.map((i) => gridNaturalTrack(kids[i] as Prepared, vertical))
+        : [],
+      content,
+      { count, gap: layout.gap },
+    );
     const measure = vertical ? verticalGridKid : horizontalGridKid;
-    const sized = order.map((i) => measure(kids[i] as Prepared, layout, size));
+    const sized = order.map((i, at) =>
+      measure(kids[i] as Prepared, layout, tracks.extentOf(at % count)),
+    );
     const { cells, extents } = flowCells(
       sized.map((info) => info.f),
       count,
@@ -775,19 +789,21 @@ export function layoutScreen(
     for (const cell of cells) {
       const line = { top: stacked.tops[cell.line] ?? 0, extent: extents[cell.line] ?? 0 };
       const info = sized[cell.index] as GridKid;
+      const track = {
+        offset: tracks.offsetOf(cell.track),
+        extent: tracks.extentOf(cell.track),
+      };
       rects[order[cell.index] as number] = placeGridCell(
         layout,
         vertical,
-        size,
-        cell,
+        track,
         line,
         info,
       );
     }
-    const tracks = count * size + layout.gap * (count - 1);
     return vertical
-      ? { rects, usedW: tracks, usedH: stacked.total }
-      : { rects, usedW: stacked.total, usedH: tracks };
+      ? { rects, usedW: tracks.used, usedH: stacked.total }
+      : { rects, usedW: stacked.total, usedH: tracks.used };
   }
 
   /** Arranges the children in a `cw` × `ch` content (null = the parent is `hug` on that axis). */

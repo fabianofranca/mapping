@@ -5,6 +5,7 @@ import {
   approximateMeasurer,
   arrangeMarking,
   canArrange,
+  setContainerDensity,
   setFieldValue,
   type ComponentCatalog,
   type Project,
@@ -154,3 +155,119 @@ describe('arrangeMarking: grid slot', () => {
     expect(marking(project, 'T4').rect).toEqual(box(100, 142, 100, 40));
   });
 });
+
+describe('arrangeMarking: grid slot with a track list (DX6, decisions 21 to 24 of #1903)', () => {
+  it('a list row: a 100 px column, then two 1fr columns', () => {
+    const catalog = gridCatalog('row', {
+      columns: [100, '1fr', '1fr'],
+      justify: 'stretch',
+    });
+    const kids = Array.from({ length: 5 }, (_, i) => kidAt(i));
+    const p = withKids(catalog, box(100, 100, 332, 300), kids);
+    const { project, warnings } = arrangeMarking(p, catalog, 'C', approximateMeasurer);
+    // free = 332 − 100 − 16 = 216 → 108 each; starts 0, 108, 224.
+    const at = (i: number) => marking(project, `T${i + 1}`).rect;
+    expect(at(0)).toEqual(box(100, 100, 100, 40));
+    expect(at(1)).toEqual(box(208, 100, 108, 40));
+    expect(at(2)).toEqual(box(324, 100, 108, 40));
+    expect(at(3)).toEqual(box(100, 140, 100, 40));
+    expect(at(4)).toEqual(box(208, 140, 108, 40));
+    expect(warnings).toEqual([]);
+    expectValid(project);
+  });
+
+  it('a hug track measures the child markings placed in it', () => {
+    const catalog = gridCatalog('row', { columns: ['hug', '1fr'] });
+    const p = withKids(catalog, box(100, 100, 300, 300), [
+      box(100, 100, 60, 40),
+      box(170, 100, 100, 40),
+      box(100, 140, 90, 40),
+    ]);
+    const { project } = arrangeMarking(p, catalog, 'C', approximateMeasurer);
+    // hug = max(60, 90) = 90; the second column starts at 90 + 8.
+    expect(marking(project, 'T2').rect.x).toBe(198);
+    expect(marking(project, 'T3').rect).toEqual(box(100, 140, 90, 40));
+  });
+
+  it('rows as a list: the tracks are the lines', () => {
+    const catalog = gridCatalog('row', { rows: [40, '1fr'] });
+    const p = withKids(catalog, box(100, 100, 300, 200), [kidAt(0), kidAt(1), kidAt(2)]);
+    const { project } = arrangeMarking(p, catalog, 'C', approximateMeasurer);
+    expect(marking(project, 'T1').rect).toEqual(box(100, 100, 100, 40));
+    expect(marking(project, 'T2').rect).toEqual(box(100, 148, 100, 40));
+    expect(marking(project, 'T3').rect).toEqual(box(200, 100, 100, 40));
+  });
+
+  it('a hug container hugs px + hug tracks + gaps; with fr, the largest need ÷ n × the fr total', () => {
+    const noFr = gridCatalog('rowhug', { columns: [60, 'hug'], lineGap: 4 });
+    const kids = [box(100, 100, 60, 40), box(170, 100, 70, 40)];
+    const a = withKids(noFr, box(100, 100, 200, 60), kids, 'rowhug');
+    expect(
+      marking(arrangeMarking(a, noFr, 'C', approximateMeasurer).project, 'C').rect,
+    ).toEqual(box(100, 100, 60 + 8 + 70, 40));
+    const withFr = gridCatalog('rowhug', { columns: [60, '1fr', '2fr'] });
+    const b = withKids(
+      withFr,
+      box(100, 100, 400, 60),
+      [box(100, 100, 60, 40), box(170, 100, 80, 40), box(260, 100, 120, 40)],
+      'rowhug',
+    );
+    // max(80 / 1, 120 / 2) = 80 → 240; 60 + 240 + 16.
+    expect(
+      marking(arrangeMarking(b, withFr, 'C', approximateMeasurer).project, 'C').rect
+        .width,
+    ).toBe(316);
+  });
+
+  it('the px tracks scale with the container density, like gap and padding', () => {
+    const catalog = gridCatalog('row', { columns: [100, '1fr'] });
+    const build = (density: number, k: number): Project => {
+      const base = setContainerDensity(componentProject(), 'I1', density);
+      return withKidsOn(base, catalog, box(40 * k, 40 * k, 300 * k, 100 * k), [
+        box(40 * k, 40 * k, 100 * k, 40 * k),
+        box(160 * k, 40 * k, 100 * k, 40 * k),
+      ]);
+    };
+    const one = arrangeMarking(build(1, 1), catalog, 'C', approximateMeasurer).project;
+    const two = arrangeMarking(build(2, 2), catalog, 'C', approximateMeasurer).project;
+    // 1x: the second track starts at 100 + 8; 2x: everything doubles, the px track included.
+    expect(marking(one, 'T2').rect.x).toBe(40 + 108);
+    expect(marking(two, 'T2').rect.x).toBe(80 + 216);
+  });
+});
+
+function withKidsOn(base: Project, catalog: ComponentCatalog, rect: Rect, kids: Rect[]) {
+  let p = addComponentMarking(
+    base,
+    catalog,
+    {
+      markingId: 'C',
+      annotationId: 'A_C',
+      containerId: 'I1',
+      parentId: null,
+      specId: SPEC_ID,
+      typeId: 'row',
+      rect,
+      name: 'Grid',
+    },
+    approximateMeasurer,
+  );
+  kids.forEach((kid, i) => {
+    p = addComponentMarking(
+      p,
+      catalog,
+      {
+        markingId: `T${i + 1}`,
+        annotationId: `A_T${i + 1}`,
+        containerId: 'I1',
+        parentId: 'C',
+        specId: SPEC_ID,
+        typeId: 'text',
+        rect: kid,
+        name: `T${i + 1}`,
+      },
+      approximateMeasurer,
+    );
+  });
+  return p;
+}

@@ -28,10 +28,11 @@ import {
   type PixelRect,
   type Raster,
 } from './image/raster';
-import { paintContainerDrawings } from './image/containerDrawing';
+import { paintContainerDrawingsWithImages } from './image/containerDrawing';
 import type { ImageServer } from './imageServer';
 import type { Refs } from './items';
 import { resolveProjectFile, type Roots } from './paths';
+import { packageImageResolver } from './projects';
 
 export type ImageMode = 'crop' | 'context';
 
@@ -206,6 +207,12 @@ export const sizeWarning = (loaded: LoadedImage, image: ProjectContainer) =>
         warning: `the file is ${loaded.raster.width}×${loaded.raster.height}, but the project records ${image.width}×${image.height}: the coordinates were proportionally adjusted`,
       };
 
+/** The `warning` field: the file-size one (if any) and the notes of the package images that were not drawn. */
+const warningOf = (size: { warning?: string }, notes: readonly string[]) => {
+  const all = [size.warning, ...notes].filter((w): w is string => w !== undefined);
+  return all.length === 0 ? {} : { warning: all.join('; ') };
+};
+
 export const rectJson = (r: PixelRect) => ({
   x: r.x,
   y: r.y,
@@ -262,17 +269,23 @@ export async function markingImage(
   // Container without a file: paints the components' drawing (the same as `render_container`, with the
   // bundled font or the library's) in the region the output shows.
   const bgContainer = isBackgroundContainer(image);
+  let imageNotes: readonly string[] = [];
   if (bgContainer) {
-    paintContainerDrawings(
+    ({ notes: imageNotes } = await paintContainerDrawingsWithImages(
       loaded.raster,
-      { project: refs.project, catalog: refs.loaded.catalog, fonts: refs.loaded.fonts },
+      {
+        project: refs.project,
+        catalog: refs.loaded.catalog,
+        fonts: refs.loaded.fonts,
+        images: packageImageResolver(roots, refs.loaded),
+      },
       image.id,
       {
         scaleX: loaded.scaleX,
         scaleY: loaded.scaleY,
         clip: region,
       },
-    );
+    ));
   }
 
   const legend: { color: string; name: string; ref: string; rect: PixelRect }[] = [];
@@ -327,7 +340,7 @@ export async function markingImage(
         ? {
             drawing: 'rendered',
             drawingNote:
-              "drawing of the components with real text (bundled font or the library's), shadow, dashes and icons; no gradient (the first color applies) and no remote image (it becomes a placeholder)",
+              "drawing of the components with real text (bundled font or the library's), shadow, dashes, gradients, icons and the images of the library package; a remote image becomes a placeholder",
           }
         : {}),
       format,
@@ -353,7 +366,7 @@ export async function markingImage(
             ...(omitted > 0 ? { childrenNotOutlined: omitted } : {}),
           }
         : {}),
-      ...sizeWarning(loaded, image),
+      ...warningOf(sizeWarning(loaded, image), imageNotes),
       ...(await urlFields(images, bytes, format, refs.markingName(marking.id))),
     },
     image: { bytes, mimeType: MIME[format] },

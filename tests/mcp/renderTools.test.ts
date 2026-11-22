@@ -427,3 +427,258 @@ describe("file with dimensions different from the project's and EXIF (findings 2
     expect([decoded.raster.width, decoded.raster.height]).toEqual([20, 40]);
   });
 });
+
+// DX4 (stage #1903, decision 17): the `logo` type of the example library `drawing-extras` draws its
+// three package images (PNG, JPEG and WebP) in `render_marking`, `render_container` and the
+// `get_marking_image` of a container without a file. A remote `src` stays the placeholder, and an
+// image that is missing, corrupt or changed on disk is the placeholder or the new file, with a warning.
+describe('package images of the example library drawing-extras', () => {
+  const EXAMPLE = join(__dirname, '../../examples/libraries/drawing-extras');
+  // The quadrants of each image (top left, top right, bottom left, bottom right), from docs/logo.md.
+  const PNG_COLORS = ['#E53935', '#43A047', '#1E88E5', '#FDD835'];
+  const JPEG_COLORS = ['#8E24AA', '#00ACC1', '#FB8C00', '#6D4C41'];
+  const WEBP_COLORS = ['#212121', '#F5F5F5', '#F06292', '#26A69A'];
+
+  let pkgBase: string;
+  let pkgRoots: Roots;
+  let packageDir: string;
+
+  beforeAll(() => {
+    pkgBase = mkdtempSync(join(tmpdir(), 'mapping-package-render-'));
+    const dir = join(pkgBase, 'telas');
+    packageDir = join(dir, 'specs', 'drawing-extras');
+    mkdirSync(join(dir, 'images'), { recursive: true });
+    cpSync(EXAMPLE, packageDir, { recursive: true });
+    const parsed = parseSpecText(
+      readFileSync(join(EXAMPLE, 'drawing-extras.spec.json'), 'utf8'),
+    );
+    if (!parsed.ok) throw new Error(`invalid spec: ${JSON.stringify(parsed)}`);
+    let p = createProject({
+      name: 'Telas',
+      now: NOW,
+      firstLayer: { id: LAYER, name: 'Layer 1', color: '#D32F2F' },
+    });
+    p = applySpecialization(p, parsed.spec, {
+      packageSpecName: 'drawing-extras.spec.json',
+    });
+    writeFileSync(join(dir, 'mapping.json'), serialize(p));
+    pkgRoots = new Roots([pkgBase]);
+  });
+
+  afterAll(() => rmSync(pkgBase, { recursive: true, force: true }));
+
+  const RECT = { x: 20, y: 20, width: 360, height: 160 };
+
+  async function open(values: Record<string, string>) {
+    const project = await loadProject(pkgRoots, await findProject(pkgRoots, 'telas'));
+    const result = await runBatch(
+      project,
+      [
+        {
+          op: 'add_container',
+          as: '$tela',
+          width: 400,
+          height: 200,
+          background: '#FFFFFF',
+        },
+        create('$logo', RECT, values, 'drawing-extras/logo'),
+      ],
+      io,
+    );
+    expect(result.errors).toEqual([]);
+    const refs = new Refs({ ...project, project: result.project });
+    const id = (alias: string) => (result.aliases.get(alias) as { id: string }).id;
+    return {
+      refs,
+      marking: result.project.markings.find((m) => m.id === id('$logo'))!,
+      container: result.project.containers.find((c) => c.id === id('$tela'))!,
+    };
+  }
+
+  const decoded = async (image: { bytes: Uint8Array }) =>
+    (await decodeImage(image.bytes)).raster;
+
+  /** Pixels within `tolerance` of the color, and the mean x of them (where on the drawing it is). */
+  function find(raster: Raster, hex: string, tolerance: number) {
+    const want = [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16));
+    let count = 0;
+    let sumX = 0;
+    for (let y = 0; y < raster.height; y++) {
+      for (let x = 0; x < raster.width; x++) {
+        const at = (y * raster.width + x) * 4;
+        const close = want.every(
+          (w, c) => Math.abs(raster.data[at + c]! - w) <= tolerance,
+        );
+        if (close) {
+          count++;
+          sumX += x;
+        }
+      }
+    }
+    return { count, meanX: count === 0 ? -1 : sumX / count };
+  }
+
+  /** The JPEG is lossy: a wider tolerance for its decoded pixels (the PNG and the WebP are exact). */
+  const EXACT = 6;
+  const LOSSY = 28;
+  const MIN_PIXELS = 300;
+
+  function expectColors(raster: Raster, colors: string[], tolerance: number): number {
+    const means = colors.map((hex) => {
+      const found = find(raster, hex, tolerance);
+      expect(found.count, hex).toBeGreaterThan(MIN_PIXELS);
+      return found.meanX;
+    });
+    // Left quadrants sit left of the right ones.
+    expect(means[0]!).toBeLessThan(means[1]!);
+    expect(means[2]!).toBeLessThan(means[3]!);
+    return (means[0]! + means[1]!) / 2;
+  }
+
+  it('render_marking draws the quadrant colors of the three formats, left to right', async () => {
+    const { refs, marking } = await open({
+      variant: 'jpeg',
+      source: 'images/pattern.webp',
+    });
+    const out = await renderMarking(pkgRoots, refs, marking, {});
+    const raster = await decoded(out.image);
+    const png = expectColors(raster, PNG_COLORS, EXACT);
+    const jpeg = expectColors(raster, JPEG_COLORS, LOSSY);
+    const webp = expectColors(raster, WEBP_COLORS, EXACT);
+    // The fixed PNG, the variant's JPEG and the field's WebP, in the order of the slots.
+    expect(png).toBeLessThan(jpeg);
+    expect(jpeg).toBeLessThan(webp);
+    expect(out.json).not.toHaveProperty('warning');
+  });
+
+  it('the variant field picks the image: the png default shows the PNG twice and no JPEG', async () => {
+    const { refs, marking } = await open({ source: 'images/logo.png' });
+    const raster = await decoded(
+      (await renderMarking(pkgRoots, refs, marking, {})).image,
+    );
+    expect(find(raster, JPEG_COLORS[0]!, LOSSY).count).toBe(0);
+    expect(find(raster, PNG_COLORS[0]!, EXACT).count).toBeGreaterThan(2 * MIN_PIXELS);
+  });
+
+  it('render_container draws them too', async () => {
+    const { refs, container } = await open({
+      variant: 'jpeg',
+      source: 'images/pattern.webp',
+    });
+    const raster = await decoded(
+      (await renderContainer(pkgRoots, refs, container, {})).image,
+    );
+    expectColors(raster, PNG_COLORS, EXACT);
+    expectColors(raster, JPEG_COLORS, LOSSY);
+    expectColors(raster, WEBP_COLORS, EXACT);
+  });
+
+  it('get_marking_image of a container without a file draws them as well', async () => {
+    const { refs, marking } = await open({
+      variant: 'jpeg',
+      source: 'images/pattern.webp',
+    });
+    const out = await markingImage(pkgRoots, refs, marking, {});
+    expect(out.json).toMatchObject({ drawing: 'rendered' });
+    const raster = await decoded(out.image);
+    expectColors(raster, PNG_COLORS, EXACT);
+    expectColors(raster, WEBP_COLORS, EXACT);
+  });
+
+  it('a remote src stays the placeholder', async () => {
+    const { refs, marking } = await open({ source: 'https://example.com/pattern.webp' });
+    const out = await renderMarking(pkgRoots, refs, marking, {});
+    const raster = await decoded(out.image);
+    // (Not the light quadrant #F5F5F5: it is within the tolerance of the node's own #F3F4F6 fill.)
+    for (const hex of [WEBP_COLORS[0]!, WEBP_COLORS[2]!, WEBP_COLORS[3]!]) {
+      expect(find(raster, hex, EXACT).count, hex).toBe(0);
+    }
+    // The package images of the same drawing are still there.
+    expect(find(raster, PNG_COLORS[0]!, EXACT).count).toBeGreaterThan(MIN_PIXELS);
+    expect(out.json).not.toHaveProperty('warning');
+  });
+
+  it('a path the package does not hold is the placeholder, with a warning', async () => {
+    const { refs, marking } = await open({ source: 'images/nope.png' });
+    const out = await renderMarking(pkgRoots, refs, marking, {});
+    expect(out.json.warning).toEqual(expect.stringContaining('images/nope.png'));
+    const raster = await decoded(out.image);
+    expect(find(raster, PNG_COLORS[0]!, EXACT).count).toBeGreaterThan(MIN_PIXELS);
+  });
+
+  it('a corrupt image is the placeholder, with a warning, and the rest is drawn', async () => {
+    writeFileSync(join(packageDir, 'images', 'broken.png'), 'not an image');
+    const { refs, marking } = await open({ source: 'images/broken.png' });
+    const out = await renderMarking(pkgRoots, refs, marking, {});
+    expect(out.json.warning).toEqual(expect.stringContaining('images/broken.png'));
+    const raster = await decoded(out.image);
+    expect(find(raster, PNG_COLORS[0]!, EXACT).count).toBeGreaterThan(MIN_PIXELS);
+  });
+
+  it('an image beyond the 1 MB limit is the placeholder, without being decoded', async () => {
+    // A valid PNG header followed by padding: the size alone refuses it.
+    const png = readFileSync(join(EXAMPLE, 'images', 'logo.png'));
+    writeFileSync(
+      join(packageDir, 'images', 'heavy.png'),
+      Buffer.concat([png, Buffer.alloc(1024 * 1024)]),
+    );
+    const { refs, marking } = await open({ source: 'images/heavy.png' });
+    const out = await renderMarking(pkgRoots, refs, marking, {});
+    expect(out.json.warning).toEqual(expect.stringContaining('1 MB'));
+  });
+
+  it('draws the new file when the image changes on disk', async () => {
+    const swap = join(packageDir, 'images', 'swap.png');
+    const red = createRaster(8, 8);
+    for (let i = 0; i < 64; i++) red.data.set([200, 0, 0, 255], i * 4);
+    writeFileSync(swap, await encodeImage(red, 'png'));
+    const first = await open({ source: 'images/swap.png' });
+    const before = await decoded(
+      (await renderMarking(pkgRoots, first.refs, first.marking, {})).image,
+    );
+    expect(find(before, '#C80000', EXACT).count).toBeGreaterThan(MIN_PIXELS);
+    // Another content (and size): the stamp changes, so the cached decode is dropped.
+    const blue = createRaster(16, 16);
+    for (let i = 0; i < 256; i++) blue.data.set([0, 0, 200, 255], i * 4);
+    writeFileSync(swap, await encodeImage(blue, 'png'));
+    const second = await open({ source: 'images/swap.png' });
+    const after = await decoded(
+      (await renderMarking(pkgRoots, second.refs, second.marking, {})).image,
+    );
+    expect(find(after, '#C80000', EXACT).count).toBe(0);
+    expect(find(after, '#0000C8', EXACT).count).toBeGreaterThan(MIN_PIXELS);
+  });
+
+  it('filter.grayscale 1 on the component turns its package images gray (#2359)', async () => {
+    const file = join(packageDir, 'components', 'logo.json');
+    const original = readFileSync(file, 'utf8');
+    const component = JSON.parse(original) as { template: Record<string, unknown> };
+    component.template.filter = { grayscale: 1 };
+    writeFileSync(file, JSON.stringify(component));
+    try {
+      const { refs, marking } = await open({
+        variant: 'jpeg',
+        source: 'images/pattern.webp',
+      });
+      const raster = await decoded(
+        (await renderMarking(pkgRoots, refs, marking, {})).image,
+      );
+      // Every pixel has R = G = B: the images, the text and the border.
+      let colored = 0;
+      for (let i = 0; i < raster.data.length; i += 4) {
+        if (
+          raster.data[i] !== raster.data[i + 1] ||
+          raster.data[i] !== raster.data[i + 2]
+        ) {
+          colored++;
+        }
+      }
+      expect(colored).toBe(0);
+      for (const hex of [PNG_COLORS[0]!, WEBP_COLORS[2]!]) {
+        expect(find(raster, hex, EXACT).count, hex).toBe(0);
+      }
+    } finally {
+      writeFileSync(file, original);
+    }
+  });
+});

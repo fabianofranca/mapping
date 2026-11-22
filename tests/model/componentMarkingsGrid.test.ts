@@ -4,6 +4,7 @@ import {
   addComponentMarking,
   approximateMeasurer,
   arrangeMarking,
+  setContainerDensity,
   setFieldValue,
   setProjectDirection,
   type ComponentCatalog,
@@ -100,6 +101,66 @@ describe('componentPlacement in a grid slot', () => {
     for (const n of [1, 2, 3]) p = kid(p, catalog, n);
     // track (row): (200 - 8) / 2 = 96, step 104; columns of 100.
     expect(rectOf(p, 'T2')).toEqual({ x: 100, y: 204, width: 100, height: 40 });
+    expect(rectOf(p, 'T3')).toEqual({ x: 200, y: 100, width: 100, height: 40 });
+  });
+});
+
+describe('componentPlacement in a grid slot with a track list (DX6)', () => {
+  it('the children go into the tracks of the list: a 100 px column, then two 1fr', () => {
+    const catalog = gridCatalog('row', { columns: [100, '1fr', '1fr'] });
+    let p = container(catalog, { x: 100, y: 100, width: 332, height: 300 });
+    for (const n of [1, 2, 3, 4]) p = kid(p, catalog, n);
+    // free = 332 − 100 − 16 = 216 → 108 each; starts 0, 108, 224.
+    expect(rectOf(p, 'T1')).toEqual({ x: 100, y: 100, width: 100, height: 40 });
+    expect(rectOf(p, 'T2')).toEqual({ x: 208, y: 100, width: 100, height: 40 });
+    expect(rectOf(p, 'T3')).toEqual({ x: 324, y: 100, width: 100, height: 40 });
+    expect(rectOf(p, 'T4')).toEqual({ x: 100, y: 140, width: 100, height: 40 });
+    expectValid(p);
+  });
+
+  it('a hug track follows the children already placed in it', () => {
+    const catalog = gridCatalog('row', { columns: ['hug', '1fr'] });
+    let p = container(catalog, { x: 100, y: 100, width: 300, height: 300 });
+    p = kid(p, catalog, 1, { x: 100, y: 100, width: 100, height: 40 });
+    p = kid(p, catalog, 2);
+    // hug = 100: the second column starts at 100 + 8.
+    expect(rectOf(p, 'T2')).toEqual({ x: 208, y: 100, width: 100, height: 40 });
+  });
+
+  it('the placement agrees with Arrange (arranging moves nobody)', () => {
+    const catalog = gridCatalog('row', { columns: [100, '1fr', '1fr'] });
+    let p = container(catalog, { x: 100, y: 100, width: 332, height: 300 });
+    for (const n of [1, 2, 3, 4]) p = kid(p, catalog, n);
+    const arranged = arrangeMarking(p, catalog, 'C', approximateMeasurer).project;
+    for (const id of ['T1', 'T2', 'T3', 'T4'])
+      expect(rectOf(arranged, id)).toEqual(rectOf(p, id));
+  });
+
+  it('the px tracks scale with the container density (the cell stays at 2 × the 1x offset)', () => {
+    const catalog = gridCatalog('row', { columns: [100, '1fr'] });
+    const build = (density: number, k: number): Project => {
+      let p = add(
+        setContainerDensity(componentProject(), 'I1', density),
+        catalog,
+        'C',
+        'row',
+        {
+          rect: { x: 40 * k, y: 40 * k, width: 300 * k, height: 200 * k },
+        },
+      );
+      p = kid(p, catalog, 1);
+      return kid(p, catalog, 2);
+    };
+    // 1x: the second track starts at 100 + 8; 2x: the px track and the gap double.
+    expect(rectOf(build(1, 1), 'T2').x - 40).toBe(108);
+    expect(rectOf(build(2, 2), 'T2').x - 80).toBe(216);
+  });
+
+  it('rows as a list: the first free cell goes down the lines', () => {
+    const catalog = gridCatalog('row', { rows: [40, '1fr'] });
+    let p = container(catalog, { x: 100, y: 100, width: 300, height: 200 });
+    for (const n of [1, 2, 3]) p = kid(p, catalog, n);
+    expect(rectOf(p, 'T2')).toEqual({ x: 100, y: 148, width: 100, height: 40 });
     expect(rectOf(p, 'T3')).toEqual({ x: 200, y: 100, width: 100, height: 40 });
   });
 });

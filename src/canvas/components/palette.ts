@@ -8,6 +8,8 @@ export interface RenderPalette {
   readonly placeholderFill: string;
   /** Outline of the placeholder (X, image stroke, slot). */
   readonly placeholderLine: string;
+  /** The X and the dashed outline of a remote image that failed to load. */
+  readonly failedLine: string;
   /** Outline of the node box the drawing does not know (and text of the missing-type box). */
   readonly unknownLine: string;
   /** Fill of the missing-type box (instance without a component or of an unknown type). */
@@ -23,6 +25,7 @@ export interface RenderPalette {
 export const DEFAULT_PALETTE: RenderPalette = {
   placeholderFill: 'rgba(128, 128, 128, 0.25)',
   placeholderLine: 'rgba(128, 128, 128, 0.8)',
+  failedLine: '#d9480f',
   unknownLine: '#d81b60',
   unknownFill: 'rgba(216, 27, 96, 0.06)',
   slotOpacity: 0.6,

@@ -165,7 +165,7 @@ describe('validateLibrary with image', () => {
   });
 
   it.each([
-    ['relative', 'images/a.png'],
+    ['relative without an image extension', 'images/a.txt'],
     ['http:', 'http://cdn.example.com/a.png'],
     ['data:', 'data:image/png;base64,AAAA'],
     ['with credentials', 'https://u:p@cdn.example.com/a.png'],

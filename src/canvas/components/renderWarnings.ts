@@ -23,7 +23,13 @@ export type RenderWarningCode =
   /** Stroke with a radial gradient: the first color. */
   | 'stroke-radial-first-color'
   /** Stroke with an image: gray. */
-  | 'stroke-image-gray';
+  | 'stroke-image-gray'
+  /** Remote image that failed or was too large (`params.origin`): the failure look. */
+  | 'remote-image-failed'
+  /** Remote image loaded without CORS in a pixel-safe drawing (`params.origin`). */
+  | 'remote-image-opaque'
+  /** Angular gradient without `createConicGradient`: the first stop's color. */
+  | 'angular-gradient-unsupported';
 
 export interface RenderWarning {
   readonly code: RenderWarningCode;
@@ -42,4 +48,7 @@ export const RENDER_WARNING_CODES: readonly RenderWarningCode[] = [
   'stroke-align-centered',
   'stroke-radial-first-color',
   'stroke-image-gray',
+  'angular-gradient-unsupported',
+  'remote-image-failed',
+  'remote-image-opaque',
 ];
