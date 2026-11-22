@@ -199,7 +199,7 @@ describe('a linear stroke gradient', () => {
     end: { x: 100, y: 0 },
     stops: STOPS,
   };
-  const STROKE: Stroke = { width: 2, paints: [LINEAR] };
+  const STROKE: Stroke = { width: 2, align: 'center', paints: [LINEAR] };
 
   it('on an ellipse is converted like the fill (the Konva origin is the center)', () => {
     const strokeShape = (
