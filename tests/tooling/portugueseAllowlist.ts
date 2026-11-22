@@ -3618,11 +3618,6 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
     reason: 'option value `não` of the boolean mapping, stored data (decision 7 of #741)',
   },
   {
-    path: 'examples/libraries/sdui-backend/sdui-backend.spec.json',
-    pattern: /"não": "no"/,
-    reason: 'option value `não` of the boolean mapping, stored data (decision 7 of #741)',
-  },
-  {
     path: 'scripts/testing/fiel.mjs',
     pattern: /Quando o cartão abraça/,
     reason:
