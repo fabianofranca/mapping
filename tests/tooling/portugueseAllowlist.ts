@@ -1586,6 +1586,12 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'owner-chat',
   },
   {
+    // A command the coordinator matches in the owner's own chat message after the End (stage #2293, decision 11).
+    term: 'retomar fila',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
     term: 'ainda não #<n>',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
