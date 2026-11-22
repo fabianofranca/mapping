@@ -61,8 +61,16 @@ export function canSaveWithPicker(): boolean {
 
 export type SaveResult = 'saved' | 'cancelled' | 'failed';
 
+/** The file type the picker offers: the file's own (its MIME type and extension), the zip by default. */
+function pickerType(file: File): { accept: Record<string, readonly string[]> } {
+  const dot = file.name.lastIndexOf('.');
+  const extension = dot > 0 ? file.name.slice(dot).toLowerCase() : '.zip';
+  const mime = file.type.split(';')[0]?.trim() || 'application/zip';
+  return { accept: { [mime]: [extension] } };
+}
+
 /**
- * Opens the system "Save as" (suggested name, zip type) and writes the file through the
+ * Opens the system "Save as" (suggested name, the file's type) and writes the file through the
  * handle. `saved` only after `close()`, when the file is on disk; `cancelled`
  * if the person closed the picker. It must be called straight from the click (the picker requires
  * a user gesture), before any `await`.
@@ -74,7 +82,7 @@ export async function saveFileWithPicker(file: File): Promise<SaveResult> {
   try {
     handle = await picker.call(globalThis, {
       suggestedName: file.name,
-      types: [{ accept: { 'application/zip': ['.zip'] } }],
+      types: [pickerType(file)],
     });
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') return 'cancelled';

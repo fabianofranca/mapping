@@ -330,6 +330,33 @@ export const ptBR: Dictionary = {
   'export.downloadHint':
     'Ao baixar, o projeto conta como exportado. Se você cancelar o salvamento do arquivo, exporte de novo.',
 
+  'format.exportMenu': 'Exportar em um formato…',
+  'format.export.title': 'Exportar em um formato',
+  'format.export.format': 'Formato',
+  'format.export.container': 'Container',
+  'format.export.option': '{spec} › {format} (.{extension})',
+  'format.export.run': 'Exportar',
+  'format.export.running': 'Executando o plugin…',
+  'format.export.loading': 'Lendo as especializações…',
+  'format.export.none': 'Nenhuma especialização aplicada tem um formato que exporta.',
+  'format.export.fileMeta': 'Arquivo de texto · {size}',
+  'format.isolation':
+    'O código do plugin roda isolado, sem rede, disco ou acesso aos seus projetos.',
+  'format.specNotice':
+    'Traz {count} formato(s) de arquivo; o código deles roda isolado, sem rede, disco ou acesso aos seus projetos.',
+  'format.error.unexpected': 'A exportação falhou por um motivo inesperado.',
+  'format.error.save':
+    'As alterações pendentes não puderam ser salvas, então nada foi exportado. Corrija o erro de salvamento e tente de novo.',
+  'format.error.project': 'Não foi possível ler o projeto para este formato.',
+  'format.error.container': 'Escolha um container para exportar.',
+  'format.error.plugin-failed': 'O plugin falhou: {message}',
+  'format.error.plugin-failed.at':
+    'O plugin falhou: {message} (linha {line}, coluna {column})',
+  'format.error.plugin-timeout': 'O plugin passou do limite de tempo de {seconds} s.',
+  'format.error.plugin-limit': 'O plugin passou de um limite: {message}',
+  'format.error.plugin-output-invalid':
+    'O plugin devolveu algo que o app não consegue usar: {message}',
+
   'pwa.updateAvailable': 'Nova versão disponível.',
   'pwa.update': 'Atualizar',
   'pwa.installTitle': 'Instalar no dispositivo',

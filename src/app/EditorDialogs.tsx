@@ -26,6 +26,7 @@ import { SpecsDialog } from '../ui/SpecsDialog';
 import { selectItems } from '../store/ui';
 import { closeProject } from './controller';
 import { ExportDialog } from './ExportDialog';
+import { FormatExportDialog } from './FormatExportDialog';
 import type { EditorDialog, EditorDialogs as Dialogs } from './useEditorDialogs';
 import { Button } from '../ui/controls';
 import { ExitReviewDialog } from '../ui/review/ExitReviewDialog';
@@ -262,8 +263,18 @@ function renderDialog(
         <ExportDialog
           file={dialog.file}
           saved={dialog.saved}
+          {...(dialog.format === undefined ? {} : { format: dialog.format })}
           onDone={close}
           returnFocus={() => dialogs.exportButton.current}
+        />
+      );
+    case 'exportFormat':
+      return (
+        <FormatExportDialog
+          onClose={close}
+          onGenerated={(file) =>
+            dialogs.show({ kind: 'export', file, saved: true, format: true })
+          }
         />
       );
     case 'exitReview':

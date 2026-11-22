@@ -124,6 +124,9 @@ describe('dictionaries', () => {
       'zoom.value',
       'status.empty',
       'view.containers',
+      // Export in a format (AF3): "Container" is the same word in both languages; the option is only {parameters}.
+      'format.export.container',
+      'format.export.option',
       // CM5-B: "Container" is the same word in both languages.
       'citation.group.container',
       'status.schema',

@@ -50,6 +50,8 @@ const ALLOWLIST = [
   'src/app/itemClipboard.ts',
   // Requests to delete an image/marking: real project, disabled in the review.
   'src/app/useEditorDialogs.ts',
+  // Export in a format (AF3): exports the saved project (flush first), not a proposal being reviewed.
+  'src/app/FormatExportDialog.tsx',
   // Image intake (drag, paste, choose): real project.
   'src/app/useImageIntake.tsx',
   // Diagnostics of the real project.

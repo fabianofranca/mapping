@@ -128,6 +128,49 @@ describe('SpecsDialog', () => {
     expect(within(design).getByText('icons/set.json')).toBeTruthy();
   });
 
+  it('a specialization that declares file formats shows the isolation notice (#2035, AF3)', () => {
+    let n = 0;
+    const withFormats: Spec = {
+      ...libSpec(1, { c: [buttonType()] }, { formatVersion: 20 }),
+      fileFormats: [
+        {
+          id: 'notes',
+          name: 'Notes',
+          extension: 'txt',
+          plugin: 'plugins/notes.js',
+          contract: 1,
+        },
+        {
+          id: 'list',
+          name: 'List',
+          extension: 'csv',
+          plugin: 'plugins/list.js',
+          contract: 1,
+        },
+      ],
+    };
+    setup(applySpecialization(emptyProject(), withFormats, { newId: () => `LS${++n}` }));
+    const item = document.querySelector<HTMLElement>('.spec-item');
+    expect(item).not.toBeNull();
+    expect(
+      within(item!).getByText(
+        'Brings 2 file format(s); their code runs isolated, without network, disk or access to your projects.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('a specialization without file formats shows no isolation notice', () => {
+    let n = 0;
+    setup(
+      applySpecialization(emptyProject(), libSpec(1, { c: [buttonType()] }), {
+        newId: () => `LS${++n}`,
+      }),
+    );
+    const item = document.querySelector<HTMLElement>('.spec-item');
+    expect(item).not.toBeNull();
+    expect(within(item!).queryByText(/file format\(s\)/)).toBeNull();
+  });
+
   it('a specialization with no layers shows its version without a dangling colon (CL2)', () => {
     let n = 0;
     const empty: Spec = { ...libSpec(1), layers: [] };
