@@ -130,3 +130,6 @@ export * from './markdown';
 export * from './typeChoice';
 // The marking rules of the MCP batch (`add_container` with a background, `create_marking`, `update_marking`).
 export * from './batchMarkings';
+export * from './batchAnnotations';
+export * from './batchRefs';
+export * from './formatApply';
