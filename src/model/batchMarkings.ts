@@ -943,8 +943,7 @@ export function createBatchMarking(
     annotationId: made.annotationId,
     marking: created,
     typeRef: target.typeRef,
-    componentName:
-      target.typeRef === null ? null : componentTypeName(p, target.typeRef),
+    componentName: target.typeRef === null ? null : componentTypeName(p, target.typeRef),
   };
 }
 
