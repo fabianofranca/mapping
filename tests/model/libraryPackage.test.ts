@@ -6,6 +6,7 @@ import {
   MAX_PACKAGE_BYTES,
   MAX_PACKAGE_FILES,
   applySpecialization,
+  hasLoadedPackage,
   isPackageFile,
   isTextPackageFile,
   packageDirOf,
@@ -71,6 +72,22 @@ describe('package paths', () => {
     expect(packageSpecNameOf(files, 'material3')).toBe('material3.spec.json');
     expect(packageSpecNameOf(files, 'other')).toBe('other.spec.json');
     expect(packageSpecNameOf(new Map(), 'x')).toBe('x.spec.json');
+  });
+});
+
+describe('hasLoadedPackage', () => {
+  const spec = material3Spec();
+
+  it('is true for a folder package with a loaded spec', () => {
+    expect(hasLoadedPackage({ spec, file: 'specs/m3/m3.spec.json' })).toBe(true);
+  });
+
+  it('is false without a loaded spec', () => {
+    expect(hasLoadedPackage({ spec: null, file: 'specs/m3/m3.spec.json' })).toBe(false);
+  });
+
+  it('is false for the standalone copy of v1 to v3', () => {
+    expect(hasLoadedPackage({ spec, file: 'specs/sdui.json' })).toBe(false);
   });
 });
 
