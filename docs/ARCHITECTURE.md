@@ -165,7 +165,7 @@ of the markings changed, repeated id), the whole project. The canvas spaces and 
 are settled whole (spatial index of `spaceIndex.ts`); in the others, only those that fit (including equal) in a rectangle that
 changed, before or after, are reviewed (`settleLocal.ts`): a marking's parent depends only on who contains it, on the ranks of equal
 rectangles and on the current parent. The sweep uses the positions and boxes of the markings of each space, kept per markings array
-(`settlePositions.ts`, filled on demand and passed from one operation to the next without sweeping the project). The perspectives and the
+(`settlePositions.ts`, filled on demand and passed from one operation to the next without sweeping the project: creations append to the space's entry, and a move or resize inside one space, not floating, keeps it too, copying the boxes on write so the previous array's entry, and so the undo and redo branches, stay intact; a change of space or of `floating` makes the spaces unknown again). A query of the spatial index walks the cells of its range, or the occupied cells of the size class when the range is larger, so a far-away marking does not stall every query. The perspectives and the
 "Came from…" marks are reconciled by `reconcilePerspectivesFrom`, the same algorithm over a lean view of the two projects (containers,
 canvas markings and replaced markings), instead of building the index of the whole project. The proof of equivalence is a randomized test of
 sequences of public operations (`tests/model/settleSequences.test.ts`, seed printed on failure), besides the randomized test of projects
