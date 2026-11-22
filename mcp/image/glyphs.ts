@@ -92,6 +92,8 @@ export interface GlyphStyle {
   readonly italic: boolean;
   /** CSS weight, for a variable font's `wght` axis (default 400). */
   readonly weight?: number;
+  /** The node's base direction (absent = `ltr`): the runs of the line are reordered by it (stage #2448). */
+  readonly direction?: 'rtl';
 }
 
 /** The outlines of the text laid out by `face` (shaped as a whole; with letter spacing, without the optional ligatures and contextual alternates). */
@@ -106,6 +108,7 @@ function laidOut(
     face.path(text, x, baseline, style.size, {
       letterSpacing: style.letterSpacing,
       weight: style.weight,
+      direction: style.direction,
     }),
   );
 }
@@ -137,17 +140,20 @@ export function textPolygons(
   return value;
 }
 
-/** Width of a one-line text with the font and the letter spacing. */
-export function textWidth(
-  book: FontBook,
-  text: string,
-  font: Pick<MeasureFont, 'family' | 'size' | 'weight' | 'italic' | 'letterSpacing'>,
-): number {
+/** What lays a line out: the font, the letter spacing and the base direction. */
+type LineFont = Pick<
+  MeasureFont,
+  'family' | 'size' | 'weight' | 'italic' | 'letterSpacing' | 'direction'
+>;
+
+/** Width of a one-line text with the font, the letter spacing and the direction. */
+export function textWidth(book: FontBook, text: string, font: LineFont): number {
   const face = book.fontFor(font.family, font.weight, font.italic);
   const advance = guardedLayout(
     face,
     () => book.embeddedFor(font.family, font.weight),
-    (f) => f.advance(text, font.size, font.weight, font.letterSpacing !== 0),
+    (f) =>
+      f.advance(text, font.size, font.weight, font.letterSpacing !== 0, font.direction),
   );
   return Math.max(0, advance + font.letterSpacing * [...text].length);
 }
@@ -156,15 +162,12 @@ export function textWidth(
  * The face that lays the one-line `text` out: the font's own, or the embedded one when its shaping throws. What reads
  * the vertical metrics of a text asks this face, so they match the glyphs and the width.
  */
-export function layingFace(
-  book: FontBook,
-  text: string,
-  font: Pick<MeasureFont, 'family' | 'size' | 'weight' | 'italic' | 'letterSpacing'>,
-): Face {
+export function layingFace(book: FontBook, text: string, font: LineFont): Face {
   return guardedLayoutWith(
     book.fontFor(font.family, font.weight, font.italic),
     () => book.embeddedFor(font.family, font.weight),
-    (f) => f.advance(text, font.size, font.weight, font.letterSpacing !== 0),
+    (f) =>
+      f.advance(text, font.size, font.weight, font.letterSpacing !== 0, font.direction),
   ).face;
 }
 
