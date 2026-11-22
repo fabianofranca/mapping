@@ -1,4 +1,4 @@
-# Queue canary line documentation — [Não lançado] (épico `epic/fila-canarios-doc`, PR #2554, MCP unchanged, schema v23 unchanged)
+# Queue canary line documentation — 2026-11-22 (épico `epic/fila-canarios-doc`, PR #2568, MCP unchanged, schema v23 unchanged)
 
 ## Corrigido
 
