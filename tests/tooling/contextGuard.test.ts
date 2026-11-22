@@ -1223,7 +1223,7 @@ describe('CG1 — the tester role (decision 7)', () => {
     expect(
       roleOf([phasePrompt + ' Read `docs/TESTING-NUVEM.md` and run in modo dirigido']),
     ).toBe('fase');
-    expect(roleOf(['/implementar-fila x', testerPrompts[0]])).toBe('coordenador');
+    expect(roleOf(['/implementar-fila x', testerPrompts[0] ?? ''])).toBe('coordenador');
   });
 
   const tester = testerPrompts[0];
