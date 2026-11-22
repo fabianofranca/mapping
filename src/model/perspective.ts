@@ -1,6 +1,7 @@
 import { imageCanvasRect, toCanvasRect } from './geometry';
 import { projectIndex, type ProjectIndex } from './projectIndex';
 import type {
+  Annotation,
   Arrow,
   Marking,
   Perspective,
@@ -33,7 +34,10 @@ function markingFootprint(index: ProjectIndex, marking: Marking): Rect {
  * canvas units. `null` for an id that is neither a container nor a marking.
  */
 export function rootFootprint(p: Project, id: string): Rect | null {
-  const index = projectIndex(p);
+  return footprintIn(projectIndex(p), id);
+}
+
+function footprintIn(index: ProjectIndex, id: string): Rect | null {
   const container = index.containers.get(id);
   if (container) return imageCanvasRect(container, container.placement);
   const marking = index.markings.get(id);
@@ -69,13 +73,16 @@ export function isMarkingRoot(p: Project, id: string): boolean {
 // The project in view
 
 /** Shift of each root present in the view (the first entry of each root wins). */
-function viewShifts(p: Project, perspective: Perspective): Map<string, CanvasPosition> {
+function viewShifts(
+  index: ProjectIndex,
+  perspective: Perspective,
+): Map<string, CanvasPosition> {
   const shifts = new Map<string, CanvasPosition>();
   for (const item of perspective.items) {
-    if (shifts.has(item.root) || !isRootId(p, item.root)) continue;
-    const at = rootPosition(p, item.root) as CanvasPosition;
+    if (shifts.has(item.root) || index.rootOf.get(item.root) !== item.root) continue;
+    const at = footprintIn(index, item.root) as Rect;
     // A marking's position is whole: so is the shift.
-    const whole = isMarkingRoot(p, item.root);
+    const whole = !index.containers.has(item.root) && index.markings.has(item.root);
     const dx = item.x - at.x;
     const dy = item.y - at.y;
     shifts.set(
@@ -88,11 +95,15 @@ function viewShifts(p: Project, perspective: Perspective): Map<string, CanvasPos
 
 const isStill = (d: CanvasPosition) => d.x === 0 && d.y === 0;
 
-/** The arrow in view: points kept, shifted or erased according to the space of the ends. */
+/**
+ * The arrow in view: points kept, shifted or erased according to the space of the ends.
+ * `sameRoot`: both ends have the same root (the caller already read both roots).
+ */
 function arrowInView(
   index: ProjectIndex,
   arrow: Arrow,
   shift: CanvasPosition,
+  sameRoot: boolean,
 ): Arrow | null {
   const from = index.markings.get(arrow.from);
   const to = index.markings.get(arrow.to);
@@ -100,8 +111,7 @@ function arrowInView(
   if (arrow.points.length === 0) return arrow;
   // Points in container pixels: ends in the same container move together with it.
   if (from.containerId !== null && from.containerId === to.containerId) return arrow;
-  if (index.rootOf.get(from.id) !== index.rootOf.get(to.id))
-    return { ...arrow, points: [] };
+  if (!sameRoot) return { ...arrow, points: [] };
   if (isStill(shift)) return arrow;
   const points = arrow.points.map((pt) => ({ x: pt.x + shift.x, y: pt.y + shift.y }));
   return { ...arrow, points };
@@ -122,25 +132,40 @@ function movedMarking(m: Marking, d: CanvasPosition): Marking {
 
 function buildView(p: Project, perspective: Perspective): Project {
   const index = projectIndex(p);
-  const shifts = viewShifts(p, perspective);
-  const shiftOf = (id: string) => shifts.get(index.rootOf.get(id) ?? '');
+  const shifts = viewShifts(index, perspective);
+  // The roots come from the index by position: no hashing of each id, no reading of the annotations of what leaves.
+  const { containerRoots, markingRoots, annotationRoots } = index;
 
-  const containers = p.containers.flatMap((c) => {
-    const d = shiftOf(c.id);
-    return d ? [movedContainer(c, d)] : [];
-  });
-  const markings = p.markings.flatMap((m) => {
-    const d = shiftOf(m.id);
-    return d ? [movedMarking(m, d)] : [];
-  });
-  const arrows = p.arrows.flatMap((a) => {
-    const d = shiftOf(a.from);
-    const other = shiftOf(a.to);
-    const next = d && other ? arrowInView(index, a, d) : null;
-    return next ? [next] : [];
-  });
-  const kept = new Set<string>([...markings, ...arrows].map((x) => x.id));
-  const annotations = p.annotations.filter((a) => kept.has(a.markingId));
+  const containers: ProjectContainer[] = [];
+  for (let i = 0; i < p.containers.length; i++) {
+    const d = shifts.get(containerRoots[i]!);
+    if (d) containers.push(movedContainer(p.containers[i]!, d));
+  }
+  const markings: Marking[] = [];
+  for (let i = 0; i < p.markings.length; i++) {
+    const d = shifts.get(markingRoots[i]!);
+    if (d) markings.push(movedMarking(p.markings[i]!, d));
+  }
+  const arrows: Arrow[] = [];
+  const keptArrows = new Set<string>();
+  for (const a of p.arrows) {
+    const fromRoot = index.rootOf.get(a.from) ?? '';
+    const toRoot = index.rootOf.get(a.to) ?? '';
+    const d = shifts.get(fromRoot);
+    const next =
+      d && shifts.has(toRoot) ? arrowInView(index, a, d, fromRoot === toRoot) : null;
+    if (!next) continue;
+    arrows.push(next);
+    keptArrows.add(next.id);
+  }
+  // A marking's annotation stays with its root; the object is read only for those on an arrow (or on nothing).
+  const annotations: Annotation[] = [];
+  for (let i = 0; i < p.annotations.length; i++) {
+    const root = annotationRoots[i]!;
+    const a = p.annotations[i]!;
+    if (root !== null ? shifts.has(root) : keptArrows.has(a.markingId))
+      annotations.push(a);
+  }
   return { ...p, containers, markings, arrows, annotations };
 }
 
