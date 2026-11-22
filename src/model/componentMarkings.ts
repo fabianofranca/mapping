@@ -268,6 +268,8 @@ function scaledLayout(layout: ResolvedSlotLayout, density: number): ResolvedSlot
 /** The boxes (image pixels) of the visible slots of a marking and the children the geometry put in each. */
 interface SlotScene {
   readonly boxes: ReadonlyMap<string, Rect>;
+  /** The boxes (image pixels) of the slots hidden by `visible`: where they sit if shown; only an explicit ask uses them. */
+  readonly revealed: ReadonlyMap<string, Rect>;
   readonly kids: ReadonlyMap<string, readonly Marking[]>;
 }
 
@@ -287,7 +289,8 @@ function sceneOfSlots(
   drawings: ComponentDrawings | undefined,
 ): SlotScene {
   // A `screen` component takes its children whole (the drawing has no slot plan for it): no slot box.
-  if (drawn.component.screen !== undefined) return { boxes: new Map(), kids: new Map() };
+  if (drawn.component.screen !== undefined)
+    return { boxes: new Map(), revealed: new Map(), kids: new Map() };
   const kids = childrenOf(p, container.id);
   const byId = new Map(kids.map((kid) => [kid.id, kid]));
   const known = drawings?.get(container.id);
@@ -298,6 +301,11 @@ function sceneOfSlots(
       boxes: new Map(
         known.slots.flatMap((slot) =>
           slot.hidden ? [] : [[slot.id, slot.box] as const],
+        ),
+      ),
+      revealed: new Map(
+        known.slots.flatMap((slot) =>
+          slot.hidden ? [[slot.id, slot.box] as const] : [],
         ),
       ),
       kids: new Map(known.slots.map((slot) => [slot.id, []])),
@@ -311,11 +319,17 @@ function sceneOfSlots(
     [...slotsOfScene(root)].map(([id, slot]) => [id, space.toPixels(slot.box)]),
   );
   if (known !== undefined)
-    return { boxes, kids: new Map(known.slots.map((s) => [s.id, own(s.children)])) };
+    return {
+      boxes,
+      revealed: new Map(
+        known.slots.flatMap((s) => (s.hidden ? [[s.id, s.box] as const] : [])),
+      ),
+      kids: new Map(known.slots.map((s) => [s.id, own(s.children)])),
+    };
   const defs = new Map(
     typeSlots(p, mc.specId, mc.typeId, mc.component).map((def) => [def.id, def]),
   );
-  const { inputs } = slotInputsOf({
+  const { inputs, revealed } = slotInputsOf({
     component: drawn.component,
     values,
     target: space.box,
@@ -323,7 +337,8 @@ function sceneOfSlots(
     probe: root,
     space,
     defs,
-    hasKids: kids.length > 0,
+    // Always reveal: a slot asked for by name (`slot` of `inside`) may be hidden while it has no child.
+    hasKids: true,
   });
   const assignment = assignSlots(
     inputs,
@@ -335,6 +350,7 @@ function sceneOfSlots(
   );
   return {
     boxes,
+    revealed: new Map([...revealed].map(([id, slot]) => [id, slot.box])),
     kids: new Map([...assignment.children].map(([id, ids]) => [id, own(ids)])),
   };
 }
@@ -365,7 +381,12 @@ function slotToUse(
       counts: new Map([...scene.kids].map(([id, kids]) => [id, kids.length])),
     },
   );
-  if (chosen.ok) return scene.boxes.has(chosen.id) ? chosen.id : undefined;
+  if (chosen.ok) {
+    const shown = scene.boxes.has(chosen.id);
+    return shown || (asked !== undefined && scene.revealed.has(chosen.id))
+      ? chosen.id
+      : undefined;
+  }
   if (chosen.reason === 'unknown-slot') return fail('invalid-parent', chosen.slot);
   return undefined;
 }
@@ -407,9 +428,11 @@ function slotArea(
   const scene = sceneOfSlots(p, catalog, container, mc, drawn, measure, drawings);
   const key = slotToUse(p, mc, scene, slotId, typeId);
   const slot = componentSlots(drawn.component).find((s) => slotKey(s) === key);
-  const box = key === undefined ? undefined : scene.boxes.get(key);
+  const box =
+    key === undefined ? undefined : (scene.boxes.get(key) ?? scene.revealed.get(key));
   if (slot === undefined || box === undefined) return whole;
-  const area = wholePixels(box, container.rect);
+  const hug = slotHugAxes(slot);
+  const area = wholePixels(hugged(box, hug, container.rect), container.rect);
   if (area === null) return whole;
   const values = withContainer(
     drawingValues(p, mc.annotation, mc.type).values,
@@ -432,7 +455,7 @@ function slotArea(
     maxLines: layout.maxLines,
     hasSlot: true,
     align: layout.align,
-    hug: slotHugAxes(slot),
+    hug,
     kids: scene.kids.get(slotKey(slot)) ?? [],
   };
 }
@@ -446,6 +469,20 @@ function drawnWithSlots(
   if (mc === null) return null;
   const drawn = componentForDrawing(p, mc.component, containerId);
   return drawn === null || componentSlots(drawn.component).length === 0 ? null : drawn;
+}
+
+/**
+ * An empty slot that takes its content's size (`hug`) has no extent on that axis (a bar's `actions` without a label):
+ * its area runs from where the slot starts to the edge of the component, so the child still goes into the slot.
+ */
+function hugged(
+  box: Rect,
+  hug: { readonly x: boolean; readonly y: boolean },
+  within: Rect,
+): Rect {
+  const width = hug.x && box.width < 1 ? right(within) - box.x : box.width;
+  const height = hug.y && box.height < 1 ? bottom(within) - box.y : box.height;
+  return { ...box, width, height };
 }
 
 /** A box in whole pixels inside `within` (`null` when less than a pixel is left). */
@@ -473,7 +510,16 @@ export function placementFitsSlot(
   typeId?: string,
 ): boolean {
   const slot = slotArea(p, catalog, targetId, measure, slotId, undefined, typeId);
-  if (!slot.hasSlot || !containsRect(slot.area, rect)) return false;
+  if (!slot.hasSlot) return false;
+  // On a `hug` axis the area is only where the slot starts (empty, it may be a few pixels): the component is the limit.
+  const outer = findById(p.markings, targetId).rect;
+  const room = {
+    x: slot.hug.x ? outer.x : slot.area.x,
+    y: slot.hug.y ? outer.y : slot.area.y,
+    width: slot.hug.x ? outer.width : slot.area.width,
+    height: slot.hug.y ? outer.height : slot.area.height,
+  };
+  if (!containsRect(room, rect)) return false;
   // Row or column layout: stuck to the component, the child may be inside the slot area and still
   // on top of the last sibling (slot the size of the component): it also did not fit.
   const { kids } = slot;
