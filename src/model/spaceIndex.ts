@@ -107,7 +107,13 @@ export function buildRectIndex<T>(
   return { containing };
 }
 
-/** Collects into `out` the positions of the class's cells that may contain the point of `inner`. */
+/**
+ * Collects into `out` the positions of the class's cells that may contain the point of `inner`.
+ * The query range grows with the coordinates (the padding is relative to `|x|`, the step is the
+ * class's cell), so a far query on a fine class would walk millions of empty cells: when the range
+ * has more cells than the class has occupied ones, it walks the occupied ones and keeps those
+ * inside the range. The result is the same; the cost is at most the smaller of the two.
+ */
 function collectCells(
   cls: SizeClass,
   inner: Rect,
@@ -119,6 +125,16 @@ function collectCells(
   const x1 = Math.floor((inner.x + padX) / cls.sx);
   const y0 = Math.floor((inner.y - padY) / cls.sy) - 1;
   const y1 = Math.floor((inner.y + padY) / cls.sy);
+  if ((x1 - x0 + 1) * (y1 - y0 + 1) > cls.cells.size) {
+    for (const [key, cell] of cls.cells) {
+      const column = Math.floor(key / CELL_STRIDE);
+      const cx = column - CELL_SHIFT;
+      const cy = key - column * CELL_STRIDE - CELL_SHIFT;
+      if (cx < x0 || cx > x1 || cy < y0 || cy > y1) continue;
+      for (const pos of cell) out.push(pos);
+    }
+    return;
+  }
   for (let cx = x0; cx <= x1; cx++) {
     for (let cy = y0; cy <= y1; cy++) {
       const cell = cls.cells.get(cellKey(cx, cy));

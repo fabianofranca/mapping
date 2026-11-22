@@ -81,11 +81,48 @@ function appended(entry: SpaceEntry, i: number, rect: Rect): SpaceEntry {
   return { count: count + 1, positions, boxes };
 }
 
+/** The slot of position `i` in the entry (binary search; `positions` increases), or -1. */
+function slotOf(entry: SpaceEntry, i: number): number {
+  let low = 0;
+  let high = entry.count - 1;
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    const at = entry.positions[mid] as number;
+    if (at === i) return mid;
+    if (at < i) low = mid + 1;
+    else high = mid - 1;
+  }
+  return -1;
+}
+
+/**
+ * The entry with the box of the marking at position `i` replaced, copy on write: the previous
+ * entry keeps its own boxes (undo and redo branches), the positions are shared. A buffer already
+ * copied in this call (`own`) is written in place. `null` if `i` is not in the entry.
+ */
+function moved(
+  entry: SpaceEntry,
+  i: number,
+  rect: Rect,
+  own: Set<Float64Array>,
+): SpaceEntry | null {
+  const slot = slotOf(entry, i);
+  if (slot < 0) return null;
+  let { boxes } = entry;
+  if (!own.has(boxes)) {
+    boxes = boxes.slice();
+    own.add(boxes);
+  }
+  boxes.set(boxOf(rect), slot * 4);
+  return boxes === entry.boxes ? entry : { ...entry, boxes };
+}
+
 /**
  * The table of `now` from that of `was` (the operation only appended at the end or swapped objects
- * in place), with only the spaces `known` already had: the space of a swapped marking leaves the
- * table (becomes unknown again) and the appended ones go at the end of their space's entry.
-
+ * in place), with only the spaces `known` already had. A swapped marking that stays in the same
+ * space, not floating, keeps the space's entry with its new box (`moved`); one that changes space
+ * or `floating` makes its spaces unknown again; the appended ones go at the end of their space's
+ * entry.
  */
 export function advancePositions(
   known: PositionTable,
@@ -94,15 +131,39 @@ export function advancePositions(
   now: readonly Marking[],
 ): PositionTable {
   const table = new Map(known);
+  const own = new Set<Float64Array>();
   for (const i of delta.changed) {
     const m = now[i] as Marking;
     if (i < was.length) {
-      table.delete((was[i] as Marking).containerId);
-      table.delete(m.containerId);
+      swapped(table, was[i] as Marking, m, i, own);
       continue;
     }
     const entry = table.get(m.containerId);
-    if (entry && !m.floating) table.set(m.containerId, appended(entry, i, m.rect));
+    if (!entry || m.floating) continue;
+    const next = appended(entry, i, m.rect);
+    // A buffer the append had to allocate belongs to this call: later moves write in it.
+    if (next.boxes !== entry.boxes) own.add(next.boxes);
+    table.set(m.containerId, next);
   }
   return table;
+}
+
+/** Applies the swap of `old` by `m` (position `i`) to the table. */
+function swapped(
+  table: Map<string | null, SpaceEntry>,
+  old: Marking,
+  m: Marking,
+  i: number,
+  own: Set<Float64Array>,
+): void {
+  const entry = table.get(m.containerId);
+  if (entry && old.containerId === m.containerId && !old.floating && !m.floating) {
+    const next = moved(entry, i, m.rect, own);
+    if (next) {
+      table.set(m.containerId, next);
+      return;
+    }
+  }
+  table.delete(old.containerId);
+  table.delete(m.containerId);
 }
