@@ -1,7 +1,13 @@
 import { readFile, readdir, realpath, stat } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { NOTES_LIBRARY } from '../libraries/notas';
-import { parseSpecText, type BundledLibrary, type Spec } from '../src/model';
+import {
+  parseSpecText,
+  reportWithFormatChecks,
+  specFileOf as specFileInPackage,
+  type BundledLibrary,
+  type Spec,
+} from '../src/model';
 import { resolvePath } from '../src/model/components/library';
 import { isImagePath } from '../src/model/components/imagePath';
 import { MAX_IMAGE_BYTES } from '../src/model/libraryImages';
@@ -391,56 +397,29 @@ async function fontLayoutWarnings(
   return issues;
 }
 
-/**
- * The file formats' problems (level 2: the plugin loads and defines a function; level 3: the examples
- * run), for a package that passed level 1 and reached the level they belong to.
- */
-async function formatIssuesOf(
+/** The three levels over the package and, with them, the file formats' checks (they are errors: `ok` turns false). */
+async function checkedLibrary(
   roots: Roots,
   pkg: ReadPackage,
+  previous: Spec | undefined,
+  level: 1 | 2 | 3 | undefined,
   formatChecks: typeof PluginIssues,
-  report: LibraryReport,
-): Promise<LibraryIssue[]> {
-  const level = report.summary.level;
-  if (!report.ok || report.spec === undefined || level < 2) return [];
-  const specPath = pkg.specPath ?? specPathOf(pkg.files, report.spec);
-  if (specPath === undefined) return [];
-  return formatChecks(
-    { spec: report.spec, specPath },
-    (path) => readPackageFile(roots, pkg.dir, path),
-    level === 2 ? 2 : 3,
-  );
-}
-
-/** The report with the file formats' problems added (they are errors, so `ok` turns false). */
-async function withFormatIssues(
-  roots: Roots,
-  pkg: ReadPackage,
-  formatChecks: typeof PluginIssues,
-  report: LibraryReport,
 ): Promise<LibraryReport> {
-  const extra = await formatIssuesOf(roots, pkg, formatChecks, report);
-  if (extra.length === 0) return report;
-  return {
-    ...report,
-    ok: false,
-    issues: [...report.issues, ...extra],
-    errors: [...report.errors, ...extra],
-  };
-}
-
-/** The package file that holds `spec` (the validator found it, but does not say which one it was). */
-function specPathOf(files: readonly LibraryFile[], spec: Spec): string | undefined {
-  return files.find((file) => {
-    if (file.text === undefined || !file.path.toLowerCase().endsWith('.json'))
-      return false;
-    try {
-      const raw = JSON.parse(file.text) as { format?: unknown; id?: unknown };
-      return raw.format === 'mapping-spec' && raw.id === spec.id;
-    } catch {
-      return false;
-    }
-  })?.path;
+  const checked = validateLibrary({
+    files: pkg.files,
+    ...(pkg.specPath === undefined ? {} : { specPath: pkg.specPath }),
+    ...(previous === undefined ? {} : { previous }),
+    ...(level === undefined ? {} : { level }),
+  });
+  const specPath =
+    pkg.specPath ??
+    (checked.spec === undefined ? undefined : specFileInPackage(pkg.files, checked.spec));
+  return reportWithFormatChecks(
+    checked,
+    specPath,
+    (path) => readPackageFile(roots, pkg.dir, path),
+    formatChecks,
+  );
 }
 
 /** `validate_library`: the three levels over the folder, in the format of the other validation tools. */
@@ -460,17 +439,7 @@ export async function validateLibraryTool(
     args.previous === undefined
       ? undefined
       : await readPreviousSpec(roots, args.previous);
-  const report = await withFormatIssues(
-    roots,
-    pkg,
-    formatChecks,
-    validateLibrary({
-      files: pkg.files,
-      ...(pkg.specPath === undefined ? {} : { specPath: pkg.specPath }),
-      ...(previous === undefined ? {} : { previous }),
-      ...(args.level === undefined ? {} : { level: args.level }),
-    }),
-  );
+  const report = await checkedLibrary(roots, pkg, previous, args.level, formatChecks);
   const errors = report.errors.map(issueView);
   // Document in an external repository: outside the package, it is checked here (a warning, never an error).
   const docWarnings = await docWarningsOf(

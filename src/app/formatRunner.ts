@@ -119,6 +119,10 @@ function positionOf(answer: Answer): Pick<FormatFailure, 'line' | 'column'> {
   return typeof line === 'number' && typeof column === 'number' ? { line, column } : {};
 }
 
+function phaseOf(answer: Answer): Pick<FormatFailure, 'phase'> {
+  return answer['phase'] === 'load' ? { phase: 'load' } : {};
+}
+
 function outputOf(output: unknown, fn: FormatFunction): FormatOutcome {
   const raw = textOf(output, '');
   // The largest legitimate output is a projection-sized result; anything beyond is not parsed.
@@ -154,6 +158,7 @@ function outcomeOf(answer: Answer, fn: FormatFunction): FormatOutcome {
           code: 'plugin-failed',
           message: textOf(answer.message, 'the plugin failed'),
           ...positionOf(answer),
+          ...phaseOf(answer),
         },
       };
     case 'missing':

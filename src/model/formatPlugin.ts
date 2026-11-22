@@ -61,6 +61,11 @@ export interface FormatFailure {
   readonly message: string;
   readonly line?: number;
   readonly column?: number;
+  /**
+   * `load` when the plugin's text itself failed (it threw while loading, or went past a limit then), `call` when
+   * its function failed. The format checks tell the two apart; an executor that cannot says nothing.
+   */
+  readonly phase?: 'load' | 'call';
 }
 
 /** What a call gives back: the JSON value the function returned, or the typed failure. */
@@ -78,7 +83,16 @@ export type FormatRunner = (
   source: string,
   fn: FormatFunction,
   args: readonly unknown[],
+  context?: FormatCallContext,
 ) => Promise<FormatOutcome>;
+
+/** Where a call comes from, so an executor can word its messages ("the plugin of data-model/csv …"); it may ignore it. */
+export interface FormatCallContext {
+  /** `<specId>/<formatId>`. */
+  readonly format: string;
+  /** The plugin's path in the package. */
+  readonly pluginPath: string;
+}
 
 // ---------------------------------------------------------------------------------- the input
 
