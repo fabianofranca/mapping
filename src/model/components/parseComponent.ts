@@ -19,6 +19,7 @@ import {
   type ComponentFile,
 } from './componentFormat';
 import { checkRemoteImageUrl } from '../remoteImages';
+import { MAX_TRACKS, parseTrack } from './gridLayout';
 import { isPackageImagePath } from './imagePath';
 import { isValidFontFamily } from './fontFamily';
 import {
@@ -1000,15 +1001,34 @@ function checkNoneLayout(value: Rec, path: string, out: Ctx): void {
     checkExpr(value.justify, join(path, 'justify'), oneOf(NONE_JUSTIFIES), out);
 }
 
-/** The values of the track keys present: `columns`/`rows` integers, `min*` numbers greater than 0. */
+const TRACK_ITEM_EXPECTED = 'expected a number ≥ 0, "<n>fr" or "hug"';
+
+/**
+ * `columns`/`rows` (v4): an integer ≥ 1 or a list of 1 to 24 tracks (px, `"<n>fr"` or `"hug"`);
+ * an item outside the set is an error at its own path. The checks of the tokens do not apply
+ * (a `$token` still gives the integer).
+ */
+const checkTrackCount = tokenCheck('number', (v, p, out) => {
+  if (!Array.isArray(v)) {
+    if (!Number.isInteger(v) || (v as number) < 1)
+      add(out, p, 'expected an integer greater than or equal to 1 or a list of tracks');
+    return;
+  }
+  if (v.length < 1 || v.length > MAX_TRACKS) add(out, p, 'expected 1 to 24 tracks');
+  v.forEach((item: unknown, i) => {
+    if (parseTrack(item) === undefined) add(out, `${p}[${i}]`, TRACK_ITEM_EXPECTED);
+  });
+});
+
+/** The values of the track keys present: `columns`/`rows` integers or lists, `min*` numbers greater than 0. */
 function checkTrackKeys(value: Rec, path: string, out: Ctx): void {
   for (const key of GRID_TRACK_KEYS) {
     if (!(key in value)) continue;
-    const integer = key === 'columns' || key === 'rows';
+    const count = key === 'columns' || key === 'rows';
     checkExpr(
       value[key],
       join(path, key),
-      integer ? checkPositiveInteger : checkPositiveNumber,
+      count ? checkTrackCount : checkPositiveNumber,
       out,
     );
   }

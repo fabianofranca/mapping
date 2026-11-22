@@ -144,17 +144,25 @@ import {
 } from './tokens';
 import {
   alignInCell,
+  cellExtent,
+  parseTrackList,
   placeCells,
   spanExtent,
   trackCount,
   trackOffset,
+  trackOffsets,
   trackSize,
+  trackSizes,
   type GridCell,
+  type Track,
 } from './gridLayout';
 import {
   TRACK_KEYS,
+  hugTrackSizes,
   lineExtents,
+  listHugExtent,
   maxCellOf,
+  needsNaturals,
   isTrackAbsent,
   numericValue,
   validTrack,
@@ -1276,8 +1284,13 @@ function createEngine(
     };
   };
 
-  /** A grid track: an invalid value falls to a single track (`columns: 1`, `rows: 1`) with the warning. */
+  /**
+   * A grid track: `columns`/`rows` take an integer or a track list (v4); an invalid value falls to
+   * a single track (`columns: 1`, `rows: 1`) with the warning.
+   */
   const trackOf = (entry: (typeof TRACK_KEYS)[number], value: unknown): GridTracks => {
+    const list = entry.field === 'count' ? parseTrackList(value) : undefined;
+    if (list !== undefined) return { count: list.length, list, vertical: entry.vertical };
     const valid = validTrack(entry.field, value);
     if (valid !== undefined)
       return entry.field === 'count'
@@ -2658,6 +2671,50 @@ function createEngine(
   const gridTolerance = (space: GridSpace): number =>
     space.kids.some((kid) => kid.node.type === 'text') ? TEXT_TOLERANCE : EPS;
 
+  /**
+   * The tracks' axis with a track list: px, `hug` (the largest span 1 child of the track) and `fr`
+   * (what is left), the cells of `span` tracks, the child aligned within the cell. The `hug` of the
+   * grid on this axis is `listHugExtent`.
+   */
+  const solveTrackList = (
+    space: GridSpace,
+    axis: Axis,
+    others: readonly number[] | null,
+    list: readonly Track[],
+  ): GridAxis => {
+    const { layout, kids, cells } = space;
+    const known = gridContent(space, axis);
+    const naturals = needsNaturals(list, known)
+      ? kids.map((_, i) => gridKidSize(space, i, axis, null, others))
+      : [];
+    const hugs = hugTrackSizes(list, cells, naturals);
+    const content = known ?? listHugExtent(list, cells, naturals, hugs, layout.gap);
+    const tracks = trackSizes(list, content, layout.gap, hugs);
+    const total = space.known[axis] ?? content + padAxis(layout, axis);
+    const extents = cells.map((cell) =>
+      cellExtent(tracks, cell.track, cell.span, layout.gap),
+    );
+    const starts = trackOffsets(tracks, layout.gap);
+    const sizes = kids.map((_, i) =>
+      gridKidSize(space, i, axis, extents[i] ?? 0, others),
+    );
+    const excess = maxOf(sizes.map((size, i) => size - (extents[i] ?? 0)));
+    if (known !== null && excess > gridTolerance(space))
+      warnShort('engine.contentTooBig', nodeName(space.frame), excess);
+    const start = axis === 'w' ? layout.pad.left : layout.pad.top;
+    const align = gridAlign(space, axis);
+    return {
+      total,
+      sizes,
+      offsets: sizes.map(
+        (size, i) =>
+          start +
+          (starts[cells[i]?.track ?? 0] ?? 0) +
+          alignInCell(align, extents[i] ?? 0, size).pos,
+      ),
+    };
+  };
+
   /** The tracks' axis: equal tracks, cells of `span` tracks, the child aligned within the cell. */
   const solveTracks = (
     space: GridSpace,
@@ -2665,6 +2722,8 @@ function createEngine(
     others: readonly number[] | null,
   ): GridAxis => {
     const { layout, kids, cells, count } = space;
+    if (layout.grid?.list !== undefined)
+      return solveTrackList(space, axis, others, layout.grid.list);
     const known = gridContent(space, axis);
     const track =
       known === null

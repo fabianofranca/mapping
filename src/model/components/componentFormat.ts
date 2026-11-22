@@ -374,16 +374,20 @@ export interface LayoutSpec {
   readonly maxLines?: Expr<number>;
   /**
    * Grid (`type: "grid"`, v4; exactly one of the four tracks, numbers or expression): `columns`
-   * (integer ≥ 1) is Compose's `GridCells.Fixed` and CSS's `repeat(n, 1fr)`; `minColumnWidth`
+   * (integer ≥ 1) is Compose's `GridCells.Fixed` and CSS's `repeat(n, 1fr)`, or a list of 1 to 24
+   * tracks (px, `"<n>fr"` or `"hug"`), CSS's `grid-template-columns`; `minColumnWidth`
    * (> 0) is `GridCells.Adaptive` and `repeat(auto-fit, minmax(x, 1fr))`; `rows` and `minRowHeight`
    * the same on the horizontal grid (which fills columns, `LazyHorizontalGrid`). `gap` stays between
    * the tracks and `lineGap` between the flow lines.
    */
-  readonly columns?: Expr<number>;
+  readonly columns?: Expr<number | TrackList>;
   readonly minColumnWidth?: Expr<number>;
-  readonly rows?: Expr<number>;
+  readonly rows?: Expr<number | TrackList>;
   readonly minRowHeight?: Expr<number>;
 }
+
+/** The tracks of a grid (v4): px (a number ≥ 0), `"<n>fr"` (n > 0) or `"hug"`; 1 to 24 of them. */
+export type TrackList = readonly (number | string)[];
 
 // ---------------------------------------------------------------------------------------
 // Template nodes

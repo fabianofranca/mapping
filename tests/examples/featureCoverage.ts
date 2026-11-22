@@ -447,6 +447,10 @@ const SHAPE_FEATURES = [
   'layout.padding=pair',
   'layout.padding=quad',
   'layout.padding=item-expression',
+  'layout.tracks=list',
+  'layout.track=px',
+  'layout.track=fr',
+  'layout.track=hug',
   'font.letterSpacing=percent',
   'fill=color',
   'fill=none',
@@ -596,6 +600,19 @@ function layoutFeatures(layout: unknown, out: Set<string>): void {
     else if (Array.isArray(leaf)) {
       out.add(leaf.length === 2 ? 'layout.padding=pair' : 'layout.padding=quad');
       if (leaf.some(isRec)) out.add('layout.padding=item-expression');
+    }
+  }
+  // the grid's `columns`/`rows` as a track list (formatVersion 4): px, `"<n>fr"` and `"hug"` items
+  for (const key of ['columns', 'rows'] as const) {
+    for (const leaf of leaves(layout[key])) {
+      if (!Array.isArray(leaf)) continue;
+      out.add('layout.tracks=list');
+      for (const track of leaf) {
+        if (typeof track === 'number') out.add('layout.track=px');
+        else if (track === 'hug') out.add('layout.track=hug');
+        else if (typeof track === 'string' && track.endsWith('fr'))
+          out.add('layout.track=fr');
+      }
     }
   }
 }

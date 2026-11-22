@@ -24,6 +24,84 @@ export interface GridCell {
   readonly span: number;
 }
 
+/** A track of a `columns`/`rows` list (v4): px, a share `"<n>fr"` of what is left, or `"hug"` (the largest child). */
+export type Track =
+  | { readonly kind: 'px'; readonly px: number }
+  | { readonly kind: 'fr'; readonly fr: number }
+  | { readonly kind: 'hug' };
+
+/** The most tracks a list may have. */
+export const MAX_TRACKS = 24;
+
+const FR_PATTERN = /^(\d+(?:\.\d+)?)fr$/;
+
+/** One item of a track list: a number ≥ 0 (px), `"<n>fr"` with n > 0, or `"hug"`; `undefined` for anything else. */
+export function parseTrack(item: unknown): Track | undefined {
+  if (typeof item === 'number') {
+    return Number.isFinite(item) && item >= 0 ? { kind: 'px', px: item } : undefined;
+  }
+  if (item === 'hug') return { kind: 'hug' };
+  const share = typeof item === 'string' ? FR_PATTERN.exec(item) : null;
+  const n = share === null ? Number.NaN : Number(share[1]);
+  return n > 0 && Number.isFinite(n) ? { kind: 'fr', fr: n } : undefined;
+}
+
+/** A non-empty list of up to 24 valid tracks; `undefined` for any other value (an integer included). */
+export function parseTrackList(value: unknown): readonly Track[] | undefined {
+  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_TRACKS)
+    return undefined;
+  const tracks = value.map(parseTrack);
+  return tracks.every((track) => track !== undefined)
+    ? (tracks as readonly Track[])
+    : undefined;
+}
+
+/**
+ * The size of each track of a list in a `content` extent: px is fixed, `hug` is the measured size
+ * (`hugs[t]`, the largest span 1 child of the track), and the `fr` tracks split what is left (content
+ * − px − hug − gaps) in proportion to `n`, never below 0.
+ */
+export function trackSizes(
+  tracks: readonly Track[],
+  content: number,
+  gap: number,
+  hugs: readonly number[],
+): number[] {
+  let fixed = gap * Math.max(0, tracks.length - 1);
+  let shares = 0;
+  tracks.forEach((track, i) => {
+    if (track.kind === 'px') fixed += track.px;
+    else if (track.kind === 'hug') fixed += hugs[i] ?? 0;
+    else shares += track.fr;
+  });
+  const free = Math.max(0, content - fixed);
+  return tracks.map((track, i) => {
+    if (track.kind === 'px') return track.px;
+    return track.kind === 'hug' ? (hugs[i] ?? 0) : (free * track.fr) / shares;
+  });
+}
+
+/** Where each track starts, from the start of the content area. */
+export function trackOffsets(sizes: readonly number[], gap: number): number[] {
+  let at = 0;
+  return sizes.map((size) => {
+    const start = at;
+    at += size + gap;
+    return start;
+  });
+}
+
+/** The extent of the `span` tracks that start at `track`, with the gaps between them. */
+export function cellExtent(
+  sizes: readonly number[],
+  track: number,
+  span: number,
+  gap: number,
+): number {
+  const covered = sizes.slice(track, track + span);
+  return covered.reduce((sum, size) => sum + size, 0) + gap * Math.max(0, span - 1);
+}
+
 /**
  * The `span` of a child: integer ≥ 1, limited to the number of tracks. A missing, non-integer or
  * less-than-1 value counts as 1.
