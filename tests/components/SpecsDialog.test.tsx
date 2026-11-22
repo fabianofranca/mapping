@@ -773,6 +773,19 @@ describe('SpecsDialog: file formats of a package', () => {
     expect(harness.project().specializations).toHaveLength(0);
   }, 60_000);
 
+  it('an executor that throws ends in an error message, not in a silent dialog', async () => {
+    const files = notesFiles('NOTES');
+    setup(freeProject(), false, () => {
+      throw new Error('runner exploded');
+    });
+    const input = document.querySelector<HTMLInputElement>('input[accept^=".zip"]');
+    if (!input) throw new Error('no zip input');
+    fireEvent.change(input, { target: { files: [await zipOf(files)] } });
+    expect(
+      await screen.findByText('Could not read the package.', {}, { timeout: 30_000 }),
+    ).toBeTruthy();
+  }, 60_000);
+
   it('without an executor the formats are not run (the other levels still are)', async () => {
     const files = notesFiles('THROWS-ON-LOAD');
     setup(freeProject(), false);

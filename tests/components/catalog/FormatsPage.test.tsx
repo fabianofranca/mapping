@@ -130,6 +130,17 @@ describe('FormatsPage', () => {
     expect(rasterize).toHaveBeenCalledTimes(1);
   });
 
+  it('a runner that throws ends in a message, never in a spinner', async () => {
+    const throwing: FormatRunner = () => {
+      throw new Error('runner exploded');
+    };
+    page(catalogOf(), throwing);
+    await waitFor(() =>
+      expect(screen.queryByText(t('catalog.formats.running'))).toBeNull(),
+    );
+    expect(screen.getByText(/runner exploded/)).toBeTruthy();
+  });
+
   it('keeps the example text in a collapsible block', async () => {
     const user = userEvent.setup();
     page(catalogOf(), runnerOf(HOME));

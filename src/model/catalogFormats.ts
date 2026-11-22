@@ -134,12 +134,11 @@ function containersOf(
   return found;
 }
 
-/** What `parse` needs for one example, or null when the Catalog lacks a piece (spec, plugin or text). */
-function formatInputsOf(
+/** What the plugin of `format` needs (spec, declared format, plugin text, components), or null when the Catalog lacks a piece. */
+export function formatPluginInputOf(
   catalog: Catalog,
   format: CatalogFormat,
-  example: CatalogFormatExample,
-): { input: FormatExampleInput; text: string } | null {
+): FormatExampleInput | null {
   const { spec } = catalog;
   const declared = spec?.fileFormats?.find((f) => f.id === format.id);
   const components = componentsOf(catalog);
@@ -147,20 +146,16 @@ function formatInputsOf(
     spec === null ||
     declared === undefined ||
     components === null ||
-    format.pluginText === null ||
-    example.text === null
+    format.pluginText === null
   ) {
     return null;
   }
   return {
-    input: {
-      spec,
-      specPath: SPEC_PATH,
-      format: declared,
-      pluginText: format.pluginText,
-      components,
-    },
-    text: example.text,
+    spec,
+    specPath: SPEC_PATH,
+    format: declared,
+    pluginText: format.pluginText,
+    components,
   };
 }
 
@@ -175,11 +170,11 @@ export async function drawFormatExample(
   deps: FormatDrawDeps,
 ): Promise<FormatExampleView> {
   if (example.input !== undefined) return { kind: 'generate' };
-  const inputs = formatInputsOf(catalog, format, example);
-  if (inputs === null) return { kind: 'unavailable' };
+  const input = formatPluginInputOf(catalog, format);
+  if (input === null || example.text === null) return { kind: 'unavailable' };
   try {
     const checkDeps: FormatCheckDeps = deps;
-    const applied = await applyFormatExample(inputs.input, inputs.text, checkDeps);
+    const applied = await applyFormatExample(input, example.text, checkDeps);
     if (!applied.ok)
       return { kind: 'failed', code: applied.code, message: applied.message };
     const drawings = createDrawingCache()(

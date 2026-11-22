@@ -28,8 +28,6 @@ export interface LibraryPreview {
    * library without formats; the Catalog counts them in its validation line.
    */
   readonly formatIssues: ReadonlySignal<readonly LibraryIssue[]>;
-  /** The format checks ran to the end (false without a runner, without formats or while they run). */
-  readonly formatsChecked: ReadonlySignal<boolean>;
   /** Rises when the fonts finish registering: the drawings are remeasured. */
   readonly fontsEpoch: ReadonlySignal<number>;
   /** The package images, decoded from the files in memory (decision 18 of stage #1903). */
@@ -80,14 +78,12 @@ export function openLibraryPreview(
   }
 
   const formatIssues = signal<readonly LibraryIssue[]>([]);
-  const formatsChecked = signal(false);
   const { run } = options;
   if (run !== undefined && catalog.formats.length > 0) {
     void (async () => {
       try {
         const issues = await formatIssuesOf(files, catalog.report, { run });
         if (!disposed) formatIssues.value = issues;
-        if (!disposed) formatsChecked.value = true;
       } catch (error) {
         reportError('library.preview.formats', error);
       }
@@ -111,7 +107,6 @@ export function openLibraryPreview(
     version: spec?.version ?? 0,
     catalog,
     formatIssues,
-    formatsChecked,
     fontsEpoch: epoch,
     images,
     imagesEpoch,

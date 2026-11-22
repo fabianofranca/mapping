@@ -134,7 +134,6 @@ describe('openLibraryPreview: the file formats', () => {
       run: checked,
     });
     await vi.waitFor(() => expect(checked).toHaveBeenCalled());
-    await vi.waitFor(() => expect(preview.formatsChecked.value).toBe(true));
     expect(preview.formatIssues.value).toEqual([]);
     preview.dispose();
   });
@@ -145,7 +144,6 @@ describe('openLibraryPreview: the file formats', () => {
       fonts: registry,
     });
     expect(preview.formatIssues.value).toEqual([]);
-    expect(preview.formatsChecked.value).toBe(false);
     preview.dispose();
   });
 

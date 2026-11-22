@@ -9,7 +9,9 @@ import {
   type FormatRunner,
   definedFormatFunctions,
   drawFormatExample,
+  formatPluginInputOf,
 } from '../../model';
+import { reportError } from '../../utils/report';
 import { Button } from '../controls';
 import {
   type CatalogImages,
@@ -46,10 +48,19 @@ async function resultOf(
   format: CatalogFormat,
   deps: { run: FormatRunner; measure: CatalogRenderer['measure'] },
 ): Promise<FormatResult> {
-  const examples = await Promise.all(
-    format.examples.map((example) => drawFormatExample(catalog, format, example, deps)),
-  );
-  return { functions: await functionsOf(catalog, format, deps), examples };
+  try {
+    const examples = await Promise.all(
+      format.examples.map((example) => drawFormatExample(catalog, format, example, deps)),
+    );
+    return { functions: await functionsOf(catalog, format, deps), examples };
+  } catch (error) {
+    // The checks never throw on a sound library; if one does, the page shows why instead of a spinner.
+    reportError('catalog.formats', error);
+    return {
+      functions: error instanceof Error ? error.message : String(error),
+      examples: format.examples.map(() => ({ kind: 'unavailable' as const })),
+    };
+  }
 }
 
 async function functionsOf(
@@ -57,34 +68,10 @@ async function functionsOf(
   format: CatalogFormat,
   deps: { run: FormatRunner; measure: CatalogRenderer['measure'] },
 ): Promise<FormatFunctions | string> {
-  const { spec } = catalog;
-  const declared = spec?.fileFormats?.find((f) => f.id === format.id);
-  if (spec === null || declared === undefined || format.pluginText === null) {
-    return t('catalog.formats.pluginMissing');
-  }
-  const byType = new Map(
-    catalog.layers.flatMap((layer) =>
-      layer.entries.flatMap((entry) =>
-        entry.component === null ? [] : [[entry.type.id, entry.component] as const],
-      ),
-    ),
-  );
-  return definedFormatFunctions(
-    {
-      spec,
-      specPath: 'library.spec.json',
-      format: declared,
-      pluginText: format.pluginText,
-      components: {
-        specId: spec.id,
-        version: spec.version,
-        byType,
-        problems: [],
-        problemMessages: [],
-      },
-    },
-    deps,
-  );
+  const input = formatPluginInputOf(catalog, format);
+  return input === null
+    ? t('catalog.formats.pluginMissing')
+    : definedFormatFunctions(input, deps);
 }
 
 /** Runs the plugins of the library's formats once per catalog (and runner); `undefined` while it runs. */
@@ -92,6 +79,7 @@ function useFormatResults(
   catalog: Catalog,
   run: FormatRunner | undefined,
   measure: CatalogRenderer['measure'],
+  fontsEpoch: number,
 ): Results | undefined {
   const [results, setResults] = useState<Results | undefined>(undefined);
   useEffect(() => {
@@ -108,7 +96,8 @@ function useFormatResults(
     return () => {
       current = false;
     };
-  }, [catalog, run, measure]);
+    // The drawings are laid out with the measurer: they are redone when the library's fonts register.
+  }, [catalog, run, measure, fontsEpoch]);
   return results;
 }
 
@@ -302,7 +291,7 @@ export function FormatsPage({
   images,
   run,
 }: FormatsPageProps) {
-  const results = useFormatResults(catalog, run, renderer.measure);
+  const results = useFormatResults(catalog, run, renderer.measure, fontsEpoch);
   return (
     <article class="catalog-page" aria-label={t('catalog.formats.page')}>
       <header class="catalog-page-header">

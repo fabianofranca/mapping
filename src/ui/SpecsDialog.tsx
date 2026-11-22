@@ -255,6 +255,10 @@ export function SpecsDialog({
         report: await validate(files, previous, imageBytes),
         files,
       });
+    } catch (e) {
+      // The validation runs the plugins: a failure of the executor ends as a message, never silently.
+      reportError('spec.validatePackage', e);
+      setMessage({ tone: 'error', text: t('spec.packageReadFailed') });
     } finally {
       setBusy(false);
     }
