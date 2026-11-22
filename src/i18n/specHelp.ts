@@ -620,7 +620,8 @@ const PACKAGE_TREE = `sdui-backend/
   sdui-backend.spec.json       the specialization (formatVersion 9)
   components/sdui-button.json  one file per component (mapping-component)
   docs/sdui-button.md          the type's markdown document
-  examples/settings.sdui.json  an example screen of an external system
+  plugins/sdui.js              the plugin of a file format (fileFormats)
+  examples/home.sdui.json      an example file of the format
   fonts/Roboto-Regular.woff2   the design fonts (optional)`;
 
 /** Excerpt of the file formats (`fileFormats`, v20). */
