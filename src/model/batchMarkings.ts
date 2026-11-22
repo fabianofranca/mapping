@@ -395,7 +395,7 @@ function insideTarget(
     );
   }
   const id = ctx.refs.marking(args.inside!);
-  const target = p.markings.find((m) => m.id === id);
+  const target = projectIndex(p).markings.get(id);
   if (target === undefined || !hasComponentSlot(p, ctx.catalog, id, ctx.measurer)) {
     throw new ModelError(
       'invalid-parent',

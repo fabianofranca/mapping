@@ -362,6 +362,32 @@ describe('addBatchBackgroundContainer', () => {
     expect(container).toMatchObject({ name: 'Blank', width: 300, height: 200 });
   });
 
+  it('records `source` and resolves the placement only after the arguments are checked', () => {
+    const { project, id } = addBatchBackgroundContainer(
+      emptyProject(),
+      {
+        width: 300,
+        height: 200,
+        background: '#ffffff',
+        source: { system: 'figma', id: 'f1' },
+      },
+      () => ({}),
+    );
+    expect(projectIndex(project).containers.get(id)?.source).toEqual({
+      system: 'figma',
+      id: 'f1',
+      url: null,
+    });
+    let placed = false;
+    refusal(() =>
+      addBatchBackgroundContainer(emptyProject(), { width: 300 }, () => {
+        placed = true;
+        return {};
+      }),
+    );
+    expect(placed).toBe(false);
+  });
+
   it('names what is missing', () => {
     const error = refusal(() =>
       addBatchBackgroundContainer(emptyProject(), { width: 300 }, () => ({})),
@@ -422,6 +448,27 @@ describe('updateBatchMarking', () => {
     expect(error.message).toBe(
       'changing `container` requires the `rect` in the pixels of the new container (on the canvas, in canvas units)',
     );
+  });
+
+  it('`move` shifts the marking and `locked` is applied after the other changes', () => {
+    const { project, changes } = update(two(), 'M5', {
+      move: { dx: 10, dy: 20 },
+      name: 'Moved',
+      locked: true,
+    });
+    expect(marking(project, 'M5')).toMatchObject({
+      name: 'Moved',
+      rect: { x: 2510, y: 1020 },
+      locked: true,
+    });
+    expect(changes).toEqual(['name "Moved"', 'move (10, 20) with the children', 'lock']);
+  });
+
+  it('unlocking runs before the other changes, so a locked marking can be renamed', () => {
+    const locked = update(two(), 'M5', { locked: true }).project;
+    const { project, changes } = update(locked, 'M5', { locked: false, name: 'Free' });
+    expect(marking(project, 'M5')).toMatchObject({ name: 'Free', locked: false });
+    expect(changes).toEqual(['unlock', 'name "Free"']);
   });
 
   it('with nothing to change it reports no changes', () => {
