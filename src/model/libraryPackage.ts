@@ -25,6 +25,18 @@ export function packageDirOf(file: string): string | null {
   return base === undefined ? null : `${SPECS_ROOT}/${base}`;
 }
 
+/**
+ * A specialization with a folder package and loaded content: the only one that has components and
+ * package images. The app (`src/store/componentLibrary.ts`) and the MCP resolver (`mcp/projects.ts`)
+ * use this same rule.
+ */
+export function hasLoadedPackage(s: {
+  readonly spec: Spec | null;
+  readonly file: string;
+}): boolean {
+  return s.spec !== null && packageDirOf(s.file) !== null;
+}
+
 /** Does the specialization's `file` point inside a package folder? */
 export function isPackageFile(file: string): boolean {
   return packageDirOf(file) !== null;
