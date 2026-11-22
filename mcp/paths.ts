@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { realpathSync } from 'node:fs';
 import { mkdir, realpath, rename, rm, writeFile } from 'node:fs/promises';
 import path, {
   basename,
@@ -94,6 +95,49 @@ function outsideRootsAndScratch(input: string): ToolError {
     `the path points outside the configured roots and scratch folders: ${input}`,
     { path: input },
   );
+}
+
+/** A scratch folder and a root that overlap, as configured. */
+export interface ScratchOverlap {
+  readonly root: string;
+  readonly scratch: string;
+}
+
+/** Real path of an existing folder; `null` for one that does not exist (compared by its path only). */
+function realFolder(folder: string): string | null {
+  try {
+    return realpathSync(folder);
+  } catch {
+    return null;
+  }
+}
+
+/** The two folders are the same or one is inside the other. */
+function nested(a: string, b: string): boolean {
+  return isWithin(a, b) || isWithin(b, a);
+}
+
+/**
+ * The first pair of a root and a scratch folder (both absolute) that overlap: one inside the
+ * other or the same folder, by the path as configured or by the real path (symbolic links
+ * resolved). A folder that does not exist yet is compared by its path. `null` when there is none.
+ */
+export function scratchOverlap(
+  roots: readonly string[],
+  scratch: readonly string[],
+): ScratchOverlap | null {
+  for (const root of roots) {
+    const realRoot = realFolder(root);
+    for (const folder of scratch) {
+      const realScratch = realFolder(folder);
+      const forms: [string, string][] = [[root, folder]];
+      if (realRoot !== null) forms.push([realRoot, folder]);
+      if (realScratch !== null) forms.push([root, realScratch]);
+      if (realRoot !== null && realScratch !== null) forms.push([realRoot, realScratch]);
+      if (forms.some(([a, b]) => nested(a, b))) return { root, scratch: folder };
+    }
+  }
+  return null;
 }
 
 export class Roots {
@@ -259,7 +303,10 @@ export class Roots {
           if (isNotFound(error)) continue;
           throw error;
         }
-        if (areaHoldsReal(area, real)) return { real, scratch: area.scratch };
+        // A link may lead into the other area: the real path decides, across all areas
+        // (as `absoluteInput` does).
+        const holder = areas.find((candidate) => areaHoldsReal(candidate, real));
+        if (holder !== undefined) return { real, scratch: holder.scratch };
         left = true;
       }
     }
