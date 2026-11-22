@@ -2,4 +2,4 @@
 
 ## Pendências
 
-nenhuma (só processo)
+None. Process-only change (skill text and tests); no component, token or icon of the app's design system changes.
