@@ -3094,20 +3094,27 @@ def unplannable(r):
     return bool(r.get("hold") or row_incomplete(r))
 
 
+def wave_key(r):
+    """What the wave check reads from a row, computed once per round: (skips the check, `toca=` citations, changes the schema)."""
+    plan = r.get("plan", "")
+    return unplannable(r), toca_list(plan), changes_schema(plan)
+
+
 def wave_conflict(a, b):
-    """Two rows that cannot share a wave: a file in common (`first_conflict`) or both change the schema (decision 1 of #2293)."""
-    if unplannable(a) or unplannable(b):
+    """Two `wave_key`s that cannot share a wave: a file in common (`first_conflict`) or both change the schema (decision 1 of #2293)."""
+    if a[0] or b[0]:
         return False
-    pa, pb = a.get("plan", ""), b.get("plan", "")
-    return first_conflict(toca_list(pa), toca_list(pb)) is not None or (changes_schema(pa) and changes_schema(pb))
+    return first_conflict(a[1], b[1]) is not None or (a[2] and b[2])
 
 
 def pack_round(rows):
     """The rows of `rows` (taken in `order`) that fit in one round: each one with no conflict with those already placed."""
-    placed = []
+    placed, keys = [], []
     for r in sorted(rows, key=lambda x: x["order"]):
-        if not any(wave_conflict(r, p) for p in placed):
+        key = wave_key(r)
+        if not any(wave_conflict(key, k) for k in keys):
             placed.append(r)
+            keys.append(key)
     return placed
 
 

@@ -125,6 +125,24 @@ describe('painel.py — real waves (GW1, #2293)', () => {
   );
 
   it(
+    'h. a stage that depends on a delayed one follows it, and an exclusive stage with hold enters last, as before',
+    () => {
+      fullSlots();
+      stage('#1', ficha('nenhuma', 'src/a.ts'));
+      stage('#2', ficha('nenhuma', 'src/a.ts'));
+      stage('#3', ficha('#2:aberta', 'src/c.ts'));
+      stage(
+        '#4',
+        ficha('nenhuma', 'src/d.ts'),
+        'exclusive=sim',
+        'hold=owner decision pending',
+      );
+      expect(waves()).toEqual({ '#90': 0, '#1': 1, '#2': 2, '#3': 3, '#4': 4 });
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
     'f. a dep cycle still enters together in the last wave, even with a file in common',
     () => {
       fullSlots();
