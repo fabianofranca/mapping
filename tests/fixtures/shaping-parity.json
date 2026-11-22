@@ -436,5 +436,74 @@
       "right": 755.56640625,
       "top": -72.4609375
     }
+  },
+  {
+    "font": "vslntd",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "width": 568.408203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 580.56640625,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "vslntd",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "italic": true,
+    "width": 568.408203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 580.56640625,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "vitald",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "width": 755.908203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 755.56640625,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "vitald",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "italic": true,
+    "width": 755.908203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 755.56640625,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "fsital",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "width": 755.908203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 755.56640625,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "fsital",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "italic": true,
+    "width": 755.908203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 755.56640625,
+      "top": -72.4609375
+    }
   }
 ]

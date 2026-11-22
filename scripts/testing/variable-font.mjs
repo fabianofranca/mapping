@@ -1,11 +1,13 @@
-// variable-font.mjs: node variable-font.mjs <out.ttf> [--wght] [--slnt=<min>,<default>,<max>] [--ital=<default>]
+// variable-font.mjs: node variable-font.mjs <out.ttf> [--wght] [--slnt=<min>,<default>,<max>] [--ital=<default>] [--fs-italic]
 // Writes a variable test font (stage #2574, decision 5): a copy of `mcp/fonts/MappingSans-Regular.ttf` with variation
 // axes whose only effect is on the advance of `A`-`Z` and `a`-`z`, so a width reads the axis value a renderer sets. No
 // binary font is kept in the repository: tests and the tester build it.
 //
 //   --wght                       adds the axis `wght` 100, 400, 900;
 //   --slnt=<min>,<default>,<max> adds the axis `slnt` with those values;
-//   --ital=<default>             adds the axis `ital` 0 to 1 with that default (0 or 1).
+//   --ital=<default>             adds the axis `ital` 0 to 1 with that default (0 or 1);
+//   --fs-italic                  sets bit 0 (italic) of `OS/2.fsSelection` and clears bit 6 (regular), with or without
+//                                axes: a file that says it slants (decision 5 of #2574, VA2).
 //
 // Each axis has an `fvar` axis record (no named instance). With an axis the font also has a `gvar` table whose only
 // deltas move the advance phantom point (the second one) of the simple glyphs mapped from `A`-`Z` and `a`-`z`, the same way for every
@@ -20,7 +22,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const USAGE =
-  'usage: node variable-font.mjs <out.ttf> [--wght] [--slnt=<min>,<default>,<max>] [--ital=<default>]\n';
+  'usage: node variable-font.mjs <out.ttf> [--wght] [--slnt=<min>,<default>,<max>] [--ital=<default>] [--fs-italic]\n';
 const TOWARD_MIN = 512;
 const TOWARD_MAX = -256;
 
@@ -54,9 +56,11 @@ function parseAxes(args) {
     axes.push({ tag: 'ital', min: 0, default: def, max: 1 });
   }
   const unknown = args.filter(
-    (a) => !['--wght', '--slnt', '--ital'].includes(a.split('=')[0]),
+    (a) => !['--wght', '--slnt', '--ital', '--fs-italic'].includes(a.split('=')[0]),
   );
   if (unknown.length > 0) throw new Error(`unknown option ${unknown.join(' ')}`);
+  if (known('--fs-italic') !== undefined && known('--fs-italic') !== '--fs-italic')
+    throw new Error('--fs-italic takes no value');
   return axes;
 }
 
@@ -68,7 +72,8 @@ try {
   process.stderr.write(`${error.message}\n${USAGE}`);
   process.exit(2);
 }
-if (out === undefined || out.startsWith('--') || axes.length === 0) {
+const fsItalic = process.argv.slice(3).includes('--fs-italic');
+if (out === undefined || out.startsWith('--') || (axes.length === 0 && !fsItalic)) {
   process.stderr.write(USAGE);
   process.exit(2);
 }
@@ -251,8 +256,15 @@ const checksum = (buf) => {
 };
 
 const tables = readTables(readFileSync(source));
-tables.set('fvar', buildFvar());
-tables.set('gvar', buildGvar(tables));
+if (axes.length > 0) {
+  tables.set('fvar', buildFvar());
+  tables.set('gvar', buildGvar(tables));
+}
+if (fsItalic) {
+  // OS/2.fsSelection is the u16 at byte 62: bit 0 italic, bit 6 regular.
+  const os2 = tables.get('OS/2');
+  os2.writeUInt16BE((os2.readUInt16BE(62) | 0x01) & ~0x40, 62);
+}
 tables.get('head').writeUInt32BE(0, 8);
 
 const tags = [...tables.keys()].sort();

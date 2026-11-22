@@ -118,7 +118,7 @@ export interface FontBook {
   /**
    * What the drawing adds to the face `fontFor` returns (stage #2448, decisions 12 and 13): synthetic bold (a library
    * face whose top weight is below 600, asked for from 600) and the slant of a face that is not italic (0.25 for a
-   * library face, 0.2 for the embedded fonts). The advance does not change.
+   * library face, 0.2 for the embedded fonts), none when the file itself slants (`Face.slanted`, stage #2574). The advance does not change.
    */
   synthesis(family: string, weight: number, italic: boolean): Synthesis;
   /** The embedded font for `family` and `weight`: where a text goes when its library font cannot lay it out. */
@@ -195,7 +195,7 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
           face: hit.font,
           synthesis: {
             bold: weight >= SYNTHETIC_BOLD_FROM && hit.high < SYNTHETIC_BOLD_FROM,
-            slant: italic && !hit.italic ? LIBRARY_SLANT : 0,
+            slant: italic && !hit.italic && !hit.font.slanted ? LIBRARY_SLANT : 0,
           },
         };
       if (MONO_FAMILY.test(name)) break;

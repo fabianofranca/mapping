@@ -114,6 +114,11 @@ export interface Face {
   /** The variation axes of the font (empty for a static font). */
   readonly axes: Readonly<Record<string, AxisRange>>;
   /**
+   * Whether the file itself slants (decision 3 of #2574): bit 0 (italic) or bit 9 (oblique) of `OS/2.fsSelection`, or a
+   * `slnt` or `ital` axis whose default is not 0. Chromium does not skew such a file again.
+   */
+  readonly slanted: boolean;
+  /**
    * Width of the one-line text shaped as a whole (kerning included, no letter spacing), at `size` (px) and CSS
    * `weight`. `spaced` shapes it as letter-spaced text is: without `liga`, `clig` and `calt`. `direction` is the
    * text's base direction: each directional run is shaped on its own (stage #2448).
@@ -250,6 +255,7 @@ class HarfBuzzFace implements Face {
   readonly ascender: number;
   readonly descender: number;
   readonly axes: Readonly<Record<string, AxisRange>>;
+  readonly slanted: boolean;
   private readonly font: Font;
   private readonly buffer = new ShapeBuffer();
   /** Widths in font units, by text, variation settings and feature set. */
@@ -259,10 +265,14 @@ class HarfBuzzFace implements Face {
 
   constructor(
     face: HbFace,
+    slantedFile: boolean,
     private readonly declared?: DeclaredFace,
   ) {
     this.unitsPerEm = face.upem;
     this.axes = face.getAxisInfos();
+    this.slanted =
+      slantedFile ||
+      (['slnt', 'ital'] as const).some((tag) => (this.axes[tag]?.default ?? 0) !== 0);
     this.font = new Font(face);
     this.font.setScale(face.upem * SCALE_SUBDIVISIONS, face.upem * SCALE_SUBDIVISIONS);
     const extents = this.font.hExtents();
@@ -432,6 +442,25 @@ function hasTables(sfnt: Uint8Array, tags: readonly string[]): boolean {
   return tags.every((tag) => present.has(tag));
 }
 
+const FS_SELECTION_ITALIC = 1 << 0;
+const FS_SELECTION_OBLIQUE = 1 << 9;
+
+/** Whether `OS/2.fsSelection` flags the file as italic or oblique (false without an `OS/2` table). Read from the bytes, like `hasTables`. */
+function flaggedSlanted(sfnt: Uint8Array): boolean {
+  const view = new DataView(sfnt.buffer, sfnt.byteOffset, sfnt.byteLength);
+  const count = Math.min(view.getUint16(4), Math.floor((sfnt.length - 12) / 16));
+  for (let i = 0; i < count; i++) {
+    const at = 12 + i * 16;
+    if (String.fromCharCode(...sfnt.subarray(at, at + 4)) !== 'OS/2') continue;
+    const offset = view.getUint32(at + 8);
+    if (offset + 64 > sfnt.length) return false;
+    return (
+      (view.getUint16(offset + 62) & (FS_SELECTION_ITALIC | FS_SELECTION_OBLIQUE)) !== 0
+    );
+  }
+  return false;
+}
+
 /** A face is usable with `head` and `hhea` tables and at least one code point in its cmap. */
 function usable(face: HbFace, sfnt: Uint8Array): boolean {
   return hasTables(sfnt, ['head', 'hhea']) && face.collectUnicodes().length > 0;
@@ -448,5 +477,7 @@ export function loadFace(bytes: Uint8Array, declared?: DeclaredFace): Face | nul
   const sfnt = fontSfnt(bytes);
   if (sfnt === null || sfnt.length < 12) return null;
   const face = new HbFace(new Blob(sfnt), 0);
-  return usable(face, sfnt) ? new HarfBuzzFace(face, declared) : null;
+  return usable(face, sfnt)
+    ? new HarfBuzzFace(face, flaggedSlanted(sfnt), declared)
+    : null;
 }
