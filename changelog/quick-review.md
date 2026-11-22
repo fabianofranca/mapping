@@ -3,3 +3,7 @@
 ## Adicionado
 
 - Quick review on the canvas: a small proposal linked to the conversation open in the Conversation window can be accepted in one write with one undo entry (Ctrl+Z brings the proposal back undecided) or rejected on this device, which writes nothing and hides it until the agent revises the proposal. This first part adds the eligibility rule (at most 5 markings in one container or on the canvas; creations and changes of markings and annotations; no removals), the quick review state of the open conversation, Accept and the Reject-on-this-device state. The second part draws the proposal on the canvas as a grey, translucent ghost with the review's created and changed marks (never selectable), shows the real result while the quick review bar has the pointer or the focus, and publishes the ghost's bounds for the bar. The bar and the card come in the next parts.
+
+## Alterado
+
+- The `dist/index.html` ceiling went up 16 KiB, from 2,441,216 to 2,457,600, by the budget rule.
