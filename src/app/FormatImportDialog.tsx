@@ -13,6 +13,7 @@ import {
 } from '../store/formatActions';
 import { selectItems } from '../store/ui';
 import { textMeasurer } from '../store/textMeasure';
+import type { ProjectContainer } from '../model';
 import { reportError } from '../utils/report';
 import { importActionErrorText, importErrorText } from './formatErrors';
 import {
@@ -124,6 +125,18 @@ function Messages({
   );
 }
 
+/** The target container: the chosen one, else the selection's; only when it is in the project and the scope asks. */
+function targetOf(
+  choice: FormatChoice | null,
+  containers: readonly ProjectContainer[],
+  chosen: string | null | undefined,
+  fallback: string | null,
+): string | null {
+  if (choice?.scope !== 'container') return null;
+  const wanted = chosen === undefined ? fallback : chosen;
+  return hasContainer(containers, wanted) ? wanted : null;
+}
+
 /** What is picked: the format (the first one by default), the target container and the file. */
 function useImportPick() {
   const { session, store, ui } = useEditor();
@@ -141,15 +154,13 @@ function useImportPick() {
   const index = Math.max(choices?.findIndex((c) => c.ref === pickedRef) ?? 0, 0);
   const choice = choices?.[index] ?? null;
   const fallback = selectedContainer(project, ui.selection.value);
-  const wanted = target === undefined ? fallback : target;
-  const containerId = hasContainer(containers, wanted) ? wanted : null;
   return {
     choices,
     index,
     choice,
     containers,
     file,
-    containerId: choice?.scope === 'container' ? containerId : null,
+    containerId: targetOf(choice, containers, target, fallback),
     needsContainer: choice?.scope === 'container',
     setFormatRef: setPickedRef,
     setTarget: (id: string) => setTarget(id === '' ? null : id),
