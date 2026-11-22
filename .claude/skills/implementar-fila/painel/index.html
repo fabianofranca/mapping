@@ -1206,7 +1206,9 @@
         if (grafo.onda.get(n.issue) >= 1 && into.length) {
           const espera = buildEspera(into);
           const motivo = asText(n.motivo);
-          if (!motivo || motivo.startsWith('dep ')) return espera;
+          // A pure `dep …` repeats the tags; a combined reason (`dep #A; arquivo x com #B`) shows next to them (decision 6 of #2293).
+          if (!motivo || (motivo.startsWith('dep ') && !motivo.includes('; ')))
+            return espera;
           const box = el('div', 'porque');
           box.append(espera, el('div', 'mot', motivo));
           return box;

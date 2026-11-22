@@ -129,7 +129,12 @@ blocked. The slots do not cut a wave (`Vagas k/N` already shows them). The exclu
 `exclusiva`, reason `segurada para a exclusiva #N`); in a cycle, what is left enters together in the last one.
 `rank` (1, 2, 3…): the `aguardando` without `started`, except `segurada` and `ficha`, by wave and `order`; the others stay `null`. Arrow
 `{de, para, tipo}` (the arrow runs from the holder to the held one): `dep` by the ficha's `dep=` between nodes (without `:main` or `meta.merged`), only the
-transitive reduction, and `arquivo` from `#N` when the reason is `arquivo <x> com #N` or `schema com #N`.
+transitive reduction, and `arquivo` (see below). Every blocker (stage #2293, decisions 4 and 5): a node that is not started, is outside wave 0 and
+is not `segurada` or `ficha` has in its `motivo` all its blockers, read from the waves already assigned and joined by `; `: the open dependencies
+(`dep #A, #B`, with `#N recusada`, as in `plan_block`), then one `arquivo <citation> com #N` per earlier-wave node (wave, then `order`) that shares a
+file with it (the citation of `first_conflict`), then one `schema com #N` per earlier-wave node that shares only the schema. The `exclusiva` state keeps
+the `slots_plan` reason first; with no blocker the `slots_plan` reason stays (`vagas cheias`). Each of those file and schema blockers is one `arquivo`
+arrow to the node, each pair once; the single `holder` arrow of the reason stays only for the other nodes. `estado` and `rank` do not change.
 Usage and quality (stage #1889, decisions 2 to 7): every write refreshes `meta.uso`, one entry per key (`papel`, `modelo`, `esforco`) of
 the sessions with a `cost`: the model is the family of the id in `cost.model` (`Haiku`, `Sonnet`, `Opus`, `Fable`; another id as it came),
 the effort as written; with `sessoes`, `usd`, `pct`, `medianaSessao`, `medianaEtapa` (only merged stages), `ctxMediano`, `acimaTeto`
@@ -2882,6 +2887,11 @@ def plan_block(r, merged, done, refused=()):
     miss = row_incomplete(r)
     if miss:
         return "ficha incompleta (" + ", ".join(miss) + ")"
+    return dep_reason(r, merged, done, refused)
+
+
+def dep_reason(r, merged, done, refused=()):
+    """`dep #A, #B recusada` for the open dependencies of the ficha (`#N recusada` for a refused row); "" with none open."""
     miss = [d + " recusada" if d in refused else d for d in open_deps(r, merged, done)]
     return "dep " + ", ".join(miss) if miss else ""
 
@@ -3146,6 +3156,53 @@ def assign_waves(rows, wave, deps):
             wave[r["issue"]] = w
 
 
+def file_blockers(mine, earlier):
+    """`(files, schemas)` of the earlier nodes that `mine` (a `wave_key`) shares a file or the schema with (decision 4 of #2293).
+
+    `files` is `[(#N, "arquivo <citation> com #N")]`, the citation being the one `first_conflict` returns; `schemas` is
+    `[(#N, "schema com #N")]` of the nodes that share only the schema (a pair with a file in common is listed once, as in `schema_block`,
+    which runs only without a file conflict). `earlier` is `[(#N, wave_key, wave)]` by wave, then `order`. A wave 0 node always counts (the
+    slots read the started ones whatever their ficha); a later one counts only when plannable (decision 2 of #2293)."""
+    files, schemas = [], []
+    for issue, (skip, toca, schema), w in earlier:
+        if skip and w:
+            continue
+        cite = first_conflict(mine[1], toca)
+        if cite:
+            files.append((issue, f"arquivo {cite} com {issue}"))
+        elif mine[2] and schema:
+            schemas.append((issue, f"schema com {issue}"))
+    return files, schemas
+
+
+def node_blockers(r, placed, wave, ctx):
+    """`(reason parts, holders)` of a node of decision 4 of #2293, from the waves already assigned: the `dep` part (`dep_reason`), then the
+    `arquivo` items, then the `schema` ones. `holders` are the file and schema blockers (the `arquivo` arrows). `placed` is
+    `[(#N, wave_key, wave)]` of every node by wave, then `order` (computed once); `ctx` is `(merged, done, refused)`."""
+    w = wave[r["issue"]]
+    files, schemas = file_blockers(wave_key(r), [t for t in placed if t[2] < w])
+    held = files + schemas
+    parts = [dep_reason(r, *ctx)] + [text for _, text in held]
+    return [p for p in parts if p], [h for h, _ in held]
+
+
+def blocker_graph(r, why, placed, wave, ctx):
+    """`(motivo, holders)` of a node of decision 4: the blockers joined by `; `; the `exclusiva` state keeps the `slots_plan` reason
+    first (`dep` parts that it already carries are not repeated); with no blocker the `slots_plan` reason stays (`vagas cheias`)."""
+    parts, holders = node_blockers(r, placed, wave, ctx)
+    if candidate_state(r, why) == "exclusiva":
+        parts = [why] + [p for p in parts if not (why.startswith("dep ") and p.startswith("dep "))]
+    return ("; ".join(parts) if parts else why), holders
+
+
+def graph_blockers(nodes, state, wave, q, meta):
+    """`{issue: (motivo, holders)}` of every node of decision 4 of #2293: not started, outside wave 0, not `segurada` or `ficha`."""
+    ctx = (set(meta.get("merged", [])), {r["issue"] for r in q if r["status"] == "concluída"}, refused_issues(q))
+    placed = [(k, wave_key(nodes[k]), wave[k]) for k in sorted(nodes, key=lambda k: (wave[k], nodes[k]["order"]))]
+    return {k: blocker_graph(r, state[k][1], placed, wave, ctx) for k, r in nodes.items()
+            if not is_started(r) and wave[k] and state[k][0] not in ("segurada", "ficha")}
+
+
 def first_open_phase(r):
     for item in (r.get("phases") or "").split("|"):
         code, _, st = item.partition(":")
@@ -3171,6 +3228,7 @@ def queue_graph(q, meta, reasons):
     wave = {r["issue"]: 0 for r in rows
             if is_started(r) or reasons.get(r["issue"], ("", ""))[0].startswith(STARTS_NOW)}
     assign_waves(rows, wave, deps)
+    blocked = graph_blockers(nodes, state, wave, q, meta)
     ranked = sorted((r for r in rows if not is_started(r) and state[r["issue"]][0] not in ("segurada", "ficha")),
                     key=lambda r: (wave[r["issue"]], r["order"]))
     rank = {r["issue"]: i for i, r in enumerate(ranked, 1)}
@@ -3180,15 +3238,14 @@ def queue_graph(q, meta, reasons):
     edges = []
     for k in nodes:
         edges += [(d, k, "dep") for d in reduce_deps(k, deps, anc)]
-        holder = reasons.get(k, ("", ""))[1]
-        if holder and holder in nodes:
-            edges.append((holder, k, "arquivo"))
+        holders = blocked[k][1] if k in blocked else [reasons.get(k, ("", ""))[1]]
+        edges += [(h, k, "arquivo") for h in holders if h and h in nodes]
         if is_started(nodes[k]):
             edges += [(h, k, "entrega") for h in open_holders(nodes[k], q, merged) if h in nodes]
     edges.sort(key=lambda e: (pos[e[1]], pos[e[0]]))
     graph_nodes = [{
         "issue": r["issue"], "titulo": r.get("title", ""), "onda": wave[r["issue"]],
-        "rank": rank.get(r["issue"]), "estado": state[r["issue"]][0], "motivo": state[r["issue"]][1],
+        "rank": rank.get(r["issue"]), "estado": state[r["issue"]][0], "motivo": blocked.get(r["issue"], (None,))[0] or state[r["issue"]][1],
         "fase": first_open_phase(r), "feitas": r.get("phasesDone", 0), "total": r.get("phasesTotal", 0),
         "cedo": ", ".join(open_holders(r, q, merged)),
     } for r in listed]
