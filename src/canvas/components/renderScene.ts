@@ -838,7 +838,9 @@ function toShapeLocal(shape: Konva.Shape, box: Box): (p: Point) => Point {
 }
 
 /** The drawing warning of a package image failure: a missing file has none (the validator reports it). */
-function packageFailureWarning(reason: PackageImageFailure): RenderWarningCode | undefined {
+function packageFailureWarning(
+  reason: PackageImageFailure,
+): RenderWarningCode | undefined {
   switch (reason) {
     case 'decode':
       return 'image-decode-failed';

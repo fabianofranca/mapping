@@ -45,7 +45,14 @@ function ellipseWith(fill: Paint, stroke?: Stroke): Konva.Shape {
     cornerRadius: 0,
     children: [
       {
-        ...baseNode({ id: 'e', name: 'e', width: 100, height: 40, fills: [fill], stroke }),
+        ...baseNode({
+          id: 'e',
+          name: 'e',
+          width: 100,
+          height: 40,
+          fills: [fill],
+          stroke,
+        }),
         type: 'ellipse',
       },
     ],
@@ -196,8 +203,7 @@ describe('a linear stroke gradient', () => {
 
   it('on an ellipse is converted like the fill (the Konva origin is the center)', () => {
     const strokeShape = (
-      ellipseWith({ type: 'solid', color: '#000000' }, STROKE)
-        .getParent() as Konva.Group
+      ellipseWith({ type: 'solid', color: '#000000' }, STROKE).getParent() as Konva.Group
     ).find('Ellipse')[1] as Konva.Shape;
     expect(strokeShape.strokeLinearGradientStartPoint()).toEqual({ x: -50, y: -20 });
     expect(strokeShape.strokeLinearGradientEndPoint()).toEqual({ x: 50, y: -20 });
