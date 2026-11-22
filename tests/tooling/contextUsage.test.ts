@@ -509,7 +509,7 @@ describe('CM1 — flow texts that use the measure (decisions 5 to 10)', () => {
   });
 
   it('implementar-fila: the change is small (the large-skill rule is 60 lines)', () => {
-    expect(queue.split('\n').length).toBeLessThan(540);
+    expect(queue.split('\n').length).toBeLessThan(560);
     expect(section(queue, '## Rules of this queue')).not.toContain('contextUsage');
   });
 

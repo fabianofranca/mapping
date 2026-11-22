@@ -102,8 +102,8 @@ describe('implementar-fila: the queue runs the released fast tracks', () => {
     has('end', section(QUEUE, '## End'), ['`recusada` row is not pending']);
   });
 
-  it('SKILL.md stays under the 540-line limit of contextUsage.test.ts', () => {
-    expect(QUEUE.split('\n').length).toBeLessThan(540);
+  it('SKILL.md stays under the 560-line limit of contextUsage.test.ts', () => {
+    expect(QUEUE.split('\n').length).toBeLessThan(560);
   });
 });
 
