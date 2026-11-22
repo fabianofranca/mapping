@@ -1,4 +1,4 @@
-import { batch, effect, signal, type Signal } from '@preact/signals';
+import { batch, signal, type Signal } from '@preact/signals';
 import {
   projectIndex,
   spaceOf,
@@ -106,15 +106,19 @@ export interface EditorUi {
   /** Review: before/after comparison of the replaced image open (image id). */
   readonly compareImage: Signal<string | null>;
   /**
-   * Selected thread (Comments stage, decision 19), tied to the selection it was chosen in:
-   * only valid while `selection` is the same object (`selectedThreadId`), like the multiple
-   * selection group. Never saved.
+   * The Conversation window's target (stage #1881, decision 6): a chosen conversation or a new
+   * one in draft. It does not follow the selection and is never saved; it changes when another
+   * conversation opens, on Cancel of a draft and when the conversation is deleted.
    */
-  readonly thread: Signal<SelectedThread | null>;
+  readonly conversation: Signal<ConversationTarget | null>;
+  /**
+   * The proposal the person just left the review of (stage #1881, decision 20): Details shows the
+   * "still open" notice with Review while it is `open`. Set by every exit, cleared when a review
+   * opens or the notice is dismissed. UI state, never saved.
+   */
+  readonly reviewReturn: Signal<string | null>;
   /** Message drafts by key (`threadDraftKey`), in memory: they survive a selection change. */
   readonly threadDrafts: Signal<ReadonlyMap<string, string>>;
-  /** New thread in draft (nothing saved until the first Send) and where it will go. */
-  readonly composing: Signal<ComposingThread | null>;
   /** Comments window: status, user and search filters (decision 21). */
   readonly commentsStatus: Signal<ThreadStatusFilter>;
   readonly commentsUser: Signal<string>;
@@ -141,17 +145,10 @@ export interface ArmedComment {
   readonly mode: EditorMode;
 }
 
-/** The new thread draft and the selection it is valid for. */
-export interface ComposingThread {
-  readonly anchor: ThreadAnchor;
-  readonly selection: Selection;
-}
-
-/** The chosen thread and the selection it is valid for. */
-export interface SelectedThread {
-  readonly id: string;
-  readonly selection: Selection;
-}
+/** What the Conversation window shows: a conversation, or a new one in draft (not yet saved). */
+export type ConversationTarget =
+  | { readonly kind: 'thread'; readonly id: string }
+  | { readonly kind: 'new'; readonly anchor: ThreadAnchor };
 
 export interface CanvasMenu {
   /** Cursor position in the window (`clientX`/`clientY`). */
@@ -166,19 +163,7 @@ export interface CanvasMenu {
 }
 
 export function createEditorUi(): EditorUi {
-  const ui = buildEditorUi();
-  // Changing the selection forgets the chosen thread and the new-thread draft (stage #940,
-  // decision 3): without that, the empty selection that comes back would make the comparison valid
-  // again. The draft text stays in `threadDrafts`. The instance lives as long as the app, never
-  // unsubscribed.
-  effect(() => {
-    const selection = ui.selection.value;
-    const chosen = ui.thread.peek();
-    if (chosen !== null && chosen.selection !== selection) ui.thread.value = null;
-    const draft = ui.composing.peek();
-    if (draft !== null && draft.selection !== selection) ui.composing.value = null;
-  });
-  return ui;
+  return buildEditorUi();
 }
 
 function buildEditorUi(): EditorUi {
@@ -203,9 +188,9 @@ function buildEditorUi(): EditorUi {
     canvasMenu: signal<CanvasMenu | null>(null),
     reviewLegend: signal<boolean>(false),
     compareImage: signal<string | null>(null),
-    thread: signal<SelectedThread | null>(null),
+    conversation: signal<ConversationTarget | null>(null),
+    reviewReturn: signal<string | null>(null),
     threadDrafts: signal<ReadonlyMap<string, string>>(new Map()),
-    composing: signal<ComposingThread | null>(null),
     commentsStatus: signal<ThreadStatusFilter>('open'),
     commentsUser: signal<string>(''),
     commentsText: signal<string>(''),

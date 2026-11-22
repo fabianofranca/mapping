@@ -90,9 +90,30 @@ describe('thread actions: refusals', () => {
     expect(await root.read(threadFilePath('A', false))).toBe(before);
   });
 
-  it('with the proposal review open they refuse (decision 26)', async () => {
-    const { actions } = await setup({ reviewing: true });
-    expect(await actions.open(ANCHOR, 'hi')).toEqual({ ok: false, error: 'reviewing' });
+  it('with the proposal review open, post, resolve and reopen write (decision 12)', async () => {
+    const { actions, threads } = await setup({
+      reviewing: true,
+      threads: [sampleThread({ id: 'A' })],
+    });
+    const count = () => threads.list.value.find((x) => x.id === 'A')?.messages.length;
+    const start = count() ?? 0;
+    expect((await actions.post('A', 'hi')).ok).toBe(true);
+    expect((await actions.resolve('A')).ok).toBe(true);
+    expect((await actions.reopen('A')).ok).toBe(true);
+    expect(count()).toBe(start + 1);
+  });
+
+  it('with the proposal review open, open, remove and removeMany refuse', async () => {
+    const { actions, root } = await setup({
+      reviewing: true,
+      threads: [sampleThread({ id: 'A' })],
+    });
+    const before = await root.read(threadFilePath('A', false));
+    const denied = { ok: false, error: 'reviewing' };
+    expect(await actions.open(ANCHOR, 'hi')).toEqual(denied);
+    expect(await actions.remove('A')).toEqual(denied);
+    expect(await actions.removeMany(['A'])).toEqual(denied);
+    expect(await root.read(threadFilePath('A', false))).toBe(before);
   });
 
   it('they refuse an empty message and one above the limit without writing anything', async () => {

@@ -39,6 +39,10 @@ test('the pins are born hidden, Comment opens the draft and the click on the pin
   await drawMarking(page, center);
   await setMode(page, 'Navigate');
   const conversations = page.getByRole('button', { name: 'Conversations', exact: true });
+  const conversationWindow = page.getByRole('region', {
+    name: 'Conversation',
+    exact: true,
+  });
   await expect(conversations).toHaveAttribute('aria-pressed', 'false');
   expect(await pins(host)).toBe(0);
 
@@ -52,19 +56,22 @@ test('the pins are born hidden, Comment opens the draft and the click on the pin
   await composer.press('Control+Enter');
   await expect.poll(() => pins(host)).toBe(1);
 
-  // Turning Conversations off hides the pin (the conversation stays in Details).
+  // Turning Conversations off hides the pins, but the conversation in the Conversation window
+  // keeps its own pin (it does not follow the selection: stage #1881, decision 6).
   const elsewhere = await canvasPoint(page, 0.9);
   await page.mouse.click(elsewhere.x, elsewhere.y);
   await conversations.click();
   await expect(conversations).toHaveAttribute('aria-pressed', 'false');
-  await expect.poll(() => pins(host)).toBe(0);
-  // Turning it on again brings the pin back.
+  await expect(conversationWindow.getByText('What is the variant?')).toBeVisible();
+  await expect.poll(() => pins(host)).toBe(1);
+  // Turning it on again keeps the pin.
   await conversations.click();
+  await expect(conversations).toHaveAttribute('aria-pressed', 'true');
   await expect.poll(() => pins(host)).toBe(1);
 
-  // The click on the pin (top right corner of the marking, outside) opens the conversation in Details.
+  // The click on the pin (top right corner of the marking, outside) opens the conversation in the Conversation window.
   await page.mouse.click(center.x + 60 + 22, center.y - 40 - 10);
-  await expect(page.getByText('What is the variant?')).toBeVisible();
+  await expect(conversationWindow.getByText('What is the variant?')).toBeVisible();
   await expect(
     page.getByRole('textbox', { name: /Reply as Marina Alves/ }),
   ).toBeVisible();
@@ -383,8 +390,8 @@ test('with no identity, New conversation, Comment and the menu Comment lead to t
   await page.getByRole('button', { name: 'New conversation' }).click();
   await expectNotice();
 
-  // (2) Details closed: the armed Comment, then the click on the selected marking.
-  await page.keyboard.press('Control+Shift+Digit3');
+  // (2) Conversation window closed: the armed Comment, then the click on the selected marking.
+  await page.getByRole('button', { name: 'Close the Conversation window' }).click();
   await expect(notice).toBeHidden();
   const box = (await host.getAttribute('data-selection-box'))!
     .match(/-?\d+(\.\d+)?/g)!
