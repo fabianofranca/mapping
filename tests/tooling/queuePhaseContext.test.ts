@@ -523,3 +523,30 @@ describe('PP3 — skill panel commands run on a temporary panel (decision 8)', (
     SUBPROCESS_TIMEOUT,
   );
 });
+
+describe('CG2 — implementar-fila skill, "Phase above 300 thousand" (decision 8 of #2474)', () => {
+  const fallback = between(
+    perStage,
+    '- **Phase above 300 thousand:**',
+    '- Then check whether the skill changed',
+  );
+
+  it('keeps the condition: above 300 thousand, no switch request, last PR not open, `5 de 5` exempt', () => {
+    expect(fallback).toContain('`used_tokens`');
+    expect(fallback).toContain('above 300 thousand');
+    expect(fallback).toContain('with no `Troca de sessão da fase` request');
+    expect(fallback).toContain('without its last PR open');
+    expect(fallback).toContain('The `5 de 5` session does not receive it');
+  });
+
+  it('the message says not to open the PR, not even the only or last one, and only a PR already open goes on', () => {
+    expect(fallback).toContain(
+      '"Context above 300 thousand: hand over now (sub-item \\"Phase context ceiling\\" of item 3 of \\"For the phase session\\"); do not open the PR, not even the phase\'s only or last one: only a PR already open goes on."',
+    );
+  });
+
+  it('the words "another PR" leave the text', () => {
+    expect(fallback).not.toContain('another PR');
+    expect(fallback).not.toContain('do not open another');
+  });
+});
