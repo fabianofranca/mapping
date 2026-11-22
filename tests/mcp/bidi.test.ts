@@ -87,12 +87,13 @@ describe('bidiRuns (mcp/image/bidi.ts)', () => {
     expect(bidiRuns('א(ב)', 'rtl')).toEqual([run(0, 4, true)]);
   });
 
-  it('a surrogate pair is never split', () => {
+  it('a surrogate pair is never split and an emoji is a neutral', () => {
     expect(bidiRuns('a\u{1F600}b', 'ltr')).toEqual([run(0, 4, false)]);
-    // bidi-js classifies each UTF-16 unit on its own, so an astral character counts as a left-to-right letter (a known
-    // limit); both of its units get the same level, so no run starts or ends between them
     const bounds = bidiRuns('א\u{1F600}ב', 'rtl').flatMap((r) => [r.start, r.end]);
     expect(bounds).not.toContain(2);
+    // between two Hebrew words the emoji joins them in one right-to-left run, as in the browser
+    expect(bidiRuns('אבג \u{1F600} דהו', 'ltr')).toEqual([run(0, 10, true)]);
+    expect(bidiRuns('abc \u{1F600} def', 'rtl')).toEqual([run(0, 10, false)]);
   });
 
   it('every run covers the text once, whatever the direction', () => {

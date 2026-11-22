@@ -13,6 +13,9 @@ export interface BidiRun {
 /** The first code unit that can have a bidi class other than L or the neutrals (the Hebrew block). */
 const FIRST_RTL_UNIT = 0x0590;
 
+/** An astral character (a surrogate pair); `bidi-js` classifies each UTF-16 unit on its own, so it would read as two letters. */
+const ASTRAL = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g;
+
 let bidi: ReturnType<typeof bidiFactory> | undefined;
 
 const algorithm = () => (bidi ??= bidiFactory());
@@ -35,10 +38,13 @@ export function bidiRuns(text: string, direction: 'ltr' | 'rtl'): BidiRun[] {
   if (direction === 'ltr' && belowHebrew(text))
     return [{ start: 0, end: text.length, rtl: false }];
   const api = algorithm();
-  const embedding = api.getEmbeddingLevels(text, direction);
+  // Emoji are neutrals in UAX #9 (the rare right-to-left scripts above U+FFFF are not handled): each astral character
+  // becomes two neutral units, so the offsets stay those of `text`.
+  const masked = text.replace(ASTRAL, '!!');
+  const embedding = api.getEmbeddingLevels(masked, direction);
   // The code units in visual order: each reversed segment of the line, applied in sequence.
   const order = Array.from({ length: text.length }, (_, i) => i);
-  for (const [from, to] of api.getReorderSegments(text, embedding)) {
+  for (const [from, to] of api.getReorderSegments(masked, embedding)) {
     const reversed = order.slice(from!, to! + 1).reverse();
     order.splice(from!, reversed.length, ...reversed);
   }
