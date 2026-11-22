@@ -84,13 +84,6 @@ async function projectZip(): Promise<Buffer> {
   return zip.generateAsync({ type: 'nodebuffer' });
 }
 
-/** The zip a package is applied from in Specializations. */
-async function packageZip(): Promise<Buffer> {
-  const zip = new JSZip();
-  for (const [path, data] of packageFiles()) zip.file(path, data);
-  return zip.generateAsync({ type: 'nodebuffer' });
-}
-
 /** Specializations › Apply zip…, confirming the package window. */
 async function applyPackage(
   page: Page,

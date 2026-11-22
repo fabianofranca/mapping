@@ -78,19 +78,7 @@ function CatalogComponents({ onOpenSpecs, formatRunner }: CatalogWindowProps) {
   if (!current) return null;
   return (
     <>
-      {entries.length > 1 && (
-        <Select
-          label={t('catalog.window.spec')}
-          value={current.specId}
-          onChange={(e) => setSpecId(e.currentTarget.value)}
-        >
-          {entries.map((e) => (
-            <option key={e.specId} value={e.specId}>
-              {e.name}
-            </option>
-          ))}
-        </Select>
-      )}
+      <SpecChooser entries={entries} value={current.specId} onChange={setSpecId} />
       {error && (
         <p class="field-error" role="alert">
           {error}
@@ -113,5 +101,31 @@ function CatalogComponents({ onOpenSpecs, formatRunner }: CatalogWindowProps) {
         {...(disabledReason === undefined ? {} : { addDisabledReason: disabledReason })}
       />
     </>
+  );
+}
+
+/** The specialization selector, only when the project has more than one. */
+function SpecChooser({
+  entries,
+  value,
+  onChange,
+}: {
+  entries: readonly { specId: string; name: string }[];
+  value: string;
+  onChange: (specId: string) => void;
+}) {
+  if (entries.length < 2) return null;
+  return (
+    <Select
+      label={t('catalog.window.spec')}
+      value={value}
+      onChange={(e) => onChange(e.currentTarget.value)}
+    >
+      {entries.map((e) => (
+        <option key={e.specId} value={e.specId}>
+          {e.name}
+        </option>
+      ))}
+    </Select>
   );
 }

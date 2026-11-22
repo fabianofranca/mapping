@@ -4,7 +4,11 @@ import { createDrawingCache, type ComponentDrawing } from './componentDrawings';
 import { baseNode, type FrameNode } from './components/scene';
 import type { TextMeasurer } from './components/instantiate';
 import type { ModelMessage } from './modelMessage';
-import { applyFormatExample, type FormatCheckDeps } from './formatChecks';
+import {
+  applyFormatExample,
+  type FormatCheckDeps,
+  type FormatExampleInput,
+} from './formatChecks';
 import type { FormatRunner } from './formatPlugin';
 import { projectIndex } from './projectIndex';
 import type { Project, ProjectContainer, Rect } from './types';
@@ -130,6 +134,36 @@ function containersOf(
   return found;
 }
 
+/** What `parse` needs for one example, or null when the Catalog lacks a piece (spec, plugin or text). */
+function formatInputsOf(
+  catalog: Catalog,
+  format: CatalogFormat,
+  example: CatalogFormatExample,
+): { input: FormatExampleInput; text: string } | null {
+  const { spec } = catalog;
+  const declared = spec?.fileFormats?.find((f) => f.id === format.id);
+  const components = componentsOf(catalog);
+  if (
+    spec === null ||
+    declared === undefined ||
+    components === null ||
+    format.pluginText === null ||
+    example.text === null
+  ) {
+    return null;
+  }
+  return {
+    input: {
+      spec,
+      specPath: SPEC_PATH,
+      format: declared,
+      pluginText: format.pluginText,
+      components,
+    },
+    text: example.text,
+  };
+}
+
 /**
  * Draws one example of a format of the Catalog: its text goes through `parse` on an empty in-memory project
  * with the specialization and the result is drawn container by container. Never throws.
@@ -140,32 +174,12 @@ export async function drawFormatExample(
   example: CatalogFormatExample,
   deps: FormatDrawDeps,
 ): Promise<FormatExampleView> {
-  const { spec } = catalog;
-  const declared = spec?.fileFormats?.find((f) => f.id === format.id);
-  const components = componentsOf(catalog);
   if (example.input !== undefined) return { kind: 'generate' };
-  if (
-    spec === null ||
-    declared === undefined ||
-    components === null ||
-    format.pluginText === null ||
-    example.text === null
-  ) {
-    return { kind: 'unavailable' };
-  }
+  const inputs = formatInputsOf(catalog, format, example);
+  if (inputs === null) return { kind: 'unavailable' };
   try {
     const checkDeps: FormatCheckDeps = deps;
-    const applied = await applyFormatExample(
-      {
-        spec,
-        specPath: SPEC_PATH,
-        format: declared,
-        pluginText: format.pluginText,
-        components,
-      },
-      example.text,
-      checkDeps,
-    );
+    const applied = await applyFormatExample(inputs.input, inputs.text, checkDeps);
     if (!applied.ok)
       return { kind: 'failed', code: applied.code, message: applied.message };
     const drawings = createDrawingCache()(
