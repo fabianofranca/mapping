@@ -1,4 +1,4 @@
-# Script fixes from the round on main 5d2fef9 — 2026-11-22 (épico `epic/script-fixes-5d2fef9`, PR #0, MCP no change, schema v23)
+# Script fixes from the round on main 5d2fef9 — 2026-11-22 (épico `epic/script-fixes-5d2fef9`, PR #2654, MCP no change, schema v23)
 
 ## Alterado
 
