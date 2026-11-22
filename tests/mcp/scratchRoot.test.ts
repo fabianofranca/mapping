@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import {
   cpSync,
   mkdirSync,
@@ -9,7 +10,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, relative } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { encodePng, quadrants } from './images';
 import { errorOf, ok } from './proposalSupport';
@@ -304,5 +305,37 @@ describe('list_projects and the write paths', () => {
     expect(readFileSync(join(scratch, 'batch.json'), 'utf8')).toBe(
       JSON.stringify([SCREEN]),
     );
+  });
+});
+
+describe('a scratch folder that overlaps a root is refused at startup (usage error)', () => {
+  const bundle = resolve('dist-mcp/mapping-mcp.js');
+  const start = (...args: string[]) =>
+    spawnSync(process.execPath, [bundle, ...args], {
+      encoding: 'utf8',
+      input: '',
+      timeout: 20_000,
+    });
+
+  it.each([
+    ['inside a root', (r: string) => ['--root', r, '--scratch', join(r, 'tmp')]],
+    ['a root inside it', (r: string) => ['--root', join(r, 'inner'), '--scratch', r]],
+    ['the same folder', (r: string) => ['--root', r, '--scratch', r]],
+  ])('%s: exit 2, the message and the usage text on stderr', (_name, args) => {
+    const run = start(...args(root));
+    expect(run.status).toBe(2);
+    expect(run.stdout).toBe('');
+    expect(run.stderr).toMatch(
+      /^mapping-mcp: the scratch folder .+ overlaps the root .+: keep the scratch folder outside the roots\n\nUsage:/,
+    );
+  });
+
+  it('sibling folders still start (the server waits for the client and ends with its input)', () => {
+    const run = start('--root', root, '--scratch', scratch);
+    expect(run.error).toBeUndefined();
+    expect(run.status).not.toBeNull();
+    expect(run.status).not.toBe(2);
+    expect(run.stderr).not.toContain('overlaps');
+    expect(run.stderr).not.toContain('Usage:');
   });
 });

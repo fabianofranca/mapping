@@ -5,6 +5,7 @@ import { USAGE, UsageError, parseArgs } from './args';
 import { MAX_MESSAGE_BYTES } from './image/formats';
 import { initShaper } from './image/harfbuzz';
 import { ImageServer } from './imageServer';
+import { scratchOverlap } from './paths';
 import { runPlugin } from './pluginRunner';
 import { createServer } from './server';
 import { BUILD_VERSION } from './version';
@@ -65,6 +66,14 @@ async function main(): Promise<void> {
     process.exitCode = await checkPluginRunner();
     return;
   }
+  const roots = options.roots.map((root) => resolve(root));
+  const scratch = options.scratch.map((folder) => resolve(folder));
+  const overlap = scratchOverlap(roots, scratch);
+  if (overlap !== null) {
+    throw new UsageError(
+      `the scratch folder ${overlap.scratch} overlaps the root ${overlap.root}: keep the scratch folder outside the roots`,
+    );
+  }
   keepStdoutForProtocol();
   // HarfBuzz is instantiated once, before any tool runs: the measurer and the rasterizer are synchronous.
   await initShaper();
@@ -77,8 +86,8 @@ async function main(): Promise<void> {
     process.exit(1);
   });
   const server = createServer({
-    roots: options.roots.map((root) => resolve(root)),
-    scratch: options.scratch.map((folder) => resolve(folder)),
+    roots,
+    scratch,
     images: options.http ? new ImageServer() : null,
   });
   // The read ceiling follows the `base64` one in the schema. Above it, the SDK transport warns
