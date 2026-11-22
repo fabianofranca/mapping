@@ -1,4 +1,4 @@
-# Plan reserve — [Não lançado] (épico `epic/plan-reserve`, MCP 0.57.1, schema v23)
+# Plan reserve — [Não lançado] (épico `epic/plan-reserve`, PR #2523, MCP 0.57.1, schema v23)
 
 ## Corrigido
 
