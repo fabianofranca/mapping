@@ -277,6 +277,37 @@ describe('texts (decisions 2 to 4)', () => {
     ).toBe(true);
   });
 
+  it('review: the tester check runs once per batch and an open SM<k> holds the whole batch', () => {
+    for (const [name, text] of [
+      ['skill', perStage],
+      ['orchestrator', orchestrator],
+    ] as const) {
+      expect(text.includes('once per batch'), `${name}: once per batch`).toBe(true);
+      expect(
+        text.includes('already open'),
+        `${name}: an open SM<k> holds the batch`,
+      ).toBe(true);
+    }
+  });
+
+  it('review: a failing fetch is treated like no base, never run on stale refs', () => {
+    const sub = section(FLOW, '### Main before a session (hook files)');
+    for (const [name, text] of [
+      ['skill', perStage],
+      ['orchestrator', orchestrator],
+      ['subsection', sub],
+    ] as const) {
+      expect(text.includes('fetch fails'), `${name}: fetch fails`).toBe(true);
+      expect(text.includes('stale'), `${name}: stale refs`).toBe(true);
+    }
+  });
+
+  it('review: the sync template keeps both sides of a conflict in a hook file', () => {
+    const sub = section(FLOW, '### Main before a session (hook files)');
+    expect(sub.includes('unless the stage itself edits it')).toBe(false);
+    expect(sub.includes('keep both changes in a hook file')).toBe(true);
+  });
+
   it('FLOW "Orchestrator — step by step" runs the same check before each session', () => {
     expect(orchestrator.includes(command), command).toBe(true);
     expect(orchestrator.includes(fetch), fetch).toBe(true);
