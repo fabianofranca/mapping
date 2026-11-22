@@ -36,6 +36,11 @@ describe('bidiRuns (mcp/image/bidi.ts)', () => {
     expect(calls.levels).toBe(before);
   });
 
+  it('a left-to-right letter above U+FFFF is not a neutral: it keeps its order in an rtl base', () => {
+    // MATHEMATICAL BOLD CAPITAL A, B, C (surrogate pairs): strong left-to-right, like Chromium
+    expect(bidiRuns('\u{1D400}\u{1D401}\u{1D402}', 'rtl')).toEqual([run(0, 6, false)]);
+  });
+
   it('an empty text has no runs', () => {
     expect(bidiRuns('', 'ltr')).toEqual([]);
     expect(bidiRuns('', 'rtl')).toEqual([]);

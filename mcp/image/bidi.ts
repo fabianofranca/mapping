@@ -15,6 +15,7 @@ const FIRST_RTL_UNIT = 0x0590;
 
 /** An astral character (a surrogate pair); `bidi-js` classifies each UTF-16 unit on its own, so it would read as two letters. */
 const ASTRAL = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g;
+const ASTRAL_LETTER = /^\p{L}$/u;
 
 let bidi: ReturnType<typeof bidiFactory> | undefined;
 
@@ -38,9 +39,10 @@ export function bidiRuns(text: string, direction: 'ltr' | 'rtl'): BidiRun[] {
   if (direction === 'ltr' && belowHebrew(text))
     return [{ start: 0, end: text.length, rtl: false }];
   const api = algorithm();
-  // Emoji are neutrals in UAX #9 (the rare right-to-left scripts above U+FFFF are not handled): each astral character
-  // becomes two neutral units, so the offsets stay those of `text`.
-  const masked = text.replace(ASTRAL, '!!');
+  // Each astral character becomes two units, so the offsets stay those of `text`: a letter is strong left-to-right
+  // (`aa`) and the rest (emoji, symbols) is neutral, as in UAX #9 (the rare right-to-left scripts above U+FFFF are
+  // not handled).
+  const masked = text.replace(ASTRAL, (c) => (ASTRAL_LETTER.test(c) ? 'aa' : '!!'));
   const embedding = api.getEmbeddingLevels(masked, direction);
   // The code units in visual order: each reversed segment of the line, applied in sequence.
   const order = Array.from({ length: text.length }, (_, i) => i);
