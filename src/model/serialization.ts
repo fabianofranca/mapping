@@ -1,4 +1,5 @@
 import { validateProject, type InvariantIssue } from './invariants';
+import { settleHierarchy } from './hierarchySettle';
 import { isRecord } from './isRecord';
 import {
   discardedOnMigrationTo11,
@@ -355,11 +356,17 @@ export function deserializeParsed(
   const { project, warnings } = attachSpecs(parsed.data, specs);
   const issues = validateProject(project);
   if (issues.length > 0) {
+    const repair = repairProject(project, issues, undefined, pageName);
     return {
       ok: false,
       error: { code: 'invariant-violation', issues },
       repair: {
-        ...repairProject(project, issues, undefined, pageName),
+        ...repair,
+        // A repaired project that is valid is settled like a valid one (reading settles).
+        project:
+          repair.unrepaired.length === 0
+            ? settleHierarchy(repair.project)
+            : repair.project,
         readOnly,
         migratedFrom,
         specWarnings: warnings,
@@ -370,7 +377,10 @@ export function deserializeParsed(
   }
   return {
     ok: true,
-    project,
+    // Reading settles the project in memory (a hand-edited `parentId` is corrected; the
+    // clipped settle of every later operation assumes a settled `before`). It gives back the same
+    // object when there is nothing to change, and nothing is written until an edit.
+    project: settleHierarchy(project),
     readOnly,
     migratedFrom,
     specWarnings: warnings,

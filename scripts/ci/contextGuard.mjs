@@ -72,11 +72,12 @@ export const MARCADOR = 'Você é o agente da fase ';
 export const MARCADOR_FILA = /^Fase \S+ — .* da etapa #\d+ \(sub-issue #\d+\)/;
 /**
  * The coordinator's initial prompt: the text, after `trimStart`, starts with `/implementar-fila`
- * followed by whitespace or the end (what `create_session` sends to the successor), or it contains
- * the form Claude Code records for a typed slash command.
+ * followed by whitespace or the end (what `create_session` sends to the successor), or it starts with
+ * the form Claude Code records for a typed slash command (an optional `<command-message>` first). Both
+ * are anchored to the start of the block: a prompt that only quotes the tag is not a coordinator.
  */
 export const MARCADOR_COORDENADOR =
-  /^\/implementar-fila(?:\s|$)|<command-name>\/implementar-fila<\/command-name>/;
+  /^(?:\/implementar-fila(?:\s|$)|(?:<command-message>[^<]*<\/command-message>\s*)?<command-name>\/implementar-fila<\/command-name>)/;
 /**
  * The resume line the coordinator adds to a successor phase (`docs/FLOW.md`, item 3 of "For the phase
  * session"): `Retomada por contexto (<k> de <N>)`.
@@ -254,7 +255,7 @@ export function coordinatorWarningText(contexto, jumps) {
     `This counts as "above 35%" of "Session switch" in .claude/skills/implementar-fila/SKILL.md: ` +
     `hand the coordination over now, in this turn, after the lineage check ("Lineage limit"), ` +
     `without rereading a changed SKILL.md. ` +
-    `With no room in the lineage, the owner's path of "Lineage limit" applies once, and the later notices do not repeat it. ` +
+    `With no room in the lineage, follow the owner's path of "Lineage limit" and keep working. This hook cannot see the lineage and repeats this notice every ${PASSO / 1000} thousand: if the \`current\` of the panel already says "aguardando o dono abrir a sessão nova da fila", the owner was notified, so do not send it again. ` +
     `A session that already handed over (no longer the registered coordinator) ignores this notice. ` +
     `Largest jumps (approximate): ${saltos}. Subagent: ignore this notice.`
   );

@@ -115,7 +115,7 @@ In the three cases, **do not ask for confirmation**: build the list and put it a
 - **Retest** (mode 1, findings of a previous report): only the windows and dialogs cited in the findings of the report, never the default list nor the one in the message.
 - **Full round:** the default list; if the message brings `Passada visual: <list>`, use that one instead of the default.
 - **Directed round in groups:** the `Passada visual: <list>` line of the message applies to the group that receives it; the coordinator puts it in one group only, and in the others the message says `nenhuma` (same report line).
-- **Full round in blocks:** only **block 4** does the visual pass (default list, or the one in the message); in blocks 1, 2, 3 and 5, the report says "Visual pass: in block 4".
+- **Full round in blocks:** only **block 4** does the visual pass (default list, or the one in the message); in blocks 1, 2, 3, 5 and 6, the report says "Visual pass: in block 4".
 
 **Visual pass detail** (default list, focus, Perspectives, Content outside the image): `node scripts/testing/cloud.mjs secao consulta.passada`.
 
@@ -125,12 +125,12 @@ The full round (R0 to R43) runs in **simultaneous sessions, one per block of the
 
 | Block | Scripts, in the order of the guide                                                      | Steps |
 | ----- | --------------------------------------------------------------------------------------- | ----- |
-| 1     | R0, R1, section 6, R3, R6.3 to R6.7, R6.12 to R6.14, R7, R5, R8, R14, R15 and R26       | 163   |
+| 1     | R0, R1, section 6, R3, R6.3 to R6.7, R6.12 to R6.14, R7, R5, R8, R14, R26 and R28       | 169   |
 | 2     | R0, section 6, R2 and R25                                                               | 148   |
-| 3     | R0, section 6, R12, R18, R19 and R43                                                    | 157   |
-| 4     | R0, section 6, R4, R6.8a to R6.11, R9, R10, R13, R16, R22, R24, R28 and the visual pass | 177   |
-| 5     | R0, section 6, R11, R17, R20, R21 and R23                                               | 147   |
-| 6     | R0, section 6, R27, R29, R30, R32, R37, R38, R39, R40, R41 and R42                      | 150   |
+| 3     | R0, section 6, R12, R15, R19 and R40                                                    | 153   |
+| 4     | R0, section 6, R4, R6.8a to R6.11, R9, R10, R13, R16, R18, R22, R24 and the visual pass | 172   |
+| 5     | R0, section 6, R17, R20, R21, R23 and R29                                               | 146   |
+| 6     | R0, section 6, R11, R27, R30, R32, R37, R38, R39, R41, R42 and R43                      | 156   |
 
 There are 6 blocks: 5 by decision of the owner (2026-11-09) and the 6th by #2024 (2026-11-17). The visual pass stays in block 4 (decision 6 of stage #841). The guide limit (`MAX_BLOCK_GUIDE_CHARS`), sizes, dependencies and baselines: `cloud.mjs secao consulta.historico`.
 

@@ -35,13 +35,15 @@ const v15Raw = (): Raw => {
   return raw;
 };
 
+// Far from every container: reading settles the project, and a canvas marking over a container
+// would be taken into it.
 const canvasMarking = (id: string, extra: Partial<Marking> = {}): Marking => ({
   id,
   containerId: null,
   parentId: null,
   pageId: 'PG1',
   name: null,
-  rect: { x: 300, y: 300, width: 100, height: 100 },
+  rect: { x: 20000, y: 20000, width: 100, height: 100 },
   needsReview: false,
   locked: false,
   floating: false,
@@ -66,7 +68,7 @@ function withPerspectives(): Project {
         hiddenLayers: ['L2'],
         items: [
           { root: 'I1', x: 0, y: 0 },
-          { root: 'MC', x: 100.5, y: -40 },
+          { root: 'MC', x: 101, y: -40 },
         ],
       },
       {
