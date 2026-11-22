@@ -561,6 +561,7 @@ describe('scripts/testing/ listed in the repository', () => {
         'rot.mjs',
         'round-guide.d.mts',
         'round-guide.mjs',
+        'slots.mjs',
         'sombras.mjs',
         'tokens.mjs',
       ].sort(),
