@@ -62,12 +62,9 @@ describe.each(['light', 'dark'] as const)('canvas marking in the %s theme', (the
     'cv-select-secondary',
     'cv-arrow',
     'cv-component-image-failed',
-  ])(
-    '%s over the canvas background ≥ 3',
-    (name) => {
-      expect(contrast(tokenValue(name, theme), canvasBg)).toBeGreaterThanOrEqual(3);
-    },
-  );
+  ])('%s over the canvas background ≥ 3', (name) => {
+    expect(contrast(tokenValue(name, theme), canvasBg)).toBeGreaterThanOrEqual(3);
+  });
 });
 
 /** `cv-*` color ('#rrggbb' or 'rgba(r, g, b, a)') as [r, g, b, a]. */

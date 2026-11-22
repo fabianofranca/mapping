@@ -51,7 +51,9 @@ const draw = (
   });
 
 const outlines = (r: ReturnType<typeof renderScene>): Konva.Rect[] =>
-  (r.byId.get('box')!.find('Rect') as Konva.Rect[]).filter((x) => (x.dash() ?? []).length > 0);
+  (r.byId.get('box')!.find('Rect') as Konva.Rect[]).filter(
+    (x) => (x.dash() ?? []).length > 0,
+  );
 
 describe('DX7: the failure look', () => {
   it.each([
