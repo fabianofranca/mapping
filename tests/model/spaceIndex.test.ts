@@ -80,10 +80,9 @@ describe('buildRectIndex', () => {
     for (let q = 0; q < 10; q++) found = index.containing(inner, EPSILON);
     const elapsed = performance.now() - start;
     expect(found.filter((rect) => containsRectApprox(rect, inner))).toEqual([huge]);
-    expect(
-      found.filter((rect) => containsRectApprox(rect, inner)),
-      'same as the brute force',
-    ).toEqual(rects.filter((rect) => containsRectApprox(rect, inner)));
+    expect(found.filter((rect) => containsRectApprox(rect, inner))).toEqual(
+      rects.filter((rect) => containsRectApprox(rect, inner)),
+    );
     expect(elapsed, `10 far queries took ${elapsed.toFixed(0)} ms`).toBeLessThan(100);
   });
 });

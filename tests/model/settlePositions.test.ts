@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  createMarking,
   moveMarking,
+  setMarkingRect,
   setMarkingFloating,
   settleHierarchy,
   type Marking,
@@ -55,6 +57,8 @@ function settledProject(): Project {
       mk('inner', 50, 50, 'A'),
       mk('far', 600, 100, 'A'),
       mk('other', 20, 40, 'B'),
+      // Enough markings that an operation touching a few of them is clipped (not settled in full).
+      ...[1, 2, 3, 4, 5, 6].map((k) => mk(`fill${k}`, k * 100, 30, 'B')),
     ],
   });
 }
@@ -122,5 +126,53 @@ describe('advancePositions: a move inside a space keeps the entry', () => {
     const after = setMarkingFloating(before, 'far', true);
     // The entry of the space is dropped (unknown again), not updated.
     expect(knownPositions(after.markings)?.has('A') ?? false).toBe(false);
+  });
+
+  it('moves a marking with its members in one call', () => {
+    const before = warm();
+    // `outer` holds `inner`: both are swapped in the same operation.
+    const after = moveMarking(before, 'outer', 7, 3);
+    expect(boxAt(after, 'A', 'outer')).toEqual([17, 13, 317, 313]);
+    expect(boxAt(after, 'A', 'inner')).toEqual([57, 53, 107, 103]);
+    expect(boxAt(after, 'A', 'far')).toEqual([601, 600, 701, 700]);
+    expect(boxAt(before, 'A', 'outer')).toEqual([10, 10, 310, 310]);
+    expect(boxAt(before, 'A', 'inner')).toEqual([50, 50, 100, 100]);
+  });
+
+  it('moves after a creation on the same table, and each branch keeps its own boxes', () => {
+    const before = warm();
+    const created = createMarking(before, {
+      id: 'N',
+      containerId: 'A',
+      rect: { x: 400, y: 400, width: 20, height: 20 },
+    });
+    expect(knownPositions(created.markings)?.get('A')?.count).toBe(4);
+    const movedAfter = moveMarking(created, 'N', 5, 5);
+    expect(boxAt(movedAfter, 'A', 'N')).toEqual([405, 405, 425, 425]);
+    expect(boxAt(created, 'A', 'N')).toEqual([400, 400, 420, 420]);
+    // Undo branch: from `before`, a move and then a creation (the shared positions are copied).
+    const branchMoved = moveMarking(before, 'far', 9, 0);
+    const branchCreated = createMarking(branchMoved, {
+      id: 'M',
+      containerId: 'A',
+      rect: { x: 800, y: 800, width: 10, height: 10 },
+    });
+    expect(boxAt(branchCreated, 'A', 'far')).toEqual([610, 600, 710, 700]);
+    expect(boxAt(branchCreated, 'A', 'M')).toEqual([800, 800, 810, 810]);
+    expect(boxAt(before, 'A', 'far')).toEqual([601, 600, 701, 700]);
+    expect(boxAt(created, 'A', 'N')).toEqual([400, 400, 420, 420]);
+    expect(knownPositions(before.markings)?.get('A')?.count).toBe(3);
+  });
+
+  it('resizes a marking and keeps the entry with the new box', () => {
+    const before = warm();
+    const after = setMarkingRect(before, 'far', {
+      x: 601,
+      y: 600,
+      width: 50,
+      height: 60,
+    });
+    expect(boxAt(after, 'A', 'far')).toEqual([601, 600, 651, 660]);
+    expect(boxAt(before, 'A', 'far')).toEqual([601, 600, 701, 700]);
   });
 });

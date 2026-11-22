@@ -108,12 +108,16 @@ function moved(
 ): SpaceEntry | null {
   const slot = slotOf(entry, i);
   if (slot < 0) return null;
+  const box = boxOf(rect);
+  const at = slot * 4;
+  // Same box as stored (a rename or a lock toggle swaps the object, not the rectangle): no copy.
+  if (box.every((value, k) => entry.boxes[at + k] === value)) return entry;
   let { boxes } = entry;
   if (!own.has(boxes)) {
-    boxes = boxes.slice();
+    boxes = boxes.slice(0, entry.count * 4);
     own.add(boxes);
   }
-  boxes.set(boxOf(rect), slot * 4);
+  boxes.set(box, at);
   return boxes === entry.boxes ? entry : { ...entry, boxes };
 }
 
