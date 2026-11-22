@@ -86,7 +86,7 @@ Write each line with `row '#n' plan="<the line>"` (and `title`). The `formato=` 
 
 ## 1. Start
 
-1. `get_session` without `session_id`: keep this session's **id** (the "Coordenador" of the messages) and the `session_context.model`. If it is not Sonnet, warn once that the coordination costs more and go on. `set_session_title`: "Fila — coordenador <n>" (<n> = 1 on a new queue; with `retomar`, the `n` of `roles` plus 1, "Session switch"). Without `retomar`, register yourself after creating the panel: `painel.py role <folder> coordenador <id>`.
+1. `get_session` without `session_id`: keep this session's **id** (the "Coordenador" of the messages) and the `session_context.model`. If it is not Sonnet, warn once that the coordination costs more and go on. `set_session_title`: "Fila — coordenador <n> · linhagem <depth>/<limit>" (<n> = 1 on a new queue; with `retomar`, the `n` of `roles` plus 1, "Session switch"; `<depth>` and `<limit>` come from `lineage.depth` and `lineage.limit` of that same `get_session`: a chat the owner opens is level 0, so the owner sees the lineage level in the session list). Without `retomar`, register yourself after creating the panel: `painel.py role <folder> coordenador <id>`.
 2. Another coordinator running? `list_sessions` (`mine: true`, `limit: 10`; skip with `retomar`). A session with the prefix "Fila — coordenador" that is working and is neither this one nor the `anterior` is another queue: stop and tell the owner.
 3. Load with `ToolSearch` what you are going to use:
    - `AskUserQuestion`, `PushNotification` and `ArtifactData`;
@@ -490,7 +490,7 @@ Write to `painel.py` **at every advance** (phase opened and merged, PR, tester, 
 2. Create the new session with `create_session`:
    - the same `model`;
    - the repository's `source_url`, `source_revision` `main`;
-   - title "Fila — coordenador <n>", with <n> = the `n` of `roles` (`painel.py roles <folder>`) plus 1;
+   - title "Fila — coordenador <n> · linhagem <d>/<limit>", with <n> = the `n` of `roles` (`painel.py roles <folder>`) plus 1, <d> = this session's `lineage.depth` plus 1 and <limit> = its `lineage.limit` (the successor sets its own title again in "1. Start" from its own `get_session`, which is the authority);
    - message: **only** `/implementar-fila retomar anterior=<this session's id> painel=<url>`, followed by this session's call arguments **except** `painel=`, `importar=`, `retomar` and `anterior=` (the command already carries the `painel=` and the `anterior=` of this session, and the successor must not import again; `#n ...`, `paralelo=` and `modelo=tabela` stay), and then `sem-confirmar`. Copy `mesclar=auto` only if the owner wrote it in this session's call. No handoff notes: what is not in the panel, write to the `log` first.
    - As soon as `create_session` returns the id, register the successor: `painel.py role <folder> coordenador <new id> link=https://claude.ai/code/<new id>` (the `previous` keeps this session's id), and publish the panel. From then on this session is not the registered one and does not act.
 3. Send each child session that is still owed a notice (the `child` rows of the panel) `send_message`: "O coordenador mudou: mande seus avisos para `<id novo>`".
