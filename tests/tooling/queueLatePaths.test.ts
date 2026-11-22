@@ -38,6 +38,7 @@ describe('implementar-fila: the re-entry clock is GitHub against GitHub (decisio
       '`Via rápida recusada:`',
       '`created_at`',
       'same call',
+      '`--paginate`',
       "row's `ended`",
       'only when there is no such comment',
       '`#n reentra kind=',
@@ -78,6 +79,7 @@ describe('implementar-fila: the answers that arrive after the End have a path (d
       '`painel.py start',
       '`painel.py reserve`',
       'new fallback check',
+      '`current` back to a working text',
       '`painel.py end`',
     ]);
   });
