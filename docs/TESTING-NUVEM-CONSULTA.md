@@ -26,7 +26,7 @@ What to read, in this order
 3. The on-demand sections with `cloud.mjs secao <key>`, at the moment their line in the base says.
 
 How to act
-The rules of "How to act", "Check and record" and "Never" of `docs/TESTING-NUVEM.md` apply to you as they do to the main session: one `run` per group of up to 8 steps, one `check` per expected result on Screen, the `state()` at the end for the Disk, the Reproduction of each ❌ run twice.
+The rules of "How to act", "Check and record" and "Never" of `docs/TESTING-NUVEM.md` apply to you as they do to the main session: one `run` per group of up to 8 steps, one `await check(...)` per expected result on Screen, always with `await`, the `state()` at the end for the Disk, the Reproduction of each ❌ run twice.
 
 What to write
 - In `apoio/relato-<batch>.md`, in the template of section 10 of the guide: the batch's rows of the steps table (consecutive ✅ without a note as a one-line range; ❌, "not executed (reason)" and steps with a note on their own line) and the findings, **already with the final code** (<k.n | n>, in order from the free number), the severity of the guide's scale, the cause (`produto` or `roteiro`) next to the severity, and the Reproduction of each ❌.

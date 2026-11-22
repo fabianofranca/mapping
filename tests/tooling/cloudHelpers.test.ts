@@ -2421,9 +2421,9 @@ describe('persistent run server, check and runs.log (stage #1533, TE2)', () => {
       const r = await run(`
         check('R4.2', true);
         check('R4.3', false, 'missing the notice');
-        check('R4.4', async () => { throw new Error('could not find the button'); });
+        await check('R4.4', async () => { throw new Error('could not find the button'); });
         check('R4.5', () => true);
-        check('R4.6', Promise.resolve(true));
+        await check('R4.6', Promise.resolve(true));
         check('R4.7', () => false);
         console.log('body went on');
       `);
@@ -2453,12 +2453,50 @@ describe('persistent run server, check and runs.log (stage #1533, TE2)', () => {
       );
     });
 
-    it('all passing: the run exits 0; a check without await is also awaited', async () => {
+    it('all passing: the run exits 0; an awaited async check prints its own result', async () => {
       const r = await run(
-        `check('ok', async () => { await new Promise((r) => setTimeout(r, 30)); return true; })`,
+        `await check('ok', async () => { await new Promise((r) => setTimeout(r, 30)); return true; })`,
       );
       expect(r.code).toBe(0);
       expect(r.out).toContain('✅ ok');
+    });
+
+    it.each([
+      ['an async function', `async () => true`],
+      ['a function that returns a promise', `() => Promise.resolve(true)`],
+      ['a promise', `Promise.resolve(true)`],
+    ])(
+      'an un-awaited async check (%s) fails as not awaited, even when true, and the run exits 1',
+      async (_name, condition) => {
+        const r = await run(`check('R1.1', ${condition}); console.log('body went on');`);
+        expect(r.code).toBe(1);
+        expect(r.out).toContain('body went on');
+        expect(r.out.split('\n')).toContain(
+          '❌ R1.1 — not awaited: write await check(...)',
+        );
+        expect(r.out).not.toContain('✅ R1.1');
+      },
+    );
+
+    it('the same check with await, or inside an awaited Promise.all, prints its own result', async () => {
+      const r = await run(`
+        await check('A', async () => true);
+        await Promise.all([check('B', () => Promise.resolve(true)), check('C', async () => false, 'nope')]);
+      `);
+      expect(r.code).toBe(1);
+      const lines = r.out.split('\n');
+      expect(lines).toContain('✅ A');
+      expect(lines).toContain('✅ B');
+      expect(lines).toContain('❌ C — nope');
+      expect(r.out).not.toContain('not awaited');
+    });
+
+    it('sync checks without await stay as they are', async () => {
+      const r = await run(`check('x', true); check('y', () => true);`);
+      expect(r.code).toBe(0);
+      expect(r.out).toContain('✅ x');
+      expect(r.out).toContain('✅ y');
+      expect(r.out).not.toContain('not awaited');
     });
   });
 

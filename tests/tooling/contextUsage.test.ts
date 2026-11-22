@@ -465,8 +465,8 @@ describe('CM1 — flow texts that use the measure (decisions 5 to 10)', () => {
       '`pkill -f chrome` (it kills the shell itself and makes Chrome restore tabs)',
     );
     expect(cloud).toContain('(for example, the 25,000 cut or a missing excerpt)');
-    // The ceiling went from 32,000 to 32,500 in stage #1712 (restoring the wording from before PR #1709) and to 33,200 in #2261 (the cause rule of "Check and record").
-    expect(cloud.length).toBeLessThanOrEqual(33_200);
+    // The ceiling went from 32,000 to 32,500 in stage #1712 (restoring the wording from before PR #1709) and to 33,200 in #2261 (the cause rule of "Check and record") and to 33,500 in #2450 (the `await check` rule).
+    expect(cloud.length).toBeLessThanOrEqual(33_500);
   });
 
   it('CL1.5: the hardened measure catches the text that goes back to the old measure (mutation)', () => {
