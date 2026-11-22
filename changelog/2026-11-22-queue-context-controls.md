@@ -1,4 +1,4 @@
-# Queue context and cost controls — [Não lançado] (épico `epic/queue-context-controls`, PR #0, MCP unchanged, schema v23)
+# Queue context and cost controls — 2026-11-22 (épico `epic/queue-context-controls`, PR #2689, MCP unchanged, schema v23)
 
 ## Alterado
 
