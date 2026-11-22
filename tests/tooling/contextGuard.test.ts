@@ -21,8 +21,12 @@ import { between, section } from '../support/textSlice';
 import {
   GATILHO,
   GATILHO_COORDENADOR,
+  GATILHO_TESTADOR,
   MARCADOR,
   MARCADOR_COORDENADOR,
+  MARCADOR_RETOMADA,
+  MARCADOR_TESTADOR,
+  opensPullRequest,
   sessionRole,
   shouldWarn,
   // @ts-expect-error .mjs module without type declarations
@@ -31,7 +35,11 @@ import {
 const TRIGGER = GATILHO as number;
 const COORD_TRIGGER = GATILHO_COORDENADOR as number;
 const COORD_MARK = MARCADOR_COORDENADOR as RegExp;
-const roleOf = sessionRole as (texts: string[]) => 'fase' | 'coordenador' | null;
+const TESTER_TRIGGER = GATILHO_TESTADOR as number;
+const roleOf = sessionRole as (
+  texts: string[],
+) => 'fase' | 'coordenador' | 'testador' | null;
+const opensPr = opensPullRequest as (toolName: unknown, toolInput: unknown) => boolean;
 const warns = shouldWarn as (
   contexto: number,
   ultimoAviso: number | null,
@@ -103,6 +111,7 @@ function sandbox(lines: string[] = []): Sandbox {
 }
 
 interface Call {
+  hook_event_name?: string;
   tool_name?: string;
   tool_input?: Record<string, unknown>;
   agent_id?: string;
@@ -142,7 +151,7 @@ function hook(
 
 interface State {
   fase: boolean;
-  papel?: 'fase' | 'coordenador' | 'nenhum';
+  papel?: 'fase' | 'coordenador' | 'testador' | 'nenhum';
   contexto?: number;
   ferramenta?: string;
   ultimoAviso: number | null;
@@ -207,7 +216,7 @@ describe('GC1 — contextGuard.mjs: the silent outputs (decision 4)', () => {
     expect(stateOf(box).fase).toBe(false);
   });
 
-  it('the tester, the supervision and the fast track stay out (papel nenhum)', () => {
+  it('the supervision and the fast track stay out (papel nenhum), and so does a tester described in prose', () => {
     for (const prompt of [
       'You are the tester of stage #1856.',
       '/supervisionar-fila',
@@ -243,6 +252,24 @@ describe('CH1 — contextGuard.mjs: the coordinator prompt and the role (decisio
       expect(COORD_MARK.test(text.trimStart()), text).toBe(true);
       expect(roleOf([text]), text).toBe('coordenador');
     }
+  });
+
+  it('a prompt that only quotes the command tag is not a coordinator (anchored to the start of the block)', () => {
+    for (const text of [
+      'Fix the hook: it matches <command-name>/implementar-fila</command-name> anywhere',
+      'Note\n<command-name>/implementar-fila</command-name>',
+    ]) {
+      expect(COORD_MARK.test(text.trimStart()), text).toBe(false);
+      expect(roleOf([text]), text).toBeNull();
+    }
+  });
+
+  it('the typed form counts with or without the leading command-message block', () => {
+    const bare = '<command-name>/implementar-fila</command-name>';
+    expect(roleOf([bare])).toBe('coordenador');
+    expect(
+      roleOf([`  <command-message>implementar-fila</command-message>\n${bare}`]),
+    ).toBe('coordenador');
   });
 
   it('the form recorded for a typed slash command counts', () => {
@@ -480,11 +507,21 @@ describe('CH1 — contextGuard.mjs: the coordinator notice (decision 5)', () => 
     expect(text).toContain('without rereading a changed SKILL.md');
   });
 
+  it('names the `current` phrase that the skill\'s "Lineage limit" writes', () => {
+    const phrase = 'aguardando o dono abrir a sessão nova da fila';
+    expect(notice()).toContain(phrase);
+    expect(readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8')).toContain(
+      `"${phrase}"`,
+    );
+  });
+
   it('covers no room in the lineage, the session that already handed over, the jumps and the subagent line', () => {
     const text = notice();
     expect(text).toContain('no room in the lineage');
-    expect(text).toContain('once');
-    expect(text).toContain('later notices do not repeat');
+    expect(text).toContain('repeats this notice every 10 thousand');
+    expect(text).toContain('aguardando o dono abrir a sessão nova da fila');
+    expect(text).toContain('do not send it again');
+    expect(text).not.toContain('later notices do not repeat');
     expect(text).toContain('no longer the registered coordinator');
     expect(text).toContain('Largest jumps (approximate): Read: a.md +');
     expect(text).toContain('Subagent: ignore this notice.');
@@ -731,10 +768,16 @@ describe('CH1 — the "Session switch" section of the implementar-fila skill (de
     expect(first).toContain('painel.py context <folder> --medir --max <max_tokens>');
   });
 
-  it('"New skill on main" skips the check with the context above 35% or the hook notice', () => {
+  it('"New skill on main" keeps the cheap check with the context above 35% or the hook notice, and reads only the touched switch rules', () => {
     expect(newSkill).toContain('above 35%');
     expect(newSkill).toContain("hook's notice");
-    expect(newSkill).toContain('skip this check entirely');
+    expect(newSkill).not.toContain('skip this check entirely');
+    expect(newSkill).toContain(
+      'run only `git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/`',
+    );
+    expect(newSkill).toContain('no pull and no reread');
+    expect(newSkill).toContain('"Session switch" or "Rules of this queue"');
+    expect(newSkill).toContain('read only those sections');
     expect(newSkill).toContain('the successor reads the new skill');
     // With no room in the lineage there is no successor to read it: the check stays.
     expect(newSkill).toContain('with room in the lineage');
@@ -751,6 +794,21 @@ describe('GC1 — .claude/settings.json (decision 10)', () => {
     expect(settings.hooks.PostToolUse).toEqual([
       {
         matcher: '*',
+        hooks: [
+          {
+            type: 'command',
+            command: 'node "$CLAUDE_PROJECT_DIR/scripts/ci/contextGuard.mjs"',
+            timeout: 10,
+          },
+        ],
+      },
+    ]);
+  });
+
+  it('CG1 — PreToolUse has one entry: matcher Bash|mcp__github__create_pull_request, the same command, timeout 10', () => {
+    expect(settings.hooks.PreToolUse).toEqual([
+      {
+        matcher: 'Bash|mcp__github__create_pull_request',
         hooks: [
           {
             type: 'command',
@@ -782,7 +840,11 @@ describe('GC1 — .claude/settings.json (decision 10)', () => {
     expect(settings.permissions.allow).toContain(
       'mcp__claude-code-remote__archive_session',
     );
-    expect(Object.keys(settings.hooks).sort()).toEqual(['PostToolUse', 'SessionStart']);
+    expect(Object.keys(settings.hooks).sort()).toEqual([
+      'PostToolUse',
+      'PreToolUse',
+      'SessionStart',
+    ]);
   });
 });
 
@@ -880,5 +942,509 @@ describe("CC1 — the notice exempts only the phase's last PR (#1949)", () => {
     );
     expect(ceiling).toContain("the phase's **last** PR");
     expect(ceiling).toContain('between a merged PR and the next one');
+  });
+});
+
+// Stage #2474, phase CG1 (decisions 1 to 7 and 11): the `PreToolUse` gate on opening a PR, and the tester role.
+const PR_TOOL = 'mcp__github__create_pull_request';
+const CREATE_PR: Call = {
+  hook_event_name: 'PreToolUse',
+  tool_name: PR_TOOL,
+  tool_input: { owner: 'o', repo: 'r', title: 't', head: 'h', base: 'b' },
+};
+const preCall = (command: string): Call => ({
+  hook_event_name: 'PreToolUse',
+  tool_name: 'Bash',
+  tool_input: { command },
+});
+const resumeLine = (k: number, n: number): string =>
+  `\n\nRetomada por contexto (${k} de ${n}): a sessão anterior (session_01X) passou a vez com 271 mil.`;
+
+interface Denial {
+  hookSpecificOutput: {
+    hookEventName: string;
+    permissionDecision: string;
+    permissionDecisionReason: string;
+  };
+}
+const denialOf = (r: Result): Denial => {
+  expect(r.status).toBe(0);
+  expect(r.stdout.trimEnd().split('\n')).toHaveLength(1);
+  return JSON.parse(r.stdout) as Denial;
+};
+
+describe('CG1 — opensPullRequest (decision 2)', () => {
+  it('the create_pull_request tool opens a PR', () => {
+    expect(opensPr(PR_TOOL, {})).toBe(true);
+  });
+
+  it.each([
+    'gh pr create --base epic/x --title t',
+    'cd /x && gh pr create',
+    'gh api repos/o/r/pulls -f title=t -f head=h -f base=b',
+    'gh api repos/o/r/pulls --field title=t',
+    'gh api repos/o/r/pulls --raw-field title=t',
+    'gh api repos/o/r/pulls -F title=t',
+    'gh api repos/o/r/pulls --input body.json',
+    'gh api repos/o/r/pulls -X POST',
+    'gh api --method POST repos/o/r/pulls',
+    'gh api "repos/o/r/pulls" -f title=t',
+    "gh api 'repos/o/r/pulls?x=1' -f title=t",
+  ])('Bash that opens a PR: %s', (command) => {
+    expect(opensPr('Bash', { command })).toBe(true);
+  });
+
+  it.each([
+    'gh api repos/o/r/pulls',
+    'gh api repos/o/r/pulls/12',
+    'gh api repos/o/r/pulls/12/merge -X PUT',
+    'gh api repos/o/r/pulls/12 -f state=closed',
+    'gh api -X GET repos/o/r/pulls',
+    'gh pr view 12',
+    'gh pr merge 12',
+    'git status',
+  ])('Bash that does not open a PR: %s', (command) => {
+    expect(opensPr('Bash', { command })).toBe(false);
+  });
+
+  it.each([
+    'git commit -m "gate refuses gh pr create above the trigger"',
+    "echo 'gh pr create'",
+    'grep -n "gh pr create" docs/FLOW.md',
+    'echo gh api repos/o/r/pulls -f title=t',
+    'gh api repos/o/r/pulls -X GET -f head=o:b -f state=open',
+    'gh api --method GET repos/o/r/pulls -f state=open',
+  ])(
+    'review: Bash that only mentions a PR open, or lists with GET, does not open one: %s',
+    (command) => {
+      expect(opensPr('Bash', { command })).toBe(false);
+    },
+  );
+
+  it.each([
+    'cd /x && gh pr create --base b',
+    'git push -u origin b; gh pr create',
+    'git push || gh pr create',
+    'echo done | gh pr create --body-file -',
+    'GH_TOKEN=x gh pr create',
+    '(gh pr create)',
+    'git status\ngh pr create',
+    'cd /x && gh api repos/o/r/pulls -f title=t',
+  ])('review: Bash with gh in command position still opens a PR: %s', (command) => {
+    expect(opensPr('Bash', { command })).toBe(true);
+  });
+
+  it.each([
+    'if git push; then gh pr create; fi',
+    'for b in x; do gh pr create; done',
+    '{ gh pr create; }',
+    'env GH_TOKEN=x gh pr create',
+    'sudo gh pr create',
+    'timeout 60 gh pr create',
+    'command gh pr create',
+    'time gh pr create',
+    'cd /x && nohup gh pr create',
+  ])('review: a shell keyword or wrapper before gh still opens a PR: %s', (command) => {
+    expect(opensPr('Bash', { command })).toBe(true);
+  });
+
+  it.each([
+    'gh api repos/o/r/pulls -f title=t && curl -X GET http://x',
+    'gh api repos/o/r/pulls -f title=t; curl --method GET http://x',
+    'gh api repos/o/r/pulls -f title=t\ngh api -X GET repos/o/r/pulls/1',
+    'gh api repos/o/r/pulls -f title=t | jq .number',
+    'gh api "repos/o/r/pulls?a=1&b=2" -f title=t',
+  ])(
+    'review: the method of another command does not override the body flag of gh api: %s',
+    (command) => {
+      expect(opensPr('Bash', { command })).toBe(true);
+    },
+  );
+
+  it.each([
+    'curl -X POST http://x && gh api repos/o/r/pulls',
+    'curl -X POST http://x; gh api repos/o/r/pulls --jq .[].number',
+    'echo -f && gh api repos/o/r/pulls',
+    'gh api user -f a=b && echo repos/o/r/pulls',
+    'gh pr create-foo',
+    'gh pr create_x',
+  ])(
+    'review: a flag or path from another command, or a longer word, is not a PR open: %s',
+    (command) => {
+      expect(opensPr('Bash', { command })).toBe(false);
+    },
+  );
+
+  it('every other tool passes, and malformed input is not a PR', () => {
+    for (const name of [
+      'mcp__github__merge_pull_request',
+      'mcp__github__update_pull_request',
+      'mcp__github__pull_request_read',
+      'Read',
+    ])
+      expect(opensPr(name, { command: 'gh pr create' }), name).toBe(false);
+    expect(opensPr('Bash', null)).toBe(false);
+    expect(opensPr('Bash', { command: 42 })).toBe(false);
+    expect(opensPr(undefined, undefined)).toBe(false);
+  });
+});
+
+describe('CG1 — the PR gate (decisions 1, 3, 4 and 5)', () => {
+  it('create_pull_request above 270,000 in a phase is refused, with the JSON and the text of decision 4', () => {
+    const box = sandbox([userLine(phasePrompt), measure(TRIGGER + 1)]);
+    const out = denialOf(hook(box, CREATE_PR));
+    expect(Object.keys(out)).toEqual(['hookSpecificOutput']);
+    expect(out.hookSpecificOutput.hookEventName).toBe('PreToolUse');
+    expect(out.hookSpecificOutput.permissionDecision).toBe('deny');
+    const text = out.hookSpecificOutput.permissionDecisionReason;
+    expect(text).toContain(
+      'Context gate: this phase session is at 271 thousand, above the trigger of 270 thousand',
+    );
+    expect(text).toContain('Phase context ceiling');
+    expect(text).toContain('docs/FLOW.md');
+    expect(text).toContain('steps 1 to 5 of the handover');
+    expect(text).toContain('<n> = 271');
+    expect(text).toContain('the successor opens the PR');
+    expect(text).toContain('/code-review');
+    expect(text).toContain('not "the PR open"');
+    expect(text).toContain(
+      'Subagent: return to the phase session without opening the PR.',
+    );
+    expect(text).not.toContain('\n');
+  });
+
+  it('at 270,000 exactly it passes', () => {
+    const box = sandbox([userLine(phasePrompt), measure(TRIGGER)]);
+    silent(hook(box, CREATE_PR));
+  });
+
+  it('every refused form of decision 2 is denied above the trigger, with no PASSO: each attempt is refused', () => {
+    const box = sandbox([userLine(phasePrompt), measure(TRIGGER + 1)]);
+    for (const command of [
+      'gh pr create --base epic/x',
+      'gh api repos/o/r/pulls -f title=t',
+      'gh api repos/o/r/pulls -X POST',
+    ])
+      expect(
+        denialOf(hook(box, preCall(command))).hookSpecificOutput.permissionDecision,
+      ).toBe('deny');
+    denialOf(hook(box, CREATE_PR));
+    denialOf(hook(box, CREATE_PR));
+  });
+
+  it('the listing, the merge and the other tools pass above the trigger', () => {
+    const box = sandbox([userLine(phasePrompt), measure(TRIGGER + 50_000)]);
+    silent(hook(box, preCall('gh api repos/o/r/pulls')));
+    silent(hook(box, preCall('gh api repos/o/r/pulls/12')));
+    silent(hook(box, preCall('git status')));
+    silent(
+      hook(box, {
+        hook_event_name: 'PreToolUse',
+        tool_name: 'mcp__github__merge_pull_request',
+      }),
+    );
+  });
+
+  it('the short prompt of the coordinator is a phase too', () => {
+    const box = sandbox([userLine(queuePrompt), measure(TRIGGER + 1)]);
+    denialOf(hook(box, CREATE_PR));
+  });
+
+  it('a call with agent_id is refused the same way', () => {
+    const box = sandbox([userLine(phasePrompt), measure(TRIGGER + 1)]);
+    denialOf(hook(box, { ...CREATE_PR, agent_id: 'agent-1' }));
+  });
+
+  it('session 5 of 5 goes to the end; 4 of 5 is refused; a prompt without the line is session 1 and is refused', () => {
+    const last = sandbox([userLine(phasePrompt + resumeLine(5, 5)), measure(300_000)]);
+    silent(hook(last, CREATE_PR));
+    const fourth = sandbox([userLine(phasePrompt + resumeLine(4, 5)), measure(300_000)]);
+    denialOf(hook(fourth, CREATE_PR));
+    const first = sandbox([userLine(phasePrompt), measure(300_000)]);
+    denialOf(hook(first, CREATE_PR));
+  });
+
+  it('MARCADOR_RETOMADA captures k and N from the resume line of docs/FLOW.md', () => {
+    const m = (MARCADOR_RETOMADA as RegExp).exec('Retomada por contexto (3 de 5): x');
+    expect(m?.slice(1, 3)).toEqual(['3', '5']);
+    expect((MARCADOR_RETOMADA as RegExp).test('Retomada por contexto (x de 5)')).toBe(
+      false,
+    );
+  });
+
+  it('the resume line in a text block after the first one counts', () => {
+    const box = sandbox([
+      userLine([
+        { type: 'text', text: phasePrompt },
+        { type: 'text', text: resumeLine(5, 5).trim() },
+      ]),
+      measure(300_000),
+    ]);
+    silent(hook(box, CREATE_PR));
+  });
+
+  it('the coordinator and the tester are never refused', () => {
+    const coordinator = sandbox([userLine('/implementar-fila #1856'), measure(400_000)]);
+    silent(hook(coordinator, CREATE_PR));
+    const tester = sandbox([
+      userLine('Read `docs/TESTING-NUVEM.md` and run in modo dirigido: R0.'),
+      measure(400_000),
+    ]);
+    silent(hook(tester, CREATE_PR));
+    const other = sandbox([userLine('Hi'), measure(400_000)]);
+    silent(hook(other, CREATE_PR));
+  });
+
+  it('fails open: unset CLAUDE_CODE_REMOTE, no measure, undecided role, bad input and a missing transcript give no output', () => {
+    const phase = [userLine(phasePrompt), measure(TRIGGER + 1)];
+    silent(hook(sandbox(phase), CREATE_PR, { remote: false }));
+    silent(hook(sandbox([userLine(phasePrompt)]), CREATE_PR));
+    silent(hook(sandbox([measure(TRIGGER + 1)]), CREATE_PR)); // no initial prompt yet: undecided
+    silent(hook(sandbox(phase), CREATE_PR, { raw: 'not json' }));
+    const box = sandbox(phase);
+    silent(hook(box, { ...CREATE_PR, transcript_path: join(box.tmp, 'missing.jsonl') }));
+    silent(hook(box, { ...CREATE_PR, transcript_path: '' }));
+    silent(hook(box, { ...CREATE_PR, tool_input: undefined, tool_name: 'Bash' }));
+  });
+
+  it('review: a subagent call (agent_id) never writes the role to the state', () => {
+    const box = sandbox([userLine('You are a subagent.'), measure(TRIGGER + 1)]);
+    silent(hook(box, { ...CREATE_PR, agent_id: 'agent-1' }));
+    expect(existsSync(box.state)).toBe(false);
+  });
+
+  it('a corrupted state does not break the gate: it fails open', () => {
+    const box = sandbox([userLine(phasePrompt), measure(TRIGGER + 1)]);
+    mkdirSync(join(box.tmp, 'context-guard'), { recursive: true });
+    writeFileSync(box.state, '{ not json');
+    silent(hook(box, CREATE_PR));
+  });
+
+  it('the gate does not change contexto, ferramenta, ultimoAviso or saltos in the state', () => {
+    const box = sandbox([userLine(phasePrompt), measure(260_000)]);
+    silent(hook(box, { tool_name: 'Read', tool_input: { file_path: 'a.ts' } }));
+    appendFileSync(box.transcript, measure(TRIGGER + 5_000) + '\n');
+    warningOf(hook(box, { tool_name: 'Bash', tool_input: { command: 'npm test' } }));
+    const before = stateOf(box);
+    denialOf(hook(box, CREATE_PR));
+    appendFileSync(box.transcript, measure(TRIGGER + 9_000) + '\n');
+    denialOf(hook(box, CREATE_PR));
+    expect(stateOf(box)).toEqual(before);
+  });
+
+  it('the gate records the role it had to decide, and never contexto', () => {
+    const box = sandbox([userLine(phasePrompt), measure(TRIGGER + 1)]);
+    denialOf(hook(box, CREATE_PR));
+    const state = stateOf(box);
+    expect(state).toMatchObject({ fase: true, papel: 'fase' });
+    expect(state.contexto).toBeUndefined();
+    expect(state.ultimoAviso).toBeNull();
+    // The PostToolUse path that follows still works from that state.
+    const out = warningOf(hook(box, { hook_event_name: 'PostToolUse' }));
+    expect(out.hookSpecificOutput.hookEventName).toBe('PostToolUse');
+  });
+
+  it('PostToolUse, or no hook_event_name, runs today path; a PostToolUse of create_pull_request is not gated', () => {
+    const a = sandbox([userLine(phasePrompt), measure(TRIGGER + 1)]);
+    expect(
+      warningOf(hook(a, { ...CREATE_PR, hook_event_name: 'PostToolUse' }))
+        .hookSpecificOutput.hookEventName,
+    ).toBe('PostToolUse');
+    const b = sandbox([userLine(phasePrompt), measure(TRIGGER + 1)]);
+    expect(
+      warningOf(hook(b, { tool_name: PR_TOOL })).hookSpecificOutput.hookEventName,
+    ).toBe('PostToolUse');
+  });
+
+  it('a PreToolUse that is not a PR open is silent, with no notice and no state change in a phase', () => {
+    const box = sandbox([userLine(phasePrompt), measure(TRIGGER + 1)]);
+    silent(hook(box, preCall('git status')));
+  });
+});
+
+describe('CG1 — the phase notice (decision 6)', () => {
+  const notice = (): string =>
+    warningOf(hook(sandbox([userLine(phasePrompt), measure(TRIGGER + 1)])))
+      .hookSpecificOutput.additionalContext;
+
+  it('carries the new sentence before "Largest jumps"', () => {
+    const text = notice();
+    const sentence =
+      'The `/code-review` of item 10 and the fixes of its findings come before the PR and are not the PR open; above the trigger the hook refuses to open the PR. ';
+    expect(text).toContain(sentence + 'Largest jumps');
+    expect(text).not.toContain('\n');
+  });
+
+  it('the coordinator notice is unchanged', () => {
+    const box = sandbox([
+      userLine('/implementar-fila #1856'),
+      measure(COORD_TRIGGER + 1),
+    ]);
+    const text = warningOf(hook(box)).hookSpecificOutput.additionalContext;
+    expect(text).not.toContain('refuses to open the PR');
+    expect(text).toBe(
+      `Context hook: this coordinator session is at 321 thousand, above its trigger of 320 thousand. ` +
+        `This counts as "above 35%" of "Session switch" in .claude/skills/implementar-fila/SKILL.md: ` +
+        `hand the coordination over now, in this turn, after the lineage check ("Lineage limit"), ` +
+        `without rereading a changed SKILL.md. ` +
+        `With no room in the lineage, follow the owner's path of "Lineage limit" and keep working. This hook cannot see the lineage and repeats this notice every 10 thousand: if the \`current\` of the panel already says "aguardando o dono abrir a sessão nova da fila", the owner was notified, so do not send it again. ` +
+        `A session that already handed over (no longer the registered coordinator) ignores this notice. ` +
+        `Largest jumps (approximate): none recorded. Subagent: ignore this notice.`,
+    );
+  });
+});
+
+describe('CG1 — the tester role (decision 7)', () => {
+  const testerPrompts = [
+    'Read `docs/TESTING-NUVEM.md` and run in modo dirigido: R0. Passada visual: nenhuma. Branch `epic/x`.',
+    'Read `docs/TESTING-NUVEM.md` and run in modo dirigido: findings 1.2 of the report. Branch `epic/x`.',
+    'Read `docs/TESTING-NUVEM.md` and run in modo dirigido, grupo 2 de 3: R1, R2.',
+    'Read `docs/TESTING-NUVEM.md` and run the modo completo, bloco 4 de 6. Passada visual: R5.',
+    'Read `docs/TESTING-NUVEM.md` and run in `modo dirigido`: R0 and R2.',
+    'Read `docs/TESTING-NUVEM.md` and run the `modo completo, bloco 1 de 6`. Tail.',
+    '  Read `docs/TESTING-NUVEM.md` and run the `modo completo`. Branch `epic/x`.',
+  ];
+
+  it('the constants: the trigger is 250,000 and the prompt marker is a regex', () => {
+    expect(TESTER_TRIGGER).toBe(250_000);
+    expect(MARCADOR_TESTADOR).toBeInstanceOf(RegExp);
+  });
+
+  it.each(testerPrompts)('the prompt form is a tester: %s', (prompt) => {
+    expect(roleOf([prompt])).toBe('testador');
+    const box = sandbox([userLine(prompt), measure(100_000)]);
+    silent(hook(box));
+    expect(stateOf(box)).toMatchObject({ fase: false, papel: 'testador' });
+  });
+
+  it('prose about a tester, a different doc and a mid-text mention stay silent', () => {
+    for (const prompt of [
+      'You are the tester of stage #1856.',
+      'Read `docs/TESTING.md` and run in modo dirigido: R0.',
+      'Please Read `docs/TESTING-NUVEM.md` and run in modo dirigido: R0.',
+      'Read `docs/TESTING-NUVEM.md` and run the tests.',
+    ])
+      expect(roleOf([prompt]), prompt).toBeNull();
+  });
+
+  it('a phase prompt and the coordinator win over the tester mention', () => {
+    expect(
+      roleOf([phasePrompt + ' Read `docs/TESTING-NUVEM.md` and run in modo dirigido']),
+    ).toBe('fase');
+    expect(roleOf(['/implementar-fila x', testerPrompts[0] ?? ''])).toBe('coordenador');
+  });
+
+  const tester = testerPrompts[0];
+
+  it('silent at 250,000 and a one-line notice at 250,001', () => {
+    const a = sandbox([userLine(tester), measure(TESTER_TRIGGER)]);
+    silent(hook(a));
+    expect(stateOf(a).ultimoAviso).toBeNull();
+
+    const b = sandbox([userLine(tester), measure(TESTER_TRIGGER + 1)]);
+    const out = warningOf(hook(b));
+    expect(out.hookSpecificOutput.hookEventName).toBe('PostToolUse');
+    expect(stateOf(b)).toMatchObject({
+      fase: false,
+      papel: 'testador',
+      ultimoAviso: TESTER_TRIGGER + 1,
+    });
+  });
+
+  it('the notice has the items of decision 7 and a single line', () => {
+    const box = sandbox([userLine(tester), measure(TESTER_TRIGGER + 1)]);
+    const text = warningOf(hook(box)).hookSpecificOutput.additionalContext;
+    expect(text).toContain(
+      'Context hook: this tester session is at 251 thousand, above its trigger of 250 thousand',
+    );
+    expect(text).toContain('ceiling 300 thousand');
+    expect(text).toContain('"Context up to 300 thousand" of docs/TESTING-NUVEM.md');
+    expect(text).toContain('every remaining batch runs in a subagent');
+    expect(text).toContain('reads only its summary line');
+    expect(text).toContain('the guide, the captures, the `runs` or the reports');
+    expect(text).toContain('assembles the report from the files of `apoio/`');
+    expect(text).toContain('no step marked "not executed" for context');
+    expect(text).toContain('Largest jumps (approximate): none recorded');
+    expect(text).toContain('Subagent: ignore this notice.');
+    expect(text).not.toContain('hand over');
+    expect(text).not.toContain('\n');
+  });
+
+  it('repeats at +10 thousand, and a compaction resets it with its own trigger', () => {
+    const box = sandbox([userLine(tester), measure(TESTER_TRIGGER + 1)]);
+    warningOf(hook(box));
+    appendFileSync(box.transcript, measure(259_999) + '\n');
+    silent(hook(box));
+    appendFileSync(box.transcript, measure(260_001) + '\n');
+    expect(warningOf(hook(box)).hookSpecificOutput.additionalContext).toContain(
+      '261 thousand',
+    );
+    appendFileSync(box.transcript, measure(TESTER_TRIGGER) + '\n'); // compaction
+    silent(hook(box));
+    expect(stateOf(box).ultimoAviso).toBeNull();
+    appendFileSync(box.transcript, measure(255_000) + '\n');
+    expect(warningOf(hook(box)).hookSpecificOutput.additionalContext).toContain(
+      '255 thousand',
+    );
+  });
+
+  it('the phase trigger does not apply to the tester, and the tester trigger does not apply to a phase', () => {
+    const t = sandbox([userLine(tester), measure(260_000)]);
+    warningOf(hook(t));
+    const f = sandbox([userLine(phasePrompt), measure(260_000)]);
+    silent(hook(f));
+  });
+});
+
+// Stage #2474, phase CG2 (decision 8 and the CG2 part of 11): the FLOW sub-item says what the hook and the gate do.
+describe('CG2 — docs/FLOW.md: the PR gate in the phase session (decision 8)', () => {
+  const flow = readFileSync('docs/FLOW.md', 'utf8');
+  const phase = section(flow, '## For the phase session');
+  const ceiling = between(
+    phase,
+    '   - **Phase context ceiling:**',
+    '4. Every briefing for a behavior change',
+  );
+  const hook = between(ceiling, '**Hook:**', '**Transition:**');
+  const checks = between(ceiling, 'Check at two points', 'Once the phase PR');
+
+  it('the Hook sentence describes the PreToolUse gate and its exemption', () => {
+    expect(hook).toContain('`PreToolUse`');
+    expect(hook).toContain('refuses to open the PR');
+    expect(hook).toContain(`above the trigger of ${TRIGGER / 1000} thousand`);
+    expect(hook).toContain('except in the `5 de 5` session');
+    expect(hook).toContain('the successor opens the PR');
+    expect(hook).not.toContain('it does not block');
+  });
+
+  it('the Hook sentence says the tester gets its own notice from 250 thousand, and the supervision and the fast track get none', () => {
+    expect(hook).toContain(`its own notice from ${TESTER_TRIGGER / 1000} thousand`);
+    expect(hook).toContain('docs/TESTING-NUVEM.md');
+    expect(hook).toContain('`/supervisionar-fila` and `/via-rapida` get none');
+    expect(hook).not.toContain('the tester, `/supervisionar-fila`');
+  });
+
+  it('check (c) comes before the /code-review of item 10, with --teto equal to the trigger', () => {
+    expect(checks).toContain('(c) before the `/code-review` of item 10');
+    expect(checks.indexOf('(c)')).toBeGreaterThan(checks.indexOf('(b)'));
+    expect(checks).toContain('only in a phase that has item 10');
+    expect(checks).toContain(`--teto ${TRIGGER}`);
+    expect(checks).toContain('hands over before the review');
+    expect(checks).toContain('the successor runs the review and opens the PR');
+  });
+
+  it('the /code-review and the fixes of its findings never count as the PR open', () => {
+    expect(ceiling).toMatch(/Once the phase PR is open[^.]*there is no switch/);
+    expect(ceiling).toContain(
+      'The `/code-review` and the fixes of its findings come before the PR and never count as the PR open',
+    );
+  });
+
+  it('the 300 thousand ceiling, the 4 switches, the resume line and checks (a) and (b) stay', () => {
+    expect(ceiling).toContain('300,000');
+    expect(ceiling).toContain('At most 4 switches per phase (5 sessions)');
+    expect(ceiling).toContain('Retomada por contexto (<k> de 5)');
+    expect(checks).toContain('(a) before sending a new task to a subagent');
+    expect(checks).toContain('(b) before running the gates of item 5');
   });
 });

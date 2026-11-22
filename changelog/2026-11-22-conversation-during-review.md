@@ -1,0 +1,19 @@
+# Conversation during review — 2026-11-22 (épico `epic/conversation-during-review`, PR #2538, MCP 0.57.2, schema v18)
+
+## Adicionado
+
+- **Writing in the conversation during the review (CV3, stage #1881):** with a proposal under review, the person replies, resolves and reopens existing conversations in the Conversation window, and nothing is written to `mapping.json` or to the proposal. A new conversation, **Comment**, deleting and a new citation of an item that only exists in the preview still wait for the end of the review. A new message from the agent says "New message from <name>" in a polite live region and never takes the focus. Opening the review (from the card or the Proposals list) shows the proposal's conversation in the window.
+- **The "In review" / "Revised" card (CV3):** the proposal card in a conversation says "In review" while its proposal is under review (no button) and "Revised · N to check" after the agent revised it; the card, the review header, the row flag and the conversation line ("linked to the proposal under review") update in the same render.
+- **The way back to the review (CV3):** leaving the review (**Exit** or the "Exit the review?" dialog) puts the focus in the composer of the conversation in the window, and a notice at the top of Details ("The proposal "<title>" is still open.") offers **Review** to go back or dismiss.
+
+- **Docs and test scripts (CV4, stage #1881):** `docs/COMMENT-FORMAT.md` and `docs/AGENT-GUIDE.md` now say that the person can keep writing in an existing conversation while reviewing its proposal, and that a tweak asked there is fixed with `revise_proposal` in the same proposal plus a `post_message`. These two files are release inputs, so the MCP gets a **patch** (the header says "no change" until the epic closing picks the number; no tool, argument, error code or format changes; the number is chosen at the epic closing). R22 was rewritten in place for the **Conversation** window, and the new script **R43 — Conversation during review** runs alone in block 6 of the full round (R41 and R42 were already taken).
+
+## Corrigido
+
+- **The notice scrolls into view (CL1, stage #1881):** after **Exit review** the "proposal is still open" notice at the top of Details no longer stays above the visible part when Details was scrolled during the review. The R22 and R43 test scripts now match the real behavior (pins off keep the selected pin, **Comment** arms before the click, `create_marking`, `drop`, the example's real rows).
+
+## Alterado
+
+- **Budget:** the `dist/index.html` ceiling went up 16 KiB, from 2408448 to 2424832, by the budget rule; above the limits, `bug` #2552 for the owner to review.
+- **Conversation window (CV1, stage #1881):** a new tool window stacked under Details in the right column, with its own strip button (icon `conversation`), a splitter (drag to resize, double click to reset) and a stored height (`conversationHeight`, default `size-tw-conversation` = 320 px). It has no `Ctrl+Shift` number, so the Help shortcut list and the guide's table do not change. Its body only shows the empty state for now.
+- **One place for conversations (CV2, stage #1881):** every conversation now opens in the Conversation window: the Comments list, a pin, a citation chip, **New**, **Comment**, **Comment here** and sending a new conversation all show it there, and nothing is shown or written inside Details any more. The window has the state badge in its header, an "on <where>" line, the thread and the composer, and it does not follow the selection (the draft stays when the selection changes). The Conversations section of Details is now a list of the item's conversations (a row opens it in the window, **New** opens its composer there). The panel of a conversation without an item (layer, loose point, orphan) is gone: it opens in the window. The identity notice (**Fill in Settings**) appears in the window, in view and focused, on every request.

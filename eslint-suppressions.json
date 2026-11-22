@@ -299,11 +299,6 @@
       "count": 1
     }
   },
-  "src/model/imageHeader.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/model/invariants.ts": {
     "complexity": {
       "count": 1

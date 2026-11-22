@@ -98,7 +98,7 @@ describe('CanvasController: conversation pins', () => {
   it('the selected conversation shows only its own pin, even with the pins turned off', () => {
     const other = sampleThread({ id: 't2', anchor: { kind: 'marking', id: 'M2' } });
     const { controller, ui, internals } = setup([OPEN, other]);
-    ui.thread.value = { id: 't2', selection: ui.selection.peek() };
+    ui.conversation.value = { kind: 'thread', id: 't2' };
     flush();
     expect(internals.pinLayer.size).toBe(1);
     expect(internals.pinLayer.node('marking:M2')).toBeDefined();

@@ -13,7 +13,7 @@ import {
   type ReviseError,
 } from '../src/model';
 import type { BatchResult } from './batch';
-import { prepareBatch } from './changes';
+import { prepareBatch, type PrepareOptions } from './changes';
 import { ToolError } from './errors';
 import { assertFileSize } from './image/codecs';
 import type { ImageResult, ImageSource } from './imageTools';
@@ -29,6 +29,7 @@ import type { Operation } from './operations';
 import { resolveProjectFile, type Roots } from './paths';
 import { findProject, loadCatalog, loadProject, type ProjectLocation } from './projects';
 import { revisionReserve, toToolError } from './proposalRevise';
+import { newProposalReserveAt } from './proposalStore';
 import { resolveProposal, type ResolvedProposal } from './proposalRefs';
 import { renderContainer, renderMarking, type RenderOptions } from './renderImage';
 import type { ImageServer } from './imageServer';
@@ -224,6 +225,29 @@ async function previewProposal(
   };
 }
 
+/**
+ * What the batch is prepared with. Over a proposal: its reserve, its whole proposed state and its
+ * package components. Without one: the reserve of a new proposal, as `propose_changes` would have.
+ */
+async function batchOptions(
+  roots: Roots,
+  now: () => number,
+  location: ProjectLocation,
+  resolved: ResolvedProposal | undefined,
+): Promise<PrepareOptions> {
+  const proposal = resolved?.stored.proposal;
+  if (resolved === undefined || proposal === undefined) {
+    return { now, ...(await newProposalReserveAt(roots, location)) };
+  }
+  return {
+    now,
+    ...(await revisionReserve(roots, location, resolved.stored.id)),
+    startFrom: (project: Project) => proposedState(project, proposal),
+    catalogFor: (base: Project) =>
+      loadCatalog(roots, location.dir, base, componentPath(proposal)),
+  };
+}
+
 /** A batch, over the project or (with `resolved`) over the proposal's whole proposed state. */
 async function previewBatch(
   roots: Roots,
@@ -232,18 +256,12 @@ async function previewBatch(
   batch: readonly Operation[],
   resolved: ResolvedProposal | undefined,
 ): Promise<Previewed> {
-  const proposal = resolved?.stored.proposal;
-  const prepared = await prepareBatch(roots, location, batch, {
-    now,
-    ...(resolved === undefined || proposal === undefined
-      ? {}
-      : {
-          ...(await revisionReserve(roots, location, resolved.stored.id)),
-          startFrom: (project: Project) => proposedState(project, proposal),
-          catalogFor: (base: Project) =>
-            loadCatalog(roots, location.dir, base, componentPath(proposal)),
-        }),
-  });
+  const prepared = await prepareBatch(
+    roots,
+    location,
+    batch,
+    await batchOptions(roots, now, location, resolved),
+  );
   if (!prepared.valid) throw invalidBatch(prepared.result);
   const { result } = prepared;
   return {

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { conversationZip } from './conversationFixture';
 import { fixtureZip } from './proposalFixture';
 
 // Stage #515 (FN2, finding 1 of the FN1 report): leaving the review through the button moves focus to
@@ -7,14 +8,17 @@ import { fixtureZip } from './proposalFixture';
 
 test.use({ viewport: { width: 1280, height: 860 } });
 
-async function openFixture(page: import('@playwright/test').Page) {
+async function openFixture(
+  page: import('@playwright/test').Page,
+  zip: () => Promise<Buffer> = fixtureZip,
+) {
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({
       name: 'loja.zip',
       mimeType: 'application/zip',
-      buffer: await fixtureZip(),
+      buffer: await zip(),
     });
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
 }
@@ -24,6 +28,7 @@ const activeTag = (page: import('@playwright/test').Page) =>
     const el = document.activeElement;
     return {
       proposalAction: el?.hasAttribute('data-proposal-action') ?? false,
+      composer: el?.hasAttribute('data-composer-field') ?? false,
       canvas: el?.getAttribute('aria-label') ?? '',
       body: el === document.body,
     };
@@ -67,4 +72,35 @@ test('Exiting the review through the button, with Proposals closed: focus on the
   const state = await activeTag(page);
   expect(state.body).toBe(false);
   expect(state.canvas).toBe('Project canvas');
+});
+
+// Stage #1881 (CV3, decision 19): with the Conversation window open on a conversation the person
+// can answer, the first target is its composer field, ahead of the proposal button.
+test('Exiting the review with the Conversation window open on an open conversation: focus in its composer', async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      'mapping.identity',
+      JSON.stringify({ name: 'Marina Alves', email: 'marina@example.com' }),
+    ),
+  );
+  await openFixture(page, conversationZip);
+  await page.keyboard.press('Control+Shift+7');
+  await page
+    .getByRole('button', { name: /, citation$/ })
+    .first()
+    .click();
+  const window = page.locator('[data-window="conversation"]');
+  await expect(window).toBeVisible();
+  await window.locator('[data-proposal-card]').getByRole('button').click();
+  const exit = page.getByRole('button', { name: 'Exit review' });
+  await expect(exit).toBeVisible();
+  await exit.click();
+  await expect(exit).toHaveCount(0);
+  await expect.poll(async () => (await activeTag(page)).composer).toBe(true);
+  await page.waitForTimeout(600);
+  const state = await activeTag(page);
+  expect(state.composer).toBe(true);
+  expect(state.proposalAction).toBe(false);
 });

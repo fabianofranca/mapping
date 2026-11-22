@@ -58,4 +58,31 @@ describe('buildRectIndex', () => {
     const index = buildRectIndex(rects, (rect) => rect);
     expect(index.containing({ x: 0, y: 0, width: -1, height: 1 })).toEqual(rects);
   });
+
+  it('far coordinates: the result is the same and the walk is bounded by the occupied cells', () => {
+    // 100 small ones in the finest class (2^-10) near the origin, a few mid ones, and a huge one
+    // that covers the far point: the padding of a query at y = 2e12 is ~2,000 units, which is
+    // ~4e6 cells per axis of the finest class (about 600 ms per query without the bound).
+    const rects: Rect[] = [];
+    const r = rng(20261122);
+    for (let k = 0; k < 100; k++) {
+      rects.push({ x: r() * 50, y: r() * 50, width: 0.0009, height: 0.0009 });
+    }
+    for (let k = 0; k < 20; k++) {
+      rects.push({ x: r() * 500, y: r() * 500, width: 10 + k, height: 10 + k });
+    }
+    const huge: Rect = { x: 0, y: 1.9e12, width: 2 ** 30, height: 2 ** 40 };
+    rects.push(huge);
+    const index = buildRectIndex(rects, (rect) => rect);
+    const inner: Rect = { x: 5, y: 2e12, width: 0.5, height: 0.5 };
+    const start = performance.now();
+    let found: Rect[] = [];
+    for (let q = 0; q < 10; q++) found = index.containing(inner, EPSILON);
+    const elapsed = performance.now() - start;
+    expect(found.filter((rect) => containsRectApprox(rect, inner))).toEqual([huge]);
+    expect(found.filter((rect) => containsRectApprox(rect, inner))).toEqual(
+      rects.filter((rect) => containsRectApprox(rect, inner)),
+    );
+    expect(elapsed, `10 far queries took ${elapsed.toFixed(0)} ms`).toBeLessThan(100);
+  });
 });

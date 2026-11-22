@@ -1,4 +1,4 @@
-# The MCP server lays mixed-direction text out like the browser — [Não lançado] (MCP 0.57.1, schema v23 unchanged)
+# The MCP server lays mixed-direction text out like the browser — [Não lançado] (MCP 0.57.5, schema v23 unchanged)
 
 ## Alterado
 
