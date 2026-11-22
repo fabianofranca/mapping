@@ -295,6 +295,10 @@ The stage `epic/format-plugins` lets a specialization (`formatVersion` 20) carry
 - **Errors.** New code `format-not-found` (an unknown `<specId>/<formatId>`; `details.formats` lists the available ones). The plugin errors `plugin-failed`, `plugin-timeout`, `plugin-limit` and `plugin-output-invalid` come from the executor (`details.path` is the path inside the result for `plugin-output-invalid`). An operation of the result that the model refuses is the batch's usual error with `details.path` = `operations[i].result[j]` and `details.resultOp` = the operation's name. No error brings the server down and nothing is written.
 - **Update the MCP first:** an earlier version does not know `export_format` or `import_format` (`unknown operation`) and does not run the plugins in `validate_library`.
 
+### Change in 0.56.1 — variant slots, transparent icons, the preview reserve and the scratch folder (stage #2361)
+
+- **Variant slots** (SL1, #2349, #2350): the `slots` of a `variants` case are added to the base's, key by key, in the resolved `code` of `get_code_hints`, `get_annotation` and `get_marking`. A case with its own readable `signature` sheet does not inherit the base `slots` whose parameter that sheet lacks with `role: slot`; its own entries always stay. `validate_library` warns about a case's `slots` only for the case's own entries. No output key is added.
+
 ### Container classes in the specialization format (stage #1901, 0.56.0)
 
 The stage `epic/container-context` starts with `formatVersion` 21 of the specialization: `containerClasses` at the root (named sets of classes, computed from a container's size with `by` and `below`, or chosen per container), `classes` on a ready-made size of `containers` and `appliesIn` on a type. No tool, operation or argument is new; `get_specialization` returns the keys as they are and `validate_specialization` and `validate_library` accept and check them (the error paths are in `docs/SPEC-FORMAT.md`, "Container classes (`formatVersion` 21)"). The three keys are outside the version contract. **Update the MCP first:** an earlier version refuses a specialization of `formatVersion` 21.
