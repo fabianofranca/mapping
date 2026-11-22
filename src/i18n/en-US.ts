@@ -983,6 +983,7 @@ export const enUS = {
     'The slot {slot} has content: this field does not draw or go into the code',
   'typed.roleLabel': 'Role',
   'issue.type-not-applicable': 'the type does not apply to this item (marking or arrow)',
+  'issue.outside-container-class': 'Not meant for {set}: {class} (meant for: {allowed})',
   'issue.broken-ref': 'broken reference',
   'issue.ref-not-accepted': 'target not accepted (lost the tag or is no longer free)',
   'issue.component-overflow': 'The component does not fit',
@@ -1297,6 +1298,16 @@ export const enUS = {
   'diagnostics.drawingModeHint':
     'The mode stays saved; without a specialization that declares it, the drawing uses that specialization first mode.',
   'diagnostics.modeUndeclared': 'mode {mode} not declared',
+  'containerClass.none': 'None',
+  'containerClass.chosenHint':
+    'Chosen for this container; a type meant for other classes shows as incomplete. None checks nothing.',
+  'containerClass.byWidth': '{class} ({units} units wide)',
+  'containerClass.byHeight': '{class} ({units} units tall)',
+  'diagnostics.containerClasses': 'Container classes',
+  'diagnostics.containerClassesHint':
+    'The choice stays saved; without a specialization that declares the set and the class, the container has no class there.',
+  'diagnostics.containerClassUndeclared':
+    '{container}: class {class} of the set {set} is not declared',
   'direction.title': 'Reading direction',
   'direction.intro':
     'Picks which way reading runs when the components are drawn: left to right (the default) or right to left. No marking moves.',

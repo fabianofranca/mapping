@@ -1,12 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../../i18n';
-import { type Catalog, type CatalogEntry, type Project, findEntry } from '../../model';
+import {
+  type Catalog,
+  type CatalogDocument,
+  type CatalogEntry,
+  type Project,
+  findEntry,
+} from '../../model';
 import { Button, TextField } from '../controls';
 import { ContainerMark } from '../ContainerMark';
 import { TypeNoticeBadge } from '../NoticeBadge';
 import { Dialog } from '../Dialog';
 import { LibraryIssueList } from '../LibraryIssueList';
 import { CatalogPage } from './CatalogPage';
+import { LibraryDocumentPage } from './LibraryDocumentPage';
 import {
   type CatalogImages,
   type CatalogRenderer,
@@ -67,6 +74,10 @@ function matches(entry: CatalogEntry, query: string): boolean {
   return haystack.toLowerCase().includes(query);
 }
 
+function matchesDocument(document: CatalogDocument, query: string): boolean {
+  return `${document.name} ${document.id}`.toLowerCase().includes(query);
+}
+
 export function CatalogView({
   catalog,
   specId,
@@ -87,6 +98,7 @@ export function CatalogView({
       : null;
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(initial);
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(layout === 'list' && initial !== null);
   const [issuesOpen, setIssuesOpen] = useState<boolean | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -107,6 +119,12 @@ export function CatalogView({
         .filter((layer) => layer.entries.length > 0),
     [catalog, needle],
   );
+  const documents = useMemo(
+    () => catalog.documents.filter((d) => matchesDocument(d, needle)),
+    [catalog, needle],
+  );
+  const selectedDocument =
+    documentId === null ? undefined : catalog.documents.find((d) => d.id === documentId);
   const firstEntry = catalog.layers.find((l) => l.entries.length > 0)?.entries[0];
   const selected =
     (selectedId === null ? undefined : findEntry(catalog, selectedId)) ??
@@ -116,14 +134,25 @@ export function CatalogView({
   const issueCount = errors.length + warnings.length;
   const issuesShown = issuesOpen ?? issueCount < ISSUES_COLLAPSE_AT;
 
-  const select = (typeId: string) => {
-    setNotice(null);
-    setSelectedId(typeId);
+  const open = () => {
     setNavigation((n) => n + 1);
     if (layout === 'list') {
       openerRef.current = document.activeElement as HTMLElement | null;
       setDialogOpen(true);
     }
+  };
+
+  const selectDocument = (id: string) => {
+    setNotice(null);
+    setDocumentId(id);
+    open();
+  };
+
+  const select = (typeId: string) => {
+    setNotice(null);
+    setDocumentId(null);
+    setSelectedId(typeId);
+    open();
   };
 
   // Navigating to a component opens the page at the top (full screen and dialog).
@@ -164,21 +193,26 @@ export function CatalogView({
     next.focus();
   };
 
-  const page = selected !== undefined && (
-    <CatalogPage
-      catalog={catalog}
-      entry={selected}
-      specId={specId}
-      version={version}
-      renderer={engine}
-      fontsEpoch={fontsEpoch}
-      {...(images === undefined ? {} : { images })}
-      project={project}
-      onLink={onLink}
-      {...(onAddToScreen === undefined ? {} : { onAddToScreen })}
-      {...(addDisabledReason === undefined ? {} : { addDisabledReason })}
-    />
-  );
+  const page =
+    selectedDocument !== undefined ? (
+      <LibraryDocumentPage document={selectedDocument} onLink={onLink} />
+    ) : (
+      selected !== undefined && (
+        <CatalogPage
+          catalog={catalog}
+          entry={selected}
+          specId={specId}
+          version={version}
+          renderer={engine}
+          fontsEpoch={fontsEpoch}
+          {...(images === undefined ? {} : { images })}
+          project={project}
+          onLink={onLink}
+          {...(onAddToScreen === undefined ? {} : { onAddToScreen })}
+          {...(addDisabledReason === undefined ? {} : { addDisabledReason })}
+        />
+      )
+    );
 
   return (
     <div class={layout === 'list' ? 'catalog catalog-list-layout' : 'catalog'}>
@@ -223,7 +257,28 @@ export function CatalogView({
             onInput={(e) => setQuery(e.currentTarget.value)}
           />
           <div class="catalog-list-scroll" ref={listRef} onKeyDown={onListKeyDown}>
-            {layers.length === 0 ? (
+            {documents.length > 0 && (
+              <section class="catalog-layer" aria-label={t('catalog.documents')}>
+                <h3 class="catalog-layer-name">{t('catalog.documents')}</h3>
+                <ul class="catalog-entries">
+                  {documents.map((document) => (
+                    <li key={document.id}>
+                      {/* Exception to Button: list option of catalog documents (docs/DESIGN-SYSTEM.md, "Loose buttons") */}
+                      <button
+                        type="button"
+                        class="catalog-entry"
+                        data-type-id={`doc:${document.id}`}
+                        aria-current={document.id === documentId ? 'true' : undefined}
+                        onClick={() => selectDocument(document.id)}
+                      >
+                        <span class="catalog-entry-name">{document.name}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+            {layers.length === 0 && documents.length > 0 ? null : layers.length === 0 ? (
               <p class="muted">
                 {catalog.layers.length === 0
                   ? t('catalog.view.empty')
@@ -243,7 +298,10 @@ export function CatalogView({
                             class="catalog-entry"
                             data-type-id={entry.type.id}
                             aria-current={
-                              selected?.type.id === entry.type.id ? 'true' : undefined
+                              selectedDocument === undefined &&
+                              selected?.type.id === entry.type.id
+                                ? 'true'
+                                : undefined
                             }
                             onClick={() => select(entry.type.id)}
                           >
@@ -273,28 +331,30 @@ export function CatalogView({
         )}
       </div>
 
-      {layout === 'list' && dialogOpen && selected !== undefined && (
-        <Dialog
-          title={selected.type.name}
-          size="lg"
-          returnFocus={() => openerRef.current}
-          onCancel={() => setDialogOpen(false)}
-          actions={
-            <Button onClick={() => setDialogOpen(false)}>
-              {t('catalog.view.close')}
-            </Button>
-          }
-        >
-          <div class="catalog-dialog-content" ref={dialogContentRef}>
-            {notice !== null && (
-              <p class="catalog-notice muted" role="status">
-                {notice}
-              </p>
-            )}
-            {page}
-          </div>
-        </Dialog>
-      )}
+      {layout === 'list' &&
+        dialogOpen &&
+        (selectedDocument ?? selected) !== undefined && (
+          <Dialog
+            title={selectedDocument?.name ?? selected?.type.name ?? ''}
+            size="lg"
+            returnFocus={() => openerRef.current}
+            onCancel={() => setDialogOpen(false)}
+            actions={
+              <Button onClick={() => setDialogOpen(false)}>
+                {t('catalog.view.close')}
+              </Button>
+            }
+          >
+            <div class="catalog-dialog-content" ref={dialogContentRef}>
+              {notice !== null && (
+                <p class="catalog-notice muted" role="status">
+                  {notice}
+                </p>
+              )}
+              {page}
+            </div>
+          </Dialog>
+        )}
     </div>
   );
 }

@@ -65,6 +65,10 @@ export function imageValue(i: ProjectContainer, withPage = false): JsonValue {
     ...(i.density == null ? {} : { density: i.density }),
     // Only when pinned (formatVersion 8).
     ...(i.direction == null ? {} : { direction: i.direction }),
+    // Only when a class is chosen (formatVersion 11).
+    ...(i.classes == null || Object.keys(i.classes).length === 0
+      ? {}
+      : { classes: toJson(i.classes) }),
     // Only when the proposal carries pages (formatVersion 10).
     ...(withPage ? { pageId: i.pageId } : {}),
   });
@@ -175,6 +179,7 @@ export const COMPARED_FIELDS = {
     'drawingMode',
     'density',
     'direction',
+    'classes',
     'page',
   ],
   marking: ['name', 'space', 'rect', 'floating', 'locked', 'source', 'anchor', 'page'],
@@ -247,6 +252,10 @@ export function imageField(i: ProjectContainer, field: string): JsonValue | unde
       return i.density ?? null;
     case 'direction':
       return i.direction ?? null;
+    case 'classes':
+      return i.classes == null || Object.keys(i.classes).length === 0
+        ? null
+        : toJson(i.classes);
     case 'page':
       return toJson({ pageId: i.pageId, position: i.placement });
     default:

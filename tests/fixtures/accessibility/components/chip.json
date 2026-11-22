@@ -1,0 +1,30 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "chip",
+  "name": "Chip",
+  "size": { "width": 96, "height": 32 },
+  "preview": { "kind": "assist" },
+  "template": {
+    "type": "frame",
+    "layout": { "type": "row", "align": "center", "justify": "center" },
+    "cornerRadius": 8,
+    "fill": {
+      "$switch": "kind",
+      "cases": {
+        "filter": "#E8DEF8",
+        "input": "#F7F2FA"
+      },
+      "default": "#FFFFFF"
+    },
+    "children": [
+      {
+        "type": "text",
+        "text": { "$field": "label" },
+        "font": { "size": 12, "weight": 500 },
+        "color": "#1D1B20",
+        "width": "hug"
+      }
+    ]
+  }
+}

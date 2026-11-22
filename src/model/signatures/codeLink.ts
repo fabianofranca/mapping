@@ -140,3 +140,22 @@ export function inheritedOutsideCase(
   );
   return paramsOutsideSignature(sheet, { params: Object.fromEntries(inherited) }, models);
 }
+
+/**
+ * The `slots` entries (slot id → parameter) whose parameter the sheet lacks with `role: slot`, compared by
+ * `name` and by `callName`: the test of the validator's "parameter outside the signature" warning for `code.slots`.
+ */
+export function slotsOutsideSignature(
+  signature: Signature,
+  slots: Readonly<Record<string, string>> | undefined,
+): { readonly id: string; readonly name: string }[] {
+  const named = new Set<string>();
+  for (const param of signature.params) {
+    if (param.role !== 'slot') continue;
+    named.add(param.name);
+    named.add(callName(param));
+  }
+  return Object.entries(slots ?? {})
+    .filter(([, name]) => !named.has(name))
+    .map(([id, name]) => ({ id, name }));
+}

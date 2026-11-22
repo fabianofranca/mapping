@@ -1077,6 +1077,35 @@ Whoever instantiates hands the anchor to the engine through the `anchor` option 
 
 **Known limit.** A size that depends on `$anchor.x`/`$anchor.y` is measured at the box the marking has when it is measured. When something moves the marking afterwards (the snap that follows the app's Arrange on an anchored marking, the MCP batch's refit to the table rows, or a slot that places the child), the drawing reads the new box and the next Arrange measures there. A size that depends on `$anchor.side`, `$anchor.width`, `$anchor.height` or on the direction is exact.
 
+### The `$container.*` pseudo-fields (`formatVersion` 4)
+
+The template (and the `sizing`) reads the container the instance is in as it reads a field: `{ "$field": "$container.window" }`. The names **are not fields of the type** (the library validator accepts them without the type declaring them, and they do not count as a cited field):
+
+| Name                | Value                                                                                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `$container.width`  | The container's width **in units** (pixels divided by its effective density). A number.                                                                       |
+| `$container.height` | The container's height in units. A number.                                                                                                                    |
+| `$container.<set>`  | The container's class in the set `<set>` of the component's specialization (`containerClasses`), computed by the size or chosen on the container. A class id. |
+
+They apply in `$field`, `$switch`, `$eq`, `$has` and the operations, and wherever those apply (`width`, `padding`, `visible`, a slot's `layout`, `sizing`…). **Without a class for the set, or on the canvas (no container), the field is empty**: the `$switch` takes its `default`. Any other name is `field does not exist: $container.<name>`, and in a `formatVersion` lower than 4 the expression is `only allowed with formatVersion 4`. A `component` node and a slot's `fallback` pass the container on to the inner instance.
+
+```json
+{
+  "type": "frame",
+  "layout": {
+    "type": "row",
+    "padding": {
+      "$switch": "$container.window",
+      "cases": { "compact": 16 },
+      "default": 24
+    }
+  },
+  "children": []
+}
+```
+
+The drawing follows the container: choosing a class or resizing the container redraws only the markings whose component reads the changed value (the cache compares what the component cites, not the whole container); the measures (`fit_marking`, Arrange, creation) read the same values the drawing does. **The library proof** (`validate_library`, level 3) draws a component that reads a set once without a container and once per class of each set it reads (the sum of the classes, not the product); a warning that only a class gives is prefixed `in container <set>=<class>:`. The example is `sdui-column` in `examples/libraries/sdui-backend/`: 16 px of padding in a `compact` container, 24 px in the others.
+
 ## Expressions and conditions
 
 Almost every attribute accepts, in place of a literal, an **expression** over the annotation's fields.

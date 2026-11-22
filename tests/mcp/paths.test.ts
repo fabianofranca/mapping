@@ -9,7 +9,7 @@ import {
 import { tmpdir } from 'node:os';
 import path, { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { hasParentSegment, isWithin, Roots } from '../../mcp/paths';
+import { hasParentSegment, isWithin, Roots, scratchOverlap } from '../../mcp/paths';
 
 // The server tests run only on Linux (CI `ubuntu-latest`); the two path checks
 // that matter on Windows are tested here with `path.win32` (phase 8.5, M14).
@@ -139,6 +139,38 @@ describe('Roots with scratch folders (input files)', () => {
     expect(found).toMatchObject({ real: join(scratch, 'shots', 'a.png'), scratch: true });
   });
 
+  it('a relative path through a root link into the scratch folder resolves like its absolute path', async () => {
+    // The link and its target have different names: the relative path is not found under the scratch folder.
+    mkdirSync(join(scratch, 'pictures'));
+    writeFileSync(join(scratch, 'pictures', 'a.png'), '1');
+    symlinkSync(join(scratch, 'pictures'), join(root, 'shots'));
+    const expected = { real: join(scratch, 'pictures', 'a.png'), scratch: true };
+    expect(await roots.resolveInputFile('shots/a.png')).toMatchObject(expected);
+    expect(await roots.resolveInputFile(join(root, 'shots', 'a.png'))).toMatchObject(
+      expected,
+    );
+  });
+
+  it('a relative path through a scratch link into a root resolves like its absolute path', async () => {
+    writeFileSync(join(root, 'b.json'), '2');
+    symlinkSync(join(root, 'b.json'), join(scratch, 'b-link.json'));
+    const expected = { real: join(root, 'b.json'), scratch: false };
+    expect(await roots.resolveInputFile('b-link.json')).toMatchObject(expected);
+    expect(await roots.resolveInputFile(join(scratch, 'b-link.json'))).toMatchObject(
+      expected,
+    );
+  });
+
+  it('a relative link that leaves both areas is still outside-roots', async () => {
+    const outside = join(base, 'outside');
+    mkdirSync(outside);
+    writeFileSync(join(outside, 'x.json'), 'x');
+    symlinkSync(outside, join(root, 'out'));
+    symlinkSync(join(outside, 'x.json'), join(scratch, 'x-link.json'));
+    expect(await code(roots.resolveInputFile('out/x.json'))).toBe('outside-roots');
+    expect(await code(roots.resolveInputFile('x-link.json'))).toBe('outside-roots');
+  });
+
   it('a missing file is path-not-found, and a missing scratch folder is not an error', async () => {
     expect(await code(roots.resolveInputFile('nothing.json'))).toBe('path-not-found');
     const lonely = new Roots([root], base, [join(base, 'not-created')]);
@@ -155,5 +187,79 @@ describe('Roots with scratch folders (input files)', () => {
     );
     expect(await code(roots.assertInside(join(scratch, 'a.json')))).toBe('outside-roots');
     expect(await roots.locate(join(scratch, 'a.json'))).toBeNull();
+  });
+});
+
+describe('scratchOverlap', () => {
+  let base: string;
+  beforeEach(() => {
+    base = realpathSync(mkdtempSync(join(tmpdir(), 'mapping-scratch-overlap-')));
+  });
+  afterEach(() => rmSync(base, { recursive: true, force: true }));
+
+  it('a scratch folder inside a root', () => {
+    const root = join(base, 'projects');
+    const scratch = join(root, 'tmp');
+    mkdirSync(scratch, { recursive: true });
+    expect(scratchOverlap([root], [scratch])).toEqual({ root, scratch });
+  });
+
+  it('a root inside a scratch folder', () => {
+    const scratch = join(base, 'scratch');
+    const root = join(scratch, 'inner');
+    mkdirSync(root, { recursive: true });
+    expect(scratchOverlap([root], [scratch])).toEqual({ root, scratch });
+  });
+
+  it('the same folder, also when written differently', () => {
+    const root = join(base, 'projects');
+    mkdirSync(root);
+    expect(scratchOverlap([root], [root])).toEqual({ root, scratch: root });
+    expect(scratchOverlap([root], [`${root}/`])).not.toBeNull();
+  });
+
+  it('an overlap only through a real path (a symbolic link)', () => {
+    const root = join(base, 'projects');
+    const elsewhere = join(base, 'elsewhere');
+    mkdirSync(join(root, 'tmp'), { recursive: true });
+    mkdirSync(elsewhere);
+    symlinkSync(join(root, 'tmp'), join(elsewhere, 'link'));
+    const scratch = join(elsewhere, 'link');
+    expect(scratchOverlap([root], [scratch])).toEqual({ root, scratch });
+    // The other way: the root is the link.
+    const linkedRoot = join(base, 'linked-root');
+    symlinkSync(root, linkedRoot);
+    const inside = join(root, 'tmp');
+    expect(scratchOverlap([linkedRoot], [inside])).toEqual({
+      root: linkedRoot,
+      scratch: inside,
+    });
+  });
+
+  it('a scratch folder that does not exist yet is compared by its path', () => {
+    const root = join(base, 'projects');
+    mkdirSync(root);
+    const inside = join(root, 'not-created');
+    expect(scratchOverlap([root], [inside])).toEqual({ root, scratch: inside });
+    expect(scratchOverlap([root], [join(base, 'not-created')])).toBeNull();
+  });
+
+  it('a root that does not exist yet, under a link into the scratch area, overlaps', () => {
+    const scratch = join(base, 'b', 'projects', 'tmp');
+    mkdirSync(join(base, 'b'));
+    symlinkSync(join(base, 'b'), join(base, 'link'));
+    const root = join(base, 'link', 'projects');
+    expect(scratchOverlap([root], [scratch])).toEqual({ root, scratch });
+    expect(scratchOverlap([join(base, 'link', 'other')], [scratch])).toBeNull();
+  });
+
+  it('sibling folders do not overlap', () => {
+    const projects = join(base, 'projects');
+    const specializations = join(base, 'specializations');
+    const scratch = join(base, 'scratch');
+    const alike = join(base, 'projects-tmp');
+    for (const dir of [projects, specializations, scratch, alike]) mkdirSync(dir);
+    expect(scratchOverlap([projects, specializations], [scratch, alike])).toBeNull();
+    expect(scratchOverlap([projects], [])).toBeNull();
   });
 });

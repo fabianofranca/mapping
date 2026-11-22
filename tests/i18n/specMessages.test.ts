@@ -59,6 +59,22 @@ const ff = (s: Raw, value: unknown): void => {
   s.formatVersion = 20;
   s.fileFormats = value;
 };
+/** Container classes (formatVersion 21): a computed set `w` and a chosen set `p`, and the helper that sets the spec's `containerClasses`. */
+const wSet = {
+  id: 'w',
+  name: 'W',
+  by: 'width',
+  classes: [
+    { id: 'a', name: 'A', below: 10 },
+    { id: 'b', name: 'B' },
+  ],
+};
+const pSet = { id: 'p', name: 'P', classes: [{ id: 'x', name: 'X' }] };
+const cc = (s: Raw, sets: unknown): void => {
+  s.formatVersion = 21;
+  s.containerClasses = sets;
+};
+const withClasses = (s: Raw, extra: Raw): void => cc(s, [{ ...wSet, ...extra }]);
 const field = (s: Raw, i = 0): Raw => type(s).fields[i];
 
 const container = (extra: Raw): Raw => ({
@@ -122,6 +138,14 @@ function accessibilityCases(): readonly (readonly [string, (s: Raw) => void])[] 
   return [
     ['spec.accessibilityRoleInvalid', (s) => a(s, { role: 'x' })],
     ['spec.accessibilityTouchNeedsRole', (s) => a(s, { touchTarget: false })],
+    [
+      'spec.accessibilityVariantEmptyCase',
+      (s) => {
+        a(s, { variants: { field: 'e', cases: { x: {} } } });
+        s.formatVersion = 21;
+        type(s).fields.push({ key: 'e', type: 'enum', options: ['x'] });
+      },
+    ],
     ['spec.accessibilityLabelFieldMissing', (s) => a(s, { label: { fields: ['zz'] } })],
     ['spec.accessibilityLabelFieldType', (s) => a(s, { label: { fields: ['n'] } })],
     [
@@ -507,6 +531,10 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
       ]),
   ],
   ['spec.repoIdInvalid', (s) => (s.docRepos = [{ id: 'A b', url: 'https://a.b' }])],
+  [
+    'spec.documentIdInvalid',
+    (s) => (s.documents = [{ id: 'A b', name: 'N', doc: 'docs/a.md' }]),
+  ],
   ['spec.mustBeNumber', (s) => (s.containers = [container({ width: 'x' })])],
   ['spec.mustBeInteger', (s) => (s.containers = [container({ width: 1.5 })])],
   ['spec.minOne', (s) => (s.containers = [container({ width: 0 })])],
@@ -736,6 +764,78 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
   ['spec.fileFormatExtensionInvalid', (s) => ff(s, [{ ...fmt, extension: '.csv' }])],
   ['spec.fileFormatContractInvalid', (s) => ff(s, [{ ...fmt, contract: 2 }])],
   ['spec.fileFormatScopeInvalid', (s) => ff(s, [{ ...fmt, scope: 'layer' }])],
+  // Container classes (formatVersion 21)
+  ['spec.containerClassSetsShape', (s) => cc(s, 'x')],
+  ['spec.containerClassListShape', (s) => withClasses(s, { classes: 'x' })],
+  ['spec.containerClassKeyUnknown', (s) => withClasses(s, { zz: 1 })],
+  ['spec.containerClassIdInvalid', (s) => withClasses(s, { id: 'A b' })],
+  ['spec.containerClassIdReserved', (s) => withClasses(s, { id: 'width' })],
+  ['spec.containerClassByInvalid', (s) => withClasses(s, { by: 'depth' })],
+  [
+    'spec.containerClassBelowInvalid',
+    (s) =>
+      withClasses(s, {
+        classes: [
+          { id: 'a', name: 'A', below: 'x' },
+          { id: 'b', name: 'B' },
+        ],
+      }),
+  ],
+  [
+    'spec.containerClassBelowRequired',
+    (s) =>
+      withClasses(s, {
+        classes: [
+          { id: 'a', name: 'A' },
+          { id: 'b', name: 'B' },
+        ],
+      }),
+  ],
+  [
+    'spec.containerClassLastBelow',
+    (s) =>
+      withClasses(s, {
+        classes: [
+          { id: 'a', name: 'A', below: 10 },
+          { id: 'b', name: 'B', below: 20 },
+        ],
+      }),
+  ],
+  [
+    'spec.containerClassBelowIncrease',
+    (s) =>
+      withClasses(s, {
+        classes: [
+          { id: 'a', name: 'A', below: 10 },
+          { id: 'b', name: 'B', below: 5 },
+          { id: 'c', name: 'C' },
+        ],
+      }),
+  ],
+  [
+    'spec.containerClassBelowNotComputed',
+    (s) => cc(s, [{ ...pSet, classes: [{ id: 'x', name: 'X', below: 5 }] }]),
+  ],
+  [
+    'spec.containerClassSetMissing',
+    (s) => (cc(s, [pSet]), (s.containers = [container({ classes: { zz: 'x' } })])),
+  ],
+  [
+    'spec.containerClassSetComputed',
+    (s) => (cc(s, [wSet]), (s.containers = [container({ classes: { w: 'a' } })])),
+  ],
+  [
+    'spec.containerClassNotInSet',
+    (s) => (cc(s, [pSet]), (s.containers = [container({ classes: { p: 'zz' } })])),
+  ],
+  [
+    'spec.appliesInNotInContainer',
+    (s) => (
+      cc(s, [pSet]),
+      (type(s).appliesTo = ['arrow']),
+      (type(s).appliesIn = { p: ['x'] })
+    ),
+  ],
   // Tokens and icons
   ['spec.tokensShape', (s) => (s.tokens = 'x')],
   ['spec.tokenKeyUnknown', (s) => (s.tokens = { modes: ['a'], values: {}, zz: 1 })],

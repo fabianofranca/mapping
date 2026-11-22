@@ -17,4 +17,5 @@
 
 - The docs (`COMPONENT-FORMAT.md`, the `spec-author` skill, the agent guide, `ARCHITECTURE.md` and the viewer README) state that a remote image's server must send `Access-Control-Allow-Origin` (check with `curl -sI`), and what happens without it: the failure look, "failed to load" in Diagnostics, and the image shows only on the main canvas when Settings › Privacy › "Show images from servers without CORS" is on.
 - Ceiling of `dist/index.html` went up 16 KiB, from 2375680 to 2392064 bytes, by the budget rule; above the limits, `bug` #2498 for the owner to review.
+- Ceiling of `dist/index.html` went up 32 KiB, from 2408448 to 2441216 bytes, by the budget rule (SM1 sync with `main`); above the limits, `bug` #2534 for the owner to review.
 - `COMPONENT-FORMAT.md` "Known limits" lists what the stage leaves out: no image fill outside the `image` node, no SVG or animation in package images, no elliptical radial gradient and no gradient on the stroke; the agent guide says what the PNG draws (gradients, inner shadow, uneven tracks); `examples/README.md` cites the script.

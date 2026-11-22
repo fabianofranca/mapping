@@ -25,4 +25,5 @@ export const engineMessages = {
   'engine.approximate': '{reason} (approximate)',
   // Drawing proof in `rtl`: the warning that only appears in that direction (`ltr` did not give it).
   'engine.inRtl': 'in rtl: {reason}',
+  'engine.inContainer': 'in container {container}: {reason}',
 } as const;

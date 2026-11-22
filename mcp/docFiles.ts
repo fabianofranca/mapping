@@ -110,6 +110,25 @@ const unverified = (repo: string, count: number) =>
     ? `1 document of ${repo} not checked (no clone)`
     : `${count} documents of ${repo} not checked (no clone)`;
 
+/** The `{ repo, path }` documents of the types and of `documents` (v21), with the path of each `doc`. */
+function externalDocRefs(spec: Spec): { doc: SpecDocRef; path: string }[] {
+  const out: { doc: SpecDocRef; path: string }[] = [];
+  for (const [i, layer] of spec.layers.entries()) {
+    for (const [j, type] of layer.annotationTypes.entries()) {
+      const doc: SpecDocRef | string | undefined = type.doc;
+      if (doc !== undefined && typeof doc !== 'string') {
+        out.push({ doc, path: `layers[${i}].annotationTypes[${j}].doc` });
+      }
+    }
+  }
+  for (const [i, document] of (spec.documents ?? []).entries()) {
+    if (typeof document.doc !== 'string') {
+      out.push({ doc: document.doc, path: `documents[${i}].doc` });
+    }
+  }
+  return out;
+}
+
 /**
  * Warnings for the specialization's external documents: one per document that the clone does
  * not have ("document not found in <repo>"; a warning, not an error, because the clone may be on
@@ -122,20 +141,16 @@ export async function externalDocWarnings(
 ): Promise<LibraryIssue[]> {
   const missing: LibraryIssue[] = [];
   const unchecked = new Map<string, number>();
-  for (const [i, layer] of spec.layers.entries()) {
-    for (const [j, type] of layer.annotationTypes.entries()) {
-      const doc: SpecDocRef | string | undefined = type.doc;
-      if (doc === undefined || typeof doc === 'string') continue;
-      const found = await check(doc.repo, doc.path);
-      if (found === null) unchecked.set(doc.repo, (unchecked.get(doc.repo) ?? 0) + 1);
-      else if (!found) {
-        missing.push({
-          file,
-          path: `layers[${i}].annotationTypes[${j}].doc`,
-          message: `document not found in ${doc.repo}: ${doc.path}`,
-          severity: 'warning',
-        });
-      }
+  for (const { doc, path } of externalDocRefs(spec)) {
+    const found = await check(doc.repo, doc.path);
+    if (found === null) unchecked.set(doc.repo, (unchecked.get(doc.repo) ?? 0) + 1);
+    else if (!found) {
+      missing.push({
+        file,
+        path,
+        message: `document not found in ${doc.repo}: ${doc.path}`,
+        severity: 'warning',
+      });
     }
   }
   const repoIndex = (repo: string) =>

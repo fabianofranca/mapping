@@ -6,6 +6,7 @@ import {
   changeType,
   createArrow,
   createMarking,
+  setContainerClass,
   setContainerDensity,
   setMarkingAnchor,
   snapToAnchor,
@@ -14,6 +15,7 @@ import {
   setProjectDrawingMode,
   type Change,
   type JsonValue,
+  type Project,
   type Proposal,
 } from '../../src/model';
 import {
@@ -356,5 +358,90 @@ describe('changeTitle and changeSummary: the marking anchor (R3 of stage #1096)'
     expect(changeTitle({ current: anchored, preview: null, proposal }, rect)).toBe(
       t('review.field.rect'),
     );
+  });
+});
+
+describe('changeTitle and changeSummary: the container classes (decision 13 of #1901)', () => {
+  beforeEach(() => {
+    locale.value = 'en-US';
+  });
+  const withSpecs = (p: Project): Project => ({
+    ...p,
+    specializations: [
+      {
+        id: 'ds',
+        version: 1,
+        file: 'specs/ds.json',
+        spec: {
+          format: 'mapping-spec' as const,
+          formatVersion: 21,
+          id: 'ds',
+          name: 'DS',
+          version: 1,
+          layers: [],
+          containerClasses: [
+            {
+              id: 'platform',
+              name: 'Platform',
+              classes: [
+                { id: 'android', name: 'Android' },
+                { id: 'ios', name: 'iOS' },
+              ],
+            },
+            {
+              id: 'form',
+              name: 'Form factor',
+              classes: [
+                { id: 'phone', name: 'Phone' },
+                { id: 'tablet', name: 'Tablet' },
+              ],
+            },
+          ],
+        },
+      },
+    ],
+  });
+  const base = withSpecs(
+    addBackgroundContainer(emptyProject(), {
+      id: 'c1',
+      width: 1080,
+      height: 2400,
+      background: '#FFFFFF',
+    }),
+  );
+  const summaryOf = (before: typeof base, after: typeof base) => {
+    const proposal = propose(before, after);
+    const change = proposal.changes.find((c) => c.field === 'classes');
+    if (!change) throw new Error('no classes change');
+    const names = { current: before, preview: null, proposal };
+    return `${changeTitle(names, change)}: ${changeSummary(names, change)}`;
+  };
+
+  it('shows the set and class names, not the ids', () => {
+    const after = setContainerClass(
+      setContainerClass(base, 'c1', 'platform', 'android'),
+      'c1',
+      'form',
+      'tablet',
+    );
+    expect(summaryOf(base, after)).toBe(
+      'Classes: (empty) → Platform: Android, Form factor: Tablet',
+    );
+  });
+
+  it('removing the choice shows the names on the left and (empty) on the right', () => {
+    const fixed = setContainerClass(base, 'c1', 'platform', 'ios');
+    expect(summaryOf(fixed, base)).toBe('Classes: Platform: iOS → (empty)');
+  });
+
+  it('an undeclared set or class shows its id', () => {
+    const after = setContainerClass(base, 'c1', 'gone', 'x');
+    expect(summaryOf(base, after)).toBe('Classes: (empty) → gone: x');
+  });
+
+  it('the pt-BR text uses the pt-BR labels', () => {
+    locale.value = 'pt-BR';
+    const after = setContainerClass(base, 'c1', 'platform', 'android');
+    expect(summaryOf(base, after)).toMatch(/^Classes: .* → Platform: Android$/);
   });
 });

@@ -1,6 +1,11 @@
 import { useContext, useEffect } from 'preact/hooks';
 import { t } from '../i18n';
-import { SCHEMA_VERSION, projectIndex, undeclaredDrawingMode } from '../model';
+import {
+  SCHEMA_VERSION,
+  projectIndex,
+  undeclaredContainerClasses,
+  undeclaredDrawingMode,
+} from '../model';
 import type { FontProblem } from '../storage/fonts';
 import { markDiagnosticsSeen, remoteImageIssues } from '../store/diagnostics';
 import { allowedOrigins } from '../store/imagePermissions';
@@ -19,6 +24,7 @@ import { Button } from './controls';
 import { EditorContext, type EditorContextValue } from './EditorContext';
 import { DiagnosticsDirection } from './DiagnosticsDirection';
 import { declaredDrawingModes } from './drawingModes';
+import { imageLabel } from './labels';
 import { LibraryIssueList } from './LibraryIssueList';
 import { markingLabel } from './labels';
 import { useCopyResult } from './useCopyResult';
@@ -333,6 +339,41 @@ export function DiagnosticsDrawingMode() {
   );
 }
 
+/**
+ * Container class choices saved that no applied specialization declares (stage #1901, decision 16): the
+ * choice stays in the file, gives no class, and each one is listed with the container, the set and the class.
+ */
+export function DiagnosticsContainerClasses() {
+  const project = useContext(EditorContext)?.store.project.value;
+  if (!project) return null;
+  const undeclared = undeclaredContainerClasses(project);
+  if (undeclared.length === 0) return null;
+  const containers = projectIndex(project).containers;
+  return (
+    <section
+      class="diagnostics-container-classes"
+      aria-label={t('diagnostics.containerClasses')}
+    >
+      <h3>{t('diagnostics.containerClasses')}</h3>
+      <p class="muted">{t('diagnostics.containerClassesHint')}</p>
+      <ul>
+        {undeclared.map((u) => {
+          const container = containers.get(u.containerId);
+          return (
+            <li key={`${u.containerId}/${u.set}`}>
+              {t('diagnostics.containerClassUndeclared', {
+                container: container ? imageLabel(container) : u.containerId,
+                set: u.set,
+                class: u.class,
+              })}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 /** Reading direction of the real project, for the read-only section. */
 function DiagnosticsDirectionSection() {
   const project = useContext(EditorContext)?.store.project.value;
@@ -372,6 +413,7 @@ export function DiagnosticsView() {
       <DiagnosticsLibrary />
       <DiagnosticsComponents />
       <DiagnosticsDrawingMode />
+      <DiagnosticsContainerClasses />
       <DiagnosticsDirectionSection />
       <DiagnosticsRemoteImages />
       <DiagnosticsTable />

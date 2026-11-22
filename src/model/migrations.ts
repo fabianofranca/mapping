@@ -371,6 +371,13 @@ export const migrateFrom20To21: Migration = (data, context = NO_CONTEXT) => {
  */
 export const migrateFrom21To22: Migration = (data) => data;
 
+/**
+ * v22 → v23 (container classes): only the version changes. `containers[].classes` is optional; the new
+ * version exists so that an earlier app opens a file with a choice read-only, instead of discarding
+ * the choice when writing.
+ */
+export const migrateFrom22To23: Migration = (data) => data;
+
 /** Migration registry: the key is the source version. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -394,6 +401,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [19, migrateFrom19To20],
   [20, migrateFrom20To21],
   [21, migrateFrom21To22],
+  [22, migrateFrom22To23],
 ]);
 
 export type MigrationResult =

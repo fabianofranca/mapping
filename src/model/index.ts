@@ -61,6 +61,7 @@ export * from './listing';
 export * from './display';
 export * from './spec';
 export * from './fileFormats';
+export * from './containerClasses';
 export * from './formatPlugin';
 export * from './formatInput';
 export * from './formatResult';

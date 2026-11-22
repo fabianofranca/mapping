@@ -14,6 +14,7 @@ import type {
   InstanceSizeSpec,
 } from './componentFormat';
 import { type InstanceAnchor, anchorFieldValues } from './anchor';
+import { type InstanceContainer, containerFieldValues } from './container';
 import { DIRECTION_FIELD, evaluate } from './expressions';
 import { type ResolvedTokens, substituteTokens } from './tokens';
 import { describeValue, isIntrinsicSize, parseSizeSpec } from './layoutValues';
@@ -44,10 +45,12 @@ function plainSpec(value: unknown): InstanceSizeSpec | undefined {
 
 /**
  * The reserved values of an instance, which `sizing` reads like the template does (decision 6 of #1893):
- * `$anchor.*` (with no anchor the five stay empty) and `$direction` (default `ltr`).
+ * `$anchor.*` (with no anchor the five stay empty), `$container.*` (with no container they stay empty, decision 17
+ * of #1901: unlike `$size`, the container is known before measuring) and `$direction` (default `ltr`).
  */
 export interface ReservedValues {
   readonly anchor?: InstanceAnchor | undefined;
+  readonly container?: InstanceContainer | undefined;
   readonly direction?: Direction | undefined;
 }
 
@@ -57,6 +60,7 @@ function withReserved(values: FieldValues, reserved: ReservedValues): FieldValue
     ...values,
     [DIRECTION_FIELD]: reserved.direction ?? 'ltr',
     ...anchorFieldValues(reserved.anchor),
+    ...containerFieldValues(reserved.container),
   };
 }
 
@@ -65,7 +69,7 @@ function withReserved(values: FieldValues, reserved: ReservedValues): FieldValue
  * A `$token` of an axis becomes the value of `tokens` (the drawing mode's table; without it, the
  * component's `resolvedTokens`) before evaluating: one without a value is an invalid value.
  * With `reserved` (an instance: `fitComponentSize`, Arrange, the screen's layout), the expression also
- * reads `$anchor.*` and `$direction` as the instance's template does; without it, nothing changes.
+ * reads `$anchor.*`, `$container.*` and `$direction` as the instance's template does; without it, nothing changes.
  */
 export function resolveSizing(
   component: ComponentFile,

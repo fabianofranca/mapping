@@ -265,6 +265,7 @@ function externalDocView(
     localFile: found?.localFile ?? null,
     exists: found?.exists ?? null,
     ...(found?.problem ? { localFileProblem: found.problem } : {}),
+    ...(found?.tooLarge ? { tooLarge: true } : {}),
   };
 }
 
@@ -302,7 +303,7 @@ function slotsField(
   return slots === null ? {} : { slots };
 }
 
-/** `accessibility` of the type resolved (role, label, touch target and parts), only when it declares one. */
+/** `accessibility` of the type resolved (role, label, touch target, parts and variants), only when it declares one. */
 function accessibilityField(spec: Spec, type: SpecAnnotationType): Json {
   const accessibility = typeAccessibility(spec, type);
   return accessibility === null ? {} : { accessibility };
@@ -333,6 +334,59 @@ export function findTypeEntry(spec: Spec, wantedType: string): TypeEntry {
     );
   }
   return matches[0]!;
+}
+
+/**
+ * `get_library_document` (stage #1901, decision 22): a general document of the library (`documents`,
+ * formatVersion 21). A package `.md` comes from the package (up to `MAX_DOC_BYTES`); a `{ repo, path }`
+ * one is read like the `doc` object of `get_component`: through the project's clone, or only the link
+ * and the `hint`. An unknown id is `not-found`, with the ids of the library in `details`.
+ */
+export async function getLibraryDocument(
+  roots: Roots,
+  args: ComponentArgs & { document: string },
+): Promise<Json> {
+  const { source, loaded: project } = await openPackage(roots, args);
+  const documents = source.spec.documents ?? [];
+  const entry = documents.find((d) => d.id === args.document.trim());
+  if (entry === undefined) {
+    throw new ToolError('not-found', `document not found: ${args.document}`, {
+      document: args.document,
+      available: documents.map((d) => d.id),
+    });
+  }
+  const head = {
+    spec: { id: source.spec.id, name: source.spec.name, version: source.spec.version },
+    id: entry.id,
+    name: entry.name,
+  };
+  if (typeof entry.doc !== 'string') {
+    const external = await externalDocument(roots, source.spec, project, entry.doc);
+    return {
+      ...head,
+      doc: external.text,
+      ...external.view,
+      ...(external.hint === undefined ? {} : { hint: external.hint }),
+    };
+  }
+  const path = source.resolve(entry.doc);
+  const text = await source.read(path);
+  const tooLarge = text !== null && Buffer.byteLength(text, 'utf8') > MAX_DOC_BYTES;
+  const hint = packageDocumentHint(text === null, tooLarge, path);
+  return {
+    ...head,
+    doc: tooLarge ? null : text,
+    path,
+    ...(tooLarge ? { tooLarge: true } : {}),
+    ...(hint === undefined ? {} : { hint }),
+  };
+}
+
+function packageDocumentHint(missing: boolean, tooLarge: boolean, path: string) {
+  if (missing) return 'the document is missing from the package; run validate_library';
+  if (tooLarge)
+    return `the document ${path} exceeds ${MAX_DOC_BYTES} bytes and was not read; open the file in the package`;
+  return undefined;
 }
 
 /** `get_component`: everything about a library type. */

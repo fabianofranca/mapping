@@ -13,7 +13,11 @@ import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { approximateMeasurer } from '../../src/model/components/instantiate';
+import { resolveSlotLayout } from '../../src/model/components/arrange';
+import { withContainer } from '../../src/model/components/container';
 import { loadLibrary } from '../../src/model/components/library';
+import { parseComponentText } from '../../src/model/components/parseComponent';
+import { componentSlots } from '../../src/model/components/slots';
 import { screenFromSource } from '../../src/model/components/origin';
 import { validateLibrary } from '../../src/model/library';
 import { parseSpecText } from '../../src/model/spec';
@@ -68,11 +72,11 @@ describe('example library sdui-backend', () => {
     expect(report.summary).toMatchObject({ level: 3, types: 6, components: 5, docs: 6 });
   });
 
-  it('is version 3, with a migration from 1 (the six steps) and one from 2', () => {
+  it('is version 4, with a migration from 1 (the six steps) and one from 2', () => {
     const parsed = parseSpecText(text(SPEC_FILE));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.spec.version).toBe(3);
+    expect(parsed.spec.version).toBe(4);
     expect(parsed.spec.migrations).toHaveLength(2);
     const steps = parsed.spec.migrations?.[0]?.steps ?? [];
     expect([...new Set(steps.map((s) => s.op))].sort()).toEqual([
@@ -85,6 +89,78 @@ describe('example library sdui-backend', () => {
     ]);
     const modes = steps.flatMap((s) => (s.op === 'remove-type' ? [s.mode] : []));
     expect(modes.sort()).toEqual(['convert', 'delete']);
+  });
+});
+
+describe('container classes (stage #1901, CX1; decision 27)', () => {
+  const parsed = parseSpecText(text(SPEC_FILE));
+  const spec = parsed.ok ? parsed.spec : undefined;
+  const typeOf = (id: string) =>
+    spec?.layers.flatMap((l) => l.annotationTypes).find((t) => t.id === id);
+
+  it('is at formatVersion 21 and parses with no issue', () => {
+    expect(parsed.ok).toBe(true);
+    expect(spec?.formatVersion).toBe(21);
+  });
+
+  it('declares the two sets: platform (chosen) and window (by width: 600 and 840)', () => {
+    expect(spec?.containerClasses).toEqual([
+      {
+        id: 'platform',
+        name: 'Platform',
+        classes: [
+          { id: 'android', name: 'Android' },
+          { id: 'ios', name: 'iOS' },
+          { id: 'web', name: 'Web' },
+        ],
+      },
+      {
+        id: 'window',
+        name: 'Window',
+        by: 'width',
+        classes: [
+          { id: 'compact', name: 'Compact', below: 600 },
+          { id: 'medium', name: 'Medium', below: 840 },
+          { id: 'expanded', name: 'Expanded' },
+        ],
+      },
+    ]);
+  });
+
+  it('the Phone size chooses android and the new web-desktop size (1440 x 900) chooses web', () => {
+    expect(spec?.containers?.map((c) => [c.id, c.width, c.height, c.classes])).toEqual([
+      ['phone', 412, 917, { platform: 'android' }],
+      ['web-desktop', 1440, 900, { platform: 'web' }],
+    ]);
+  });
+
+  it('sdui-sheet is meant for android and ios, sdui-fab for the compact and medium windows', () => {
+    expect(typeOf('sdui-sheet')?.appliesIn).toEqual({ platform: ['android', 'ios'] });
+    expect(typeOf('sdui-fab')?.appliesIn).toEqual({ window: ['compact', 'medium'] });
+    expect(typeOf('sdui-button')?.appliesIn).toBeUndefined();
+  });
+});
+
+describe('sdui-column reads the container (stage #1901, CX4; decision 27)', () => {
+  const parsed = parseComponentText(text('components/sdui-column.json'));
+  const slot = parsed.ok ? componentSlots(parsed.component)[0] : undefined;
+  const padding = (window: string | undefined, values = {}) =>
+    resolveSlotLayout(
+      slot!,
+      withContainer(values, window === undefined ? undefined : { classes: { window } }),
+    ).padding;
+  const all = (n: number) => ({ top: n, right: n, bottom: n, left: n });
+
+  it('pads 16 px in a compact container and 24 px in the others', () => {
+    expect(parsed.ok).toBe(true);
+    expect(padding('compact')).toEqual(all(16));
+    expect(padding('medium')).toEqual(all(24));
+    expect(padding('expanded')).toEqual(all(24));
+  });
+
+  it('keeps 24 px without a container class and the type padding wins when informed', () => {
+    expect(padding(undefined)).toEqual(all(24));
+    expect(padding('compact', { padding: 8 })).toEqual(all(8));
   });
 });
 
@@ -280,5 +356,30 @@ describe('file format sdui (stage #1923, FP6)', () => {
     expect(planned.valid).toBe(true);
     expect(planned.created).toEqual([]);
     expect(readProject(dir).containers).toHaveLength(1);
+  });
+});
+
+describe('accessibility variants (stage CX6; decision 27)', () => {
+  const parsed = parseSpecText(text(SPEC_FILE));
+  const button = parsed.ok
+    ? parsed.spec.layers
+        .flatMap((l) => l.annotationTypes)
+        .find((t) => t.id === 'sdui-button')
+    : undefined;
+
+  it('the button declares the link case of its `mode` field: role link over the base button', () => {
+    expect(button?.accessibility?.role).toBe('button');
+    expect(button?.accessibility?.variants).toEqual({
+      field: 'mode',
+      cases: {
+        link: { role: 'link', label: { fields: ['label'], required: true } },
+      },
+    });
+    const mode = button?.fields.find((f) => f.key === 'mode');
+    expect(mode?.type === 'enum' && mode.options.includes('link')).toBe(true);
+  });
+
+  it('the library still validates with no error', () => {
+    expect(validateLibrary({ files, specPath: SPEC_FILE }).errors).toEqual([]);
   });
 });

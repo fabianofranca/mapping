@@ -1,5 +1,6 @@
 import {
   drawingModesOf,
+  effectiveContainerClasses,
   effectiveDirection,
   effectiveDrawingMode,
   arrowsOf,
@@ -158,6 +159,21 @@ export function markingRow(refs: Refs, marking: Marking): Json {
   };
 }
 
+/** The `set`, `class` and `allowed` of an `outside-container-class` item (empty for any other). */
+export function containerClassIssueView(issue: AnnotationIssue): Json {
+  return {
+    ...(issue.set !== undefined
+      ? { set: { id: issue.set.id, name: issue.set.name } }
+      : {}),
+    ...(issue.class !== undefined
+      ? { class: { id: issue.class.id, name: issue.class.name } }
+      : {}),
+    ...(issue.allowed !== undefined
+      ? { allowed: issue.allowed.map((c) => ({ id: c.id, name: c.name })) }
+      : {}),
+  };
+}
+
 export function issueView(issue: AnnotationIssue): Json {
   return {
     code: issue.code,
@@ -172,6 +188,7 @@ export function issueView(issue: AnnotationIssue): Json {
       : {}),
     ...(issue.owner !== undefined ? { owner: issue.owner } : {}),
     ...(issue.max !== undefined ? { max: issue.max } : {}),
+    ...containerClassIssueView(issue),
   };
 }
 
@@ -232,7 +249,7 @@ function typeSlotsField(refs: Refs, resolved: ResolvedType | null): Json {
   return slots === null ? {} : { slots };
 }
 
-/** `accessibility` of the annotation's type, resolved (role, label, touch target and parts), when it declares one. */
+/** `accessibility` of the annotation's type, resolved (role, label, touch target, parts and variants), when it declares one. */
 function typeAccessibilityField(resolved: ResolvedType | null): Json {
   const accessibility =
     resolved === null ? null : typeAccessibility(resolved.spec, resolved.type);
@@ -569,6 +586,10 @@ function containerSummary(refs: Refs, image: ProjectContainer): Json {
     effectiveDirection: effectiveDirection(refs.project, image.id),
     // Image pixels per component unit (1 = the default, also when absent).
     density: image.density ?? 1,
+    // Chosen container classes (set → class; `null` = none stored) and the ones the container has
+    // (computed sets from its size ÷ density, chosen sets from the stored choice).
+    classes: image.classes ?? null,
+    effectiveClasses: effectiveContainerClasses(refs.project, image.id),
     // Canvas marking that contains the container (derived from the geometry), or `null`.
     parent: image.parentId === null ? null : refs.ref('m', image.parentId),
   };

@@ -20,6 +20,12 @@ import {
 } from './specAccessibility';
 import { checkSignatureKeys } from './specSignature';
 import { checkFileFormats, type SpecFileFormat } from './fileFormats';
+import {
+  checkContainerClasses,
+  type SpecAppliesIn,
+  type SpecContainerChoice,
+  type SpecContainerClassSet,
+} from './containerClasses';
 import type { ModelMessageTemplateCode } from './messages';
 import {
   addSpecIssue,
@@ -39,8 +45,10 @@ export {
   INTERACTIVE_ROLES,
   type AccessibilityRole,
   type SpecAccessibility,
+  type SpecAccessibilityCase,
   type SpecAccessibilityLabel,
   type SpecAccessibilityPart,
+  type SpecAccessibilityVariants,
   type SpecTouchTarget,
   type SpecTypeAccessibility,
   type TouchTargetMode,
@@ -51,7 +59,7 @@ function onlyFormat(version: number): SpecMsg {
   return specMsg('spec.onlyFormat', { version: String(version) });
 }
 
-// Specialization format (`formatVersion` 1 to 20), see docs/SPEC-FORMAT.md. Version 2 adds
+// Specialization format (`formatVersion` 1 to 21), see docs/SPEC-FORMAT.md. Version 2 adds
 // `platforms` and `code`; version 1 is 2 without platforms and without `code`; version 3 is 2 plus
 // `sources` (external origins on types and fields, including `table` columns); version 4 is 3
 // plus the library: the package (the specialization's folder) with `component`, `doc` and
@@ -91,7 +99,11 @@ function onlyFormat(version: number): SpecMsg {
 // it copies a field into another on the annotations that match `when`; it covers no break, see
 // `specVersions.ts`); version 20 is 19 plus `fileFormats` at the root (stage #1923: the file
 // formats the specialization reads and writes, each one handled by an isolated `.js` plugin of the
-// package; see `fileFormats.ts`), outside the version contract too.
+// package; see `fileFormats.ts`), outside the version contract too; version 21 is 20 plus container
+// classes (stage #1901: `containerClasses` at the root, `classes` on a ready-made size of
+// `containers` and `appliesIn` on the type; see `containerClasses.ts`) and the library documents
+// (`documents` at the root: general documents of the library, a package `.md` or `{ repo, path }`
+// like the type's `doc`), both outside the version contract too.
 // The zod here is the source of truth; `docs/spec.schema.json` mirrors it for those who do not
 // use TypeScript. No browser APIs: reusable by the MCP server.
 //
@@ -104,10 +116,10 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Value used before the product rename: import still accepts it. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Current format version (the one that the documentation and new examples use). */
-export const SPEC_FORMAT_VERSION = 20;
+export const SPEC_FORMAT_VERSION = 21;
 /** Versions accepted on import. */
 export const SPEC_FORMAT_VERSIONS = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
 ] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
@@ -415,6 +427,15 @@ export interface SpecDocRef {
   path: string;
 }
 
+/** General document of the library, outside any type (`formatVersion` 21 only); see `documents`. */
+export interface SpecDocument {
+  /** `[a-z0-9-]+`, unique in the specialization. */
+  id: string;
+  name: string;
+  /** A package `.md` or `{ repo, path }` of a `docRepos` repository, like the type's `doc`. */
+  doc: string | SpecDocRef;
+}
+
 /**
  * A slot of the type's component (`formatVersion` 17 only): what it accepts and how many children it
  * holds. Declaring `slots` is what turns on the validation of what goes in each slot.
@@ -479,6 +500,11 @@ export interface SpecAnnotationType {
    * not show the name header and the outline only appears on hover or when selected. Absent = `false`.
    */
   structural?: boolean;
+  /**
+   * The container classes the type is meant for, set id → class ids (`formatVersion` 21 only);
+   * checked as a pending item (OR inside a set, AND across sets).
+   */
+  appliesIn?: SpecAppliesIn;
 }
 
 /** Items an annotation type applies to (ME4, decision 14). */
@@ -506,6 +532,8 @@ export interface SpecContainer {
   height: number;
   /** `#RRGGBB`; absent = white. */
   background?: string;
+  /** The choice the size carries, set id → class id, chosen sets only (`formatVersion` 21 only). */
+  classes?: SpecContainerChoice;
 }
 
 export interface SpecLayer {
@@ -561,6 +589,10 @@ export interface Spec {
   accessibility?: SpecAccessibility;
   /** File formats handled by a plugin of the package (`formatVersion` 20 only). */
   fileFormats?: SpecFileFormat[];
+  /** Sets of container classes, computed by size or chosen per container (`formatVersion` 21 only). */
+  containerClasses?: SpecContainerClassSet[];
+  /** General documents of the library: conventions, glossary (`formatVersion` 21 only). */
+  documents?: SpecDocument[];
 }
 
 const KEY_RE = /^[A-Za-z0-9_]+$/;
@@ -1343,6 +1375,15 @@ const docShape = z.custom<string | SpecDocRef>().superRefine((value: unknown, ct
   }
 });
 
+/** A library document (v21): `id`, `name` and a `doc` that follows the type's `doc` rules. */
+const documentShape = z
+  .object({
+    id: requiredText.regex(TAG_RE, 'invalid document id; use [a-z0-9-]+'),
+    name: requiredText,
+    doc: docShape,
+  })
+  .strict();
+
 const childRoleShape = z
   .object({ id: requiredText, name: requiredText, description: z.string().optional() })
   .strict();
@@ -1479,6 +1520,8 @@ const annotationTypeShape = z
       .optional(),
     notices: noticesShape.optional(),
     structural: z.boolean({ error: 'must be true or false' }).optional(),
+    // `formatVersion` 21 only: validated by `checkContainerClasses`, which knows the sets.
+    appliesIn: z.unknown().optional(),
   })
   .strict()
   .superRefine((type, ctx) => {
@@ -1648,6 +1691,8 @@ const containerShape = z
     width: containerSide,
     height: containerSide,
     background: color.optional(),
+    // `formatVersion` 21 only: validated by `checkContainerClasses`, which knows the sets.
+    classes: z.unknown().optional(),
   })
   .strict();
 
@@ -2817,6 +2862,7 @@ function checkLayerGroups(layers: readonly V11Layer[], ctx: z.RefinementCtx): vo
 function checkDocRepos(
   spec: {
     docRepos?: readonly { readonly id: string }[] | undefined;
+    documents?: readonly { readonly doc: unknown }[] | undefined;
     layers: readonly V11Layer[];
   },
   ctx: z.RefinementCtx,
@@ -2833,6 +2879,40 @@ function checkDocRepos(
     const { doc } = type;
     if (!isRecord(doc) || typeof doc.repo !== 'string' || declared.has(doc.repo)) return;
     add([...path, 'doc', 'repo'], specMsg('spec.docRepoUndeclared', { repo: doc.repo }));
+  });
+  (spec.documents ?? []).forEach((document, di) => {
+    const { doc } = document;
+    if (!isRecord(doc) || typeof doc.repo !== 'string' || declared.has(doc.repo)) return;
+    add(
+      ['documents', di, 'doc', 'repo'],
+      specMsg('spec.docRepoUndeclared', { repo: doc.repo }),
+    );
+  });
+}
+
+/** From this `formatVersion` on, `documents` (library documents) exist. */
+const DOCUMENTS_VERSION = 21;
+
+/** v21: `documents` only from this version, with unique ids (the shape and the repositories are checked elsewhere). */
+function checkDocuments(
+  spec: {
+    formatVersion: number;
+    documents?: readonly { readonly id: string }[] | undefined;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  if (spec.documents === undefined) return;
+  const add = issueAdder(ctx);
+  if (spec.formatVersion < DOCUMENTS_VERSION) {
+    add(['documents'], onlyFormat(DOCUMENTS_VERSION));
+    return;
+  }
+  const seen = new Set<string>();
+  spec.documents.forEach((document, di) => {
+    if (seen.has(document.id)) {
+      add(['documents', di, 'id'], specMsg('spec.idRepeated', { id: document.id }));
+    }
+    seen.add(document.id);
   });
 }
 
@@ -3007,6 +3087,10 @@ export const specSchema = z
     accessibility: accessibilityShape.optional(),
     // Validated by `checkFileFormats` (the version, the shapes and the cross checks), in superRefine.
     fileFormats: z.unknown().optional(),
+    // Validated by `checkContainerClasses` (the version, the shapes and the cross checks).
+    containerClasses: z.unknown().optional(),
+    // `formatVersion` 21 only (`checkDocuments`, which also checks the ids and the repositories).
+    documents: z.array(documentShape).min(1, 'cannot be empty').optional(),
   })
   .strict()
   .superRefine((spec, ctx) => {
@@ -3166,6 +3250,8 @@ export const specSchema = z
     checkSlotKeys(spec, typeLayer, ctx);
     checkAccessibilityKeys(spec, ctx);
     checkFileFormats(spec, ctx);
+    checkContainerClasses(spec, ctx);
+    checkDocuments(spec, ctx);
     if (spec.formatVersion >= 11) {
       checkLayerGroups(spec.layers, ctx);
       checkDocRepos(spec, ctx);
