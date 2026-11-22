@@ -1,4 +1,4 @@
-# Cloud tester guide and helpers — 2026-11-22 (épico `epic/tester-guide-gaps`, PR #2450, MCP unchanged, schema v23)
+# Cloud tester guide and helpers — 2026-11-22 (épico `epic/tester-guide-gaps`, PR #2617, MCP unchanged, schema v23)
 
 Schema unchanged.
 
