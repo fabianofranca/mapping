@@ -30,6 +30,7 @@ import { ImageInputs, useImageIntake } from './useImageIntake';
 import { useProjectCommands } from './useProjectCommands';
 import { useReviewSync } from './useReviewSync';
 import { ReviewBar } from '../ui/review/ReviewBar';
+import { QuickReviewBar } from '../ui/review/QuickReviewBar';
 import { CompareDialog, ReviewLegend } from '../ui/review/ReviewCanvasControls';
 import { useExitReview } from './useExitReview';
 import { Button } from '../ui/controls';
@@ -140,6 +141,7 @@ export function EditorScreen() {
               }}
             >
               <CanvasHost />
+              <QuickReviewBar />
               <CanvasNotices notices={notices} />
               <CanvasContextMenu />
               <Minimap />

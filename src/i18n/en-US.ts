@@ -803,6 +803,9 @@ export const enUS = {
   'thread.proposal.inReview': 'In review',
   'thread.proposal.revisedOne': 'Revised · 1 to check',
   'thread.proposal.revisedMany': 'Revised · {count} to check',
+  'thread.proposal.onCanvas': 'On the canvas: accept or reject it there',
+  'thread.proposal.rejectedOnCanvas': 'Rejected on the canvas · ask for a change here',
+  'thread.proposal.showAgain': 'Show on the canvas',
   'proposals.fromThread': 'from the conversation',
   'thread.editorHint': 'Enter adds a line break, Ctrl+Enter sends and @ cites an item.',
   // CM5-C: cite and copy reference in menus
