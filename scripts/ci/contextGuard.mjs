@@ -39,10 +39,12 @@
 //       unquoted one level and checked again, up to depth 3.
 //     Inert text is not a command position: the position is looked for on a masked copy of the command, of the
 //     same length (`maskInert`), where heredoc bodies and the content of `'…'`, `$'…'` and `"…"` are blank
-//     (the code of `$( … )` and of backticks inside `"…"` stays). The segment checks read the original text.
+//     (the code of `$( … )` and of backticks inside `"…"` stays), and comments. A heredoc fed to a shell
+//     (`bash <<EOF`, `cat <<EOF | sh`) is a script and stays code; a heredoc that is never closed is not
+//     blanked. The segment checks read the original text.
 //   Best effort that stays (the gate fails open on these): a script file or interpreter (`python x.py`,
-//     `node -e`, a script fed to `bash` on stdin); a command built in a variable; another HTTP client (`wget`,
-//     `httpie`); a GraphQL query read from a file (`-f query=@file`); and the gate measures the
+//     `node -e`); a command built in a variable; another HTTP client (`wget`,
+//     `httpie`); a GraphQL query read from a file or from stdin (`-f query=@file`, `-F query=@-`); and the gate measures the
 //     `transcript_path` it receives, so if that is a subagent's own transcript the measure is lower and the
 //     call goes through.
 //   Always exit code 0: the hook never blocks or delays a call except by the gate's deny, and any failure
@@ -190,6 +192,9 @@ const CURL_METHOD_FLAG = /(?:^|\s)(?:-X\s*|--request[\s=]+)([A-Za-z]+)/i;
 const CURL_DATA_FLAG =
   /(?:^|\s)(?:-[dF]|--data(?:-raw|-binary|-urlencode|-ascii)?|--json|--form(?:-string)?)(?=[\s='"@{[]|$)/;
 const CURL_GET_FLAG = /(?:^|\s)(?:-G|--get)(?=\s|$)/;
+/** A line that feeds a heredoc to a shell (`bash <<EOF`, `cat <<EOF | sh`): its body is a script, so it is code. */
+const SHELL_LINE =
+  /(?:^|[;&|(]|\b(?:sudo|env|xargs|exec|command|nohup|time)\s)\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*(?:bash|sh|zsh|dash)(?=\s|$)/;
 const HEREDOC_OPEN = /^<<(-?)[ \t]*(?:'([^']*)'|"([^"]*)"|\\?([A-Za-z0-9_]+))/;
 /** Shell wrappers (`bash -c`, `eval`) are unquoted and checked again up to this depth. */
 const MAX_WRAPPER_DEPTH = 3;
@@ -251,25 +256,27 @@ function skipDouble(ctx, open) {
   return i + 1;
 }
 
-/** Blanks the body of the oldest pending heredoc, which starts after the line break at `nl`; returns where it ends. */
+/**
+ * Blanks the body of the oldest pending heredoc, which starts after the line break at `nl`, and returns where
+ * it ends. A body that feeds a shell is kept (code), and one that is never closed is not blanked: the mask
+ * only hides text it is sure about.
+ */
 function consumeHeredoc(ctx, nl) {
-  const { word, strip } = ctx.pending.shift();
+  const { word, strip, shell } = ctx.pending.shift();
   const { text } = ctx;
-  const start = nl + 1;
-  let lineStart = start;
+  let lineStart = nl + 1;
   while (lineStart <= text.length) {
     const found = text.indexOf('\n', lineStart);
     const lineEnd = found < 0 ? text.length : found;
     const line = text.slice(lineStart, lineEnd);
     if ((strip ? line.replace(/^\t+/, '') : line) === word) {
-      blank(ctx, start, lineEnd);
+      if (!shell) blank(ctx, nl + 1, lineEnd);
       return lineEnd;
     }
     if (found < 0) break;
     lineStart = found + 1;
   }
-  blank(ctx, start, text.length);
-  return text.length;
+  return nl;
 }
 
 /** The heredoc opened at `i` (`<<`, `<<-`, not `<<<`): queues it and returns the index after its word. */
@@ -277,11 +284,40 @@ function openHeredoc(ctx, i) {
   if (ctx.text[i + 2] === '<') return i + 3;
   const found = HEREDOC_OPEN.exec(ctx.text.slice(i, i + 200));
   if (found === null) return i + 2;
+  const lineStart = ctx.text.lastIndexOf('\n', i - 1) + 1;
+  const lineEnd = ctx.text.indexOf('\n', i);
+  const line = ctx.text.slice(lineStart, lineEnd < 0 ? ctx.text.length : lineEnd);
   ctx.pending.push({
     word: found[2] ?? found[3] ?? found[4],
     strip: found[1] === '-',
+    shell: SHELL_LINE.test(line),
   });
   return i + found[0].length;
+}
+
+/** `$(( … ))` at `i` (a shift such as `1<<3` is not a heredoc): returns the index after the closing `))`. */
+function skipArithmetic(ctx, i) {
+  let depth = 2;
+  let j = i + 3;
+  while (j < ctx.text.length && depth > 0) {
+    if (ctx.text[j] === '(') depth += 1;
+    else if (ctx.text[j] === ')') depth -= 1;
+    j += 1;
+  }
+  return j;
+}
+
+/** A `#` that starts a word is a comment to the end of the line (its quotes do not open a string). */
+function isComment(text, i) {
+  return text[i] === '#' && (i === 0 || /[\s;&|(]/.test(text[i - 1]));
+}
+
+/** Blanks the comment at `i` and returns the index of its line break. */
+function skipComment(ctx, i) {
+  const found = ctx.text.indexOf('\n', i);
+  const end = found < 0 ? ctx.text.length : found;
+  blank(ctx, i, end);
+  return end;
 }
 
 /** Code starting at `i` up to `end` (not nested in parentheses) or the end of the text; returns the index of `end`. */
@@ -295,6 +331,8 @@ function scanCode(ctx, i, end) {
     else if (char === "'") i = skipSingle(ctx, i);
     else if (char === '"') i = skipDouble(ctx, i);
     else if (char === '$' && text[i + 1] === "'") i = skipAnsiC(ctx, i + 1);
+    else if (isComment(text, i)) i = skipComment(ctx, i);
+    else if (char === '$' && text.startsWith('((', i + 1)) i = skipArithmetic(ctx, i);
     else if (char === '<' && text[i + 1] === '<') i = openHeredoc(ctx, i);
     else if (char === '\n' && ctx.pending.length > 0) i = consumeHeredoc(ctx, i);
     else {

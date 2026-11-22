@@ -1174,6 +1174,35 @@ describe('CT1 — opensPullRequest: inert text, wrappers, curl and GraphQL (deci
     ).toBe(true);
   });
 
+  it.each([
+    "# Open the PR, don't wait\ngh pr create --title x",
+    "echo a # it's here\ngh pr create",
+    'echo $((1<<3))\ngh pr create --title x',
+    'x=$((1 << 3)); gh pr create',
+    'cat <<EOF\nnever closed\ngh pr create',
+    "bash <<'EOF'\ngh pr create\nEOF",
+    'sh <<EOF\ncd /x\ngh pr create\nEOF',
+    'cat <<EOF | bash\ngh pr create\nEOF',
+    'cd /x && zsh <<-EOF\n\tgh pr create\n\tEOF',
+  ])(
+    'review: masking never hides a real call (comment, arithmetic, shell stdin): %s',
+    (command) => {
+      expect(opensPr('Bash', { command })).toBe(true);
+    },
+  );
+
+  it.each([
+    "# don't: gh pr create\necho ok",
+    'echo ${#x} $# # gh pr create\necho ok',
+    'cat <<EOF > run.sh\ngh pr create\nEOF',
+    'git commit -F - <<EOF\ngh pr create\nEOF',
+  ])(
+    'review: a comment, a $# word or a heredoc that is not a shell script stays inert: %s',
+    (command) => {
+      expect(opensPr('Bash', { command })).toBe(false);
+    },
+  );
+
   it('the wrapper recursion stops at depth 3', () => {
     const wrap = (inner: string): string =>
       `bash -c "${inner.replace(/(["\\$`])/g, '\\$1')}"`;
