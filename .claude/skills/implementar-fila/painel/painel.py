@@ -70,12 +70,15 @@ served=] [issue= kind=]` writes the session's cost (`kind` required with a new i
 (no measure; decision 14 of #2293); `costs [--desde <ISO>] DIR` reads only the `meta`
 and prints the total, one line per kind (sessions, US$, median) and one per stage (with `--desde`, only those with `created` from
 the date on; the line of a stage in `meta.partialCost` ends in ` (partial: imported)`, decisions 12 and 13 of #2293); `show` brings the `custo:` line.
-`outliers [--desde <ISO>] DIR` (decisions 3 to 9 of #1937, read-only, outside `apply`) reads the queue and the meta: for the `concluída` stages
+`outliers [--desde <ISO>] [--encerradas-desde <ISO>] DIR` (decisions 3 to 9 of #1937, read-only, outside `apply`) reads the queue and the meta: for the `concluída` stages
 with a valid `fases=` and a `toca=` other than `?` (with `--desde`, `started` from the date on) it divides the stage cost by the planned
 phases and lists, per group (`process` by `is_process_stage`, else `product`), those strictly above `OUTLIER_FACTOR` times the group
 median, with the cause: the session kind that went furthest above the group's median in that kind. A group under `OUTLIER_MIN_BASE` stages
 flags nothing; a stage without a usable ficha (and one only in `meta.merged`) enters `without ficha`. A stage in `meta.partialCost` (below) is
-out of the base and counted in the header's `, partial: <k>` (decision 13 of #2293).
+out of the base and counted in the header's `, partial: <k>` (decision 13 of #2293). `--encerradas-desde <ISO>` (decision 11 of #2635) keeps the
+medians over the whole base (with or without `--desde`) and lists only the stages above the ceiling whose row `ended` is from `<ISO>` on (a row
+with no `ended` is left out); the header adds `, listed: ended from <ISO>`, a value that is not ISO UTC gives code 2, and without the flag the
+output does not change.
 Tester ceiling (decision 9 of #1639): a `cost` of a `testador` or `reteste` session with `ctx` above TESTER_CONTEXT_LIMIT
 is written as always, exits with 0 and prints `acima do teto do testador (300 mil): <id> <ctx>`; `show` brings `testador acima do teto: <stage> <label> <ctx in thousands>k; …` (or `nenhum`), only for the stages not `concluída` or `recusada` and outside `meta.merged`.
 Current session of each role (decision 7 of #1532): `role DIR <coordenador|supervisor> <id> [link=<url>]` writes
@@ -1572,8 +1575,10 @@ def outlier_line(row, total, phases, cause, counts):
             f"testers {testers}; retests {retests}; fixes {fixes}")
 
 
-def outlier_group(name, rows, meta, costs):
-    """The lines of one group: its header and the stages above the ceiling, or `base too small`."""
+def outlier_group(name, rows, meta, costs, ended_since=None):
+    """The lines of one group: its header and the stages above the ceiling, or `base too small`. The median and the
+    ceiling come from every row of the group; with `ended_since`, only the rows whose `ended` is from there on are listed
+    (stage #2635, decision 11; ISO UTC strings compare in order, and a row with no `ended` is left out)."""
     if len(rows) < OUTLIER_MIN_BASE:
         return [f"{name}: base too small ({len(rows)} stages)"]
     per_phase = {}
@@ -1583,7 +1588,8 @@ def outlier_group(name, rows, meta, costs):
     ceiling = OUTLIER_FACTOR * median
     lines = [f"{name}: {len(rows)} stages, median {money(median)} per phase, ceiling {money(ceiling)}"]
     group_kinds = [costs[r["issue"]] for r in rows]
-    over = [r for r in rows if per_phase[r["issue"]] > ceiling]
+    over = [r for r in rows if per_phase[r["issue"]] > ceiling
+            and (not ended_since or (r.get("ended") or "") >= ended_since)]
     for r in sorted(over, key=lambda r: -per_phase[r["issue"]]):
         i, phases = r["issue"], len(plan_phase_codes(r["plan"]))
         lines.append(outlier_line(r, sum(costs[i].values()), phases, outlier_cause(costs[i], group_kinds),
@@ -1593,14 +1599,16 @@ def outlier_group(name, rows, meta, costs):
 
 def cmd_outliers(a):
     since = check_iso(a.desde) if a.desde else None
+    ended_since = check_iso(a.encerradas_desde) if a.encerradas_desde else None
     q, m = load(a.dir, "queue"), load(a.dir, "meta")
     meta = m[0] if m else {}
     base, without, partial = outlier_base(q, meta, since)
     costs = stage_kind_costs(meta, [r["issue"] for r in base])
-    print(f"outliers (since {since or 'all'}): {len(base)} stages in the base, without ficha: {without}, partial: {partial}")
+    listed = f", listed: ended from {ended_since}" if ended_since else ""
+    print(f"outliers (since {since or 'all'}): {len(base)} stages in the base, without ficha: {without}, partial: {partial}{listed}")
     for name, rows in (("product", [r for r in base if not is_process_stage(r)]),
                        ("process", [r for r in base if is_process_stage(r)])):
-        print("\n".join(outlier_group(name, rows, meta, costs)))
+        print("\n".join(outlier_group(name, rows, meta, costs, ended_since)))
 
 
 def process_cite(cite):
@@ -3774,8 +3782,9 @@ def build_parser():
     sp.add_argument("--desde", help="only the sessions with created from this date on (ISO UTC)")
     sp.add_argument("dir", help="folder of the JSON files")
     sp.set_defaults(fn=cmd_uso)
-    sp = sub.add_parser("outliers", help="stages above 2x the median cost per planned phase of their group, with the cause (reads queue and meta; --desde <ISO> filters by started)")
+    sp = sub.add_parser("outliers", help="stages above 2x the median cost per planned phase of their group, with the cause (reads queue and meta; --desde <ISO> filters the base by started; --encerradas-desde <ISO> lists only the stages that ended from then on)")
     sp.add_argument("--desde", help="only the stages with started from this date on (ISO UTC)")
+    sp.add_argument("--encerradas-desde", help="list only the outliers whose ended is from this date on (ISO UTC); the medians still come from the whole base")
     sp.add_argument("dir", help="folder of the JSON files")
     sp.set_defaults(fn=cmd_outliers)
     sp = add("show", cmd_show, "readable summary; with '#n', the whole row (with the ficha)")
