@@ -1,4 +1,4 @@
-# Plan reserve — [Não lançado] (épico `epic/plan-reserve`, PR #2523, MCP 0.57.4, schema v23)
+# Plan reserve — 2026-11-22 (épico `epic/plan-reserve`, PR #0, MCP 0.57.4, schema v23)
 
 ## Corrigido
 
