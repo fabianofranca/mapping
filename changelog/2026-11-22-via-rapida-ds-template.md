@@ -1,4 +1,4 @@
-# The fast-track DS record template passes the Portuguese guard — [Não lançado] (épico `epic/via-rapida-ds-template`, MCP unchanged, schema v23)
+# The fast-track DS record template passes the Portuguese guard — 2026-11-22 (épico `epic/via-rapida-ds-template`, PR #2569, MCP unchanged, schema v23)
 
 ## Corrigido
 
