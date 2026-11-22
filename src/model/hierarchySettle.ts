@@ -745,12 +745,27 @@ export function settleFrom(
   const touched = delta === null ? null : (table.touched ?? []);
   const settled = releaseStrandedAnchors(geometry, touched, before);
   const reference = merged.before ?? next;
-  const sameDelta =
+  const known = reusableDelta(reference, before, next, settled, delta);
+  return reconcileSettled(reference, settled, known);
+}
+
+/**
+ * The first delta, when the reconciliation can reuse it: the reference is `before` and the settle
+ * kept `next`'s markings and containers arrays (the only thing `settleDelta` compares).
+ */
+function reusableDelta(
+  reference: Project,
+  before: Project,
+  next: Project,
+  settled: Project,
+  delta: SettleDelta | null,
+): { readonly delta: SettleDelta | null } | undefined {
+  const same =
     reference === before &&
     settled !== before &&
     settled.markings === next.markings &&
     settled.containers === next.containers;
-  return reconcileSettled(reference, settled, sameDelta ? { delta } : undefined);
+  return same ? { delta } : undefined;
 }
 
 /** Members of a marking: the markings and containers whose parent it is, in array order. */
