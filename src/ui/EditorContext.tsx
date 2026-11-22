@@ -12,6 +12,7 @@ import type { ProjectActions } from '../store/project';
 import { identity } from '../store/identity';
 import { createLayerVisibility, type LayerVisibility } from '../store/layerVisibility';
 import { createOpenPerspective } from '../store/perspectiveShown';
+import { createQuickReview, type QuickReviewState } from '../store/quickReview';
 import { createReviewState, type ReviewState } from '../store/review';
 import type { ProjectSession } from '../store/session';
 import { createEditorUi, type EditorUi } from '../store/ui';
@@ -40,6 +41,8 @@ export interface EditorContextValue {
   readonly layers: LayerVisibility;
   /** Proposal review (stage 4): open proposal, filters, decisions and its derived state. */
   readonly review: ReviewState;
+  /** Quick review on the canvas (stage #1932): the chat proposal shown as a ghost, accept and reject in place. */
+  readonly quick: QuickReviewState;
   /** Mounted canvas controller (`CanvasHost` fills it in); `null` outside the editor. */
   readonly canvas: { current: CanvasController | null };
   /** Zoom, cursor and image area, written by the canvas and read by the interface. */
@@ -95,6 +98,7 @@ export function createEditorContextValue(
       perspectiveActions: session.perspectiveActions,
     }),
     review,
+    quick: createQuickReview({ session, ui, reviewOpen: review.proposalId }),
     canvas: { current: null },
     view: createCanvasViewState(),
     moveRefusal: signal<MoveRefusal | null>(null),
@@ -117,6 +121,7 @@ export function EditorProvider({
   useEffect(
     () => () => {
       value.review.dispose();
+      value.quick.dispose();
       value.stopViewShow();
     },
     [value],
