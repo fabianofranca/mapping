@@ -62,6 +62,19 @@ export interface ProjectIndex {
    */
   readonly rootOf: ReadonlyMap<string, string>;
   /**
+   * `rootOf` of each container, by position: the root of `p.containers[i]`. A repeated id takes
+   * the root of that id. It lets a pass over the containers skip hashing each id.
+   */
+  readonly containerRoots: readonly string[];
+  /** The root of `p.markings[i]`, by position (like `containerRoots`). */
+  readonly markingRoots: readonly string[];
+  /**
+   * The root of the marking that `p.annotations[i].markingId` points to, by position; `null` when
+   * the target is not a marking (an arrow, or an id that does not exist in an invalid project).
+   * It lets a pass over the annotations skip reading each annotation and hashing its target.
+   */
+  readonly annotationRoots: readonly (string | null)[];
+  /**
    * Everything that has a root (it included), by root id, in array order. Every root
    * has an entry, even with nobody else.
    */
@@ -174,7 +187,16 @@ function rootGroups(
   containers: ReadonlyMap<string, ProjectContainer>,
   markings: ReadonlyMap<string, Marking>,
   canvasRoots: readonly Marking[],
-): Pick<ProjectIndex, 'rootOf' | 'rootMembers' | 'roots' | 'perspectivesByRoot'> {
+): Pick<
+  ProjectIndex,
+  | 'rootOf'
+  | 'containerRoots'
+  | 'markingRoots'
+  | 'annotationRoots'
+  | 'rootMembers'
+  | 'roots'
+  | 'perspectivesByRoot'
+> {
   const upper = (id: string) => upperNode(id, containers, markings);
   const rootOf = computeRootOf(
     [...p.containers.map((c) => c.id), ...p.markings.map((m) => m.id)],
@@ -184,14 +206,34 @@ function rootGroups(
     string,
     { markings: Marking[]; containers: ProjectContainer[] }
   >();
-  const groupOf = (id: string) => {
-    const root = rootOf.get(id) as string;
+  const groupOf = (root: string) => {
     let group = groups.get(root);
     if (!group) groups.set(root, (group = { markings: [], containers: [] }));
     return group;
   };
-  for (const c of p.containers) groupOf(c.id).containers.push(c);
-  for (const m of p.markings) groupOf(m.id).markings.push(m);
+  const containerRoots: string[] = [];
+  const markingRoots: string[] = [];
+  for (const c of p.containers) {
+    const root = rootOf.get(c.id) as string;
+    containerRoots.push(root);
+    groupOf(root).containers.push(c);
+  }
+  for (const m of p.markings) {
+    const root = rootOf.get(m.id) as string;
+    markingRoots.push(root);
+    groupOf(root).markings.push(m);
+  }
+  // Annotations of a marking usually come together: the last target's root is reused instead of looked up again.
+  const annotationRoots: (string | null)[] = [];
+  let lastTarget: string | undefined;
+  let lastRoot: string | null = null;
+  for (const a of p.annotations) {
+    if (a.markingId !== lastTarget) {
+      lastTarget = a.markingId;
+      lastRoot = markings.has(lastTarget) ? (rootOf.get(lastTarget) as string) : null;
+    }
+    annotationRoots.push(lastRoot);
+  }
 
   const roots = [
     ...p.containers.filter((c) => c.parentId === null).map((c) => c.id),
@@ -203,7 +245,15 @@ function rootGroups(
       push(perspectivesByRoot, root, perspective);
     }
   }
-  return { rootOf, rootMembers: groups, roots, perspectivesByRoot };
+  return {
+    rootOf,
+    containerRoots,
+    markingRoots,
+    annotationRoots,
+    rootMembers: groups,
+    roots,
+    perspectivesByRoot,
+  };
 }
 
 /** The page of each container, marking and arrow (a marking inside a container has its container's; an arrow, its `from`'s). */

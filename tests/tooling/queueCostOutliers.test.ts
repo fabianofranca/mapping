@@ -33,6 +33,7 @@ interface StageOptions {
   started?: string;
   fases?: string;
   status?: string;
+  ended?: string;
 }
 
 function ficha(o: StageOptions): string {
@@ -53,6 +54,7 @@ function stage(n: number, specs: Spec[], o: StageOptions = {}): void {
     `title=Stage ${n}`,
     `status=${o.status ?? 'concluída'}`,
     `started=${o.started ?? '2026-11-12T08:00:00Z'}`,
+    ...(o.ended ? [`ended=${o.ended}`] : []),
     `plan=${ficha(o)}`,
   );
   specs.forEach(([kind, usd, ctx, label], i) => {
@@ -65,7 +67,7 @@ function stage(n: number, specs: Spec[], o: StageOptions = {}): void {
       `kind=${kind}`,
       ...(label ? [`label=${label}`] : []),
     );
-    run('cost', dir, id, `usd=${usd}`, `ctx=${ctx ?? 1000}`);
+    run('cost', dir, id, `usd=${usd}`, `ctx=${ctx ?? 150000}`);
   });
 }
 
@@ -98,7 +100,7 @@ describe('painel.py outliers: base and ceiling (decisions 4, 5, 7 and 9)', () =>
     stage(20, [['fase', 20]]);
     const out = run('outliers', dir);
     expect(out.split('\n')[0]).toBe(
-      'outliers (since all): 5 stages in the base, without ficha: 0',
+      'outliers (since all): 5 stages in the base, without ficha: 0, partial: 0',
     );
     expect(out).toContain(
       'product: 5 stages, median US$ 2.00 per phase, ceiling US$ 4.00',
@@ -220,7 +222,7 @@ describe('painel.py outliers: groups, small base and without ficha (decisions 4,
     writeFileSync(metaFile, JSON.stringify(meta));
     const out = run('outliers', dir);
     expect(out.split('\n')[0]).toBe(
-      'outliers (since all): 4 stages in the base, without ficha: 3',
+      'outliers (since all): 4 stages in the base, without ficha: 3, partial: 0',
     );
     expect(out).toContain('product: base too small (4 stages)');
   });
@@ -234,7 +236,7 @@ describe('painel.py outliers: a toca= with only ignored citations is without fic
     stage(20, [['fase', 400]], { toca: IGNORED_TOCA });
     const out = run('outliers', dir);
     expect(out.split('\n')[0]).toBe(
-      'outliers (since all): 4 stages in the base, without ficha: 1',
+      'outliers (since all): 4 stages in the base, without ficha: 1, partial: 0',
     );
     expect(out).not.toContain('#20 ');
   });
@@ -283,7 +285,7 @@ describe('painel.py outliers: --desde and read-only (decisions 3 and 4)', () => 
     expect(all).toContain('6 stages in the base');
     const since = run('outliers', '--desde', '2026-11-11T00:00:00Z', dir);
     expect(since.split('\n')[0]).toBe(
-      'outliers (since 2026-11-11T00:00:00Z): 4 stages in the base, without ficha: 0',
+      'outliers (since 2026-11-11T00:00:00Z): 4 stages in the base, without ficha: 0, partial: 0',
     );
   });
 
@@ -297,7 +299,7 @@ describe('painel.py outliers: --desde and read-only (decisions 3 and 4)', () => 
     writeFileSync(metaFile, JSON.stringify(meta));
     const since = run('outliers', '--desde', '2026-11-11T00:00:00Z', dir);
     expect(since.split('\n')[0]).toBe(
-      'outliers (since 2026-11-11T00:00:00Z): 4 stages in the base, without ficha: 0',
+      'outliers (since 2026-11-11T00:00:00Z): 4 stages in the base, without ficha: 0, partial: 0',
     );
   });
 
@@ -331,5 +333,135 @@ describe('painel.py outliers: --desde and read-only (decisions 3 and 4)', () => 
     });
     expect(bad.status).toBe(2);
     expect(files()).toEqual(before);
+  });
+});
+
+describe('painel.py outliers --encerradas-desde (stage #2635, decisions 11 and 12)', () => {
+  const WINDOW = '2026-11-12T00:00:00Z';
+
+  /** Four cheap stages that ended before the window, plus one expensive stage that ended at `ended`. */
+  function withOutlier(ended: string, o: StageOptions = {}): void {
+    cheap(10, 4, { ended: '2026-11-10T09:00:00Z', ...o });
+    stage(20, [['fase', 20]], { ended, ...o });
+  }
+
+  it('the median comes from the whole base, not from the stages of the window', () => {
+    withOutlier('2026-11-12T09:00:00Z');
+    const out = run('outliers', '--encerradas-desde', WINDOW, dir);
+    expect(out).toContain(
+      'product: 5 stages, median US$ 2.00 per phase, ceiling US$ 4.00',
+    );
+    expect(out).toContain('  #20 US$ 20.00 (2 phases, US$ 10.00 per phase)');
+  });
+
+  it('the median comes from the base that --desde leaves, not from the window', () => {
+    cheap(10, 4, { started: '2026-11-11T08:00:00Z', ended: '2026-11-10T09:00:00Z' });
+    // Expensive stages that --desde leaves out: counted in the median they would hide #20.
+    for (let n = 30; n < 35; n++)
+      stage(n, [['fase', 40]], {
+        started: '2026-11-01T08:00:00Z',
+        ended: '2026-11-02T09:00:00Z',
+      });
+    stage(20, [['fase', 20]], {
+      started: '2026-11-11T09:00:00Z',
+      ended: '2026-11-12T09:00:00Z',
+    });
+    const out = run(
+      'outliers',
+      '--desde',
+      '2026-11-11T00:00:00Z',
+      '--encerradas-desde',
+      WINDOW,
+      dir,
+    );
+    expect(out.split('\n')[0]).toBe(
+      'outliers (since 2026-11-11T00:00:00Z): 5 stages in the base, without ficha: 0, partial: 0, listed: ended from 2026-11-12T00:00:00Z',
+    );
+    expect(out).toContain(
+      'product: 5 stages, median US$ 2.00 per phase, ceiling US$ 4.00',
+    );
+    expect(out).toContain('#20 ');
+  });
+
+  it('a stage above the ceiling that ended before the window is not listed', () => {
+    withOutlier('2026-11-11T23:59:59Z');
+    const unfiltered = run('outliers', dir);
+    expect(unfiltered).toContain('#20 US$ 20.00');
+    const out = run('outliers', '--encerradas-desde', WINDOW, dir);
+    expect(out).not.toContain('#20 ');
+    expect(out).toContain(
+      'none above the ceiling that ended in the window (1 older above the ceiling)',
+    );
+    expect(run('outliers', dir)).not.toContain('none above the ceiling');
+  });
+
+  it('a stage that ended exactly at the start of the window is listed', () => {
+    withOutlier(WINDOW);
+    expect(run('outliers', '--encerradas-desde', WINDOW, dir)).toContain('#20 US$ 20.00');
+  });
+
+  it('a stage with no `ended` is not listed', () => {
+    cheap(10, 4, { ended: '2026-11-10T09:00:00Z' });
+    stage(20, [['fase', 20]], { ended: '2026-11-12T09:00:00Z' });
+    const metaOnly = JSON.parse(
+      readFileSync(path.join(dir, 'queue.json'), 'utf8'),
+    ) as Array<Record<string, unknown>>;
+    for (const r of metaOnly) if (r.issue === '#20') r.ended = '';
+    writeFileSync(path.join(dir, 'queue.json'), JSON.stringify(metaOnly));
+    expect(run('outliers', '--encerradas-desde', WINDOW, dir)).not.toContain('#20 ');
+  });
+
+  it('the header shows `listed: ended from <ISO>` after the counts', () => {
+    withOutlier('2026-11-12T09:00:00Z');
+    expect(run('outliers', '--encerradas-desde', WINDOW, dir).split('\n')[0]).toBe(
+      'outliers (since all): 5 stages in the base, without ficha: 0, partial: 0, listed: ended from 2026-11-12T00:00:00Z',
+    );
+  });
+
+  it('a value that is not ISO UTC exits with code 2 and writes nothing', () => {
+    withOutlier('2026-11-12T09:00:00Z');
+    const before = files();
+    for (const bad of ['yesterday', '2026-11-12', '2026-11-12T00:00:00']) {
+      const r = tryRun('outliers', '--encerradas-desde', bad, dir);
+      expect(r.code).toBe(2);
+      expect(r.out).toBe('');
+    }
+    expect(files()).toEqual(before);
+  });
+
+  it('the output without the flag is unchanged by a byte', () => {
+    withOutlier('2026-11-12T09:00:00Z');
+    expect(run('outliers', dir)).toBe(
+      [
+        'outliers (since all): 5 stages in the base, without ficha: 0, partial: 0',
+        'product: 5 stages, median US$ 2.00 per phase, ceiling US$ 4.00',
+        '  #20 US$ 20.00 (2 phases, US$ 10.00 per phase) — cause: fase US$ 20.00 (group median US$ 4.00); switches 0; above 300k 0; testers 0; retests 0; fixes 0',
+        'process: base too small (0 stages)',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('is rejected inside an apply, like the other read-only commands', () => {
+    withOutlier('2026-11-12T09:00:00Z');
+    const before = files();
+    const bad = spawnSync('python3', [SCRIPT, 'apply', dir, '-'], {
+      input: `outliers --encerradas-desde ${WINDOW} ${dir}\n`,
+      encoding: 'utf8',
+    });
+    expect(bad.status).toBe(2);
+    expect(files()).toEqual(before);
+  });
+
+  it('the texts of both skills and the script header cite the flag', () => {
+    const queue = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+    const supervisor = readFileSync('.claude/skills/supervisionar-fila/SKILL.md', 'utf8');
+    const script = readFileSync(SCRIPT, 'utf8');
+    expect(queue).toContain(
+      'painel.py outliers [--desde <ISO>] [--encerradas-desde <ISO>] <folder>',
+    );
+    expect(supervisor).toContain('--encerradas-desde <ISO>');
+    expect(script.split('"""')[1]).toContain('--encerradas-desde <ISO>');
+    expect(run('outliers', '--help')).toContain('--encerradas-desde');
   });
 });
