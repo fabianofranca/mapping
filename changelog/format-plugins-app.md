@@ -6,6 +6,7 @@
 - The rules of the MCP batch for `create_annotation`, `update_annotation` and `create_arrow` (values, table rows and their aliases, `ref` values, owner and role) also live in the model now (`src/model/batchAnnotations.ts`, with the reference lookups in `batchRefs.ts`), and `applyFormatResult` (`src/model/formatApply.ts`) applies a format plugin's result through them; `import_format` now uses it. The batch and `import_format` behave exactly as before: same results, messages and error codes. One test of the error registry (`tests/mcp/errorCodes.test.ts`) now counts a code raised only by a model batch rule as used.
 - The `dist/index.html` ceiling rose 16 KiB, from 2441216 to 2457600, by the budget rule.
 - The `dist/index.html` ceiling rose 64 KiB, from 2457600 to 2523136, by the budget rule; above the limits, `bug` #2656 for the owner to review.
+- The `dist/index.html` ceiling rose 16 KiB, from 2523136 to 2539520, by the budget rule, after bringing `main` into the epic; above the limits, `bug` for the owner to review.
 
 ## Corrigido
 
