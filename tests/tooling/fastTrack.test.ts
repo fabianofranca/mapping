@@ -131,6 +131,14 @@ describe('skill via-rapida', () => {
     expect(s).toContain('`## Pendências` "None (process only)."');
   });
 
+  it('step 6: the DS record says `None.` in `## Ficou sem gravar`, in English, with `Sem impacto…` kept in `## Sincronização` (#2570)', () => {
+    const s = section(SKILL, '## Step by step');
+    expect(s).toContain('`## Sincronização` "Sem impacto…"');
+    expect(s).toContain('`## Ficou sem gravar` "None." in the DS one');
+    expect(s).not.toMatch(/Ficou sem gravar`\s*[`"]?Nada/);
+    expect(s).not.toContain('Nada.');
+  });
+
   it('decision 7: the owner authorization is asked in the fast-track chat, never relayed', () => {
     const s = section(SKILL, '## Owner authorization');
     for (const t of [
