@@ -5,6 +5,7 @@
 // `<style>` block. There is no `'unsafe-inline'` or `'unsafe-eval'`. This module is pure (only
 // `node:crypto`), so it can be tested without running Vite.
 import { createHash } from 'node:crypto';
+import { SANDBOX_BOOTSTRAP } from '../src/app/formatSandbox';
 
 /**
  * Policy profile. `app` is the app's `index.html`: it accepts remote images (`https:`/`http:`;
@@ -34,6 +35,15 @@ const STATIC_DIRECTIVES: ReadonlyArray<Directive> = [
 
 /** Remote images (only in the `app` profile). */
 const APP_IMG_SRC = "'self' data: blob: https: http:";
+/**
+ * The `app` profile runs a specialization's format plugin in a `blob:` Worker created by the
+ * sandbox iframe (`src/app/formatRunner.ts`): `worker-src` gains `blob:`, and `script-src` gains the
+ * hash of the iframe's only script (`SANDBOX_BOOTSTRAP`, in `src/app/formatSandbox.ts`), which is
+ * not a block of the `index.html` but the content of the iframe's `srcdoc`. The `static` profile
+ * has neither.
+ */
+const APP_WORKER_SRC = "'self' blob:";
+
 /** Trusted Types (only in the `app` profile): the `default` policy lives in `src/app/trustedTypes.ts`. */
 const TRUSTED_TYPES_DIRECTIVES: ReadonlyArray<Directive> = [
   ['require-trusted-types-for', "'script'"],
@@ -42,13 +52,23 @@ const TRUSTED_TYPES_DIRECTIVES: ReadonlyArray<Directive> = [
 const REFERRER_META =
   /<meta\s+name=["']referrer["']\s+content=["']no-referrer["'][^>]*>/i;
 
+function appValue(name: string, value: string): string {
+  if (name === 'img-src') return APP_IMG_SRC;
+  return name === 'worker-src' ? APP_WORKER_SRC : value;
+}
+
+/** The hashes of the sandbox's own documents: part of `script-src` in the `app` profile, with no block in the HTML. */
+function sandboxHashes(profile: CspProfile): string[] {
+  return profile === 'app' ? [cspHash(SANDBOX_BOOTSTRAP)] : [];
+}
+
 /** The profile's fixed directives. */
 function fixedDirectives(profile: CspProfile): Directive[] {
   if (profile === 'static') return [...STATIC_DIRECTIVES];
   return [
     ...STATIC_DIRECTIVES.map(([name, value]): Directive => [
       name,
-      name === 'img-src' ? APP_IMG_SRC : value,
+      appValue(name, value),
     ]),
     ...TRUSTED_TYPES_DIRECTIVES,
   ];
@@ -88,7 +108,7 @@ function hashesOf(html: string, tag: 'script' | 'style'): string[] {
 
 /** The policy for this HTML (already with the inlined blocks). */
 export function buildCsp(html: string, profile: CspProfile): string {
-  const scripts = hashesOf(html, 'script');
+  const scripts = [...new Set([...hashesOf(html, 'script'), ...sandboxHashes(profile)])];
   const styles = hashesOf(html, 'style');
   const sources = (hashes: string[]) => (hashes.length > 0 ? hashes.join(' ') : "'none'");
   const [defaultSrc, ...rest] = fixedDirectives(profile);
@@ -169,13 +189,19 @@ export function verifyCsp(html: string, profile: CspProfile): string[] {
   for (const tag of ['script', 'style'] as const) {
     const allowed = directives.get(`${tag}-src`) ?? [];
     const expected = hashesOf(body, tag);
+    const sandbox = tag === 'script' ? sandboxHashes(profile) : [];
+    for (const hash of sandbox) {
+      if (!allowed.includes(hash)) {
+        problems.push(`script-src has no hash for the sandbox bootstrap: ${hash}`);
+      }
+    }
     for (const hash of expected) {
       if (!allowed.includes(hash)) {
         problems.push(`bloco <${tag}> embutido sem hash correspondente na CSP: ${hash}`);
       }
     }
     for (const hash of allowed) {
-      if (hash !== "'none'" && !expected.includes(hash)) {
+      if (hash !== "'none'" && !expected.includes(hash) && !sandbox.includes(hash)) {
         problems.push(`${tag}-src tem um hash sem bloco <${tag}>: ${hash}`);
       }
     }

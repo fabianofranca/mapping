@@ -38,7 +38,15 @@ export type EditorDialog =
       readonly change: AspectChange;
       readonly resolve: (confirmed: boolean) => void;
     }
-  | { readonly kind: 'export'; readonly file: File; readonly saved: boolean }
+  | {
+      readonly kind: 'export';
+      readonly file: File;
+      readonly saved: boolean;
+      /** The file is the project in a specialization's format (stage #2035), not the zip. */
+      readonly format?: boolean;
+    }
+  /** Export in a format (stage #2035, AF3). */
+  | { readonly kind: 'exportFormat' }
   | { readonly kind: 'confirmClose' }
   /** Leave the review with accepted changes not yet applied (stage 4). */
   | { readonly kind: 'exitReview' }

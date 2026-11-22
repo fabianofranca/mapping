@@ -26,10 +26,16 @@ import { Button } from '../ui/controls';
 export function ExportDialog({
   file,
   saved = true,
+  format = false,
   onDone,
   returnFocus,
 }: {
   readonly file: File;
+  /**
+   * The file is the project in a specialization's format (not the zip): it has its own title and
+   * size line, and delivering it does not count as an export of the project.
+   */
+  readonly format?: boolean;
   /**
    * `false` with the write in error: the zip carries the latest changes, which the project's
    * storage does not have yet (`collectFiles().saved`).
@@ -49,7 +55,7 @@ export function ExportDialog({
   const onShare = async () => {
     const result = await shareFile(file, file.name);
     if (result === 'shared') {
-      await markExported();
+      if (!format) await markExported();
       onDone();
     } else if (result === 'failed') {
       setError(t('export.shareFailed'));
@@ -68,13 +74,13 @@ export function ExportDialog({
     } else {
       downloadFile(file);
     }
-    await markExported();
+    if (!format) await markExported();
     onDone();
   };
 
   return (
     <Dialog
-      title={t('export.title')}
+      title={format ? t('format.export.title') : t('export.title')}
       onCancel={onDone}
       returnFocus={returnFocus}
       actions={
@@ -102,7 +108,9 @@ export function ExportDialog({
         <span class="file-card-info">
           <strong class="file-card-name">{file.name}</strong>
           <span class="muted">
-            {t('export.fileMeta', { size: formatBytes(file.size) })}
+            {t(format ? 'format.export.fileMeta' : 'export.fileMeta', {
+              size: formatBytes(file.size),
+            })}
           </span>
         </span>
       </div>
@@ -111,7 +119,7 @@ export function ExportDialog({
           {t('export.unsaved')}
         </p>
       )}
-      {!picker && <p class="muted">{t('export.downloadHint')}</p>}
+      {!picker && !format && <p class="muted">{t('export.downloadHint')}</p>}
       {error && (
         <p class="notice notice-error" role="alert">
           {error}

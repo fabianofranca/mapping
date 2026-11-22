@@ -333,6 +333,31 @@ export const enUS = {
   'export.downloadHint':
     'Downloading counts as exported. If you cancel saving the file, export again.',
 
+  'format.exportMenu': 'Export in a format…',
+  'format.export.title': 'Export in a format',
+  'format.export.format': 'Format',
+  'format.export.container': 'Container',
+  'format.export.option': '{spec} › {format} (.{extension})',
+  'format.export.run': 'Export',
+  'format.export.running': 'Running the plugin…',
+  'format.export.loading': 'Reading the specializations…',
+  'format.export.none': 'No applied specialization has a format that exports.',
+  'format.export.fileMeta': 'Text file · {size}',
+  'format.isolation':
+    'The plugin code runs isolated, without network, disk or access to your projects.',
+  'format.specNotice':
+    'Brings {count} file format(s); their code runs isolated, without network, disk or access to your projects.',
+  'format.error.save':
+    'The pending changes could not be saved, so nothing was exported. Fix the save error and try again.',
+  'format.error.project': 'The project could not be read for this format.',
+  'format.error.container': 'Choose a container to export.',
+  'format.error.plugin-failed': 'The plugin failed: {message}',
+  'format.error.plugin-failed.at': 'The plugin failed: {message} (line {line}, column {column})',
+  'format.error.plugin-timeout': 'The plugin went past the time limit of {seconds} s.',
+  'format.error.plugin-limit': 'The plugin went past a limit: {message}',
+  'format.error.plugin-output-invalid':
+    'The plugin returned something the app cannot use: {message}',
+
   'pwa.updateAvailable': 'New version available.',
   'pwa.update': 'Update',
   'pwa.installTitle': 'Install on this device',
