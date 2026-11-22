@@ -1,4 +1,4 @@
-import { fontExtents, textWidth } from './glyphs';
+import { fontExtents, layingFace, textWidth } from './glyphs';
 import { loadFace, type Face } from './harfbuzz';
 import monoBold from 'font:mono-bold';
 import mono from 'font:mono';
@@ -145,7 +145,8 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
       const first = familyNames(family).find(
         (name) => isLibraryFamily(name) || MONO_FAMILY.test(name),
       );
-      if (first !== undefined && MONO_FAMILY.test(first) && !isLibraryFamily(first))
+      // A monospace name falls back to Mapping Mono, library family or not (stage #2267, decision 1).
+      if (first !== undefined && MONO_FAMILY.test(first))
         return weight >= BOLD_FROM ? b.monoBold : b.mono;
       return weight >= BOLD_FROM ? b.sansBold : b.sans;
     },
@@ -168,7 +169,10 @@ const measurers = new WeakMap<FontBook, TextMeasurer>();
 export function measurerFor(book: FontBook): TextMeasurer {
   let measure = measurers.get(book);
   if (measure === undefined) {
-    // The baselines come from the `fontExtents` of the font that draws (the same as `lineInk`'s).
+    // The baselines come from the `fontExtents` of the face that lays the whole text out (the same as `lineInk`'s):
+    // the library face, or the embedded one when its shaping throws. Accepted: a text whose whole shaping works but
+    // one of its lines throws (or the opposite) can still differ, because the fallback is a last resort and the
+    // measure works per text, not per line (stage #2267, decision 2).
     // The measurer memoizes by (text, font, limit): the fonts of a `FontBook` do not change, so
     // the measurement holds as long as the reader exists (decision 19 of #1078).
     measure = cachedMeasurer(
@@ -178,7 +182,7 @@ export function measurerFor(book: FontBook): TextMeasurer {
           font,
           maxWidth,
           (value) => textWidth(book, value, font),
-          fontExtents(book.fontFor(font.family, font.weight, font.italic), font.size),
+          fontExtents(layingFace(book, text, font), font.size),
           SERVER_ELLIPSIS_SLACK,
         ),
       { limit: MEASURE_CACHE_LIMIT },
