@@ -963,7 +963,7 @@ describe('package images (DX5)', () => {
     ]);
   });
 
-  it('a new library frees the previous bitmaps and draws from the new one', async () => {
+  it('a new library drops the previous bitmaps without closing them and draws from the new one', async () => {
     const { bitmaps } = stubDecode();
     const el = container();
     const viewer = make(el, { library: packageLibrary('pkg-a', true), screen });
@@ -972,7 +972,7 @@ describe('package images (DX5)', () => {
     try {
       viewer.update({ library: packageLibrary('pkg-b', true) });
       await vi.advanceTimersByTimeAsync(3000);
-      expect(bitmaps[0]?.close).toHaveBeenCalledTimes(1);
+      expect(bitmaps[0]?.close).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }
@@ -981,7 +981,7 @@ describe('package images (DX5)', () => {
     expect(imagesOf(el)[0]?.image()).toBe(bitmaps[1]);
   });
 
-  it('dispose frees every bitmap', async () => {
+  it('dispose drops every bitmap without closing it (the garbage collector reclaims them)', async () => {
     const { bitmaps } = stubDecode();
     const el = container();
     const viewer = make(el, { library: packageLibrary('pkg-a', true), screen });
@@ -990,7 +990,7 @@ describe('package images (DX5)', () => {
     try {
       viewer.dispose();
       await vi.advanceTimersByTimeAsync(3000);
-      expect(bitmaps[0]?.close).toHaveBeenCalledTimes(1);
+      expect(bitmaps[0]?.close).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }
