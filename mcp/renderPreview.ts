@@ -1,6 +1,5 @@
 import { readFile, stat } from 'node:fs/promises';
 import {
-  changeImageFile,
   matchShortCode,
   packageDirOf,
   parseRef,
@@ -29,7 +28,7 @@ import { resolveOptionalOperations } from './operationsFile';
 import type { Operation } from './operations';
 import { resolveProjectFile, type Roots } from './paths';
 import { findProject, loadCatalog, loadProject, type ProjectLocation } from './projects';
-import { toToolError } from './proposalRevise';
+import { revisionReserve, toToolError } from './proposalRevise';
 import { resolveProposal, type ResolvedProposal } from './proposalRefs';
 import { renderContainer, renderMarking, type RenderOptions } from './renderImage';
 import type { ImageServer } from './imageServer';
@@ -236,12 +235,10 @@ async function previewBatch(
   const proposal = resolved?.stored.proposal;
   const prepared = await prepareBatch(roots, location, batch, {
     now,
-    ...(proposal === undefined
+    ...(resolved === undefined || proposal === undefined
       ? {}
       : {
-          reservedImages: new Set(
-            proposal.changes.flatMap((c) => changeImageFile(c) ?? []),
-          ),
+          ...(await revisionReserve(roots, location, resolved.stored.id)),
           startFrom: (project: Project) => proposedState(project, proposal),
           catalogFor: (base: Project) =>
             loadCatalog(roots, location.dir, base, componentPath(proposal)),
@@ -261,7 +258,7 @@ async function previewBatch(
   };
 }
 
-async function openPreview(
+export async function openPreview(
   roots: Roots,
   now: () => number,
   args: PreviewArgs,

@@ -126,6 +126,26 @@ function reservedSpaceFor(
     .flatMap((s) => reservedContainers(s.proposal));
 }
 
+/**
+ * What a revision of the proposal reserves: the image files and the containers' space of the other open
+ * proposals. `revise_proposal` and the preview over a proposal (`previewBatch`) use the same reserve, so
+ * a new container lands where the revision puts it.
+ */
+export async function revisionReserve(
+  roots: Roots,
+  location: ProjectLocation,
+  proposalId: string,
+): Promise<{
+  readonly reservedImages: Set<string>;
+  readonly reservedContainers: ProjectContainer[];
+}> {
+  const { proposals } = await listStored(roots, location);
+  return {
+    reservedImages: await reservedFor(roots, location, proposalId, proposals),
+    reservedContainers: reservedSpaceFor(proposalId, proposals),
+  };
+}
+
 interface Computed {
   readonly summary: {
     readonly changed: readonly string[];
@@ -144,11 +164,9 @@ async function compute(
 ): Promise<RevisionPlan<Computed> | RevisionStop<Computed>> {
   const drop = args.drop ?? [];
   const operations = args.operations ?? [];
-  const { proposals } = await listStored(roots, location);
   const prepared = await prepareBatch(roots, location, operations, {
     now,
-    reservedImages: await reservedFor(roots, location, current.id, proposals),
-    reservedContainers: reservedSpaceFor(current.id, proposals),
+    ...(await revisionReserve(roots, location, current.id)),
     startFrom: (project) => {
       const prep = prepareRevision(project, current, drop);
       if (!prep.ok) throw toToolError(prep.error);
