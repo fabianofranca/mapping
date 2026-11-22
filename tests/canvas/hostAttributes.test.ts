@@ -3,6 +3,7 @@ import { arrowHandles, arrowShape } from '../../src/canvas/arrowGeometry';
 import {
   formatArrowHandles,
   formatContainerBoxes,
+  formatQuickReview,
   formatSelection,
 } from '../../src/canvas/hostAttributes';
 import { setArrowRoute, setArrowStyle, type Placement } from '../../src/model';
@@ -99,5 +100,12 @@ describe('formatContainerBoxes', () => {
     const only = new Map([['B', { x: 2000, y: 0, scale: 2 }]]);
     expect(formatContainerBoxes(project.containers, only)).toBe('B 2000 0 1000 1000 2');
     expect(formatContainerBoxes(project.containers, new Map())).toBeNull();
+  });
+});
+
+describe('formatQuickReview', () => {
+  it('"<proposalId>:<mode>:<items>"', () => {
+    expect(formatQuickReview('P1', 'ghost', 3)).toBe('P1:ghost:3');
+    expect(formatQuickReview('P7', 'peek', 0)).toBe('P7:peek:0');
   });
 });

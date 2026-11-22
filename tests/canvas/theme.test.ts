@@ -49,7 +49,12 @@ describe('canvasTokensFrom', () => {
     expect(t.nameTag).toBe(t.select);
     expect(t.badge).toBe('rgba(10, 12, 16, 0.9)');
     expect(t.card).toBe('rgba(255, 255, 255, 0.92)');
-    expect(t.opacity).toEqual({ dimmed: 0.35, ancestor: 0.75, inherited: 0.7 });
+    expect(t.opacity).toEqual({
+      dimmed: 0.35,
+      ghost: 0.38,
+      ancestor: 0.75,
+      inherited: 0.7,
+    });
     expect(t.type.name).toEqual({ size: 11, line: 16, weight: 600 });
     expect(t.radius).toEqual({ sm: 4, md: 6 });
     expect(t.fontFamily).toBe(tokenValue('font-sans', 'light'));
