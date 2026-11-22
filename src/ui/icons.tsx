@@ -336,6 +336,13 @@ const SHAPES = {
   // Thread (Comments stage): bubble with two lines of text.
   chat: { d: ['M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z', 'M5 6h6', 'M5 8h4'] },
   // Comment (start a thread): the bubble with a plus.
+  conversation: {
+    d: [
+      'M1.5 2.5h8v5.5h-4l-2 1.8v-1.8h-2z',
+      'M6.5 10.5v-.5h2h4.5v4h-1.5v-1.5z',
+      'M11 10.5h3.5v3.5h-1.5v1.3l-1.5-1.3h-.5',
+    ],
+  },
   chatAdd: { d: ['M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z', 'M8 5v4', 'M6 7h4'] },
   moved: { d: MOVED_PATHS },
   changed: { d: CHANGED_PATHS },
