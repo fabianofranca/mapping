@@ -64,6 +64,17 @@ export function selectThread(ui: EditorUi, project: Project, thread: Thread): vo
   });
 }
 
+/**
+ * Shows a conversation in the Conversation window without touching the selection (the review:
+ * the window opens the thread, the canvas and the Details stay where they are).
+ */
+export function showConversation(ui: EditorUi, threadId: string): void {
+  batch(() => {
+    ui.conversation.value = { kind: 'thread', id: threadId };
+    showToolWindow('conversation');
+  });
+}
+
 /** Starts a new thread as a draft, anchored at `anchor` (nothing is saved before Send). */
 export function startComposing(
   ui: EditorUi,

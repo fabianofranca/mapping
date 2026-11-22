@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -8,10 +9,12 @@ import {
 } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
-import type { Thread } from '../../src/model';
+import { citationUrl, type Thread } from '../../src/model';
 import { clearIdentity, setIdentity } from '../../src/store/identity';
 import { locale } from '../../src/store/settings';
 import { selectThread, startComposing } from '../../src/store/threadUi';
+import { hideToolWindow, isToolWindowOpen } from '../../src/store/toolWindows';
+import { openReviewIn } from '../../src/ui/review/useReviewCommands';
 import {
   ConversationStateBadge,
   ConversationWindow,
@@ -21,6 +24,8 @@ import { sampleProject } from '../model/fixtures';
 import { AGENT, message, sampleThread } from '../model/threadFixtures';
 import { typeIn } from './composerHelpers';
 import { createHarness, type Harness } from './harness';
+import { openReviewHarness, type ReviewHarness } from './review/reviewHarness';
+import { richScenario } from '../store/proposalHarness';
 
 // Conversation window (stage #1881, CV2, decisions 6 to 11): the only place where a conversation
 // is shown and written.
@@ -165,5 +170,112 @@ describe('ConversationWindow', () => {
     expect(within(document.body).getByLabelText(/Reply as/).textContent).toContain(
       'draft',
     );
+  });
+});
+
+describe('ConversationWindow › live region (stage #1881, decision 18)', () => {
+  const T1 = '2026-09-01T11:00:00.000Z';
+
+  async function shown() {
+    const thread = agentThread('c1', { anchor: { kind: 'marking', id: 'M1' } });
+    const harness = await setup([thread]);
+    selectThread(harness.ui, harness.project(), thread);
+    renderWindow(harness);
+    return { harness, thread };
+  }
+
+  const append = (harness: Harness, id: string, author: typeof AGENT, text: string) =>
+    act(async () => {
+      await harness.context.session.threads.mutate('c1', (th) => ({
+        ...th,
+        messages: [...th.messages, message(id, T1, author, text)],
+      }));
+    });
+
+  it('an agent message fills the polite region and does not move the focus', async () => {
+    const { harness } = await shown();
+    const field = screen.getByLabelText(/Reply as/);
+    field.focus();
+    const live = document.querySelector('[data-conversation-live]') as HTMLElement;
+    expect(live.getAttribute('role')).toBe('status');
+    expect(live.textContent).toBe('');
+    await append(harness, 'c1b', AGENT, 'tweaked');
+    await screen.findByText('tweaked');
+    expect(live.textContent).toBe(t('conversation.newMessage', { name: 'Claude Code' }));
+    expect(t('conversation.newMessage', { name: 'Claude Code' })).toBe(
+      'New message from Claude Code',
+    );
+    expect(document.activeElement).toBe(field);
+  });
+
+  it('a message by this device identity says nothing', async () => {
+    const { harness } = await shown();
+    await append(
+      harness,
+      'c1b',
+      { kind: 'human', name: 'Marina Alves', email: 'marina@exemplo.com' },
+      'mine',
+    );
+    await screen.findByText('mine');
+    expect(document.querySelector('[data-conversation-live]')?.textContent).toBe('');
+  });
+
+  it('opening a conversation does not announce its existing messages', async () => {
+    await shown();
+    expect(document.querySelector('[data-conversation-live]')?.textContent).toBe('');
+  });
+});
+
+describe('ConversationWindow › opening the review (decision 17)', () => {
+  function proposalThread(id: string, proposalId: string): Thread {
+    const url = citationUrl('project', sampleProject(), [], {
+      kind: 'proposal',
+      id: proposalId,
+    });
+    return sampleThread({
+      id,
+      messages: [
+        {
+          ...message(`${id}a`, T0, AGENT, `Proposal [x](${url ?? ''})`),
+          proposal: proposalId,
+        },
+      ],
+    });
+  }
+
+  async function reviewSetup(threads: readonly Thread[]): Promise<ReviewHarness> {
+    const { proposal } = richScenario();
+    const h = await openReviewHarness({
+      proposals: [{ ...proposal, title: 'Checkout' }],
+    });
+    for (const th of threads) await h.session.threads.create(th);
+    return h;
+  }
+
+  it('from the card, keeps its conversation (even with another first linked)', async () => {
+    const h = await reviewSetup([proposalThread('c1', 'P1'), proposalThread('c2', 'P1')]);
+    hideToolWindow('conversation');
+    expect(openReviewIn(h.context, 'P1', 'c2')).toBe(true);
+    expect(h.ui.conversation.value).toEqual({ kind: 'thread', id: 'c2' });
+    expect(isToolWindowOpen('conversation')).toBe(true);
+  });
+
+  it('from the Proposals list, shows the linked conversation and opens the window', async () => {
+    const h = await reviewSetup([proposalThread('c1', 'P1')]);
+    hideToolWindow('conversation');
+    h.ui.conversation.value = null;
+    expect(openReviewIn(h.context, 'P1')).toBe(true);
+    expect(h.ui.conversation.value).toEqual({ kind: 'thread', id: 'c1' });
+    expect(isToolWindowOpen('conversation')).toBe(true);
+  });
+
+  it('without a linked conversation the window does not change', async () => {
+    const other = agentThread('c9');
+    const h = await reviewSetup([other]);
+    hideToolWindow('conversation');
+    h.ui.conversation.value = { kind: 'thread', id: 'c9' };
+    expect(openReviewIn(h.context, 'P1')).toBe(true);
+    expect(h.ui.conversation.value).toEqual({ kind: 'thread', id: 'c9' });
+    expect(isToolWindowOpen('conversation')).toBe(false);
   });
 });

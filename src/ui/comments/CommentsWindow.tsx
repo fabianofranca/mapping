@@ -15,7 +15,12 @@ import {
 import { identity } from '../../store/identity';
 import type { ThreadEntry } from '../../store/threadDerived';
 import { showAndFocusToolWindow } from '../toolWindowLayout';
-import { selectedThreadId, selectThread, startComposing } from '../../store/threadUi';
+import {
+  selectedThreadId,
+  selectThread,
+  showConversation,
+  startComposing,
+} from '../../store/threadUi';
 import { resolveSelection, type Selection } from '../../store/ui';
 import { ActionMenu } from '../ActionMenu';
 import { Button, Choice, Select, TextField } from '../controls';
@@ -252,28 +257,23 @@ function OpenerCell({ thread }: { readonly thread: Thread }) {
 interface AnchorCellProps {
   readonly anchor: string;
   /** In the review the anchor is text only. */
-  readonly plain: boolean;
   readonly selected: boolean;
   readonly unread: boolean;
 }
 
-function AnchorCell({ anchor, plain, selected, unread }: AnchorCellProps) {
+function AnchorCell({ anchor, selected, unread }: AnchorCellProps) {
   return (
     <div class="comments-anchor-line">
-      {plain ? (
-        <span class="comments-anchor-text">{anchor}</span>
-      ) : (
-        <button
-          type="button"
-          class="link comments-anchor-button"
-          aria-current={selected || undefined}
-          aria-label={t(unread ? 'comments.row.openUnread' : 'comments.row.open', {
-            anchor,
-          })}
-        >
-          {anchor}
-        </button>
-      )}
+      <button
+        type="button"
+        class="link comments-anchor-button"
+        aria-current={selected || undefined}
+        aria-label={t(unread ? 'comments.row.openUnread' : 'comments.row.open', {
+          anchor,
+        })}
+      >
+        {anchor}
+      </button>
       {unread && <span class="comments-unread-dot" title={t('comments.unread')} />}
     </div>
   );
@@ -320,12 +320,7 @@ function ThreadRow({
         <OpenerCell thread={thread} />
       </td>
       <td class="list-cell comments-anchor">
-        <AnchorCell
-          anchor={anchor}
-          plain={reviewing}
-          selected={selected}
-          unread={unread}
-        />
+        <AnchorCell anchor={anchor} selected={selected} unread={unread} />
       </td>
       <td class="list-cell comments-last">{last ? messagePlainText(last.text) : ''}</td>
       <td class="list-cell comments-count">{thread.messages.length}</td>
@@ -365,8 +360,12 @@ export function CommentsWindow() {
   const unread = derived.threads.unreadIds.value;
   const chosen = selectedThreadId(ui);
   const choose = (thread: Thread) => {
-    // In the review the window only shows: choosing a row does not touch the selection (decision 26).
-    if (access.reviewing) return;
+    // In the review a row only opens the conversation in the window: the selection stays (decision 14).
+    if (access.reviewing) {
+      showConversation(ui, thread.id);
+      showAndFocusToolWindow('conversation');
+      return;
+    }
     navigateTo(editor, thread.anchor, () => {
       const shown = review.derived.shownProject.peek();
       if (shown) selectThread(ui, shown, thread);
@@ -375,11 +374,6 @@ export function CommentsWindow() {
   };
   return (
     <div class="list-view comments-view">
-      {access.reviewing && (
-        <p class="comments-notice" role="note">
-          {t('comments.reviewNotice')}
-        </p>
-      )}
       <Filters />
       <Summary />
       {rows.length === 0 ? (
