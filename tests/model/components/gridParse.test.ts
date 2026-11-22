@@ -78,10 +78,10 @@ describe('layout grid: type and keys', () => {
 
   it('checks the values of the tracks', () => {
     expect(issues(host({ type: 'grid', columns: 0 }))).toEqual([
-      'template.layout.columns: expected an integer greater than or equal to 1',
+      'template.layout.columns: expected an integer greater than or equal to 1 or a list of tracks',
     ]);
     expect(issues(host({ type: 'grid', rows: 1.5 }))).toEqual([
-      'template.layout.rows: expected an integer greater than or equal to 1',
+      'template.layout.rows: expected an integer greater than or equal to 1 or a list of tracks',
     ]);
     expect(issues(host({ type: 'grid', minColumnWidth: 0 }))).toEqual([
       'template.layout.minColumnWidth: expected a number greater than 0',
@@ -148,6 +148,115 @@ describe('layout grid: type and keys', () => {
     expect(issues(host({ type: 'grid', minRowHeight: 2 }, [], 3))).toContain(
       `template.layout.minRowHeight: ${V4}`,
     );
+  });
+});
+
+describe('layout grid: track list (DX6, decisions 21 and 25 of #1903)', () => {
+  const ITEM = 'expected a number ≥ 0, "<n>fr" or "hug"';
+
+  it('accepts a list with px, "1fr", "2.5fr" and "hug", in columns and in rows', () => {
+    expect(
+      issues(host({ type: 'grid', columns: [72, '1fr', '2.5fr', 'hug', 0] })),
+    ).toEqual([]);
+    expect(issues(host({ type: 'grid', rows: ['hug', '1fr'], gap: 4 }))).toEqual([]);
+    const max = Array.from({ length: 24 }, () => '1fr');
+    expect(issues(host({ type: 'grid', columns: max }))).toEqual([]);
+  });
+
+  it('an empty list and more than 24 tracks are errors at the key', () => {
+    expect(issues(host({ type: 'grid', columns: [] }))).toEqual([
+      'template.layout.columns: expected 1 to 24 tracks',
+    ]);
+    const long = Array.from({ length: 25 }, () => 10);
+    expect(issues(host({ type: 'grid', rows: long }))).toEqual([
+      'template.layout.rows: expected 1 to 24 tracks',
+    ]);
+  });
+
+  it('"0fr", a negative px, "auto" and other items are each an error at the item', () => {
+    expect(
+      issues(host({ type: 'grid', columns: [10, '0fr', -4, 'auto', true] })),
+    ).toEqual([1, 2, 3, 4].map((i) => `template.layout.columns[${i}]: ${ITEM}`));
+    expect(issues(host({ type: 'grid', rows: ['-1fr'] }))).toEqual([
+      `template.layout.rows[0]: ${ITEM}`,
+    ]);
+  });
+
+  it('a list in minColumnWidth and minRowHeight stays an error', () => {
+    expect(issues(host({ type: 'grid', minColumnWidth: [10, 20] }))).toEqual([
+      'template.layout.minColumnWidth: expected a number greater than 0',
+    ]);
+    expect(issues(host({ type: 'grid', minRowHeight: [10] }))).toEqual([
+      'template.layout.minRowHeight: expected a number greater than 0',
+    ]);
+  });
+
+  it('the list counts as the one track key of the "exactly one" rule', () => {
+    expect(issues(host({ type: 'grid', columns: [10, '1fr'], rows: 2 }))).toEqual([
+      `template.layout: ${TRACKS}`,
+    ]);
+  });
+
+  it('accepts a list as the default of a field and as the result of $if and $switch', () => {
+    const layout = (columns: unknown) => host({ type: 'grid', columns });
+    expect(issues(layout({ $field: 'n', default: [40, '1fr'] }))).toEqual([]);
+    expect(
+      issues(
+        layout({
+          $switch: 'kind',
+          cases: { a: [40, '1fr'], b: 3 },
+          default: ['1fr', 'hug'],
+        }),
+      ),
+    ).toEqual([]);
+    expect(issues(layout({ $if: { $has: 'wide' }, then: [10, '1fr'], else: 2 }))).toEqual(
+      [],
+    );
+    expect(issues(layout({ $field: 'n', default: [10, 'auto'] }))).toEqual([
+      `template.layout.columns.default[1]: ${ITEM}`,
+    ]);
+  });
+
+  it('the slot and repeat.layout take the list with the same rules', () => {
+    expect(
+      issues(
+        component({
+          type: 'frame',
+          children: [
+            { type: 'slot', layout: { type: 'grid', columns: [30, '1fr'] } },
+            {
+              type: 'repeat',
+              count: 2,
+              layout: { type: 'grid', rows: ['hug', '2fr'] },
+              template: { type: 'frame' },
+            },
+          ],
+        }),
+      ),
+    ).toEqual([]);
+    expect(
+      issues(
+        component({
+          type: 'frame',
+          children: [{ type: 'slot', layout: { type: 'grid', columns: ['0fr'] } }],
+        }),
+      ),
+    ).toEqual([`template.children[0].layout.columns[0]: ${ITEM}`]);
+  });
+
+  it('the list in a formatVersion 1 to 3 is only allowed with formatVersion 4', () => {
+    for (const version of [1, 2, 3])
+      expect(issues(host({ type: 'grid', columns: [10, '1fr'] }, [], version))).toContain(
+        `template.layout.columns: ${V4}`,
+      );
+    expect(issues(host({ type: 'grid', rows: [10, '1fr'] }, [], 3))).toContain(
+      `template.layout.rows: ${V4}`,
+    );
+  });
+
+  it('the integer stays valid, unchanged', () => {
+    expect(issues(host({ type: 'grid', columns: 1 }))).toEqual([]);
+    expect(issues(host({ type: 'grid', rows: 24 }))).toEqual([]);
   });
 });
 
@@ -428,6 +537,23 @@ describe('docs/component.schema.json', () => {
         ],
       }),
     );
+  });
+
+  it('accepts the track list in columns and rows and rejects an item outside the set', () => {
+    ok(host({ type: 'grid', columns: [72, '1fr', '2.5fr', 'hug'] }));
+    ok(host({ type: 'grid', rows: ['hug', 30] }));
+    ok(host({ type: 'grid', columns: { $field: 'c', default: [10, '1fr'] } }));
+    ok(
+      host({
+        type: 'grid',
+        columns: { $switch: 'k', cases: { a: [10, '1fr'], b: 2 }, default: ['hug'] },
+      }),
+    );
+    bad(host({ type: 'grid', columns: [] }));
+    bad(host({ type: 'grid', columns: [10, 'auto'] }));
+    bad(host({ type: 'grid', rows: [-1] }));
+    bad(host({ type: 'grid', columns: Array.from({ length: 25 }, () => 10) }));
+    bad(host({ type: 'grid', minColumnWidth: [10] }));
   });
 
   it('rejects a loose key, a value outside the type and align outside the grid set', () => {

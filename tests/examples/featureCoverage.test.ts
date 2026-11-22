@@ -98,7 +98,8 @@ const MISSING_TODAY: string[] = [
   // tests/model/components/wrapLayout.test.ts and by script R25.
   'component:node.repeat.wrap',
   // `span` and `weight` (stage #1078, L3): Material 3 does not adopt them (the grid and
-  // `repeat.layout` do, in L5); covered by tests/model/components/gridInstantiate.test.ts, gridParse.test.ts,
+  // `repeat.layout` do, in L5); `span` has an example since the Uneven grid of `drawing-extras` (stage #1903, DX6);
+  // covered by tests/model/components/gridInstantiate.test.ts, gridParse.test.ts,
   // gridSlot.test.ts and by script R25.
   // `code.slots` (formatVersion 17, stage #1080, SL3): the Material 3 library (SL7) declares the `slots`
   // on the type and `slot.id`/`slot.fallback` on the components, but binds the slots to the call
@@ -115,7 +116,6 @@ const MISSING_TODAY: string[] = [
   'spec:accessibility.touchTarget.mode=visual',
   'spec:layers[].annotationTypes[].accessibility.touchTarget.mode=expanded',
   'spec:layers[].annotationTypes[].accessibility.touchTarget=false',
-  'component:node.span',
   'component:node.weight',
   'component:node.repeat.lineGap',
   'component:node.repeat.maxPerLine',

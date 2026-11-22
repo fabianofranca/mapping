@@ -516,6 +516,10 @@ export const templatePtBR: {
   'model.component.offsetOnlyShapes':
     'só vale em frame, rect e ellipse (este é {nodeType})',
   'model.component.expectedInteger1': 'esperava inteiro maior ou igual a 1',
+  'model.component.expectedTrackCount':
+    'esperava inteiro maior ou igual a 1 ou uma lista de trilhas',
+  'model.component.expectedTrackItem': 'esperava número ≥ 0, "<n>fr" ou "hug"',
+  'model.component.expectedTrackListSize': 'esperava de 1 a 24 trilhas',
   'model.component.expectedPadding':
     'esperava número, lista de 2 ou lista de 4 números (maiores ou iguais a 0)',
   'model.component.expectedGap':

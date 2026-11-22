@@ -713,4 +713,51 @@ describe('component.schema.json — arcs on ellipse (FG6)', () => {
       }
     });
   });
+
+  describe('grid track lists in columns and rows (formatVersion 4, DX6)', () => {
+    const withLayout = (layout: unknown): Record<string, unknown> => ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'list',
+      name: 'List',
+      size: { width: 200, height: 60 },
+      template: { type: 'frame', layout, children: [] },
+    });
+
+    it('accepts an integer and a list of px, fr and hug, literal or by expression (the parser too)', () => {
+      for (const layout of [
+        { type: 'grid', columns: 3 },
+        { type: 'grid', columns: [56, '1fr', '2.5fr', 'hug', 0] },
+        { type: 'grid', rows: ['hug', '1fr'] },
+        { type: 'grid', columns: { $field: 'c', default: [10, '1fr'] } },
+        {
+          type: 'grid',
+          columns: { $if: { $field: 'wide' }, then: [10, '1fr'], else: 2 },
+        },
+        {
+          type: 'grid',
+          rows: { $switch: 'k', cases: { a: [10, '1fr'] }, default: ['hug'] },
+        },
+      ]) {
+        const c = withLayout(layout);
+        expect(checkSchema(schema, c), JSON.stringify(layout)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(layout)).toBe(true);
+      }
+    });
+
+    it('rejects what the parser rejects: empty, over 24, "0fr", negative px and "auto"', () => {
+      for (const columns of [
+        [],
+        Array.from({ length: 25 }, () => 10),
+        [10, '0fr'],
+        [-1],
+        [10, 'auto'],
+        [true],
+      ]) {
+        const c = withLayout({ type: 'grid', columns });
+        expect(checkSchema(schema, c).length, JSON.stringify(columns)).toBeGreaterThan(0);
+        expect(parseComponent(c).ok, JSON.stringify(columns)).toBe(false);
+      }
+    });
+  });
 });

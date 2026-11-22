@@ -2590,7 +2590,7 @@
       }
     },
     "layout": {
-      "description": "Distribution of the children: none (anchors), row, column or grid. In formatVersion 4, type, align and justify accept an expression, justify also space-around and space-evenly, reverse inverts the order of the children on the main axis (the start becomes the end) and wrap (none, wrap or wrap-reverse), lineGap, maxPerLine and maxLines break the row into lines (lineGap, maxPerLine and maxLines are valid only with wrap, which the schema does not check: that is parseComponent's job); with literal type \"grid\" (formatVersion 4; the schema does not check the version nor that exactly one of the four tracks columns, minColumnWidth, rows and minRowHeight is present (or several, when all are expressions and of the same orientation: the first that has a value wins), nor that the track keys are valid only in grid: that is parseComponent's job) gap, lineGap, padding, align and justify (start, center, end or stretch, within the cell), reverse and one track are valid: columns and rows (integer greater than or equal to 1) or minColumnWidth and minRowHeight (number greater than 0); wrap, maxPerLine and maxLines are not valid in the grid; with literal type \"none\" only type, align and justify are valid (formatVersion 4; align is the vertical axis and justify the horizontal one, with start, center, end or stretch; the schema does not check the version: that is parseComponent's job).",
+      "description": "Distribution of the children: none (anchors), row, column or grid. In formatVersion 4, type, align and justify accept an expression, justify also space-around and space-evenly, reverse inverts the order of the children on the main axis (the start becomes the end) and wrap (none, wrap or wrap-reverse), lineGap, maxPerLine and maxLines break the row into lines (lineGap, maxPerLine and maxLines are valid only with wrap, which the schema does not check: that is parseComponent's job); with literal type \"grid\" (formatVersion 4; the schema does not check the version nor that exactly one of the four tracks columns, minColumnWidth, rows and minRowHeight is present (or several, when all are expressions and of the same orientation: the first that has a value wins), nor that the track keys are valid only in grid: that is parseComponent's job) gap, lineGap, padding, align and justify (start, center, end or stretch, within the cell), reverse and one track are valid: columns and rows (an integer greater than or equal to 1 or a list of 1 to 24 tracks: a number of px, \"<n>fr\" or \"hug\") or minColumnWidth and minRowHeight (number greater than 0); wrap, maxPerLine and maxLines are not valid in the grid; with literal type \"none\" only type, align and justify are valid (formatVersion 4; align is the vertical axis and justify the horizontal one, with start, center, end or stretch; the schema does not check the version: that is parseComponent's job).",
       "anyOf": [
         {
           "type": "object",
@@ -2635,13 +2635,13 @@
               "$ref": "#/$defs/expr_boolean"
             },
             "columns": {
-              "$ref": "#/$defs/expr_positiveInteger"
+              "$ref": "#/$defs/expr_gridTracks"
             },
             "minColumnWidth": {
               "$ref": "#/$defs/expr_positiveNumber"
             },
             "rows": {
-              "$ref": "#/$defs/expr_positiveInteger"
+              "$ref": "#/$defs/expr_gridTracks"
             },
             "minRowHeight": {
               "$ref": "#/$defs/expr_positiveNumber"
@@ -2684,13 +2684,13 @@
               "$ref": "#/$defs/expr_positiveInteger"
             },
             "columns": {
-              "$ref": "#/$defs/expr_positiveInteger"
+              "$ref": "#/$defs/expr_gridTracks"
             },
             "minColumnWidth": {
               "$ref": "#/$defs/expr_positiveNumber"
             },
             "rows": {
-              "$ref": "#/$defs/expr_positiveInteger"
+              "$ref": "#/$defs/expr_gridTracks"
             },
             "minRowHeight": {
               "$ref": "#/$defs/expr_positiveNumber"
@@ -4375,6 +4375,38 @@
       "type": "integer",
       "minimum": 1
     },
+    "lit_gridTrack": {
+      "description": "One track of a columns/rows list (formatVersion 4): a number >= 0 (px), a share \"<n>fr\" with n > 0, or \"hug\" (the largest child placed in the track).",
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "string",
+          "pattern": "^(?!0+(\\.0+)?fr$)[0-9]+(\\.[0-9]+)?fr$"
+        },
+        {
+          "const": "hug"
+        }
+      ]
+    },
+    "lit_gridTracks": {
+      "description": "columns/rows of a grid: an integer >= 1 (equal 1fr tracks) or, in formatVersion 4, a list of 1 to 24 tracks (px, \"<n>fr\" or \"hug\").",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_positiveInteger"
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": {
+            "$ref": "#/$defs/lit_gridTrack"
+          }
+        }
+      ]
+    },
     "lit_positiveNumber": {
       "type": "number",
       "exclusiveMinimum": 0
@@ -4558,6 +4590,106 @@
             },
             "default": {
               "$ref": "#/$defs/expr_positiveInteger"
+            }
+          }
+        },
+        {
+          "$ref": "#/$defs/varRef"
+        }
+      ]
+    },
+    "expr_gridTracks": {
+      "description": "Literal or expression ($field, $if, $switch, $concat, $token).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_gridTracks"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_gridTracks"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_gridTracks"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_gridTracks"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_gridTracks"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_gridTracks"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
+        },
+        {
+          "$ref": "#/$defs/numericOps"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$provided"],
+          "properties": {
+            "$provided": {
+              "description": "Name of a color or value offered by an ancestor (formatVersion 4): the nearest ancestor that offers the name wins; with no ancestor, the default applies.",
+              "type": "string",
+              "minLength": 1
+            },
+            "default": {
+              "$ref": "#/$defs/expr_gridTracks"
             }
           }
         },

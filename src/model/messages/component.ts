@@ -62,6 +62,10 @@ export const componentMessages = {
   'component.offsetOnlyShapes':
     'only valid in frame, rect and ellipse (this is {nodeType})',
   'component.expectedInteger1': 'expected an integer greater than or equal to 1',
+  'component.expectedTrackCount':
+    'expected an integer greater than or equal to 1 or a list of tracks',
+  'component.expectedTrackItem': 'expected a number ≥ 0, "<n>fr" or "hug"',
+  'component.expectedTrackListSize': 'expected 1 to 24 tracks',
   'component.expectedPadding':
     'expected a number, a list of 2 or a list of 4 numbers (greater than or equal to 0)',
   'component.expectedGap':

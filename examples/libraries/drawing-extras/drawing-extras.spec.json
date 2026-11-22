@@ -4,7 +4,7 @@
   "id": "drawing-extras",
   "name": "Drawing extras",
   "version": 1,
-  "description": "Example of the drawing extras of the component format: radial and angular gradients in a node's fill, next to the linear one, a gradient chosen by a $switch, the inner shadow of a node's shadow, and images of the library package in an image node's src. The Gradients component draws four swatches that read their two colors from fields; the Inner shadow component draws a sunken field and two buttons; the Logo component draws three package images (PNG, JPEG and WebP from the images folder): a fixed one, one chosen by a $switch and one named by a field.",
+  "description": "Example of the drawing extras of the component format: radial and angular gradients in a node's fill, next to the linear one, a gradient chosen by a $switch, the inner shadow of a node's shadow, images of the library package in an image node's src and a grid whose columns have different sizes. The Gradients component draws four swatches that read their two colors from fields; the Inner shadow component draws a sunken field and two buttons; the Logo component draws three package images (PNG, JPEG and WebP from the images folder): a fixed one, one chosen by a $switch and one named by a field; the Uneven grid component draws a list row with a px, a 1fr and a hug column and a 12-column grid with spans.",
   "layers": [
     {
       "id": "ui",
@@ -113,6 +113,54 @@
               "values": {
                 "variant": "webp",
                 "source": "images/pattern.webp"
+              }
+            }
+          ]
+        },
+        {
+          "id": "uneven-grid",
+          "name": "Uneven grid",
+          "description": "A list row with a 56 px leading column, a 1fr text column and a hug trailing column, and a 12-column grid whose cells span 8, 4 or 3 tracks.",
+          "component": "components/uneven-grid.json",
+          "doc": "docs/uneven-grid.md",
+          "fields": [
+            {
+              "key": "title",
+              "label": "Title",
+              "description": "The first line of the list row.",
+              "type": "string",
+              "default": "Weekly report"
+            },
+            {
+              "key": "subtitle",
+              "label": "Subtitle",
+              "description": "The second line of the list row; it takes the width the other two columns leave.",
+              "type": "string",
+              "default": "Updated 2 hours ago"
+            },
+            {
+              "key": "trailing",
+              "label": "Trailing",
+              "description": "The text of the last column, which hugs it.",
+              "type": "string",
+              "default": "12:40"
+            },
+            {
+              "key": "accent",
+              "label": "Accent",
+              "description": "The color of the leading square and of the darker cells of the 12-column grid.",
+              "type": "string",
+              "default": "#7C3AED"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Long subtitle",
+              "values": {
+                "title": "Design review",
+                "subtitle": "Moved to the big room",
+                "trailing": "Mon 09:30",
+                "accent": "#0EA5E9"
               }
             }
           ]
