@@ -1,4 +1,4 @@
-# [Não lançado] Round blocks rebalance
+# Round blocks rebalance — [Não lançado] (épico `epic/round-blocks-rebalance`)
 
 ## Pendências
 
