@@ -1,4 +1,4 @@
-# Coordinator context hook nits [Não lançado] (épico `epic/coordinator-hook-nits`, MCP unchanged, schema v23 unchanged)
+# Coordinator context hook nits — [Não lançado] (épico `epic/coordinator-hook-nits`, PR #2621, MCP unchanged, schema v23 unchanged)
 
 ## Alterado
 
