@@ -503,8 +503,8 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(r16).toContain('OutlinedButton');
     });
 
-    it('the cloud prompt lists the scripts up to R42', () => {
-      expect(prompt).toContain('R0 to R42');
+    it('the cloud prompt lists the scripts up to R43', () => {
+      expect(prompt).toContain('R0 to R43');
     });
   });
 
@@ -572,8 +572,8 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(r17).toContain('Apply zip…');
     });
 
-    it('the cloud prompt lists the scripts up to R42', () => {
-      expect(prompt).toContain('R0 to R42');
+    it('the cloud prompt lists the scripts up to R43', () => {
+      expect(prompt).toContain('R0 to R43');
     });
   });
 
@@ -647,12 +647,12 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(JSON.parse(block)).toEqual(JSON.parse(fixture));
     });
 
-    it('the cloud prompt lists the scripts up to R42', () => {
-      expect(prompt).toContain('R0 to R42');
+    it('the cloud prompt lists the scripts up to R43', () => {
+      expect(prompt).toContain('R0 to R43');
     });
 
-    it('the full-round order enumeration ends at R42, like the heading', () => {
-      expect(prompt).toContain('R5, R8 and R9 to R42.');
+    it('the full-round order enumeration ends at R43, like the heading', () => {
+      expect(prompt).toContain('R5, R8 and R9 to R43.');
       expect(prompt).not.toContain('R9 to R27');
     });
   });
@@ -1039,7 +1039,7 @@ describe('TS2 — prompt with the round guide, foreground, state() and grouped r
     for (const text of [
       'cloud.mjs serve',
       '`ctx`',
-      '`check(label, condition, detail?)`',
+      '`await check(label, condition, detail?)`',
       'run --novo',
       'paletteDrag(page, type, to, { capture, group })',
     ]) {
@@ -1426,9 +1426,9 @@ describe('lean docs/TESTING-NUVEM.md and TESTING-NUVEM-CONSULTA.md (#1533, TE1)'
   const cloud = read('docs/TESTING-NUVEM.md');
   const consulta = read('docs/TESTING-NUVEM-CONSULTA.md');
 
-  // The ceiling went from 32,000 to 32,500 in stage #1712 (restoring the wording from before PR #1709) and to 33,200 in #2261 (the cause rule of "Check and record").
-  it('TESTING-NUVEM.md has up to 33,200 characters', () => {
-    expect(cloud.length).toBeLessThanOrEqual(33_200);
+  // The ceiling went from 32,000 to 32,500 in stage #1712 (restoring the wording from before PR #1709), to 33,200 in #2261 (the cause rule of "Check and record"), to 33,550 in #2474 (the hook notice of "Context up to 300 thousand") and to 33,850 in #2450 (the `await check` rule, on top of the hook notice).
+  it('TESTING-NUVEM.md has up to 33,850 characters', () => {
+    expect(cloud.length).toBeLessThanOrEqual(33_850);
   });
 
   it('the CONSULTA brings the keys and TESTING-NUVEM.md points to the secao of each one', () => {

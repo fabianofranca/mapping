@@ -15,6 +15,7 @@ export const TOOL_WINDOWS = [
   'tree',
   'layers',
   'details',
+  'conversation',
   'list',
   'incomplete',
   'notices',
@@ -33,6 +34,7 @@ export const WINDOW_SIDE: Readonly<Record<ToolWindowId, ToolWindowSide>> = {
   tree: 'left',
   layers: 'left',
   details: 'right',
+  conversation: 'right',
   list: 'bottom',
   incomplete: 'bottom',
   notices: 'bottom',
@@ -49,11 +51,14 @@ export const WINDOW_SIDE: Readonly<Record<ToolWindowId, ToolWindowSide>> = {
  * (Library stage, B5, which keeps B3's palette as a tab) is 9. The 8, vacant since B3,
  * is the Warnings window (stage #486), which sits in the tab between Incomplete and Diagnostics.
  * The 0 is the Comments window (Comments stage), the last tab of the bottom window.
+ * The Conversation window has no number (`null`): it opens from the strip or from a conversation.
  */
-export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
+export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number | null>> = {
   tree: 1,
   layers: 2,
   details: 3,
+  // The Conversation window has no number: 0 to 9 are all taken (stage #1881, decision 3).
+  conversation: null,
   list: 4,
   incomplete: 5,
   notices: 8,
@@ -97,13 +102,20 @@ const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min)
 /** Minimum height of each window of the left column when Tree and Layers share it. */
 const SPLIT_MIN = 96;
 
+/** Minimum height of each window of the right column (Details and Conversation). */
+const RIGHT_SPLIT_MIN = 160;
+
 /**
- * Height of the Layers window when it is stacked below the Tree: neither of the two
- * goes below `SPLIT_MIN` (nor exceeds the column's space). Pure function.
+ * Height of the window stacked below another in a column: neither of the two goes below
+ * `min` (nor exceeds the column's space). Pure function.
  */
-export function clampLayersHeight(size: number, columnHeight: number): number {
-  const max = Math.max(SPLIT_MIN, columnHeight - SPLIT_MIN);
-  return clamp(size, SPLIT_MIN, max);
+export function clampStackedHeight(
+  size: number,
+  columnHeight: number,
+  min: number,
+): number {
+  const max = Math.max(min, columnHeight - min);
+  return clamp(size, min, max);
 }
 
 /** Passo do Ctrl+Shift+setas (B2). */
@@ -145,6 +157,7 @@ interface StoredLayout {
   /** Height of the bottom window in review mode (kept apart from the normal one). */
   readonly bottomReview?: number;
   readonly layersHeight?: number;
+  readonly conversationHeight?: number;
 }
 
 const KEY = 'mapping.toolWindows';
@@ -230,6 +243,15 @@ const layersSplit = signal<number>(
     : px('size-tw-layers'),
 );
 
+/** Height of the Conversation window when it shares the right column with Details. */
+const conversationSplit = signal<number>(
+  typeof stored.conversationHeight === 'number' &&
+    Number.isFinite(stored.conversationHeight) &&
+    stored.conversationHeight > 0
+    ? stored.conversationHeight
+    : px('size-tw-conversation'),
+);
+
 /** Active tab of the bottom window (one at a time, as in an IDE). */
 const bottomTab = signal<ToolWindowId>(
   isToolWindow(stored.bottomTab) && WINDOW_SIDE[stored.bottomTab] === 'bottom'
@@ -242,6 +264,7 @@ export const toolWindowSizes: ReadonlySignal<Readonly<Record<ToolWindowSide, num
   sizes;
 export const bottomToolWindow: ReadonlySignal<ToolWindowId> = bottomTab;
 export const layersWindowHeight: ReadonlySignal<number> = layersSplit;
+export const conversationWindowHeight: ReadonlySignal<number> = conversationSplit;
 
 /**
  * Visible windows of a side, in the order of the windows. The left stacks Tree and
@@ -324,6 +347,7 @@ function persist(): void {
       bottom: bottomHeights.normal,
       bottomReview: bottomHeights.review,
       layersHeight: layersSplit.value,
+      conversationHeight: conversationSplit.value,
     } satisfies StoredLayout),
   );
 }
@@ -346,13 +370,14 @@ export function showToolWindow(id: ToolWindowId): void {
   const side = WINDOW_SIDE[id];
   if (side === 'bottom') bottomTab.value = id;
   const next = new Set(openIds.value);
-  // The left stacks Tree and Layers; the other sides show one window at a time. The
-  // Catalog's left column is its own: opening it hides the two and vice versa.
-  if (side !== 'left') {
+  // The left stacks Tree and Layers and the right Details and Conversation; the bottom shows
+  // one tab at a time. The Catalog's left column is its own: opening it hides the two and
+  // vice versa.
+  if (side === 'bottom') {
     for (const other of next) if (WINDOW_SIDE[other] === side) next.delete(other);
   } else if (id === 'catalog') {
     for (const other of next) if (WINDOW_SIDE[other] === 'left') next.delete(other);
-  } else {
+  } else if (side === 'left') {
     next.delete('catalog');
   }
   next.add(id);
@@ -388,7 +413,7 @@ export function resizeToolWindow(
 
 /** Writes the Layers window height, limited to the left column's space. */
 export function resizeLayersWindow(size: number, columnHeight: number): void {
-  const next = clampLayersHeight(size, columnHeight);
+  const next = clampStackedHeight(size, columnHeight, SPLIT_MIN);
   if (next === layersSplit.value) return;
   layersSplit.value = next;
   persist();
@@ -417,4 +442,17 @@ export function collapseDetailsOnCompact(): void {
   // stored, and the first visit does not repeat when switching projects.
   if (readSetting(KEY) !== null) return;
   hideToolWindow('details');
+}
+
+/** Writes the Conversation window height, limited to the right column's space. */
+export function resizeConversationWindow(size: number, columnHeight: number): void {
+  const next = clampStackedHeight(size, columnHeight, RIGHT_SPLIT_MIN);
+  if (next === conversationSplit.value) return;
+  conversationSplit.value = next;
+  persist();
+}
+
+/** Double click on the divider between Details and Conversation: back to the default height. */
+export function resetConversationWindowHeight(columnHeight: number): void {
+  resizeConversationWindow(px('size-tw-conversation'), columnHeight);
 }

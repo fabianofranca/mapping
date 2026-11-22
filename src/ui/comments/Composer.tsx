@@ -38,7 +38,7 @@ function useReplyAnchor(target: ComposerTarget): ThreadAnchor | null {
 
 /**
  * Focuses the field on each new-thread request or, with no identity (the notice replaces the
- * field), its button. Each request creates a new `ui.composing` object, so asking again on the
+ * field), its button. Each request creates a new `ui.conversation` object, so asking again on the
  * same anchor focuses again.
  */
 function useRequestFocus(
@@ -48,7 +48,7 @@ function useRequestFocus(
   button: RefObject<HTMLElement>,
 ): void {
   const { ui } = useEditor();
-  const request = autoFocus ? ui.composing.value : null;
+  const request = autoFocus ? ui.conversation.value : null;
   useEffect(() => {
     if (autoFocus) (field.current ?? button.current)?.focus();
   }, [autoFocus, key, request, field, button]);
@@ -118,6 +118,7 @@ export function Composer({ target, onOpenSettings, autoFocus, onCancel }: Compos
           name: me.name,
         })}
         editorRef={field}
+        composerField
         value={text}
         anchor={replyAnchor}
         excludeThreadId={target.kind === 'reply' ? target.threadId : undefined}

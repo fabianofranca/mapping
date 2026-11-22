@@ -3,6 +3,7 @@ import { reviewShortcutFor, shortcutFor } from '../../src/app/shortcuts';
 import { t } from '../../src/i18n';
 import { TOOL_WINDOWS, WINDOW_NUMBER } from '../../src/store/toolWindows';
 import { comboText, shortcutGroups } from '../../src/ui/shortcutList';
+import { toolWindowShortcut } from '../../src/ui/toolWindowMeta';
 
 describe('Help shortcut list (P10)', () => {
   const groups = shortcutGroups();
@@ -11,6 +12,7 @@ describe('Help shortcut list (P10)', () => {
     const windows = groups.find((g) => g.id === 'windows');
     for (const id of TOOL_WINDOWS) {
       const n = WINDOW_NUMBER[id];
+      if (n === null) continue;
       const row = windows?.rows.find((r) =>
         r.combos.some((c) => comboText(c) === `Ctrl + Shift + ${n}`),
       );
@@ -22,6 +24,7 @@ describe('Help shortcut list (P10)', () => {
   it('the listed Ctrl+Shift+N really triggers the window', () => {
     for (const id of TOOL_WINDOWS) {
       const n = WINDOW_NUMBER[id];
+      if (n === null) continue;
       expect(
         shortcutFor({
           key: String(n),
@@ -33,6 +36,14 @@ describe('Help shortcut list (P10)', () => {
         }),
       ).toEqual({ kind: 'toggle-window', window: id });
     }
+  });
+
+  it('leaves the windows without a number out of the list, and the strip has no shortcut', () => {
+    const windows = groups.find((g) => g.id === 'windows');
+    const title = t('conversation.title');
+    expect(windows?.rows.some((r) => r.label.includes(title))).toBe(false);
+    expect(toolWindowShortcut('conversation')).toBeNull();
+    expect(toolWindowShortcut('details')).toBe('Ctrl+Shift+3');
   });
 
   it('lists "View" with Alt+H, and it really triggers', () => {

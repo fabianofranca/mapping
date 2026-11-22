@@ -153,6 +153,7 @@ function windowTitles(
     tree: title('panel.tree'),
     layers: title('layer.title'),
     details: title('panel.details'),
+    conversation: title('conversation.title'),
     list: title('view.list'),
     incomplete: title('incomplete.title'),
     notices: title('notices.title'),
@@ -245,8 +246,12 @@ function guideTexts(): unknown {
 
 /** The shortcut table rows: one per window (from `WINDOW_NUMBER`, 0 last) and Arrange, per language. */
 function shortcutRows(): string {
-  const order = (id: ToolWindowId) => (WINDOW_NUMBER[id] === 0 ? 10 : WINDOW_NUMBER[id]);
-  const windows = [...TOOL_WINDOWS].sort((a, b) => order(a) - order(b));
+  const order = (id: ToolWindowId) =>
+    WINDOW_NUMBER[id] === 0 ? 10 : (WINDOW_NUMBER[id] ?? 11);
+  // The windows without a number (Conversation) have no shortcut: they stay out of the table.
+  const windows = TOOL_WINDOWS.filter((id) => WINDOW_NUMBER[id] !== null).sort(
+    (a, b) => order(a) - order(b),
+  );
   return LOCALES.flatMap((locale) => {
     const dict = DICTIONARIES[locale];
     const titles = windowTitles(dict);

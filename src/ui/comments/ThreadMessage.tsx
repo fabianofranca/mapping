@@ -10,7 +10,14 @@ const renderCitation = (href: string, label: string) => (
 );
 
 /** A message of the thread: initials, name, agent badge, relative time and the text in markdown. */
-export function ThreadMessage({ message }: { readonly message: Message }) {
+export function ThreadMessage({
+  message,
+  threadId,
+}: {
+  readonly message: Message;
+  /** The conversation the message is in: its proposal card opens the review keeping it. */
+  readonly threadId?: string;
+}) {
   const agent = message.author.kind === 'agent';
   return (
     <li class="thread-message">
@@ -25,7 +32,9 @@ export function ThreadMessage({ message }: { readonly message: Message }) {
             {relativeTime(message.at)}
           </time>
         </div>
-        {message.proposal !== null && <ProposalCard proposalId={message.proposal} />}
+        {message.proposal !== null && (
+          <ProposalCard proposalId={message.proposal} threadId={threadId} />
+        )}
         <Markdown text={message.text} lineBreaks renderMapping={renderCitation} />
       </div>
     </li>

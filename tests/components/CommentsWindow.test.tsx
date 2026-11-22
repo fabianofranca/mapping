@@ -97,6 +97,7 @@ beforeEach(() => {
   setIdentity('Marina Alves', 'marina@exemplo.com');
   locale.value = 'en-US';
   hideToolWindow('details');
+  hideToolWindow('conversation');
 });
 afterEach(() => {
   cleanup();
@@ -245,7 +246,7 @@ describe.each(['pt-BR', 'en-US'] as const)('Comments window (%s)', (lang) => {
     ).toBeTruthy();
   });
 
-  it('choosing the row selects the thread and the item, and opens the Details', async () => {
+  it('choosing the row selects the thread and the item, and opens the Conversation window', async () => {
     const { user, harness } = await mount();
     const label = anchorLabel(harness.project(), WAITING_HUMAN.anchor);
     await user.click(
@@ -255,7 +256,7 @@ describe.each(['pt-BR', 'en-US'] as const)('Comments window (%s)', (lang) => {
     );
     expect(selectedThreadId(harness.ui)).toBe('ta');
     expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
-    expect(isToolWindowOpen('details')).toBe(true);
+    expect(isToolWindowOpen('conversation')).toBe(true);
   });
 
   it('New thread with a selection: opens the draft anchored to it', async () => {
@@ -265,7 +266,7 @@ describe.each(['pt-BR', 'en-US'] as const)('Comments window (%s)', (lang) => {
     });
     await user.click(screen.getByRole('button', { name: t('comments.new') }));
     expect(composingAnchor(harness.ui)).toEqual({ kind: 'container', id: 'I1' });
-    expect(isToolWindowOpen('details')).toBe(true);
+    expect(isToolWindowOpen('conversation')).toBe(true);
   });
 
   it('New thread without a selection is disabled, with the hint', async () => {
@@ -547,14 +548,14 @@ describe('delete threads in bulk', () => {
   });
 });
 
-describe('proposal review (decision 26)', () => {
-  it('the window is read-only, with the notice, without New thread or Delete', async () => {
-    const { harness, user } = await mount([WAITING_HUMAN]);
+describe('proposal review (decisions 14 and 26)', () => {
+  it('no notice, no New conversation, no Delete conversations, no row menu', async () => {
+    const { harness } = await mount([WAITING_HUMAN]);
     act(() => {
       harness.store.setReviewing('R');
       harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     });
-    expect(screen.getByText(t('comments.reviewNotice'))).toBeTruthy();
+    expect(screen.queryByRole('note')).toBeNull();
     expect(screen.queryByRole('button', { name: t('comments.new') })).toBeNull();
     expect(screen.queryByRole('button', { name: t('comments.windowMore') })).toBeNull();
     expect(
@@ -563,8 +564,19 @@ describe('proposal review (decision 26)', () => {
       }),
     ).toBeNull();
     expect(ids()).toEqual(['ta']);
-    // Choosing the row in review does not change the selection.
+  });
+
+  it('a row opens the conversation in the window without changing the selection', async () => {
+    const { harness, user } = await mount([WAITING_HUMAN]);
+    act(() => {
+      harness.store.setReviewing('R');
+      harness.ui.selection.value = { kind: 'marking', id: 'M2' };
+    });
+    const anchorButton = rowOf('ta').querySelector('button.comments-anchor-button');
+    expect(anchorButton).not.toBeNull();
     await user.click(rowOf('ta'));
-    expect(selectedThreadId(harness.ui)).toBeNull();
+    expect(selectedThreadId(harness.ui)).toBe('ta');
+    expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
+    expect(isToolWindowOpen('conversation')).toBe(true);
   });
 });

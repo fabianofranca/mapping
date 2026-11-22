@@ -8,7 +8,7 @@ import type { EditorDialogs } from './useEditorDialogs';
  * (HANDOFF-PROPOSALS 5.3). Used by the review strip.
  */
 export function useExitReview(dialogs: EditorDialogs): () => void {
-  const { review } = useEditor();
+  const { review, ui } = useEditor();
   return () => {
     const p = review.derived.proposal.peek();
     if (needsExitReminder(p?.status, review.derived.counts.peek().acceptedPending)) {
@@ -16,6 +16,7 @@ export function useExitReview(dialogs: EditorDialogs): () => void {
     } else {
       const id = review.proposalId.peek();
       review.close();
+      ui.reviewReturn.value = id;
       focusReviewExitTarget(id);
     }
   };
