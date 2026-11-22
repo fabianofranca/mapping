@@ -66,6 +66,7 @@ export * from './formatPlugin';
 export * from './formatInput';
 export * from './formatResult';
 export * from './formatChecks';
+export * from './catalogFormats';
 export * from './notices';
 export * from './noticeList';
 export * from './specLookup';

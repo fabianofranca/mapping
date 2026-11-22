@@ -1,4 +1,8 @@
-import { loadSpecComponents, type ComponentCatalog } from './componentCatalog';
+import {
+  loadSpecComponents,
+  type ComponentCatalog,
+  type SpecComponents,
+} from './componentCatalog';
 import { createDrawingCache } from './componentDrawings';
 import { resolvePath } from './components/library';
 import type { TextMeasurer } from './components/instantiate';
@@ -82,21 +86,33 @@ function memoryProject(
   deps: FormatCheckDeps,
 ): Memory {
   const { spec } = pkg;
+  const root = `specs/${spec.id}/`;
+  const file = `${root}${pkg.specPath}`;
+  const components = loadSpecComponents(spec, file, spec.version, (path) =>
+    path.startsWith(root) ? files.get(path.slice(root.length)) : undefined,
+  );
+  return memoryOf(pkg, files, components, deps);
+}
+
+/** The in-memory project over components that were already read (the Catalog has them parsed). */
+function memoryOf(
+  pkg: FormatCheckPackage,
+  files: ReadonlyMap<string, string>,
+  components: SpecComponents,
+  deps: FormatCheckDeps,
+): Memory {
+  const { spec } = pkg;
   const empty = createProject({
     name: spec.id,
     now: new Date(0).toISOString(),
     firstLayer: { id: crypto.randomUUID(), name: 'Layer 1', color: '#D32F2F' },
   });
   const applied = applySpecialization(empty, spec, { packageSpecName: pkg.specPath });
-  const root = `specs/${spec.id}/`;
-  const file = `${root}${pkg.specPath}`;
+  const file = `specs/${spec.id}/${pkg.specPath}`;
   const project: Project = {
     ...applied,
     specializations: applied.specializations.map((s) => ({ ...s, file })),
   };
-  const components = loadSpecComponents(spec, file, spec.version, (path) =>
-    path.startsWith(root) ? files.get(path.slice(root.length)) : undefined,
-  );
   return { spec, project, catalog: new Map([[spec.id, components]]), files, deps };
 }
 
@@ -250,19 +266,36 @@ function firstDifference(expected: string, actual: string): string | null {
   return null;
 }
 
+/** Why an example could not be applied: the failure's code and message, and the line the checks word it as. */
+export interface ExampleFailure {
+  readonly ok: false;
+  readonly code: string;
+  readonly message: string;
+  readonly text: string;
+}
+
+type ExampleApplied = { readonly ok: true; readonly project: Project } | ExampleFailure;
+
+const failed = (code: string, message: string, text?: string): ExampleFailure => ({
+  ok: false,
+  code,
+  message,
+  text: text ?? codedText(code, message),
+});
+
 /** Applies the example text with `parse` on an empty project; the project, or why it failed. */
 async function applyExample(
   memory: Memory,
   found: Found,
   text: string,
-): Promise<Project | string> {
+): Promise<ExampleApplied> {
   const input = emptyInput(memory, found);
   const run = await callPlugin(memory, found, 'parse', [text, input]);
-  if (!run.ok) return codedText(run.failure.code, run.failure.message);
+  if (!run.ok) return failed(run.failure.code, run.failure.message);
   const checked = checkFormatResult(run.value, input);
   if (!checked.ok) {
     const first = checked.problems[0]!;
-    return codedText(first.code, formatResultProblemText(first));
+    return failed(first.code, formatResultProblemText(first));
   }
   const outcome = applyFormatResult(memory.project, checked.result, {
     input,
@@ -271,9 +304,10 @@ async function applyExample(
   });
   if (!outcome.ok) {
     const { index, op, code, message } = outcome.error;
-    return `operation ${index} (${op}) refused: ${codedText(code, message)}`;
+    const where = `operation ${index} (${op}) refused`;
+    return failed(code, `${where}: ${message}`, `${where}: ${codedText(code, message)}`);
   }
-  return outcome.project;
+  return { ok: true, project: outcome.project };
 }
 
 /** The text `generate` gives for `project` (scope `container`: the first container). */
@@ -294,9 +328,9 @@ async function roundTrip(
   found: Found,
   text: string,
 ): Promise<string | null> {
-  const project = await applyExample(memory, found, text);
-  if (typeof project === 'string') return `parse: ${project}`;
-  const back = await generated(memory, project, found);
+  const applied = await applyExample(memory, found, text);
+  if (!applied.ok) return `parse: ${applied.text}`;
+  const back = await generated(memory, applied.project, found);
   const difference = firstDifference(text, back);
   return difference === null ? null : `it does not round-trip: ${difference}`;
 }
@@ -345,7 +379,7 @@ async function exampleProblem(
   if (defined.parse && defined.generate) return roundTrip(memory, found, text);
   if (defined.parse) {
     const applied = await applyExample(memory, found, text);
-    return typeof applied === 'string' ? `parse: ${applied}` : null;
+    return applied.ok ? null : `parse: ${applied.text}`;
   }
   return 'a format that only generates needs `input` in the example (the projection `generate` receives)';
 }
@@ -506,4 +540,73 @@ export async function reportWithFormatChecks(
     issues: [...report.issues, ...extra],
     errors: [...report.errors, ...extra],
   };
+}
+
+// ------------------------------------------------------------------------------ one example, applied
+
+export interface FormatExampleInput {
+  readonly spec: Spec;
+  /** The specialization file, relative to the package folder. */
+  readonly specPath: string;
+  readonly format: SpecFileFormat;
+  /** The plugin's text. */
+  readonly pluginText: string;
+  /** The components of the specialization, already read. */
+  readonly components: SpecComponents;
+}
+
+export type FormatExampleOutcome =
+  | {
+      readonly ok: true;
+      readonly project: Project;
+      /** The component catalog the project was built with (what draws its markings). */
+      readonly catalog: ComponentCatalog;
+    }
+  | { readonly ok: false; readonly code: string; readonly message: string };
+
+/** The in-memory project and the format, as the checks have them. */
+function formatMemory(
+  input: FormatExampleInput,
+  deps: FormatCheckDeps,
+): { memory: Memory; found: Found } {
+  const { spec, specPath, format } = input;
+  const pluginPath = resolvePath(specPath, format.plugin);
+  const memory = memoryOf(
+    { spec, specPath },
+    new Map([[pluginPath, input.pluginText]]),
+    input.components,
+    deps,
+  );
+  return { memory, found: { ref: `${spec.id}/${format.id}`, format, pluginPath } };
+}
+
+/**
+ * An example's text through `parse` on an empty in-memory project with the specialization, as level 3
+ * does for a format that parses: the project the operations build, or the first failure (the plugin's, the
+ * result's or an operation's). Used by the Catalog to draw the example (decision 14 of #2035).
+ */
+export async function applyFormatExample(
+  input: FormatExampleInput,
+  text: string,
+  deps: FormatCheckDeps,
+): Promise<FormatExampleOutcome> {
+  const { memory, found } = formatMemory(input, deps);
+  const applied = await applyExample(memory, found, text);
+  if (!applied.ok) return { ok: false, code: applied.code, message: applied.message };
+  return { ok: true, project: applied.project, catalog: memory.catalog };
+}
+
+/** Which of `generate` and `parse` the plugin defines. */
+export type FormatFunctions = Defined;
+
+/**
+ * Which of the two functions the plugin defines, or why it does not load (`<code>: <message>`): level 2 of the
+ * checks, for the Catalog to say what a format does.
+ */
+export function definedFormatFunctions(
+  input: FormatExampleInput,
+  deps: FormatCheckDeps,
+): Promise<FormatFunctions | string> {
+  const { memory, found } = formatMemory(input, deps);
+  return definedFunctions(memory, found, emptyInput(memory, found));
 }
