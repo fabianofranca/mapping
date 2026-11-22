@@ -1,6 +1,6 @@
 /** MCP server version (the release tag is `mcp-v<version>`). One version per epic. */
 export const SERVER_NAME = 'mapping';
-export const SERVER_VERSION = '0.57.0';
+export const SERVER_VERSION = '0.57.1';
 
 declare const __MCP_BUILD_SUFFIX__: string | undefined;
 
