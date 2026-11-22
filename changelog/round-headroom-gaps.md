@@ -6,6 +6,8 @@
 
 - **`slots.mjs` writes `save` (for whoever runs the tester, #2625, RH4):** `render` and `a11y` put in each call the name that `slots.mjs names 57|58a|58b` gives at its position, and `a11y <list.out> [58a|58b]` picks the `a-` or the `b-` run. R17.57 and R17.58 no longer ask for a rename.
 
+- **R12.15 and R12.47 step text (for whoever runs the tester, #2625, CL1):** R12.15 says the new and the upgraded project are born at the current schema (`schemaVersion` 23), not v22. R12.47 says the drawing takes the new size, weight and color but stays clipped by the 29x17 box until **Arrange** (R12.48), with the Incomplete notice "The component does not fit" expected there, and that an unset field is written as `null` (R12.48: `largura` is `null` after Arrange with the default width).
+
 ## Corrigido
 
 - **R12.54 to R12.56 run in a shallow clone, R12.18 and R1.20c (for whoever runs the tester, #2625, RH2):** R12.54 fetches commit `338892d912761e564d2308b92e78c5c98588686f` by its full SHA before the `git show` (the same pattern as R3.19), so R12.55 and R12.56, which depend on it, no longer stop in the cloud tester's `--depth=1` clone. R12.18 says where to right-click the stroke: at the `center` of `arrowHandlesOf(page)` with the arrow selected. R1.20c reads `aria-pressed` of **View** before clicking it after reopening `principal`, and checks the starting state in a new empty project `vista-nova` instead of clearing the site data; `principal` is reopened from **Recent projects** so R1.21 finds it as it was.
