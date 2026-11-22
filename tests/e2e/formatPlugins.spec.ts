@@ -505,7 +505,7 @@ test.describe('Formats in the Catalog and in the validation', () => {
       mimeType: 'application/zip',
       buffer: await zip.generateAsync({ type: 'nodebuffer' }),
     });
-    const dialog = page.getByRole('dialog');
+    const dialog = page.getByRole('dialog', { name: /^Package/ });
     await expect(dialog).toContainText('fileFormats[0]', { timeout: 30_000 });
     await expect(dialog).toContainText(/\d+ error\(s\)/);
     await expect(
