@@ -135,7 +135,8 @@ describe('skill via-rapida', () => {
     const s = section(SKILL, '## Step by step');
     expect(s).toContain('`## Sincronização` "Sem impacto…"');
     expect(s).toContain('`## Ficou sem gravar` "None." in the DS one');
-    expect(s).not.toContain('"Nada."');
+    expect(s).not.toMatch(/Ficou sem gravar`\s*[`"]?Nada/);
+    expect(s).not.toContain('Nada.');
   });
 
   it('decision 7: the owner authorization is asked in the fast-track chat, never relayed', () => {
