@@ -17,6 +17,8 @@ function drawWarning({ code, params }: RenderWarning): string {
       return 'image without pixels drawn as a placeholder';
     case 'image-decode-failed':
       return 'an embedded image could not be decoded';
+    case 'package-image-refused':
+      return 'a package image is over the limits or not in the format of its extension: drawn as a placeholder';
     case 'stroke-extra-paints':
       return 'only the first fill of the stroke was used';
     case 'stroke-align-centered':

@@ -13,6 +13,7 @@ const KEYS: Record<RenderWarningCode, TranslationKey> = {
   'unknown-node': 'catalog.drawWarning.unknown-node',
   'image-without-pixels': 'catalog.drawWarning.image-without-pixels',
   'image-decode-failed': 'catalog.drawWarning.image-decode-failed',
+  'package-image-refused': 'catalog.drawWarning.package-image-refused',
   'stroke-extra-paints': 'catalog.drawWarning.stroke-extra-paints',
   'stroke-align-centered': 'catalog.drawWarning.stroke-align-centered',
   'stroke-radial-first-color': 'catalog.drawWarning.stroke-radial-first-color',

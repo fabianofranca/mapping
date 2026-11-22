@@ -362,6 +362,10 @@ The stage `epic/mcp-woff2` makes the server read a library's `.woff2` fonts with
 - **What moves.** Material 3 text is measured and drawn in Roboto instead of the embedded font: sizes (`fit_marking`, `create_marking` without `rect`, `measure_component`), line counts and PNG text move towards the app's, and the Material 3 `component-overflow` items no longer carry `approximate`. The same project with the `.woff` of the same release gives the same sizes and overflow set, and Chromium measures Roboto Regular within 0.1 px of the server. Embedded-font measurements and rasters do not change.
 - **Size.** `dist-mcp/mapping-mcp.js` grew from 7,674,431 to 7,693,658 bytes (+19,227; the stage's limit is +30 kB).
 
+### Change in 0.57.5 — package images only for a package (stage #2544)
+
+`render_marking`, `render_container` and `get_marking_image` draw a package image only for a specialization with a loaded spec and a folder package (`specs/<id>/…`), the app's rule; any other specialization gives the placeholder with a note and its image file is not read. No tool, parameter or error code changes.
+
 ### Gradients painted in the images (stage #1903, 0.57.0)
 
 The stage `epic/drawing-extras` adds the radial and angular gradients to the component format (component `formatVersion` 4, no bump; specialization, schema, proposal, comment, signature and icon formats unchanged). The later phases of the stage add their own items to this section.

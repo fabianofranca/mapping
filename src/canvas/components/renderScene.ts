@@ -55,6 +55,7 @@ import { capMetricsOf } from './capMiddle';
 import { grayscalePixels } from '../../model/components/grayscale';
 import { cachedEmbeddedImage, loadEmbeddedImage } from './imageLoader';
 import { DEFAULT_PALETTE, type RenderPalette } from './palette';
+import type { PackageImageFailure } from '../../storage/packageImages';
 import type { RenderWarning, RenderWarningCode } from './renderWarnings';
 import type { RemoteImageView, RemoteImageViewState } from './remoteImageTypes';
 
@@ -115,7 +116,7 @@ export interface RenderResult {
 /** What the host knows about a package image: still decoding, failed, or the decoded bitmap. */
 export type PackageImageResult =
   | { readonly state: 'loading' }
-  | { readonly state: 'failed' }
+  | { readonly state: 'failed'; readonly reason: PackageImageFailure }
   | {
       readonly state: 'ready';
       readonly image: CanvasImageSource;
@@ -343,7 +344,7 @@ class Renderer {
             radiusX: Math.max(0, geometry.radiusX - inset),
             radiusY: Math.max(0, geometry.radiusY - inset),
           });
-          this.applyStroke(shape, node.stroke);
+          this.applyStroke(shape, node.stroke, 'box', false, toShapeLocal(shape, box));
           shapes.push(shape);
         }
         return shapes;
@@ -501,10 +502,7 @@ class Renderer {
   private fillShape(shape: ShapeWithFill, paint: Paint, box: Box): Konva.Shape[] {
     shape.opacity(paint.opacity ?? 1);
     // The gradient points are in the node's box (top-left origin); an ellipse's Konva origin is its center.
-    const local = (p: Point): Point =>
-      shape instanceof KonvaEllipse
-        ? { x: p.x - box.width / 2, y: p.y - box.height / 2 }
-        : p;
+    const local = toShapeLocal(shape, box);
     switch (paint.type) {
       case 'solid':
         shape.fill(paint.color);
@@ -551,7 +549,8 @@ class Renderer {
 
   /**
    * A package image (`asset`): the placeholder while the host decodes it (a known state, no warning)
-   * and when it cannot be drawn (`image-decode-failed`); the bitmap on a rect once it is ready.
+   * and when it cannot be drawn (`image-decode-failed`, or `package-image-refused` for an image over
+   * the limits, none for a missing file); the bitmap on a rect once it is ready.
    * `undefined` for any other paint.
    */
   private packageImageFill(
@@ -598,7 +597,10 @@ class Renderer {
       grayscaleImage(image, paint.grayscale, 'loaded');
       return [image];
     }
-    if (view.state === 'failed') this.warn('image-decode-failed');
+    if (view.state === 'failed') {
+      const code = packageFailureWarning(view.reason);
+      if (code) this.warn(code);
+    }
     return placeholder(shape, box, this.palette);
   }
 
@@ -789,6 +791,7 @@ class Renderer {
     stroke: Stroke,
     kind: 'box' | 'line' | 'path' = 'box',
     sideLine = false,
+    local: (p: Point) => Point = (p) => p,
   ): void {
     const [paint, ...rest] = stroke.paints;
     if (rest.length > 0) this.warn('stroke-extra-paints');
@@ -809,8 +812,8 @@ class Renderer {
         shape.stroke(paint.color);
         return;
       case 'linear':
-        shape.strokeLinearGradientStartPoint(paint.start);
-        shape.strokeLinearGradientEndPoint(paint.end);
+        shape.strokeLinearGradientStartPoint(local(paint.start));
+        shape.strokeLinearGradientEndPoint(local(paint.end));
         shape.strokeLinearGradientColorStops(flattenStops(paint.stops));
         return;
       case 'radial':
@@ -824,6 +827,28 @@ class Renderer {
         shape.stroke(this.palette.placeholderLine);
         return;
     }
+  }
+}
+
+/** Gradient points are in the node's box (top-left origin); an ellipse's Konva origin is its center. */
+function toShapeLocal(shape: Konva.Shape, box: Box): (p: Point) => Point {
+  return (p) =>
+    shape instanceof KonvaEllipse
+      ? { x: p.x - box.width / 2, y: p.y - box.height / 2 }
+      : p;
+}
+
+/** The drawing warning of a package image failure: a missing file has none (the validator reports it). */
+function packageFailureWarning(
+  reason: PackageImageFailure,
+): RenderWarningCode | undefined {
+  switch (reason) {
+    case 'decode':
+      return 'image-decode-failed';
+    case 'refused':
+      return 'package-image-refused';
+    case 'missing':
+      return undefined;
   }
 }
 
