@@ -1918,32 +1918,45 @@ function checkFieldSources(
   executable: ReadonlySet<string>,
   ctx: z.RefinementCtx,
 ): void {
-  const plain = version >= PLAIN_SOURCES_VERSION;
   (sources ?? []).forEach((source, i) => {
     const at = [...path, 'sources', i];
     const add = (key: string, message: string | SpecMsg) =>
       addSpecIssue(ctx, [...at, key], message);
     const isExecutable = version >= 4 && executable.has(source.system);
     if (source.path !== undefined) {
-      if (version < 4) add('path', onlyFormat(4));
-      else if (!plain && !isExecutable) {
-        add('path', 'only allowed in a system declared in origins');
-      } else {
-        const problem = fieldPathProblem(source.path);
-        if (problem !== undefined) add('path', problem);
-      }
+      const problem = sourcePathProblem(source.path, version, isExecutable);
+      if (problem !== undefined) add('path', problem);
     } else if (isExecutable) {
       add('path', 'required in a system declared in origins');
     }
-    if (source.name === undefined && !isExecutable && !(plain && source.path !== undefined)) {
-      add(
-        'name',
-        plain
-          ? 'required when there is no path'
-          : 'required in a system that is not in origins',
-      );
-    }
+    const nameProblem = sourceNameProblem(source, version, isExecutable);
+    if (nameProblem !== undefined) add('name', nameProblem);
   });
+}
+
+/** Why a field source's `path` is refused (`undefined`: it is valid); from v22 any system takes it. */
+function sourcePathProblem(
+  path: string,
+  version: number,
+  isExecutable: boolean,
+): string | SpecMsg | undefined {
+  if (version < 4) return onlyFormat(4);
+  if (version < PLAIN_SOURCES_VERSION && !isExecutable) {
+    return 'only allowed in a system declared in origins';
+  }
+  return fieldPathProblem(path);
+}
+
+/** Why a field source has no usable `name` (`undefined`: it is fine). From v22 `path` is enough. */
+function sourceNameProblem(
+  source: z.infer<typeof fieldSourceShape>,
+  version: number,
+  isExecutable: boolean,
+): string | undefined {
+  if (source.name !== undefined || isExecutable) return undefined;
+  if (version < PLAIN_SOURCES_VERSION)
+    return 'required in a system that is not in origins';
+  return source.path === undefined ? 'required when there is no path' : undefined;
 }
 
 /**
@@ -3233,8 +3246,7 @@ export const specSchema = z
     // v4: library. Before it, each new key is an error at the exact path.
     const v4 = spec.formatVersion >= 4;
     const plain = spec.formatVersion >= PLAIN_SOURCES_VERSION;
-    const executable =
-      v4 && !plain ? declaredSystems(spec.origins) : new Set<string>();
+    const executable = v4 && !plain ? declaredSystems(spec.origins) : new Set<string>();
     if (!v4) {
       for (const key of ['fonts', 'origins', 'migrations'] as const) {
         if (spec[key] !== undefined) {
