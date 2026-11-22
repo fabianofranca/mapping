@@ -3433,6 +3433,12 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
       '`para` is a key of the graph arrows that painel.py emits (`de`, `para`, `tipo`), frozen vocabulary of decision 16',
   },
   {
+    path: 'tests/tooling/queueGraphWaves.test.ts',
+    pattern: /\bde: '[^']*'(, para: |\s*\})|\bpara: |para: string/,
+    reason:
+      '`para` is a key of the graph arrows that painel.py emits (`de`, `para`, `tipo`), frozen vocabulary of decision 16',
+  },
+  {
     path: 'tests/tooling/queuePanelPage.test.ts',
     pattern: /espera merge de #1, #9 para testar|cedo · espera #1(, #9)? para testar/,
     reason:
