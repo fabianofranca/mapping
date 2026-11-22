@@ -39,6 +39,10 @@ test('the pins are born hidden, Comment opens the draft and the click on the pin
   await drawMarking(page, center);
   await setMode(page, 'Navigate');
   const conversations = page.getByRole('button', { name: 'Conversations', exact: true });
+  const conversationWindow = page.getByRole('region', {
+    name: 'Conversation',
+    exact: true,
+  });
   await expect(conversations).toHaveAttribute('aria-pressed', 'false');
   expect(await pins(host)).toBe(0);
 
@@ -58,7 +62,7 @@ test('the pins are born hidden, Comment opens the draft and the click on the pin
   await page.mouse.click(elsewhere.x, elsewhere.y);
   await conversations.click();
   await expect(conversations).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.getByText('What is the variant?')).toBeVisible();
+  await expect(conversationWindow.getByText('What is the variant?')).toBeVisible();
   await expect.poll(() => pins(host)).toBe(1);
   // Turning it on again keeps the pin.
   await conversations.click();
@@ -67,7 +71,7 @@ test('the pins are born hidden, Comment opens the draft and the click on the pin
 
   // The click on the pin (top right corner of the marking, outside) opens the conversation in the Conversation window.
   await page.mouse.click(center.x + 60 + 22, center.y - 40 - 10);
-  await expect(page.getByText('What is the variant?')).toBeVisible();
+  await expect(conversationWindow.getByText('What is the variant?')).toBeVisible();
   await expect(
     page.getByRole('textbox', { name: /Reply as Marina Alves/ }),
   ).toBeVisible();
