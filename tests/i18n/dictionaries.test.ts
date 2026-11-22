@@ -190,6 +190,9 @@ describe('dictionaries', () => {
       'catalog.page.codeParamsArrow',
       // The text of the sheet problem comes from the sheet reader and enters whole as a parameter.
       'model.library.signatureInvalid',
+      // The names of the plugin functions (`generate`, `parse`) are the contract's, the same in both languages.
+      'catalog.formats.generate',
+      'catalog.formats.parse',
       // The product name is "Mapping" in both languages.
       'app.title',
       'editor.appName',
