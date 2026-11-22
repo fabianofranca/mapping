@@ -687,17 +687,13 @@ class Renderer {
     box: Box,
   ): Konva.Shape[] {
     const view = this.resolveRemote(url);
-    if (isFailureLook(view.state, this.options.pixelSafe === true)) {
-      this.warn(
-        view.state === 'opaque' ? 'remote-image-opaque' : 'remote-image-failed',
-        { origin: urlOrigin(url) },
-      );
-      return failurePlaceholder(shape, box, this.palette);
-    }
-    const drawable =
-      view.image !== undefined &&
-      (view.state === 'loaded' || (view.state === 'opaque' && !this.options.pixelSafe));
-    if (!drawable || view.image === undefined || !(shape instanceof KonvaRect)) {
+    const failed = this.failureLook(view.state, url, shape, box);
+    if (failed) return failed;
+    if (
+      !this.isDrawable(view) ||
+      view.image === undefined ||
+      !(shape instanceof KonvaRect)
+    ) {
       return placeholder(shape, box, this.palette);
     }
     const size = sourceSize(view);
@@ -712,6 +708,28 @@ class Renderer {
     // An `opaque` image (loaded without CORS) cannot be read back: it stays in color, uncached.
     grayscaleImage(image, paint.grayscale, view.state);
     return [image];
+  }
+
+  /** A loaded image, or an opaque one on the main canvas (not pixel-safe), is drawn as an image. */
+  private isDrawable(view: RemoteImageView): boolean {
+    return (
+      view.image !== undefined &&
+      (view.state === 'loaded' || (view.state === 'opaque' && !this.options.pixelSafe))
+    );
+  }
+
+  /** The failure look (and its warning) for the states that draw it, or `undefined`. */
+  private failureLook(
+    state: RemoteImageViewState,
+    url: string,
+    shape: ShapeWithFill,
+    box: Box,
+  ): Konva.Shape[] | undefined {
+    if (!isFailureLook(state, this.options.pixelSafe === true)) return undefined;
+    this.warn(state === 'opaque' ? 'remote-image-opaque' : 'remote-image-failed', {
+      origin: urlOrigin(url),
+    });
+    return failurePlaceholder(shape, box, this.palette);
   }
 
   /**
@@ -1043,9 +1061,7 @@ function placeholder(
 
 /** `failed`, `too-large` and, in a pixel-safe drawing, `opaque` draw the failure look. */
 function isFailureLook(state: RemoteImageViewState, pixelSafe: boolean): boolean {
-  return (
-    state === 'failed' || state === 'too-large' || (state === 'opaque' && pixelSafe)
-  );
+  return state === 'failed' || state === 'too-large' || (state === 'opaque' && pixelSafe);
 }
 
 /** The origin of a URL for a warning (never the whole URL); `''` when it does not parse. */
