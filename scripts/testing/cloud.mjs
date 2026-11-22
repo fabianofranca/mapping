@@ -1964,23 +1964,34 @@ function bodyConsole(io) {
 }
 
 /**
- * `check(rotulo, condicao, detalhe?)` of the `run` body (stage #1533, decision 7). `condicao` is a
- * boolean, a promise or a function (sync or async) that returns truthy or throws.
+ * `await check(rotulo, condicao, detalhe?)` of the `run` body (stage #1533, decision 7; stage
+ * #2450, decision 8). `condicao` is a boolean, a promise or a function (sync or async) that
+ * returns truthy or throws. Always write `await check(...)`: the return is a thenable that records
+ * whether its `then` was called, and an async condition (a promise, an async function or a
+ * function that returns a promise) that was never awaited is turned into a failure by `execStep`
+ * (`not awaited`). A sync condition works without `await`.
  * Does not interrupt the body: the result stays in `results` and `execStep` waits for the pending ones.
  */
-function makeCheck(results, pending) {
+function makeCheck(results, pending, tracked = []) {
   return (rotulo, condicao, detalhe) => {
+    const entry = { async: false, awaited: false, result: null };
+    const record = (result) => {
+      entry.result = result;
+      results.push(result);
+    };
     const task = (async () => {
       try {
-        const value = typeof condicao === 'function' ? await condicao() : await condicao;
+        const raw = typeof condicao === 'function' ? condicao() : condicao;
+        entry.async = typeof raw?.then === 'function';
+        const value = await raw;
         if (value) {
-          results.push({ rotulo, ok: true, detalhe });
+          record({ rotulo, ok: true, detalhe });
         } else {
-          results.push({ rotulo, ok: false, mensagem: detalhe ?? 'condition false' });
+          record({ rotulo, ok: false, mensagem: detalhe ?? 'condition false' });
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        results.push({
+        record({
           rotulo,
           ok: false,
           mensagem: detalhe ? `${message} (${detalhe})` : message,
@@ -1988,8 +1999,25 @@ function makeCheck(results, pending) {
       }
     })();
     pending.push(task);
-    return task;
+    tracked.push(entry);
+    return {
+      then(onFulfilled, onRejected) {
+        entry.awaited = true;
+        return task.then(onFulfilled, onRejected);
+      },
+    };
   };
+}
+
+/** Turns each async check that was never awaited into the `not awaited` failure. */
+function failUnawaited(tracked) {
+  for (const entry of tracked) {
+    if (entry.async && !entry.awaited && entry.result) {
+      entry.result.ok = false;
+      entry.result.mensagem = 'not awaited: write await check(...)';
+      delete entry.result.detalhe;
+    }
+  }
 }
 
 /** One line per check: `✅ <label>` or `❌ <label> — <message>`. */
@@ -2024,6 +2052,7 @@ async function execStep(
   const { browser, page } = connection ?? (await connectFn(apoioDir));
   const checks = [];
   const pending = [];
+  const tracked = [];
   const printState = async () => {
     try {
       const snapshot = await Promise.race([
@@ -2057,7 +2086,7 @@ async function execStep(
           ...options,
         }),
       ctx,
-      check: makeCheck(checks, pending),
+      check: makeCheck(checks, pending, tracked),
       console: bodyConsole(io),
     };
     const fn = new AsyncFunction(...Object.keys(scope), body);
@@ -2068,6 +2097,8 @@ async function execStep(
     if (outcome === 'prazo') {
       io.error(`deadline of ${prazoSeconds} s exceeded in the step`);
       code = 124;
+    } else {
+      failUnawaited(tracked);
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -2718,7 +2749,7 @@ export const HELP = {
   },
   runStep: {
     sig: 'runStep(corpo, { apoioDir, projectDir?, prazoSeconds?, connectFn?, ctx?, io? })',
-    desc: 'runs the body of a step script without a server (the fallback path of run); in the body ctx, check(rotulo, condicao, detalhe?) and console are also available',
+    desc: 'runs the body of a step script without a server (the fallback path of run); in the body ctx, await check(rotulo, condicao, detalhe?) and console are also available',
   },
   startRunServer: {
     sig: 'startRunServer({ apoioDir, connectFn?, onExit? })',
@@ -2749,7 +2780,7 @@ const CLI_HELP = [
   ],
   [
     'run [<project-folder>] [--prazo=<s>] [--novo]',
-    "runs the script body read from standard input (heredoc <<'JS') on a persistent server (the connection and the ctx stay between runs; apoio/cloud.sock), with page, browser, apoioDir, projectDir, ctx, check(rotulo, condicao, detalhe?) and the exports in scope; prints one line per check and the state; exits 0, 1 (error or failed check) or 124 (90 s timeout; the server exits); --novo restarts the server; each run is kept in apoio/runs/<n>.js and .out and in apoio/runs.log",
+    "runs the script body read from standard input (heredoc <<'JS') on a persistent server (the connection and the ctx stay between runs; apoio/cloud.sock), with page, browser, apoioDir, projectDir, ctx, await check(rotulo, condicao, detalhe?) and the exports in scope; prints one line per check (an async check without await fails as `not awaited`) and the state; exits 0, 1 (error or failed check) or 124 (90 s timeout; the server exits); --novo restarts the server; each run is kept in apoio/runs/<n>.js and .out and in apoio/runs.log",
   ],
   [
     'serve',
@@ -2761,7 +2792,7 @@ const CLI_HELP = [
   ],
   [
     'passo <item…> [--guia=<file>] [--preparo]',
-    'prints from the round guide (<APOIO>/guia.md) a test script (R12), a step (R12.4) or a range (R12.1-R12.8), without opening Chrome; with --preparo, only the part of the whole script before the first step (title, What it covers, Setup and code blocks: the functions of a script that the range does not bring); an item the round guide does not have comes from docs/TESTING.md, with the first line saying so; over 25 thousand characters, cuts and says how to continue',
+    'prints from the round guide (<APOIO>/guia.md) a test script (R12), a step (R12.4) or a range (R12.1-R12.8), without opening Chrome (a range or a step also brings the labeled Setup blocks of its steps: the "The batch of R<n>.<k>" paragraphs with their code fence); with --preparo, only the part of the whole script before the first step (title, What it covers, Setup and code blocks: the functions of a script that the range does not bring); an item the round guide does not have comes from docs/TESTING.md, with the first line saying so; over 25 thousand characters, cuts and says how to continue',
   ],
   [
     'secao [<key…>] [--guia=<file>]',
