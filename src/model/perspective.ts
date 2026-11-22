@@ -58,15 +58,18 @@ export function perspectiveRootOf(p: Project, id: string): string | null {
   return projectIndex(p).rootOf.get(id) ?? null;
 }
 
+const isRootIn = (index: ProjectIndex, id: string) => index.rootOf.get(id) === id;
+const isMarkingRootIn = (index: ProjectIndex, id: string) =>
+  !index.containers.has(id) && index.markings.has(id);
+
 /** `true` if `id` is a container or a marking that is a root. */
 export function isRootId(p: Project, id: string): boolean {
-  return projectIndex(p).rootOf.get(id) === id;
+  return isRootIn(projectIndex(p), id);
 }
 
 /** `true` if the root is a marking (and not a container): its position is whole. */
 export function isMarkingRoot(p: Project, id: string): boolean {
-  const index = projectIndex(p);
-  return !index.containers.has(id) && index.markings.has(id);
+  return isMarkingRootIn(projectIndex(p), id);
 }
 
 // ---------------------------------------------------------------------------
@@ -79,10 +82,10 @@ function viewShifts(
 ): Map<string, CanvasPosition> {
   const shifts = new Map<string, CanvasPosition>();
   for (const item of perspective.items) {
-    if (shifts.has(item.root) || index.rootOf.get(item.root) !== item.root) continue;
+    if (shifts.has(item.root) || !isRootIn(index, item.root)) continue;
     const at = footprintIn(index, item.root) as Rect;
     // A marking's position is whole: so is the shift.
-    const whole = !index.containers.has(item.root) && index.markings.has(item.root);
+    const whole = isMarkingRootIn(index, item.root);
     const dx = item.x - at.x;
     const dy = item.y - at.y;
     shifts.set(
@@ -168,7 +171,10 @@ function arrowsInView(
   return kept;
 }
 
-/** A marking's annotation stays with its root; the object is read only for those on an arrow (or on nothing). */
+/**
+ * A marking's annotation stays with its root. A `null` root means the target is not a marking (an arrow, or an id that does
+ * not exist in an invalid project): then it stays only with a kept arrow, and the annotation object is read only for those.
+ */
 function annotationsInView(
   p: Project,
   annotationRoots: readonly (string | null)[],

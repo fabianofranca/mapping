@@ -325,10 +325,11 @@ describe('perspectiveView: the same view as the plain filter by root (decision 4
     return {
       ...p,
       markings: [...p.markings, mk('a1', 'B', rect(5, 5, 20, 20))],
-      // An annotation whose target does not exist (invalid project).
+      // An annotation whose target does not exist; and `aA`, on a container id: neither is a marking or an arrow (invalid project).
       annotations: [
         ...p.annotations,
         { ...p.annotations[0]!, id: 'lost', markingId: 'nowhere' },
+        { ...p.annotations[0]!, id: 'aA', markingId: 'A' },
       ],
     };
   }
