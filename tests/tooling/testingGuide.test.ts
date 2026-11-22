@@ -1426,9 +1426,9 @@ describe('lean docs/TESTING-NUVEM.md and TESTING-NUVEM-CONSULTA.md (#1533, TE1)'
   const cloud = read('docs/TESTING-NUVEM.md');
   const consulta = read('docs/TESTING-NUVEM-CONSULTA.md');
 
-  // The ceiling went from 32,000 to 32,500 in stage #1712 (restoring the wording from before PR #1709) and to 33,200 in #2261 (the cause rule of "Check and record").
-  it('TESTING-NUVEM.md has up to 33,200 characters', () => {
-    expect(cloud.length).toBeLessThanOrEqual(33_200);
+  // The ceiling went from 32,000 to 32,500 in stage #1712 (restoring the wording from before PR #1709) to 33,200 in #2261 (the cause rule of "Check and record") and to 33,550 in #2474 (the hook notice of "Context up to 300 thousand").
+  it('TESTING-NUVEM.md has up to 33,550 characters', () => {
+    expect(cloud.length).toBeLessThanOrEqual(33_550);
   });
 
   it('the CONSULTA brings the keys and TESTING-NUVEM.md points to the secao of each one', () => {
