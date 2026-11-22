@@ -128,3 +128,5 @@ export * from './specWarnings';
 export * from './markdown';
 // Type choice: group by group and filter by the search.
 export * from './typeChoice';
+// The marking rules of the MCP batch (`add_container` with a background, `create_marking`, `update_marking`).
+export * from './batchMarkings';
