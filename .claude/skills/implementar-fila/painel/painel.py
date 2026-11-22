@@ -121,10 +121,12 @@ Queue graph (stage #1761): every write writes, right after `vagas` and `vagasIte
 (`show` does not change). Node: `{issue, titulo, onda, rank, estado, motivo, fase, feitas, total}` of each non-`concluída` row, in
 the order wave, `rank` (`null` last) and `order`; `estado` is `rodando`, `dono`, `arquivo`, `dep`, `exclusiva`, `segurada`, `livre`
 or `ficha`, read from the reason that `slots_plan` gave the candidate. Waves, in rounds: wave 0 has the started ones and those that start now; in
-each round enter those that depend only on nodes already placed (those waiting for a file, slot or the running exclusive stay in 1), and the
-exclusive stage at the front (the first by `order`, without `hold` and with a complete ficha) enters alone after the ordinary ones that come before
-it and before those it holds (`estado` `exclusiva`, reason `segurada para a exclusiva #N`); in a cycle, what is left enters
-together in the last one.
+each round enter, in `order`, those that depend only on nodes already placed and have no file (`first_conflict`) and no schema (both
+`changes_schema`) in common with the ones already in that round; the rest wait for the next round, so a wave is a set of stages that
+can run together (stage #2293). A row with `hold` or an incomplete ficha enters its round without the check, neither blocking nor
+blocked. The slots do not cut a wave (`Vagas k/N` already shows them). The exclusive stage at the front (the first by `order`, without
+`hold` and with a complete ficha) enters alone after the ordinary ones that come before it and before those it holds (`estado`
+`exclusiva`, reason `segurada para a exclusiva #N`); in a cycle, what is left enters together in the last one.
 `rank` (1, 2, 3…): the `aguardando` without `started`, except `segurada` and `ficha`, by wave and `order`; the others stay `null`. Arrow
 `{de, para, tipo}` (the arrow runs from the holder to the held one): `dep` by the ficha's `dep=` between nodes (without `:main` or `meta.merged`), only the
 transitive reduction, and `arquivo` from `#N` when the reason is `arquivo <x> com #N` or `schema com #N`.
@@ -3087,18 +3089,40 @@ def eligible_exclusive(r):
             and not row_incomplete(r))
 
 
+def unplannable(r):
+    """A row with `hold` or an incomplete ficha: it has no reliable `toca=`, so the wave check skips it both ways (decision 2 of #2293)."""
+    return bool(r.get("hold") or row_incomplete(r))
+
+
+def wave_conflict(a, b):
+    """Two rows that cannot share a wave: a file in common (`first_conflict`) or both change the schema (decision 1 of #2293)."""
+    if unplannable(a) or unplannable(b):
+        return False
+    pa, pb = a.get("plan", ""), b.get("plan", "")
+    return first_conflict(toca_list(pa), toca_list(pb)) is not None or (changes_schema(pa) and changes_schema(pb))
+
+
+def pack_round(rows):
+    """The rows of `rows` (taken in `order`) that fit in one round: each one with no conflict with those already placed."""
+    placed = []
+    for r in sorted(rows, key=lambda x: x["order"]):
+        if not any(wave_conflict(r, p) for p in placed):
+            placed.append(r)
+    return placed
+
+
 def wave_round(pending, ready):
     """The rows of a round of the waves; `E` is the first eligible exclusive stage among the ready ones (decision 6 of #1813).
 
-    Entering are the ordinary ones that come before `E` in `order`, plus the ordinary ones with `hold` or an incomplete ficha (in any
-    position); with none of them, `E` alone; without `E`, all the ordinary ones; with neither ordinary ones nor `E`, the first ready one; in a cycle,
+    Candidates are the ordinary ones that come before `E` in `order`, plus the ordinary ones with `hold` or an incomplete ficha (in any
+    position); of those, `pack_round` keeps the ones with no file or schema in common (the rest wait for the next round). With none of
+    them, `E` alone; without `E`, all the ordinary ones; with neither ordinary ones nor `E`, the first ready one; in a cycle,
     what is left enters together.
     """
     front = next((r for r in ready if eligible_exclusive(r)), None)
     plain = [r for r in ready if r.get("exclusive") != "sim"]
-    before = [r for r in plain if front is None or r["order"] < front["order"]
-              or r.get("hold") or row_incomplete(r)]
-    return before or ([front] if front else ready[:1]) or pending
+    before = [r for r in plain if front is None or r["order"] < front["order"] or unplannable(r)]
+    return pack_round(before) or ([front] if front else ready[:1]) or pending
 
 
 def assign_waves(rows, wave, deps):
