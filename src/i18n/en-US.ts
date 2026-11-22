@@ -656,6 +656,8 @@ export const enUS = {
   'conversation.empty':
     'No conversation open. Choose one in Details, in Comments or on a pin.',
   'conversation.anchor': 'on {where}',
+  'conversation.linkedToReview': ' · linked to the proposal under review',
+  'conversation.newMessage': 'New message from {name}',
   'comments.delete.title': 'Delete the conversation?',
   'comments.delete.confirm': 'Delete',
   'comments.delete.goes': '{count} messages will be gone: {authors}.',
@@ -798,6 +800,9 @@ export const enUS = {
   'thread.proposal.changesMany': '{count} changes to review',
   'thread.proposal.allDecided': 'All changes decided',
   'thread.proposal.removed': 'Proposal removed',
+  'thread.proposal.inReview': 'In review',
+  'thread.proposal.revisedOne': 'Revised · 1 to check',
+  'thread.proposal.revisedMany': 'Revised · {count} to check',
   'proposals.fromThread': 'from the conversation',
   'thread.editorHint': 'Enter adds a line break, Ctrl+Enter sends and @ cites an item.',
   // CM5-C: cite and copy reference in menus

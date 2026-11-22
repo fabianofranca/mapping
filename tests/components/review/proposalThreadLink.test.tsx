@@ -1,4 +1,4 @@
-import { cleanup, screen, within } from '@testing-library/preact';
+import { act, cleanup, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { t } from '../../../src/i18n';
@@ -13,11 +13,14 @@ import { selectedThreadId } from '../../../src/store/threadUi';
 import { hideToolWindow, isToolWindowOpen } from '../../../src/store/toolWindows';
 import { ThreadView } from '../../../src/ui/comments/ThreadView';
 import { ProposalList } from '../../../src/ui/review/ProposalList';
+import { ProposalsWindow } from '../../../src/ui/review/ProposalsWindow';
+import { ReviewDetails } from '../../../src/ui/review/ReviewDetails';
 import { decided, propose } from '../../model/proposalFixtures';
 import { HUMAN, T0, message, sampleThread } from '../../model/threadFixtures';
 import { sampleProject } from '../../model/fixtures';
-import { richScenario } from '../../store/proposalHarness';
+import { NEW_IMAGE_PATH, richScenario, writeOutside } from '../../store/proposalHarness';
 import { openReviewHarness, renderInEditor, type ReviewHarness } from './reviewHarness';
+import { revisedScenario } from './revisedFixture';
 
 // The proposal linked to a thread (decision 36): the card in the thread and the "from the
 // thread" in the row of the Proposals window.
@@ -182,5 +185,65 @@ describe('"from the thread" in the proposal row', () => {
     expect(
       within(row).getByRole('button', { name: /, citation$/ }).textContent,
     ).toContain('First');
+  });
+});
+
+describe('the card under review (stage #1881, decision 16)', () => {
+  it('says "In review" with no button while its proposal is under review', async () => {
+    const { proposal } = richScenario();
+    const thread = proposalThread('tp1', 'P1', 'Proposal:');
+    const h = await open([{ ...proposal, title: 'Checkout' }], [thread]);
+    h.review.open('P1');
+    renderInEditor(h, <ThreadView thread={thread} />);
+    const el = card() as HTMLElement;
+    expect(within(el).getByText(t('thread.proposal.inReview'))).toBeTruthy();
+    expect(within(el).queryByRole('button')).toBeNull();
+    expect(t('thread.proposal.inReview')).toBe('In review');
+  });
+
+  it('outside its review the card keeps the Review button', async () => {
+    const { proposal } = richScenario();
+    const thread = proposalThread('tp1', 'P1', 'Proposal:');
+    const h = await open([{ ...proposal, title: 'Checkout' }], [thread]);
+    renderInEditor(h, <ThreadView thread={thread} />);
+    const el = card() as HTMLElement;
+    expect(within(el).queryByText(t('thread.proposal.inReview'))).toBeNull();
+    expect(within(el).getByRole('button', { name: 'Review: Checkout' })).toBeTruthy();
+  });
+
+  it('after a revision: "Revised · N to check" and, in the same render, the header line and the row flag', async () => {
+    const { proposal } = richScenario();
+    const s = revisedScenario();
+    const thread = proposalThread('tp1', 'P1', 'Proposal:');
+    const h = await openReviewHarness({
+      proposals: [{ ...proposal, title: 'Checkout' }],
+      files: { [NEW_IMAGE_PATH]: 'image' },
+    });
+    await h.session.threads.create(thread);
+    h.review.open('P1');
+    act(() => h.review.select({ level: 'proposal', id: null }));
+    renderInEditor(
+      h,
+      <>
+        <ThreadView thread={thread} />
+        <ReviewDetails />
+        <ProposalsWindow onHelp={noop} />
+      </>,
+    );
+    expect(within(card() as HTMLElement).queryByText(/^Revised/)).toBeNull();
+    writeOutside(h.root, s.proposal);
+    await act(async () => {
+      await h.session.proposals.scan();
+    });
+    const el = card() as HTMLElement;
+    // The revision replaces one change and adds another: two to check.
+    expect(within(el).getByText('Revised · 2 to check')).toBeTruthy();
+    expect(t('thread.proposal.revisedOne')).toBe('Revised · 1 to check');
+    expect(within(el).getByText(t('thread.proposal.inReview'))).toBeTruthy();
+    expect(screen.getByText(/^Revised by the agent on /)).toBeTruthy();
+    const flagged = document.querySelector('[data-row="item:M1"]') as HTMLElement | null;
+    expect(flagged).not.toBeNull();
+    expect(within(flagged as HTMLElement).getByText('Revised')).toBeTruthy();
+    expect(h.review.derived.rows.value[0]?.revised).toBe(2);
   });
 });

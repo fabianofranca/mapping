@@ -73,6 +73,8 @@ interface CitationEditorProps {
   readonly excludeThreadId?: string;
   /** Reference to the field (the composer focuses it on mount). */
   readonly editorRef?: Ref<HTMLDivElement>;
+  /** Marks the field as a composer field (`data-composer-field`): where focus goes on leaving a review. */
+  readonly composerField?: boolean;
 }
 
 type ChipPart = Extract<ComposerPart, { type: 'chip' }>;
@@ -406,6 +408,7 @@ export function CitationEditor({
   anchor,
   excludeThreadId,
   editorRef,
+  composerField,
 }: CitationEditorProps) {
   const root = useRef<HTMLDivElement | null>(null);
   const ctx = useCitationContext();
@@ -460,6 +463,7 @@ export function CitationEditor({
         }}
         class="input input-area citation-editor"
         role="textbox"
+        data-composer-field={composerField ? '' : undefined}
         aria-multiline="true"
         aria-label={label}
         aria-describedby={hintId}

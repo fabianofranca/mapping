@@ -270,6 +270,19 @@
   white-space: nowrap;
 }
 
+/* "In review" and "Revised · N to check" on the card of the proposal under review (stage #1881) */
+.proposal-card-review {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  color: var(--color-text-muted);
+}
+
+.proposal-card-review b {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
 /* "from thread <chip>" on the proposal row (Proposals window) */
 .proposal-row-thread {
   display: flex;
@@ -294,4 +307,9 @@
 
 .thread-section-empty {
   margin: 0;
+}
+
+/* "The proposal is still open" notice at the top of Details (stage #1881, decision 20) */
+.review-return-notice {
+  margin: var(--space-2);
 }

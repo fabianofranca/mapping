@@ -127,7 +127,7 @@ export function ThreadView({
       )}
       <ul class="thread-messages">
         {thread.messages.map((m) => (
-          <ThreadMessage key={m.id} message={m} />
+          <ThreadMessage key={m.id} message={m} threadId={thread.id} />
         ))}
       </ul>
       <CitedIn thread={thread} />

@@ -118,6 +118,7 @@ export function Composer({ target, onOpenSettings, autoFocus, onCancel }: Compos
           name: me.name,
         })}
         editorRef={field}
+        composerField
         value={text}
         anchor={replyAnchor}
         excludeThreadId={target.kind === 'reply' ? target.threadId : undefined}

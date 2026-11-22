@@ -111,6 +111,12 @@ export interface EditorUi {
    * conversation opens, on Cancel of a draft and when the conversation is deleted.
    */
   readonly conversation: Signal<ConversationTarget | null>;
+  /**
+   * The proposal the person just left the review of (stage #1881, decision 20): Details shows the
+   * "still open" notice with Review while it is `open`. Set by every exit, cleared when a review
+   * opens or the notice is dismissed. UI state, never saved.
+   */
+  readonly reviewReturn: Signal<string | null>;
   /** Message drafts by key (`threadDraftKey`), in memory: they survive a selection change. */
   readonly threadDrafts: Signal<ReadonlyMap<string, string>>;
   /** Comments window: status, user and search filters (decision 21). */
@@ -183,6 +189,7 @@ function buildEditorUi(): EditorUi {
     reviewLegend: signal<boolean>(false),
     compareImage: signal<string | null>(null),
     conversation: signal<ConversationTarget | null>(null),
+    reviewReturn: signal<string | null>(null),
     threadDrafts: signal<ReadonlyMap<string, string>>(new Map()),
     commentsStatus: signal<ThreadStatusFilter>('open'),
     commentsUser: signal<string>(''),

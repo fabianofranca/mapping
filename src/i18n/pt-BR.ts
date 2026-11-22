@@ -656,6 +656,8 @@ export const ptBR: Dictionary = {
   'conversation.empty':
     'Nenhuma conversa aberta. Escolha uma em Detalhes, em Comentários ou em um pino.',
   'conversation.anchor': 'em {where}',
+  'conversation.linkedToReview': ' · ligada à proposta em revisão',
+  'conversation.newMessage': 'Nova mensagem de {name}',
   'comments.delete.title': 'Apagar a conversa?',
   'comments.delete.confirm': 'Apagar',
   'comments.delete.goes': 'Vão embora {count} mensagens: {authors}.',
@@ -798,6 +800,9 @@ export const ptBR: Dictionary = {
   'thread.proposal.changesMany': '{count} mudanças para revisar',
   'thread.proposal.allDecided': 'Todas as mudanças com decisão',
   'thread.proposal.removed': 'Proposta removida',
+  'thread.proposal.inReview': 'Em revisão',
+  'thread.proposal.revisedOne': 'Revisada · 1 para conferir',
+  'thread.proposal.revisedMany': 'Revisada · {count} para conferir',
   'proposals.fromThread': 'da conversa',
   'thread.editorHint': 'Enter quebra a linha, Ctrl+Enter envia e @ cita um item.',
   'cite.insert': 'Citar na conversa',

@@ -14,7 +14,7 @@ import { useApplyAccepted } from './useReview';
 // proposal. Actions: Apply now · N (main), Leave anyway and Keep reviewing.
 
 export function ExitReviewDialog({ onClose }: { readonly onClose: () => void }) {
-  const { review } = useEditor();
+  const { review, ui } = useEditor();
   const apply = useApplyAccepted();
   const counts = review.derived.counts.value;
   const canApply = review.derived.canApply.value;
@@ -23,6 +23,7 @@ export function ExitReviewDialog({ onClose }: { readonly onClose: () => void }) 
   const exit = () => {
     onClose();
     review.close();
+    ui.reviewReturn.value = proposalId.current;
   };
   // The click on "Leave" decided from the state before an application in progress finished:
   // if, once open, the reminder stopped applying (nothing awaits anymore), it leaves without asking.

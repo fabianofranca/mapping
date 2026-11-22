@@ -527,4 +527,41 @@ describe('CitationEditor › in the proposal review (decision 15)', () => {
     expect(only.title).toBe(t('cite.onlyInProposal'));
     expect((screen.getByTestId('existing') as HTMLButtonElement).disabled).toBe(false);
   });
+
+  it('proposals and conversations that exist stay citable (only preview-only items are disabled)', async () => {
+    function Probe() {
+      const actions = useCiteActions();
+      const targets = {
+        proposal: actions.cite({ kind: 'proposal', id: 'P1' }),
+        thread: actions.cite({ kind: 'thread', id: 'c1' }),
+        gone: actions.cite({ kind: 'thread', id: 'nope' }),
+        item: actions.cite({ kind: 'marking', id: 'M5' }),
+      };
+      return (
+        <>
+          {Object.entries(targets).map(([key, action]) => (
+            <button key={key} type="button" data-testid={key} disabled={action.disabled}>
+              x
+            </button>
+          ))}
+        </>
+      );
+    }
+    const { proposal } = richScenario();
+    const h = await openReviewHarness({ proposals: [proposal] });
+    await h.session.threads.create(sampleThread({ id: 'c1' }));
+    expect(h.review.open('P1').ok).toBe(true);
+    render(
+      <EditorContext.Provider value={h.context}>
+        <Host seen={[]} />
+        <Probe />
+      </EditorContext.Provider>,
+    );
+    const disabled = (id: string) =>
+      (screen.getByTestId(id) as HTMLButtonElement).disabled;
+    expect(disabled('proposal')).toBe(false);
+    expect(disabled('thread')).toBe(false);
+    expect(disabled('gone')).toBe(true);
+    expect(disabled('item')).toBe(true);
+  });
 });

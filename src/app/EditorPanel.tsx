@@ -11,6 +11,7 @@ import { MarkingPanel } from '../ui/MarkingPanel';
 import { MultiSelectionPanel } from '../ui/MultiSelectionPanel';
 import { SelectionPanel } from '../ui/SelectionPanel';
 import { ReviewPanel } from '../ui/review/ReviewPanel';
+import { ReviewReturnNotice } from '../ui/review/ReviewReturnNotice';
 import type { EditorDialogs } from './useEditorDialogs';
 
 export interface EditorPanelProps {
@@ -20,8 +21,17 @@ export interface EditorPanelProps {
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
 
-/** Details: the window on the right. */
-export function EditorPanel({
+/** Details: the window on the right, with the way back to a review that was left at the top. */
+export function EditorPanel(props: EditorPanelProps) {
+  return (
+    <>
+      <ReviewReturnNotice />
+      <EditorPanelBody {...props} />
+    </>
+  );
+}
+
+function EditorPanelBody({
   busy,
   dialogs,
   onReplace,
