@@ -1,4 +1,4 @@
-# Variant slots, transparent icons, the preview reserve and the scratch folder — [Não lançado] (épico `epic/slots-icons-scratch`, PR #2505, MCP 0.56.1, schema v23 unchanged)
+# Variant slots, transparent icons, the preview reserve and the scratch folder — 2026-11-22 (épico `epic/slots-icons-scratch`, PR #2505, MCP 0.56.1, schema v23 unchanged)
 
 ## Corrigido
 
@@ -7,6 +7,7 @@
 - the preview over a proposal (`render_container` and `render_marking` with `proposal` and a batch) places new containers where `revise_proposal` puts them
 - a relative `operationsFile` or image path through a symbolic link between a root and the `--scratch` folder resolves like its absolute path, in both directions; a link that leaves both is still `outside-roots`
 - `create_marking` with `inside` and `slot` puts the child in a slot that is empty and takes its content's size (an `actions` slot without its label) on the side of the bar where the slot sits, with no "did not fit" warning, instead of below the bar's start
+- a slot that takes its content's size and already holds a child keeps its own area as the limit when a new child is placed (it no longer counts the whole component), and a hidden empty slot asked for by name is revealed the same way with and without the app's drawings
 
 ## Alterado
 

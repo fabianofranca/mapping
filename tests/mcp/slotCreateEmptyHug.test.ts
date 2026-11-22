@@ -124,4 +124,48 @@ describe('inside + slot in a bar with an empty actions slot', () => {
     expect(text).toMatch(/"slot":"actions"/);
     expect(text).toMatch(/trailingContent/);
   });
+
+  it('a second child in a hug slot that already holds one warns that it did not fit instead of covering the title', async () => {
+    const reply = await call('plan_changes', {
+      project: 'slots',
+      operations: [
+        {
+          op: 'add_container',
+          name: 'Full slot screen',
+          width: 400,
+          height: 300,
+          background: '#DDEEFF',
+          as: '$c',
+        },
+        {
+          op: 'create_marking',
+          container: '$c',
+          rect: { x: 0, y: 0, width: 400, height: 56 },
+          annotation: { type: 'slots/bar' },
+          as: '$bar',
+        },
+        {
+          op: 'create_marking',
+          inside: '$bar',
+          slot: 'actions',
+          annotation: { type: 'slots/pin' },
+        },
+        {
+          op: 'create_marking',
+          inside: '$bar',
+          slot: 'actions',
+          annotation: { type: 'slots/pin' },
+        },
+      ],
+    });
+    expect(reply.errors).toBeUndefined();
+    const at = (line: string): number => Number(/\(x (-?\d+),/.exec(line)![1]);
+    const second = at(reply.summary[3]);
+    const firstOk = at(reply.summary[2]) > 200;
+    expect(firstOk).toBe(true);
+    // Either it sits in the slot past the middle, or the batch says it did not fit: never silently over the title.
+    expect(second > 200 || /did not fit/.test(JSON.stringify(reply.warnings ?? []))).toBe(
+      true,
+    );
+  });
 });

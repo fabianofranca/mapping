@@ -1,4 +1,4 @@
-# Variant slots, transparent icons, the preview reserve and the scratch folder — [Não lançado] (épico `epic/slots-icons-scratch`)
+# Variant slots, transparent icons, the preview reserve and the scratch folder — 2026-11-22 (épico `epic/slots-icons-scratch`)
 
 ## Pendências
 
