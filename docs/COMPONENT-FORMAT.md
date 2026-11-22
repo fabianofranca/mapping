@@ -1464,7 +1464,7 @@ In a `formatVersion` lower than 4, `runs` is an error (`template.children[0].run
 
 Rich text (`runs`) uses the same measurement: the runs' layout measures each piece of a line with the measurer, in the run's font, and **the same layout** serves the `hug` measurement, the validator's drawing proof and the drawing. That is why the height of a `hug` text with `runs` is the sum of the lines (with the chip's height) and the width is that of the widest line. The MCP server also draws rich text with letters (`render_marking`, `render_container` and the `get_marking_image` of a container without a file), with the built-in free font.
 
-Whoever reads a warning ending in **`(approximate)`** (the library validator's drawing proof, in the MCP server or in the skill) should understand that the text was measured by the approximation: a "content larger than the box" warning can disappear, or appear only at another size, when the browser measures with the real font. The warning is a signal to look, not a verdict. And the opposite also holds: without the warning, the browser may measure a little wider.
+Whoever reads a warning ending in **`(approximate)`** (the library validator's drawing proof, in the MCP server or in the skill) should understand that some text of that drawing was measured with the embedded font in place of its family (a family that is not a library font; a drawing set in a library family does not carry it, even in a library with other fonts): a "content larger than the box" warning can disappear, or appear only at another size, when the browser measures with the real font. The warning is a signal to look, not a verdict. And the opposite also holds: without the warning, the browser may measure a little wider.
 
 ## Validation
 

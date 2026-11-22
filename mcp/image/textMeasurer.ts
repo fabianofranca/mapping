@@ -80,6 +80,12 @@ export interface FontBook {
   fontFor(family: string, weight: number, italic: boolean): Face;
   /** The embedded font for `family` and `weight`: where a text goes when its library font cannot lay it out. */
   embeddedFor(family: string, weight: number): Face;
+  /**
+   * Whether the family stack resolves to a library face: the first name that is a library family or a mono name is
+   * a library family. A generic or mono name, or no name read, ends on an embedded face (stage #2267, decision 3).
+   * The weight and the style do not matter: any face of the family counts.
+   */
+  isLibraryFamily(family: string): boolean;
   /** Whether any library font (`fonts`) was read; otherwise everything is measured with the embedded one. */
   readonly hasLibraryFonts: boolean;
 }
@@ -121,8 +127,11 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
     )[0];
     return best?.font ?? null;
   };
-  const isLibraryFamily = (name: string): boolean =>
+  const hasFamily = (name: string): boolean =>
     candidates.some((c) => c.family === name.toLowerCase());
+  // The first name `resolve` stops on: a library family or a mono name (`undefined` = the sans).
+  const stopName = (family: string): string | undefined =>
+    familyNames(family).find((name) => hasFamily(name) || MONO_FAMILY.test(name));
   const resolved = new Map<string, Face>();
   const resolve = (family: string, weight: number, italic: boolean): Face => {
     const names = familyNames(family);
@@ -139,12 +148,14 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
   };
   return {
     hasLibraryFonts: candidates.length > 0,
+    isLibraryFamily(family) {
+      const first = stopName(family);
+      return first !== undefined && hasFamily(first);
+    },
     // The embedded face `resolve` would end on: the first name that is a library font or a mono name.
     embeddedFor(family, weight) {
       const b = builtinFonts();
-      const first = familyNames(family).find(
-        (name) => isLibraryFamily(name) || MONO_FAMILY.test(name),
-      );
+      const first = stopName(family);
       // A monospace name falls back to Mapping Mono, library family or not (stage #2267, decision 1).
       if (first !== undefined && MONO_FAMILY.test(first))
         return weight >= BOLD_FROM ? b.monoBold : b.mono;
