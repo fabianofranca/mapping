@@ -154,10 +154,17 @@ export function showAndFocusToolWindow(id: ToolWindowId): void {
 
 /**
  * Focus target when leaving the review (stage #515, FN1): leaving removes the clicked button from the screen
- * (the review strip), so focus goes to the proposal button (Review or Continue) in the
+ * (the review strip), so focus goes to the composer field of the open conversation in the Conversation
+ * window (stage #1881); without one, to the proposal button (Review or Continue) in the
  * Proposals window, if it is open; otherwise, to the canvas.
  */
 export function reviewExitTarget(proposalId: string | null): HTMLElement | null {
+  // The Conversation window open on a conversation the person can answer: its composer field
+  // (stage #1881, decision 19). The field only exists in that case.
+  const composer = document.querySelector<HTMLElement>(
+    '[data-window="conversation"] [data-composer-field]',
+  );
+  if (composer) return composer;
   if (proposalId !== null) {
     for (const row of document.querySelectorAll<HTMLElement>('[data-proposal]')) {
       if (row.dataset.proposal !== proposalId) continue;

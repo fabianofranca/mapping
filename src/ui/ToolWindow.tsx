@@ -3,9 +3,12 @@ import { isTypingField } from '../app/shortcuts';
 import { t } from '../i18n';
 import {
   WINDOW_SIDE,
+  conversationWindowHeight,
   layersWindowHeight,
+  resetConversationWindowHeight,
   resetLayersWindowHeight,
   resetToolWindowSize,
+  resizeConversationWindow,
   resizeLayersWindow,
   resizeToolWindow,
   sideWidth,
@@ -35,17 +38,30 @@ interface ToolWindowProps {
   readonly children: ComponentChildren;
 }
 
-function windowStyle(side: ToolWindowSide, size: number, stacked: boolean) {
+/** The width belongs to the column (`data-tool-column`) on both sides; a stacked window gets its height. */
+function windowStyle(
+  id: ToolWindowId,
+  side: ToolWindowSide,
+  size: number,
+  stacked: boolean,
+) {
   if (side === 'bottom') return { height: `${size}px` };
-  if (side === 'right') return { width: `${size}px` };
-  return stacked ? { height: `${layersWindowHeight.value}px` } : undefined;
+  if (!stacked) return undefined;
+  const height =
+    id === 'conversation' ? conversationWindowHeight.value : layersWindowHeight.value;
+  return { height: `${height}px` };
 }
 
 /**
  * Windows that Esc closes when the focus is inside them (stage #1273, decision 2; the Catalog
  * joined in stage #1835, decision 1). The other windows keep no Esc (decision 3).
  */
-const ESC_CLOSES: readonly ToolWindowId[] = ['details', 'comments', 'catalog'];
+const ESC_CLOSES: readonly ToolWindowId[] = [
+  'details',
+  'comments',
+  'catalog',
+  'conversation',
+];
 
 /**
  * Esc without modifiers, not consumed by a menu, popover or tooltip, with no modal open and outside
@@ -64,11 +80,11 @@ function closeOnEscape(id: ToolWindowId, e: KeyboardEvent): void {
 export function ToolWindow({ id, actions, stacked = false, children }: ToolWindowProps) {
   const side = WINDOW_SIDE[id];
   const title = toolWindowMeta(id).title();
-  const size = side === 'bottom' ? toolWindowSizes.value.bottom : sideWidth(side);
+  const size = side === 'bottom' ? toolWindowSizes.value.bottom : 0;
   return (
     <section
       class={`tool-window tool-window-${side}${stacked ? ' tool-window-stacked' : ''}`}
-      style={windowStyle(side, size, stacked)}
+      style={windowStyle(id, side, size, stacked)}
       aria-label={title}
       data-side={side}
       data-window={id}
@@ -76,7 +92,7 @@ export function ToolWindow({ id, actions, stacked = false, children }: ToolWindo
       onKeyDown={(e) => closeOnEscape(id, e)}
     >
       <ToolResizer side={side} name={title} />
-      {stacked && <ToolSplitter name={title} />}
+      {stacked && <ToolSplitter id={id} name={title} />}
       <header class="tool-window-head">
         {side === 'bottom' ? (
           <div class="tool-window-tabs">
@@ -175,12 +191,21 @@ function columnHeight(el: Element): number {
  * Horizontal divider between the Tree and the Layers: dragging up grows the
  * Layers, double click returns to the default height. Same drag as the side divider.
  */
-function ToolSplitter({ name }: { readonly name: string }) {
+function ToolSplitter({
+  id,
+  name,
+}: {
+  readonly id: ToolWindowId;
+  readonly name: string;
+}) {
+  const conversation = id === 'conversation';
+  const resize = conversation ? resizeConversationWindow : resizeLayersWindow;
+  const reset = conversation ? resetConversationWindowHeight : resetLayersWindowHeight;
   const onPointerDown = (e: PointerEvent) => {
     const column = columnHeight(e.currentTarget as HTMLElement);
-    const from = layersWindowHeight.peek();
+    const from = (conversation ? conversationWindowHeight : layersWindowHeight).peek();
     const origin = e.clientY;
-    startDrag(e, (move) => resizeLayersWindow(from - (move.clientY - origin), column));
+    startDrag(e, (move) => resize(from - (move.clientY - origin), column));
   };
 
   return (
@@ -190,7 +215,7 @@ function ToolSplitter({ name }: { readonly name: string }) {
       aria-label={t('window.resize', { name })}
       aria-orientation="horizontal"
       onPointerDown={onPointerDown}
-      onDblClick={(e) => resetLayersWindowHeight(columnHeight(e.currentTarget))}
+      onDblClick={(e) => reset(columnHeight(e.currentTarget))}
     />
   );
 }

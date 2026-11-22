@@ -2,7 +2,10 @@ import { cleanup, fireEvent, screen, waitFor } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { EditorDialogs } from '../../../src/app/useEditorDialogs';
 import { useExitReview } from '../../../src/app/useExitReview';
+import { setIdentity, clearIdentity } from '../../../src/store/identity';
 import { locale } from '../../../src/store/settings';
+import { ConversationWindow } from '../../../src/ui/comments/ConversationWindow';
+import { AGENT, message, sampleThread } from '../../model/threadFixtures';
 import { useDialogSlot } from '../../../src/ui/focus';
 import { ExitReviewDialog } from '../../../src/ui/review/ExitReviewDialog';
 import { ProposalList } from '../../../src/ui/review/ProposalList';
@@ -20,7 +23,10 @@ beforeEach(() => {
   locale.value = 'en-US';
   localStorage.clear();
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  clearIdentity();
+});
 
 const noop = () => {};
 
@@ -38,7 +44,13 @@ function RealShell() {
   );
 }
 
-function Shell({ withList }: { readonly withList: boolean }) {
+function Shell({
+  withList,
+  withConversation = false,
+}: {
+  readonly withList: boolean;
+  readonly withConversation?: boolean;
+}) {
   const dialogs = useDialogSlot<{ readonly kind: 'exitReview' }>();
   const exit = useExitReview(dialogs as unknown as EditorDialogs);
   return (
@@ -48,21 +60,55 @@ function Shell({ withList }: { readonly withList: boolean }) {
       </main>
       <ReviewBar onExit={exit} />
       {withList && <ProposalList onHelp={noop} onScan={noop} />}
+      {withConversation && (
+        <section data-window="conversation">
+          <ConversationWindow />
+        </section>
+      )}
       {dialogs.current && <ExitReviewDialog onClose={dialogs.close} />}
     </>
   );
 }
 
-async function mount(options: { accepted: boolean; withList: boolean }) {
+async function mount(options: {
+  accepted: boolean;
+  withList: boolean;
+  conversation?: { readonly resolved: boolean } | 'empty';
+}) {
   const { base, proposal } = richScenario();
   const p = options.accepted
     ? decided(proposal, base, { level: 'item', id: 'M1' }, 'accepted')
     : proposal;
   const h = await openReviewHarness({ proposals: [p] });
   h.review.open('P1');
-  renderInEditor(h, <Shell withList={options.withList} />);
+  const c = options.conversation;
+  if (c !== undefined && c !== 'empty') {
+    setIdentity('Marina Alves', 'marina@exemplo.com');
+    await h.session.threads.create(
+      sampleThread({
+        id: 'c1',
+        anchor: { kind: 'marking', id: 'M1' },
+        messages: [message('c1a', '2026-09-01T10:00:00.000Z', AGENT, 'a question')],
+        ...(c.resolved
+          ? {
+              resolved: {
+                by: { name: 'Marina Alves', email: 'marina@exemplo.com' },
+                at: '2026-09-01T11:00:00.000Z',
+              },
+            }
+          : {}),
+      }),
+    );
+    h.ui.conversation.value = { kind: 'thread', id: 'c1' };
+  }
+  renderInEditor(
+    h,
+    <Shell withList={options.withList} withConversation={c !== undefined} />,
+  );
   return h;
 }
+
+const composerField = () => document.querySelector('[data-composer-field]');
 
 const canvas = () => document.querySelector('[data-canvas-area]');
 const rowAction = () =>
@@ -125,5 +171,65 @@ describe('Exiting the review: focus does not go to the body', () => {
     fireEvent.click(exit);
     await waitFor(() => expect(rowAction()).not.toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(rowAction()));
+  });
+});
+
+describe('Exiting the review with the Conversation window open (stage #1881, decision 19)', () => {
+  it('via the button → the composer field of the open conversation, even with Proposals open', async () => {
+    const h = await mount({
+      accepted: false,
+      withList: true,
+      conversation: { resolved: false },
+    });
+    const exit = screen.getByRole('button', { name: 'Exit review' });
+    exit.focus();
+    fireEvent.click(exit);
+    await waitFor(() => expect(h.review.proposalId.value).toBeNull());
+    expect(composerField()).not.toBeNull();
+    expect(document.activeElement).toBe(composerField());
+    await new Promise<void>((resolve) => setTimeout(resolve, 100));
+    expect(document.activeElement).toBe(composerField());
+    // The window stays as it was.
+    expect(h.ui.conversation.value).toEqual({ kind: 'thread', id: 'c1' });
+  });
+
+  it('via the dialog (Exit anyway) → the composer field', async () => {
+    const h = await mount({
+      accepted: true,
+      withList: true,
+      conversation: { resolved: false },
+    });
+    const exit = screen.getByRole('button', { name: 'Exit review' });
+    exit.focus();
+    fireEvent.click(exit);
+    const confirm = await screen.findByRole('button', { name: 'Exit anyway' });
+    confirm.focus();
+    fireEvent.click(confirm);
+    await waitFor(() => expect(h.review.proposalId.value).toBeNull());
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    expect(document.activeElement).toBe(composerField());
+  });
+
+  it("a resolved conversation has no composer: today's order (the proposal button)", async () => {
+    const h = await mount({
+      accepted: false,
+      withList: true,
+      conversation: { resolved: true },
+    });
+    expect(composerField()).toBeNull();
+    const exit = screen.getByRole('button', { name: 'Exit review' });
+    exit.focus();
+    fireEvent.click(exit);
+    await waitFor(() => expect(h.review.proposalId.value).toBeNull());
+    expect(document.activeElement).toBe(rowAction());
+  });
+
+  it("the window open on no conversation: today's order (the canvas)", async () => {
+    const h = await mount({ accepted: false, withList: false, conversation: 'empty' });
+    const exit = screen.getByRole('button', { name: 'Exit review' });
+    exit.focus();
+    fireEvent.click(exit);
+    await waitFor(() => expect(h.review.proposalId.value).toBeNull());
+    expect(document.activeElement).toBe(canvas());
   });
 });

@@ -54,10 +54,9 @@ function goToItem(
 function goToThread(editor: EditorContextValue, project: Project, id: string): void {
   const thread = editor.session.threads.list.peek().find((th) => th.id === id);
   if (!thread) return;
+  // Opens the Conversation window, wherever the chip was clicked (e.g. "from the conversation"
+  // in Proposals).
   selectThread(editor.ui, project, thread);
-  // From the chip of a window that is not Details (e.g. "from the thread" in Proposals), the
-  // thread only shows up if Details is in view.
-  openToolWindow('details');
 }
 
 /** The target of a citation as `revealTarget` takes it (the thread goes through its anchor). */
