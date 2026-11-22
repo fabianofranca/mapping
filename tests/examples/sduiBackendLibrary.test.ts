@@ -1,6 +1,7 @@
 // @vitest-environment node
-// Example library `sdui-backend` (EX1): the executable origin (a fictional SDUI backend),
-// with `sources`, `slot`, anchors, `scrim`, external-system examples and the version contract.
+// Example library `sdui-backend` (EX1): a fictional SDUI backend described by `sources` (plain data)
+// and the `sdui` file format plugin, with `slot`, anchors, `scrim`, container classes and the
+// version contract. Stage #2035 (AF7): no `origins` and no external-system examples any more.
 import {
   cpSync,
   mkdirSync,
@@ -13,12 +14,12 @@ import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { approximateMeasurer } from '../../src/model/components/instantiate';
+import { buildCatalog } from '../../src/model';
 import { resolveSlotLayout } from '../../src/model/components/arrange';
 import { withContainer } from '../../src/model/components/container';
 import { loadLibrary } from '../../src/model/components/library';
 import { parseComponentText } from '../../src/model/components/parseComponent';
 import { componentSlots } from '../../src/model/components/slots';
-import { screenFromSource } from '../../src/model/components/origin';
 import { validateLibrary } from '../../src/model/library';
 import { parseSpecText } from '../../src/model/spec';
 import { acceptAllAndApply, ok, propose, readProject } from '../mcp/proposalSupport';
@@ -41,7 +42,20 @@ const files = listDisk(ROOT)
 const text = (path: string): string => files.find((f) => f.path === path)?.text ?? '';
 
 describe('example library sdui-backend', () => {
-  it('has the specialization, one component per visual type, one document per type and the external-system JSON', () => {
+  it('is at formatVersion 22 with no origins and no external-system example', () => {
+    const parsed = parseSpecText(text(SPEC_FILE));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.spec.formatVersion).toBe(22);
+    expect(parsed.spec.origins).toBeUndefined();
+    const examples = parsed.spec.layers
+      .flatMap((l) => l.annotationTypes)
+      .flatMap((t) => t.examples ?? []);
+    expect(examples.some((e) => e.mode === 'system' || 'system' in e)).toBe(false);
+    expect(parsed.spec.fileFormats).toHaveLength(1);
+  });
+
+  it('has the specialization, one component per visual type, one document per type, the plugin and its example', () => {
     expect(files.map((f) => f.path)).toEqual(
       [
         SPEC_FILE,
@@ -56,9 +70,7 @@ describe('example library sdui-backend', () => {
         'docs/sdui-fab.md',
         'docs/sdui-scrim.md',
         'docs/sdui-sheet.md',
-        'examples/button.sdui.json',
         'examples/home.sdui.json',
-        'examples/settings.sdui.json',
         'plugins/sdui.js',
       ].sort(),
     );
@@ -98,9 +110,9 @@ describe('container classes (stage #1901, CX1; decision 27)', () => {
   const typeOf = (id: string) =>
     spec?.layers.flatMap((l) => l.annotationTypes).find((t) => t.id === id);
 
-  it('is at formatVersion 21 and parses with no issue', () => {
+  it('is at formatVersion 22 and parses with no issue', () => {
     expect(parsed.ok).toBe(true);
-    expect(spec?.formatVersion).toBe(21);
+    expect(spec?.formatVersion).toBe(22);
   });
 
   it('declares the two sets: platform (chosen) and window (by width: 600 and 840)', () => {
@@ -161,44 +173,6 @@ describe('sdui-column reads the container (stage #1901, CX4; decision 27)', () =
   it('keeps 24 px without a container class and the type padding wins when informed', () => {
     expect(padding(undefined)).toEqual(all(24));
     expect(padding('compact', { padding: 8 })).toEqual(all(8));
-  });
-});
-
-describe('contrato da origem do pacote', () => {
-  const library = loadLibrary(
-    files
-      .filter((f) => f.path.endsWith('.json'))
-      .map((f) => ({ path: f.path, text: f.text })),
-  );
-
-  it('the declaration translates examples/settings.sdui.json with no warning', () => {
-    expect(library.problems).toEqual([]);
-    const result = screenFromSource(
-      library,
-      JSON.parse(text('examples/settings.sdui.json')),
-      { measure: approximateMeasurer },
-    );
-    expect(result.error).toBeUndefined();
-    expect(result.warnings).toEqual([]);
-    expect(result.screen).toBeDefined();
-  });
-
-  it('the screen brings the column, the floating one and the sheet with the scrim', () => {
-    const result = screenFromSource(
-      library,
-      JSON.parse(text('examples/settings.sdui.json')),
-      { measure: approximateMeasurer },
-    );
-    const types = JSON.stringify(result.screen);
-    for (const id of [
-      'sdui-column',
-      'sdui-button',
-      'sdui-fab',
-      'sdui-sheet',
-      'sdui-scrim',
-    ]) {
-      expect(types, id).toContain(id);
-    }
   });
 });
 
@@ -272,6 +246,7 @@ describe('file format sdui (stage #1923, FP6)', () => {
     expect(result.valid).toBe(true);
     expect(result.summary.level).toBe(3);
     expect(result.spec).toMatchObject({ fileFormats: 1 });
+    expect(result.spec).toMatchObject({ origins: 0 });
   });
 
   it('importing home.sdui.json without a container creates the screen, the components, the slot children and the bottom bar', async () => {
@@ -356,6 +331,23 @@ describe('file format sdui (stage #1923, FP6)', () => {
     expect(planned.valid).toBe(true);
     expect(planned.created).toEqual([]);
     expect(readProject(dir).containers).toHaveLength(1);
+  });
+});
+
+describe('the Catalog of sdui-backend (stage #2035, AF7)', () => {
+  const catalog = buildCatalog(files);
+
+  it('has no "From the external system" example on any type', () => {
+    const examples = catalog.layers.flatMap((l) => l.entries).flatMap((t) => t.examples);
+    expect(examples.filter((e) => e.mode === 'system')).toEqual([]);
+    expect(examples.map((e) => e.name)).not.toContain('From the external system');
+  });
+
+  it('lists the sdui format with its home.sdui.json example', () => {
+    expect(catalog.formats.map((f) => f.id)).toEqual(['sdui']);
+    expect(catalog.formats[0]!.examples.map((e) => e.file)).toEqual([
+      'examples/home.sdui.json',
+    ]);
   });
 });
 

@@ -543,6 +543,8 @@ Rules:
 
 When the screen already exists in a browser or in an app (a web page, a view hierarchy) and you can **measure** its rectangles, do not recreate each marking by hand: the batch's `import_measured` op reads the measured tree and translates it into `create_marking`s, each one with the annotation of the type that matched. It needs an applied specialization with an origin `kind: "measured"` (`origins`, `formatVersion` 15 to 21: from 22 there is no `origins`, and a file format plugin read by `import_format` takes its place) and types with `sources` in that `system`; the example library is `examples/libraries/measured/` (`system` `dom`).
 
+**From `formatVersion` 22** the measured page is imported with the `dom` file format of that library, through the `import_format` op: `{ "op": "import_format", "format": "measured/dom", "file": "measures/page.measured.json", "container": "$page" }` (or `text`). The file is the bare tree or `{ tree, scale?, offset? }`, and a node smaller than its component's minimum size makes the whole import refuse, where `import_measured` skips it with a note. `import_measured` works only for specializations up to `formatVersion` 21, which is what the rest of this section describes.
+
 | Parameter   | Description                                                                                                                                       |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `container` | Where the markings are born (reference, id or `$name` alias). The rectangles are in its pixels, after `scale` and `offset`.                       |

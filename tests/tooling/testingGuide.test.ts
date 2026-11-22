@@ -504,7 +504,7 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
     });
 
     it('the cloud prompt lists the scripts up to R43', () => {
-      expect(prompt).toContain('R0 to R43');
+      expect(prompt).toContain('R0 to R44');
     });
   });
 
@@ -573,7 +573,7 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
     });
 
     it('the cloud prompt lists the scripts up to R43', () => {
-      expect(prompt).toContain('R0 to R43');
+      expect(prompt).toContain('R0 to R44');
     });
   });
 
@@ -648,11 +648,11 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
     });
 
     it('the cloud prompt lists the scripts up to R43', () => {
-      expect(prompt).toContain('R0 to R43');
+      expect(prompt).toContain('R0 to R44');
     });
 
     it('the full-round order enumeration ends at R43, like the heading', () => {
-      expect(prompt).toContain('R5, R8 and R9 to R43.');
+      expect(prompt).toContain('R5, R8 and R9 to R44.');
       expect(prompt).not.toContain('R9 to R27');
     });
   });
