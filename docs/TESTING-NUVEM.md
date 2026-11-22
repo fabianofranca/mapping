@@ -133,7 +133,7 @@ The full round (R0 to R43) runs in **simultaneous sessions, one per block of the
 | 6     | R0, section 6, R11, R27, R32, R37, R38, R39, R41, R42 and R43                      | 131   |
 | 7     | R0, section 6, R2, R18, R19, R20, R28 and R30                                      | 145   |
 
-There are 7 blocks: 5 by decision of the owner (2026-11-09), the 6th by #2024 (2026-11-17) and the 7th by #2625 (2026-11-22), which also gave R25 a block of its own. The visual pass stays in block 4 (decision 6 of stage #841). The guide limit (`MAX_BLOCK_GUIDE_CHARS`), sizes, dependencies and baselines: `cloud.mjs secao consulta.historico`.
+There are 7 blocks: 5 by the owner (2026-11-09), the 6th by #2024, the 7th by #2625 (2026-11-22). The visual pass stays in block 4. The limit (`MAX_BLOCK_GUIDE_CHARS`), sizes, dependencies and baselines: `cloud.mjs secao consulta.historico`.
 
 **Mode `modo completo, bloco k de n`.** The message "run the `modo completo, bloco k de n`" (k from 1 to n) tells you to:
 
