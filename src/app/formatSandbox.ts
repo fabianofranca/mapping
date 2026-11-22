@@ -9,7 +9,7 @@
 //   page → frame   { id, source, fn, args, timeoutMs }   (`args` is one JSON text)
 //   frame → page   { ready: true }                       (once, when the bootstrap runs)
 //   frame → page   { id, status: 'ok', output }          (`output` is one JSON text)
-//                  { id, status: 'error', message, line?, column? }
+//                  { id, status: 'error', message, line?, column?, phase? }   (`phase: 'load'` when the text failed to load)
 //                  { id, status: 'missing' }             (the plugin does not define `fn`)
 //                  { id, status: 'invalid', message }    (a Promise, or not JSON)
 //                  { id, status: 'timeout' }
@@ -148,7 +148,7 @@ export const SANDBOX_BOOTSTRAP = `(function () {
     };
     worker.onerror = function (failure) {
       failure.preventDefault();
-      var out = { status: 'error', message: String(failure.message).replace(/^Uncaught /, '') };
+      var out = { status: 'error', phase: 'load', message: String(failure.message).replace(/^Uncaught /, '') };
       if (failure.lineno > 0) {
         out.line = failure.lineno;
         out.column = Math.max(1, failure.colno - (failure.lineno === 1 ? prefix.length : 0));

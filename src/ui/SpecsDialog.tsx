@@ -11,6 +11,7 @@ import {
   specializationUpdateImpact,
   usesPackageFiles,
   type BundledLibrary,
+  type FormatRunner,
   type IgnoredSpecField,
   type Project,
   type ProjectSpecialization,
@@ -35,6 +36,8 @@ import {
   readPackageFromZip,
   readPackageSpec,
   validatePackage,
+  validatePackageWithFormats,
+  type PackageImageBytes,
   type PackageReadResult,
 } from './specPackageImport';
 import { labelTexts } from './typedText';
@@ -47,6 +50,11 @@ interface SpecsDialogProps {
   readonly readOnly: boolean;
   /** Packages built into the app: a specialization with an older copy offers the update to them. */
   readonly bundled?: readonly BundledLibrary[];
+  /**
+   * The executor of the format plugins (the sandbox): with it, applying or updating a package also
+   * runs the checks of its file formats (stage #2035, decision 13); without it they are not run.
+   */
+  readonly formatRunner?: FormatRunner;
   readonly onClose: () => void;
 }
 
@@ -127,6 +135,7 @@ export function SpecsDialog({
   project,
   readOnly,
   bundled = [],
+  formatRunner,
   onClose,
 }: SpecsDialogProps) {
   const { actions } = useEditor();
@@ -187,7 +196,17 @@ export function SpecsDialog({
     return null;
   };
 
-  /** Reads, validates (three levels) and opens the package review; nothing changes yet. */
+  /** The three levels and, with an executor, the checks of the package's file formats. */
+  const validate = (
+    files: SpecPackageFiles,
+    previous: Spec | undefined,
+    imageBytes: PackageImageBytes,
+  ): Promise<LibraryReport> =>
+    formatRunner === undefined
+      ? Promise.resolve(validatePackage(files, previous, imageBytes))
+      : validatePackageWithFormats(files, previous, imageBytes, { run: formatRunner });
+
+  /** Reads, validates (three levels and the formats) and opens the package review; nothing changes yet. */
   const reviewPackage = async (
     read: () => Promise<PackageReadResult>,
     expectedId: string | null = expected.current,
@@ -217,7 +236,7 @@ export function SpecsDialog({
           kind: 'package',
           spec: null,
           decision: 'apply',
-          report: validatePackage(files, undefined, imageBytes),
+          report: await validate(files, undefined, imageBytes),
           files,
         });
         return;
@@ -233,9 +252,13 @@ export function SpecsDialog({
         kind: 'package',
         spec,
         decision,
-        report: validatePackage(files, previous, imageBytes),
+        report: await validate(files, previous, imageBytes),
         files,
       });
+    } catch (e) {
+      // The validation runs the plugins: a failure of the executor ends as a message, never silently.
+      reportError('spec.validatePackage', e);
+      setMessage({ tone: 'error', text: t('spec.packageReadFailed') });
     } finally {
       setBusy(false);
     }
