@@ -18,6 +18,8 @@ import {
   parseSpec,
   type ComponentFile,
 } from '../../../src/model';
+import { RENDER_WARNING_CODES } from '../../../src/canvas/components/renderWarnings';
+import { catalogEnUS, catalogPtBR } from '../../../src/i18n/catalog';
 import { instantiate } from '../../../src/model/components/instantiate';
 import {
   baseNode,
@@ -127,11 +129,42 @@ describe('the logo example drawn with the package image resolver', () => {
   it('a decode failure is the placeholder with the image-decode-failed warning', () => {
     const result = renderScene(logoScene(VALUES), {
       specId: SPEC_ID,
-      packageImage: () => ({ state: 'failed' }),
+      packageImage: () => ({ state: 'failed', reason: 'decode' }),
     });
     expect(imagesOf(result.root)).toHaveLength(0);
     expect(crossesOf(result.root)).toHaveLength(3);
     expect(result.warnings.map((w) => w.code)).toContain('image-decode-failed');
+  });
+
+  it('a refused image is the placeholder with package-image-refused, not the decode warning', () => {
+    const result = renderScene(logoScene(VALUES), {
+      specId: SPEC_ID,
+      packageImage: () => ({ state: 'failed', reason: 'refused' }),
+    });
+    expect(imagesOf(result.root)).toHaveLength(0);
+    expect(crossesOf(result.root)).toHaveLength(3);
+    const codes = result.warnings.map((w) => w.code);
+    expect(codes).toContain('package-image-refused');
+    expect(codes).not.toContain('image-decode-failed');
+  });
+
+  it('a missing image is the placeholder with no drawing warning', () => {
+    const result = renderScene(logoScene(VALUES), {
+      specId: SPEC_ID,
+      packageImage: () => ({ state: 'failed', reason: 'missing' }),
+    });
+    expect(imagesOf(result.root)).toHaveLength(0);
+    expect(crossesOf(result.root)).toHaveLength(3);
+    const codes = result.warnings.map((w) => w.code);
+    expect(codes).not.toContain('package-image-refused');
+    expect(codes).not.toContain('image-decode-failed');
+  });
+
+  it('package-image-refused is in the list of codes and has text in both locales', () => {
+    expect(RENDER_WARNING_CODES).toContain('package-image-refused');
+    const key = 'catalog.drawWarning.package-image-refused' as const;
+    expect(catalogEnUS[key]).toMatch(/limits/i);
+    expect(catalogPtBR[key]).toMatch(/limites/i);
   });
 
   it('draws each image from the bitmap the resolver gives for its own asset', () => {

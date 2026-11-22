@@ -10,6 +10,7 @@ import { catalogEnUS, catalogPtBR } from '../../../src/i18n/catalog';
 import {
   type FrameNode,
   type Paint,
+  type Stroke,
   type Scene,
   baseNode,
 } from '../../../src/model/components/scene';
@@ -36,7 +37,7 @@ function sceneWith(fill: Paint): Scene {
 }
 
 /** A 100 × 40 ellipse (a Konva ellipse has its origin at its center) with `fill`. */
-function ellipseWith(fill: Paint): Konva.Shape {
+function ellipseWith(fill: Paint, stroke?: Stroke): Konva.Shape {
   const frame: FrameNode = {
     ...baseNode({ id: 'r', name: 'r', width: 100, height: 40 }),
     type: 'frame',
@@ -44,7 +45,7 @@ function ellipseWith(fill: Paint): Konva.Shape {
     cornerRadius: 0,
     children: [
       {
-        ...baseNode({ id: 'e', name: 'e', width: 100, height: 40, fills: [fill] }),
+        ...baseNode({ id: 'e', name: 'e', width: 100, height: 40, fills: [fill], stroke }),
         type: 'ellipse',
       },
     ],
@@ -181,6 +182,41 @@ describe('on an ellipse (whose Konva origin is its center)', () => {
     });
     expect(linear.fillLinearGradientStartPoint()).toEqual({ x: -50, y: -20 });
     expect(linear.fillLinearGradientEndPoint()).toEqual({ x: 50, y: -20 });
+  });
+});
+
+describe('a linear stroke gradient', () => {
+  const LINEAR: Paint = {
+    type: 'linear',
+    start: { x: 0, y: 0 },
+    end: { x: 100, y: 0 },
+    stops: STOPS,
+  };
+  const STROKE: Stroke = { width: 2, paints: [LINEAR] };
+
+  it('on an ellipse is converted like the fill (the Konva origin is the center)', () => {
+    const strokeShape = (
+      ellipseWith({ type: 'solid', color: '#000000' }, STROKE)
+        .getParent() as Konva.Group
+    ).find('Ellipse')[1] as Konva.Shape;
+    expect(strokeShape.strokeLinearGradientStartPoint()).toEqual({ x: -50, y: -20 });
+    expect(strokeShape.strokeLinearGradientEndPoint()).toEqual({ x: 50, y: -20 });
+  });
+
+  it('on a rect keeps the points in the box', () => {
+    const node: FrameNode = {
+      ...baseNode({ id: 'r', name: 'r', width: 100, height: 40 }),
+      type: 'frame',
+      clip: false,
+      cornerRadius: 0,
+      children: [],
+      stroke: STROKE,
+    };
+    const rect = renderScene({ root: node, warnings: [] }).root.find(
+      'Rect',
+    )[0] as Konva.Rect;
+    expect(rect.strokeLinearGradientStartPoint()).toEqual({ x: 0, y: 0 });
+    expect(rect.strokeLinearGradientEndPoint()).toEqual({ x: 100, y: 0 });
   });
 });
 
