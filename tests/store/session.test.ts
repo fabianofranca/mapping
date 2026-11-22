@@ -151,6 +151,29 @@ describe('project session', () => {
       expect(await root.read('images/foo-2.png')).toBeNull();
     });
 
+    it('R6.12/R6.13 sequence: the deleted name stays reserved while undo can bring it back, and a case-only name takes the next suffix', async () => {
+      const root = new MemoryDirectory('p');
+      session = start(root);
+      await session.addImages([file('foo.png', '400x300')]);
+      await session.flush();
+      const containerId = session.store.project.value?.containers[0]?.id ?? '';
+      session.actions.removeContainer(containerId);
+      await session.flush();
+      expect((await session.addImages([file('foo.png', '100x100')])).added).toEqual([
+        'images/foo-2.png',
+      ]);
+      await session.flush();
+      session.store.undo();
+      session.store.undo();
+      await session.flush();
+      // `foo` is back and `foo-2` is still in the redo history: the case-only name skips both.
+      expect((await session.addImages([file('FOO.PNG', '400x300')])).added).toEqual([
+        'images/FOO-3.PNG',
+      ]);
+      await session.flush();
+      expect(await root.read('images/foo.png')).toBe('400x300');
+    });
+
     it('two concurrent imports with the same name write different files', async () => {
       const root = new MemoryDirectory('p');
       session = start(root);
