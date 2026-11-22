@@ -1,10 +1,16 @@
 import { signal, type ReadonlySignal } from '@preact/signals';
-import { buildCatalog, packageSpecNameOf, type Catalog } from '../model';
+import {
+  buildCatalog,
+  packageSpecNameOf,
+  type Catalog,
+  type FormatRunner,
+} from '../model';
+import type { LibraryIssue } from '../model/library';
 import { createFontRegistry, type FontRegistry } from '../storage/fonts';
 import { createPackageImages, type PackageImages } from '../storage/packageImages';
 import { reportError } from '../utils/report';
 import { fontDeclaration } from './componentLibrary';
-import { libraryInputFiles } from './packageValidation';
+import { formatIssuesOf, libraryInputFiles } from './packageValidation';
 import type { SpecPackageFiles } from './project';
 
 // Library opened without a project (Library stage, B5): the package read into memory becomes a
@@ -17,6 +23,13 @@ export interface LibraryPreview {
   readonly specId: string;
   readonly version: number;
   readonly catalog: Catalog;
+  /**
+   * The problems the formats' checks found (stage #2035, decision 13): empty until they finish and for a
+   * library without formats; the Catalog counts them in its validation line.
+   */
+  readonly formatIssues: ReadonlySignal<readonly LibraryIssue[]>;
+  /** The format checks ran to the end (false without a runner, without formats or while they run). */
+  readonly formatsChecked: ReadonlySignal<boolean>;
   /** Rises when the fonts finish registering: the drawings are remeasured. */
   readonly fontsEpoch: ReadonlySignal<number>;
   /** The package images, decoded from the files in memory (decision 18 of stage #1903). */
@@ -28,7 +41,14 @@ export interface LibraryPreview {
 
 export function openLibraryPreview(
   files: SpecPackageFiles,
-  options: { readonly fonts?: FontRegistry } = {},
+  options: {
+    readonly fonts?: FontRegistry;
+    /**
+     * The executor of the formats' plugins (the sandbox): opening a library from the home screen is the
+     * explicit action that runs their checks (decision 13); without it nothing runs.
+     */
+    readonly run?: FormatRunner;
+  } = {},
 ): LibraryPreview {
   const catalog = buildCatalog(libraryInputFiles(files));
   const spec = catalog.spec;
@@ -59,6 +79,21 @@ export function openLibraryPreview(
     })();
   }
 
+  const formatIssues = signal<readonly LibraryIssue[]>([]);
+  const formatsChecked = signal(false);
+  const { run } = options;
+  if (run !== undefined && catalog.formats.length > 0) {
+    void (async () => {
+      try {
+        const issues = await formatIssuesOf(files, catalog.report, { run });
+        if (!disposed) formatIssues.value = issues;
+        if (!disposed) formatsChecked.value = true;
+      } catch (error) {
+        reportError('library.preview.formats', error);
+      }
+    })();
+  }
+
   const imagesEpoch = signal(0);
   const images = createPackageImages({
     read: async (specId, asset) => {
@@ -75,6 +110,8 @@ export function openLibraryPreview(
     specId: spec?.id ?? '',
     version: spec?.version ?? 0,
     catalog,
+    formatIssues,
+    formatsChecked,
     fontsEpoch: epoch,
     images,
     imagesEpoch,

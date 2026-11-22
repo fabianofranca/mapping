@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n';
+import type { FormatRunner } from '../model';
 import { CatalogView } from './catalog/CatalogView';
 import { Button, Select, Tabs, type TabItem } from './controls';
 import { useEditor } from './EditorContext';
@@ -16,9 +17,11 @@ type CatalogTab = 'components' | 'palette';
 interface CatalogWindowProps {
   /** Opens the Specializations dialog (shortcut from the empty state). */
   readonly onOpenSpecs: () => void;
+  /** The executor of the formats' plugins: the "File formats" page draws the examples with it. */
+  readonly formatRunner?: FormatRunner;
 }
 
-export function CatalogWindow({ onOpenSpecs }: CatalogWindowProps) {
+export function CatalogWindow({ onOpenSpecs, formatRunner }: CatalogWindowProps) {
   const [tab, setTab] = useState<CatalogTab>('components');
   const tabs: readonly TabItem<CatalogTab>[] = [
     { id: 'components', label: t('catalog.window.components') },
@@ -35,7 +38,10 @@ export function CatalogWindow({ onOpenSpecs }: CatalogWindowProps) {
         />
         <div role="tabpanel">
           {tab === 'components' ? (
-            <CatalogComponents onOpenSpecs={onOpenSpecs} />
+            <CatalogComponents
+              onOpenSpecs={onOpenSpecs}
+              {...(formatRunner === undefined ? {} : { formatRunner })}
+            />
           ) : (
             <LibraryPalette onOpenSpecs={onOpenSpecs} />
           )}
@@ -45,7 +51,7 @@ export function CatalogWindow({ onOpenSpecs }: CatalogWindowProps) {
   );
 }
 
-function CatalogComponents({ onOpenSpecs }: CatalogWindowProps) {
+function CatalogComponents({ onOpenSpecs, formatRunner }: CatalogWindowProps) {
   const { session, review } = useEditor();
   const { add, disabledReason, error } = useAddComponent();
   const [specId, setSpecId] = useState<string | null>(null);
@@ -102,6 +108,7 @@ function CatalogComponents({ onOpenSpecs }: CatalogWindowProps) {
         }}
         project={project}
         layout="list"
+        {...(formatRunner === undefined ? {} : { formatRunner })}
         onAddToScreen={(typeId) => add(current.specId, typeId)}
         {...(disabledReason === undefined ? {} : { addDisabledReason: disabledReason })}
       />
