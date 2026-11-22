@@ -1,8 +1,8 @@
-# Image header reader split into small helpers — [Não lançado] (épico `epic/image-header-complexity`)
+# Image header reader split into small helpers — 2026-11-22 (épico `epic/image-header-complexity`)
 
 ## Pendências
 
-None.
+None (model refactor only).
 
 ## Sincronização
 

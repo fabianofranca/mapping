@@ -1,4 +1,4 @@
-# Image header reader split into small helpers — [Não lançado] (épico `epic/image-header-complexity`, PR #0, MCP 0.57.1, schema v23)
+# Image header reader split into small helpers — 2026-11-22 (épico `epic/image-header-complexity`, PR #0, MCP 0.57.1, schema v23)
 
 ## Alterado
 
