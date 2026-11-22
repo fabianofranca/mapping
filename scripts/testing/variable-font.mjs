@@ -8,7 +8,7 @@
 //   --ital=<default>             adds the axis `ital` 0 to 1 with that default (0 or 1).
 //
 // Each axis has an `fvar` axis record (no named instance). With an axis the font also has a `gvar` table whose only
-// deltas move phantom point 2 (the advance) of the simple glyphs mapped from `A`-`Z` and `a`-`z`, the same way for every
+// deltas move the advance phantom point (the second one) of the simple glyphs mapped from `A`-`Z` and `a`-`z`, the same way for every
 // axis: the region toward the axis minimum (peak −1) adds 512 units and the region toward the maximum (peak +1)
 // subtracts 256 (the font has 2048 units per em). Composite and empty glyphs get no variation data and the outlines do
 // not move. There is no `HVAR`: HarfBuzz and Chromium take the advance from the phantom points.
@@ -173,7 +173,7 @@ function packedPoint(point) {
 const packedWord = (value) => Buffer.from([0x40, (value >> 8) & 255, value & 255]);
 const PACKED_ZERO = Buffer.from([0x80]);
 
-/** The `GlyphVariationData` of a simple glyph with `points` points: two tuples per axis, on phantom point 2. */
+/** The `GlyphVariationData` of a simple glyph with `points` points: two tuples per axis, on the advance phantom point. */
 function glyphData(points) {
   const tuples = [];
   axes.forEach((_, n) => {
@@ -182,7 +182,7 @@ function glyphData(points) {
       [1, TOWARD_MAX],
     ]) {
       const peaks = axes.map((__, m) => (m === n ? f2dot14(peak) : 0));
-      // Phantom points follow the glyph's points: 0 is the origin, 1 the advance, 2 the top and 3 the bottom.
+      // Phantom points follow the glyph's points: `points` is the origin, `points + 1` the advance (the second phantom point), then the top and the bottom.
       const data = Buffer.concat([
         packedPoint(points + 1),
         packedWord(delta),
