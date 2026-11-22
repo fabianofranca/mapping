@@ -189,6 +189,63 @@ describe('measurer with the --calt test font', () => {
   });
 });
 
+// Stage #2448 (BD1, decisions 5 and 8): a mixed-direction line is measured run by run, in the node's direction. The
+// Hebrew letters of the `--rtl` test font are the glyphs of `A` to `J`.
+describe('measurer with the --rtl test font', () => {
+  let dir: string;
+  let bytes: ArrayBuffer;
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'mapping-rtl-'));
+    execFileSync('node', [
+      'scripts/testing/gsub-font.mjs',
+      join(dir, 'rtl.ttf'),
+      '--rtl',
+    ]);
+    const file = new Uint8Array(readFileSync(join(dir, 'rtl.ttf')));
+    bytes = file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength);
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  const measure = (): ReturnType<typeof createMeasurer> =>
+    createMeasurer([
+      { family: 'Rtl', weight: '400', style: 'normal', path: 'fonts/Rtl.ttf', bytes },
+    ]);
+  const inRtl = { ...font, family: 'Rtl, sans-serif' };
+
+  it('a mixed line measures the sum of its runs', () => {
+    const sum = ['abc ', 'ABC', ' def'].reduce((w, run) => w + sans.advance(run, 14), 0);
+    expect(measure()('abc אבג def', inRtl).width).toBeCloseTo(sum, 6);
+  });
+
+  it('in rtl the runs are shaped in the node direction: the period of a Latin line is its own run', () => {
+    const rtl = { ...inRtl, direction: 'rtl' as const };
+    // `V.` is a kerning pair; with the period in a run of its own the pair is not kerned
+    const sum = sans.advance('.', 14) + sans.advance('AV', 14);
+    expect(measure()('AV.', rtl).width).toBeCloseTo(sum, 6);
+    expect(sum).toBeGreaterThan(sans.advance('AV.', 14) + 1);
+    expect(measure()('אבג 123 דה', rtl).width).toBeCloseTo(
+      sans.advance('ABC ', 14) + sans.advance('123', 14) + sans.advance(' DE', 14),
+      6,
+    );
+  });
+
+  it('Latin text in ltr is unchanged', () => {
+    expect(measure()('Pay invoice.', inRtl).width).toBe(sans.advance('Pay invoice.', 14));
+    expect(measure()('AV.', inRtl).width).toBe(sans.advance('AV.', 14));
+    expect(measure()('Hamburgefonstiv', inRtl).width).toBe(
+      sans.advance('Hamburgefonstiv', 14),
+    );
+  });
+
+  it('the direction is part of the measurer cache key', () => {
+    const m = measure();
+    const rtl = { ...inRtl, direction: 'rtl' as const };
+    const ltr = m('AV.', inRtl).width;
+    expect(m('AV.', rtl).width).not.toBe(ltr);
+    expect(m('AV.', inRtl).width).toBe(ltr);
+  });
+});
+
 // Stage #2121 (HB2, decisions 7 and 8): the library's font formats and what makes a font usable.
 describe('library font formats', () => {
   const entry = (bytes: Uint8Array, path: string) => ({
