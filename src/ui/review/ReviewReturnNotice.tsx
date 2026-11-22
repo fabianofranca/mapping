@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'preact/hooks';
 import { t } from '../../i18n';
 import { Button } from '../controls';
 import { useEditor } from '../EditorContext';
@@ -15,36 +16,49 @@ export function ReviewReturnNotice() {
   if (id === null || review.proposalId.value !== null) return null;
   const row = review.derived.rows.value.find((r) => r.proposal.id === id);
   if (!row || row.proposal.status !== 'open') return null;
-  const { title } = row.proposal;
+  return <ReturnNotice id={id} title={row.proposal.title} />;
+}
+
+// Details keeps the scroll the review left it at; the notice scrolls itself into view when it
+// appears (it mounts once per exit), so it is never left above the visible part.
+function ReturnNotice({ id, title }: { readonly id: string; readonly title: string }) {
+  const editor = useEditor();
+  const { ui } = editor;
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.scrollIntoView?.({ block: 'nearest' });
+  }, []);
   return (
-    <Notice
-      tone="info"
-      icon="proposal"
-      size="sm"
-      class="review-return-notice"
-      actions={
-        <>
-          <Button
-            size="sm"
-            variant="primary"
-            aria-label={`${t('proposals.action.review')}: ${title}`}
-            onClick={() => openReviewIn(editor, id)}
-          >
-            {t('proposals.action.review')}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              ui.reviewReturn.value = null;
-            }}
-          >
-            {t('review.returnDismiss')}
-          </Button>
-        </>
-      }
-    >
-      <span>{t('review.returnNotice', { title })}</span>
-    </Notice>
+    <div ref={ref}>
+      <Notice
+        tone="info"
+        icon="proposal"
+        size="sm"
+        class="review-return-notice"
+        actions={
+          <>
+            <Button
+              size="sm"
+              variant="primary"
+              aria-label={`${t('proposals.action.review')}: ${title}`}
+              onClick={() => openReviewIn(editor, id)}
+            >
+              {t('proposals.action.review')}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                ui.reviewReturn.value = null;
+              }}
+            >
+              {t('review.returnDismiss')}
+            </Button>
+          </>
+        }
+      >
+        <span>{t('review.returnNotice', { title })}</span>
+      </Notice>
+    </div>
   );
 }
