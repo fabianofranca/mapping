@@ -1,4 +1,4 @@
-# Package image fixes — [Não lançado] (épico `epic/package-image-fixes`)
+# Package image fixes — [Não lançado]
 
 ## Alterado
 
