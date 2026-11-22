@@ -205,6 +205,81 @@ describe('resolveCode', () => {
       expect(code.params).toEqual({ title: 'title' });
     });
 
+    describe('slots', () => {
+      const slotSheet = (
+        values: readonly string[],
+        slots: readonly string[],
+      ): Signature => ({
+        ...sheet(values),
+        params: [
+          ...values.map((name) => ({ name, role: 'value' as const, type: 'String' })),
+          ...slots.map((name) => ({
+            name,
+            role: 'slot' as const,
+            type: '@Composable () -> Unit',
+          })),
+        ],
+      });
+      const bar: SpecCode = {
+        symbol: 'A',
+        slots: { actions: 'trailingContent', navigationIcon: 'navigationIcon' },
+        variants: {
+          field: 'style',
+          cases: {
+            center: {
+              symbol: 'C',
+              signature: 'c.json',
+              slots: { navigationIcon: 'leading' },
+            },
+            plain: { symbol: 'P', slots: { navigationIcon: 'leading' } },
+            bare: { symbol: 'B' },
+          },
+        },
+      };
+
+      it("a case's slots are added to the base's, key by key", () => {
+        expect(resolveCode(bar, { style: 'plain' }, fields).slots).toEqual({
+          actions: 'trailingContent',
+          navigationIcon: 'leading',
+        });
+      });
+
+      it('a case without slots keeps the base slots', () => {
+        expect(resolveCode(bar, { style: 'bare' }, fields).slots).toEqual(bar.slots);
+      });
+
+      it('a case with its own sheet does not inherit the base slot its sheet lacks', () => {
+        const code = resolveCode(
+          bar,
+          { style: 'center' },
+          fields,
+          sheets({ 'c.json': slotSheet(['title'], ['leading', 'actions']) }),
+        );
+        expect(code.slots).toEqual({ navigationIcon: 'leading' });
+      });
+
+      it('the base slot its sheet has is inherited, and the own entry stays even if the sheet lacks it', () => {
+        const code = resolveCode(
+          bar,
+          { style: 'center' },
+          fields,
+          sheets({ 'c.json': slotSheet(['title'], ['trailingContent']) }),
+        );
+        expect(code.slots).toEqual({
+          actions: 'trailingContent',
+          navigationIcon: 'leading',
+        });
+      });
+
+      it('without sheets or with an unreadable one the slots resolve as before', () => {
+        const old = { actions: 'trailingContent', navigationIcon: 'leading' };
+        expect(resolveCode(bar, { style: 'center' }, fields).slots).toEqual(old);
+        expect(resolveCode(bar, { style: 'center' }, fields, sheets({})).slots).toEqual(
+          old,
+        );
+      });
+    });
+
     it('without sheets, with a case without its own sheet or with an unreadable one, the result equals the old one', () => {
       const old = resolveCode(entry, { style: 'center' }, fields);
       expect(old.params).toEqual({ title: 'title', subtitle: 'subtitle', size: 'size' });

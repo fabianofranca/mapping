@@ -291,6 +291,31 @@ describe('import_icons: conversion problems', () => {
   });
 });
 
+describe('import_icons: transparent is not a color', () => {
+  const CLEAR_BOX =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="transparent"/><path d="M4 4h16v16H4z" fill="#000000"/></svg>';
+
+  it('drops the transparent rect: one path with fill true, in a dry run and for real', async () => {
+    const lib = library();
+    writeFileSync(join(root, 'clear-box.svg'), CLEAR_BOX);
+    const dry = ok(
+      await mcp.call<Imported>('import_icons', {
+        path: lib,
+        svg: 'clear-box.svg',
+        dryRun: true,
+      }),
+    );
+    expect(dry).toMatchObject({ added: ['clear-box'], errors: [], written: false });
+    const real = ok(
+      await mcp.call<Imported>('import_icons', { path: lib, svg: 'clear-box.svg' }),
+    );
+    expect(real).toMatchObject({ added: ['clear-box'], errors: [], written: true });
+    expect(readIcons(lib).icons['clear-box']!.paths).toEqual([
+      { d: 'M4 4h16v16H4z', fill: true },
+    ]);
+  });
+});
+
 describe('import_icons: the icons file', () => {
   it('creates a declared but missing file, with format, version and the first icon viewBox', async () => {
     const lib = library();

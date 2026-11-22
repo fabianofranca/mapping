@@ -1,5 +1,9 @@
 import type { SpecCode, SpecField } from './spec';
-import { inheritedOutsideCase, type ExpandModels } from './signatures/codeLink';
+import {
+  inheritedOutsideCase,
+  slotsOutsideSignature,
+  type ExpandModels,
+} from './signatures/codeLink';
 import type { Signature } from './signatures/types';
 import type { JsonValue } from './types';
 
@@ -49,10 +53,10 @@ export function chosenCase<C>(
  * The `code` of a platform for an annotation: the base with the `variants` case for the value of the
  * annotation in the chosen field (or the field's `default`) applied. The case's `symbol`, `path` and `notes`
  * replace the base's, and in `formatVersion` 16 so do `signature` and `ignore`; `params`,
- * `values`, `calls` and `formats` are added to them, key by key (the case's `calls` replaces the base's
+ * `values`, `calls`, `formats` and `slots` are added to them, key by key (the case's `calls` replaces the base's
  * for the same parameter: `ButtonDefaults.outlinedButtonColors`). Without `variants` returns the
  * `code` itself; never returns `variants`. With `sheets`, a case with its own readable `signature` does not inherit the
- * base `params` its sheet lacks (`inheritedOutsideCase`); without it, or with a case without its own sheet, the result is
+ * base `params` and `slots` its sheet lacks (`inheritedOutsideCase`, `slotsOutsideSignature`); without it, or with a case without its own sheet, the result is
  * the one above.
  */
 export function resolveCode(
@@ -86,12 +90,13 @@ function applyCase(
     ...merged(base, kase, 'params'),
     ...merged(base, kase, 'calls'),
     ...merged(base, kase, 'formats'),
+    ...merged(base, kase, 'slots'),
     ...(kase.values === undefined ? {} : { values: { ...base.values, ...kase.values } }),
   };
 }
 
 /** `{ key: { ...base[key], ...kase[key] } }` when the case brings the key; otherwise nothing. */
-function merged<K extends 'params' | 'calls' | 'formats'>(
+function merged<K extends 'params' | 'calls' | 'formats' | 'slots'>(
   base: SpecCode,
   kase: { readonly [P in K]?: Record<string, string> | undefined },
   key: K,
@@ -102,7 +107,10 @@ function merged<K extends 'params' | 'calls' | 'formats'>(
     : ({ [key]: { ...base[key], ...own } } as { [P in K]?: Record<string, string> });
 }
 
-/** The base without the `params` the case's own sheet lacks (`inheritedOutsideCase`); the base itself without a sheet. */
+/**
+ * The base without the `params` and `slots` the case's own sheet lacks (`inheritedOutsideCase`,
+ * `slotsOutsideSignature`); the base itself without a sheet. The case's own entries always stay.
+ */
 function withoutInherited(
   base: SpecCode,
   kase: NonNullable<SpecCode['variants']>['cases'][string],
@@ -110,13 +118,32 @@ function withoutInherited(
 ): SpecCode {
   const sheet =
     kase.signature === undefined ? null : (sheets?.read(kase.signature) ?? null);
-  if (sheet === null || base.params === undefined) return base;
-  const left = new Set(
-    inheritedOutsideCase(base, kase, sheet, sheets?.models).map((o) => o.field),
+  if (sheet === null) return base;
+  const params = withoutKeys(
+    base.params,
+    new Set(inheritedOutsideCase(base, kase, sheet, sheets?.models).map((o) => o.field)),
   );
-  if (left.size === 0) return base;
-  const params = Object.fromEntries(
-    Object.entries(base.params).filter(([field]) => !left.has(field)),
+  const own = kase.slots ?? {};
+  const inherited = Object.fromEntries(
+    Object.entries(base.slots ?? {}).filter(([id]) => !Object.hasOwn(own, id)),
   );
-  return { ...base, params };
+  const slots = withoutKeys(
+    base.slots,
+    new Set(slotsOutsideSignature(sheet, inherited).map((o) => o.id)),
+  );
+  return {
+    ...base,
+    ...(params === undefined ? {} : { params }),
+    ...(slots === undefined ? {} : { slots }),
+  };
+}
+
+/** The map without the `left` keys (`undefined` stays `undefined`). */
+function withoutKeys(
+  map: Readonly<Record<string, string>> | undefined,
+  left: ReadonlySet<string>,
+): Record<string, string> | undefined {
+  if (map === undefined || left.size === 0)
+    return map === undefined ? undefined : { ...map };
+  return Object.fromEntries(Object.entries(map).filter(([key]) => !left.has(key)));
 }
