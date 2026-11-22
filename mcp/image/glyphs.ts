@@ -1,6 +1,6 @@
 import type { MeasureFont } from '../../src/model/components/instantiate';
 import type { Point } from '../../src/model/components/scene';
-import { guardedLayout } from './fontSubstitutions';
+import { guardedLayout, guardedLayoutWith } from './fontSubstitutions';
 import type { Face, PathCommand } from './harfbuzz';
 import type { FontBook } from './textMeasurer';
 
@@ -110,22 +110,31 @@ function laidOut(
   );
 }
 
+/** The outlines of a text and the baseline they were laid out on. */
+export interface TextOutline {
+  readonly polygons: Polygon[];
+  readonly baseline: number;
+}
+
 /**
- * Outlines of the text with the baseline origin at (`x`, `baseline`). A shaping that throws is laid out with the
- * embedded `fallback` font.
+ * Outlines of the text with the baseline origin at (`x`, `baselineOf(face)`). A shaping that throws is laid out with
+ * the embedded `fallback` font, and the baseline is asked of that font: the metrics and the glyphs come from the same
+ * face (stage #2267, decision 2).
  */
 export function textPolygons(
   face: Face,
   fallback: () => Face,
   text: string,
   x: number,
-  baseline: number,
+  baselineOf: (face: Face) => number,
   style: GlyphStyle,
-): Polygon[] {
-  const polygons = guardedLayout(face, fallback, (f) =>
-    laidOut(f, text, x, baseline, style),
-  );
-  return style.italic ? slant(polygons, baseline) : polygons;
+): TextOutline {
+  const { value } = guardedLayoutWith(face, fallback, (f) => {
+    const baseline = baselineOf(f);
+    const polygons = laidOut(f, text, x, baseline, style);
+    return { polygons: style.italic ? slant(polygons, baseline) : polygons, baseline };
+  });
+  return value;
 }
 
 /** Width of a one-line text with the font and the letter spacing. */
@@ -141,6 +150,22 @@ export function textWidth(
     (f) => f.advance(text, font.size, font.weight, font.letterSpacing !== 0),
   );
   return Math.max(0, advance + font.letterSpacing * [...text].length);
+}
+
+/**
+ * The face that lays the one-line `text` out: the font's own, or the embedded one when its shaping throws. What reads
+ * the vertical metrics of a text asks this face, so they match the glyphs and the width.
+ */
+export function layingFace(
+  book: FontBook,
+  text: string,
+  font: Pick<MeasureFont, 'family' | 'size' | 'weight' | 'italic' | 'letterSpacing'>,
+): Face {
+  return guardedLayoutWith(
+    book.fontFor(font.family, font.weight, font.italic),
+    () => book.embeddedFor(font.family, font.weight),
+    (f) => f.advance(text, font.size, font.weight, font.letterSpacing !== 0),
+  ).face;
 }
 
 /**
