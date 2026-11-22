@@ -49,7 +49,7 @@ function creation(id = 'P1', markingId = 'M9'): Proposal {
     id: markingId,
     containerId: 'I1',
     rect: { x: 10, y: 10, width: 100, height: 50 },
-    name: 'Botão',
+    name: 'Button',
   });
   after = addAnnotation(after, { id: `A-${id}`, markingId, layerId: 'L1' });
   return propose(base, after, { id });

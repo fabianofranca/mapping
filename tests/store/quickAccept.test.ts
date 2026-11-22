@@ -23,7 +23,7 @@ function creation(): Proposal {
     id: 'M9',
     containerId: 'I1',
     rect: { x: 10, y: 10, width: 100, height: 50 },
-    name: 'Botão',
+    name: 'Button',
   });
   after = addAnnotation(after, { id: 'A9', markingId: 'M9', layerId: 'L1' });
   return propose(base, after, { id: 'P1' });
