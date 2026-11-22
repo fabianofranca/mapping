@@ -12,7 +12,7 @@ This file is its record in the repository. It says what the DS is, **when** a ph
 - **It is not generated from the code.** The Claude Code skill `/design-sync` **does not apply** to this DS: it expects the `dist/` of a published component library and would turn the curated DS into a mirror of the build. Do not use it here.
 - **The code is the source of truth; the DS describes.** Where the two diverge, fix the DS. A divergence that looks like a defect of the app is not resolved here: record it in "Pending items" and take it to the owner.
 - **Name.** The artifact's index is called **Mapping**. If the old name "Mapeador de Imagens 2.0" shows up, it is the same artifact.
-- **Size today:** 79 components with a guide (plus the `Cover` cover), 6 sections, 177 tokens (not counting the 12 `t-*` text styles) and 92 icons (artifact at version 71, DS5 of the `sincronia-ds-2` epic).
+- **Size today:** 80 components with a guide (plus the `Cover` cover), 6 sections, 178 tokens (not counting the 12 `t-*` text styles) and 93 icons (artifact at version 109, epic `conversation-during-review`).
 
 ## When to check
 
@@ -157,7 +157,8 @@ Each DS component and its origin in the code. A DS name can cover several files,
 | `CommentPin` | `src/canvas/commentPins.ts`, `src/canvas/renderers/commentPins.ts`, `src/canvas/theme.ts` | Pin drawn in Konva; no `.tsx`; guide only, no preview. |
 | `CitationChip` | `src/ui/comments/CitationChip.tsx`, `CitationEditor.tsx`, `CitePicker.tsx` | Guide only, no preview. |
 | `ThreadMessage` | `src/ui/comments/ThreadMessage.tsx`, `ThreadView.tsx` | Guide only, no preview. |
-| `ThreadsSection` | `src/ui/comments/ThreadsSection.tsx` | Conversations section of Details; guide only, no preview. |
+| `ThreadsSection` | `src/ui/comments/ThreadsSection.tsx` | List of the conversations of an item, in Details (the conversation itself is in the `ConversationWindow`); guide and preview. |
+| `ConversationWindow` | `src/ui/comments/ConversationWindow.tsx` | Content of the Conversation window (right column, under Details); the DS folder takes the code name because a component folder must be an ASCII identifier; guide and preview. |
 | `Composer` | `src/ui/comments/Composer.tsx` | Guide only, no preview. |
 | `CommentsWindow` | `src/ui/comments/CommentsWindow.tsx` | Content of the Comments window (the tab is in "Janela Comentários", above); guide only, no preview. |
 | `ProposalCard` | `src/ui/comments/ProposalCard.tsx` | Guide only, no preview. |
