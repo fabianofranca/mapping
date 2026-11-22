@@ -3,12 +3,12 @@ import type Konva from 'konva/lib/Core';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CanvasController } from '../../src/canvas/CanvasController';
 import * as ghostModule from '../../src/canvas/quickGhost';
-import { createCanvasViewState } from '../../src/canvas/viewState';
 import {
   createMarking,
   renameMarking,
   type Project,
   type Proposal,
+  type Rect,
 } from '../../src/model';
 import { createDisplayImages } from '../../src/store/displayImages';
 import { sampleProject } from '../model/fixtures';
@@ -41,6 +41,11 @@ describe('CanvasController: quick review', () => {
     while (frames.length > 0) for (const frame of frames.splice(0)) frame(0);
   };
   const controllers: CanvasController[] = [];
+  const spies: { mockRestore(): void }[] = [];
+  const track = <T extends { mockRestore(): void }>(s: T): T => {
+    spies.push(s);
+    return s;
+  };
 
   beforeAll(() => {
     installFakeCanvas();
@@ -56,7 +61,7 @@ describe('CanvasController: quick review', () => {
   });
   afterEach(() => {
     for (const c of controllers.splice(0)) c.destroy();
-    vi.restoreAllMocks();
+    for (const spy of spies.splice(0)) spy.mockRestore();
   });
 
   function setup(withQuick = true) {
@@ -79,15 +84,26 @@ describe('CanvasController: quick review', () => {
       drawnProject: { readonly value: Project | null };
     };
     const overlay = () => internals.stage.getLayers()[4] as Konva.Layer;
-    const ghost = () =>
-      overlay().findOne('.quick-ghost') as Konva.Group;
+    const ghost = () => overlay().findOne('.quick-ghost') as Konva.Group;
     flush();
-    return { ...editor, quick, enabled, container, controller, internals, overlay, ghost };
+    // Zoomed in, the badges of the small markings show (below ~22 screen px they are left out).
+    controller.zoomTo(1);
+    flush();
+    return {
+      ...editor,
+      quick,
+      enabled,
+      container,
+      controller,
+      internals,
+      overlay,
+      ghost,
+    };
   }
 
   /** Cache calls of the ghost group, counted from now on. */
   function cacheSpy(group: Konva.Group) {
-    return vi.spyOn(group, 'cache');
+    return track(vi.spyOn(group, 'cache'));
   }
 
   const wheel = (container: HTMLElement, deltaY: number) =>
@@ -107,11 +123,11 @@ describe('CanvasController: quick review', () => {
   it('draws the created and the changed marking in the ghost, translucent', () => {
     const t = setup();
     const group = t.ghost();
-    expect(group.getChildren().length).toBeGreaterThan(0);
-    expect(group.opacity()).toBeCloseTo(0.5, 5);
+    expect(group.find('Shape').length).toBeGreaterThan(0);
     expect(group.opacity()).toBe(
-      (t.controller as unknown as { tokens: { peek(): { opacity: { ghost: number } } } })
-        .tokens.peek().opacity.ghost,
+      (
+        t.controller as unknown as { tokens: { peek(): { opacity: { ghost: number } } } }
+      ).tokens.peek().opacity.ghost,
     );
     const badges = group.find('Path').length;
     expect(badges).toBeGreaterThanOrEqual(2); // created and changed badges
@@ -121,10 +137,6 @@ describe('CanvasController: quick review', () => {
   it('caches the ghost on the zoom, not on pan, and not on an edit that does not touch it', () => {
     const t = setup();
     const spy = cacheSpy(t.ghost());
-    t.ui.selection.value = { kind: 'image', id: 'I2' };
-    t.controller.centerSelection();
-    flush();
-    expect(spy).toHaveBeenCalledTimes(0);
     for (let i = 0; i < 3; i++) {
       t.controller.centerOnPoint({ x: 600 + 50 * i, y: 500 });
       flush();
@@ -171,14 +183,14 @@ describe('CanvasController: quick review', () => {
       );
       flush();
     };
-    const scale = t.view.viewport.value.scale;
-    click(box.x + box.width / 2, box.y + box.height / 2);
+    // The box spans M2 (x 1200) to M9 (x 2800) and from y 1000 to 1400, in image pixels.
+    const perPx = box.width / 1600;
+    const at = (x: number, y: number) =>
+      click(box.x + (x - 1200) * perPx, box.y + (y - 1000) * perPx);
+    expect(t.internals.drawnProject.value?.markings.map((m) => m.id)).toContain('M9');
+    at(2650, 1150); // The center of M9: it exists only in the proposal.
     expect(t.ui.selection.value).not.toMatchObject({ kind: 'marking', id: 'M9' });
-    // A live marking (M1) is still picked during peek.
-    click(
-      box.x + box.width / 2 + (1900 - 2650) * scale,
-      box.y + box.height / 2 + (1900 - 1150) * scale,
-    );
+    at(1900, 1900); // A live marking (M1) is still picked during peek.
     expect(t.ui.selection.value).toMatchObject({ kind: 'marking', id: 'M1' });
   });
 
@@ -192,7 +204,7 @@ describe('CanvasController: quick review', () => {
 
   it('without a quick review: no ghost content, no box, no attribute', () => {
     const t = setup(false);
-    expect(t.ghost().getChildren()).toHaveLength(0);
+    expect(t.ghost().find('Shape')).toHaveLength(0);
     expect(t.view.quickReviewBox.value).toBeNull();
     expect(t.container.dataset.quickReview).toBeUndefined();
   });
@@ -200,7 +212,9 @@ describe('CanvasController: quick review', () => {
   it('the box is in CSS px, follows pan and zoom, and is not rewritten when nothing changed', () => {
     const t = setup();
     const writes: unknown[] = [];
-    const stop = effect(() => writes.push(t.view.quickReviewBox.value));
+    const stop = effect(() => {
+      writes.push(t.view.quickReviewBox.value);
+    });
     const expected = () => {
       const view = t.quick.current.value;
       const committed = t.store.committed.value;
@@ -215,16 +229,15 @@ describe('CanvasController: quick review', () => {
         height: canvas.height * vp.scale,
       };
     };
-    const near = (a: Record<string, number> | null, b: Record<string, number>) => {
+    const near = (a: Rect | null, b: Rect) => {
       expect(a).not.toBeNull();
-      for (const k of ['x', 'y', 'width', 'height']) {
-        expect(a?.[k]).toBeCloseTo(b[k] as number, 5);
+      for (const k of ['x', 'y', 'width', 'height'] as const) {
+        expect(a?.[k]).toBeCloseTo(b[k], 5);
       }
     };
     near(t.view.quickReviewBox.value, expected());
     const before = t.view.quickReviewBox.value;
-    t.ui.selection.value = { kind: 'image', id: 'I2' };
-    t.controller.centerSelection();
+    t.controller.centerOnPoint({ x: 900, y: 500 });
     flush();
     const panned = t.view.quickReviewBox.value;
     expect(panned?.x).not.toBe(before?.x);
@@ -242,8 +255,13 @@ describe('CanvasController: quick review', () => {
 
   it('pan and zoom neither rebuild the ghost nor ask for the drawings of the preview', () => {
     const t = setup();
-    const drawings = vi.spyOn(t.derived, 'drawingsOf');
-    const ghost = vi.spyOn(ghostModule, 'quickGhost');
+    const drawings = track(vi.spyOn(t.derived, 'drawingsOf'));
+    const ghost = track(vi.spyOn(ghostModule, 'quickGhost'));
+    t.actions.renameMarking('M3', 'Edited');
+    flush();
+    expect(ghost.mock.calls.length).toBeGreaterThan(0);
+    ghost.mockClear();
+    drawings.mockClear();
     for (let i = 0; i < 20; i++) {
       if (i % 2 === 0) t.controller.centerOnPoint({ x: 600 + 40 * i, y: 500 });
       else wheel(t.container, i % 4 === 1 ? -40 : 40);
@@ -258,7 +276,7 @@ describe('CanvasController: quick review', () => {
     expect(t.ghost().getChildren().length).toBeGreaterThan(0);
     t.enabled.value = false;
     flush();
-    expect(t.ghost().getChildren()).toHaveLength(0);
+    expect(t.ghost().find('Shape')).toHaveLength(0);
     expect(t.view.quickReviewBox.value).toBeNull();
     expect(t.container.dataset.quickReview).toBeUndefined();
   });

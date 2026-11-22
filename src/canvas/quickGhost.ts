@@ -8,6 +8,7 @@ import {
   changeStatus,
   projectIndex,
   reviewTree,
+  type ComponentDrawing,
   type ComponentDrawings,
   type Project,
   type Proposal,
@@ -17,6 +18,7 @@ import type { QuickReviewView } from '../store/quickReview';
 import { markingCanvasRect } from './markingGeometry';
 import { unionRect } from './minimap';
 import { reviewMarks, type ReviewCanvas, type ReviewShape } from './reviewMarks';
+import { sameRect } from './viewState';
 
 export interface QuickGhost {
   readonly proposalId: string;
@@ -109,4 +111,83 @@ export function quickGhost(
   };
   cache.set(view, { drawings, committed, result });
   return result;
+}
+
+/**
+ * The ghost box (canvas units) in CSS px relative to the canvas host: the box times the zoom plus
+ * the viewport offset. The quick-review bar anchors to it (`CanvasViewState.quickReviewBox`).
+ */
+export function quickBoxCss(
+  box: Rect | null,
+  view: { readonly x: number; readonly y: number; readonly scale: number },
+): Rect | null {
+  if (box === null) return null;
+  return {
+    x: box.x * view.scale + view.x,
+    y: box.y * view.scale + view.y,
+    width: box.width * view.scale,
+    height: box.height * view.scale,
+  };
+}
+
+const sameBadges = (a: readonly string[], b: readonly string[]): boolean =>
+  a.length === b.length && a.every((kind, i) => kind === b[i]);
+
+function sameReview(a: ReviewCanvas, b: ReviewCanvas): boolean {
+  if (a.markings.size !== b.markings.size || a.ghosts.length !== b.ghosts.length) {
+    return false;
+  }
+  for (const [id, mark] of a.markings) {
+    const other = b.markings.get(id);
+    if (!other || other.line !== mark.line || other.dim !== mark.dim) return false;
+    if (!sameBadges(mark.badges, other.badges)) return false;
+  }
+  return a.ghosts.every((g, i) => {
+    const o = b.ghosts[i];
+    return !!o && o.key === g.key && sameRect(o.rect, g.rect);
+  });
+}
+
+const drawingTexts = new WeakMap<object, string>();
+
+/** The drawing as text (memoized by object): the drawings of an edited project are new objects with the same content. */
+function drawingText(drawing: ComponentDrawing): string {
+  let text = drawingTexts.get(drawing);
+  if (text === undefined) {
+    try {
+      text = JSON.stringify(drawing);
+    } catch {
+      text = '';
+    }
+    drawingTexts.set(drawing, text);
+  }
+  return text;
+}
+
+function sameDrawings(a: ComponentDrawings, b: ComponentDrawings): boolean {
+  if (a === b) return true;
+  if (a.size !== b.size) return false;
+  for (const [id, drawing] of a) {
+    const other = b.get(id);
+    if (!other) return false;
+    if (other === drawing) continue;
+    const text = drawingText(drawing);
+    if (text === '' || text !== drawingText(other)) return false;
+  }
+  return true;
+}
+
+/**
+ * `true` when `a` and `b` draw the same ghost: an edit that does not touch the ghost rebuilds the
+ * preview (new objects) but not what it looks like, and the canvas must not redo its cache.
+ */
+export function sameGhost(a: QuickGhost, b: QuickGhost): boolean {
+  if (a === b) return true;
+  return (
+    a.proposalId === b.proposalId &&
+    a.items === b.items &&
+    sameRect(a.box, b.box) &&
+    sameDrawings(a.drawings, b.drawings) &&
+    sameReview(a.review, b.review)
+  );
 }

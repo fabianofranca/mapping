@@ -32,6 +32,8 @@ import {
   addComponentMarking,
   applySpecialization,
   createArrow,
+  createMarking,
+  renameMarking,
   createDrawingCache,
   loadSpecComponents,
   parseSpec,
@@ -56,6 +58,7 @@ import { libraryOption } from '../model/scenarioProject';
 import { SPEC_ID, SPEC_JSON, testCatalog } from '../model/componentFixtures';
 import { emptyProject } from '../model/fixtures';
 import { propose } from '../model/proposalFixtures';
+import { fakeQuick } from './quickReviewFixture';
 import { openHarness } from '../store/proposalHarness';
 import { buildLargeTypedProject } from '../model/largeTypedProject';
 import { material3Spec } from '../storage/packageFixture';
@@ -1401,6 +1404,53 @@ describe('pan and zoom with 2,000 markings and 1,000 named arrows', () => {
         expectBelow(median(samples.map((r) => r.zoom)), 33, `zoom (${open})`);
         s.destroy();
       }
+    },
+  );
+});
+
+// The quick review's ghost (stage #1932, QR2): a few translucent markings over the whole project;
+// pan and zoom only move the stage and an edit elsewhere leaves the ghost alone.
+describe('quick review with the whole project in view (2,000 markings)', () => {
+  budgetIt(
+    'pan, zoom and edit of the large project draw in under RENDER_BUDGET_MS with a quick review visible',
+    BUDGET_OPTIONS,
+    () => {
+      // The proposal renames one marking and creates another in the same container (the ghost).
+      const base = buildLargeTypedProject();
+      const first = base.markings.find((m) => m.containerId !== null);
+      if (!first?.containerId) throw new Error('fixture');
+      const created = createMarking(base, {
+        id: 'QR-NEW',
+        containerId: first.containerId,
+        rect: { x: 5, y: 5, width: 40, height: 20 },
+        name: 'Ghost',
+      });
+      const proposal = propose(base, renameMarking(created, first.id, 'Ghost rename'));
+      const s = openWholeProject(2000, 'fit', {
+        project: base,
+        quick: (store) => fakeQuick(store, proposal).quick,
+      });
+      expect(s.container.dataset.quickReview).toBe('P1:ghost:2');
+      const other = base.markings.find((m) => m.id !== first.id);
+      if (!other) throw new Error('fixture');
+      let step = 0;
+      const round = (): { pan: number; zoom: number; edit: number } => {
+        step++;
+        s.controller.centerOnPoint({ x: 500 + 20 * (step % 5), y: 500 });
+        const pan = s.flush();
+        s.controller.zoomBy(step % 2 ? 1.1 : 1 / 1.1);
+        const zoom = s.flush();
+        s.actions.renameMarking(other.id, `Renamed ${step}`);
+        return { pan, zoom, edit: s.flush() };
+      };
+      for (let i = 0; i < 3; i++) round();
+      const samples = Array.from({ length: 15 }, round);
+      const median = (xs: number[]) =>
+        [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? Number.NaN;
+      expectBelow(median(samples.map((r) => r.pan)), RENDER_BUDGET_MS, 'pan');
+      expectBelow(median(samples.map((r) => r.zoom)), RENDER_BUDGET_MS, 'zoom');
+      expectBelow(median(samples.map((r) => r.edit)), RENDER_BUDGET_MS, 'edit');
+      s.destroy();
     },
   );
 });

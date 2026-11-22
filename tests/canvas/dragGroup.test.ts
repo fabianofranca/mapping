@@ -484,8 +484,10 @@ describe('drag group: the stage', () => {
     ]);
     const overlay = stage.getLayers()[4] as Konva.Layer;
     const node = internals(s).markings.node(parent.id)?.group as Konva.Group;
-    // The drag group is the first child of the layer, below everything else.
-    expect(overlay.getChildren()[0]?.isAncestorOf(node)).toBe(true);
+    // The quick-review ghost group is the lowest child (stage #1932, QR2); the drag group comes
+    // right above it, below everything else.
+    expect(overlay.getChildren()[0]?.name()).toBe('quick-ghost');
+    expect(overlay.getChildren()[1]?.isAncestorOf(node)).toBe(true);
     s.actions.cancelGesture();
     s.flush();
     expect(warn).not.toHaveBeenCalled();

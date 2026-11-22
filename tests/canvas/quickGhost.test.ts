@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { quickGhost } from '../../src/canvas/quickGhost';
+import { quickBoxCss, quickGhost, sameGhost } from '../../src/canvas/quickGhost';
 import { unionRect } from '../../src/canvas/minimap';
 import { markingCanvasRect } from '../../src/canvas/markingGeometry';
 import {
@@ -173,5 +173,32 @@ describe('quickGhost', () => {
     const before = JSON.stringify(view);
     quickGhost(view, base, drawingsOf('M1'));
     expect(JSON.stringify(view)).toBe(before);
+  });
+});
+
+describe('quickBoxCss and sameGhost', () => {
+  it('quickBoxCss: the box times the zoom plus the viewport offset; null stays null', () => {
+    expect(quickBoxCss(null, { x: 1, y: 2, scale: 3 })).toBeNull();
+    expect(
+      quickBoxCss({ x: 10, y: 20, width: 30, height: 40 }, { x: 5, y: -5, scale: 2 }),
+    ).toEqual({ x: 25, y: 35, width: 60, height: 80 });
+  });
+
+  it('sameGhost: an edit elsewhere rebuilds the preview but not the ghost', () => {
+    const after = renameMarking(base, 'M1', 'Front door');
+    const proposal = propose(base, after);
+    const first = quickGhost(viewOf(proposal), base, drawingsOf());
+    const edited = renameMarking(base, 'M3', 'Other');
+    const second = quickGhost(viewOf(proposal, edited), edited, drawingsOf());
+    expect(second).not.toBe(first);
+    expect(sameGhost(first, second)).toBe(true);
+    const moved = quickGhost(
+      viewOf(
+        propose(base, setMarkingRect(base, 'M2', { x: 1, y: 1, width: 9, height: 9 })),
+      ),
+      base,
+      drawingsOf(),
+    );
+    expect(sameGhost(first, moved)).toBe(false);
   });
 });
