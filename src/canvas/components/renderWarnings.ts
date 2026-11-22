@@ -16,6 +16,8 @@ export type RenderWarningCode =
   | 'image-without-pixels'
   /** Embedded image that could not be decoded. */
   | 'image-decode-failed'
+  /** Package image over the limits or not in the format of its extension: placeholder. */
+  | 'package-image-refused'
   /** Stroke with several fills: only the first one counts. */
   | 'stroke-extra-paints'
   /** Inside or outside stroke on a path or line: centered. */
@@ -44,6 +46,7 @@ export const RENDER_WARNING_CODES: readonly RenderWarningCode[] = [
   'unknown-node',
   'image-without-pixels',
   'image-decode-failed',
+  'package-image-refused',
   'stroke-extra-paints',
   'stroke-align-centered',
   'stroke-radial-first-color',
