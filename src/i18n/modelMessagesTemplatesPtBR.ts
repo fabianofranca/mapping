@@ -301,6 +301,7 @@ export const templatePtBR: {
   'model.spec.formatInvalid': 'deve ser "{format}"',
   'model.spec.formatVersionInvalid': 'deve ser {versions} ou {last}',
   'model.spec.onlyFormat': 'só é permitido com formatVersion {version}',
+  'model.spec.onlyUpToFormat': 'só é permitido até a formatVersion {version}',
   'model.spec.fileFormatsShape': 'deve ser uma lista de formatos de arquivo',
   'model.spec.fileFormatExamplesShape': 'deve ser uma lista de exemplos',
   'model.spec.fileFormatKeyUnknown': 'chave desconhecida: {key}',
