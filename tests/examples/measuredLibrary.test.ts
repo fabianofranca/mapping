@@ -153,7 +153,7 @@ describe('the dom format and import_measured agree (decision 2)', () => {
       parent: m.parentId === null ? null : markings.findIndex((o) => o.id === m.parentId),
       annotations: project.annotations
         .filter((a) => a.markingId === m.id)
-        .map((a) => ({ type: a.typeId, values: a.values })),
+        .map((a) => ({ type: a.type, values: a.values })),
     }));
   }
 

@@ -13,11 +13,9 @@ import {
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { approximateMeasurer } from '../../src/model/components/instantiate';
 import { buildCatalog } from '../../src/model';
 import { resolveSlotLayout } from '../../src/model/components/arrange';
 import { withContainer } from '../../src/model/components/container';
-import { loadLibrary } from '../../src/model/components/library';
 import { parseComponentText } from '../../src/model/components/parseComponent';
 import { componentSlots } from '../../src/model/components/slots';
 import { validateLibrary } from '../../src/model/library';
@@ -51,7 +49,9 @@ describe('example library sdui-backend', () => {
     const examples = parsed.spec.layers
       .flatMap((l) => l.annotationTypes)
       .flatMap((t) => t.examples ?? []);
-    expect(examples.some((e) => e.mode === 'system' || 'system' in e)).toBe(false);
+    expect(examples.some((e) => e.system !== undefined || e.file !== undefined)).toBe(
+      false,
+    );
     expect(parsed.spec.fileFormats).toHaveLength(1);
   });
 

@@ -123,14 +123,14 @@ In the three cases, **do not ask for confirmation**: build the list and put it a
 
 The full round (R0 to R44) runs in **simultaneous sessions, one per block of the table**. Each sets up the environment, runs the whole R0 and its block's scripts and delivers its own report; a coordinator (the stage's orchestrator or the owner's standalone chat, see [`docs/FLOW.md`](FLOW.md)) creates them and summarizes.
 
-| Block | Scripts, in the order of the guide                                                      | Steps |
-| ----- | --------------------------------------------------------------------------------------- | ----- |
-| 1     | R0, R1, section 6, R3, R6.3 to R6.7, R6.12 to R6.14, R7, R5, R8, R14, R26 and R28       | 168   |
-| 2     | R0, section 6, R2 and R25                                                               | 148   |
-| 3     | R0, section 6, R12, R15, R19 and R40                                                    | 153   |
+| Block | Scripts, in the order of the guide                                                           | Steps |
+| ----- | -------------------------------------------------------------------------------------------- | ----- |
+| 1     | R0, R1, section 6, R3, R6.3 to R6.7, R6.12 to R6.14, R7, R5, R8, R14, R26 and R28            | 168   |
+| 2     | R0, section 6, R2 and R25                                                                    | 148   |
+| 3     | R0, section 6, R12, R15, R19 and R40                                                         | 153   |
 | 4     | R0, section 6, R4, R6.8a to R6.11, R9, R10, R13, R16, R18, R22, R24, R44 and the visual pass | 190   |
-| 5     | R0, section 6, R17, R20, R21, R23 and R29                                               | 146   |
-| 6     | R0, section 6, R11, R27, R30, R32, R37, R38, R39, R41, R42 and R43                      | 156   |
+| 5     | R0, section 6, R17, R20, R21, R23 and R29                                                    | 146   |
+| 6     | R0, section 6, R11, R27, R30, R32, R37, R38, R39, R41, R42 and R43                           | 156   |
 
 There are 6 blocks: 5 by decision of the owner (2026-11-09) and the 6th by #2024 (2026-11-17). The visual pass stays in block 4 (decision 6 of stage #841). The guide limit (`MAX_BLOCK_GUIDE_CHARS`), sizes, dependencies and baselines: `cloud.mjs secao consulta.historico`.
 
