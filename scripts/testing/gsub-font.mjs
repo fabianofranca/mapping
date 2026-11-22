@@ -1,4 +1,4 @@
-// gsub-font.mjs: node gsub-font.mjs <out.ttf> [--calt]
+// gsub-font.mjs: node gsub-font.mjs <out.ttf> [--calt] [--rtl]
 // Writes a test font: a copy of `mcp/fonts/MappingSans-Regular.ttf` whose GSUB table is replaced by
 // one the MCP server's `opentype.js` 2.0.0 cannot fully apply (stage #2089, "A library font never
 // makes the server fail"). No binary font is kept in the repository: tests and the tester build it.
@@ -18,6 +18,11 @@
 // lookup 0, `ccmp` → lookup 1 and `liga` → lookup 2): `fi` measures as `wi` with the chaining context that
 // `opentype.js` could not apply, and the ligature `ii` → `m` stays under `liga`. Without the flag the font is #2089's.
 //
+// With `--rtl` (stage #2448, decision 9) the `cmap` also maps U+05D0 to U+05D9 (Hebrew letters) to the glyphs of `A` to
+// `J`, so a test can lay out right-to-left text with a font the repository does not ship; every other mapping stays.
+// The `cmap` is rebuilt as one format 4 subtable (shared by its two encoding records). Without the flag the font is
+// unchanged.
+//
 // The table directory is rewritten: tables sorted by tag, offsets aligned to 4, checksums recomputed
 // (`head.checkSumAdjustment` too).
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -26,6 +31,7 @@ import { fileURLToPath } from 'node:url';
 
 const out = process.argv[2];
 const withCalt = process.argv.includes('--calt', 3);
+const withRtl = process.argv.includes('--rtl', 3);
 if (out === undefined) {
   process.stderr.write('usage: node gsub-font.mjs <out.ttf>\n');
   process.exit(2);
@@ -76,6 +82,79 @@ function glyphOf(cmap, char) {
     }
   }
   throw new Error(`no glyph for ${char} in ${source}`);
+}
+
+/** Every BMP mapping of the format 4 subtable of the `cmap`: code point → glyph (the sentinel and the missing glyph left out). */
+function cmapEntries(cmap) {
+  const entries = new Map();
+  const subtables = cmap.readUInt16BE(2);
+  for (let n = 0; n < subtables; n++) {
+    const base = cmap.readUInt32BE(4 + n * 8 + 4);
+    if (cmap.readUInt16BE(base) !== 4) continue;
+    const segments = cmap.readUInt16BE(base + 6) / 2;
+    const ends = base + 14;
+    const starts = ends + segments * 2 + 2;
+    const deltas = starts + segments * 2;
+    const ranges = deltas + segments * 2;
+    for (let s = 0; s < segments; s++) {
+      const start = cmap.readUInt16BE(starts + s * 2);
+      const end = cmap.readUInt16BE(ends + s * 2);
+      const delta = cmap.readUInt16BE(deltas + s * 2);
+      const range = cmap.readUInt16BE(ranges + s * 2);
+      for (let code = start; code <= Math.min(end, 0xfffe); code++) {
+        const glyph =
+          range === 0
+            ? (code + delta) & 0xffff
+            : cmap.readUInt16BE(ranges + s * 2 + range + (code - start) * 2);
+        if (glyph !== 0)
+          entries.set(code, range === 0 ? glyph : (glyph + delta) & 0xffff);
+      }
+    }
+    return entries;
+  }
+  throw new Error('no format 4 subtable in the cmap');
+}
+
+/** A `cmap` with one format 4 subtable for `entries`, under the Unicode (0, 3) and Windows (3, 1) records. */
+function buildCmap(entries) {
+  const codes = [...entries.keys()].sort((a, b) => a - b);
+  const segments = [];
+  for (const code of codes) {
+    const delta = (entries.get(code) - code) & 0xffff;
+    const last = segments[segments.length - 1];
+    if (last !== undefined && last.end + 1 === code && last.delta === delta)
+      last.end = code;
+    else segments.push({ start: code, end: code, delta });
+  }
+  segments.push({ start: 0xffff, end: 0xffff, delta: 1 });
+  const count = segments.length;
+  const entrySelector = Math.floor(Math.log2(count));
+  const searchRange = 2 ** entrySelector * 2;
+  const subtable = u16(
+    4,
+    16 + count * 8,
+    0,
+    count * 2,
+    searchRange,
+    entrySelector,
+    count * 2 - searchRange,
+    ...segments.map((s) => s.end),
+    0,
+    ...segments.map((s) => s.start),
+    ...segments.map((s) => s.delta),
+    ...segments.map(() => 0),
+  );
+  const header = Buffer.alloc(20);
+  header.writeUInt16BE(2, 2);
+  [
+    [0, 3],
+    [3, 1],
+  ].forEach(([platform, encoding], n) => {
+    header.writeUInt16BE(platform, 4 + n * 8);
+    header.writeUInt16BE(encoding, 6 + n * 8);
+    header.writeUInt32BE(20, 8 + n * 8);
+  });
+  return Buffer.concat([header, subtable]);
 }
 
 const u16 = (...values) => {
@@ -186,6 +265,12 @@ tables.set(
     withCalt,
   ),
 );
+if (withRtl) {
+  const entries = cmapEntries(cmap);
+  for (let n = 0; n < 10; n++)
+    entries.set(0x05d0 + n, glyphOf(cmap, String.fromCharCode(0x41 + n)));
+  tables.set('cmap', buildCmap(entries));
+}
 tables.get('head').writeUInt32BE(0, 8);
 
 const tags = [...tables.keys()].sort();

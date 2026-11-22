@@ -47,6 +47,8 @@ interface FontSpec {
   readonly weight: number;
   readonly italic: boolean;
   readonly letterSpacing: number;
+  /** The node's base direction (absent = `ltr`), for plain lines, justified words and rich-text pieces alike. */
+  readonly direction?: 'rtl';
 }
 
 const rectPolygon = (x: number, y: number, w: number, h: number): Polygon => [
@@ -87,6 +89,7 @@ function lineInk(
     x,
     (face) => lineBaseline(top, lineHeight, fontExtents(face, spec.size)),
     spec,
+    book.synthesis(spec.family, spec.weight, spec.italic),
   );
   if (decoration === undefined) return polygons;
   return [
@@ -150,6 +153,7 @@ function plainInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextIn
     weight: style.fontWeight,
     italic: style.italic,
     letterSpacing: style.letterSpacing ?? 0,
+    ...(style.direction ? { direction: style.direction } : {}),
   };
   const widthOf = (text: string) => textWidth(book, text, spec);
   // Only the lines that fit the box's height (decision 31); `cap-middle` centers by them.
@@ -200,6 +204,7 @@ function pieceInk(
   run: SceneTextRun,
   top: number,
   out: TextInk,
+  direction: 'rtl' | undefined,
 ): void {
   const [padV, padH] = piece.chip ? (run.padding ?? [0, 0]) : [0, 0];
   if (piece.chip && run.background !== undefined) {
@@ -218,6 +223,7 @@ function pieceInk(
     weight: run.fontWeight,
     italic: run.italic,
     letterSpacing: 0,
+    ...(direction ? { direction } : {}),
   };
   out.glyphs.push({
     polygons: lineInk(
@@ -241,6 +247,7 @@ function richInk(node: TextNode, layout: RunLayout, book: FontBook): TextInk {
     weight: node.style.fontWeight,
     italic: node.style.italic,
     letterSpacing: 0,
+    ...(node.style.direction ? { direction: node.style.direction } : {}),
   };
   const shift = richShift(
     node,
@@ -252,7 +259,8 @@ function richInk(node: TextNode, layout: RunLayout, book: FontBook): TextInk {
     for (const piece of line.pieces) {
       const run = runs[piece.run];
       if (run === undefined) continue;
-      pieceInk(book, piece, run, line.y + (line.height - piece.height) / 2 + shift, out);
+      const top = line.y + (line.height - piece.height) / 2 + shift;
+      pieceInk(book, piece, run, top, out, node.style.direction);
     }
   }
   return out;
