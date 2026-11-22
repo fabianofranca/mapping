@@ -1,5 +1,13 @@
 import {
+  BatchRuleError,
   ModelError,
+  addBatchBackgroundContainer,
+  createBatchMarking,
+  externalSourceLabel as sourceLabel,
+  quotedLabel as quoted,
+  toExternalSource as toSource,
+  updateBatchMarking,
+  type MarkingContext,
   NOTICE_KINDS,
   createPage,
   deletePage,
@@ -12,15 +20,12 @@ import {
   type Change,
   type SpecNotice,
   addAnnotation,
-  addBackgroundContainer,
-  addComponentMarking,
   addContainer,
   addLayer,
   addTableRow,
   addTypedAnnotation,
   arrowDeletionImpact,
   createArrow,
-  placeFloatingNear,
   removeArrow,
   setArrowLocked,
   setArrowName,
@@ -32,33 +37,16 @@ import {
   checkSpecApply,
   SHORT_CODE_LENGTH,
   normalizeId,
-  componentFileMinSize,
   effectiveDensity,
   componentMinSize,
-  componentPlacement,
-  placementIsFree,
-  markingComponent,
-  typeSlots,
-  componentSize,
   fitMarking,
   snapToAnchor,
-  setMarkingAnchor,
-  setNewMarkingAnchor,
-  checkAnchorTarget,
-  componentAnchoredPlacement,
-  typeAnchorDefaults,
   markingAnchorDefaults,
-  type MarkingAnchor,
-  placementFitsSlot,
-  hasComponentSlot,
   componentTypes,
-  findSpecType,
   loadSpecComponents,
   type ComponentCatalog,
   type ComponentType,
   type TextMeasurer,
-  confirmMarkingReview,
-  createMarking,
   reorderMarking,
   setBackgroundContainer,
   siblingPosition,
@@ -71,7 +59,6 @@ import {
   markingDeletionImpact,
   matchShortCode,
   moveLayer,
-  moveMarking,
   moveTableRow,
   nextLayerColor,
   parseRef,
@@ -110,10 +97,6 @@ import {
   snapPlacement,
   setImageSource,
   setLayerColor,
-  setMarkingLocked,
-  setMarkingFloating,
-  setMarkingRect,
-  setMarkingSpace,
   setMarkingSource,
   setPlatformRepo,
   setTableCell,
@@ -128,7 +111,6 @@ import {
   type AnnotationIssue,
   type AnnotationTypeRef,
   type EntryInput,
-  type ExternalSource,
   type ItemKind,
   type JsonValue,
   type Layer,
@@ -352,27 +334,6 @@ const DEPRECATED_OPS: Partial<Record<Operation['op'], string>> = {
     'delete_image is old: use delete_container (the `image` argument became `container`)',
 };
 
-/**
- * What the model needs to measure the size of the new instance (decision 16 of #898): the simple values
- * (text, number, empty) of `annotation.values` (table and reference do not count, they stay on the
- * `default`) and `preview: 'required'` (decision 9 of #1891): only the required fields without a
- * `default` that the batch does not give come from the component's `preview`.
- */
-function initialValuesArg(values: Record<string, JsonValue> | undefined): {
-  values?: Record<string, JsonValue>;
-  preview: 'required';
-} {
-  const preview = { preview: 'required' } as const;
-  if (values === undefined) return preview;
-  const simple = Object.entries(values).filter(
-    ([, value]) =>
-      value === null || typeof value === 'string' || typeof value === 'number',
-  );
-  return simple.length === 0
-    ? preview
-    : { values: Object.fromEntries(simple), ...preview };
-}
-
 /** `{ pageId }` for the model's creators, or `{}` to leave the choice to them (the first page). */
 function pageArg(pageId: string | undefined): { pageId?: string } {
   return pageId === undefined ? {} : { pageId };
@@ -389,11 +350,6 @@ function requireSinglePage(p: Project, ids: readonly string[]): void {
   throw new ModelError('page-mixed', `the items are on ${names.join(', ')}`);
 }
 
-/** Some value is a table (list of rows): `initialValuesArg` leaves it out of the measurement. */
-function hasTableValue(values: Record<string, JsonValue>): boolean {
-  return Object.values(values).some((value) => Array.isArray(value));
-}
-
 /** Lowercase and without accents, to find layers and types by name. */
 function fold(text: string): string {
   return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
@@ -402,10 +358,6 @@ function fold(text: string): string {
 /** The name in quotes and a space, or nothing (for sentences like "container <name> with …"). */
 const nameLabel = (name: string | undefined): string =>
   name === undefined ? '' : `${quoted(name)} `;
-
-function quoted(text: string | null): string {
-  return text === null ? '(unnamed)' : `"${text}"`;
-}
 
 function isRecord(value: unknown): value is Record<string, JsonValue> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -432,20 +384,6 @@ function decodeBase64(text: string): Uint8Array {
     throw new ToolError('invalid-base64', 'empty or invalid base64 content');
   }
   return new Uint8Array(Buffer.from(payload, 'base64'));
-}
-
-/** The operation's `source` → the model's `ExternalSource` (`url` omitted = no link). */
-function toSource(
-  input: { system: string; id: string; url?: string | null | undefined } | null,
-): ExternalSource | null {
-  return input === null
-    ? null
-    : { system: input.system, id: input.id, url: input.url ?? null };
-}
-
-/** Short label of the source in the summaries: `figma:3f2a` or `no source`. */
-function sourceLabel(source: ExternalSource | null): string {
-  return source === null ? 'no source' : `source ${source.system}:${source.id}`;
 }
 
 /** Catalog without the specialization `specId`. */
@@ -482,28 +420,6 @@ function catalogAfterSpecStep(
     }),
   );
   return next;
-}
-
-/**
- * Note of the step when the type declares a component in the applied specialization and the batch's
- * catalog does not have it (missing file, unreadable or with a problem): the annotation is created
- * without the preview and without the minimum size. `null` if the type does not declare a component.
- */
-function missingComponentNote(
-  p: Project,
-  catalog: ComponentCatalog,
-  ref: AnnotationTypeRef,
-): string | null {
-  const found = findSpecType(p, ref);
-  if (found === null || found.type.component === undefined) return null;
-  const label = `${ref.specId}/${ref.typeId}`;
-  const components = catalog.get(ref.specId);
-  const problem = components?.problems.find((m) => m.startsWith(`${ref.typeId}: `));
-  const reason =
-    problem !== undefined
-      ? problem.slice(ref.typeId.length + 2)
-      : 'the batch did not find the component files of that specialization';
-  return `type ${label} declares a component, but ${reason}: the annotation was created without the preview and without the minimum size`;
 }
 
 type CreateMarkingValues = NonNullable<
@@ -941,7 +857,7 @@ class Batch {
 
   /** `page` of `create_marking`: only a canvas marking has one; the target of `near`, `inside` or the anchor gives it. */
   private markingPageId(
-    op: Extract<Operation, { op: 'create_marking' }>,
+    op: { readonly page: string | undefined; readonly near: string | undefined },
     p: Project,
     containerId: string | null,
     reference: {
@@ -1622,83 +1538,9 @@ class Batch {
         const id = this.item(op.marking, 'm');
         this.requireNotArrow(id, 'update_arrow');
         const label = this.markingLabel(p, id);
-        let project = p;
-        const changes: string[] = [];
-        if (op.locked === false) {
-          project = setMarkingLocked(project, id, false);
-          changes.push('unlock');
-        }
-        if (op.name !== undefined) {
-          project = renameMarking(project, id, op.name);
-          changes.push(`name ${quoted(projectIndex(project).markings.get(id)!.name)}`);
-        }
-        if (op.source !== undefined) {
-          project = setMarkingSource(project, id, toSource(op.source));
-          changes.push(sourceLabel(projectIndex(project).markings.get(id)!.source));
-        }
-        if (op.move !== undefined) {
-          project = moveMarking(project, id, op.move.dx, op.move.dy, {
-            minSizeOf: this.minSizeOf(project),
-          });
-          changes.push(`move (${op.move.dx}, ${op.move.dy}) with the children`);
-        }
-        if (op.floating !== undefined) {
-          const minSize = componentMinSize(project, this.catalog, id);
-          project = setMarkingFloating(project, id, op.floating, {
-            ...(minSize ? { minSize } : {}),
-            minSizeOf: this.minSizeOf(project),
-          });
-          changes.push(op.floating ? 'floating' : 'stop being floating');
-        }
-        if (op.container !== undefined) {
-          if (op.rect === undefined) {
-            throw new ToolError(
-              'invalid-arguments',
-              'changing `container` requires the `rect` in the pixels of the new container (on the canvas, in canvas units)',
-            );
-          }
-          const target =
-            op.container === null ? null : this.containerItem(op.container, project);
-          const { rect } = op;
-          const minSize = componentMinSize(project, this.catalog, id);
-          project = this.checkMinSize(minSize, `"${label}"`, () =>
-            setMarkingSpace(project, id, target, rect, {
-              ...(minSize ? { minSize } : {}),
-              minSizeOf: this.minSizeOf(project),
-            }),
-          );
-          changes.push(
-            `${target === null ? 'go to the canvas' : `go to the container "${this.refs(project).imageLabel(target)}"`}, rectangle x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}`,
-          );
-        } else if (op.rect !== undefined) {
-          const { rect } = op;
-          const minSize = componentMinSize(project, this.catalog, id);
-          project = this.checkMinSize(minSize, `"${label}"`, () =>
-            setMarkingRect(project, id, rect, {
-              ...(minSize ? { minSize } : {}),
-              minSizeOf: this.minSizeOf(project),
-            }),
-          );
-          const r = op.rect;
-          changes.push(`rectangle x ${r.x}, y ${r.y}, ${r.width}×${r.height}`);
-        }
-        if (op.anchor !== undefined) {
-          const anchor = op.anchor === null ? null : this.markingAnchor(op.anchor);
-          project = setMarkingAnchor(project, id, anchor);
-          changes.push(
-            anchor === null
-              ? 'remove the anchor'
-              : `anchor to "${this.markingLabel(project, anchor.to)}"`,
-          );
-        }
-        if (op.confirmReview === true) {
-          project = confirmMarkingReview(project, id);
-          changes.push('confirm the position');
-        }
-        if (op.locked === true) {
-          project = setMarkingLocked(project, id, true);
-          changes.push('lock');
-        }
+        const { project, changes } = this.rules(() =>
+          updateBatchMarking(this.markingContext([]), p, id, op),
+        );
         return {
           project,
           description: `Change the marking "${label}": ${changes.join(', ') || 'nothing'}`,
@@ -2001,37 +1843,18 @@ class Batch {
     op: Extract<Operation, { op: 'add_container' | 'add_blank_image' }>,
     p: Project,
   ): Step {
-    const { width, height, background } = op;
-    if (width === undefined || height === undefined || background === undefined) {
-      const missing = [
-        width === undefined ? '`width`' : null,
-        height === undefined ? '`height`' : null,
-        background === undefined ? '`background`' : null,
-      ].filter((m) => m !== null);
-      throw new ToolError(
-        'invalid-arguments',
-        `add_container needs \`file\` (or \`base64\`), or \`width\`, \`height\` and \`background\`; missing: ${missing.join(', ')}`,
-      );
-    }
-    const beside = this.besideId(op, p);
-    const pageArgs = this.containerPage(op, p, beside);
-    const id = crypto.randomUUID();
-    let project = addBackgroundContainer(p, {
-      id,
-      ...(op.name !== undefined ? { name: op.name } : {}),
-      width,
-      height,
-      background,
-      ...(op.center ? { center: op.center } : {}),
-      ...(beside !== undefined ? { beside } : {}),
-      ...pageArgs,
-    });
-    if (op.source !== undefined) {
-      project = setImageSource(project, id, toSource(op.source));
-    }
+    const { project, id, size } = this.rules(() =>
+      addBatchBackgroundContainer(p, op, () => {
+        const beside = this.besideId(op, p);
+        return {
+          ...(beside !== undefined ? { beside } : {}),
+          ...this.containerPage(op, p, beside),
+        };
+      }),
+    );
     return {
       project,
-      description: `Add the container "${this.refs(project).imageLabel(id)}" (${width}×${height} px, background ${background.toUpperCase()}${
+      description: `Add the container "${this.refs(project).imageLabel(id)}" (${size.width}×${size.height} px, background ${size.background.toUpperCase()}${
         op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
       })`,
       created: [{ kind: 'i', id }],
@@ -2168,34 +1991,6 @@ class Batch {
   }
 
   /**
-   * Redoes the size of a new instance after the batch's table rows have been entered (the initial size
-   * is measured before them, with the table empty): `fitMarking` and, if the marking was created anchored,
-   * `snapToAnchor` with the component's defaults. A component that does not fit (slot, no `sizing`)
-   * stays as it is.
-   */
-  private refitToRows(p: Project, markingId: string, anchored: boolean): Project {
-    let next = p;
-    try {
-      next = fitMarking(next, this.catalog, markingId, this.measurer, {
-        minSizeOf: (id) => componentMinSize(next, this.catalog, id),
-      });
-    } catch (error) {
-      if (!(error instanceof ModelError)) throw error;
-      return p;
-    }
-    if (!anchored || projectIndex(next).markings.get(markingId)?.anchor == null)
-      return next;
-    try {
-      return snapToAnchor(next, markingId, {
-        defaults: markingAnchorDefaults(next, this.catalog),
-      }).project;
-    } catch (error) {
-      if (!(error instanceof ModelError)) throw error;
-      return next;
-    }
-  }
-
-  /**
    * `fit_marking`: the model's `fitMarking` (the same as the app's Arrange on a marking without a slot), with the
    * annotation's values in the batch state. The summary gives the rectangle before and after.
    */
@@ -2218,18 +2013,6 @@ class Batch {
     return {
       project,
       description: `Fit the marking "${label}" to its content: ${rectText(before)} → ${rectText(after)}`,
-    };
-  }
-
-  /** The step's anchor: the target (reference, id or alias) becomes an id; `side`, `align` and `offset` only go in if given. */
-  private markingAnchor(
-    anchor: NonNullable<Extract<Operation, { op: 'update_marking' }>['anchor']>,
-  ): MarkingAnchor {
-    return {
-      to: this.item(anchor.to, 'm'),
-      ...(anchor.side === undefined ? {} : { side: anchor.side }),
-      ...(anchor.align === undefined ? {} : { align: anchor.align }),
-      ...(anchor.offset === undefined ? {} : { offset: anchor.offset }),
     };
   }
 
@@ -2662,468 +2445,70 @@ class Batch {
 
   private createMarkingOp(op: Extract<Operation, { op: 'create_marking' }>): Step {
     const p = this.p;
-    const catalog = this.catalog;
-    const annotation = op.annotation;
-    if (annotation === undefined && op.annotationAs !== undefined) {
-      throw new ToolError(
-        'invalid-arguments',
-        '`annotationAs` only applies with `annotation` in the same operation',
-      );
-    }
-    if (op.container !== undefined && op.image !== undefined) {
-      throw new ToolError(
-        'invalid-arguments',
-        'provide `container` (the old `image` is also accepted), not both',
-      );
-    }
-    if (op.slot !== undefined && op.inside === undefined) {
-      throw new ToolError(
-        'invalid-arguments',
-        '`slot` only applies with `inside` (the component whose slot receives the child)',
-      );
-    }
-    const containerRef = op.container ?? op.image;
-    // `inside`: the target (a component with a slot) gives the container; the stored parent still comes from the geometry.
-    const inside = op.inside === undefined ? null : this.insideTarget(op, containerRef);
-    // Without `container`: canvas marking (rect in canvas units, possibly negative).
-    const containerId = inside
-      ? inside.containerId
-      : containerRef === undefined
-        ? null
-        : this.containerItem(containerRef, p);
-    const markingId = crypto.randomUUID();
-    const typeRef = annotation ? this.type(annotation.type) : null;
-    const component =
-      typeRef === null
-        ? null
-        : (this.componentTypeMap(p, catalog).get(`${typeRef.specId}/${typeRef.typeId}`) ??
-          null);
-    if (inside !== null && component === null) {
-      throw new ToolError(
-        'invalid-arguments',
-        '`inside` only applies with `annotation` of a type with a component (see list_components)',
-      );
-    }
-    const anchor = op.anchor === undefined ? null : this.markingAnchor(op.anchor);
-    const pageId = this.markingPageId(op, p, containerId, {
-      inside: inside?.id ?? null,
-      anchor: anchor?.to ?? null,
-      nearUsed: component?.floating === true,
-    });
-    // The anchor is checked before creating (the invariant's errors); after settling, only the space
-    // may have changed and then the new marking is created without an anchor, with a warning.
-    if (anchor !== null) {
-      checkAnchorTarget(p, markingId, containerId, anchor, pageId ?? null);
-    }
-    if (anchor !== null && (op.near !== undefined || inside !== null)) {
-      throw new ToolError(
-        'invalid-arguments',
-        '`anchor` and `near`/`inside` are different placements: provide only one',
-      );
-    }
-    if (op.rect === undefined && component === null) {
-      throw new ToolError(
-        'invalid-arguments',
-        '`rect` is required (only an annotation type with a component dispenses with the rectangle: see list_components)',
-      );
-    }
-    // With a component the minimum is its `minSize` or 1×1; without a component, that of any marking (8).
-    const minSize =
-      component === null
-        ? null
-        : componentFileMinSize(component.component, effectiveDensity(p, containerId));
-    // `near` (ME4): only a floating type; the spot comes from `placeFloatingNear` and the `rect`, if given,
-    // supplies only the size. In the other cases the argument is ignored, with a warning.
-    const notes: string[] = [];
-    let nearRect: { x: number; y: number; width: number; height: number } | null = null;
-    if (op.near !== undefined) {
-      if (component?.floating === true && containerId === null) {
-        const target = this.nearTarget(op.near);
-        const size =
-          op.rect ??
-          componentSize(
-            p,
-            catalog,
-            {
-              containerId: null,
-              parentId: null,
-              ...typeRef!,
-              ...initialValuesArg(op.annotation?.values),
-            },
-            this.measurer,
-          );
-        nearRect = placeFloatingNear(p, target, size);
-      } else {
-        notes.push(
-          '`near` only applies to a floating annotation type, without `container`: it was ignored (to place the marking in a container, use `container` and `rect`)',
-        );
-      }
-    }
-    if (typeRef !== null && component === null) {
-      const missing = missingComponentNote(p, catalog, typeRef);
-      if (missing !== null) notes.push(missing);
-    }
     const rowAliases: [string, AliasTarget][] = [];
-    let project: Project;
-    let annotationId: string | null = null;
-    let autoPlaced = false;
-
-    if (annotation && typeRef !== null && component !== null) {
-      const newAnnotationId = crypto.randomUUID();
-      annotationId = newAnnotationId;
-      // The parent comes from the geometry (the model settles on creation): without `rect`, in the center of the container.
-      // The size came from the component (not from the request): the batch's table rows did not
-      // exist yet when it was measured, so `refitToRows` redoes it after `setValues`.
-      const rectFromComponent =
-        nearRect === null && inside === null && op.rect === undefined;
-      const rect =
-        nearRect ??
-        (inside ? this.insideRect(op, inside.id, containerId, typeRef, minSize) : null) ??
-        op.rect ??
-        this.anchoredRect(p, notes, markingId, containerId, typeRef, op, anchor) ??
-        componentPlacement(
-          p,
-          catalog,
-          {
-            containerId,
-            parentId: null,
-            ...(pageId === undefined ? {} : { pageId }),
-            ...typeRef,
-            ...initialValuesArg(annotation.values),
-          },
-          this.measurer,
-        );
-      if (annotation.layer !== undefined) {
-        const layer = this.layer(annotation.layer);
-        if (
-          layer.spec?.specId !== typeRef.specId ||
-          layer.spec.layerId !== component.layerId
-        ) {
-          throw new ModelError('type-not-in-layer');
-        }
-      }
-      project = this.checkMinSize(minSize, `"${typeRef.specId}/${typeRef.typeId}"`, () =>
-        addComponentMarking(
-          p,
-          catalog,
-          {
-            markingId,
-            annotationId: newAnnotationId,
-            containerId,
-            ...(pageId === undefined ? {} : { pageId }),
-            parentId: inside?.id ?? null,
-            ...typeRef,
-            rect,
-            name: op.name ?? null,
-            preview: 'required',
-            ...(anchor === null ? {} : { anchor }),
-          },
-          this.measurer,
-        ),
-      );
-      // Automatic placement only (no rect, near, inside or anchor; not a floating type): the "no free space" check
-      // runs below, on the stored rectangle (decision 5 of #1891). `inside` has its own full-slot warning.
-      autoPlaced =
-        rectFromComponent &&
-        anchor === null &&
-        op.near === undefined &&
-        component.floating !== true;
-      if (inside) {
-        this.noteInsideFit(notes, p, project, inside.id, {
-          id: markingId,
-          rect,
-          asked: op.rect,
-          typeId: typeRef.typeId,
-          slot: op.slot,
-        });
-      }
-      if (annotation.name !== undefined) {
-        project = renameAnnotation(project, newAnnotationId, annotation.name);
-      }
-      if (annotation.values !== undefined) {
-        project = this.setValues(project, newAnnotationId, annotation.values, rowAliases);
-        if (rectFromComponent && hasTableValue(annotation.values)) {
-          project = this.refitToRows(project, markingId, anchor !== null);
-        }
-      }
-    } else {
-      project = createMarking(p, {
-        id: markingId,
-        containerId,
-        ...(pageId === undefined ? {} : { pageId }),
-        rect: op.rect!,
-        name: op.name ?? null,
-      });
-      if (anchor !== null) project = setNewMarkingAnchor(project, markingId, anchor);
-      if (annotation && typeRef !== null) {
-        annotationId = crypto.randomUUID();
-        project = this.typedAnnotation(project, annotationId, markingId, {
-          type: typeRef,
-          layer: annotation.layer,
-          name: annotation.name,
-          values: annotation.values,
-          ownerId: null,
-          rowAliases,
-        });
-      }
-    }
-    if (op.source !== undefined) {
-      project = setMarkingSource(project, markingId, toSource(op.source));
-    }
-    // The new marking is at the end of the array (settling does not reorder): the backward search is O(1).
-    let created!: Marking;
-    for (let i = project.markings.length - 1; i >= 0; i--) {
-      if (project.markings[i]!.id === markingId) {
-        created = project.markings[i]!;
-        break;
-      }
-    }
+    const made = this.rules(() =>
+      createBatchMarking(this.markingContext(rowAliases), p, op),
+    );
+    const { project, marking: created, typeRef, notes } = made;
     const { rect } = created;
-    if (autoPlaced && typeRef !== null) {
-      this.noteNoFreeSpace(notes, p, { containerId, pageId, typeRef, rect });
-    }
-    if (anchor !== null && created.anchor == null) {
-      notes.push(
-        'the anchor was dropped: by geometry the marking was created in a different space than the target (the container or the canvas); anchor it afterwards with `update_marking`, in the same space as the target',
-      );
-    }
-    const label = this.createdMarkingLabel(p, project, created, component?.name ?? null);
+    const label = this.createdMarkingLabel(p, project, created, made.componentName);
     return {
       project,
-      ...(notes.length > 0 ? { notes } : {}),
+      ...(notes.length > 0 ? { notes: [...notes] } : {}),
       description: `Create the marking "${label}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
         op.rect === undefined ? ', initial size of the component' : ''
       }${op.source ? `, ${sourceLabel(toSource(op.source))}` : ''})${
         typeRef ? ` with the annotation ${typeRef.specId}/${typeRef.typeId}` : ''
       }`,
       created: [
-        { kind: 'm', id: markingId },
-        ...(annotationId ? [{ kind: 'a' as const, id: annotationId }] : []),
+        { kind: 'm', id: made.markingId },
+        ...(made.annotationId ? [{ kind: 'a' as const, id: made.annotationId }] : []),
       ],
       rowAliases,
     };
   }
 
   /**
-   * The rectangle of a new instance with `anchor` and without `rect`: the measured size snapped to the target,
-   * with the component's defaults; `null` when there is no `anchor` or the `rect` rules. The "clamped
-   * inside the container" warning goes to the notes.
+   * The model's rules of the marking operations need the batch's references, labels and annotation values:
+   * this is what the batch hands them (the row aliases of a `create_marking` collect in `rowAliases`).
    */
-  private anchoredRect(
-    p: Project,
-    notes: string[],
-    markingId: string,
-    containerId: string | null,
-    typeRef: AnnotationTypeRef,
-    op: Extract<Operation, { op: 'create_marking' }>,
-    anchor: MarkingAnchor | null,
-  ): Rect | null {
-    if (anchor === null || op.rect !== undefined) return null;
-    const placed = componentAnchoredPlacement(
-      p,
-      this.catalog,
-      {
-        markingId,
-        containerId,
-        parentId: null,
-        ...typeRef,
-        ...initialValuesArg(op.annotation?.values),
-        anchor,
-        anchorDefaults: typeAnchorDefaults(this.catalog, typeRef.specId, typeRef.typeId),
+  private markingContext(rowAliases: [string, AliasTarget][]): MarkingContext {
+    const { catalog } = this;
+    return {
+      catalog,
+      measurer: this.measurer,
+      refs: {
+        marking: (ref) => this.item(ref, 'm'),
+        container: (ref, p = this.p) => this.containerItem(ref, p),
+        layer: (ref) => this.layer(ref),
+        type: (ref) => this.type(ref),
+        nearTarget: (ref) => this.nearTarget(ref),
+        pageFor: (p, containerId, args) =>
+          this.markingPageId({ page: args.page, near: args.near }, p, containerId, args),
+        componentType: (p, type) =>
+          this.componentTypeMap(p, catalog).get(`${type.specId}/${type.typeId}`) ?? null,
+        markingLabel: (p, id) => this.markingLabel(p, id),
+        containerLabel: (p, id) => this.refs(p).imageLabel(id),
+        guardMinSize: (minSize, what, run) => this.checkMinSize(minSize, what, run),
       },
-      this.measurer,
-    );
-    notes.push(...placed.warnings.map((w) => w.text));
-    return placed.rect;
-  }
-
-  /**
-   * Target of the `inside` of `create_marking`: a marking (from the batch or the project) that draws a
-   * component with a slot. It only positions: the stored parent comes from the geometry. `container`, if given,
-   * must be the target's.
-   */
-  private insideTarget(
-    op: Extract<Operation, { op: 'create_marking' }>,
-    containerRef: string | undefined,
-  ): { id: string; containerId: string | null } {
-    if (op.near !== undefined) {
-      throw new ToolError(
-        'invalid-arguments',
-        '`inside` and `near` are two placements: provide only one',
-      );
-    }
-    if (op.annotation === undefined) {
-      throw new ToolError(
-        'invalid-arguments',
-        '`inside` only applies with `annotation` of a type with a component (see list_components)',
-      );
-    }
-    const id = this.item(op.inside!, 'm');
-    const target = this.p.markings.find((m) => m.id === id);
-    if (
-      target === undefined ||
-      !hasComponentSlot(this.p, this.catalog, id, this.measurer)
-    ) {
-      throw new ModelError(
-        'invalid-parent',
-        '`inside` must be a marking that draws a component with a slot (see list_components: only a component with a slot, such as Column or Row, receives children)',
-      );
-    }
-    if (
-      containerRef !== undefined &&
-      this.containerItem(containerRef, this.p) !== target.containerId
-    ) {
-      throw new ModelError(
-        'invalid-parent',
-        '`container` is not the container of the `inside` target: omit `container` (it comes from the target)',
-      );
-    }
-    this.checkInsideSlot(op, id);
-    return { id, containerId: target.containerId };
-  }
-
-  /** The `slot` of `create_marking` is one of the target's slots with an `id` (the others go in `detail`). */
-  private checkInsideSlot(
-    op: Extract<Operation, { op: 'create_marking' }>,
-    targetId: string,
-  ): void {
-    if (op.slot === undefined) return;
-    const drawn = markingComponent(this.p, this.catalog, targetId);
-    const slots =
-      drawn === null
-        ? []
-        : typeSlots(this.p, drawn.specId, drawn.typeId, drawn.component).filter(
-            (slot) => slot.id !== '',
-          );
-    if (slots.some((slot) => slot.id === op.slot)) return;
-    throw new ToolError(
-      'invalid-arguments',
-      `the target has no slot "${op.slot}"; use one of its slots (see \`slots\` in get_marking)`,
-      { detail: { slots: slots.map((slot) => ({ id: slot.id, name: slot.name })) } },
-    );
-  }
-
-  /** Rectangle of the child in the target's slot; the step's `rect` supplies only the size (x and y are ignored). */
-  private insideRect(
-    op: Extract<Operation, { op: 'create_marking' }>,
-    targetId: string,
-    containerId: string | null,
-    typeRef: AnnotationTypeRef,
-    minSize: { width: number; height: number } | null,
-  ): Rect {
-    const { rect } = op;
-    if (
-      rect !== undefined &&
-      minSize !== null &&
-      (rect.width < minSize.width || rect.height < minSize.height)
-    ) {
-      this.checkMinSize(minSize, `"${typeRef.specId}/${typeRef.typeId}"`, () => {
-        throw new ModelError('rect-too-small', undefined, {
-          received: { width: rect.width, height: rect.height },
-          min: { ...minSize },
-          source: 'component',
-        });
-      });
-    }
-    return componentPlacement(
-      this.p,
-      this.catalog,
-      {
-        containerId,
-        parentId: targetId,
-        ...(op.slot === undefined ? {} : { slot: op.slot }),
-        ...typeRef,
-        ...(rect === undefined
-          ? {}
-          : { size: { width: rect.width, height: rect.height } }),
-        ...initialValuesArg(op.annotation?.values),
+      annotate: {
+        typed: (p, id, markingId, args) =>
+          this.typedAnnotation(p, id, markingId, { ...args, ownerId: null, rowAliases }),
+        setValues: (p, annotationId, values) =>
+          this.setValues(p, annotationId, values, rowAliases),
       },
-      this.measurer,
-    );
+    };
   }
 
-  /**
-   * The warning of a marking created without `rect`, `inside`, `near` or `anchor` that was born over others:
-   * `placementIsFree` (on the project from before, with the rectangle that was stored) says it did not find a
-   * free spot at any level. The note becomes the usual `ignored-argument` warning.
-   */
-  private noteNoFreeSpace(
-    notes: string[],
-    before: Project,
-    created: {
-      containerId: string | null;
-      pageId: string | undefined;
-      typeRef: AnnotationTypeRef;
-      rect: Rect;
-    },
-  ): void {
-    const free = placementIsFree(
-      before,
-      this.catalog,
-      {
-        containerId: created.containerId,
-        parentId: null,
-        ...(created.pageId === undefined ? {} : { pageId: created.pageId }),
-        ...created.typeRef,
-        rect: created.rect,
-      },
-      this.measurer,
-    );
-    if (free) return;
-    notes.push(
-      'no free space: the marking was born over other markings (give `rect` or make room in the container)',
-    );
-  }
-
-  /**
-   * Warnings of `inside`: full slot (the child did not fit in the slot's area), stored parent that is not the
-   * target (and who it ended up in, even when it fit) and `rect` shrunk to the slot.
-   */
-  private noteInsideFit(
-    notes: string[],
-    before: Project,
-    after: Project,
-    targetId: string,
-    created: {
-      id: string;
-      rect: Rect;
-      asked: Rect | undefined;
-      typeId: string;
-      slot: string | undefined;
-    },
-  ): void {
-    const target = this.markingLabel(after, targetId);
-    const { asked, rect } = created;
-    if (asked && (asked.width !== rect.width || asked.height !== rect.height)) {
-      notes.push(
-        `the size of the \`rect\` (${asked.width}×${asked.height}) does not fit in the slot of ${target}: the marking was created at ${rect.width}×${rect.height}`,
-      );
-    }
-    const parentId = projectIndex(after).markings.get(created.id)?.parentId ?? null;
-    const where =
-      parentId === targetId
-        ? ''
-        : parentId === null
-          ? '; it ended up outside it'
-          : `; it ended up inside ${this.markingLabel(after, parentId)}`;
-    if (
-      !placementFitsSlot(
-        before,
-        this.catalog,
-        targetId,
-        rect,
-        this.measurer,
-        created.slot,
-        created.typeId,
-      )
-    ) {
-      notes.push(
-        `the marking did not fit in the slot of ${target}: enlarge the component or use Arrange in the app${where}`,
-      );
-    } else if (where !== '') {
-      notes.push(
-        `the marking was created in the slot of ${target}, but the stored parent is not it${where}`,
-      );
+  /** Runs a rule of the model: its `BatchRuleError` becomes the batch's `ToolError`, with the same code and message. */
+  private rules<T>(run: () => T): T {
+    try {
+      return run();
+    } catch (error) {
+      if (error instanceof BatchRuleError) {
+        throw new ToolError(error.code, error.message, error.details);
+      }
+      throw error;
     }
   }
 
