@@ -61,6 +61,7 @@ import {
   type RemoteImageSource,
   sharedRemoteImageSource,
 } from './components/remoteImages';
+import type { PackageImages } from '../storage/packageImages';
 import { imageAt, imagesBounds } from './imageGeometry';
 import { watchSpaceKey } from './input/keyboard';
 import { PointerInput } from './input/pointer';
@@ -129,6 +130,12 @@ export interface CanvasControllerOptions {
    * source; tests pass a fake one.
    */
   readonly remoteImages?: RemoteImageSource;
+  /**
+   * The package images of the applied libraries (stage #1903, decision 18): the canvas asks for
+   * `(specId, asset)` and redraws the markings that cite an image when it finishes decoding.
+   * Without it, a package image is the placeholder.
+   */
+  readonly packageImages?: PackageImages;
 }
 
 /** No arrows in view ("Show arrows" off, or the Arrows item of view mode): always the same array. */
@@ -202,6 +209,9 @@ export class CanvasController {
   private readonly perspective: PerspectiveState | null;
   private readonly page: PageState | null;
   private readonly remoteImages: RemoteImageSource;
+  private readonly packageImages: PackageImages | null;
+  /** Keys of the package images that finished since the last frame (the frame redoes only their markings). */
+  private readonly changedPackageKeys = new Set<string>();
   /** URLs whose images changed since the last frame (the frame redoes only their markings). */
   private readonly changedImageUrls = new Set<string>();
   /** The consent or a switch changed: the frame redoes all markings with an image. */
@@ -519,6 +529,7 @@ export class CanvasController {
     this.perspective = options.perspective ?? null;
     this.page = options.page ?? null;
     this.remoteImages = options.remoteImages ?? sharedRemoteImageSource();
+    this.packageImages = options.packageImages ?? null;
 
     // The drawings measure text with Konva (the layout matches what is painted) and redraw themselves
     // when the measurer changes; the model and the store never import Konva.
@@ -630,6 +641,12 @@ export class CanvasController {
         this.changedImageUrls.add(url);
         this.requestRender();
       }),
+      // A package image that finishes decoding (or fails): redoes only the markings that cite it.
+      this.packageImages?.subscribe((key) => {
+        if (this.destroyed) return;
+        this.changedPackageKeys.add(key);
+        this.requestRender();
+      }) ?? (() => undefined),
       // Consent or a switch changed: all markings with a remote image are redone.
       effect(() => {
         void this.remoteImages.gate.value;
@@ -814,6 +831,12 @@ export class CanvasController {
         if (!this.destroyed) this.requestRender();
       },
       remoteImage: (url) => this.remoteImages.resolve(url),
+      ...(this.packageImages
+        ? {
+            packageImage: (specId: string, asset: string) =>
+              this.packageImages?.resolve(specId, asset) ?? { state: 'loading' as const },
+          }
+        : {}),
     });
   }
 
@@ -960,6 +983,7 @@ export class CanvasController {
     // Pan, zoom and size touch the stage's transform: all layers redraw.
     const moved = last === null || last.viewport !== v || last.size !== size;
     this.refreshRemoteImages();
+    this.refreshPackageImages();
 
     let placementsChanged = last === null;
     if (scaleChanged || dragChanged || !sameFrame(last, frame, IMAGE_KEYS)) {
@@ -1164,6 +1188,15 @@ export class CanvasController {
     if (all) this.stage.batchDraw();
     else for (const layer of this.dirty) layer.batchDraw();
     this.dirty.clear();
+  }
+
+  /** Redoes the markings whose package images finished since the last frame. */
+  private refreshPackageImages(): void {
+    if (this.changedPackageKeys.size === 0) return;
+    const keys = new Set(this.changedPackageKeys);
+    this.changedPackageKeys.clear();
+    this.mark(this.layers.components, this.componentLayer.refreshPackageImages(keys));
+    this.mark(this.layers.floating, this.floatingLayer.refreshPackageImages(keys));
   }
 
   /** Redoes the markings whose remote images changed since the last frame. */

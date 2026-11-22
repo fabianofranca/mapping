@@ -22,7 +22,11 @@ import { Markdown } from '../markdown/Markdown';
 import { ExternalDoc } from './ExternalDoc';
 import { Playground } from './Playground';
 import { drawWarningText } from './drawWarnings';
-import type { CatalogRenderer } from './renderer';
+import {
+  type CatalogImages,
+  type CatalogRenderer,
+  packageImageOptions,
+} from './renderer';
 
 // Page of a Catalog component: header, document, properties, code per
 // platform, sources, gallery and playground. Presentation only: nothing here writes or reads disk.
@@ -34,6 +38,7 @@ export interface CatalogPageProps {
   readonly version: number;
   readonly renderer: CatalogRenderer;
   readonly fontsEpoch?: number;
+  readonly images?: CatalogImages;
   readonly project?: Project | null;
   readonly onLink?: (href: string) => void;
   readonly onAddToScreen?: (typeId: string) => void;
@@ -328,6 +333,7 @@ function Gallery({
   version,
   renderer,
   fontsEpoch,
+  images,
 }: {
   readonly catalog: Catalog;
   readonly entry: CatalogEntry;
@@ -335,9 +341,12 @@ function Gallery({
   readonly version: number;
   readonly renderer: CatalogRenderer;
   readonly fontsEpoch: number;
+  readonly images: CatalogImages | undefined;
 }) {
-  // A remote image that finishes loading (or the consent that changes) invalidates the entry.
-  const imagesEpoch = renderer.imagesEpoch.value;
+  // A remote image that finishes loading (or the consent that changes) or a package image that
+  // finishes decoding invalidates the entry: both epochs only rise, so their sum never repeats.
+  const imagesEpoch = renderer.imagesEpoch.value + (images?.epoch ?? 0);
+  const imageSource = images?.source;
   const items = useMemo((): GalleryItem[] => {
     const make = (
       key: string,
@@ -360,7 +369,11 @@ function Gallery({
         imagesEpoch,
       };
       try {
-        url = renderer.cache.get(cacheKey, () => drawing.root);
+        url = renderer.cache.get(
+          cacheKey,
+          () => drawing.root,
+          packageImageOptions(specId, imageSource),
+        );
       } catch {
         url = null;
       }
@@ -377,7 +390,7 @@ function Gallery({
       list.push(make(`ex-${i}`, example.name, example.description, example));
     });
     return list;
-  }, [catalog, entry, specId, version, renderer, fontsEpoch, imagesEpoch]);
+  }, [catalog, entry, specId, version, renderer, fontsEpoch, imagesEpoch, imageSource]);
 
   if (items.length === 0) return <p class="muted">{t('catalog.gallery.empty')}</p>;
   return (
@@ -447,6 +460,7 @@ export function CatalogPage({
   version,
   renderer,
   fontsEpoch = 0,
+  images,
   project = null,
   onLink,
   onAddToScreen,
@@ -527,6 +541,7 @@ export function CatalogPage({
           version={version}
           renderer={renderer}
           fontsEpoch={fontsEpoch}
+          images={images}
         />
       </section>
 
@@ -538,6 +553,8 @@ export function CatalogPage({
           entry={entry}
           renderer={renderer}
           fontsEpoch={fontsEpoch}
+          specId={specId}
+          {...(images === undefined ? {} : { images })}
         />
       </section>
     </article>

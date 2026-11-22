@@ -18,6 +18,7 @@ import {
   type Project,
 } from '../src/model';
 import { builtinFontBook, measurerFor, type FontBook } from './image/textMeasurer';
+import { anyApproximate, sceneFamilies } from './approximateText';
 import { auditWarning } from './auditViews';
 import type { Refs } from './items';
 import { issueView } from './views';
@@ -38,7 +39,7 @@ export interface OverflowItem {
   readonly node: string;
   /** How much is missing, in px (one decimal place). */
   readonly missing: number;
-  /** Measured without the library's font: the bundled one in its place, only a signal to take a look. */
+  /** Some text of the drawing was measured without its family: the bundled font in its place, only a signal to take a look. */
   readonly approximate?: true;
   readonly message: string;
 }
@@ -237,12 +238,15 @@ function drawingItemsOf(
   drawings: ComponentDrawings,
 ): Map<string, readonly DrawingItem[]> {
   const found = new Map<string, readonly DrawingItem[]>();
-  const approximate = !(refs.loaded.fonts ?? builtinFontBook()).hasLibraryFonts;
+  const fonts = refs.loaded.fonts ?? builtinFontBook();
   const add = (annotationId: string, items: readonly DrawingItem[]) =>
     found.set(annotationId, [...(found.get(annotationId) ?? []), ...items]);
   for (const drawing of drawings.values()) {
     if (drawing.overflow && (touched === null || touched.has(drawing.markingId))) {
-      add(drawing.annotationId, itemsOf(drawing, approximate));
+      add(
+        drawing.annotationId,
+        itemsOf(drawing, anyApproximate(fonts, sceneFamilies(drawing.root))),
+      );
     }
     for (const [annotationId, item] of slotItemsOf(drawing, project, touched)) {
       add(annotationId, [item]);

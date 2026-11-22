@@ -33,6 +33,7 @@ export * from './direction';
 export * from './drawingMode';
 export * from './imageOptimization';
 export * from './exif';
+export { detectFormat, readSize, type ImageFormat } from './imageHeader';
 export * from './markings';
 export * from './arrows';
 export * from './anchors';
@@ -45,7 +46,7 @@ export { cachedMeasurer, MEASURE_CACHE_LIMIT } from './components/measureCache';
 export type { ComponentFile, FieldValues } from './components/componentFormat';
 export { fitComponentSize, resolveSizing } from './components/sizing';
 export * from './componentMeasure';
-export type { FrameNode } from './components/scene';
+export type { FrameNode, SceneNode } from './components/scene';
 export * from './componentCatalog';
 export * from './structural';
 export * from './componentValues';
@@ -70,6 +71,13 @@ export * from './specLookup';
 export * from './specSlots';
 export * from './specializations';
 export * from './libraryPackage';
+export {
+  MAX_IMAGE_BYTES,
+  MAX_IMAGE_SIDE,
+  MAX_IMAGES_TOTAL_BYTES,
+  citedImages,
+  type CitedImage,
+} from './libraryImages';
 export * from './bundledLibrary';
 export * from './catalog';
 export * from './specVersions';

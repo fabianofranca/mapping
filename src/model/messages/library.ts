@@ -65,6 +65,12 @@ export const libraryMessages = {
     'the image src reads "{key}", which is a {fieldType} field of the type "{typeId}", not string',
   'library.fontMissing':
     'file of the font "{family}" not found: {path}; the drawing uses the system font',
+  // Package images (PNG, JPEG, WebP) cited by an `image` node's `src`
+  'library.imageBadFormat': 'image is not PNG, JPEG or WebP: {path}',
+  'library.imageTooHeavy': 'image larger than 1 MB: {path}',
+  'library.imageTooWide': 'image larger than 2048 px: {path} ({width}×{height})',
+  'library.imagesTooHeavy': 'the package images exceed 8 MB',
+  'library.imageValueMissing': 'package image not found: {path}',
   'library.scrimMissing': 'the type "{typeId}" does not exist in the specialization',
   // Tokens: one code per pair (token type, expected type; `TOKEN_KIND_NAMES`)
   'library.tokenMissing':

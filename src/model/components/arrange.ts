@@ -54,10 +54,16 @@ import {
   alignInCell,
   placeCells,
   trackCount,
-  trackOffset,
-  trackSize,
+  parseTrackList,
+  type Track,
 } from './gridLayout';
-import { TRACK_KEYS, isTrackAbsent, lineExtents, validTrack } from './gridPlan';
+import {
+  TRACK_KEYS,
+  isTrackAbsent,
+  lineExtents,
+  slotTrackGeometry,
+  validTrack,
+} from './gridPlan';
 import { breakLines, stackLines } from './wrapLines';
 
 /**
@@ -67,6 +73,8 @@ import { breakLines, stackLines } from './wrapLines';
  */
 export interface ResolvedGrid {
   readonly count?: number | undefined;
+  /** The track list of `columns`/`rows` (v4); `count` is its length. */
+  readonly tracks?: readonly Track[] | undefined;
   readonly min?: number | undefined;
   readonly orientation: 'vertical' | 'horizontal';
 }
@@ -177,6 +185,9 @@ function resolveGrid(layout: LayoutSpec, values: FieldValues): ResolvedGrid {
   const chosen = present.find((p) => !isTrackAbsent(p.value)) ?? present[0];
   const orientation = chosen?.entry.vertical === false ? 'horizontal' : 'vertical';
   if (chosen === undefined) return { count: 1, orientation };
+  const tracks =
+    chosen.entry.field === 'count' ? parseTrackList(chosen.value) : undefined;
+  if (tracks !== undefined) return { count: tracks.length, tracks, orientation };
   const value = validTrack(chosen.entry.field, chosen.value);
   if (value === undefined) return { count: 1, orientation };
   return chosen.entry.field === 'min'
@@ -656,19 +667,29 @@ function layoutGrid(
     : slot.height - padding.top - padding.bottom;
   const fStart = vertical ? slot.y + padding.top : slot.x + padding.left;
   const plan = planGrid(layout, children, tContent);
-  const size = trackSize(tContent, plan.count, layout.gap);
+  const tracks = slotTrackGeometry(
+    layout.grid?.tracks,
+    plan.cells,
+    plan.order.map((i) => gridSize(children[i] as LayoutChild, vertical, true)),
+    tContent,
+    { count: plan.count, gap: layout.gap },
+  );
   const stacked = stackLines(plan.extents, layout.lineGap, false);
   const out: Box[] = children.map((c) => c.box);
   for (const cell of plan.cells) {
     const index = plan.order[cell.index] as number;
     const child = children[index] as LayoutChild;
-    const t = alignInCell(layout.justify, size, gridSize(child, vertical, true));
+    const t = alignInCell(
+      layout.justify,
+      tracks.extentOf(cell.track),
+      gridSize(child, vertical, true),
+    );
     const f = alignInCell(
       layout.align,
       plan.extents[cell.line] ?? 0,
       gridSize(child, vertical, false),
     );
-    const tPos = tStart + trackOffset(cell.track, size, layout.gap) + t.pos;
+    const tPos = tStart + tracks.offsetOf(cell.track) + t.pos;
     const fPos = fStart + (stacked.tops[cell.line] ?? 0) + f.pos;
     out[index] = roundedBox(
       vertical
@@ -690,8 +711,13 @@ function gridExtent(
   available: number | null,
 ): { width: number; height: number } {
   const plan = planGrid(layout, children, available);
-  const widest = Math.max(0, ...children.map((c) => gridSize(c, plan.vertical, true)));
-  const tracks = plan.count * widest + layout.gap * (plan.count - 1);
+  const { used: tracks } = slotTrackGeometry(
+    layout.grid?.tracks,
+    plan.cells,
+    plan.order.map((i) => gridSize(children[i] as LayoutChild, plan.vertical, true)),
+    null,
+    { count: plan.count, gap: layout.gap },
+  );
   const flow = stackLines(plan.extents, layout.lineGap, false).total;
   return plan.vertical
     ? { width: tracks, height: flow }

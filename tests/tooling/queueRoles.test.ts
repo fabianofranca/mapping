@@ -301,9 +301,11 @@ describe('implementar-fila: switch at 35% and one active session per role (decis
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const flow = readFileSync('docs/FLOW.md', 'utf8');
 
-  it('"1. Start" gives the title "Fila — coordenador <n>" and registers the role', () => {
+  it('"1. Start" gives the title "Fila — coordenador <n> · linhagem <depth>/<limit>" and registers the role', () => {
     const start = section(skill, '## 1. Start');
-    expect(start).toContain('Fila — coordenador <n>');
+    expect(start).toContain('"Fila — coordenador <n> · linhagem <depth>/<limit>"');
+    expect(start).toContain('`lineage.depth`');
+    expect(start).toContain('`lineage.limit`');
     expect(start).toContain('role');
     expect(start).toContain('prefix "Fila — coordenador"');
   });
@@ -322,7 +324,8 @@ describe('implementar-fila: switch at 35% and one active session per role (decis
     const switching = section(skill, '## Session switch');
     expect(switching).toContain('Above 35%');
     expect(switching).not.toContain('60%');
-    expect(switching).toContain('Fila — coordenador <n>');
+    expect(switching).toContain('"Fila — coordenador <n> · linhagem <d>/<limit>"');
+    expect(switching).toMatch(/<d>[^\n]*`lineage\.depth`[^\n]*plus 1/);
     const newSession = switching.slice(switching.indexOf('**In the new session**'));
     expect(newSession).toContain('role');
     expect(newSession).toContain('archive_session');

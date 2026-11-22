@@ -44,6 +44,7 @@ export interface CanvasTokens {
   readonly component: {
     readonly placeholderFill: string;
     readonly placeholderLine: string;
+    readonly failedLine: string;
     readonly unknownLine: string;
     readonly unknownFill: string;
     readonly slotOpacity: number;
@@ -163,6 +164,7 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
     component: {
       placeholderFill: read('--cv-component-placeholder'),
       placeholderLine: read('--cv-component-placeholder-line'),
+      failedLine: read('--cv-component-image-failed'),
       unknownLine: read('--cv-component-unknown'),
       unknownFill: read('--cv-component-unknown-fill'),
       slotOpacity: number(read, '--opacity-slot'),

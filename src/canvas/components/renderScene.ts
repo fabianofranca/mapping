@@ -34,6 +34,7 @@ import {
   type CornerRadius,
   type Matrix,
   type Paint,
+  type Point,
   type Scene,
   type SceneNode,
   type SceneTextRun,
@@ -44,7 +45,8 @@ import {
   hasChildren,
   nodeMatrix,
 } from '../../model/components/scene';
-import type { ImageFit } from '../../model/components/componentFormat';
+import { imageFit } from '../../model/components/imageFit';
+import { packageImageKey } from '../../model/components/imagePath';
 import type { RunLayout, RunPiece } from '../../model/components/richText';
 import { textBoxLimits } from './textLimits';
 import { wordSafeText } from './wordWidth';
@@ -73,6 +75,17 @@ export interface RenderOptions {
    */
   readonly remoteImage?: (url: string) => RemoteImageResult;
   /**
+   * The specialization the scene's component belongs to: with a package image's path it names the
+   * file, `(specId, asset)`. Without it a package image is the placeholder.
+   */
+  readonly specId?: string;
+  /**
+   * Resolves a package image (stage #1903, decision 18): the app decodes the bytes of the file in
+   * the library package and answers with the state (and the ready bitmap). Package images skip the
+   * consent and the URL policy: the bytes are local. Without it, the placeholder.
+   */
+  readonly packageImage?: (specId: string, asset: string) => PackageImageResult;
+  /**
    * `true` when the result will be read back (`toDataURL`, `toBlob`, `getImageData`):
    * an `opaque` image (loaded without CORS) is not drawn, the placeholder takes its place.
    */
@@ -95,12 +108,30 @@ export interface RenderResult {
   readonly warnings: readonly RenderWarning[];
   /** Remote URLs (`url` of the `image` fill) that the scene uses, without repeats. */
   readonly imageUrls: readonly string[];
+  /** Keys (`packageImageKey`) of the package images the scene cites, without repeats. */
+  readonly packageImages: readonly string[];
 }
+
+/** What the host knows about a package image: still decoding, failed, or the decoded bitmap. */
+export type PackageImageResult =
+  | { readonly state: 'loading' }
+  | { readonly state: 'failed' }
+  | {
+      readonly state: 'ready';
+      readonly image: CanvasImageSource;
+      readonly width: number;
+      readonly height: number;
+    };
+
+/** The `fit` arithmetic lives in the model (the MCP raster uses it too); the canvas keeps the name. */
+export { imageFit };
 
 export const SCENE_ID_ATTR = 'sceneId';
 
 /** Shape that exists only to receive the pointer: it neither paints nor receives a shadow. */
 const HIT_ONLY_ATTR = 'hitOnly';
+/** Marks the shadow-only shape of an inner shadow: it never owns an outer shadow. */
+const INNER_SHADOW_ATTR = 'innerShadow';
 
 interface Box {
   readonly width: number;
@@ -113,6 +144,7 @@ class Renderer {
   readonly byId = new Map<string, Konva.Group>();
   private readonly warned = new Map<string, RenderWarning>();
   readonly imageUrls = new Set<string>();
+  readonly packageKeys = new Set<string>();
 
   private readonly palette: RenderPalette;
 
@@ -144,6 +176,16 @@ class Renderer {
     // (e.g. `filter` on a group that wraps the shape) passes the shadow to the first descendant
     // shape.
     const shadows = this.outerShadows([...pendingShadows, ...node.effects]);
+    const boxed =
+      node.type === 'frame' || node.type === 'rect' || node.type === 'ellipse';
+    const innerShadows = boxed ? node.effects.filter((s) => s.inner) : [];
+    // An inner shadow that no frame, rect or ellipse can draw (a scene from another source, or one
+    // handed down by a group): ignored, with a warning.
+    if (
+      pendingShadows.some((s) => s.inner) ||
+      (!boxed && node.effects.some((s) => s.inner))
+    )
+      this.warn('inner-shadow');
 
     if (node.type === 'frame' && node.clip) {
       const { width, height, cornerRadius, clipBox } = node;
@@ -168,11 +210,13 @@ class Renderer {
       });
     }
 
-    const shapes = this.shapesOf(node);
-    // The invisible clickable area of a transparent frame does not paint: it does not own the
-    // shadow.
+    const shapes = this.shapesOf(node, innerShadows);
+    // The invisible clickable area of a transparent frame does not paint, and the inner shadow's
+    // shapes only carry their own shadow: neither owns the outer shadow.
     const shadowOwner =
-      shadows.length > 0 ? shapes.find((s) => !s.getAttr(HIT_ONLY_ATTR)) : undefined;
+      shadows.length > 0
+        ? shapes.find((s) => !s.getAttr(HIT_ONLY_ATTR) && !s.getAttr(INNER_SHADOW_ATTR))
+        : undefined;
     // Several shadows (or `spread`) on a rectangle or ellipse: one shadow-only shape per shadow,
     // below the node's shapes, the last of the list first (the first stays on top).
     const casters = shadowOwner !== undefined && castsShadows(node, shadows);
@@ -229,17 +273,13 @@ class Renderer {
     return shape;
   }
 
-  /**
-   * The outer shadows, in order; the inner one does not exist in canvas 2D: ignored, with a
-   * warning.
-   */
+  /** The outer shadows, in order; the inner ones have their own shapes (`innerShadowShapes`). */
   private outerShadows(shadows: readonly Shadow[]): Shadow[] {
-    if (shadows.some((s) => s.inner)) this.warn('inner-shadow');
     return shadows.filter((s) => !s.inner);
   }
 
-  /** The node's own shapes (without the children). */
-  private shapesOf(node: SceneNode): Konva.Shape[] {
+  /** The node's own shapes (without the children): fills, inner shadows, stroke. */
+  private shapesOf(node: SceneNode, innerShadows: readonly Shadow[] = []): Konva.Shape[] {
     const box: Box = { width: node.width, height: node.height };
     const shapes: Konva.Shape[] = [];
     switch (node.type) {
@@ -259,6 +299,7 @@ class Renderer {
               : new KonvaRect(config);
           shapes.push(...this.fillShape(shape, paint, box));
         }
+        shapes.push(...innerShadowShapes(node, innerShadows));
         if (node.stroke) {
           if (node.stroke.sides) shapes.push(...this.sideStrokes(node.stroke, box));
           else {
@@ -294,6 +335,7 @@ class Renderer {
         for (const paint of node.fills) {
           shapes.push(...this.fillShape(new KonvaEllipse(geometry), paint, box));
         }
+        shapes.push(...innerShadowShapes(node, innerShadows));
         if (node.stroke) {
           const inset = strokeAlignInset(node.stroke) - (node.stroke.offset ?? 0);
           const shape = new KonvaEllipse({
@@ -458,26 +500,116 @@ class Renderer {
   /** Applies a fill to a shape; an image becomes the shape itself (`KonvaImage`). */
   private fillShape(shape: ShapeWithFill, paint: Paint, box: Box): Konva.Shape[] {
     shape.opacity(paint.opacity ?? 1);
+    // The gradient points are in the node's box (top-left origin); an ellipse's Konva origin is its center.
+    const local = (p: Point): Point =>
+      shape instanceof KonvaEllipse
+        ? { x: p.x - box.width / 2, y: p.y - box.height / 2 }
+        : p;
     switch (paint.type) {
       case 'solid':
         shape.fill(paint.color);
         return [shape];
       case 'linear':
         shape.fillPriority('linear-gradient');
-        shape.fillLinearGradientStartPoint(paint.start);
-        shape.fillLinearGradientEndPoint(paint.end);
+        shape.fillLinearGradientStartPoint(local(paint.start));
+        shape.fillLinearGradientEndPoint(local(paint.end));
         shape.fillLinearGradientColorStops(flattenStops(paint.stops));
         return [shape];
       case 'radial':
         shape.fillPriority('radial-gradient');
-        shape.fillRadialGradientStartPoint(paint.center);
-        shape.fillRadialGradientEndPoint(paint.center);
+        shape.fillRadialGradientStartPoint(local(paint.center));
+        shape.fillRadialGradientEndPoint(local(paint.center));
         shape.fillRadialGradientStartRadius(0);
         shape.fillRadialGradientEndRadius(paint.radius);
         shape.fillRadialGradientColorStops(flattenStops(paint.stops));
         return [shape];
+      case 'angular':
+        return this.angularFill(shape, paint, local(paint.center));
       case 'image':
         return this.imageFill(shape, paint, box);
+    }
+  }
+
+  /**
+   * The angular gradient has no Konva fill: it is a `createConicGradient` of the 2D context set as
+   * the shape's `fill` (its coordinates are the node's local ones, like the other gradients').
+   * Without that method it takes the first stop's color and warns.
+   */
+  private angularFill(
+    shape: ShapeWithFill,
+    paint: Paint & { type: 'angular' },
+    center: Point,
+  ): Konva.Shape[] {
+    const gradient = conicGradient(paint, center);
+    if (gradient) shape.fill(gradient);
+    else {
+      this.warn('angular-gradient-unsupported');
+      shape.fill(paint.stops[0]?.color ?? this.palette.placeholderLine);
+    }
+    return [shape];
+  }
+
+  /**
+   * A package image (`asset`): the placeholder while the host decodes it (a known state, no warning)
+   * and when it cannot be drawn (`image-decode-failed`); the bitmap on a rect once it is ready.
+   * `undefined` for any other paint.
+   */
+  private packageImageFill(
+    shape: ShapeWithFill,
+    paint: Paint & { type: 'image' },
+    box: Box,
+  ): Konva.Shape[] | undefined {
+    const { asset } = paint;
+    if (paint.src || asset === undefined) return undefined;
+    const specId = this.options.specId;
+    if (specId === undefined) return placeholder(shape, box, this.palette);
+    this.packageKeys.add(packageImageKey(specId, asset));
+    return this.packageViewFill(
+      shape,
+      paint,
+      box,
+      this.resolvePackageImage(specId, asset),
+    );
+  }
+
+  /** The drawing of one package image for the state the host reported. */
+  private packageViewFill(
+    shape: ShapeWithFill,
+    paint: Paint & { type: 'image' },
+    box: Box,
+    view: PackageImageResult,
+  ): Konva.Shape[] {
+    if (
+      view.state === 'ready' &&
+      view.width > 0 &&
+      view.height > 0 &&
+      shape instanceof KonvaRect
+    ) {
+      const image = new KonvaImage({
+        image: view.image,
+        ...imageFit(paint.fit ?? 'cover', box, {
+          width: view.width,
+          height: view.height,
+        }),
+        cornerRadius: shape.cornerRadius(),
+        opacity: paint.opacity ?? 1,
+        listening: true,
+      });
+      grayscaleImage(image, paint.grayscale, 'loaded');
+      return [image];
+    }
+    if (view.state === 'failed') this.warn('image-decode-failed');
+    return placeholder(shape, box, this.palette);
+  }
+
+  /** The resolver may be absent or throw: neither breaks the drawing. */
+  private resolvePackageImage(specId: string, asset: string): PackageImageResult {
+    const resolve = this.options.packageImage;
+    if (!resolve) return { state: 'loading' };
+    try {
+      return resolve(specId, asset);
+    } catch {
+      return { state: 'loading' };
     }
   }
 
@@ -490,6 +622,8 @@ class Renderer {
       this.imageUrls.add(paint.url);
       return this.remoteImageFill(shape, paint, paint.url, box);
     }
+    const packaged = this.packageImageFill(shape, paint, box);
+    if (packaged) return packaged;
     // Only the embedded image (`data:`) is loaded here; any other scheme becomes a placeholder.
     if (!paint.src || !DATA_URL.test(paint.src)) {
       this.warn('image-without-pixels');
@@ -553,10 +687,13 @@ class Renderer {
     box: Box,
   ): Konva.Shape[] {
     const view = this.resolveRemote(url);
-    const drawable =
-      view.image !== undefined &&
-      (view.state === 'loaded' || (view.state === 'opaque' && !this.options.pixelSafe));
-    if (!drawable || view.image === undefined || !(shape instanceof KonvaRect)) {
+    const failed = this.failureLook(view.state, url, shape, box);
+    if (failed) return failed;
+    if (
+      !this.isDrawable(view) ||
+      view.image === undefined ||
+      !(shape instanceof KonvaRect)
+    ) {
       return placeholder(shape, box, this.palette);
     }
     const size = sourceSize(view);
@@ -571,6 +708,28 @@ class Renderer {
     // An `opaque` image (loaded without CORS) cannot be read back: it stays in color, uncached.
     grayscaleImage(image, paint.grayscale, view.state);
     return [image];
+  }
+
+  /** A loaded image, or an opaque one on the main canvas (not pixel-safe), is drawn as an image. */
+  private isDrawable(view: RemoteImageView): boolean {
+    return (
+      view.image !== undefined &&
+      (view.state === 'loaded' || (view.state === 'opaque' && !this.options.pixelSafe))
+    );
+  }
+
+  /** The failure look (and its warning) for the states that draw it, or `undefined`. */
+  private failureLook(
+    state: RemoteImageViewState,
+    url: string,
+    shape: ShapeWithFill,
+    box: Box,
+  ): Konva.Shape[] | undefined {
+    if (!isFailureLook(state, this.options.pixelSafe === true)) return undefined;
+    this.warn(state === 'opaque' ? 'remote-image-opaque' : 'remote-image-failed', {
+      origin: urlOrigin(url),
+    });
+    return failurePlaceholder(shape, box, this.palette);
   }
 
   /**
@@ -654,7 +813,8 @@ class Renderer {
         shape.strokeLinearGradientEndPoint(paint.end);
         shape.strokeLinearGradientColorStops(flattenStops(paint.stops));
         return;
-      case 'radial': {
+      case 'radial':
+      case 'angular': {
         this.warn('stroke-radial-first-color');
         shape.stroke(paint.stops[0]?.color ?? this.palette.placeholderLine);
         return;
@@ -881,92 +1041,6 @@ function sourceSize(view: RemoteImageView): { width: number; height: number } | 
   return { width, height };
 }
 
-/**
- * Position, size and crop of the `KonvaImage` for the `fit`: `cover` crops the center of the source
- * to cover the box, `contain` fits the whole source in the center, `fill` stretches.
- */
-export function imageFit(
-  fit: ImageFit,
-  box: Box,
-  source: { width: number; height: number },
-): {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  crop?: { x: number; y: number; width: number; height: number };
-} {
-  if (fit === 'fill') return { x: 0, y: 0, width: box.width, height: box.height };
-  if (fit !== 'cover' && fit !== 'contain') return placedFit(fit, box, source);
-  if (fit === 'contain') {
-    const scale = Math.min(box.width / source.width, box.height / source.height);
-    const width = source.width * scale;
-    const height = source.height * scale;
-    return { x: (box.width - width) / 2, y: (box.height - height) / 2, width, height };
-  }
-  const scale = Math.max(box.width / source.width, box.height / source.height);
-  const cropWidth = box.width / scale;
-  const cropHeight = box.height / scale;
-  return {
-    x: 0,
-    y: 0,
-    width: box.width,
-    height: box.height,
-    crop: {
-      x: (source.width - cropWidth) / 2,
-      y: (source.height - cropHeight) / 2,
-      width: cropWidth,
-      height: cropHeight,
-    },
-  };
-}
-
-const EPSILON = 1e-9;
-
-/**
- * `fill-width`, `fill-height`, `scale-down` and `none` (format 4): the image at the `fit` scale,
- * centered in the box and clipped where it exceeds it (the `ContentScale` `FillWidth`,
- * `FillHeight`,
- * `Inside` and `None`). `scale-down` never enlarges; `none` and `scale-down` use the natural size.
- */
-function placedFit(
-  fit: Exclude<ImageFit, 'cover' | 'contain' | 'fill'>,
-  box: Box,
-  source: { width: number; height: number },
-): ReturnType<typeof imageFit> {
-  if (box.width <= 0 || box.height <= 0 || source.width <= 0 || source.height <= 0)
-    return { x: 0, y: 0, width: Math.max(0, box.width), height: Math.max(0, box.height) };
-  const scale =
-    fit === 'fill-width'
-      ? box.width / source.width
-      : fit === 'fill-height'
-        ? box.height / source.height
-        : fit === 'none'
-          ? 1
-          : Math.min(1, box.width / source.width, box.height / source.height);
-  const width = Math.min(source.width * scale, box.width);
-  const height = Math.min(source.height * scale, box.height);
-  const placed = {
-    x: (box.width - width) / 2,
-    y: (box.height - height) / 2,
-    width,
-    height,
-  };
-  const cropWidth = width / scale;
-  const cropHeight = height / scale;
-  if (cropWidth >= source.width - EPSILON && cropHeight >= source.height - EPSILON)
-    return placed;
-  return {
-    ...placed,
-    crop: {
-      x: (source.width - cropWidth) / 2,
-      y: (source.height - cropHeight) / 2,
-      width: cropWidth,
-      height: cropHeight,
-    },
-  };
-}
-
 /** Image placeholder: the shape in gray, with an X. */
 function placeholder(
   shape: Konva.Shape,
@@ -983,6 +1057,45 @@ function placeholder(
   });
   // A polygon with two crossed segments: draws 0→end, end→(w,0), (w,0)→(0,h).
   return [shape, cross];
+}
+
+/** `failed`, `too-large` and, in a pixel-safe drawing, `opaque` draw the failure look. */
+function isFailureLook(state: RemoteImageViewState, pixelSafe: boolean): boolean {
+  return state === 'failed' || state === 'too-large' || (state === 'opaque' && pixelSafe);
+}
+
+/** The origin of a URL for a warning (never the whole URL); `''` when it does not parse. */
+function urlOrigin(url: string): string {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * The failure look of a remote image: the placeholder's gray fill, and the X and a dashed outline
+ * of the box in `failedLine` (screen pixels, at any zoom).
+ */
+function failurePlaceholder(
+  shape: Konva.Shape,
+  box: Box,
+  palette: RenderPalette,
+): Konva.Shape[] {
+  const [fill, cross] = placeholder(shape, box, palette) as [Konva.Shape, KonvaLine];
+  cross.stroke(palette.failedLine);
+  const radius = shape instanceof KonvaRect ? shape.cornerRadius() : 0;
+  const outline = new KonvaRect({
+    width: box.width,
+    height: box.height,
+    cornerRadius: radius,
+    stroke: palette.failedLine,
+    strokeWidth: 1,
+    dash: [4, 3],
+    strokeScaleEnabled: false,
+    listening: false,
+  });
+  return [fill, cross, outline];
 }
 
 /**
@@ -1099,6 +1212,86 @@ function castShadow(
   native.restore();
 }
 
+/**
+ * One shadow-only shape per inner shadow (CSS `inset`), the last of the list first so the first one
+ * stays on top; they go above the fills and below the stroke and the children.
+ */
+function innerShadowShapes(node: SceneNode, shadows: readonly Shadow[]): Konva.Shape[] {
+  return [...shadows]
+    .reverse()
+    .filter((shadow) => !isInvisibleShadow(shadow))
+    .map((shadow) => {
+      const shape = new KonvaShape({
+        width: node.width,
+        height: node.height,
+        listening: false,
+        sceneFunc: (ctx) => castInnerShadow(ctx._context, node, shadow),
+      });
+      shape.setAttr(INNER_SHADOW_ATTR, true);
+      return shape;
+    });
+}
+
+/** The outline of a frame, rect or ellipse (`grow` > 0 enlarges it on every side), at the origin. */
+function outlinePath(
+  native: CanvasRenderingContext2D,
+  node: SceneNode,
+  grow: number,
+): void {
+  const width = node.width + 2 * grow;
+  const height = node.height + 2 * grow;
+  if (node.type === 'ellipse') {
+    native.beginPath();
+    native.ellipse(width / 2, height / 2, width / 2, height / 2, 0, 0, Math.PI * 2);
+  } else if (node.type === 'frame' || node.type === 'rect')
+    roundedRectPath(native, width, height, spreadRadius(node.cornerRadius, grow));
+}
+
+/**
+ * Draws only an inner shadow: clips to the outline, and then a ring (a big rectangle with the
+ * outline, shrunk by `spread`, as the hole) far from the screen, bringing its blurred shadow back
+ * by the shadow offset, as `castShadow` does. The ring never shows, only the shadow inside.
+ */
+function castInnerShadow(
+  native: CanvasRenderingContext2D,
+  node: SceneNode,
+  shadow: Shadow,
+): void {
+  const spread = shadow.spread ?? 0;
+  native.save();
+  outlinePath(native, node, 0);
+  native.clip();
+  const m = native.getTransform();
+  const sx = Math.hypot(m.a, m.b) || 1;
+  const sy = Math.hypot(m.c, m.d) || 1;
+  const margin =
+    2 * shadow.blur + Math.abs(shadow.offset.x) + Math.abs(shadow.offset.y) + 4;
+  const reach =
+    native.canvas.width +
+    native.canvas.height +
+    Math.hypot(node.width * sx, node.height * sy) +
+    2 * shadow.blur * Math.max(sx, sy) +
+    1000;
+  const away = reach / sx;
+  native.shadowColor = shadow.color;
+  native.shadowBlur = shadow.blur * Math.min(sx, sy);
+  native.shadowOffsetX = shadow.offset.x * sx + away * m.a;
+  native.shadowOffsetY = shadow.offset.y * sy + away * m.b;
+  native.translate(-away, 0);
+  const holeW = node.width - 2 * spread;
+  const holeH = node.height - 2 * spread;
+  if (holeW > 0 && holeH > 0) {
+    native.translate(spread, spread);
+    outlinePath(native, node, -spread);
+    native.translate(-spread, -spread);
+  } else native.beginPath();
+  const grow = margin + Math.max(0, spread);
+  native.rect(-grow, -grow, node.width + 2 * grow, node.height + 2 * grow);
+  native.fillStyle = '#000000';
+  native.fill('evenodd');
+  native.restore();
+}
+
 function applyShadow(shape: Konva.Shape, shadow: Shadow): void {
   // An invisible shadow still costs a canvas `shadowBlur` per draw: left out.
   if (isInvisibleShadow(shadow)) return;
@@ -1139,6 +1332,31 @@ function flattenStops(
   stops: readonly { offset: number; color: string }[],
 ): Array<number | string> {
   return stops.flatMap((s) => [s.offset, s.color]);
+}
+
+/**
+ * The conic gradient of an angular paint (angle in degrees, 0 pointing right and growing
+ * clockwise, as the canvas does), or `undefined` where the 2D context has no `createConicGradient`.
+ */
+function conicGradient(
+  paint: Paint & { type: 'angular' },
+  center: Point,
+): CanvasGradient | undefined {
+  const context = document.createElement('canvas').getContext('2d');
+  if (!context || typeof context.createConicGradient !== 'function') return undefined;
+  const gradient = context.createConicGradient(
+    (paint.angle * Math.PI) / 180,
+    center.x,
+    center.y,
+  );
+  for (const stop of paint.stops) {
+    try {
+      gradient.addColorStop(stop.offset, stop.color);
+    } catch {
+      // A color the canvas rejects (an empty field becomes `none`): the stop is left out, as the MCP raster does.
+    }
+  }
+  return gradient;
 }
 
 /** Konva `fontStyle`: "italic 600", "bold", "normal"… (it builds the canvas font from this). */
@@ -1207,6 +1425,7 @@ export function renderScene(scene: Scene, options: RenderOptions = {}): RenderRe
     byId: renderer.byId,
     warnings: renderer.warnings,
     imageUrls: [...renderer.imageUrls],
+    packageImages: [...renderer.packageKeys],
   };
 }
 

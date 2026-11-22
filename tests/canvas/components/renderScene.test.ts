@@ -281,8 +281,8 @@ describe('renderScene', () => {
     expect(rect.shadowOffset()).toEqual({ x: 1, y: 2 });
   });
 
-  it('inner shadow is ignored with a warning', () => {
-    const node: SceneNode = {
+  it('inner shadow on a node that is not frame, rect or ellipse is ignored with a warning', () => {
+    const node = {
       ...baseNode({
         id: 'r',
         name: 'r',
@@ -290,14 +290,16 @@ describe('renderScene', () => {
         height: 5,
         effects: [{ color: '#000', offset: { x: 0, y: 0 }, blur: 2, inner: true }],
       }),
-      type: 'rect',
-      cornerRadius: 0,
-      fills: [{ type: 'solid', color: '#f00' }],
-    };
-    const { warnings, byId } = renderScene(scene(node));
+      type: 'line',
+      points: [
+        { x: 0, y: 0 },
+        { x: 5, y: 5 },
+      ],
+      closed: false,
+      fills: [],
+    } as unknown as SceneNode;
+    const { warnings } = renderScene(scene(node));
     expect(warnings).toContainEqual({ code: 'inner-shadow' });
-    expect((byId.get('r')?.getChildren()[0] as Konva.Rect).shadowEnabled()).toBe(true);
-    expect((byId.get('r')?.getChildren()[0] as Konva.Rect).shadowBlur()).toBe(0);
   });
 
   describe('"only the first shadow" warning (extra-shadows)', () => {
@@ -583,13 +585,8 @@ describe('remote image resolved by the options function', () => {
   });
 
   it('each state without pixels draws the placeholder, without a warning', () => {
-    const states = [
-      'loading',
-      'failed',
-      'too-large',
-      'blocked-consent',
-      'invalid',
-    ] as const;
+    // `failed` and `too-large` draw the failure look (renderSceneImageFailed.test.ts).
+    const states = ['loading', 'blocked-consent', 'invalid'] as const;
     for (const state of states) {
       const result = renderScene(scene(rectWith(paint())), {
         remoteImage: () => state,
@@ -600,7 +597,7 @@ describe('remote image resolved by the options function', () => {
     }
   });
 
-  it('loaded without the image or with zero size falls back to the placeholder; so does a function that throws', () => {
+  it('loaded without the image or with zero size falls back to the placeholder; a function that throws draws the failure look', () => {
     const noImage = renderScene(scene(rectWith(paint())), {
       remoteImage: () => ({ state: 'loaded' }),
     });
@@ -614,7 +611,8 @@ describe('remote image resolved by the options function', () => {
         throw new Error('x');
       },
     });
-    expect(isPlaceholder(throws)).toBe(true);
+    // A function that throws is a failure: the failure look, not a crash.
+    expect(throws.byId.get('img')?.getChildren()).toHaveLength(3);
   });
 
   it('without the function, placeholder; the URL is still registered so the layer knows', () => {
@@ -623,7 +621,7 @@ describe('remote image resolved by the options function', () => {
     expect(result.imageUrls).toEqual([URL]);
   });
 
-  it('opaque shows on the main canvas and becomes a placeholder with pixelSafe', () => {
+  it('opaque shows on the main canvas and becomes the failure look with pixelSafe', () => {
     const opaque: RemoteImageView = { ...loaded(), state: 'opaque' };
     const main = renderScene(scene(rectWith(paint())), {
       remoteImage: () => opaque,
@@ -634,7 +632,11 @@ describe('remote image resolved by the options function', () => {
       remoteImage: () => opaque,
       pixelSafe: true,
     });
-    expect(isPlaceholder(safe)).toBe(true);
+    // Under pixelSafe it is the failure look (the placeholder plus the dashed outline).
+    expect(safe.byId.get('img')?.getChildren()).toHaveLength(3);
+    expect(safe.warnings).toEqual([
+      { code: 'remote-image-opaque', params: { origin: 'https://cdn.example.com' } },
+    ]);
     const ofShapes = (r: ReturnType<typeof renderScene>) => r.root.find('Image').length;
     expect(ofShapes(safe)).toBe(0);
     // pixelSafe does not hide the image with CORS.

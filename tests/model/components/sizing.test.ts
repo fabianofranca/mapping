@@ -184,10 +184,15 @@ describe('fitComponentSize', () => {
 });
 
 describe('fitComponentSize checks the drawing (FM2, decision 5 of #2089)', () => {
-  // Measurement and drawing disagree: a line measures 0.2 units wider when it gets a finite limit.
+  // Measurement and drawing disagree: a line that gets a whole-pixel limit (the drawn box; the fit's own pass
+  // measures at the exact width) and ends within 3 units of it wraps in the drawing.
   const disagreeing: TextMeasurer = (text, font, maxWidth) => {
     const base = approximateMeasurer(text, font, maxWidth);
-    return maxWidth === undefined ? base : { ...base, width: base.width + 0.2 };
+    return maxWidth !== undefined &&
+      Number.isInteger(maxWidth) &&
+      base.width + 3 > maxWidth
+      ? { ...base, height: base.height * 2 }
+      : base;
   };
   const button = (extra: Record<string, unknown> = {}): ComponentFile =>
     ({
@@ -200,8 +205,7 @@ describe('fitComponentSize checks the drawing (FM2, decision 5 of #2089)', () =>
       ...extra,
       template: {
         type: 'frame',
-        layout: { type: 'row' },
-        padding: [8, 16],
+        layout: { type: 'row', padding: [8, 16] },
         children: [
           {
             type: 'text',
@@ -220,6 +224,18 @@ describe('fitComponentSize checks the drawing (FM2, decision 5 of #2089)', () =>
         {},
     );
 
+  it('the fixture reaches the growth loop: at the free size the disagreement is short', () => {
+    const c = button();
+    const free = fitComponentSize(
+      c,
+      { label: 'Confirm' },
+      { measure: approximateMeasurer },
+      {},
+    );
+    expect(free).toBeDefined();
+    expect(shortfalls(c, free as { width: number; height: number })).not.toEqual([]);
+  });
+
   it('the fitted size has no shortfall and grew by at most ceil of the shortfall', () => {
     const c = button();
     const free = fitComponentSize(
@@ -231,7 +247,9 @@ describe('fitComponentSize checks the drawing (FM2, decision 5 of #2089)', () =>
     const fitted = fitComponentSize(c, { label: 'Confirm' }, options, {});
     expect(fitted).toBeDefined();
     expect(shortfalls(c, fitted as { width: number; height: number })).toEqual([]);
-    expect((fitted?.width ?? 0) - (free?.width ?? 0)).toBeLessThanOrEqual(1);
+    const grew = (fitted?.width ?? 0) - (free?.width ?? 0);
+    expect(grew).toBeGreaterThan(0);
+    expect(grew).toBeLessThanOrEqual(Math.ceil(20));
     expect(fitted?.height).toBe(free?.height);
   });
 

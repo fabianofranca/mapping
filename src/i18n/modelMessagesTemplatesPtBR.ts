@@ -65,6 +65,11 @@ export const templatePtBR: {
     'o src da imagem lê "{key}", que é um campo {fieldType} do tipo "{typeId}", não string',
   'model.library.fontMissing':
     'arquivo da fonte "{family}" não encontrado: {path}; o desenho usa a fonte do sistema',
+  'model.library.imageBadFormat': 'a imagem não é PNG, JPEG nem WebP: {path}',
+  'model.library.imageTooHeavy': 'imagem maior que 1 MB: {path}',
+  'model.library.imageTooWide': 'imagem maior que 2048 px: {path} ({width}×{height})',
+  'model.library.imagesTooHeavy': 'as imagens do pacote passam de 8 MB',
+  'model.library.imageValueMissing': 'imagem do pacote não encontrada: {path}',
   'model.library.scrimMissing': 'o tipo "{typeId}" não existe na especialização',
   'model.library.tokenMissing':
     'o token "{name}" não existe nos tokens da especialização',
@@ -494,7 +499,8 @@ export const templatePtBR: {
   'model.component.expectedRadius':
     'esperava número maior ou igual a 0 ou lista de 4 números',
   'model.component.expectedFill': 'esperava cor ou gradiente',
-  'model.component.expectedLinear': 'esperava "linear"',
+  'model.component.expectedGradientType': 'esperava "linear", "radial" ou "angular"',
+  'model.component.expectedGradientCenter': 'esperava dois números de 0 a 1',
   'model.component.expectedStops': 'esperava lista de paradas',
   'model.component.expectedTwoStops': 'esperava ao menos 2 paradas',
   'model.component.expectedObject': 'esperava objeto',
@@ -535,6 +541,10 @@ export const templatePtBR: {
   'model.component.offsetOnlyShapes':
     'só vale em frame, rect e ellipse (este é {nodeType})',
   'model.component.expectedInteger1': 'esperava inteiro maior ou igual a 1',
+  'model.component.expectedTrackCount':
+    'esperava inteiro maior ou igual a 1 ou uma lista de trilhas',
+  'model.component.expectedTrackItem': 'esperava número ≥ 0, "<n>fr" ou "hug"',
+  'model.component.expectedTrackListSize': 'esperava de 1 a 24 trilhas',
   'model.component.expectedPadding':
     'esperava número, lista de 2 ou lista de 4 números (maiores ou iguais a 0)',
   'model.component.expectedGap':
@@ -553,6 +563,8 @@ export const templatePtBR: {
   'model.component.expectedHttps': 'esperava URL https:// absoluta ({reason})',
   'model.component.srcOnlyLiteral':
     'src só aceita texto literal ou { "$field": "<campo>" }',
+  'model.component.imageSrcResults':
+    'em $switch e $if todo resultado deve ser um caminho de imagem do pacote',
   'model.component.expectedInteger0': 'esperava inteiro maior ou igual a 0',
   'model.component.countOrField': 'use count ou field, não os dois',
   'model.component.repeatTemplateFrame':
@@ -568,6 +580,8 @@ export const templatePtBR: {
     'esperava nome da cor oferecida (texto não vazio)',
   'model.component.gapNotWithSides': 'gap não vale com sides',
   'model.component.expectedShadowCount': 'esperava de 1 a {max} sombras',
+  'model.component.expectedTrueOrFalse': 'esperava true ou false',
+  'model.component.innerShadowNodes': 'válido apenas em frame, rect e ellipse',
   'model.component.gapNodeNotFound': 'nó não encontrado: {name}',
   'model.component.gapNotInRepeat': 'stroke.gap não pode ser usado dentro de um repeat',
   'model.component.gapNotSelf': 'stroke.gap.node não pode citar o próprio nó: {name}',

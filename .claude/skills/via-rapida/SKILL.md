@@ -58,7 +58,7 @@ In queue mode the swap is the same (the session does it; the coordinator changes
 
 ## Step by step
 
-1. `git fetch origin main && git switch -C epic/<name> origin/main` (with an uncommitted change, or a local `epic/<name>` that already exists, stop and ask the owner first, as in "Session start" of `CLAUDE.md`; `<name>` must not collide with an existing `changelog/` or `docs/design-system/` one). Create `changelog/<name>.md` (`[Não lançado]`, "MCP unchanged", the schema of `main`, categories for whoever drives the flow) and `docs/design-system/<name>.md` (`[Não lançado]`, `## Pendências` "nenhuma (só processo)"), which the `epic` job of `ci.yml` requires.
+1. `git fetch origin main && git switch -C epic/<name> origin/main` (with an uncommitted change, or a local `epic/<name>` that already exists, stop and ask the owner first, as in "Session start" of `CLAUDE.md`; `<name>` must not collide with an existing `changelog/` or `docs/design-system/` one). Create `changelog/<name>.md` (`[Não lançado]`, "MCP unchanged", the schema of `main`, categories for whoever drives the flow) and `docs/design-system/<name>.md` (`[Não lançado]`, `## Pendências` "None (process only)."), which the `epic` job of `ci.yml` requires.
 2. Implement directly in the epic, with no phase branch. A change of **rule** gets a text test in `tests/tooling/` written beforehand and seen failing (name and failure in the PR Summary); text without a new rule, only the existing tests passing.
 3. Gates: `npm run lint && npm run typecheck && npm test && npm run build`.
 4. Review ("Review"); the findings follow the rule of item 10 of "For the phase session" in `docs/FLOW.md`; gates again.

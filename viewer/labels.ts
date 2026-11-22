@@ -25,6 +25,12 @@ function drawWarning({ code, params }: RenderWarning): string {
       return 'stroke with a radial gradient drawn with the first color';
     case 'stroke-image-gray':
       return 'stroke with an image drawn in gray';
+    case 'angular-gradient-unsupported':
+      return 'angular gradient is not supported by this browser: drawn with its first color';
+    case 'remote-image-failed':
+      return `the remote image from ${String(params?.origin ?? '')} did not load (server without CORS, unreachable, or image too large)`;
+    case 'remote-image-opaque':
+      return `the remote image from ${String(params?.origin ?? '')} loaded without CORS: it only shows on the main canvas`;
   }
 }
 

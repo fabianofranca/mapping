@@ -72,13 +72,15 @@ describe('shadow list (decision 3)', () => {
     expect((group.getChildren()[0] as Konva.Rect).shadowBlur()).toBe(4);
   });
 
-  it('the inner shadow is still ignored with a warning, and the outer ones apply', () => {
+  it('the inner shadow has its own shape (DX2), next to the outer ones', () => {
     const { warnings, byId } = renderScene({
       root: card([shadow({ inner: true }), shadow(), shadow()]),
       warnings: [],
     });
-    expect(warnings).toEqual([{ code: 'inner-shadow' }]);
-    expect(casters(byId.get('c')!)).toHaveLength(2);
+    expect(warnings).toEqual([]);
+    const list = casters(byId.get('c')!);
+    expect(list).toHaveLength(3);
+    expect(list.filter((c) => c.getAttr('innerShadow') === true)).toHaveLength(1);
   });
 });
 

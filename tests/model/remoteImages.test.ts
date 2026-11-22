@@ -225,6 +225,18 @@ describe('sceneRemoteImageUrls', () => {
     height: 10,
     effects: [],
   };
+  it('a package image (asset) is not a remote URL: no consent, nothing for Diagnostics', () => {
+    const root: SceneNode = {
+      ...base,
+      id: 'p',
+      name: 'p',
+      type: 'rect',
+      cornerRadius: 0,
+      fills: [{ type: 'image', asset: 'images/logo.png' }],
+    };
+    expect(sceneRemoteImageUrls(root)).toEqual([]);
+  });
+
   it('collects the URLs of the image fills, in order and without repeating', () => {
     const rect = (id: string, url?: string, src?: string): SceneNode => ({
       ...base,

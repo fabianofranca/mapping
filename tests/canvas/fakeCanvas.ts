@@ -21,6 +21,17 @@ export function fakeContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D
       if (key === 'createLinearGradient' || key === 'createRadialGradient') {
         return () => ({ addColorStop: () => undefined });
       }
+      if (key === 'createConicGradient') {
+        // Records the arguments and the stops, so a test can tell what was painted.
+        return (angle: number, x: number, y: number) => {
+          const stops: [number, string][] = [];
+          return {
+            conic: { angle, x, y },
+            stops,
+            addColorStop: (offset: number, color: string) => stops.push([offset, color]),
+          };
+        };
+      }
       return () => undefined;
     },
     set(target, key, value) {

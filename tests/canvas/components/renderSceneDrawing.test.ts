@@ -137,7 +137,7 @@ describe('drawing warnings carry code and parameters', () => {
     ]);
   });
 
-  it('inner shadow warns; several outer shadows no longer warn', () => {
+  it('inner shadow on a rect draws without a warning; several outer shadows do not warn', () => {
     const node: SceneNode = {
       ...baseNode({
         id: 'r',
@@ -155,8 +155,7 @@ describe('drawing warnings carry code and parameters', () => {
       fills: [{ type: 'solid', color: '#f00' }],
     };
     const { warnings } = renderScene(scene(node));
-    expect(warnings).toContainEqual({ code: 'inner-shadow' });
-    expect(warnings).toEqual([{ code: 'inner-shadow' }]);
+    expect(warnings).toEqual([]);
   });
 
   it('the same warning is not repeated', () => {
@@ -175,6 +174,17 @@ describe('drawing warnings carry code and parameters', () => {
     };
     const { warnings } = renderScene(scene(root));
     expect(warnings).toEqual([{ code: 'image-without-pixels' }]);
+  });
+
+  it('a package image (asset) is the placeholder without a warning until it is drawn', () => {
+    const node: SceneNode = {
+      ...baseNode({ id: 'logo', name: 'logo', width: 20, height: 20 }),
+      type: 'rect',
+      cornerRadius: 0,
+      fills: [{ type: 'image', asset: 'images/logo.png' }],
+    };
+    const { warnings } = renderScene(scene(node));
+    expect(warnings).toEqual([]);
   });
 });
 

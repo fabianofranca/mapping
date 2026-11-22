@@ -149,3 +149,25 @@ export function compositeShadow(
     }
   }
 }
+
+/**
+ * Paints an inner shadow (CSS `inset`): `hole` is the coverage (0..1) of the shape shrunk by
+ * `spread` and already shifted by the offset, `inside` the coverage of the shape itself, both in
+ * `box`. The inverted `hole` is blurred (`sigma`) and multiplied by `inside`, and the result is
+ * blended in `color` over `raster`, within `clip`.
+ */
+export function compositeInnerShadow(
+  raster: Raster,
+  masks: { hole: Float32Array; inside: Float32Array },
+  box: PixelRect,
+  sigma: number,
+  color: { rgb: readonly [number, number, number]; alpha: number },
+  clip: PixelRect,
+): void {
+  const { hole, inside } = masks;
+  const mask = new Float32Array(hole.length);
+  for (let i = 0; i < mask.length; i++) mask[i] = 1 - hole[i]!;
+  blurAlpha(mask, box.width, box.height, sigma);
+  for (let i = 0; i < mask.length; i++) mask[i] = mask[i]! * inside[i]!;
+  compositeShadow(raster, mask, box, 0, { dx: 0, dy: 0 }, color, clip);
+}
