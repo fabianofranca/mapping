@@ -942,6 +942,51 @@ describe('package images (DX5)', () => {
     expect(viewer.warnings().size).toBe(0);
   });
 
+  it('finds the bytes of a library whose spec is not at the root (paths relative to the spec)', async () => {
+    stubDecode();
+    const spec = JSON.stringify({
+      format: 'mapping-spec',
+      formatVersion: 4,
+      id: 'pkg-d',
+      name: 'pkg-d',
+      version: 1,
+      layers: [
+        {
+          id: 'c',
+          name: 'C',
+          color: '#1E88E5',
+          annotationTypes: [
+            {
+              id: 'photo',
+              name: 'Photo',
+              component: 'components/photo.json',
+              fields: [],
+            },
+          ],
+        },
+      ],
+    });
+    const component = JSON.stringify({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'photo',
+      name: 'Photo',
+      size: { width: 100, height: 100 },
+      template: {
+        type: 'frame',
+        children: [{ type: 'image', name: 'pic', src: ASSET, width: 40, height: 40 }],
+      },
+    });
+    const library = loadLibrary([
+      { path: 'lib/pkg-d.spec.json', text: spec },
+      { path: 'lib/components/photo.json', text: component },
+      { path: `lib/${ASSET}`, bytes: pngBytes(8, 4) },
+    ]);
+    const el = container();
+    make(el, { library, screen });
+    await vi.waitFor(() => expect(imagesOf(el)).toHaveLength(1));
+  });
+
   it('without bytes it draws the placeholder and decodes nothing', async () => {
     const { decode } = stubDecode();
     const el = container();

@@ -39,7 +39,11 @@ import { Group } from 'konva/lib/Group';
 import { Layer } from 'konva/lib/Layer';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Stage } from 'konva/lib/Stage';
-import { type Library, withHostTokens } from '../src/model/components/library';
+import {
+  type Library,
+  resolvePath,
+  withHostTokens,
+} from '../src/model/components/library';
 import type { Direction } from '../src/model/components/componentFormat';
 import type { HostFonts } from '../src/model/components/tokens';
 import { tokenValue } from '../src/theme/tokens';
@@ -203,7 +207,7 @@ function packageBytes(
   asset: string,
 ): ArrayBuffer | null {
   if (library?.specId !== specId) return null;
-  const bytes = library.images?.get(asset);
+  const bytes = library.images?.get(resolvePath(library.specPath, asset));
   if (bytes === undefined) return null;
   return bytes.slice().buffer;
 }

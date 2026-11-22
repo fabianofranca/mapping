@@ -1349,7 +1349,13 @@ function conicGradient(
     center.x,
     center.y,
   );
-  for (const stop of paint.stops) gradient.addColorStop(stop.offset, stop.color);
+  for (const stop of paint.stops) {
+    try {
+      gradient.addColorStop(stop.offset, stop.color);
+    } catch {
+      // A color the canvas rejects (an empty field becomes `none`): the stop is left out, as the MCP raster does.
+    }
+  }
   return gradient;
 }
 

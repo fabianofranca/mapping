@@ -184,7 +184,10 @@ export function createPackageImages(deps: PackageImagesDeps): PackageImages {
       }
     },
     clear() {
-      for (const key of [...entries.keys()]) free(key);
+      const keys = [...entries.keys()];
+      for (const key of keys) free(key);
+      // A mounted drawing redraws on a key it hears: tell it, so it reads the file again.
+      for (const key of keys) notify(key);
     },
     get size() {
       return entries.size;

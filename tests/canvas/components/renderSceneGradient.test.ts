@@ -108,6 +108,37 @@ describe('angular gradient', () => {
     expect(warnings).toEqual([]);
   });
 
+  it('skips a stop the canvas rejects (an empty color becomes none) instead of throwing', () => {
+    const stops: [number, string][] = [];
+    const context = {
+      createConicGradient: () => ({
+        addColorStop(offset: number, color: string) {
+          if (color === 'none') throw new SyntaxError('invalid color');
+          stops.push([offset, color]);
+        },
+      }),
+    } as unknown as CanvasRenderingContext2D;
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+      (() => context) as unknown as typeof HTMLCanvasElement.prototype.getContext,
+    );
+    expect(() =>
+      draw({
+        type: 'angular',
+        center: { x: 50, y: 20 },
+        angle: 0,
+        stops: [
+          { offset: 0, color: '#ff0000' },
+          { offset: 0.5, color: 'none' },
+          { offset: 1, color: '#0000ff' },
+        ],
+      }),
+    ).not.toThrow();
+    expect(stops).toEqual([
+      [0, '#ff0000'],
+      [1, '#0000ff'],
+    ]);
+  });
+
   it('without createConicGradient, takes the first stop and warns', () => {
     const noConic = {} as CanvasRenderingContext2D;
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(

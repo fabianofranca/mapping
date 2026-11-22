@@ -107,6 +107,17 @@ describe('createPackageImages', () => {
     expect(ready(images.resolve('lib', 'images/logo.png')).image).toBe(bitmap);
   });
 
+  it('clear() tells the subscribers which keys it freed, so a mounted drawing redraws', async () => {
+    const { images } = setup();
+    images.resolve('lib', 'images/logo.png');
+    await settle();
+    const heard: string[] = [];
+    images.subscribe((key) => heard.push(key));
+    images.clear();
+    expect(heard).toEqual([packageImageKey('lib', 'images/logo.png')]);
+    expect(images.size).toBe(0);
+  });
+
   it('a missing file is a failure, and so is one the decoder rejects', async () => {
     const { images, decode } = setup({ files: { 'images/logo.png': null } });
     images.resolve('lib', 'images/logo.png');
