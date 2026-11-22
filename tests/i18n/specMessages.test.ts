@@ -597,6 +597,10 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
     (s) => (type(s).examples = [{ name: 'x', system: 'zz', file: 'a.json' }]),
   ],
   [
+    'spec.sourceNeedsNameOrPath',
+    (s) => ((s.formatVersion = 22), (type(s).fields[0].sources = [{ system: 'zz' }])),
+  ],
+  [
     'spec.fontRepeated',
     (s) => (s.fonts = [font({ weight: 400 }), font({ weight: 400 })]),
   ],

@@ -147,6 +147,27 @@ describe('formatVersion 22', () => {
     );
   });
 
+  it('an example with only system or only file gets only the refusal, never "required with"', () => {
+    for (const key of ['system', 'file'] as const) {
+      const input = v22((s) => {
+        type(s).examples = [{ name: 'Half', [key]: key === 'system' ? 'dom' : 'a.json' }];
+      });
+      const issues = issuesOf(input).filter((i) =>
+        i.path.startsWith(`${TYPE}.examples[0]`),
+      );
+      expect(issues.map((i) => [i.path, i.message])).toEqual([
+        [`${TYPE}.examples[0].${key}`, ONLY_UP_TO_21],
+      ]);
+    }
+  });
+
+  it('an example with neither values nor an external mode asks only for values', () => {
+    const input = v22((s) => {
+      type(s).examples = [{ name: 'Empty' }];
+    });
+    expect(messageAt(input, `${TYPE}.examples[0]`)).toEqual(['needs "values"']);
+  });
+
   it('a field source with only path is valid in any system, with no origins', () => {
     const input = v22((s) => {
       type(s).fields[0].sources = [

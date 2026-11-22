@@ -159,6 +159,7 @@ export const specMessages = {
   // Format version, external sources and fonts (typefaces)
   'spec.onlyFormat': 'only allowed with formatVersion {version}',
   'spec.onlyUpToFormat': 'only allowed up to formatVersion {version}',
+  'spec.sourceNeedsNameOrPath': 'required when there is no path',
   // File formats (`fileFormats`, formatVersion 20)
   'spec.fileFormatsShape': 'must be a list of file formats',
   'spec.fileFormatExamplesShape': 'must be a list of examples',

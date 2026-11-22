@@ -242,17 +242,18 @@ export type SpecCodeMap = Record<string, SpecCode>;
 
 /**
  * Element of an external system that an annotation type corresponds to (v3), e.g.
- * `{ system: "figma", name: "DS/Button" }`. Has `id`, `name` or both. `slot` and `ignore`
- * (v4) only apply to a system declared in `origins`.
+ * `{ system: "figma", name: "DS/Button" }`. Has `id`, `name` or both. Up to v21 `slot` and
+ * `ignore` (v4) only apply to a system declared in `origins`; from v22 they stand for any
+ * system, as plain data for the file format plugins.
  */
 export interface SpecTypeSource {
   system: string;
   id?: string;
   name?: string;
-  /** Name of the component slot that receives the children (v4, executable system). */
+  /** Name of the component slot that receives the children (v4; up to v21 only in an executable system). */
   slot?: string;
   /**
-   * Props accepted and not drawn (v4, executable system); with `signature`, also those that
+   * Props accepted and not drawn (v4; up to v21 only in an executable system); with `signature`, also those that
    * import leaves out on purpose, without a warning.
    */
   ignore?: string[];
@@ -263,9 +264,10 @@ export interface SpecTypeSource {
 /**
  * Origin property of a field (v3), e.g. `{ system: "figma", name: "Style" }`.
  * `values` (only on `enum`) translates the origin value into one of the `options`. In a system
- * declared in `origins` (v4), `path` applies (the path of the value in the external node's
+ * declared in `origins` (v4 to v21), `path` applies (the path of the value in the external node's
  * `props`, required) and `name` is only the display name; in the others, `name` is required and
- * `path` is forbidden (being required is a validation rule, not part of the type).
+ * `path` is forbidden (being required is a validation rule, not part of the type). From v22
+ * `path` stands for any system, as plain data, and a source needs `name` or `path`.
  */
 export interface SpecFieldSource {
   system: string;
@@ -291,7 +293,8 @@ export type SpecExampleValue = string | number | null | SpecExampleRow[];
 
 /**
  * Example of a type (v4), in one of two modes: `values` (values of the type's fields) or
- * `system` + `file` (the JSON of a node of an external system declared in `origins`).
+ * `system` + `file` (the JSON of a node of an external system declared in `origins`; up to v21,
+ * refused from v22).
  */
 export interface SpecExample {
   name: string;
@@ -1184,7 +1187,7 @@ const exampleShape = z
 
 type RawExample = z.infer<typeof exampleShape>;
 
-/** Unique names, a single mode (`values` or `system` + `file`) and values that fit the fields. */
+/** Unique names and values that fit the fields (the mode is `checkExampleModes`, which knows the version). */
 function checkExamples(
   type: { fields: RawField[]; examples?: RawExample[] },
   ctx: z.RefinementCtx,
@@ -1202,16 +1205,6 @@ function checkExamples(
       add(['name'], specMsg('spec.exampleNameRepeated', { name: example.name }));
     }
     names.add(example.name);
-
-    const external = example.system !== undefined || example.file !== undefined;
-    if (example.values !== undefined && external) {
-      add([], 'use "values" or "system" with "file", not both modes together');
-    } else if (example.values === undefined && !external) {
-      add([], 'needs "values" or "system" with "file"');
-    } else if (example.values === undefined) {
-      if (example.system === undefined) add(['system'], 'required with "file"');
-      if (example.file === undefined) add(['file'], 'required with "system"');
-    }
 
     for (const [k, value] of Object.entries(example.values ?? {})) {
       const field = fields.get(k);
@@ -1952,11 +1945,11 @@ function sourceNameProblem(
   source: z.infer<typeof fieldSourceShape>,
   version: number,
   isExecutable: boolean,
-): string | undefined {
+): string | SpecMsg | undefined {
   if (source.name !== undefined || isExecutable) return undefined;
   if (version < PLAIN_SOURCES_VERSION)
     return 'required in a system that is not in origins';
-  return source.path === undefined ? 'required when there is no path' : undefined;
+  return source.path === undefined ? specMsg('spec.sourceNeedsNameOrPath') : undefined;
 }
 
 /**
@@ -2043,6 +2036,40 @@ function checkSources(
             );
           }
         });
+      });
+    });
+  });
+}
+
+/**
+ * A single mode per example: `values`, or (up to v21) `system` + `file`. From v22 the external mode
+ * is refused by `checkExampleSystems`, so here only a missing `values` is reported.
+ */
+function checkExampleModes(
+  layers: readonly {
+    annotationTypes: readonly { examples?: readonly RawExample[] | undefined }[];
+  }[],
+  version: number,
+  ctx: z.RefinementCtx,
+): void {
+  const plain = version >= PLAIN_SOURCES_VERSION;
+  layers.forEach((layer, li) => {
+    layer.annotationTypes.forEach((type, ti) => {
+      (type.examples ?? []).forEach((example, ei) => {
+        const at = ['layers', li, 'annotationTypes', ti, 'examples', ei];
+        const add = (key: string | undefined, message: string) =>
+          addSpecIssue(ctx, key === undefined ? at : [...at, key], message);
+        const external = example.system !== undefined || example.file !== undefined;
+        if (plain) {
+          if (example.values === undefined && !external) add(undefined, 'needs "values"');
+        } else if (example.values !== undefined && external) {
+          add(undefined, 'use "values" or "system" with "file", not both modes together');
+        } else if (example.values === undefined && !external) {
+          add(undefined, 'needs "values" or "system" with "file"');
+        } else if (example.values === undefined) {
+          if (example.system === undefined) add('system', 'required with "file"');
+          if (example.file === undefined) add('file', 'required with "system"');
+        }
       });
     });
   });
@@ -3261,6 +3288,7 @@ export const specSchema = z
     if (spec.formatVersion >= 3) {
       checkSources(spec.layers, spec.formatVersion, executable, ctx);
     }
+    checkExampleModes(spec.layers, spec.formatVersion, ctx);
     if (v4) {
       checkExampleSystems(spec.layers, spec.formatVersion, executable, ctx);
       checkFonts(spec.fonts ?? [], ctx);
