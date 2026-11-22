@@ -181,9 +181,9 @@ describe('slots in the library package', () => {
   });
 });
 
-describe('code.slots with the signature sheet (decision 9)', () => {
-  const SIG_KEY = { signature: SIG };
+const SIG_KEY = { signature: SIG };
 
+describe('code.slots with the signature sheet (decision 9)', () => {
   it('a parameter that exists in the sheet with role slot passes', () => {
     const found = issues(
       withCode(
@@ -248,5 +248,59 @@ describe('code.slots with the signature sheet (decision 9)', () => {
         severity: 'warning',
       }),
     );
+  });
+
+  it("a case with its own sheet warns only about its own slots, not the base's it does not inherit (#2350)", () => {
+    const CASE_SIG = 'signatures/bar.center.compose.json';
+    const caseSheet = (params: Json[]): LibraryFile => ({
+      path: CASE_SIG,
+      text: JSON.stringify({
+        format: 'mapping-signature',
+        formatVersion: 1,
+        source: {
+          kind: 'code',
+          platform: 'compose',
+          language: 'kotlin',
+          symbol: 'x.CenterBar',
+          path: 'CenterBar.kt',
+          extractor: 'mapping-signature/kotlin@1',
+        },
+        params,
+      }),
+    });
+    const files = (own: Json): LibraryFile[] => [
+      ...withCode(
+        {
+          ...SIG_KEY,
+          ignore: ['title'],
+          slots: { actions: 'trailingContent' },
+          variants: {
+            field: 'kind',
+            cases: {
+              Small: {
+                symbol: 'x.CenterBar',
+                path: 'CenterBar.kt',
+                signature: CASE_SIG,
+                ignore: ['title'],
+                slots: own,
+              },
+            },
+          },
+        },
+        [slotParam('navigationIcon'), slotParam('trailingContent')],
+      ),
+      caseSheet([slotParam('leading'), slotParam('actions')]),
+    ];
+    const slotWarnings = (found: ReturnType<typeof issues>) =>
+      found.filter((i) => i.severity === 'warning' && i.path.includes('.slots.'));
+    expect(slotWarnings(issues(files({ navigationIcon: 'leading' })))).toEqual([]);
+    expect(slotWarnings(issues(files({ navigationIcon: 'gone' })))).toEqual([
+      {
+        file: SPEC,
+        path: `${TYPE}.code.compose.variants.cases.Small.slots.navigationIcon`,
+        severity: 'warning',
+        message: 'parameter outside the signature: "gone"',
+      },
+    ]);
   });
 });

@@ -472,9 +472,9 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(guide).toMatch(/^- R16 uses the folder of its own `variantes`/m);
     });
 
-    it('has steps R16.1 to R16.10, in order, and none depends on the owner', () => {
+    it('has steps R16.1 to R16.12, in order, and none depends on the owner', () => {
       const codes = [...stepActions(r16).keys()];
-      expect(codes).toEqual(Array.from({ length: 10 }, (_, i) => `R16.${i + 1}`));
+      expect(codes).toEqual(Array.from({ length: 12 }, (_, i) => `R16.${i + 1}`));
       expect(/without a substitute/i.test(r16)).toBe(false);
       expect(r16).not.toContain('[person]');
     });
