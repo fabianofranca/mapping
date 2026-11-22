@@ -1,4 +1,4 @@
-# Script fixes from the round on main 5d2fef9 — [Não lançado] (épico `epic/script-fixes-5d2fef9`)
+# Script fixes from the round on main 5d2fef9 — 2026-11-22 (épico `epic/script-fixes-5d2fef9`)
 
 ## Pendências
 
