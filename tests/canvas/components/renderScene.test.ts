@@ -585,13 +585,8 @@ describe('remote image resolved by the options function', () => {
   });
 
   it('each state without pixels draws the placeholder, without a warning', () => {
-    const states = [
-      'loading',
-      'failed',
-      'too-large',
-      'blocked-consent',
-      'invalid',
-    ] as const;
+    // `failed` and `too-large` draw the failure look (renderSceneImageFailed.test.ts).
+    const states = ['loading', 'blocked-consent', 'invalid'] as const;
     for (const state of states) {
       const result = renderScene(scene(rectWith(paint())), {
         remoteImage: () => state,
@@ -602,7 +597,7 @@ describe('remote image resolved by the options function', () => {
     }
   });
 
-  it('loaded without the image or with zero size falls back to the placeholder; so does a function that throws', () => {
+  it('loaded without the image or with zero size falls back to the placeholder; a function that throws draws the failure look', () => {
     const noImage = renderScene(scene(rectWith(paint())), {
       remoteImage: () => ({ state: 'loaded' }),
     });
@@ -616,7 +611,8 @@ describe('remote image resolved by the options function', () => {
         throw new Error('x');
       },
     });
-    expect(isPlaceholder(throws)).toBe(true);
+    // A function that throws is a failure: the failure look, not a crash.
+    expect(throws.byId.get('img')?.getChildren()).toHaveLength(3);
   });
 
   it('without the function, placeholder; the URL is still registered so the layer knows', () => {
@@ -625,7 +621,7 @@ describe('remote image resolved by the options function', () => {
     expect(result.imageUrls).toEqual([URL]);
   });
 
-  it('opaque shows on the main canvas and becomes a placeholder with pixelSafe', () => {
+  it('opaque shows on the main canvas and becomes the failure look with pixelSafe', () => {
     const opaque: RemoteImageView = { ...loaded(), state: 'opaque' };
     const main = renderScene(scene(rectWith(paint())), {
       remoteImage: () => opaque,
@@ -636,7 +632,11 @@ describe('remote image resolved by the options function', () => {
       remoteImage: () => opaque,
       pixelSafe: true,
     });
-    expect(isPlaceholder(safe)).toBe(true);
+    // Under pixelSafe it is the failure look (the placeholder plus the dashed outline).
+    expect(safe.byId.get('img')?.getChildren()).toHaveLength(3);
+    expect(safe.warnings).toEqual([
+      { code: 'remote-image-opaque', params: { origin: 'https://cdn.example.com' } },
+    ]);
     const ofShapes = (r: ReturnType<typeof renderScene>) => r.root.find('Image').length;
     expect(ofShapes(safe)).toBe(0);
     // pixelSafe does not hide the image with CORS.

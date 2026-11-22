@@ -348,6 +348,8 @@ export class RemoteImageLoader {
     this.inFlight.delete(url);
     this.failures.delete(url);
     this.failures.set(url, { state, timeout, triedNoCors });
+    // A failure redraws what shows the image (the failure look), like a load does.
+    this.epochSignal.value += 1;
     while (this.failures.size > REMOTE_IMAGE_LIMITS.failureEntries) {
       const oldest = this.failures.keys().next();
       if (oldest.done) break;
