@@ -22,6 +22,9 @@ import {
   proposalFilePath,
   serialize,
 } from '../../src/model';
+import type { Operation } from '../../mcp/operations';
+import { Roots } from '../../mcp/paths';
+import { openPreview } from '../../mcp/renderPreview';
 import { createServer } from '../../mcp/server';
 import { decodeImage, encodeImage } from '../../mcp/image/codecs';
 import { createRaster, type Raster } from '../../mcp/image/raster';
@@ -375,6 +378,38 @@ describe('proposal plus batch', () => {
     expect(revised.image).not.toBe(plain.image);
     expect(revised.json.preview).toMatchObject({ proposal: p.ref, operations: 1 });
     expect(sha(proposalFile)).toBe(proposalBefore);
+  });
+});
+
+describe('placement over a proposal (#2415)', () => {
+  it('the preview puts a new container where revise_proposal puts it', async () => {
+    const screen = (name: string) => ({
+      op: 'add_container',
+      as: '$s',
+      name,
+      width: 360,
+      height: 64,
+      background: '#FFFFFF',
+    });
+    const b = await propose([screen('Holder B')]);
+    await propose([screen('Holder A')]);
+    const batch = [screen('Previewed')] as unknown as Operation[];
+    const preview = await openPreview(new Roots([base]), () => Date.now(), {
+      ref: b.container,
+      proposal: b.ref,
+      operations: batch,
+    });
+    const previewed = preview.refs.project.containers.find((c) => c.name === 'Previewed');
+    expect(previewed).toBeDefined();
+    ok(await call('revise_proposal', { ref: b.ref, operations: batch }));
+    const created = readProposal(dir, b.id).changes.filter(
+      (c) => c.entity === 'image' && c.kind === 'create',
+    );
+    const revised = created
+      .map((c) => c.to as unknown as { name: string; placement: unknown })
+      .find((c) => c.name === 'Previewed');
+    expect(revised).toBeDefined();
+    expect(previewed!.placement).toEqual(revised!.placement);
   });
 });
 
