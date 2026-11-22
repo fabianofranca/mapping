@@ -22,6 +22,11 @@ Phase CV3 (stage #1881), for the **Mapping** artifact:
 - `Notice` in Details (review return): `info` tone, small size, at the top of Details above any panel: "The proposal "<title>" is still open." with **Review** and a dismiss button.
 - `Janela Conversa`: the anchor line gains " · linked to the proposal under review", and the polite live region ("New message from <name>") is visually hidden.
 
+Phase CV4 (stage #1881), for the **Mapping** artifact:
+
+- `Atalhos.md`: the **Conversation** window has no `Ctrl+Shift` number (the list has no line for it); `Shift+Esc` and `Ctrl+Shift+arrows` work on it as on any window, and `Esc` closes it with the focus inside, outside a field.
+- `Layouts.md`: the right column stacks Details and **Conversation** (checked at 1280×720 and 900×720 in the tester's visual pass, with the review notice above the Details panel).
+
 ## Sincronização
 
 Not synced yet.
