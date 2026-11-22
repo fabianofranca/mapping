@@ -112,3 +112,57 @@ describe('perspective growth (n = 2,500, 4n = 10,000 markings)', () => {
     });
   });
 });
+
+describe('container overlap (n = 1,250, 4n = 5,000 containers)', () => {
+  // Small containers scattered without overlap, plus one 1,024 times larger placed apart (64 times larger would be about the width of the 5,000-container grid, so the
+  // check would stay linear even with the old single grid): a grid with the cell of the largest
+  // container would put every small one in one cell and the overlap check would be quadratic (code review of stage #1971).
+  const SMALL = 100;
+  const template = buildScaleProject().containers[0]!;
+  const buildContainers = (n: number): Project => {
+    const base = buildScaleProject();
+    const cols = Math.ceil(Math.sqrt(n));
+    const containers = Array.from({ length: n }, (_, i) => ({
+      ...template,
+      id: `X${i}`,
+      file: `images/x${i}.png`,
+      width: SMALL,
+      height: SMALL,
+      placement: {
+        x: (i % cols) * (SMALL * 2),
+        y: Math.floor(i / cols) * (SMALL * 2),
+        scale: 1,
+      },
+    }));
+    containers.push({
+      ...template,
+      id: 'XBIG',
+      file: 'images/big.png',
+      width: SMALL * 1024,
+      height: SMALL * 1024,
+      placement: { x: -SMALL * 2000, y: 0, scale: 1 },
+    });
+    return {
+      ...base,
+      containers,
+      markings: [],
+      annotations: [],
+      arrows: [],
+      arrivals: [],
+      perspectives: [],
+    };
+  };
+
+  it('checks that the containers do not overlap', GROWTH_OPTIONS, () => {
+    expectLinearGrowth('validateProject (container overlap)', {
+      build: buildContainers,
+      run: (p) => {
+        const issues = validateProject(p);
+        if (issues.some((i) => i.code === 'images-overlap'))
+          throw new Error('the fixture should have no overlap');
+        return issues;
+      },
+      runs: 41,
+    });
+  });
+});

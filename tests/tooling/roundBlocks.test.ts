@@ -17,7 +17,7 @@ const MAX_BLOCK_GUIDE_CHARS = 213_000;
 /**
  * Stage #1533 (TE1, decisions 3 and 5): the limit above measures what the tester reads, the block's guide without the
  * on-demand sections (`mandatoryOnly`: the mandatory base plus the test scripts), and the base of each block
- * (without the test scripts, which come out through `passo`) has up to 45 thousand characters (the largest base, block 2, measures 42,772 after the rebalance of #2193).
+ * (without the test scripts, which come out through `passo`) has up to 45 thousand characters (the largest base, block 2, measures 43,076 after the rebalance of #2193).
  */
 const MAX_BLOCK_BASE_CHARS = 45_000;
 

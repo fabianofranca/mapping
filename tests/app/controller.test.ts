@@ -951,9 +951,10 @@ describe('project with inconsistent data', () => {
     expect(await inconsistent.repair()).toEqual({ ok: true, value: undefined });
     const { session, repaired } = await openedOf(app);
     expect(repaired).toEqual(inconsistent.repaired);
+    // The repair made `MN` a root and reading settled it: by geometry it lies inside `MF`.
     expect(
       session.store.project.value?.markings.find((m) => m.id === 'MN')?.parentId,
-    ).toBeNull();
+    ).toBe('MF');
     // Reading never writes: nothing changes in the folder until the first save.
     expect(await backupsOf(root)).toEqual([]);
     expect(await root.files.get('mapping.json')?.text()).toBe(repairable);

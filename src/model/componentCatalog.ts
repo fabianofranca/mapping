@@ -16,7 +16,7 @@ import {
 import { projectIndex } from './projectIndex';
 import type { Spec, SpecAnnotationType } from './spec';
 import { findSpecType } from './specLookup';
-import type { Annotation, Project } from './types';
+import type { Annotation, AnnotationTypeRef, Project } from './types';
 
 // Component catalog (Library stage, B3): the components of the applied specializations
 // (package `specs/<id>/`, `formatVersion` 4), read once and kept in memory. `mapping.json` never
@@ -303,12 +303,22 @@ export function markingComponent(
 export function markingTypeName(p: Project, markingId: string): string | null {
   for (const annotation of projectIndex(p).annotationsByMarking.get(markingId) ?? []) {
     if (annotation.type === null || annotation.values === null) continue;
-    const resolved = findSpecType(p, annotation.type);
-    if (resolved !== null && resolved.type.component !== undefined) {
-      return resolved.type.name;
-    }
+    const name = componentTypeName(p, annotation.type);
+    if (name !== null) return name;
   }
   return null;
+}
+
+/**
+ * Name of the annotation type `ref` when it declares a component, or `null`. Like `markingTypeName`
+ * it does not use the component catalog: the name of an unnamed instance is the same wherever the
+ * project is, even when the type's component file or version is missing.
+ */
+export function componentTypeName(p: Project, ref: AnnotationTypeRef): string | null {
+  const resolved = findSpecType(p, ref);
+  return resolved !== null && resolved.type.component !== undefined
+    ? resolved.type.name
+    : null;
 }
 
 /** Component with a slot: the component has a slot that receives child markings. */
