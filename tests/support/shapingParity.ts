@@ -14,8 +14,19 @@ export const PARITY_STRINGS = [
 export const PARITY_SPACINGS = [0, 4] as const;
 export const PARITY_SIZE = 100;
 export const PARITY_FONTS = ['sans', 'calt', 'roboto'] as const;
-/** Every font the cases use: the base ones and `rtl` (the extra cases of stage #2448); `pair` is Mapping Sans at 400 and Mapping Mono at 900. */
-export const PARITY_ALL_FONTS = [...PARITY_FONTS, 'rtl', 'pair'] as const;
+/**
+ * The variable families of stage #2574 (decision 6), built from the `variable-font.mjs` test fonts: `vwght1` and `vwght`
+ * share the `--wght` bytes (declared `"400"` and `"100 900"`), `vslnt` and `vslntn` the `--slnt=-20,0,20` bytes (declared
+ * `normal` and `italic`, and only `normal`), and `vital` the `--ital=0` bytes (declared `normal` and `italic`).
+ */
+export const VARIABLE_FONTS = ['vwght1', 'vwght', 'vslnt', 'vslntn', 'vital'] as const;
+/** Every font the cases use: the base ones, `rtl` (the extra cases of stage #2448), the variable ones (#2574); `pair` is Mapping Sans at 400 and Mapping Mono at 900. */
+export const PARITY_ALL_FONTS = [
+  ...PARITY_FONTS,
+  'rtl',
+  'pair',
+  ...VARIABLE_FONTS,
+] as const;
 export type ParityFont = (typeof PARITY_ALL_FONTS)[number];
 
 export interface ParityCase {
@@ -67,6 +78,28 @@ export const WEIGHT_CASES: readonly ExtraCase[] = [
   { font: 'pair', text: 'Hamburgefonstiv', letterSpacing: 0, weight: 550 },
 ];
 
+/**
+ * The variable-font cases (stage #2574, VA1, decision 6), after the weight cases. Each family has its upright 400 case,
+ * which is the ink reference of the spec:
+ * - `vwght1`, declared `"400"`, at 700: the 400 width, and the ink grows by the fake bold (#2652);
+ * - `vwght`, declared `"100 900"`, at 700: the width follows the axis, with no fake bold;
+ * - `vslnt`, declared `normal` and `italic`: the italic text uses the italic face at `slnt` −14, with no skew;
+ * - `vslntn`, declared only `normal`: the italic text measures at `slnt` 0 and gets the 0.25 skew;
+ * - `vital`, declared `normal` and `italic`: `ital` stays at its default, so the width equals the upright one.
+ */
+export const VARIABLE_CASES: readonly ExtraCase[] = [
+  { font: 'vwght1', text: 'Hamburgefonstiv', letterSpacing: 0 },
+  { font: 'vwght1', text: 'Hamburgefonstiv', letterSpacing: 0, weight: 700 },
+  { font: 'vwght', text: 'Hamburgefonstiv', letterSpacing: 0 },
+  { font: 'vwght', text: 'Hamburgefonstiv', letterSpacing: 0, weight: 700 },
+  { font: 'vslnt', text: 'Hamburgefonstiv', letterSpacing: 0 },
+  { font: 'vslnt', text: 'Hamburgefonstiv', letterSpacing: 0, italic: true },
+  { font: 'vslntn', text: 'Hamburgefonstiv', letterSpacing: 0 },
+  { font: 'vslntn', text: 'Hamburgefonstiv', letterSpacing: 0, italic: true },
+  { font: 'vital', text: 'Hamburgefonstiv', letterSpacing: 0 },
+  { font: 'vital', text: 'Hamburgefonstiv', letterSpacing: 0, italic: true },
+];
+
 /** The ink of the weight cases is compared within this many px, as a difference to the upright 400 reference. */
 export const INK_TOLERANCE = 1;
 
@@ -74,6 +107,7 @@ export const INK_TOLERANCE = 1;
 export interface ParityFace {
   readonly family: ParityFont;
   readonly weight: string;
+  readonly style: 'normal' | 'italic';
   readonly ext: 'ttf' | 'woff2';
   readonly bytes: Uint8Array;
 }
@@ -83,27 +117,46 @@ export function parityFaces(): ParityFace[] {
   const single = (['sans', 'calt', 'roboto', 'rtl'] as const).map((family) => ({
     family,
     weight: '400',
+    style: 'normal' as const,
     ext: family === 'roboto' ? ('woff2' as const) : ('ttf' as const),
     bytes: bytes[family],
   }));
+  const variable = (
+    family: (typeof VARIABLE_FONTS)[number],
+    weight: string,
+    style: 'normal' | 'italic',
+    of: 'wght' | 'slnt' | 'ital',
+  ): ParityFace => ({ family, weight, style, ext: 'ttf', bytes: bytes[of] });
   return [
     ...single,
-    { family: 'pair', weight: '400', ext: 'ttf', bytes: bytes.sans },
+    { family: 'pair', weight: '400', style: 'normal', ext: 'ttf', bytes: bytes.sans },
     {
       family: 'pair',
       weight: '900',
+      style: 'normal',
       ext: 'ttf',
       bytes: new Uint8Array(readFileSync('mcp/fonts/MappingMono-Regular.ttf')),
     },
+    variable('vwght1', '400', 'normal', 'wght'),
+    variable('vwght', '100 900', 'normal', 'wght'),
+    variable('vslnt', '400', 'normal', 'slnt'),
+    variable('vslnt', '400', 'italic', 'slnt'),
+    variable('vslntn', '400', 'normal', 'slnt'),
+    variable('vital', '400', 'normal', 'ital'),
+    variable('vital', '400', 'italic', 'ital'),
   ];
 }
 
 /**
  * The bytes of each font: Mapping Sans, the test font of `scripts/testing/gsub-font.mjs --calt`, the Material 3
  * library's Roboto Regular `.woff2` (#2126: the server decodes it, Chromium loads the same bytes natively) and the
- * `--rtl` test font, with the Hebrew letters mapped to the glyphs of `A` to `J` (stage #2448).
+ * `--rtl` test font, with the Hebrew letters mapped to the glyphs of `A` to `J` (stage #2448), and the variable test fonts
+ * of `scripts/testing/variable-font.mjs` (stage #2574): `wght`, `slnt` (−20, 0, 20) and `ital` (default 0).
  */
-export function parityFontBytes(): Record<Exclude<ParityFont, 'pair'>, Uint8Array> {
+export function parityFontBytes(): Record<
+  'sans' | 'calt' | 'roboto' | 'rtl' | 'wght' | 'slnt' | 'ital',
+  Uint8Array
+> {
   const dir = mkdtempSync(join(tmpdir(), 'mapping-parity-'));
   try {
     execFileSync('node', [
@@ -116,7 +169,21 @@ export function parityFontBytes(): Record<Exclude<ParityFont, 'pair'>, Uint8Arra
       join(dir, 'rtl.ttf'),
       '--rtl',
     ]);
+    const variable: [string, string[]][] = [
+      ['wght', ['--wght']],
+      ['slnt', ['--slnt=-20,0,20']],
+      ['ital', ['--ital=0']],
+    ];
+    for (const [name, options] of variable)
+      execFileSync('node', [
+        'scripts/testing/variable-font.mjs',
+        join(dir, `${name}.ttf`),
+        ...options,
+      ]);
     return {
+      wght: new Uint8Array(readFileSync(join(dir, 'wght.ttf'))),
+      slnt: new Uint8Array(readFileSync(join(dir, 'slnt.ttf'))),
+      ital: new Uint8Array(readFileSync(join(dir, 'ital.ttf'))),
       sans: new Uint8Array(readFileSync('mcp/fonts/MappingSans-Regular.ttf')),
       calt: new Uint8Array(readFileSync(join(dir, 'calt.ttf'))),
       roboto: new Uint8Array(

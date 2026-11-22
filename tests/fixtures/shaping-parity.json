@@ -321,5 +321,120 @@
       "right": 896.728515625,
       "top": -72.4609375
     }
+  },
+  {
+    "font": "vwght1",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "width": 755.908203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 755.56640625,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "vwght1",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "weight": 700,
+    "width": 755.908203125,
+    "ink": {
+      "left": 6.640625,
+      "right": 757.8176816700512,
+      "top": -74.0234375
+    }
+  },
+  {
+    "font": "vwght",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "width": 755.908203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 755.56640625,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "vwght",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "weight": 700,
+    "width": 643.115234375,
+    "ink": {
+      "left": 8.203125,
+      "right": 650.29296875,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "vslnt",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "width": 755.908203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 755.56640625,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "vslnt",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "italic": true,
+    "width": 1018.115234375,
+    "ink": {
+      "left": 8.203125,
+      "right": 1000.29296875,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "vslntn",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "width": 755.908203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 755.56640625,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "vslntn",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "italic": true,
+    "width": 755.908203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 768.7744140625,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "vital",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "width": 755.908203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 755.56640625,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "vital",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "italic": true,
+    "width": 755.908203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 755.56640625,
+      "top": -72.4609375
+    }
   }
 ]

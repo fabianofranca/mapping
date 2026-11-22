@@ -6,7 +6,7 @@ import {
   textWidth,
   type Synthesis,
 } from './glyphs';
-import { loadFace, type Face } from './harfbuzz';
+import { loadFace, type DeclaredFace, type Face } from './harfbuzz';
 import monoBold from 'font:mono-bold';
 import mono from 'font:mono';
 import sansBold from 'font:sans-bold';
@@ -137,20 +137,24 @@ export interface FontBook {
  * Reads a library font (`.ttf`, `.otf`, `.woff` or `.woff2`). `null` when the bytes are not a usable font (a corrupt
  * file, a font without `head`, `hhea` or code points): the embedded font applies to its family.
  */
-export function loadLibraryFont(bytes: ArrayBuffer): Face | null {
-  return loadFace(new Uint8Array(bytes));
+export function loadLibraryFont(
+  bytes: ArrayBuffer,
+  declared?: DeclaredFace,
+): Face | null {
+  return loadFace(new Uint8Array(bytes), declared);
 }
 
 function candidateOf(entry: LoadedFont): Candidate | null {
   if (entry.bytes === undefined) return null;
-  const font = loadLibraryFont(entry.bytes);
-  if (font === null) return null;
   const [low, high] = weightRange(entry.weight);
+  const italic = entry.style === 'italic';
+  const font = loadLibraryFont(entry.bytes, { low, high, italic });
+  if (font === null) return null;
   return {
     family: entry.family.toLowerCase(),
     low,
     high,
-    italic: entry.style === 'italic',
+    italic,
     font,
   };
 }
