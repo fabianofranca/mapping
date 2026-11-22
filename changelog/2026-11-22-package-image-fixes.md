@@ -1,4 +1,4 @@
-# Package image fixes — [Não lançado]
+# Package image fixes — 2026-11-22 (épico `epic/package-image-fixes`, PR #2630, MCP 0.57.5, schema v23)
 
 ## Alterado
 
