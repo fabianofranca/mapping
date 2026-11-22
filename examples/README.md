@@ -178,9 +178,11 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 - The linear gradient next to them, to compare the three types.
 - A gradient as the result of a `$switch` in `fill` (the main swatch), with the stop colors read from fields (`$field`).
 - The inner shadow (`shadow.inner: true`, like CSS `inset`): a sunken field with one inner shadow and a pressed button with a list of two, clipped by the rounded outline, next to a raised button with an ordinary outer shadow.
-- A package image cited three ways in `image.src`: a literal path (`images/logo.png`), a `$switch` over an `enum` field whose every result is a path, and `{ "$field": "source" }` whose value is a path. The three formats (PNG, JPEG and WebP) are drawn with `fit` `cover` and `contain` and a `cornerRadius`, with no network and no consent. (Until the app draws package images, in a later phase of this epic, each one shows the placeholder.)
+- A package image cited three ways in `image.src`: a literal path (`images/logo.png`), a `$switch` over an `enum` field whose every result is a path, and `{ "$field": "source" }` whose value is a path. The three formats (PNG, JPEG and WebP) are drawn with `fit` `cover` and `contain` and a `cornerRadius`, with no network and no consent.
 - The grid with uneven tracks (`columns` as a list of px, `"<n>fr"` and `"hug"`): the list row's three column sizes, and the 12-column grid whose children occupy several tracks with `span`.
 - The validator checks the cited images: they exist, their content matches the extension, and each is at most 1 MB and 2048 px.
+
+**Scripts.** R42 in `docs/TESTING.md` ("Component drawing extras"): it copies the package, validates it and three broken copies, applies it to a folder project and probes the pixels of the four components in the app and in the MCP's PNG.
 
 ## Single-file specializations (`examples/specs/`)
 
