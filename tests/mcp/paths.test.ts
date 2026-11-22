@@ -244,6 +244,15 @@ describe('scratchOverlap', () => {
     expect(scratchOverlap([root], [join(base, 'not-created')])).toBeNull();
   });
 
+  it('a root that does not exist yet, under a link into the scratch area, overlaps', () => {
+    const scratch = join(base, 'b', 'projects', 'tmp');
+    mkdirSync(join(base, 'b'));
+    symlinkSync(join(base, 'b'), join(base, 'link'));
+    const root = join(base, 'link', 'projects');
+    expect(scratchOverlap([root], [scratch])).toEqual({ root, scratch });
+    expect(scratchOverlap([join(base, 'link', 'other')], [scratch])).toBeNull();
+  });
+
   it('sibling folders do not overlap', () => {
     const projects = join(base, 'projects');
     const specializations = join(base, 'specializations');

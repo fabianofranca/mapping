@@ -6,6 +6,7 @@ import path, {
   dirname,
   isAbsolute,
   join,
+  relative,
   resolve,
   type PlatformPath,
 } from 'node:path';
@@ -103,12 +104,21 @@ export interface ScratchOverlap {
   readonly scratch: string;
 }
 
-/** Real path of an existing folder; `null` for one that does not exist (compared by its path only). */
+/**
+ * Real path of a folder: its nearest existing ancestor resolved (symbolic links followed), with the
+ * part that does not exist yet appended. `null` when nothing of it can be resolved.
+ */
 function realFolder(folder: string): string | null {
-  try {
-    return realpathSync(folder);
-  } catch {
-    return null;
+  let existing = folder;
+  for (;;) {
+    try {
+      const real = realpathSync(existing);
+      return existing === folder ? real : join(real, relative(existing, folder));
+    } catch {
+      const parent = dirname(existing);
+      if (parent === existing) return null;
+      existing = parent;
+    }
   }
 }
 
@@ -120,7 +130,7 @@ function nested(a: string, b: string): boolean {
 /**
  * The first pair of a root and a scratch folder (both absolute) that overlap: one inside the
  * other or the same folder, by the path as configured or by the real path (symbolic links
- * resolved). A folder that does not exist yet is compared by its path. `null` when there is none.
+ * resolved). A folder that does not exist yet is compared by its path and by its nearest existing ancestor's real path. `null` when there is none.
  */
 export function scratchOverlap(
   roots: readonly string[],

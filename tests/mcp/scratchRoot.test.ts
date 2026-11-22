@@ -332,7 +332,10 @@ describe('a scratch folder that overlaps a root is refused at startup (usage err
 
   it('sibling folders still start (the server waits for the client and ends with its input)', () => {
     const run = start('--root', root, '--scratch', scratch);
+    expect(run.error).toBeUndefined();
+    expect(run.status).not.toBeNull();
     expect(run.status).not.toBe(2);
     expect(run.stderr).not.toContain('overlaps');
+    expect(run.stderr).not.toContain('Usage:');
   });
 });
