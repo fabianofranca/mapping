@@ -4,6 +4,12 @@ import { pathToFileURL } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import JSZip from 'jszip';
+import {
+  applySpecialization,
+  createProject as newProject,
+  parseSpecText,
+  serialize,
+} from '../../src/model';
 import { canvasPoint, createProject, exportMapping, watchViolations } from './helpers';
 
 // Stage #2035 (AF3): Export in a format runs the specialization's plugin in the sandbox of the
@@ -31,9 +37,9 @@ interface SpecJson {
   fileFormats: Record<string, unknown>[];
 }
 
-/** The package: the `format-library` fixture plus the fixture plugins as extra formats. */
-async function packageZip(): Promise<Buffer> {
-  const zip = new JSZip();
+/** The package files: the `format-library` fixture plus the fixture plugins as extra formats. */
+function packageFiles(): Map<string, Buffer | string> {
+  const files = new Map<string, Buffer | string>();
   const spec = JSON.parse(
     readFileSync(join(LIBRARY, 'format-library.spec.json'), 'utf8'),
   ) as SpecJson;
@@ -45,12 +51,43 @@ async function packageZip(): Promise<Buffer> {
       plugin: `plugins/${id}.js`,
       contract: 1,
     });
-    zip.file(`plugins/${id}.js`, readFileSync(join(PLUGINS, `${id}.js`)));
+    files.set(`plugins/${id}.js`, readFileSync(join(PLUGINS, `${id}.js`)));
   }
-  zip.file('format-library.spec.json', JSON.stringify(spec, null, 2));
-  zip.file('plugins/notes.js', readFileSync(join(LIBRARY, 'plugins', 'notes.js')));
+  files.set('format-library.spec.json', JSON.stringify(spec, null, 2));
+  files.set('plugins/notes.js', readFileSync(join(LIBRARY, 'plugins', 'notes.js')));
   for (const name of readdirSync(join(LIBRARY, 'examples')))
-    zip.file(`examples/${name}`, readFileSync(join(LIBRARY, 'examples', name)));
+    files.set(`examples/${name}`, readFileSync(join(LIBRARY, 'examples', name)));
+  return files;
+}
+
+/**
+ * A project zip with the package already applied. Applying a package in Specializations runs the format
+ * checks and refuses one whose plugin does not load (`module`) or never answers (`loop`), so the plugins
+ * that fail on purpose reach the project the way a project someone else made does: opened from a file.
+ */
+async function projectZip(): Promise<Buffer> {
+  const files = packageFiles();
+  const parsed = parseSpecText(String(files.get('format-library.spec.json')));
+  if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+  const project = applySpecialization(
+    newProject({
+      name: PROJECT,
+      now: '2026-01-01T00:00:00.000Z',
+      firstLayer: { id: 'layer-1', name: 'Layer 1', color: '#D32F2F' },
+    }),
+    parsed.spec,
+    { packageSpecName: 'format-library.spec.json' },
+  );
+  const zip = new JSZip();
+  zip.file('mapping.json', serialize(project));
+  for (const [path, data] of files) zip.file(`specs/${parsed.spec.id}/${path}`, data);
+  return zip.generateAsync({ type: 'nodebuffer' });
+}
+
+/** The zip a package is applied from in Specializations. */
+async function packageZip(): Promise<Buffer> {
+  const zip = new JSZip();
+  for (const [path, data] of packageFiles()) zip.file(path, data);
   return zip.generateAsync({ type: 'nodebuffer' });
 }
 
@@ -108,8 +145,15 @@ async function downloadText(page: Page): Promise<{ name: string; text: string }>
 
 async function openProject(page: Page, url: string) {
   const violations = await watchViolations(page);
-  await createProject(page, PROJECT, url);
-  await applyPackage(page, await packageZip());
+  await page.goto(url);
+  await page
+    .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
+    .setInputFiles({
+      name: 'format-project.zip',
+      mimeType: 'application/zip',
+      buffer: await projectZip(),
+    });
+  await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
   // Before the dialogs open: without the picker the app downloads with `<a download>`, which Playwright captures.
   await page.evaluate(SAVE_PICKER_OFF);
   return violations;
@@ -384,5 +428,88 @@ test.describe('Import from a format: a library from a zip', () => {
     await redoKey(page);
     expect(await countOf(page)).toEqual(imported);
     expect(violations()).toEqual([]);
+  });
+});
+
+// Stage #2035 (AF5): the formats in the library validation and in the Catalog.
+
+const SDUI = join(process.cwd(), 'examples', 'libraries', 'sdui-backend');
+
+/** A folder of files as a zip, with paths relative to it. */
+async function folderZip(dir: string): Promise<Buffer> {
+  const zip = new JSZip();
+  const walk = (path: string): void => {
+    for (const entry of readdirSync(join(dir, path), { withFileTypes: true })) {
+      const rel = path === '' ? entry.name : `${path}/${entry.name}`;
+      if (entry.isDirectory()) walk(rel);
+      else zip.file(rel, readFileSync(join(dir, rel)));
+    }
+  };
+  walk('');
+  return zip.generateAsync({ type: 'nodebuffer' });
+}
+
+test.describe('Formats in the Catalog and in the validation', () => {
+  test.use({ actionTimeout: 10_000 });
+
+  test('the home Catalog of sdui-backend draws home.sdui.json on the File formats page', async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    const violations = await watchViolations(page);
+    await page.goto('/');
+    await page.locator('input[data-library-zip]').setInputFiles({
+      name: 'sdui-backend.zip',
+      mimeType: 'application/zip',
+      buffer: await folderZip(SDUI),
+    });
+    const catalog = page.getByRole('main', { name: 'Library catalog' });
+    await expect(catalog).toBeVisible();
+    // The format checks ran with the library open and found nothing: the line has no error.
+    const validation = catalog.getByRole('region', { name: 'Package validation' });
+    await expect(validation).not.toContainText(/[1-9]\d* error\(s\)/);
+
+    await catalog.getByRole('button', { name: 'File formats' }).click();
+    const article = catalog.getByRole('article', { name: 'File formats of the library' });
+    await expect(article.getByRole('heading', { name: 'SDUI screen' })).toBeVisible();
+    await expect(article).toContainText('.json');
+    await expect(article).toContainText('Defines: generate, parse');
+    // The example is drawn: one image per screen `parse` builds from the file.
+    const screens = article.locator('.catalog-format-screens img');
+    await expect(screens.first()).toBeVisible();
+    expect(await screens.count()).toBeGreaterThan(0);
+    // The example text stays behind a toggle.
+    await expect(article.locator('.catalog-format-text')).toHaveCount(0);
+    await article.getByRole('button', { name: 'Show the example text' }).click();
+    await expect(article.locator('.catalog-format-text')).toContainText('"Continue"');
+    expect(violations()).toEqual([]);
+  });
+
+  test('a package whose plugin fails to load is refused on apply, with the problem at fileFormats[0]', async ({
+    page,
+  }) => {
+    await createProject(page, PROJECT, '/');
+    const zip = new JSZip();
+    zip.file(
+      'format-library.spec.json',
+      readFileSync(join(LIBRARY, 'format-library.spec.json')),
+    );
+    zip.file('plugins/notes.js', readFileSync(join(PLUGINS, 'module.js')));
+    zip.file('examples/notes.txt', readFileSync(join(LIBRARY, 'examples', 'notes.txt')));
+    await page
+      .locator('.main-bar')
+      .getByRole('button', { name: 'Specializations', exact: true })
+      .click();
+    await page.locator('input[type=file][accept=".zip,application/zip"]').setInputFiles({
+      name: 'broken.zip',
+      mimeType: 'application/zip',
+      buffer: await zip.generateAsync({ type: 'nodebuffer' }),
+    });
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toContainText('fileFormats[0]', { timeout: 30_000 });
+    await expect(dialog).toContainText(/\d+ error\(s\)/);
+    await expect(
+      dialog.getByRole('button', { name: 'Apply', exact: true }),
+    ).toBeDisabled();
   });
 });
