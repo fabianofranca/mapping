@@ -496,6 +496,21 @@ function wholePixels(box: Rect, within: Rect): Rect | null {
 }
 
 /**
+ * Where a new child may go: the slot area, except on an empty `hug` axis, where the component is the limit.
+ * Once the slot holds children it has a real extent and its own area is the limit again.
+ */
+function hugRoom(slot: SlotBox, outer: Rect): Rect {
+  const open = slot.kids.length === 0;
+  const axis = (hug: boolean, o: number, a: number): number => (hug && open ? o : a);
+  return {
+    x: axis(slot.hug.x, outer.x, slot.area.x),
+    y: axis(slot.hug.y, outer.y, slot.area.y),
+    width: axis(slot.hug.x, outer.width, slot.area.width),
+    height: axis(slot.hug.y, outer.height, slot.area.height),
+  };
+}
+
+/**
  * Did the rectangle `rect` end up inside the slot area of the component with a slot `targetId` (the same
  * `slotArea` as `componentPlacement`) and, in a row or column layout, outside the last child? `false`
  * also when the target does not draw a component with a slot. Serves to know whether a new instance
@@ -513,15 +528,7 @@ export function placementFitsSlot(
   const slot = slotArea(p, catalog, targetId, measure, slotId, undefined, typeId);
   if (!slot.hasSlot) return false;
   // On a `hug` axis the area is only where the slot starts (empty, it may be a few pixels): the component is the limit.
-  // Once the slot holds children it has a real extent: its own area is the limit again.
-  const outer = findById(p.markings, targetId).rect;
-  const open = slot.kids.length === 0;
-  const room = {
-    x: slot.hug.x && open ? outer.x : slot.area.x,
-    y: slot.hug.y && open ? outer.y : slot.area.y,
-    width: slot.hug.x && open ? outer.width : slot.area.width,
-    height: slot.hug.y && open ? outer.height : slot.area.height,
-  };
+  const room = hugRoom(slot, findById(p.markings, targetId).rect);
   if (!containsRect(room, rect)) return false;
   // Row or column layout: stuck to the component, the child may be inside the slot area and still
   // on top of the last sibling (slot the size of the component): it also did not fit.
