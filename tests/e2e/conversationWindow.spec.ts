@@ -34,7 +34,12 @@ async function open(page: Page, width: number): Promise<void> {
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
     .setInputFiles({ name: 'p.zip', mimeType: 'application/zip', buffer: await zip() });
   await expect(page.getByRole('main', { name: 'Project canvas' })).toBeVisible();
-  await page.getByRole('button', { name: 'Conversation' }).click();
+  // Details starts collapsed in a compact window (`collapseDetailsOnCompact`): open it.
+  const detailsButton = page.locator('[data-strip-window="details"]');
+  if ((await detailsButton.getAttribute('aria-pressed')) !== 'true') {
+    await detailsButton.click();
+  }
+  await page.locator('[data-strip-window="conversation"]').click();
 }
 
 for (const width of [900, 1280]) {
