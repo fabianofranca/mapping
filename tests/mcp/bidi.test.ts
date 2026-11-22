@@ -32,7 +32,7 @@ describe('bidiRuns (mcp/image/bidi.ts)', () => {
   it('a text below U+0590 in ltr is one left-to-right run, without calling bidi-js', () => {
     const before = calls.levels;
     expect(bidiRuns('Pay invoice 123, (ok).', 'ltr')).toEqual([run(0, 22, false)]);
-    expect(bidiRuns('é', 'ltr')).toEqual([run(0, 1, false)]);
+    expect(bidiRuns('\u00e9', 'ltr')).toEqual([run(0, 1, false)]);
     expect(calls.levels).toBe(before);
   });
 
