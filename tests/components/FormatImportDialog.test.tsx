@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/preact';
+import { act } from 'preact/test-utils';
 import type { Signal } from '@preact/signals';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FormatOutcome, Project } from '../../src/model';
@@ -253,8 +254,35 @@ describe('FormatImportDialog', () => {
   it('is disabled while the project is read-only, and says so', () => {
     setup([openapi], { readOnly: true });
     chooseFile('in.yaml');
-    expect(screen.getByText(/read-only/)).toBeTruthy();
+    expect(screen.getByText(/cannot be edited/)).toBeTruthy();
     expect(isDisabled(previewButton())).toBe(true);
     expect(isDisabled(importButton())).toBe(true);
+  });
+
+  it('a preview goes stale when the project changes: Import is disabled until a new Preview', async () => {
+    const { harness } = setup([openapi]);
+    await previewWith(parsed([newContainer, newMarking]));
+    await waitFor(() => expect(isDisabled(importButton())).toBe(false));
+    act(() => {
+      harness.store.apply((p) => ({ ...p, project: { ...p.project, name: 'Renamed' } }));
+    });
+    await waitFor(() => expect(isDisabled(importButton())).toBe(true));
+    expect(screen.queryByRole('table')).toBeNull();
+  });
+
+  it('in a review it says the project cannot be edited, not that it is read-only', () => {
+    const { harness } = setup([openapi]);
+    act(() => harness.store.setReviewing('p1'));
+    expect(screen.getByText(/proposal is in review/)).toBeTruthy();
+    expect(isDisabled(importButton())).toBe(true);
+  });
+
+  it('another format forgets the file, which may have the wrong extension', () => {
+    setup([openapi, csv]);
+    chooseFile('plan.yaml');
+    expect(screen.getByText('plan.yaml')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Format'), { target: { value: '1' } });
+    expect(screen.getByText('No file chosen')).toBeTruthy();
+    expect(isDisabled(previewButton())).toBe(true);
   });
 });

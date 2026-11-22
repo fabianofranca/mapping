@@ -162,7 +162,11 @@ function useImportPick() {
     file,
     containerId: targetOf(choice, containers, target, fallback),
     needsContainer: choice?.scope === 'container',
-    setFormatRef: setPickedRef,
+    // The file may not have the new format's extension: it is chosen again.
+    setFormatRef: (ref: string | null) => {
+      setPickedRef(ref);
+      setFile(null);
+    },
     setTarget: (id: string) => setTarget(id === '' ? null : id),
     setFile,
   };
@@ -184,12 +188,14 @@ function useImportRun(pick: Pick, onDone: () => void) {
       alive.current = false;
     };
   }, []);
-  // Another format, target or file is another preview.
+  // Another format, target or file, or a change of the project, is another preview: what was
+  // previewed is no longer what Import would apply.
   const { choice, containerId, file } = pick;
+  const revision = store.revision.value;
   useEffect(() => {
     setPreview(null);
     setError(null);
-  }, [choice?.ref, containerId, file]);
+  }, [choice?.ref, containerId, file, revision]);
 
   const runPreview = async () => {
     if (!choice || !file || running) return;
@@ -206,6 +212,7 @@ function useImportRun(pick: Pick, onDone: () => void) {
           catalog: () => session.components.catalog.peek(),
           measure: () => textMeasurer.peek(),
           page: () => session.page.openId(),
+          perspective: () => session.perspective.openId(),
         },
         choice,
         file,
@@ -230,7 +237,9 @@ function useImportRun(pick: Pick, onDone: () => void) {
     const selected = project ? importSelection(project, result.value.created) : [];
     if (selected.length > 0) {
       selectItems(ui, selected);
-      canvas.current?.centerSelection();
+      // One item: centered; several: the view fits all of them.
+      if (selected.length > 1) canvas.current?.fitSelection();
+      else canvas.current?.centerSelection();
     }
     onDone();
   };

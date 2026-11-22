@@ -58,11 +58,6 @@ export interface ActionDeps {
 }
 
 /**
- * Result of `moveRootsToPage`. A move that would cut arrows or anchors is refused with
- * `page-arrow-crossing` (an arrow crosses) or `page-anchor-crossing` (only anchors do), and both
- * lists (the dialog lists them, with "Go to the arrow" and "Go to the marking").
- */
-/**
  * Result of `importFormat` (stage #2035, AF4): what the import created and changed; a store refusal
  * (`read-only`, `reviewing`, `no-project`, `principal-only`, …) or `format-apply`, the first operation
  * of the result that the model's rules refused (the project stays as it was).
@@ -82,6 +77,11 @@ export type ImportFormatResult =
       readonly failure: model.FormatApplyError;
     };
 
+/**
+ * Result of `moveRootsToPage`. A move that would cut arrows or anchors is refused with
+ * `page-arrow-crossing` (an arrow crosses) or `page-anchor-crossing` (only anchors do), and both
+ * lists (the dialog lists them, with "Go to the arrow" and "Go to the marking").
+ */
 export type MoveRootsResult =
   | ActionResult
   | {

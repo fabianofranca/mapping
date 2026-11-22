@@ -47,6 +47,15 @@ export function exportErrorText(error: ExportInFormatError): string {
   }
 }
 
+/** The errors of an import that need nothing but their kind to be worded. */
+const IMPORT_ERROR_KEYS = {
+  read: 'format.import.error.read',
+  save: 'format.import.error.save',
+  project: 'format.error.project',
+  'principal-only': 'format.import.error.principalOnly',
+  container: 'format.import.error.container',
+} as const;
+
 /** Why an import from a format gave no preview. */
 export function importErrorText(error: ImportInFormatError): string {
   switch (error.kind) {
@@ -56,20 +65,14 @@ export function importErrorText(error: ImportInFormatError): string {
       return t('format.import.error.size', {
         size: FORMAT_PLUGIN_LIMITS.parseTextBytes / (1024 * 1024),
       });
-    case 'read':
-      return t('format.import.error.read');
-    case 'save':
-      return t('format.import.error.save');
-    case 'project':
-      return t('format.error.project');
-    case 'container':
-      return t('format.import.error.container');
     case 'plugin':
       return formatFailureText(error.failure);
     case 'result':
       return resultErrorText(error);
     case 'apply':
       return t('format.import.error.apply', { path: error.path, message: error.message });
+    default:
+      return t(IMPORT_ERROR_KEYS[error.kind]);
   }
 }
 

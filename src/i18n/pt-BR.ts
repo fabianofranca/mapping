@@ -369,7 +369,8 @@ export const ptBR: Dictionary = {
   'format.import.running': 'Executando o plugin…',
   'format.import.loading': 'Lendo as especializações…',
   'format.import.none': 'Nenhuma especialização aplicada tem um formato que importa.',
-  'format.import.locked': 'O projeto é somente leitura, então nada pode ser importado.',
+  'format.import.locked':
+    'O projeto não pode ser editado agora (é somente leitura ou há uma proposta em revisão), então nada pode ser importado.',
   'format.import.previewTitle': 'O que a importação vai fazer',
   'format.import.kind': 'Tipo',
   'format.import.created': 'Criados',
@@ -390,7 +391,8 @@ export const ptBR: Dictionary = {
   'format.import.error.container': 'O container de destino não está mais no projeto.',
   'format.import.error.apply': 'O resultado não pode ser aplicado. Em {path}: {message}',
   'format.import.error.more': '({count} problema(s) a mais não mostrado(s).)',
-  'format.import.error.locked': 'O projeto é somente leitura, então nada foi importado.',
+  'format.import.error.locked':
+    'O projeto não pode ser editado agora (é somente leitura ou há uma proposta em revisão), então nada foi importado.',
   'format.import.error.principalOnly': 'Abra a perspectiva Principal para importar.',
   'format.import.error.unexpected': 'A importação falhou por um motivo inesperado.',
 

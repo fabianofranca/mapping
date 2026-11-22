@@ -372,7 +372,8 @@ export const enUS = {
   'format.import.running': 'Running the plugin…',
   'format.import.loading': 'Reading the specializations…',
   'format.import.none': 'No applied specialization has a format that imports.',
-  'format.import.locked': 'The project is read-only, so nothing can be imported.',
+  'format.import.locked':
+    'The project cannot be edited right now (it is read-only or a proposal is in review), so nothing can be imported.',
   'format.import.previewTitle': 'What Import will do',
   'format.import.kind': 'Kind',
   'format.import.created': 'Created',
@@ -393,7 +394,8 @@ export const enUS = {
   'format.import.error.container': 'The target container is no longer in the project.',
   'format.import.error.apply': 'The result cannot be applied. At {path}: {message}',
   'format.import.error.more': '({count} more problem(s) not shown.)',
-  'format.import.error.locked': 'The project is read-only, so nothing was imported.',
+  'format.import.error.locked':
+    'The project cannot be edited right now (it is read-only or a proposal is in review), so nothing was imported.',
   'format.import.error.principalOnly': 'Open the Main perspective to import.',
   'format.import.error.unexpected': 'The import failed for an unexpected reason.',
 

@@ -457,6 +457,24 @@ describe('previewImport', () => {
     expect((run.mock.calls[0]?.[2][1] as FormatInput).target).toBeNull();
   });
 
+  it('with an "Only me" perspective open it says so before saving or running anything', async () => {
+    const { deps, run, flush } = importSetup({ operations: [container()] });
+    const result = await previewImport(
+      { ...deps, perspective: () => 'V' },
+      openapi,
+      file('x'),
+    );
+    expect(result).toEqual({ ok: false, error: { kind: 'principal-only' } });
+    expect(flush).not.toHaveBeenCalled();
+    expect(run).not.toHaveBeenCalled();
+    const main = await previewImport(
+      { ...deps, perspective: () => null },
+      openapi,
+      file('x'),
+    );
+    expect(main.ok).toBe(true);
+  });
+
   it('without a project open there is nothing to import into', async () => {
     const { deps, run } = importSetup({ operations: [] });
     const result = await previewImport(

@@ -229,6 +229,8 @@ export interface ImportInFormatDeps extends ExportInFormatDeps {
   readonly measure: () => TextMeasurer;
   /** The open page: the containers the result creates without naming a page land on it. */
   readonly page?: () => string | undefined;
+  /** The open "Only me" perspective (`null` = Main): what the import creates lands in Main, so it is refused. */
+  readonly perspective?: () => string | null;
 }
 
 /** How many items of each kind; an arrow is counted as an arrow, not as a marking. */
@@ -261,6 +263,8 @@ export type ImportInFormatError =
   | { readonly kind: 'read' }
   | { readonly kind: 'save' }
   | { readonly kind: 'project' }
+  /** A perspective other than Main is open: Import would be refused. */
+  | { readonly kind: 'principal-only' }
   /** Scope `container` with a container the project does not have. */
   | { readonly kind: 'container' }
   | { readonly kind: 'plugin'; readonly failure: FormatFailure }
@@ -436,6 +440,7 @@ export async function previewImport(
 ): Promise<ImportInFormatResult> {
   const problem = fileProblem(choice, file);
   if (problem !== null) return refuse(problem);
+  if ((deps.perspective?.() ?? null) !== null) return refuse({ kind: 'principal-only' });
   const text = await readText(file);
   if (text === null) return refuse({ kind: 'read' });
   const saved = await deps.flush();
