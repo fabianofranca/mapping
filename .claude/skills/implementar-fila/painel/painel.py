@@ -76,8 +76,8 @@ phases and lists, per group (`process` by `is_process_stage`, else `product`), t
 median, with the cause: the session kind that went furthest above the group's median in that kind. A group under `OUTLIER_MIN_BASE` stages
 flags nothing; a stage without a usable ficha (and one only in `meta.merged`) enters `without ficha`. A stage in `meta.partialCost` (below) is
 out of the base and counted in the header's `, partial: <k>` (decision 13 of #2293). `--encerradas-desde <ISO>` (decision 11 of #2635) keeps the
-medians over the whole base (with or without `--desde`) and lists only the stages above the ceiling whose row `ended` is from `<ISO>` on (a row
-with no `ended` is left out); the header adds `, listed: ended from <ISO>`, a value that is not ISO UTC gives code 2, and without the flag the
+medians over the base (every stage with a ficha, or those of `--desde`: the flag filters only the listing) and lists only the stages above the ceiling whose row `ended` is from `<ISO>` on (a row
+with no `ended` is left out; the ones above the ceiling that ended earlier are counted in `none above the ceiling that ended in the window (<k> older above the ceiling)`); the header adds `, listed: ended from <ISO>`, a value that is not ISO UTC gives code 2, and without the flag the
 output does not change.
 Tester ceiling (decision 9 of #1639): a `cost` of a `testador` or `reteste` session with `ctx` above TESTER_CONTEXT_LIMIT
 is written as always, exits with 0 and prints `acima do teto do testador (300 mil): <id> <ctx>`; `show` brings `testador acima do teto: <stage> <label> <ctx in thousands>k; …` (or `nenhum`), only for the stages not `concluída` or `recusada` and outside `meta.merged`.
@@ -1577,7 +1577,7 @@ def outlier_line(row, total, phases, cause, counts):
 
 def outlier_group(name, rows, meta, costs, ended_since=None):
     """The lines of one group: its header and the stages above the ceiling, or `base too small`. The median and the
-    ceiling come from every row of the group; with `ended_since`, only the rows whose `ended` is from there on are listed
+    ceiling come from every row of the group (the base `--desde` leaves); with `ended_since`, only the rows whose `ended` is from there on are listed
     (stage #2635, decision 11; ISO UTC strings compare in order, and a row with no `ended` is left out)."""
     if len(rows) < OUTLIER_MIN_BASE:
         return [f"{name}: base too small ({len(rows)} stages)"]
@@ -1588,13 +1588,17 @@ def outlier_group(name, rows, meta, costs, ended_since=None):
     ceiling = OUTLIER_FACTOR * median
     lines = [f"{name}: {len(rows)} stages, median {money(median)} per phase, ceiling {money(ceiling)}"]
     group_kinds = [costs[r["issue"]] for r in rows]
-    over = [r for r in rows if per_phase[r["issue"]] > ceiling
-            and (not ended_since or (r.get("ended") or "") >= ended_since)]
+    above = [r for r in rows if per_phase[r["issue"]] > ceiling]
+    over = [r for r in above if not ended_since or (r.get("ended") or "") >= ended_since]
     for r in sorted(over, key=lambda r: -per_phase[r["issue"]]):
         i, phases = r["issue"], len(plan_phase_codes(r["plan"]))
         lines.append(outlier_line(r, sum(costs[i].values()), phases, outlier_cause(costs[i], group_kinds),
                                   outlier_counts(meta, i)))
-    return lines + ([] if over else ["  none above the ceiling"])
+    if over:
+        return lines
+    older = len(above) - len(over)  # only with `ended_since`: the outliers that ended before the window
+    return lines + [f"  none above the ceiling that ended in the window ({older} older above the ceiling)" if older
+                    else "  none above the ceiling"]
 
 
 def cmd_outliers(a):

@@ -354,9 +354,14 @@ describe('painel.py outliers --encerradas-desde (stage #2635, decisions 11 and 1
     expect(out).toContain('  #20 US$ 20.00 (2 phases, US$ 10.00 per phase)');
   });
 
-  it('the median still comes from the whole base when --desde narrows it', () => {
+  it('the median comes from the base that --desde leaves, not from the window', () => {
     cheap(10, 4, { started: '2026-11-11T08:00:00Z', ended: '2026-11-10T09:00:00Z' });
-    cheap(30, 2, { started: '2026-11-01T08:00:00Z', ended: '2026-11-02T09:00:00Z' });
+    // Expensive stages that --desde leaves out: counted in the median they would hide #20.
+    for (let n = 30; n < 35; n++)
+      stage(n, [['fase', 40]], {
+        started: '2026-11-01T08:00:00Z',
+        ended: '2026-11-02T09:00:00Z',
+      });
     stage(20, [['fase', 20]], {
       started: '2026-11-11T09:00:00Z',
       ended: '2026-11-12T09:00:00Z',
@@ -384,7 +389,10 @@ describe('painel.py outliers --encerradas-desde (stage #2635, decisions 11 and 1
     expect(unfiltered).toContain('#20 US$ 20.00');
     const out = run('outliers', '--encerradas-desde', WINDOW, dir);
     expect(out).not.toContain('#20 ');
-    expect(out).toContain('none above the ceiling');
+    expect(out).toContain(
+      'none above the ceiling that ended in the window (1 older above the ceiling)',
+    );
+    expect(run('outliers', dir)).not.toContain('none above the ceiling');
   });
 
   it('a stage that ended exactly at the start of the window is listed', () => {
