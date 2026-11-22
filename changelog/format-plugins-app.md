@@ -1,4 +1,4 @@
-# Format plugins in the app — [Não lançado] (épico `epic/format-plugins-app`, PR #0 (placeholder: the epic PR is not open yet; the closing writes the real number), MCP 0.58.0 provisional, schema v23 unchanged, specialization `formatVersion` 22 expected)
+# Format plugins in the app — [Não lançado] (épico `epic/format-plugins-app`, PR #2607, MCP 0.58.0 provisional, schema v23 unchanged, specialization `formatVersion` 22 expected)
 
 ## Alterado
 
