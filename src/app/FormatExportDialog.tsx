@@ -2,22 +2,18 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { Dialog, type FocusReturn } from '../ui/Dialog';
 import { useEditor } from '../ui/EditorContext';
-import { imageLabel } from '../ui/labels';
-import { Button, Select } from '../ui/controls';
+import { Button } from '../ui/controls';
 import { exportInFormat, formatChoices, type FormatChoice } from '../store/formatActions';
-import type { Project, ProjectContainer } from '../model';
-import { resolveSelection, type Selection } from '../store/ui';
+import type { ProjectContainer } from '../model';
 import { reportError } from '../utils/report';
 import { exportErrorText } from './formatErrors';
+import {
+  ContainerSelect,
+  FormatSelect,
+  hasContainer,
+  selectedContainer,
+} from './formatDialogParts';
 import { runFormat } from './formatRunner';
-
-/** The container the selection is in (the selected container, or the one of the selected marking). */
-function selectedContainer(project: Project | null, selection: Selection): string | null {
-  const selected = resolveSelection(project, selection);
-  if (selected?.kind === 'image') return selected.image.id;
-  if (selected?.kind === 'marking') return selected.image?.id ?? null;
-  return null;
-}
 
 /** The chosen container if the project still has it; else the selection's; else the first. */
 function containerIdOf(
@@ -25,71 +21,8 @@ function containerIdOf(
   chosen: string | null,
   fallback: string | null,
 ): string | null {
-  const has = (id: string | null) => id !== null && containers.some((c) => c.id === id);
-  if (has(chosen)) return chosen;
-  return has(fallback) ? fallback : (containers[0]?.id ?? null);
-}
-
-function FormatSelect({
-  choices,
-  value,
-  disabled,
-  onChange,
-}: {
-  readonly choices: readonly FormatChoice[];
-  readonly value: number;
-  readonly disabled: boolean;
-  readonly onChange: (index: number) => void;
-}) {
-  if (choices.length === 0) return null;
-  return (
-    <Select
-      label={t('format.export.format')}
-      value={String(value)}
-      disabled={disabled}
-      onChange={(e) => onChange(Number(e.currentTarget.value))}
-    >
-      {choices.map((c, i) => (
-        <option key={c.ref} value={String(i)}>
-          {t('format.export.option', {
-            spec: c.specName,
-            format: c.name,
-            extension: c.extension,
-          })}
-        </option>
-      ))}
-    </Select>
-  );
-}
-
-function ContainerSelect({
-  show,
-  containers,
-  value,
-  disabled,
-  onChange,
-}: {
-  readonly show: boolean;
-  readonly containers: readonly ProjectContainer[];
-  readonly value: string | null;
-  readonly disabled: boolean;
-  readonly onChange: (id: string) => void;
-}) {
-  if (!show) return null;
-  return (
-    <Select
-      label={t('format.export.container')}
-      value={value ?? ''}
-      disabled={disabled}
-      onChange={(e) => onChange(e.currentTarget.value)}
-    >
-      {containers.map((c) => (
-        <option key={c.id} value={c.id}>
-          {imageLabel(c)}
-        </option>
-      ))}
-    </Select>
-  );
+  if (hasContainer(containers, chosen)) return chosen;
+  return hasContainer(containers, fallback) ? fallback : (containers[0]?.id ?? null);
 }
 
 /** What the dialog says besides the pickers: reading, none, running and the error line. */
@@ -242,6 +175,7 @@ export function FormatExportDialog({
         choices={pick.choices ?? []}
         value={pick.index}
         disabled={running}
+        label={t('format.export.format')}
         onChange={(i) => pick.setFormatRef(pick.choices?.[i]?.ref ?? null)}
       />
       <ContainerSelect
@@ -249,6 +183,7 @@ export function FormatExportDialog({
         containers={pick.containers}
         value={pick.containerId}
         disabled={running}
+        label={t('format.export.container')}
         onChange={pick.setContainer}
       />
       <Messages choices={pick.choices} running={running} error={error} />

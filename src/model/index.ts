@@ -133,3 +133,4 @@ export * from './batchMarkings';
 export * from './batchAnnotations';
 export * from './batchRefs';
 export * from './formatApply';
+export * from './formatValues';

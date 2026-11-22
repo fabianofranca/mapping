@@ -47,6 +47,8 @@ export type EditorDialog =
     }
   /** Export in a format (stage #2035, AF3). */
   | { readonly kind: 'exportFormat' }
+  /** Import from a format (stage #2035, AF4). */
+  | { readonly kind: 'importFormat' }
   | { readonly kind: 'confirmClose' }
   /** Leave the review with accepted changes not yet applied (stage 4). */
   | { readonly kind: 'exitReview' }

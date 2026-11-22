@@ -1,13 +1,24 @@
 import {
+  FORMAT_PLUGIN_LIMITS,
+  applyFormatResult,
   buildFormatInput,
+  checkFormatResult,
+  projectIndex,
+  type AppliedItem,
+  type ComponentCatalog,
+  type FormatApplyError,
   type FormatFailure,
   type FormatInput,
   type FormatFunction,
+  type FormatResult,
+  type FormatResultProblemCode,
   type FormatRunner,
   type FormatSlotDrawings,
   type Project,
+  type TextMeasurer,
 } from '../model';
 import type { ProjectCatalog } from './projectCatalogs';
+import type { SelectionItem } from './ui';
 import type { FlushResult } from '../storage/autosave';
 import { reportError } from '../utils/report';
 
@@ -144,11 +155,14 @@ function projectionOf(
   project: Project,
   choice: FormatChoice,
   target: string | null,
+  targetOptional = false,
 ): FormatInput | null {
   try {
     const drawings = deps.drawings?.(project);
     return buildFormatInput(project, choice.ref, {
       projectName: project.project.name,
+      // An import may have no container: `parse` then creates the one it reads (decision 12).
+      ...(targetOptional ? { targetOptional } : {}),
       ...(target === null ? {} : { target }),
       ...(drawings === undefined ? {} : { drawings }),
     });
@@ -191,4 +205,261 @@ export async function exportInFormat(
     type: 'text/plain;charset=utf-8',
   });
   return { ok: true, file };
+}
+
+// ---------------------------------------------------------------------------------------- import
+
+// Import from a format (stage #2035, AF4, decisions 4, 7 and 12). The preview checks the file before it
+// is read, saves the pending changes, runs `parse` on the projection of the current project, checks the
+// result against the contract and applies it with the model's applier on a copy: the counts, the
+// warnings or the error with its path. It changes nothing; the `importFormat` store action
+// (`project.ts`) applies the same checked result to the project, in one undo entry, without running
+// the plugin again.
+
+/** The file a person picked: its name, its size and its text (read as UTF-8, only when it is accepted). */
+export interface ImportFile {
+  readonly name: string;
+  readonly size: number;
+  text(): Promise<string>;
+}
+
+export interface ImportInFormatDeps extends ExportInFormatDeps {
+  /** The component catalog and the text measurer the applier draws the new markings with. */
+  readonly catalog: () => ComponentCatalog;
+  readonly measure: () => TextMeasurer;
+  /** The open page: the containers the result creates without naming a page land on it. */
+  readonly page?: () => string | undefined;
+  /** The open "Only me" perspective (`null` = Main): what the import creates lands in Main, so it is refused. */
+  readonly perspective?: () => string | null;
+}
+
+/** How many items of each kind; an arrow is counted as an arrow, not as a marking. */
+export interface ImportCounts {
+  readonly containers: number;
+  readonly markings: number;
+  readonly annotations: number;
+  readonly arrows: number;
+}
+
+/** What Import would do: the counts by kind, the plugin's warnings and the checked result. */
+export interface ImportPreview {
+  readonly choice: FormatChoice;
+  /** The projection the plugin read (the result's references are its). */
+  readonly input: FormatInput;
+  /** The result as `checkFormatResult` accepted it: what Import applies, with no new run. */
+  readonly result: FormatResult;
+  readonly created: ImportCounts;
+  readonly updated: ImportCounts;
+  readonly warnings: readonly string[];
+  /** What the rules noted while applying (a component missing from the catalog, an ignored `near`, …). */
+  readonly notes: readonly string[];
+}
+
+export type ImportInFormatError =
+  /** The file does not have the format's extension (refused before it is read). */
+  | { readonly kind: 'extension'; readonly extension: string }
+  /** The file is above the limit (refused before it is read). */
+  | { readonly kind: 'size' }
+  | { readonly kind: 'read' }
+  | { readonly kind: 'save' }
+  | { readonly kind: 'project' }
+  /** A perspective other than Main is open: Import would be refused. */
+  | { readonly kind: 'principal-only' }
+  /** Scope `container` with a container the project does not have. */
+  | { readonly kind: 'container' }
+  | { readonly kind: 'plugin'; readonly failure: FormatFailure }
+  /** The result breaks the contract: the first problem, and how many more there are. */
+  | {
+      readonly kind: 'result';
+      readonly code: FormatResultProblemCode;
+      readonly path: string;
+      readonly message: string;
+      readonly more: number;
+    }
+  /** The model's rules refuse an operation: its code, its message and where it is. */
+  | {
+      readonly kind: 'apply';
+      readonly code: string;
+      readonly path: string;
+      readonly message: string;
+    };
+
+export type ImportInFormatResult =
+  | { readonly ok: true; readonly preview: ImportPreview }
+  | { readonly ok: false; readonly error: ImportInFormatError };
+
+const refuse = (error: ImportInFormatError): ImportInFormatResult => ({
+  ok: false,
+  error,
+});
+
+/** The extension or the size of the file, before anything reads it. */
+function fileProblem(choice: FormatChoice, file: ImportFile): ImportInFormatError | null {
+  const extension = choice.extension;
+  if (!file.name.toLowerCase().endsWith(`.${extension.toLowerCase()}`)) {
+    return { kind: 'extension', extension };
+  }
+  return file.size > FORMAT_PLUGIN_LIMITS.parseTextBytes ? { kind: 'size' } : null;
+}
+
+/** The container the plugin reads: scope `container` takes the chosen one (or none); scope `project` takes none. */
+function importTarget(
+  project: Project,
+  choice: FormatChoice,
+  container: string | null | undefined,
+): { readonly target: string | null } | null {
+  if (choice.scope !== 'container' || container === null || container === undefined) {
+    return { target: null };
+  }
+  return project.containers.some((c) => c.id === container)
+    ? { target: container }
+    : null;
+}
+
+/** The counts of `items` by kind, in `p`: an arrow is a marking of `arrows`. */
+export function countItems(p: Project, items: readonly AppliedItem[]): ImportCounts {
+  const index = projectIndex(p);
+  const counts = { containers: 0, markings: 0, annotations: 0, arrows: 0 };
+  for (const item of items) {
+    if (item.kind === 'i') counts.containers++;
+    else if (item.kind === 'a') counts.annotations++;
+    else if (index.arrows.has(item.id)) counts.arrows++;
+    else counts.markings++;
+  }
+  return counts;
+}
+
+/**
+ * Where an applier error is (the value that has the wrong type, or else the operation) and what it
+ * says without repeating the path.
+ */
+export function applyErrorAt(error: FormatApplyError): {
+  readonly path: string;
+  readonly message: string;
+} {
+  const at = error.details.path;
+  const path = typeof at === 'string' ? at : `operations[${error.index}]`;
+  const prefix = `${path}: `;
+  const message = error.message.startsWith(prefix)
+    ? error.message.slice(prefix.length)
+    : error.message;
+  return { path, message };
+}
+
+/** The result of `parse` as the contract accepts it, or the error to show. */
+function checkedResult(
+  value: unknown,
+  input: FormatInput,
+): { readonly result: FormatResult } | ImportInFormatError {
+  const checked = checkFormatResult(value, input);
+  if (checked.ok) return { result: checked.result };
+  const [first, ...rest] = checked.problems;
+  return {
+    kind: 'result',
+    code: first!.code,
+    path: first!.path,
+    message: first!.message,
+    more: rest.length,
+  };
+}
+
+/** What the plugin's `parse` returned, from the file's text: the checked result or the error. */
+async function parsedResult(
+  deps: ImportInFormatDeps,
+  choice: FormatChoice,
+  text: string,
+  input: FormatInput,
+): Promise<{ readonly result: FormatResult } | ImportInFormatError> {
+  const outcome = await deps.run(choice.plugin, 'parse', [text, input]);
+  if (!outcome.ok) return { kind: 'plugin', failure: outcome.failure };
+  return checkedResult(outcome.value, input);
+}
+
+/** Reads the file's text; `null` when it cannot be read. */
+async function readText(file: ImportFile): Promise<string | null> {
+  try {
+    return await file.text();
+  } catch (error) {
+    reportError('formatActions.read', error);
+    return null;
+  }
+}
+
+/** Runs `parse` and the applier on a copy: the preview, or the error. */
+async function previewOf(
+  deps: ImportInFormatDeps,
+  choice: FormatChoice,
+  text: string,
+  container: string | null | undefined,
+): Promise<ImportInFormatResult> {
+  const project = deps.project();
+  if (project === null) return refuse({ kind: 'project' });
+  const found = importTarget(project, choice, container);
+  if (found === null) return refuse({ kind: 'container' });
+  const input = projectionOf(deps, project, choice, found.target, true);
+  if (input === null) return refuse({ kind: 'project' });
+  const parsed = await parsedResult(deps, choice, text, input);
+  if ('kind' in parsed) return refuse(parsed);
+  const outcome = applyFormatResult(project, parsed.result, {
+    input,
+    catalog: deps.catalog(),
+    measure: deps.measure(),
+    page: deps.page?.(),
+  });
+  if (!outcome.ok) {
+    return refuse({
+      kind: 'apply',
+      code: outcome.error.code,
+      ...applyErrorAt(outcome.error),
+    });
+  }
+  return {
+    ok: true,
+    preview: {
+      choice,
+      input,
+      result: parsed.result,
+      created: countItems(outcome.project, outcome.created),
+      updated: countItems(outcome.project, outcome.updated),
+      warnings: outcome.warnings,
+      notes: outcome.notes,
+    },
+  };
+}
+
+/**
+ * The preview of importing `file` in `choice`'s format (and `container`, the target of scope
+ * `container`; none lets the plugin create it). The file is checked, then read; the pending changes
+ * are saved before the plugin runs (and a save that fails stops it); the project does not change.
+ */
+export async function previewImport(
+  deps: ImportInFormatDeps,
+  choice: FormatChoice,
+  file: ImportFile,
+  container?: string | null,
+): Promise<ImportInFormatResult> {
+  const problem = fileProblem(choice, file);
+  if (problem !== null) return refuse(problem);
+  if ((deps.perspective?.() ?? null) !== null) return refuse({ kind: 'principal-only' });
+  const text = await readText(file);
+  if (text === null) return refuse({ kind: 'read' });
+  const saved = await deps.flush();
+  if (!saved.ok) return refuse({ kind: 'save' });
+  return previewOf(deps, choice, text, container);
+}
+
+/**
+ * What Import selects: the markings and arrows it created; with none, the containers it created;
+ * with only changes, nothing (the selection stays as it is).
+ */
+export function importSelection(
+  p: Project,
+  created: readonly AppliedItem[],
+): SelectionItem[] {
+  const index = projectIndex(p);
+  const items: SelectionItem[] = created
+    .filter((c) => c.kind === 'm')
+    .map((c) => ({ kind: index.arrows.has(c.id) ? 'arrow' : 'marking', id: c.id }));
+  if (items.length > 0) return items;
+  return created.filter((c) => c.kind === 'i').map((c) => ({ kind: 'image', id: c.id }));
 }
