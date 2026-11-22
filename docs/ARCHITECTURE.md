@@ -217,7 +217,7 @@ marking receives it divided by the scale and clamped to the container, and an it
 a descendant) does not receive a separate displacement. The previews use `settle: false`; on release, the final action repeats the operation with the
 settle and there is **one** undo entry. Dragging from the Palette uses `componentDropTarget` (`src/ui/componentTarget.ts`, pure: slot,
 container or canvas, and what to light up) and the `useComponentDrop` hook, with the MIME `application/x-mapping-component`; the **Add**
-button uses the same target from the selection.
+button uses the same target from the selection: with a plain marking (no slot) selected, **Add** targets its container, never the marking, so the new component is born with `parentId` null; it becomes a child of a plain marking only when geometry places it entirely inside (`settleHierarchy`), for example by dragging it in.
 
 The keyboard arrows move the selection through the pure operation `nudgeItems` (`src/model/multiSelection.ts`): 1 px, or 10 px with Shift, in the
 own space of each item (container marking in image pixels, at any scale; canvas marking, floating and container
