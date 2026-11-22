@@ -2584,7 +2584,9 @@ def norm_toca(raw):
 
 def only_ignored(raw):
     """Is the raw `toca=` non-empty and not `?`, but normalizes to `?` because every citation is ignored (decision 8 of #2562)?"""
-    return raw is not None and raw.strip() not in ("", "?") and norm_toca(raw) == ["?"]
+    if raw is None or raw.strip() in ("", "?") or norm_toca(raw) != ["?"]:
+        return False
+    return not any(norm_path(t) == "?" for t in split_toca(raw)[0])  # a literal `?` in the list is a `?`, not an ignored citation
 
 
 def toca_list(plan):

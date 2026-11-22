@@ -541,6 +541,11 @@ describe('painel.py — nested notes and only ignored citations in toca (GW3, #2
     ]);
   });
 
+  it('a literal ? next to an ignored citation is not reported as only ignored', () => {
+    const r = runRaw('toca', '?, changelog/x.md');
+    expect(r.stdout).not.toContain('only ignored citations');
+  });
+
   it('an append-only citation is not ignored: a toca with only append-only citations stays complete (#2314)', () => {
     expect(reason('docs/MCP.md#tools')).toBe('#2 começa');
     const r = runRaw('toca', 'docs/MCP.md#tools');
