@@ -2,6 +2,7 @@ import type { Spec, SpecCode, SpecCodeCase } from './spec';
 import {
   callName,
   paramsOutsideSignature,
+  slotsOutsideSignature,
   parseSignatureText,
   type ExpandModels,
   type Signature,
@@ -143,14 +144,7 @@ class Checker {
     at: string,
     slots: Readonly<Record<string, string>> | undefined,
   ): void {
-    const named = new Set<string>();
-    for (const param of signature.params) {
-      if (param.role !== 'slot') continue;
-      named.add(param.name);
-      named.add(callName(param));
-    }
-    for (const [id, name] of Object.entries(slots ?? {})) {
-      if (named.has(name)) continue;
+    for (const { id, name } of slotsOutsideSignature(signature, slots)) {
       this.add(
         'warning',
         this.reader.specPath,
@@ -212,8 +206,8 @@ class Checker {
 
 /**
  * The `variants` case: with its own sheet, it holds for the case's symbol and file and for the
- * case's own `params`: the base's it lacks are not inherited (`resolveCode`, `inheritedOutsideCase`) and
- * do not warn; without one, the base's holds,
+ * case's own `params` and `slots`: the base's it lacks are not inherited (`resolveCode`, `inheritedOutsideCase`,
+ * `slotsOutsideSignature`) and do not warn; without one, the base's holds,
  * and only the case's `params` are checked (the base's already were, in the `code`).
  */
 function checkCase(
@@ -252,7 +246,8 @@ function checkCase(
     kase.params,
     models,
   );
-  checker.slots(signature, at, { ...entry.slots, ...kase.slots });
+  // Only the case's own `slots`: the base's the sheet lacks are not inherited (`resolveCode`).
+  checker.slots(signature, at, kase.slots);
 }
 
 /** Checks the sheets the specialization cites (in `code`, `variants` cases and `sources`). */

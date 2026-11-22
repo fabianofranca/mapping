@@ -183,3 +183,113 @@ describe('get_code_hints with named slots', () => {
     expect(doc.tree.children).toBeUndefined();
   });
 });
+
+// A `variants` case with its own sheet (stage #2361, SL1): the case's `slots` are added to the base's, and the base
+// slot its sheet lacks is not inherited.
+const sheetOf = (symbol: string, path: string, slots: string[]): string =>
+  JSON.stringify({
+    format: 'mapping-signature',
+    formatVersion: 1,
+    source: {
+      kind: 'code',
+      platform: 'compose',
+      language: 'kotlin',
+      symbol,
+      path,
+      extractor: 'agent',
+    },
+    params: [
+      { name: 'title', role: 'value', type: 'String', value: { kind: 'text' } },
+      ...slots.map((name) => ({ name, role: 'slot', type: '@Composable () -> Unit' })),
+    ],
+  });
+
+const VARIANTS: SlotsOptions = {
+  tweak: (spec: Doc) => {
+    spec.platforms = [{ id: 'compose', name: 'Compose', language: 'kotlin' }];
+    const types: Doc[] = spec.layers[0].annotationTypes;
+    const bar = types.find((t) => t.id === 'bar')!;
+    bar.fields.push({
+      key: 'style',
+      type: 'enum',
+      options: ['small', 'center'],
+      default: 'small',
+    });
+    bar.code = {
+      compose: {
+        symbol: 'demo.Bar',
+        path: 'demo/Bar.kt',
+        signature: 'signatures/bar.compose.json',
+        params: { title: 'title' },
+        slots: { actions: 'trailingContent' },
+        variants: {
+          field: 'style',
+          cases: {
+            center: {
+              symbol: 'demo.CenterBar',
+              path: 'demo/CenterBar.kt',
+              signature: 'signatures/bar.center.compose.json',
+              slots: { navigationIcon: 'leading' },
+            },
+          },
+        },
+      },
+    };
+    types.find((t) => t.id === 'pin')!.code = {
+      compose: { symbol: 'demo.Pin', params: { label: 'label' } },
+    };
+  },
+  files: {
+    'signatures/bar.compose.json': sheetOf('demo.Bar', 'demo/Bar.kt', [
+      'navigationIcon',
+      'trailingContent',
+    ]),
+    'signatures/bar.center.compose.json': sheetOf('demo.CenterBar', 'demo/CenterBar.kt', [
+      'leading',
+      'actions',
+    ]),
+  },
+};
+
+describe('get_code_hints with the slots of a variants case', () => {
+  beforeAll(async () => {
+    await ws.client.close();
+    rmSync(ws.base, { recursive: true, force: true });
+    ws = await slotsWorkspace((add) => {
+      for (const [id, style, y] of [
+        ['center', 'center', 100],
+        ['small', 'small', 300],
+      ] as const) {
+        add(id, 'bar', {
+          name: id,
+          rect: { x: 100, y, width: 360, height: 56 },
+          values: { style, title: 'T' },
+        });
+        add(`${id}1`, 'pin', {
+          name: `${id}1`,
+          parentId: `mk-${id}`,
+          slot: 'navigationIcon',
+        });
+        add(`${id}2`, 'pin', { name: `${id}2`, parentId: `mk-${id}`, slot: 'actions' });
+      }
+    }, VARIANTS);
+  });
+
+  it('a center bar names its slot arguments by the case sheet; the base slot it lacks is not inherited', async () => {
+    const doc = await hints('center');
+    expect(doc.tree.annotations[0].symbol ?? doc.tree.annotations[0].code?.symbol).toBe(
+      'demo.CenterBar',
+    );
+    expect(slotArgs(doc).map((a) => [a.name, a.slot])).toEqual([
+      ['leading', 'navigationIcon'],
+      ['actions', 'actions'],
+    ]);
+  });
+
+  it('a small bar keeps the base slots', async () => {
+    expect(slotArgs(await hints('small')).map((a) => [a.name, a.slot])).toEqual([
+      ['navigationIcon', 'navigationIcon'],
+      ['trailingContent', 'actions'],
+    ]);
+  });
+});
