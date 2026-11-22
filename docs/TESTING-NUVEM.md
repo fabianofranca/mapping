@@ -7,7 +7,7 @@ The session is created by the **orchestrator** of the automated flow (`docs/PROC
 - **Directed by a list of scripts or steps:** "Read `docs/TESTING-NUVEM.md` and run in `modo dirigido`: R0 and R2. Branch `epic/x`, commit `abc1234`. `Relato na sub-issue #123`. `Coordenador: session_…`."
 - **Directed by the findings of a previous report:** "… in `modo dirigido`: findings 2 to 5 of the report at <comment link>. `<tail>`" (finding number or code, such as "A1 to A3")
 - **Directed by the phases of a stage:** "… in `modo dirigido`: phases X and Y of stage #301. `<tail>`"
-- **Full:** "Read `docs/TESTING-NUVEM.md` and run the `modo completo`. Branch `epic/x`, commit `abc1234`. `Relato na sub-issue #123`. `Coordenador: session_…`." (R0 to R42; order in "What to run")
+- **Full:** "Read `docs/TESTING-NUVEM.md` and run the `modo completo`. Branch `epic/x`, commit `abc1234`. `Relato na sub-issue #123`. `Coordenador: session_…`." (R0 to R43; order in "What to run")
 - **Full, in a block:** "Read `docs/TESTING-NUVEM.md` and run the `modo completo, bloco k de n`. `<tail>`" (only the scripts of block k in the table of "Full round in blocks")
 - **Directed, in a group:** "… in `modo dirigido`, `grupo k de n`: R12. `<tail>`" (only the scripts of group k from `round-guide.mjs --grupos`; see "Directed round in groups")
 - **Only a link to a Mapping PR** ("Test <link>"): treat it as directed by the scripts the PR touches; read the PR body and files, build the list and follow the usual mode.
@@ -93,7 +93,7 @@ Rules of this session:
 
 ## What to run
 
-**Full round (default).** All the scripts, **R0 to R42** (without RP, RF, RA, RB and RT), in the order of the guide's "Start here" table and with the dependencies at the beginning of section 8: R0, R1, R2, section 6 (test repository and MCP), R3, R4, R6, R7, R5, R8 and R9 to R42. Section 9 of the guide does not come in. With `bloco k de n` in the message, you run only block k (see "Full round in blocks").
+**Full round (default).** All the scripts, **R0 to R43** (without RP, RF, RA, RB and RT), in the order of the guide's "Start here" table and with the dependencies at the beginning of section 8: R0, R1, R2, section 6 (test repository and MCP), R3, R4, R6, R7, R5, R8 and R9 to R43. Section 9 of the guide does not come in. With `bloco k de n` in the message, you run only block k (see "Full round in blocks").
 
 **R21 and the release tag; a step that requires the owner.** Before R21, or before a step that only a person could do: `node scripts/testing/cloud.mjs secao consulta.regras`. R21 tests the real release and uses the tag in the message (`sem R21` takes it out of the round).
 
@@ -121,16 +121,16 @@ In the three cases, **do not ask for confirmation**: build the list and put it a
 
 ## Full round in blocks
 
-The full round (R0 to R42) runs in **simultaneous sessions, one per block of the table**. Each sets up the environment, runs the whole R0 and its block's scripts and delivers its own report; a coordinator (the stage's orchestrator or the owner's standalone chat, see [`docs/FLOW.md`](FLOW.md)) creates them and summarizes.
+The full round (R0 to R43) runs in **simultaneous sessions, one per block of the table**. Each sets up the environment, runs the whole R0 and its block's scripts and delivers its own report; a coordinator (the stage's orchestrator or the owner's standalone chat, see [`docs/FLOW.md`](FLOW.md)) creates them and summarizes.
 
 | Block | Scripts, in the order of the guide                                                      | Steps |
 | ----- | --------------------------------------------------------------------------------------- | ----- |
 | 1     | R0, R1, section 6, R3, R6.3 to R6.7, R6.12 to R6.14, R7, R5, R8, R14, R15 and R26       | 163   |
-| 2     | R0, section 6 and R25                                                                   | 141   |
-| 3     | R0, R2, section 6, R12, R19 and R28                                                     | 159   |
+| 2     | R0, section 6, R2 and R25                                                               | 148   |
+| 3     | R0, section 6, R12, R19, R28 and R40                                                    | 158   |
 | 4     | R0, section 6, R4, R6.8a to R6.11, R9, R10, R13, R16, R18, R22, R24 and the visual pass | 172   |
 | 5     | R0, section 6, R17, R20, R21, R23 and R29                                               | 146   |
-| 6     | R0, section 6, R11, R27, R30, R32, R37, R38, R39, R40, R41 and R42                      | 151   |
+| 6     | R0, section 6, R11, R27, R30, R32, R37, R38, R39, R41, R42 and R43                      | 155   |
 
 There are 6 blocks: 5 by decision of the owner (2026-11-09) and the 6th by #2024 (2026-11-17). The visual pass stays in block 4 (decision 6 of stage #841). The guide limit (`MAX_BLOCK_GUIDE_CHARS`), sizes, dependencies and baselines: `cloud.mjs secao consulta.historico`.
 
@@ -143,7 +143,7 @@ There are 6 blocks: 5 by decision of the owner (2026-11-09) and the 6th by #2024
 
 A long block becomes "Full round — block k of n · Part i of n" (comments above 65 thousand characters). The `modo completo` without a block remains valid: one session runs everything.
 
-**Context up to 300 thousand.** In every tester session, the main session's final context (`get_session`) stays below **300 thousand**; it is the session that guarantees it, with the subagents per batch, measuring with `node scripts/ci/contextUsage.mjs` before handing over each batch and before the notice, noting in "What got in the way" `Context per batch: <batch> <thousand>k; …; before the notice <thousand>k`. Whoever coordinates records any excess (the queue's `log` and the `roadmap` "Teto de contexto do testador"), without holding up the stage, redoing the round or calling the owner.
+**Context up to 300 thousand.** In every tester session, the main session's final context (`get_session`) stays below **300 thousand**; it is the session that guarantees it, with the subagents per batch, measuring with `node scripts/ci/contextUsage.mjs` before handing over each batch and before the notice, noting in "What got in the way" `Context per batch: <batch> <thousand>k; …; before the notice <thousand>k`. From **250 thousand** the context hook (`scripts/ci/contextGuard.mjs`) injects a notice: every remaining batch runs in a subagent, the main thread reads only its summary line, not the guide, the captures, the `runs` or the reports, and a subagent assembles the report from the files of `apoio/`; no step marked "not executed" for context. Whoever coordinates records any excess (the queue's `log` and the `roadmap` "Teto de contexto do testador"), without holding up the stage, redoing the round or calling the owner.
 
 ## Directed round in groups
 

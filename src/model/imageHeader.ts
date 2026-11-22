@@ -8,28 +8,28 @@ export interface Size {
   readonly height: number;
 }
 
+/** `expected` bytes at `offset`; the caller has already checked the buffer is long enough. */
+function hasBytes(b: Uint8Array, offset: number, expected: readonly number[]): boolean {
+  return expected.every((byte, k) => b[offset + k] === byte);
+}
+
+const isPng = (b: Uint8Array): boolean =>
+  b.length >= 8 && hasBytes(b, 0, [0x89, 0x50, 0x4e, 0x47]);
+const isJpeg = (b: Uint8Array): boolean =>
+  b.length >= 3 && hasBytes(b, 0, [0xff, 0xd8, 0xff]);
+const isWebp = (b: Uint8Array): boolean =>
+  b.length >= 12 && ascii(b, 0, 4) === 'RIFF' && ascii(b, 8, 4) === 'WEBP';
+
+/** Signature checks in order; the first match wins. */
+const SIGNATURES: readonly (readonly [ImageFormat, (b: Uint8Array) => boolean])[] = [
+  ['png', isPng],
+  ['jpeg', isJpeg],
+  ['webp', isWebp],
+];
+
 /** Format by the first bytes; `null` if it is not PNG, JPEG or WebP. */
 export function detectFormat(bytes: Uint8Array): ImageFormat | null {
-  if (
-    bytes.length >= 8 &&
-    bytes[0] === 0x89 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x4e &&
-    bytes[3] === 0x47
-  ) {
-    return 'png';
-  }
-  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
-    return 'jpeg';
-  }
-  if (
-    bytes.length >= 12 &&
-    ascii(bytes, 0, 4) === 'RIFF' &&
-    ascii(bytes, 8, 4) === 'WEBP'
-  ) {
-    return 'webp';
-  }
-  return null;
+  return SIGNATURES.find(([, matches]) => matches(bytes))?.[0] ?? null;
 }
 
 function ascii(bytes: Uint8Array, start: number, length: number): string {
@@ -45,14 +45,16 @@ const u32be = (b: Uint8Array, i: number) =>
   ((b[i]! << 24) | (b[i + 1]! << 16) | (b[i + 2]! << 8) | b[i + 3]!) >>> 0;
 const u24le = (b: Uint8Array, i: number) => b[i]! | (b[i + 1]! << 8) | (b[i + 2]! << 16);
 
+/** One reader per format; each returns `null` when the header is unreadable. */
+const READERS: Record<ImageFormat, (b: Uint8Array) => Size | null> = {
+  png: pngSize,
+  jpeg: jpegSize,
+  webp: webpSize,
+};
+
 /** Dimensions (without applying the EXIF orientation) read from the header; `null` if unreadable. */
 export function readSize(bytes: Uint8Array, format: ImageFormat): Size | null {
-  const size =
-    format === 'png'
-      ? pngSize(bytes)
-      : format === 'jpeg'
-        ? jpegSize(bytes)
-        : webpSize(bytes);
+  const size = READERS[format](bytes);
   return size && size.width > 0 && size.height > 0 ? size : null;
 }
 
@@ -61,6 +63,18 @@ function pngSize(b: Uint8Array): Size | null {
   if (b.length < 24 || ascii(b, 12, 4) !== 'IHDR') return null;
   return { width: u32be(b, 16), height: u32be(b, 20) };
 }
+
+/** Markers without a size: RSTn, SOI, EOI, TEM. */
+const isStandaloneMarker = (marker: number): boolean =>
+  marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9);
+
+/** SOF0–SOF15, except DHT (C4), JPG (C8) and DAC (CC). */
+const isSofMarker = (marker: number): boolean =>
+  marker >= 0xc0 &&
+  marker <= 0xcf &&
+  marker !== 0xc4 &&
+  marker !== 0xc8 &&
+  marker !== 0xcc;
 
 function jpegSize(b: Uint8Array): Size | null {
   let i = 2;
@@ -74,13 +88,11 @@ function jpegSize(b: Uint8Array): Size | null {
       i++;
       continue;
     }
-    // Markers without a size: RSTn, SOI, EOI, TEM.
-    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) {
+    if (isStandaloneMarker(marker)) {
       i += 2;
       continue;
     }
-    // SOF0–SOF15, except DHT (C4), JPG (C8) and DAC (CC).
-    if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+    if (isSofMarker(marker)) {
       return { height: u16be(b, i + 5), width: u16be(b, i + 7) };
     }
     i += 2 + u16be(b, i + 2);

@@ -225,7 +225,7 @@ describe('Esc closes Details, Comments and Catalog', () => {
     harness.ui.selection.value = { kind: 'marking', id: 'M1' };
   });
 
-  it.each(['details', 'comments', 'catalog'] as const)(
+  it.each(['details', 'comments', 'catalog', 'conversation'] as const)(
     '%s: Esc with focus on a button closes, focuses the strip button and the selection stays',
     async (id) => {
       const user = userEvent.setup();

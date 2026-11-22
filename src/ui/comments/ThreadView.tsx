@@ -2,7 +2,6 @@ import { useEffect, useState } from 'preact/hooks';
 import { t } from '../../i18n';
 import { awaiting, lastMessage, type Thread } from '../../model';
 import { markThreadRead } from '../../store/threadReads';
-import { selectThread } from '../../store/threadUi';
 import { ActionMenu } from '../ActionMenu';
 import { useCiteMenuItems } from '../CiteMenuItems';
 import { Button } from '../controls';
@@ -19,10 +18,12 @@ interface ThreadViewProps {
   readonly thread: Thread;
   /** "in Button › variant": where the thread lives, when it is not the item itself. */
   readonly where?: string | null;
+  /** Shows the state badge in the thread's own head (the Conversation window has it in its header). */
+  readonly showState?: boolean;
   readonly onOpenSettings?: () => void;
 }
 
-function StateBadge({ thread }: { readonly thread: Thread }) {
+export function StateBadge({ thread }: { readonly thread: Thread }) {
   if (thread.resolved !== null) {
     return (
       <span class="thread-state thread-state-resolved">
@@ -51,7 +52,8 @@ function useMarkRead(thread: Thread): void {
 }
 
 function ThreadActions({ thread }: { readonly thread: Thread }) {
-  const { session, ui, review } = useEditor();
+  const { session } = useEditor();
+  const { canStart } = useThreadAccess();
   const del = useDeleteThread();
   const citeItems = useCiteMenuItems();
   const [error, setError] = useState<string | null>(null);
@@ -62,9 +64,6 @@ function ThreadActions({ thread }: { readonly thread: Thread }) {
       ? actions.reopen(thread.id)
       : actions.resolve(thread.id));
     setError(result.ok ? null : result.error);
-    // The resolved thread stays in view (it only appears in Details when chosen).
-    const project = review.derived.shownProject.peek();
-    if (result.ok && project) selectThread(ui, project, result.thread);
   };
   return (
     <>
@@ -75,11 +74,15 @@ function ThreadActions({ thread }: { readonly thread: Thread }) {
         label={t('thread.menu')}
         items={[
           ...citeItems({ kind: 'thread', id: thread.id }, null),
-          {
-            label: t('thread.delete'),
-            danger: true,
-            onSelect: () => del.request(thread),
-          },
+          ...(canStart
+            ? [
+                {
+                  label: t('thread.delete'),
+                  danger: true,
+                  onSelect: () => del.request(thread),
+                },
+              ]
+            : []),
         ]}
       />
       {del.dialog}
@@ -96,13 +99,18 @@ function ThreadActions({ thread }: { readonly thread: Thread }) {
  * The whole thread: state badge, Resolve/Reopen and the ⋯ menu (Delete) when the person can
  * write, the messages and the reply composer. Showing the thread marks it as read.
  */
-export function ThreadView({ thread, where, onOpenSettings }: ThreadViewProps) {
+export function ThreadView({
+  thread,
+  where,
+  showState = true,
+  onOpenSettings,
+}: ThreadViewProps) {
   const { can, writable } = useThreadAccess();
   useMarkRead(thread);
   return (
     <div class="thread-view">
       <div class="thread-head">
-        <StateBadge thread={thread} />
+        {showState && <StateBadge thread={thread} />}
         <span class="thread-head-spacer" />
         {can && <ThreadActions thread={thread} />}
       </div>
@@ -119,7 +127,7 @@ export function ThreadView({ thread, where, onOpenSettings }: ThreadViewProps) {
       )}
       <ul class="thread-messages">
         {thread.messages.map((m) => (
-          <ThreadMessage key={m.id} message={m} />
+          <ThreadMessage key={m.id} message={m} threadId={thread.id} />
         ))}
       </ul>
       <CitedIn thread={thread} />

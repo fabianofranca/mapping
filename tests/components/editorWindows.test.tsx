@@ -11,6 +11,7 @@ import {
   resetToolWindowSize,
   showToolWindow,
 } from '../../src/store/toolWindows';
+import { EditorWindows } from '../../src/app/EditorWindows';
 import { Breadcrumbs } from '../../src/ui/Breadcrumbs';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { LayersWindow } from '../../src/ui/LayersWindow';
@@ -275,5 +276,62 @@ describe('zoom and minimap', () => {
     harness.context.view.size.value = { width: 400, height: 300 };
     withContext(harness, <Minimap />);
     expect(screen.queryByRole('button', { name: t('minimap.label') })).toBeNull();
+  });
+});
+
+describe('Conversation window (CV1)', () => {
+  function renderColumns() {
+    const harness = createHarness(sampleProject());
+    const panel = {
+      busy: false,
+      dialogs: { show: vi.fn() },
+      onReplace: vi.fn(),
+      onGoToAnnotation: vi.fn(),
+    } as unknown as Parameters<typeof EditorWindows>[0]['panel'];
+    return withContext(
+      harness,
+      <EditorWindows panel={panel} onSelect={vi.fn()} canvas={<p>canvas</p>} />,
+    );
+  }
+
+  afterEach(() => hideToolWindow('conversation'));
+
+  it('Details and Conversation share the right column, Conversation below with a splitter', () => {
+    showToolWindow('conversation');
+    const { container } = renderColumns();
+    const columns = container.querySelectorAll('[data-tool-column]');
+    const right = columns[columns.length - 1]!;
+    const windows = [...right.querySelectorAll('[data-window]')].map((el) =>
+      el.getAttribute('data-window'),
+    );
+    expect(windows).toEqual(['details', 'conversation']);
+    const conversation = right.querySelector('[data-window="conversation"]')!;
+    expect(conversation.classList.contains('tool-window-stacked')).toBe(true);
+    expect(
+      within(conversation as HTMLElement).getAllByRole('separator').length,
+    ).toBeGreaterThanOrEqual(2);
+    expect(
+      within(conversation as HTMLElement).getByText(t('conversation.empty')),
+    ).toBeTruthy();
+  });
+
+  it('with only Conversation open it takes the column', () => {
+    hideToolWindow('details');
+    showToolWindow('conversation');
+    const { container } = renderColumns();
+    const cols = [...container.querySelectorAll('[data-tool-column]')];
+    const right = cols[cols.length - 1]!;
+    expect(right.querySelectorAll('[data-window]').length).toBe(1);
+    expect(right.querySelector('.tool-window-stacked')).toBeNull();
+    showToolWindow('details');
+  });
+
+  it('the right strip button has no shortcut in its hint', () => {
+    const harness = createHarness(sampleProject());
+    withContext(harness, <ToolStrip side="right" />);
+    const button = screen.getByRole('button', { name: t('conversation.title') });
+    expect(button.getAttribute('aria-pressed')).toBe('false');
+    expect(button.getAttribute('aria-keyshortcuts')).toBeNull();
+    expect(button.textContent ?? '').not.toContain('Ctrl+Shift');
   });
 });

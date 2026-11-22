@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/preact';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { t } from '../../src/i18n';
 import { clearIdentity, setIdentity } from '../../src/store/identity';
@@ -21,10 +22,24 @@ afterEach(() => {
   clearIdentity();
 });
 
-function view(texts: readonly string[], proposal: string | null = null) {
+function view(
+  texts: readonly string[],
+  proposal: string | null = null,
+  reviewing = false,
+  resolved = false,
+) {
   const harness = createHarness(sampleProject());
+  if (reviewing) harness.store.setReviewing('R');
   const thread = sampleThread({
     id: 'v1',
+    ...(resolved
+      ? {
+          resolved: {
+            by: { name: 'Marina Alves', email: 'marina@exemplo.com' },
+            at: '2026-09-02T10:00:00.000Z',
+          },
+        }
+      : {}),
     messages: texts.map((text, i) => ({
       ...message(
         `m${i}`,
@@ -78,5 +93,24 @@ describe('ThreadView', () => {
   it('a message with a proposal renders normally', () => {
     view(['message text'], 'p-1');
     expect(screen.getByText('message text')).toBeTruthy();
+  });
+
+  it('in the proposal review, the composer and Resolve are there and the menu has no Delete', async () => {
+    view(['Hello'], null, true);
+    expect(screen.getByRole('button', { name: t('thread.resolve') })).toBeTruthy();
+    expect(screen.getByRole('textbox')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: t('thread.menu') }));
+    expect(screen.queryByRole('menuitem', { name: t('thread.delete') })).toBeNull();
+  });
+
+  it('in the proposal review, a resolved thread offers Reopen', () => {
+    view(['Hello'], null, true, true);
+    expect(screen.getByRole('button', { name: t('thread.reopen') })).toBeTruthy();
+  });
+
+  it('outside the review the menu keeps Delete', async () => {
+    view(['Hello']);
+    await userEvent.click(screen.getByRole('button', { name: t('thread.menu') }));
+    expect(screen.getByRole('menuitem', { name: t('thread.delete') })).toBeTruthy();
   });
 });

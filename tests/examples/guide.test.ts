@@ -182,7 +182,9 @@ describe('interactive guide', () => {
 
   it("the guide's shortcuts are the app's, in each language", () => {
     const known = new Set<string>(Object.values(SHORTCUT_LABELS));
-    const combos = TOOL_WINDOWS.map((id) => `Ctrl+Shift+${WINDOW_NUMBER[id]}`);
+    const combos = TOOL_WINDOWS.filter((id) => WINDOW_NUMBER[id] !== null).map(
+      (id) => `Ctrl+Shift+${WINDOW_NUMBER[id]}`,
+    );
     combos.forEach((combo) => known.add(combo));
     const titlesOf = (dict: Record<string, string>): Record<ToolWindowId, string> => ({
       tree: dict['panel.tree']!,
@@ -195,6 +197,7 @@ describe('interactive guide', () => {
       diagnostics: dict['diagnostics.title']!,
       proposals: dict['proposals.title']!,
       catalog: dict['catalog.window.title']!,
+      conversation: dict['conversation.title']!,
     });
     const expected = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `Ctrl+Shift+${n}`);
     for (const locale of LOCALES) {
@@ -202,6 +205,7 @@ describe('interactive guide', () => {
       const titles = titlesOf(dict);
       const byCombo = new Map<string, string>();
       for (const id of TOOL_WINDOWS) {
+        if (WINDOW_NUMBER[id] === null) continue;
         byCombo.set(`Ctrl+Shift+${WINDOW_NUMBER[id]}`, titles[id]);
       }
       byCombo.set(SHORTCUT_LABELS.arrange, dict['shortcuts.arrange']!);
