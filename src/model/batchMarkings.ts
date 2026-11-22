@@ -20,7 +20,9 @@ import {
 } from './componentMarkings';
 import type { TextMeasurer } from './components/instantiate';
 import { addBackgroundContainer } from './containers';
-import { effectiveDensity } from './density';
+import { effectiveDensity, setContainerDensity } from './density';
+import { setContainerDirection } from './direction';
+import { setContainerDrawingMode } from './drawingMode';
 import { ModelError } from './errors';
 import { setMarkingLocked } from './locks';
 import {
@@ -57,10 +59,30 @@ import type {
 // can all use them. What stays with the caller: references and aliases (the resolver), the notes' order,
 // the step descriptions and the annotation values (the `annotate` hooks, until they move to the model too).
 
+/** The codes a broken rule of the batch carries: the batch's own, unchanged. */
+export type BatchRuleCode =
+  | 'invalid-arguments'
+  | 'invalid-ref-value'
+  | 'invalid-value'
+  | 'invalid-alias'
+  | 'duplicate-alias'
+  | 'layer-required'
+  | 'not-found'
+  | 'wrong-kind'
+  | 'invalid-ref'
+  | 'project-mismatch'
+  | 'ambiguous-ref'
+  | 'ambiguous-layer'
+  | 'ambiguous-type'
+  | 'unknown-type'
+  | 'page-not-found'
+  | 'unknown-alias'
+  | 'rect-too-small';
+
 /** A broken rule of the batch: the code and the English message the MCP reports unchanged. */
 export class BatchRuleError extends Error {
   constructor(
-    readonly code: 'invalid-arguments',
+    readonly code: BatchRuleCode,
     message: string,
     readonly details: Readonly<Record<string, unknown>> = {},
   ) {
@@ -1156,5 +1178,37 @@ export function updateBatchMarking(
     project = applyAnchor(ctx, project, id, args.anchor, changes);
   }
   project = applyFlags(project, id, args, changes, 'after');
+  return { project, changes };
+}
+
+// ---------------------------------------------------------------------------
+// the settings of a new container
+
+export interface ContainerSettingsArgs {
+  readonly drawingMode?: Parameters<typeof setContainerDrawingMode>[2] | null | undefined;
+  readonly direction?: Parameters<typeof setContainerDirection>[2] | null | undefined;
+  readonly density?: number | null | undefined;
+}
+
+/** The drawing mode, direction and density `add_container` may carry (`null` or absent leave the default), in this order. */
+export function applyContainerSettings(
+  p: Project,
+  id: string,
+  args: ContainerSettingsArgs,
+): { readonly project: Project; readonly changes: string[] } {
+  let project = p;
+  const changes: string[] = [];
+  if (args.drawingMode != null) {
+    project = setContainerDrawingMode(project, id, args.drawingMode);
+    changes.push(`drawing mode ${quotedLabel(args.drawingMode)}`);
+  }
+  if (args.direction != null) {
+    project = setContainerDirection(project, id, args.direction);
+    changes.push(`direction ${quotedLabel(args.direction)}`);
+  }
+  if (args.density != null) {
+    project = setContainerDensity(project, id, args.density);
+    changes.push(`density ${args.density}x`);
+  }
   return { project, changes };
 }

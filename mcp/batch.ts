@@ -1,7 +1,36 @@
 import {
   BatchRuleError,
+  applyFormatResult,
+  type FormatApplyError,
+  type FormatResult,
+  applyContainerSettings,
+  resolveBeside,
+  KIND_WITH_ARTICLE,
+  containerPageArg,
+  guardMinSize,
+  markingRootPageId,
+  resolveContainerOrMarking,
+  resolveItem,
+  resolveLayer,
+  resolveNearTarget,
+  resolvePage,
+  resolveType,
+  rootPageId,
+  type RefContext,
   ModelError,
   addBatchBackgroundContainer,
+  addBatchTypedAnnotation,
+  annotationLabelOf,
+  refuseArrowAsMarking,
+  batchRefValue,
+  createBatchAnnotation,
+  createBatchArrow,
+  refuseArrowPoints,
+  setBatchValues,
+  updateBatchAnnotation,
+  type AnnotationResolver,
+  type RowAliasTarget,
+  type RowAliases,
   createBatchMarking,
   externalSourceLabel as sourceLabel,
   quotedLabel as quoted,
@@ -19,13 +48,9 @@ import {
   changeNotices,
   type Change,
   type SpecNotice,
-  addAnnotation,
   addContainer,
   addLayer,
-  addTableRow,
-  addTypedAnnotation,
   arrowDeletionImpact,
-  createArrow,
   removeArrow,
   setArrowLocked,
   setArrowName,
@@ -57,11 +82,8 @@ import {
   containerDeletionImpact,
   layerDeletionImpact,
   markingDeletionImpact,
-  matchShortCode,
   moveLayer,
-  moveTableRow,
   nextLayerColor,
-  parseRef,
   pastedFileName,
   projectIndex,
   projectIssues,
@@ -73,18 +95,12 @@ import {
   removeDocRepo,
   removePlatformRepo,
   removeSpecialization,
-  removeTableRow,
-  renameAnnotation,
   renameContainer,
   renameLayer,
   renameMarking,
   replaceContainer,
   roleNameOf,
-  setAnnotationParent,
-  setAnnotationRole,
   setDocRepo,
-  setEntries,
-  setFieldValue,
   setImageLocked,
   setContainerDensity,
   setContainerDirection,
@@ -99,18 +115,12 @@ import {
   setLayerColor,
   setMarkingSource,
   setPlatformRepo,
-  setTableCell,
   specializationRemovalImpact,
-  tableRows,
-  typeKey,
-  typeOfAnnotation,
   updateSpecialization,
   uniqueImageFile,
   validateProject,
-  type Annotation,
   type AnnotationIssue,
   type AnnotationTypeRef,
-  type EntryInput,
   type ItemKind,
   type JsonValue,
   type Layer,
@@ -118,7 +128,6 @@ import {
   type Project,
   type Rect,
   type Size,
-  type RefValue,
   type Spec,
   type SpecField,
   type SpecAnnotationType,
@@ -147,14 +156,9 @@ import {
 import { MAX_BASE64_LENGTH, MIME, detectFormat } from './image/formats';
 import { builtinFontBook, measurerFor } from './image/textMeasurer';
 import { prepareImage } from './imagePrepare';
-import { INVALID_REF_HINT, KIND_NOT_FOUND, KIND_WITH_ARTICLE, Refs } from './items';
+import { Refs } from './items';
 import { containersNamed } from './markingList';
-import {
-  MODEL_ERROR_MESSAGES,
-  describeModelError,
-  rectTooSmallDetail,
-  MODEL_ERROR_HINTS,
-} from './modelErrors';
+import { MODEL_ERROR_MESSAGES, describeModelError } from './modelErrors';
 import { measuredTree, planMeasured } from './importMeasured';
 import { importText, pluginOperations } from './formatImport';
 import {
@@ -164,7 +168,6 @@ import {
   type PluginReader,
 } from './formatTools';
 import { containerClassIssueView } from './views';
-import { findPage, hasSeveralPages } from './pages';
 import type { Operation } from './operations';
 import type { LoadedProject } from './projects';
 
@@ -199,13 +202,7 @@ export interface BatchIo {
 }
 
 type AliasTarget =
-  | { readonly kind: 'layer' | 'page' | ItemKind; readonly id: string }
-  | {
-      readonly kind: 'row';
-      readonly annotationId: string;
-      readonly key: string;
-      readonly rowId: string;
-    };
+  { readonly kind: 'layer' | 'page' | ItemKind; readonly id: string } | RowAliasTarget;
 
 type CreatedKind = 'layer' | 'page' | ItemKind;
 
@@ -309,7 +306,7 @@ interface Step {
   readonly specId?: string;
   readonly description: string;
   readonly created?: readonly { kind: CreatedKind; id: string }[];
-  readonly rowAliases?: readonly [string, AliasTarget][];
+  readonly rowAliases?: readonly [string, RowAliasTarget][];
   readonly imageFiles?: readonly [string, Uint8Array][];
   /** The `import_format` step: what it updated and the warnings of the plugin. */
   readonly imported?: Omit<FormatImportResult, 'index'>;
@@ -334,11 +331,6 @@ const DEPRECATED_OPS: Partial<Record<Operation['op'], string>> = {
     'delete_image is old: use delete_container (the `image` argument became `container`)',
 };
 
-/** `{ pageId }` for the model's creators, or `{}` to leave the choice to them (the first page). */
-function pageArg(pageId: string | undefined): { pageId?: string } {
-  return pageId === undefined ? {} : { pageId };
-}
-
 /** The items of a wrap are on one page (`page-mixed` otherwise); arrows count through their ends. */
 function requireSinglePage(p: Project, ids: readonly string[]): void {
   const { pageOf } = projectIndex(p);
@@ -348,11 +340,6 @@ function requireSinglePage(p: Project, ids: readonly string[]): void {
     (id) => `"${p.pages.find((g) => g.id === id)?.name ?? id}"`,
   );
   throw new ModelError('page-mixed', `the items are on ${names.join(', ')}`);
-}
-
-/** Lowercase and without accents, to find layers and types by name. */
-function fold(text: string): string {
-  return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
 }
 
 /** The name in quotes and a space, or nothing (for sentences like "container <name> with …"). */
@@ -425,20 +412,6 @@ function catalogAfterSpecStep(
 type CreateMarkingValues = NonNullable<
   Extract<Operation, { op: 'create_marking' }>['annotation']
 >['values'];
-
-/** The items an import changed that it did not create itself, each once. */
-function onlyExisting(
-  touched: readonly { kind: CreatedKind; id: string }[],
-  created: readonly { kind: CreatedKind; id: string }[],
-): { kind: CreatedKind; id: string }[] {
-  const seen = new Set(created.map((c) => `${c.kind}:${c.id}`));
-  return touched.filter((t) => {
-    const key = `${t.kind}:${t.id}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
 
 class Batch {
   private p: Project;
@@ -741,121 +714,59 @@ class Batch {
 
   /** Id of a marking, container or annotation of this project: alias, reference or id. */
   private item(text: string, kind: ItemKind, p: Project = this.p): string {
-    const wanted = text.trim();
-    if (wanted.startsWith('$')) {
-      const target = this.alias(wanted, kind);
-      return 'id' in target ? target.id : '';
-    }
-    const parsed = parseRef(wanted);
-    if (!parsed) {
-      throw new ToolError('invalid-ref', `invalid reference: ${text}`, {
-        hint: INVALID_REF_HINT,
-      });
-    }
-    if (parsed.project !== null && parsed.project !== this.loaded.location.name) {
-      throw new ToolError(
-        'project-mismatch',
-        `the reference is to project "${parsed.project}", not "${this.loaded.location.name}"`,
-      );
-    }
-    if (parsed.kind !== null && parsed.kind !== kind) {
-      throw new ToolError(
-        'wrong-kind',
-        `the reference is to ${KIND_WITH_ARTICLE[parsed.kind]}, not ${KIND_WITH_ARTICLE[kind]}`,
-      );
-    }
-    const found = matchShortCode(p, kind, parsed.code);
-    if (found.length === 1) return found[0]!.id;
-    if (found.length === 0) {
-      throw new ToolError('not-found', `${KIND_NOT_FOUND[kind]}: ${text}`);
-    }
-    throw new ToolError(
-      'ambiguous-ref',
-      `${found.length} items start with that code: use the full reference`,
-      { candidates: found.slice(0, 20).map((f) => this.refs(p).ref(f.kind, f.id)) },
-    );
+    return this.rules(() => resolveItem(this.refContext(), p, text, kind));
+  }
+
+  /** What the model's lookups need from the batch: the project's name and its aliases. */
+  private refContext(): RefContext {
+    const { loaded } = this;
+    return {
+      // Read when a reference names its project (a batch built only to read values has no location).
+      get projectName() {
+        return loaded.location.name;
+      },
+      alias: (name, kind) => {
+        const target = this.alias(name, kind);
+        return { id: 'id' in target ? target.id : '' };
+      },
+      containerAlias: (name) => {
+        const target = this.aliases.get(name);
+        return target && 'id' in target && target.kind === 'i' ? target : undefined;
+      },
+    };
   }
 
   private layer(text: string, p: Project = this.p): Layer {
-    const wanted = text.trim();
-    const index = projectIndex(p);
-    if (wanted.startsWith('$')) {
-      const target = this.alias(wanted, 'layer');
-      const layer = 'id' in target ? index.layers.get(target.id) : undefined;
-      if (layer) return layer;
-      throw new ToolError('not-found', `the layer ${wanted} no longer exists`);
-    }
-    const byId = index.layers.get(wanted);
-    if (byId) return byId;
-    const slash = wanted.indexOf('/');
-    if (slash > 0) {
-      const fromSpec = projectLayerFor(
+    return this.rules(() =>
+      resolveLayer(
+        this.refContext(),
         p,
-        wanted.slice(0, slash),
-        wanted.slice(slash + 1),
-      );
-      if (fromSpec) return fromSpec;
-    }
-    const byName = p.layers.filter((l) => fold(l.name) === fold(wanted));
-    if (byName.length === 1) return byName[0]!;
-    throw new ToolError(
-      byName.length > 1 ? 'ambiguous-layer' : 'not-found',
-      byName.length > 1
-        ? `there are ${byName.length} layers named "${text}": use the id`
-        : `layer not found: ${text}`,
-      { layers: p.layers.map((l) => ({ id: l.id, name: l.name })) },
+        text,
+        (specId, layerId) => projectLayerFor(p, specId, layerId) ?? null,
+      ),
     );
   }
 
-  /** Page by alias (`$name` of an `add_page` in the batch), id or name, in the batch's current project. */
   private page(text: string, p: Project = this.p): Page {
-    const wanted = text.trim();
-    if (!wanted.startsWith('$')) return findPage(p, text);
-    const target = this.alias(wanted, 'page');
-    const page = 'id' in target ? p.pages.find((g) => g.id === target.id) : undefined;
-    if (page) return page;
-    throw new ToolError('not-found', `the page ${wanted} no longer exists`);
+    return this.rules(() => resolvePage(this.refContext(), p, text));
   }
 
-  /**
-   * The page of a new root. `page` names it (and must agree with `implied`, the page that `container`, `near`,
-   * `beside`, `inside` or an anchor already gave); without either, a project with more than one page
-   * needs it (`page-required`) and with a single page the model takes that one (`undefined`).
-   */
   private rootPageId(
     p: Project,
     pageText: string | undefined,
     implied: string | null,
   ): string | undefined {
-    if (pageText === undefined) {
-      if (implied !== null) return implied;
-      if (hasSeveralPages(p)) throw new ModelError('page-required');
-      return undefined;
-    }
-    const given = this.page(pageText, p);
-    if (implied !== null && implied !== given.id) {
-      const other = p.pages.find((g) => g.id === implied);
-      throw new ToolError(
-        'invalid-arguments',
-        `\`page\` is "${given.name}", but \`container\`, \`near\`, \`beside\`, \`inside\` or \`anchor\` is on the page "${other?.name ?? implied}": drop \`page\` or name that page`,
-        { hint: 'a new root goes to the page of what it is placed against' },
-      );
-    }
-    return given.id;
+    return this.rules(() => rootPageId(this.refContext(), p, pageText, implied));
   }
 
-  /** `{ pageId }` of `add_container`/`add_image`/`add_blank_image` (the reference container's page when `beside`); `{}` for the model's default. */
   private containerPage(
     op: { readonly page?: string },
     p: Project,
     beside: string | undefined,
   ): { pageId?: string } {
-    const implied =
-      beside === undefined ? null : (projectIndex(p).pageOf.get(beside) ?? null);
-    return pageArg(this.rootPageId(p, op.page, implied));
+    return this.rules(() => containerPageArg(this.refContext(), p, op.page, beside));
   }
 
-  /** `page` of `create_marking`: only a canvas marking has one; the target of `near`, `inside` or the anchor gives it. */
   private markingPageId(
     op: { readonly page: string | undefined; readonly near: string | undefined },
     p: Project,
@@ -866,56 +777,13 @@ class Batch {
       readonly nearUsed: boolean;
     },
   ): string | undefined {
-    if (containerId !== null) {
-      if (op.page !== undefined) {
-        throw new ToolError(
-          'invalid-arguments',
-          "`page` only applies to a canvas marking: a marking in a container has no page of its own (it is on its container's)",
-        );
-      }
-      return undefined;
-    }
-    // An ignored `near` (non-floating type) stays a warning: it is not resolved here.
-    const near =
-      op.near === undefined || !reference.nearUsed
-        ? null
-        : this.containerOrMarking(op.near).id;
-    const ref = reference.inside ?? near ?? reference.anchor;
-    const implied = ref === null ? null : (projectIndex(p).pageOf.get(ref) ?? null);
-    return this.rootPageId(p, op.page, implied);
+    return this.rules(() =>
+      markingRootPageId(this.refContext(), p, op, containerId, reference),
+    );
   }
 
   private type(text: string, p: Project = this.p): AnnotationTypeRef {
-    const wanted = fold(text);
-    const matches = [...projectIndex(p).types.values()].filter(
-      ({ spec, type }) =>
-        fold(`${spec.id}/${type.id}`) === wanted ||
-        fold(type.id) === wanted ||
-        fold(type.name) === wanted,
-    );
-    // Strongest first: `specId/typeId`, then the type `id`, then the name. A type named like the id of
-    // another one (`notas/texto` is named "Text", `sdui/text` has the id `text`) does not make the id ambiguous.
-    const tiers = [
-      ({ spec, type }: (typeof matches)[number]) =>
-        fold(`${spec.id}/${type.id}`) === wanted,
-      ({ type }: (typeof matches)[number]) => fold(type.id) === wanted,
-    ];
-    const chosen =
-      tiers.map((tier) => matches.filter(tier)).find((found) => found.length > 0) ??
-      matches;
-    if (chosen.length === 1)
-      return { specId: chosen[0]!.spec.id, typeId: chosen[0]!.type.id };
-    throw new ToolError(
-      chosen.length > 1 ? 'ambiguous-type' : 'unknown-type',
-      chosen.length > 1
-        ? `"${text}" exists in more than one specialization: use specId/typeId`
-        : `annotation type not found: ${text} (see get_project and get_specialization)`,
-      {
-        types: [...projectIndex(p).types.values()]
-          .slice(0, 50)
-          .map(({ spec, type }) => `${spec.id}/${type.id}`),
-      },
-    );
+    return this.rules(() => resolveType(p, text));
   }
 
   /**
@@ -1028,205 +896,20 @@ class Batch {
 
   /** The model's `RefValue` of a reference in the agent's format (`measure_component` takes `values` this way). */
   storedRef(input: JsonValue, key: string): JsonValue {
-    return this.refValue(input, key, this.p);
+    return this.rules(() => batchRefValue(this.annotationRefs(), input, key, this.p));
   }
 
-  /** Reference of a `ref` field in the agent's format → the model's `RefValue`. */
-  private refValue(input: JsonValue, key: string, p: Project): JsonValue {
-    if (input === null || (typeof input === 'string' && input === '')) return null;
-    if (!isRecord(input)) {
-      throw new ToolError(
-        'invalid-ref-value',
-        `field ${key}: the reference is an object with "annotation" (see the description of values)`,
-      );
-    }
-    const target = input.annotation ?? input.annotationId;
-    if (typeof target !== 'string') {
-      throw new ToolError('invalid-ref-value', `field ${key}: "annotation" is missing`);
-    }
-    const annotationId = this.item(target, 'a', p);
-    const annotation = projectIndex(p).annotations.get(annotationId)!;
-    const entry = input.entry ?? input.entryId;
-    const field = input.key;
-    const row = input.row ?? input.rowId;
-    let ref: RefValue;
-    if (entry !== undefined) {
-      if (typeof entry !== 'string') {
-        throw new ToolError(
-          'invalid-ref-value',
-          `field ${key}: "entry" is the key or the id of the pair`,
-        );
-      }
-      const found =
-        annotation.entries.find((e) => e.id === entry) ??
-        annotation.entries.find((e) => e.key === entry.trim());
-      if (!found) {
-        throw new ToolError(
-          'not-found',
-          `field ${key}: the annotation has no pair "${entry}"`,
-          {
-            entries: annotation.entries.map((e) => e.key),
-          },
-        );
-      }
-      ref = { annotationId, entryId: found.id };
-    } else if (typeof field === 'string' && row !== undefined) {
-      ref = { annotationId, key: field, rowId: this.rowId(annotation, field, row, key) };
-    } else if (typeof field === 'string') {
-      ref = { annotationId, key: field };
-    } else if (field === undefined && row === undefined) {
-      // Without `entry`, `key` or `row`: the whole annotation (fourth format).
-      ref = { annotationId };
-    } else {
-      throw new ToolError(
-        'invalid-ref-value',
-        `field ${key}: "row" requires "key" (the table); without "entry", "key" or "row", the reference is the whole annotation`,
-      );
-    }
-    return { ...ref };
-  }
-
-  private rowId(
-    annotation: Annotation,
-    field: string,
-    row: JsonValue,
-    key: string,
-  ): string {
-    const rows = tableRows(annotation.values?.[field]);
-    if (typeof row === 'number') {
-      const found = rows[row];
-      if (!found)
-        throw new ToolError(
-          'not-found',
-          `field ${key}: the table ${field} has no row ${row}`,
-        );
-      return found._id;
-    }
-    if (typeof row !== 'string') {
-      throw new ToolError(
-        'invalid-ref-value',
-        `field ${key}: "row" is the id, the alias or the index of the row`,
-      );
-    }
-    if (row.startsWith('$')) {
-      const target = this.alias(row, 'row');
-      if (target.kind === 'row') {
-        if (target.annotationId !== annotation.id || target.key !== field) {
-          throw new ToolError(
-            'invalid-ref-value',
-            `field ${key}: row ${row} belongs to another table`,
-          );
-        }
-        return target.rowId;
-      }
-    }
-    return row;
-  }
-
-  /** Sets the values of a typed annotation, field by field, through the model's operations. */
-  private setValues(
-    p: Project,
-    annotationId: string,
-    values: Record<string, JsonValue>,
-    rowAliases: [string, AliasTarget][],
-  ): Project {
-    const entries = Object.entries(values);
-    if (entries.length === 0) return p;
-    // The annotation's type does not change when setting the values: resolved once, not per field.
-    const annotation = projectIndex(p).annotations.get(annotationId)!;
-    const resolved = typeOfAnnotation(p, annotation);
-    let next = p;
-    for (const [key, value] of entries) {
-      const field: SpecField | null = resolved ? fieldOf(resolved.type, key) : null;
-      if (field?.type === 'table') {
-        next = this.setTable(next, annotationId, field, value, rowAliases);
-      } else if (field?.type === 'ref') {
-        next = setFieldValue(next, annotationId, key, this.refValue(value, key, next));
-      } else {
-        // Simple fields; a nonexistent type or an unknown field: the model says why.
-        next = setFieldValue(next, annotationId, key, value);
-      }
-    }
-    return next;
-  }
-
-  /** Replaces the table's rows: `_id` keeps an existing row, `_as` gives it an alias. */
-  private setTable(
-    p: Project,
-    annotationId: string,
-    tableField: Extract<SpecField, { type: 'table' }>,
-    value: JsonValue,
-    rowAliases: [string, AliasTarget][],
-  ): Project {
-    const key = tableField.key;
-    if (value !== null && !Array.isArray(value)) {
-      throw new ToolError('invalid-value', `field ${key}: a table is a list of rows`);
-    }
-    const input = (value ?? []).map((row, i) => {
-      if (!isRecord(row)) {
-        throw new ToolError('invalid-value', `field ${key}: row ${i} is not an object`);
-      }
-      return row;
-    });
-    const current = tableRows(
-      projectIndex(p).annotations.get(annotationId)!.values?.[key],
-    );
-    const kept = new Set(
-      input.map((row) => row._id).filter((id): id is string => typeof id === 'string'),
-    );
-    let next = p;
-    for (const row of current) {
-      if (!kept.has(row._id)) next = removeTableRow(next, annotationId, key, row._id);
-    }
-    const existing = new Set(current.map((row) => row._id));
-    input.forEach((row, position) => {
-      const given = row._id;
-      if (given !== undefined && (typeof given !== 'string' || !existing.has(given))) {
-        throw new ToolError(
-          'not-found',
-          `field ${key}: row ${String(given)} does not exist`,
-        );
-      }
-      const rowId = given ?? crypto.randomUUID();
-      if (given === undefined) next = addTableRow(next, annotationId, key, rowId);
-      for (const [column, cell] of Object.entries(row)) {
-        if (column === '_id' || column === '_as') continue;
-        const isRef = tableField.columns.find((c) => c.key === column)?.type === 'ref';
-        // `ref` cell: the same value as the `ref` field (aliases included) or the stored format.
-        const cellValue = isRef ? this.refValue(cell, column, next) : cell;
-        next = setTableCell(next, annotationId, key, rowId, column, cellValue);
-      }
-      next = moveTableRow(next, annotationId, key, rowId, position);
-      const alias = row._as;
-      if (alias !== undefined) {
-        if (typeof alias !== 'string' || !/^\$[A-Za-z0-9_-]+$/.test(alias)) {
-          throw new ToolError(
-            'invalid-alias',
-            `field ${key}: "_as" is an alias like "$row"`,
-          );
-        }
-        if (this.aliases.has(alias) || rowAliases.some(([name]) => name === alias)) {
-          throw new ToolError('duplicate-alias', `alias repeated in the batch: ${alias}`);
-        }
-        rowAliases.push([alias, { kind: 'row', annotationId, key, rowId }]);
-      }
-    });
-    return next;
-  }
-
-  /** New pairs with the same key as an existing one keep the id (and the references to it). */
-  private entries(
-    p: Project,
-    annotationId: string | null,
-    entries: readonly { key: string; value: string; id?: string }[],
-  ): EntryInput[] {
-    const current = annotationId
-      ? (projectIndex(p).annotations.get(annotationId)?.entries ?? [])
-      : [];
-    return entries.map((e) => {
-      const id = e.id ?? current.find((c) => c.key === e.key.trim())?.id;
-      return { key: e.key, value: e.value, ...(id ? { id } : {}) };
-    });
+  /** What the model's annotation and arrow rules need from the batch: its references, aliases and labels. */
+  private annotationRefs(): AnnotationResolver {
+    return {
+      marking: (ref) => this.item(ref, 'm'),
+      annotation: (ref, p) => this.item(ref, 'a', p),
+      layer: (ref, p) => this.layer(ref, p),
+      type: (ref, p) => this.type(ref, p),
+      rowAlias: (name) => this.alias(name, 'row') as RowAliasTarget,
+      aliasTaken: (name) => this.aliases.has(name),
+      markingLabel: (p, id) => this.markingLabel(p, id),
+    };
   }
 
   // -------------------------------------------------------------------------
@@ -1307,10 +990,7 @@ class Batch {
   }
 
   private annotationLabel(p: Project, id: string): string {
-    const a = projectIndex(p).annotations.get(id);
-    return a
-      ? `${annotationShortLabel(p, a)} on "${this.markingLabel(p, a.markingId)}"`
-      : id;
+    return annotationLabelOf(this.annotationRefs(), p, id);
   }
 
   // -------------------------------------------------------------------------
@@ -1592,29 +1272,12 @@ class Batch {
     }
   }
 
-  /** Runs `run` and, if the rectangle ended up below the component's minimum, says what the minimum is. */
   private checkMinSize<T>(
     minSize: { width: number; height: number } | null,
     what: string,
     run: () => T,
   ): T {
-    try {
-      return run();
-    } catch (error) {
-      if (error instanceof ModelError && error.code === 'rect-too-small' && minSize) {
-        const detail = rectTooSmallDetail(error.data);
-        throw new ToolError(
-          error.code,
-          `rectangle smaller than the minimum size of the component of ${what}: ${minSize.width}×${minSize.height} px`,
-          {
-            minSize: { width: minSize.width, height: minSize.height },
-            ...(detail ? { detail } : {}),
-            hint: MODEL_ERROR_HINTS['rect-too-small'],
-          },
-        );
-      }
-      throw error;
-    }
+    return this.rules(() => guardMinSize(minSize, what, run));
   }
 
   /**
@@ -1749,28 +1412,12 @@ class Batch {
         : this.addContainerWithBackground(op, p);
     const id = step.created?.find((c) => c.kind === 'i')?.id;
     if (id === undefined) return step;
-    let result = step;
-    if (op.drawingMode != null) {
-      result = {
-        ...result,
-        project: setContainerDrawingMode(result.project, id, op.drawingMode),
-        description: `${result.description}, drawing mode ${quoted(op.drawingMode)}`,
-      };
-    }
-    if (op.direction != null) {
-      result = {
-        ...result,
-        project: setContainerDirection(result.project, id, op.direction),
-        description: `${result.description}, direction ${quoted(op.direction)}`,
-      };
-    }
-    if (op.density != null) {
-      result = {
-        ...result,
-        project: setContainerDensity(result.project, id, op.density),
-        description: `${result.description}, density ${op.density}x`,
-      };
-    }
+    const settings = applyContainerSettings(step.project, id, op);
+    let result: Step = {
+      ...step,
+      project: settings.project,
+      description: `${step.description}${settings.changes.map((c) => `, ${c}`).join('')}`,
+    };
     if (op.classes != null) {
       const classes = applyClassChoices(result.project, id, op.classes);
       result = {
@@ -1787,14 +1434,7 @@ class Batch {
     op: { readonly beside?: string; readonly center?: unknown },
     p: Project,
   ): string | undefined {
-    if (op.beside === undefined) return undefined;
-    if (op.center !== undefined) {
-      throw new ToolError(
-        'invalid-arguments',
-        '`beside` and `center` are mutually exclusive: use `beside` to place the container next to another one, or `center` for a canvas point',
-      );
-    }
-    return this.containerItem(op.beside, p);
+    return this.rules(() => resolveBeside(op, (ref) => this.containerItem(ref, p)));
   }
 
   /** Container with an image file: `add_container` with `file`/`base64` and the old `add_image`. */
@@ -2069,38 +1709,13 @@ class Batch {
 
   /** The id is an arrow's in a marking tool: a friendly error pointing to the right tool. */
   private requireNotArrow(id: string, tool: 'update_arrow' | 'delete_arrow'): void {
-    if (projectIndex(this.p).arrows.has(id)) {
-      throw new ToolError(
-        'wrong-kind',
-        'the reference is to an arrow, not to a marking',
-        {
-          hint: `use ${tool} for the arrow`,
-        },
-      );
-    }
-  }
-
-  private noPoints(op: { readonly points?: unknown }): void {
-    if (op.points !== undefined) {
-      throw new ToolError(
-        'invalid-arguments',
-        "`points` is not accepted: the arrow's route belongs to the person (the server only provides the endpoints and the style)",
-      );
-    }
+    this.rules(() => refuseArrowAsMarking(this.p, id, tool));
   }
 
   private createArrowOp(op: Extract<Operation, { op: 'create_arrow' }>): Step {
-    this.noPoints(op);
-    const from = this.item(op.from, 'm');
-    const to = this.item(op.to, 'm');
-    const id = crypto.randomUUID();
-    const project = createArrow(this.p, {
-      id,
-      from,
-      to,
-      ...(op.style !== undefined ? { style: op.style } : {}),
-      ...(op.name !== undefined ? { name: op.name } : {}),
-    });
+    const { project, id, from, to } = this.rules(() =>
+      createBatchArrow(this.annotationRefs(), this.p, op),
+    );
     return {
       project,
       description: `Create the arrow "${this.markingLabel(project, from)}" → "${this.markingLabel(project, to)}" (${projectIndex(project).arrows.get(id)!.style})`,
@@ -2109,7 +1724,7 @@ class Batch {
   }
 
   private updateArrowOp(op: Extract<Operation, { op: 'update_arrow' }>): Step {
-    this.noPoints(op);
+    this.rules(() => refuseArrowPoints(op));
     const id = this.item(op.arrow, 'm');
     this.requireArrow(id);
     let project = this.p;
@@ -2149,36 +1764,12 @@ class Batch {
     };
   }
 
-  /**
-   * Target of `near`: a container or a marking (never an arrow), by alias, reference or id.
-   */
   private nearTarget(text: string): FloatingNearTarget {
-    const target = this.containerOrMarking(text);
-    if (target.kind === 'marking' && projectIndex(this.p).arrows.has(target.id)) {
-      throw new ToolError('invalid-arguments', '`near` does not accept an arrow', {
-        hint: 'provide a container or a marking',
-      });
-    }
-    return target;
+    return this.rules(() => resolveNearTarget(this.refContext(), this.p, text));
   }
 
-  /** Container or marking (or arrow, which is a marking for the reference), by alias, reference or id. */
   private containerOrMarking(text: string): FloatingNearTarget {
-    const wanted = text.trim();
-    const index = projectIndex(this.p);
-    if (wanted.startsWith('$')) {
-      const target = this.aliases.get(wanted);
-      if (target && 'id' in target && target.kind === 'i') {
-        return { kind: 'container', id: target.id };
-      }
-    } else {
-      const parsed = parseRef(wanted);
-      if (parsed?.kind === 'i') return { kind: 'container', id: this.item(wanted, 'i') };
-      if (parsed === null || parsed.kind === null) {
-        if (index.containers.has(wanted)) return { kind: 'container', id: wanted };
-      }
-    }
-    return { kind: 'marking', id: this.item(wanted, 'm') };
+    return this.rules(() => resolveContainerOrMarking(this.refContext(), this.p, text));
   }
 
   /**
@@ -2248,7 +1839,7 @@ class Batch {
     this.containerItem(op.container);
     const notes = [...plan.warnings];
     const created: { kind: CreatedKind; id: string }[] = [];
-    const rowAliases: [string, AliasTarget][] = [];
+    const rowAliases: RowAliases = [];
     let project = this.p;
     for (const marking of plan.markings) {
       try {
@@ -2309,8 +1900,15 @@ class Batch {
       true,
     );
     const result = await parseFormat(found, text, input, this.readPlugin);
-    const applied = await this.applyPluginOperations(
-      withDefaultPage(pluginOperations(result.operations), op.page),
+    const applied = this.applyPluginResult(
+      {
+        // Parsed by the operations' schema: the plugin's values are the right types before the model reads them.
+        operations: pluginOperations(
+          result.operations,
+        ) as unknown as FormatResult['operations'],
+        warnings: result.warnings,
+      },
+      op.page,
     );
     const made = (kind: CreatedKind) =>
       applied.created.filter((c) => c.kind === kind).length;
@@ -2344,89 +1942,68 @@ class Batch {
   }
 
   /**
-   * Applies the plugin's operations in order, with aliases of their own (the plugin cites the
-   * references of its input and the aliases it created, never the batch's). A refused operation fails
-   * the whole step with the batch error at `operations[i].result[j]`.
+   * Applies the plugin's operations through the model's `applyFormatResult` (the plugin cites the references of
+   * its input and the aliases it created, never the batch's). A refused operation fails the whole step with
+   * the batch error at `operations[i].result[j]`; the project stays as the step found it.
    */
-  private async applyPluginOperations(operations: readonly Operation[]): Promise<{
+  private applyPluginResult(
+    result: FormatResult,
+    page: string | undefined,
+  ): {
     project: Project;
     created: { kind: CreatedKind; id: string }[];
     updated: { kind: CreatedKind; id: string }[];
     notes: string[];
-  }> {
-    const saved = { p: this.p, aliases: this.aliases, failed: this.failedAliases };
-    this.aliases = new Map();
-    this.failedAliases = new Map();
-    const created: { kind: CreatedKind; id: string }[] = [];
-    const touched: { kind: CreatedKind; id: string }[] = [];
-    const notes: string[] = [];
-    const clearedBefore = this.rolesCleared.length;
-    try {
-      for (const [j, sub] of operations.entries()) {
-        try {
-          touched.push(...this.updatedBy(sub));
-          const step = await this.applyLocal(sub);
-          created.push(...(step.created ?? []));
-          notes.push(...(step.notes ?? []));
-        } catch (error) {
-          // The step is undone: so are the roles it cleared.
-          this.rolesCleared.length = clearedBefore;
-          throw this.refusedByModel(error, sub.op, j);
-        }
-      }
-      return { project: this.p, created, updated: onlyExisting(touched, created), notes };
-    } finally {
-      this.p = saved.p;
-      this.aliases = saved.aliases;
-      this.failedAliases = saved.failed;
+  } {
+    const outcome = applyFormatResult(this.p, result, {
+      input: { project: { name: this.loaded.location.name } },
+      catalog: this.catalog,
+      measure: this.measurer,
+      page,
+      labels: {
+        markingLabel: (p, id) => this.markingLabel(p, id),
+        containerLabel: (p, id) => this.refs(p).imageLabel(id),
+      },
+    });
+    if (!outcome.ok) throw this.refusedByModel(outcome.error);
+    for (const cleared of outcome.rolesCleared) {
+      const { annotationId, role, roleName, message } = cleared;
+      this.rolesCleared.push({
+        index: this.current,
+        annotationId,
+        role,
+        roleName,
+        message,
+      });
     }
-  }
-
-  /** One operation of a plugin result, with the local alias bookkeeping of `run`. */
-  private async applyLocal(sub: Operation): Promise<Step> {
-    const names = [
-      'as' in sub ? sub.as : undefined,
-      sub.op === 'create_marking' ? sub.annotationAs : undefined,
-    ];
-    for (const name of names) {
-      if (name !== undefined && this.aliases.has(name)) {
-        throw new ToolError(
-          'duplicate-alias',
-          `alias repeated in the plugin result: ${name}`,
-        );
-      }
-    }
-    const step = await this.apply(sub);
-    this.checkRowAliases(step, names);
-    this.p = step.project;
-    if (step.roleCleared) {
-      this.rolesCleared.push({ index: this.current, ...step.roleCleared });
-    }
-    this.registerLocalAliases(step, names);
-    return step;
-  }
-
-  /** The row aliases of the step and the operation's own aliases (the first item created, then the second). */
-  private registerLocalAliases(step: Step, names: readonly (string | undefined)[]): void {
-    for (const [name, target] of step.rowAliases ?? []) this.aliases.set(name, target);
-    for (const [n, item] of (step.created ?? []).entries()) {
-      const named = names[n];
-      if (named !== undefined) this.aliases.set(named, item);
-    }
-  }
-
-  /** The existing item an update of the plugin result changes (resolved before the operation runs). */
-  private updatedBy(sub: Operation): { kind: CreatedKind; id: string }[] {
-    if (sub.op === 'update_annotation')
-      return [{ kind: 'a', id: this.item(sub.annotation, 'a') }];
-    if (sub.op === 'update_marking')
-      return [{ kind: 'm', id: this.item(sub.marking, 'm') }];
-    return [];
+    return {
+      project: outcome.project,
+      created: [...outcome.created],
+      updated: [...outcome.updated],
+      notes: [...outcome.notes],
+    };
   }
 
   /** The error of operation `j` of the result as the step's error: the model's own code, at `operations[i].result[j]`. */
-  private refusedByModel(error: unknown, op: string, j: number): ToolError {
-    if (!(error instanceof ToolError || error instanceof ModelError)) throw error;
+  private refusedByModel(failure: FormatApplyError): ToolError {
+    const { cause, op, index: j } = failure;
+    const path = `operations[${this.current}].result[${j}]`;
+    if (!(
+      cause instanceof ToolError ||
+      cause instanceof ModelError ||
+      cause instanceof BatchRuleError
+    )) {
+      const detail = cause instanceof Error ? cause.message : String(cause);
+      return new ToolError(
+        'plugin-output-invalid',
+        `${path}: a value of the plugin result has the wrong type (${detail})`,
+        { path, resultOp: op },
+      );
+    }
+    const error =
+      cause instanceof BatchRuleError
+        ? new ToolError(cause.code, cause.message, cause.details)
+        : cause;
     const described = this.describeError(this.current, op, error);
     const { code, message } = described;
     const details = Object.fromEntries(
@@ -2438,14 +2015,14 @@ class Batch {
       ...details,
       // A `path` of the original error (the bad file, for example) is kept as `itemPath`.
       ...(typeof details.path === 'string' ? { itemPath: details.path } : {}),
-      path: `operations[${this.current}].result[${j}]`,
+      path,
       resultOp: op,
     });
   }
 
   private createMarkingOp(op: Extract<Operation, { op: 'create_marking' }>): Step {
     const p = this.p;
-    const rowAliases: [string, AliasTarget][] = [];
+    const rowAliases: RowAliases = [];
     const made = this.rules(() =>
       createBatchMarking(this.markingContext(rowAliases), p, op),
     );
@@ -2472,7 +2049,7 @@ class Batch {
    * The model's rules of the marking operations need the batch's references, labels and annotation values:
    * this is what the batch hands them (the row aliases of a `create_marking` collect in `rowAliases`).
    */
-  private markingContext(rowAliases: [string, AliasTarget][]): MarkingContext {
+  private markingContext(rowAliases: RowAliases): MarkingContext {
     const { catalog } = this;
     return {
       catalog,
@@ -2493,9 +2070,16 @@ class Batch {
       },
       annotate: {
         typed: (p, id, markingId, args) =>
-          this.typedAnnotation(p, id, markingId, { ...args, ownerId: null, rowAliases }),
+          addBatchTypedAnnotation(
+            this.annotationRefs(),
+            p,
+            id,
+            markingId,
+            { ...args, ownerId: null },
+            rowAliases,
+          ),
         setValues: (p, annotationId, values) =>
-          this.setValues(p, annotationId, values, rowAliases),
+          setBatchValues(this.annotationRefs(), p, annotationId, values, rowAliases),
       },
     };
   }
@@ -2512,85 +2096,13 @@ class Batch {
     }
   }
 
-  /** New typed annotation: the type's layer (or the one given), owner and values field by field. */
-  private typedAnnotation(
-    p: Project,
-    id: string,
-    markingId: string,
-    args: {
-      readonly type: AnnotationTypeRef;
-      readonly layer: string | undefined;
-      readonly name: string | null | undefined;
-      readonly values: Record<string, JsonValue> | undefined;
-      readonly ownerId: string | null;
-      readonly rowAliases: [string, AliasTarget][];
-    },
-  ): Project {
-    const { type } = args;
-    const typeLayer = projectIndex(p).types.get(typeKey(type.specId, type.typeId))!.layer;
-    const layer =
-      args.layer !== undefined
-        ? this.layer(args.layer)
-        : (projectLayerFor(p, type.specId, typeLayer.id) ??
-          fail(
-            'not-found',
-            `the specialization's layer "${typeLayer.name}" is not in the project`,
-          ));
-    let project = addTypedAnnotation(p, {
-      id,
-      markingId,
-      layerId: layer.id,
-      type,
-      name: args.name ?? null,
-      parentAnnotationId: args.ownerId,
-    });
-    if (args.values !== undefined) {
-      project = this.setValues(project, id, args.values, args.rowAliases);
-    }
-    return project;
-  }
-
   private createAnnotation(op: Extract<Operation, { op: 'create_annotation' }>): Step {
-    const p = this.p;
-    const markingId = this.item(op.marking, 'm');
-    const id = crypto.randomUUID();
-    const ownerId =
-      op.owner === undefined || op.owner === null ? null : this.item(op.owner, 'a');
-    const rowAliases: [string, AliasTarget][] = [];
-    let project: Project;
-    if (op.type !== undefined) {
-      if (op.entries !== undefined) {
-        throw new ModelError('typed-annotation');
-      }
-      project = this.typedAnnotation(p, id, markingId, {
-        type: this.type(op.type),
-        layer: op.layer,
-        name: op.name,
-        values: op.values,
-        ownerId,
-        rowAliases,
-      });
-    } else {
-      if (op.layer === undefined) {
-        throw new ToolError(
-          'layer-required',
-          'free-form annotation: provide `layer` (or `type` for a typed annotation)',
-        );
-      }
-      if (op.values !== undefined) throw new ModelError('not-typed');
-      const layer = this.layer(op.layer);
-      project = addAnnotation(p, {
-        id,
-        markingId,
-        layerId: layer.id,
-        name: op.name ?? null,
-        entries: this.entries(p, null, op.entries ?? []),
-      });
-      if (ownerId !== null) project = setAnnotationParent(project, id, ownerId);
-    }
-    if (op.role !== undefined && op.role !== null) {
-      project = setAnnotationRole(project, id, op.role);
-    }
+    const {
+      project,
+      annotationId: id,
+      ownerId,
+      rowAliases,
+    } = this.rules(() => createBatchAnnotation(this.annotationRefs(), this.p, op));
     const ownerAnnotation = ownerId
       ? projectIndex(project).annotations.get(ownerId)
       : undefined;
@@ -2610,45 +2122,11 @@ class Batch {
     };
   }
 
-  /** Name of the role the annotation holds in the owner, for the step's description. */
-  private roleName(p: Project, id: string): string {
-    const a = projectIndex(p).annotations.get(id)!;
-    const owner = a.parentAnnotationId
-      ? projectIndex(p).annotations.get(a.parentAnnotationId)
-      : undefined;
-    return roleNameOf(p, owner, a.parentRole ?? '');
-  }
-
   private updateAnnotation(op: Extract<Operation, { op: 'update_annotation' }>): Step {
-    const p = this.p;
-    const id = this.item(op.annotation, 'a');
-    const label = this.annotationLabel(p, id);
-    const rowAliases: [string, AliasTarget][] = [];
-    const changes: string[] = [];
-    let project = p;
-    if (op.name !== undefined) {
-      project = renameAnnotation(project, id, op.name);
-      changes.push(`name ${quoted(projectIndex(project).annotations.get(id)!.name)}`);
-    }
-    if (op.entries !== undefined) {
-      project = setEntries(project, id, this.entries(project, id, op.entries));
-      changes.push(`${op.entries.length} pair(s)`);
-    }
-    if (op.values !== undefined) {
-      project = this.setValues(project, id, op.values, rowAliases);
-      changes.push(`fields ${Object.keys(op.values).join(', ')}`);
-    }
-    let roleCleared: Step['roleCleared'];
-    if (op.owner !== undefined) {
-      const moved = this.changeOwner(project, id, op.owner, op.role === undefined);
-      project = moved.project;
-      changes.push(moved.change);
-      roleCleared = moved.roleCleared;
-    }
-    if (op.role !== undefined) {
-      project = setAnnotationRole(project, id, op.role);
-      changes.push(op.role === null ? 'no role' : `role "${this.roleName(project, id)}"`);
-    }
+    const label = this.annotationLabel(this.p, this.item(op.annotation, 'a'));
+    const { project, changes, rowAliases, roleCleared } = this.rules(() =>
+      updateBatchAnnotation(this.annotationRefs(), this.p, op),
+    );
     return {
       project,
       description: `Change the annotation ${label}: ${changes.join(', ') || 'nothing'}`,
@@ -2656,53 +2134,10 @@ class Batch {
       ...(roleCleared ? { roleCleared } : {}),
     };
   }
-
-  /**
-   * Changes the owner (or removes it, with `null`). If the annotation's role goes with it and the step does not
-   * carry `role` (`roleUnset`), the note goes into the step's text and the `role-cleared` warning is returned.
-   */
-  private changeOwner(
-    p: Project,
-    id: string,
-    owner: string | null,
-    roleUnset: boolean,
-  ): { project: Project; change: string; roleCleared?: Step['roleCleared'] } {
-    const ownerId = owner === null ? null : this.item(owner, 'a', p);
-    const roleId = projectIndex(p).annotations.get(id)!.parentRole;
-    const roleName = roleId === null ? '' : this.roleName(p, id);
-    const project = setAnnotationParent(p, id, ownerId);
-    const where =
-      ownerId === null
-        ? 'no owner'
-        : `owner ${annotationShortLabel(project, projectIndex(project).annotations.get(ownerId)!)}`;
-    const cleared =
-      roleId !== null &&
-      roleUnset &&
-      projectIndex(project).annotations.get(id)!.parentRole === null;
-    if (!cleared) return { project, change: where };
-    const reason =
-      ownerId === null
-        ? 'the annotation is left without an owner'
-        : 'the new owner does not offer it';
-    return {
-      project,
-      change: `${where}; role ${quoted(roleName)} cleared`,
-      roleCleared: {
-        annotationId: id,
-        role: roleId,
-        roleName,
-        message: `the role ${quoted(roleName)} of ${this.annotationLabel(p, id)} is cleared: ${reason}`,
-      },
-    };
-  }
 }
 
 function kindLabel(kind: AliasTarget['kind']): string {
   return kind === 'row' ? 'a table row' : KIND_LABEL[kind];
-}
-
-function fail(code: 'not-found', message: string): never {
-  throw new ToolError(code, message);
 }
 
 /** Batch with no operations: only to read references (the io is not used by `storedRef`). */
@@ -2885,16 +2320,4 @@ export function noticeChanges(
   const entries = [...groups.values()];
   entries.sort((a, b) => NOTICE_KINDS.indexOf(a.kind) - NOTICE_KINDS.indexOf(b.kind));
   return { new: entries.map((e) => ({ ...e.view, annotations: e.ids.size })) };
-}
-
-/** The page the caller gave `import_format`, for the containers the plugin creates without naming one (`beside` already gives it). */
-function withDefaultPage(operations: Operation[], page: string | undefined): Operation[] {
-  if (page === undefined) return operations;
-  return operations.map((o) =>
-    (o.op === 'add_container' || o.op === 'add_image' || o.op === 'add_blank_image') &&
-    o.page === undefined &&
-    !('beside' in o && o.beside !== undefined)
-      ? { ...o, page }
-      : o,
-  );
 }
