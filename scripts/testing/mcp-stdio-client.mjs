@@ -18,7 +18,10 @@
 //     response's image; null if there is no image; on a fetch failure, {url, error}).
 //
 // <calls.json> is a list: {"list":true} shows the tools and the schemas; each
-// {"name":"<tool>","args":{...}} calls a tool, in order.
+// {"name":"<tool>","args":{...}} calls a tool, in order. A call may carry `"save": "<file name>"`:
+// its image is written as IMGDIR/<file name> (a second image of the same response, as
+// `<name>-2<ext>`, and so on), instead of `<tool>-<n>.<ext>`. A `save` with `/`, `\` or `..` is
+// refused before any call (exit 1), so nothing is written outside IMGDIR.
 //
 // Environment:
 //   WS                workspace folder where the server runs (default: the current folder)
@@ -129,6 +132,28 @@ async function checkUrl(url, imageBytes) {
   }
 }
 
+/** A `save` is a plain file name: no folder, no `..`. */
+function validSave(save) {
+  return (
+    typeof save === 'string' && save !== '' && !/[\\/]/.test(save) && !save.includes('..')
+  );
+}
+
+/** File of the `index`-th image (0-based) of a call: `save` as given, then `<name>-2<ext>`, ... */
+function imageFile(call, index, ext, id) {
+  if (call.save === undefined) return path.join(imgDir, `${call.name}-${id}${ext}`);
+  const { name, ext: saveExt } = path.parse(call.save);
+  const suffix = index === 0 ? '' : `-${index + 1}`;
+  return path.join(imgDir, `${name}${suffix}${saveExt || ext}`);
+}
+
+for (const call of calls) {
+  if (call.save !== undefined && !validSave(call.save))
+    fail(
+      `invalid "save" ${JSON.stringify(call.save)}: use a file name, with no "/", "\\" or ".."`,
+    );
+}
+
 const server = spawn('node', serverArgs, {
   cwd: workspace,
   stdio: ['pipe', 'pipe', 'inherit'],
@@ -213,6 +238,7 @@ for (const call of calls) {
   } else {
     let url = null;
     let imageBytes = null;
+    let images = 0;
     out = response.result.content.map((item) => {
       if (item.type === 'text') {
         url ??= urlFromText(item.text);
@@ -220,7 +246,7 @@ for (const call of calls) {
       }
       // Image (e.g. get_marking_image): writes a file for the agent to open.
       const ext = MIME_EXT[item.mimeType] ?? '.bin';
-      const file = path.join(imgDir, `${call.name}-${lastId}${ext}`);
+      const file = imageFile(call, images++, ext, lastId);
       imageBytes = Buffer.from(item.data, 'base64');
       fs.writeFileSync(file, imageBytes);
       return { saved: file, mimeType: item.mimeType };
