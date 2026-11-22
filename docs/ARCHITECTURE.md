@@ -170,7 +170,13 @@ rectangles and on the current parent. The sweep uses the positions and boxes of 
 canvas markings and replaced markings), instead of building the index of the whole project. The proof of equivalence is a randomized test of
 sequences of public operations (`tests/model/settleSequences.test.ts`, seed printed on failure), besides the randomized test of projects
 against the frozen reference (`tests/model/settleEquivalence.test.ts`). The clipping assumes what every model operation receives: a
-project from before that is already settled.
+project from before that is already settled. **Reading settles the project** (#1971): `deserializeParsed` (`src/model/serialization.ts`)
+returns `settleHierarchy(project)` for a valid project (the same object when there is nothing to change) and for a repaired one with
+nothing left unrepaired, in the app (`src/storage/loadProject.ts`) and in the MCP (`mcp/projects.ts`) alike, so a `mapping.json` with a
+wrong but valid `parentId` (edited by hand) opens with the hierarchy by geometry and the assumption above holds for it. Reading writes
+nothing: the corrected `parentId` reaches the disk on the next save caused by an edit, with `revision + 1`. Inside the settle, the
+container lookup (`containerLookup`) builds its id map on the first query and reuses it for the rest of the settle, and the first delta
+is reused by the reconciliation when the settle changed neither the markings nor the containers array.
 
 **Reconciliation of the perspectives.** At the end of the settle (`settleHierarchy`, unless `settle: false`), `reconcilePerspectives(before, after)`
 (`src/model/perspectiveReconcile.ts`) keeps `perspectives[].items` and `arrivals[]` consistent with the new geometry, without moving anything on
