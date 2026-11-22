@@ -1504,6 +1504,7 @@ export const TOOL_WINDOW_IDS = [
   'tree',
   'layers',
   'details',
+  'conversation',
   'list',
   'incomplete',
   'diagnostics',

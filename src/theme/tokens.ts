@@ -286,6 +286,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   /** Initial height of the bottom window: 4 whole rows of the Comments list, with filters and header, at 900 × 720 (decision 6 of #734). Measured: the list gains 1 px per window px and 357 px give 148 px (4 × 37 px); 360 px fit in 60% of the editor body at 900 × 720 (`BOTTOM_MAX_FRACTION`). With the narrow layout's filters on two lines (CL3) the list has 207 px, 4 whole rows even with broken anchors (37 + 3 × 53 px); the token does not go up: 360 px is the 60% ceiling. */
   'size-tw-bottom': '360px',
   'size-tw-layers': '224px',
+  /** Initial height of the Conversation window under Details in the right column (stage #1881). */
+  'size-tw-conversation': '320px',
   /** Initial height of the bottom window in review mode (collapsed filters, 3 whole list rows and the shortcut footer at 900 px wide). */
   'size-tw-bottom-review': '240px',
   /**
