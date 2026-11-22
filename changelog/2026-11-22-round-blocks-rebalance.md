@@ -1,4 +1,4 @@
-# Round blocks rebalance — [Não lançado]
+# Round blocks rebalance — 2026-11-22 (épico `epic/round-blocks-rebalance`, PR #0, MCP unchanged, schema v23)
 
 MCP unchanged, schema unchanged.
 
