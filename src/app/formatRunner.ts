@@ -44,6 +44,9 @@ const FRAME_MARGIN_MS = 1000;
 /** How long a new frame has to say it is ready. */
 const FRAME_READY_MS = FORMAT_PLUGIN_LIMITS.timeoutMs;
 
+/** The text of a call that went past the limit, as the MCP server words it (with the limit). */
+const TIMEOUT_MESSAGE = `the plugin went past the time limit of ${FORMAT_PLUGIN_LIMITS.timeoutMs / 1000} s`;
+
 type Limits = typeof FORMAT_PLUGIN_LIMITS;
 
 const failure = (code: FormatFailureCode, message: string): FormatOutcome => ({
@@ -164,7 +167,7 @@ function outcomeOf(answer: Answer, fn: FormatFunction): FormatOutcome {
     case 'missing':
       return failure('plugin-failed', `the plugin does not define ${fn}`);
     case 'timeout':
-      return failure('plugin-timeout', 'the plugin went past the time limit');
+      return failure('plugin-timeout', TIMEOUT_MESSAGE);
     default:
       return failure('plugin-output-invalid', textOf(answer.message, 'bad output'));
   }
@@ -248,7 +251,7 @@ export function createFormatRunner(deps: FormatRunnerDeps): DisposableFormatRunn
       // does not answer at all (it is removed, and the next call creates another).
       const timer = setTimeout(() => {
         drop();
-        settle(failure('plugin-timeout', 'the plugin went past the time limit'));
+        settle(failure('plugin-timeout', TIMEOUT_MESSAGE));
       }, FORMAT_PLUGIN_LIMITS.timeoutMs + FRAME_MARGIN_MS);
       waiting = { id, fn, settle };
       live.post({

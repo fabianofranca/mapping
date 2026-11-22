@@ -144,4 +144,31 @@ describe('formatCheckIssues', () => {
     const noInput = await issuesOf({ behavior: generateOnly });
     expect(noInput[0]!.message).toMatch(/only generates needs `input`/);
   });
+
+  it('a plugin that goes past the time limit is run once, not once per function (R44.4: about 6 s, not 10)', async () => {
+    const calls: string[] = [];
+    const timesOut: Behavior = (fn) => {
+      calls.push(fn);
+      return {
+        ok: false,
+        failure: { code: 'plugin-timeout', message: 'went past the time limit of 5 s' },
+      };
+    };
+    const issues = await issuesOf({ behavior: timesOut, level: 2 });
+    expect(calls).toEqual(['generate']);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]!.message).toMatch(/plugin-timeout/);
+    expect(issues[0]!.message).toMatch(/time limit of 5 s/);
+  });
+
+  it('a plugin that throws gives the plugin path and line:column (R44.6, as the MCP server words it)', async () => {
+    const throwing: Behavior = () => ({
+      ok: false,
+      failure: { code: 'plugin-failed', message: 'Error: boom', line: 1, column: 100 },
+    });
+    const issues = await issuesOf({ behavior: throwing });
+    expect(issues[0]!.message).toMatch(/plugin-failed/);
+    expect(issues[0]!.message).toMatch(/Error: boom/);
+    expect(issues[0]!.message).toContain(`${PLUGIN}:1:100`);
+  });
 });

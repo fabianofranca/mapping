@@ -13,6 +13,10 @@
 ## Corrigido
 
 - A plugin result with a value of the wrong type (a text where a number goes, a flag that is not a boolean, an unknown anchor side or arrow style) is now refused at its path (`operations[3].rect.x`) before any rule reads it, instead of being coerced or failing with a vague error. The types and ranges are the MCP batch's; the MCP itself is unchanged.
+- The in-app help for specializations says that file format plugins run in the app too (isolated, on an explicit action), not only in the MCP.
+- The MCP batch's `invalid-parent` error for `inside` now carries the cause (the target does not draw a component with a slot, or the container differs) in `message`, not only in `detail`; the code is the same.
+- A plugin that goes past the time limit is run once while the Catalog or the apply checks which functions it defines (about 6 s, not 10), and its message says `time limit of 5 s`. A plugin that throws during the library checks in the app gives the plugin path and `line:column`, like `validate_library`.
+- The title of a dialog opened inside a tool window (the Catalog's File formats and component pages) is vertically centered with the close button (an `h2` rule of the tool window gave it a 16 px bottom margin).
 
 ## Adicionado
 
