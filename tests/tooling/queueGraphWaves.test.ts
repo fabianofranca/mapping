@@ -13,7 +13,14 @@ const NOW = '2026-11-12T10:00:00Z';
 const SUBPROCESS_TIMEOUT = 30_000;
 
 // The field names (Portuguese) are the script's output keys, read by the panel page.
-type GraphNode = { issue: string; onda: number; estado: string; motivo: string };
+type GraphNode = {
+  issue: string;
+  onda: number;
+  rank: number | null;
+  estado: string;
+  motivo: string;
+};
+type GraphArrow = { de: string; para: string; tipo: string };
 
 let dir = '';
 
@@ -27,6 +34,14 @@ function meta(): Record<string, unknown> {
   >;
   return list[0] ?? {};
 }
+
+const nodes = (): GraphNode[] => meta().grafoNos as GraphNode[];
+const arrows = (): GraphArrow[] => meta().grafoSetas as GraphArrow[];
+const node = (issue: string): GraphNode => {
+  const found = nodes().find((n) => n.issue === issue);
+  if (!found) throw new Error(`${issue} is not a graph node`);
+  return found;
+};
 
 const waves = (): Record<string, number> =>
   Object.fromEntries((meta().grafoNos as GraphNode[]).map((n) => [n.issue, n.onda]));
@@ -168,6 +183,125 @@ describe('painel.py — real waves (GW1, #2293)', () => {
       expect(waves()).toEqual({ '#1': 0, '#2': 0, '#5': 0, '#3': 1, '#4': 2 });
       const shown = run('show', dir);
       expect(shown).toContain('começar agora: #2 #5');
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  // Phase GW2 (decisions 4 and 5): every blocker in the reason and as an arrow.
+  it(
+    'i. a stage in wave 2 lists its open dep, then a file blocker per earlier stage, by wave and order',
+    () => {
+      fullSlots();
+      stage('#1', ficha('nenhuma', 'src/a.ts'));
+      stage('#2', ficha('nenhuma', 'src/c.ts'));
+      stage('#3', ficha('#1:aberta', 'running.ts, src/c.ts'));
+      expect(node('#3')).toMatchObject({ onda: 2, estado: 'dep', rank: 3 });
+      expect(node('#3').motivo).toBe(
+        'dep #1; arquivo running.ts com #90; arquivo src/c.ts com #2',
+      );
+      expect(node('#1')).toMatchObject({
+        onda: 1,
+        estado: 'livre',
+        rank: 1,
+        motivo: 'vagas cheias',
+      });
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
+    'j. a schema blocker gives schema com #N after the arquivo items',
+    () => {
+      fullSlots();
+      stage('#1', ficha('nenhuma', 'src/a.ts', 'v24'));
+      stage('#3', ficha('nenhuma', 'src/c.ts'));
+      stage('#2', ficha('nenhuma', 'src/b.ts, src/c.ts', 'v24'));
+      expect(node('#2')).toMatchObject({ onda: 2 });
+      expect(node('#2').motivo).toBe('arquivo src/c.ts com #3; schema com #1');
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
+    'k. a refused dependency is written dep #N recusada, as in plan_block',
+    () => {
+      fullSlots();
+      run('row', dir, '#7', 'status=recusada');
+      stage('#1', ficha('#7:aberta', 'running.ts'));
+      expect(node('#1')).toMatchObject({ onda: 1, estado: 'dep' });
+      expect(node('#1').motivo).toBe('dep #7 recusada; arquivo running.ts com #90');
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
+    'l. an exclusive node keeps the slots_plan reason first, then its blockers; with none, only the reason',
+    () => {
+      fullSlots();
+      stage('#1', ficha('nenhuma', 'running.ts, src/a.ts'), 'exclusive=sim');
+      stage('#2', ficha('nenhuma', 'src/a.ts'));
+      stage('#3', ficha('nenhuma', 'src/y.ts'));
+      expect(node('#1')).toMatchObject({ onda: 1, estado: 'exclusiva' });
+      expect(node('#1').motivo).toBe(
+        'exclusiva (espera a fila esvaziar); arquivo running.ts com #90',
+      );
+      expect(node('#2')).toMatchObject({ onda: 2, estado: 'exclusiva' });
+      expect(node('#2').motivo).toBe(
+        'segurada para a exclusiva #1; arquivo src/a.ts com #1',
+      );
+      expect(node('#3')).toMatchObject({ onda: 2, estado: 'exclusiva' });
+      expect(node('#3').motivo).toBe('segurada para a exclusiva #1');
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
+    'm. started, wave 0, segurada and ficha nodes keep their motivo; so do estado and rank',
+    () => {
+      run('start', dir, '--paralelo', '3');
+      stage('#1', ficha('nenhuma', 'src/a.ts'), 'status=em andamento');
+      stage('#2', ficha('nenhuma', 'src/b.ts'));
+      stage('#3', ficha('nenhuma', 'src/a.ts'), 'hold=owner decision pending');
+      stage('#4', 'dep=nenhuma | toca=?');
+      stage('#5', ficha('nenhuma', 'src/a.ts'));
+      expect(node('#1')).toMatchObject({
+        onda: 0,
+        estado: 'rodando',
+        motivo: 'em andamento',
+      });
+      expect(node('#2')).toMatchObject({ onda: 0, estado: 'livre', motivo: 'começa' });
+      expect(node('#3')).toMatchObject({
+        estado: 'segurada',
+        motivo: 'owner decision pending',
+        rank: null,
+      });
+      expect(node('#4')).toMatchObject({ estado: 'ficha', rank: null });
+      expect(node('#4').motivo).toMatch(/^ficha incompleta/);
+      expect(node('#5')).toMatchObject({
+        onda: 1,
+        estado: 'arquivo',
+        rank: 2,
+        motivo: 'arquivo src/a.ts com #1',
+      });
+    },
+    SUBPROCESS_TIMEOUT,
+  );
+
+  it(
+    'n. one arquivo arrow per file or schema blocker, each pair once; dep arrows stay the reduction',
+    () => {
+      fullSlots();
+      stage('#1', ficha('nenhuma', 'src/a.ts'));
+      stage('#2', ficha('nenhuma', 'src/c.ts', 'v24'));
+      stage('#3', ficha('#1:aberta', 'running.ts, src/c.ts', 'v24'));
+      expect(node('#3').motivo).toBe(
+        'dep #1; arquivo running.ts com #90; arquivo src/c.ts com #2',
+      );
+      expect(arrows()).toEqual([
+        { de: '#90', para: '#3', tipo: 'arquivo' },
+        { de: '#1', para: '#3', tipo: 'dep' },
+        { de: '#2', para: '#3', tipo: 'arquivo' },
+      ]);
     },
     SUBPROCESS_TIMEOUT,
   );
