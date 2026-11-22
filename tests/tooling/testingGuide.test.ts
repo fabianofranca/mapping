@@ -412,9 +412,9 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(guide).toMatch(/^- R15 uses the folder of its own `remotas`/m);
     });
 
-    it('has steps R15.1 to R15.12, in order, and none depends on the owner', () => {
+    it('has steps R15.1 to R15.13, in order, and none depends on the owner', () => {
       const codes = [...stepActions(r15).keys()];
-      expect(codes).toEqual(Array.from({ length: 12 }, (_, i) => `R15.${i + 1}`));
+      expect(codes).toEqual(Array.from({ length: 13 }, (_, i) => `R15.${i + 1}`));
       expect(/without a substitute/i.test(r15)).toBe(false);
     });
 

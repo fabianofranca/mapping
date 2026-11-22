@@ -504,6 +504,34 @@ describe('gallery', () => {
     expect(after).not.toEqual(before);
   });
 
+  it('a remote image that fails rasterizes the gallery again and lists the warning with the origin (DX7)', () => {
+    const imagesEpoch = signal(0);
+    // The loader's `epoch` also rises on a failure; from then on the drawing warns, as
+    // `renderScene` does for a `failed` image.
+    const engine = createCatalogRenderer(
+      approximateMeasurer,
+      (_root, options) => {
+        if (imagesEpoch.peek() > 0) {
+          options.onWarnings?.([
+            { code: 'remote-image-failed', params: { origin: 'https://example.com' } },
+          ]);
+        }
+        return `data:image/png;base64,${imagesEpoch.peek()}`;
+      },
+      imagesEpoch,
+    );
+    view({ initialTypeId: 'm3-button', renderer: engine });
+    const gallery = () =>
+      screen.getByRole('region', { name: t('catalog.gallery.title') });
+    expect(gallery().textContent).not.toContain('https://example.com');
+    act(() => {
+      imagesEpoch.value += 1;
+    });
+    expect(gallery().textContent).toContain(
+      'The remote image from https://example.com did not load',
+    );
+  });
+
   it('a package image that finishes decoding (its epoch) rasterizes the gallery again, with the resolver and the specialization', () => {
     const resolve = vi.fn(() => ({ state: 'loading' as const }));
     const source = {

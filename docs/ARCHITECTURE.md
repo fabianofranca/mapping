@@ -793,7 +793,7 @@ allowLocalNetwork })` returns `{ ok: true, url, origin, local }` or `{ ok: false
   and `referrerPolicy = 'no-referrer'`; up to 6 in parallel, 20 s timeout, refuses above 8192 px on a side or 40 MP, displays a
   bitmap reduced to 2048 px on the longer side, in-memory cache per URL (64 entries, `close()` deferred to the next frame) and a failure
   not retried in the session. States per image: `loading`, `loaded`, `opaque`, `blocked-consent`, `invalid`, `failed`, `too-large`;
-  all except `loaded` and `opaque` draw the reserved area. `canvas/components/remoteImages.ts` is the bridge (policy, consent,
+  all except `loaded` and `opaque` draw the reserved area: `failed` (any reason) and `too-large` draw the **failure look** (the placeholder's gray fill, the X and a dashed `failedLine` outline of the box; `renderScene` `remoteImageFill`), and so does `opaque` under `pixelSafe` (the Catalog gallery), while the empty `src`, `loading`, `blocked-consent` and `invalid` keep the neutral placeholder. The failure look warns `remote-image-failed` (and `remote-image-opaque`) with `params.origin`, once per origin and code in a drawing; the loader's `epoch` also rises in `fail`, so the gallery redraws on a failure (the main canvas and the viewer redraw through `subscribe`). `canvas/components/remoteImages.ts` is the bridge (policy, consent,
   loader) for the main canvas and for the Catalog gallery; failures go to Diagnostics, once per URL.
 - **Without CORS:** with the switch on, the loader first tries with `crossOrigin` and, if that fails, **once** without it; the image
   becomes `opaque`. An `opaque` image is only drawn on the main canvas. **Every pixel read** (`toDataURL`, `toBlob`,

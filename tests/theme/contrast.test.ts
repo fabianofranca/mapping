@@ -56,7 +56,13 @@ const PAIRS: readonly [string, string, number][] = [
 describe.each(['light', 'dark'] as const)('canvas marking in the %s theme', (theme) => {
   const canvasBg = tokenValue('color-canvas-bg', theme);
 
-  it.each(['cv-canvas-marking', 'cv-absorb', 'cv-select-secondary', 'cv-arrow'])(
+  it.each([
+    'cv-canvas-marking',
+    'cv-absorb',
+    'cv-select-secondary',
+    'cv-arrow',
+    'cv-component-image-failed',
+  ])(
     '%s over the canvas background ≥ 3',
     (name) => {
       expect(contrast(tokenValue(name, theme), canvasBg)).toBeGreaterThanOrEqual(3);

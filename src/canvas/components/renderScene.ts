@@ -687,6 +687,13 @@ class Renderer {
     box: Box,
   ): Konva.Shape[] {
     const view = this.resolveRemote(url);
+    if (isFailureLook(view.state, this.options.pixelSafe === true)) {
+      this.warn(
+        view.state === 'opaque' ? 'remote-image-opaque' : 'remote-image-failed',
+        { origin: urlOrigin(url) },
+      );
+      return failurePlaceholder(shape, box, this.palette);
+    }
     const drawable =
       view.image !== undefined &&
       (view.state === 'loaded' || (view.state === 'opaque' && !this.options.pixelSafe));
@@ -1032,6 +1039,47 @@ function placeholder(
   });
   // A polygon with two crossed segments: draws 0→end, end→(w,0), (w,0)→(0,h).
   return [shape, cross];
+}
+
+/** `failed`, `too-large` and, in a pixel-safe drawing, `opaque` draw the failure look. */
+function isFailureLook(state: RemoteImageViewState, pixelSafe: boolean): boolean {
+  return (
+    state === 'failed' || state === 'too-large' || (state === 'opaque' && pixelSafe)
+  );
+}
+
+/** The origin of a URL for a warning (never the whole URL); `''` when it does not parse. */
+function urlOrigin(url: string): string {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * The failure look of a remote image: the placeholder's gray fill, and the X and a dashed outline
+ * of the box in `failedLine` (screen pixels, at any zoom).
+ */
+function failurePlaceholder(
+  shape: Konva.Shape,
+  box: Box,
+  palette: RenderPalette,
+): Konva.Shape[] {
+  const [fill, cross] = placeholder(shape, box, palette) as [Konva.Shape, KonvaLine];
+  cross.stroke(palette.failedLine);
+  const radius = shape instanceof KonvaRect ? shape.cornerRadius() : 0;
+  const outline = new KonvaRect({
+    width: box.width,
+    height: box.height,
+    cornerRadius: radius,
+    stroke: palette.failedLine,
+    strokeWidth: 1,
+    dash: [4, 3],
+    strokeScaleEnabled: false,
+    listening: false,
+  });
+  return [fill, cross, outline];
 }
 
 /**

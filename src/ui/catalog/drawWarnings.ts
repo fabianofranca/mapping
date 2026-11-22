@@ -18,6 +18,8 @@ const KEYS: Record<RenderWarningCode, TranslationKey> = {
   'stroke-radial-first-color': 'catalog.drawWarning.stroke-radial-first-color',
   'stroke-image-gray': 'catalog.drawWarning.stroke-image-gray',
   'angular-gradient-unsupported': 'catalog.drawWarning.angular-gradient-unsupported',
+  'remote-image-failed': 'catalog.drawWarning.remote-image-failed',
+  'remote-image-opaque': 'catalog.drawWarning.remote-image-opaque',
 };
 
 /** The text of a drawing warning (`renderScene`) in the app's language. */
