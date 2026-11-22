@@ -366,12 +366,14 @@ describe('implementar-fila: switch at 35% and one active session per role (decis
     const archive = skill.slice(skill.indexOf('**Archive the sessions**'));
     const block = between(
       archive,
-      '- **Archiving denied by Auto mode**',
+      '**Archiving denied by Auto mode**',
       '**Fallback checks:**',
     );
     expect(block).toContain('arquivamento negado (Auto)');
     expect(block).toContain('never the question picker');
     expect(block).toContain('no `PushNotification`');
+    expect(block).toMatch(/`archive_session` is not called again/);
+    expect(block).toMatch(/ids go back to pending/);
     expect(block).toContain('"pode arquivar"');
     expect(block).toContain('`pode arquivar`');
     expect(block).toContain('`não arquive`');
@@ -382,14 +384,14 @@ describe('implementar-fila: switch at 35% and one active session per role (decis
     expect(block).toMatch(/never more than once per hourly check/i);
     expect(block).toMatch(/owner's own message in the queue chat/);
     expect(block).toMatch(/by the coordinator itself, not by the cycle's subagent/);
-    expect(block).toMatch(/does not carry over/);
+    expect(block).toMatch(/do not carry over/);
   });
 
   it('"For the owner, in the three chats" lists `pode arquivar` and `não arquive` (#2579)', () => {
     const owner = section(flow, '## For the owner, in the three chats');
     expect(owner).toContain('`pode arquivar`');
     expect(owner).toContain('`não arquive`');
-    expect(owner).toMatch(/does not carry over to a successor/);
+    expect(owner).toMatch(/neither carries over to a successor/);
   });
 
   it('"Fallback checks" uses 35%', () => {

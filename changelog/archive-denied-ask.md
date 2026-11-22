@@ -1,4 +1,4 @@
-# The coordinator asks the owner to archive when Auto mode denies it — [Não lançado] (épico `epic/archive-denied-ask`, MCP unchanged, schema v23)
+# The coordinator asks the owner to archive when Auto mode denies it — [Não lançado] (épico `epic/archive-denied-ask`, PR #0, MCP unchanged, schema v23)
 
 ## Adicionado
 
