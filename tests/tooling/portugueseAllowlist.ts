@@ -1521,6 +1521,36 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'owner-chat',
   },
   {
+    term: 'Arquivamento: <k> sessões concluídas esperam (o modo Auto negou). Responda "pode arquivar" para eu arquivar estas e as próximas desta sessão.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'pode arquivar',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'não arquive',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '<rótulo>: arquivamento negado (Auto)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'arquivamento negado (Auto)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'arquivamento autorizado pelo dono (<k> arquivadas)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
     term: '#<n> — a direção para o ciclo de CI da <código> toca <arquivo>, fora do “Toca em:”. Responda `ampliar #<n>` para mandar a direção ou `manter #<n>`.',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
@@ -2526,11 +2556,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   {
     term: 'Origem: via rápida #',
-    source: '.claude/skills/via-rapida/SKILL.md',
-    group: 'issue-markers',
-  },
-  {
-    term: 'nenhuma (só processo)',
     source: '.claude/skills/via-rapida/SKILL.md',
     group: 'issue-markers',
   },
