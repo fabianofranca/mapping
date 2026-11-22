@@ -648,4 +648,37 @@ describe('package images of the example library drawing-extras', () => {
     expect(find(after, '#C80000', EXACT).count).toBe(0);
     expect(find(after, '#0000C8', EXACT).count).toBeGreaterThan(MIN_PIXELS);
   });
+
+  it('filter.grayscale 1 on the component turns its package images gray (#2359)', async () => {
+    const file = join(packageDir, 'components', 'logo.json');
+    const original = readFileSync(file, 'utf8');
+    const component = JSON.parse(original) as { template: Record<string, unknown> };
+    component.template.filter = { grayscale: 1 };
+    writeFileSync(file, JSON.stringify(component));
+    try {
+      const { refs, marking } = await open({
+        variant: 'jpeg',
+        source: 'images/pattern.webp',
+      });
+      const raster = await decoded(
+        (await renderMarking(pkgRoots, refs, marking, {})).image,
+      );
+      // Every pixel has R = G = B: the images, the text and the border.
+      let colored = 0;
+      for (let i = 0; i < raster.data.length; i += 4) {
+        if (
+          raster.data[i] !== raster.data[i + 1] ||
+          raster.data[i] !== raster.data[i + 2]
+        ) {
+          colored++;
+        }
+      }
+      expect(colored).toBe(0);
+      for (const hex of [PNG_COLORS[0]!, WEBP_COLORS[2]!]) {
+        expect(find(raster, hex, EXACT).count, hex).toBe(0);
+      }
+    } finally {
+      writeFileSync(file, original);
+    }
+  });
 });
