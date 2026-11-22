@@ -187,17 +187,6 @@
   font: var(--t-text-small);
 }
 
-.thread-standalone {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.thread-standalone-title {
-  margin: 0;
-  font: var(--t-text-heading);
-}
-
 /* Citations (Comments stage, CM5): the live chip in messages and the one in the composer editor */
 .citation-chip {
   display: inline;
@@ -288,4 +277,21 @@
   gap: var(--space-1);
   min-width: 0;
   font: var(--t-text-small);
+}
+
+/* Conversation window (stage #1881, CV2): anchor line, thread and composer share the body. */
+.conversation-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.conversation-anchor {
+  margin: 0;
+  color: var(--color-text-muted);
+  font: var(--t-text-small);
+}
+
+.thread-section-empty {
+  margin: 0;
 }

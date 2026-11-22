@@ -11,7 +11,6 @@ import { startComposing } from '../store/threadUi';
 import type { ActionMenuItem } from './ActionMenu';
 import { Button } from './controls';
 import { useEditor } from './EditorContext';
-import { openToolWindow } from './toolWindowLayout';
 
 // "Cite in the conversation", "Comment" and "Copy reference" in the menus of a target (Comments stage,
 // CM5, decision 32): field, pair, row, annotation, item, layer and thread. A single definition of
@@ -58,7 +57,6 @@ export function useCiteActions(): CiteActions {
         const project = review.derived.shownProject.peek();
         if (!project) return;
         startComposing(ui, project, anchor);
-        openToolWindow('details');
       },
     }),
     copy: (target) => ({

@@ -11,6 +11,8 @@ import { Composer, type ComposerTarget } from '../../src/ui/comments/Composer';
 import { sampleProject } from '../model/fixtures';
 import { sampleThread } from '../model/threadFixtures';
 import { chipsOf, keyDown, typeIn } from './composerHelpers';
+import { selectedThreadId } from '../../src/store/threadUi';
+import { hideToolWindow, isToolWindowOpen } from '../../src/store/toolWindows';
 import { createHarness } from './harness';
 
 // The composer with the citation editor (Comments stage, CM5): `@` anchor, bridge,
@@ -111,6 +113,17 @@ describe('Composer › draft and sending', () => {
     // pt-BR kept: shared fixture data asserted by tests/model (sampleProject)
     expect(text).toMatch(/^see \[Maçaneta\]\(mapping:\/\/[^)]+\)$/);
     await waitFor(() => expect(harness.ui.threadDrafts.value.size).toBe(0));
+  });
+
+  it('sending a new conversation shows it in the Conversation window', async () => {
+    const harness = mount({ kind: 'new', anchor: { kind: 'marking', id: 'M1' } });
+    hideToolWindow('conversation');
+    const editor = screen.getByRole('textbox');
+    typeIn(editor, 'hello');
+    keyDown(editor, 'Enter', { ctrlKey: true });
+    await waitFor(() => expect(selectedThreadId(harness.ui)).not.toBeNull());
+    expect(harness.ui.conversation.value?.kind).toBe('thread');
+    expect(isToolWindowOpen('conversation')).toBe(true);
   });
 });
 

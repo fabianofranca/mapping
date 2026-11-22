@@ -655,6 +655,7 @@ export const enUS = {
   'conversation.title': 'Conversation',
   'conversation.empty':
     'No conversation open. Choose one in Details, in Comments or on a pin.',
+  'conversation.anchor': 'on {where}',
   'comments.delete.title': 'Delete the conversation?',
   'comments.delete.confirm': 'Delete',
   'comments.delete.goes': '{count} messages will be gone: {authors}.',
@@ -731,6 +732,7 @@ export const enUS = {
   'thread.section': 'Conversations',
   'thread.list': 'Conversations on this item',
   'thread.new': 'New',
+  'thread.sectionEmpty': 'No conversations on this item.',
   'thread.newHint': 'Start a conversation on this item',
   'thread.in': 'on {where}',
   'thread.messagesOne': '1 message',

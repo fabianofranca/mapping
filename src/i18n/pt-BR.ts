@@ -655,6 +655,7 @@ export const ptBR: Dictionary = {
   'conversation.title': 'Conversa',
   'conversation.empty':
     'Nenhuma conversa aberta. Escolha uma em Detalhes, em Comentários ou em um pino.',
+  'conversation.anchor': 'em {where}',
   'comments.delete.title': 'Apagar a conversa?',
   'comments.delete.confirm': 'Apagar',
   'comments.delete.goes': 'Vão embora {count} mensagens: {authors}.',
@@ -732,6 +733,7 @@ export const ptBR: Dictionary = {
   'thread.section': 'Conversas',
   'thread.list': 'Conversas deste item',
   'thread.new': 'Nova',
+  'thread.sectionEmpty': 'Nenhuma conversa neste item.',
   'thread.newHint': 'Começar uma conversa neste item',
   'thread.in': 'em {where}',
   'thread.messagesOne': '1 mensagem',

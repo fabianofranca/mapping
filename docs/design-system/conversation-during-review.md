@@ -9,6 +9,12 @@ Phase CV1 (stage #1881), for the **Mapping** artifact:
 - Icon `conversation` (two overlapping speech bubbles, 16 px grid).
 - New component `Janela Conversa`: for now only the empty state ("No conversation open. Choose one in Details, in Comments or on a pin."); the header, state badge, anchor line and live region come in the next phases.
 
+Phase CV2 (stage #1881), for the **Mapping** artifact:
+
+- `ThreadsSection`: now only a list (rows with `aria-current` on the window's conversation, **New** in the header, empty text "No conversations on this item."); it no longer holds a thread or a composer.
+- `Janela Conversa`: header with the conversation's state badge (`StateBadge`, moved out of the thread head), body with the "on <where>" line, the thread and the composer (new-conversation composer with Cancel); the empty state also covers a deleted conversation.
+- `StandaloneThreadPanel` removed from the component map (`CommentsWindow` and others rows).
+
 ## Sincronização
 
 Not synced yet.
