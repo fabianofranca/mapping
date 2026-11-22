@@ -549,7 +549,8 @@ class Renderer {
 
   /**
    * A package image (`asset`): the placeholder while the host decodes it (a known state, no warning)
-   * and when it cannot be drawn (`image-decode-failed`); the bitmap on a rect once it is ready.
+   * and when it cannot be drawn (`image-decode-failed`, or `package-image-refused` for an image over
+   * the limits, none for a missing file); the bitmap on a rect once it is ready.
    * `undefined` for any other paint.
    */
   private packageImageFill(
