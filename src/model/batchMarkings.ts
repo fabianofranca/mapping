@@ -423,6 +423,7 @@ function insideTarget(
     throw new ModelError(
       'invalid-parent',
       '`inside` must be a marking that draws a component with a slot (see list_components: only a component with a slot, such as Column or Row, receives children)',
+      { explained: true },
     );
   }
   if (
@@ -432,6 +433,7 @@ function insideTarget(
     throw new ModelError(
       'invalid-parent',
       '`container` is not the container of the `inside` target: omit `container` (it comes from the target)',
+      { explained: true },
     );
   }
   checkInsideSlot(ctx, p, args.slot, id);

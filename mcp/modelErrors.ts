@@ -142,6 +142,17 @@ export const MODEL_ERROR_HINTS: Readonly<Partial<Record<ModelErrorCode, string>>
 };
 
 /** Text after the first `: ` of the message (`code: text`); the text may have `: ` inside it. */
+/**
+ * The text a model error shows as its `message`: the generic one of the code, or, for an error the
+ * operation explained itself (`data.explained`: `invalid-parent` of `inside`, whose cause the generic text
+ * does not name), the cause.
+ */
+export function modelErrorMessage(error: ModelError): string {
+  const cause = error.data?.explained === true ? messageDetail(error) : undefined;
+  const generic = MODEL_ERROR_MESSAGES[error.code];
+  return cause === undefined ? generic : `${generic.split(': ')[0]!}: ${cause}`;
+}
+
 function messageDetail(error: ModelError): string | undefined {
   const at = error.message.indexOf(': ');
   return at < 0 ? undefined : error.message.slice(at + 2);
@@ -276,7 +287,7 @@ export function describeModelError(
 
 /** Model rule error in a read tool → `ToolError` with the explanation and the detail. */
 export function modelToolError(error: ModelError, refs?: Refs): ToolError {
-  return new ToolError(error.code, MODEL_ERROR_MESSAGES[error.code], {
+  return new ToolError(error.code, modelErrorMessage(error), {
     ...describeModelError(error, refs),
   });
 }
