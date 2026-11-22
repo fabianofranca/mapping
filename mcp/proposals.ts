@@ -12,7 +12,6 @@ import {
   type Change,
   type Proposal,
   type ProposalStatus,
-  type ProjectContainer,
 } from '../src/model';
 import { batchReport, prepareBatch, readMapping, sha256 } from './changes';
 import { ToolError } from './errors';
@@ -26,7 +25,7 @@ import { ProposalRefs, lookupStored, resolveProposal } from './proposalRefs';
 import { Threads } from './threads';
 import {
   listStored,
-  reservedContainers,
+  newProposalReserve,
   reservedImages,
   updateStored,
   writeNewProposal,
@@ -104,23 +103,11 @@ export class Proposals {
     const previous =
       args.supersedes === undefined ? null : lookupStored(all, location, args.supersedes);
 
-    // Files in `images/` that other proposals can still apply: do not reuse the name. The
-    // open previous one counts as `superseded` (the state it will have): its accepted ones stay
-    // reserved, the pending ones are released. An applied, rejected or withdrawn previous one does not change.
-    const reserved = new Set<string>();
-    const reservedSpace: ProjectContainer[] = [];
-    for (const stored of all.proposals) {
-      const becomesSuperseded =
-        stored.id === previous?.id && stored.proposal.status === 'open';
-      const status = becomesSuperseded ? 'superseded' : stored.proposal.status;
-      for (const file of reservedImages(stored.proposal, status)) reserved.add(file);
-      reservedSpace.push(...reservedContainers(stored.proposal, status));
-    }
-
+    // Files in `images/` and canvas space that other proposals can still apply: do not reuse them.
+    // The open previous one counts as `superseded` (the state it will have): see `newProposalReserve`.
     const prepared = await prepareBatch(this.roots, location, args.operations, {
       now: this.now,
-      reservedImages: reserved,
-      reservedContainers: reservedSpace,
+      ...newProposalReserve(all.proposals, previous?.id ?? null),
     });
     const report = batchReport(prepared);
     if (!prepared.valid) {
