@@ -12,7 +12,7 @@ export default defineConfig({
   test: {
     projects: [
       {
-        // src/model/ runs in plain Node; phase 2 adds the jsdom project (session, derived state, viewer).
+        // src/model/ runs in plain Node; `scale-app` (jsdom) and `scale-mcp` below cover the session, derived state, viewer and the MCP.
         test: {
           name: 'scale-model',
           environment: 'node',

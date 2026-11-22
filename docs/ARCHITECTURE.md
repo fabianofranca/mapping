@@ -167,12 +167,18 @@ of the markings changed, repeated id), the whole project. The canvas spaces and 
 are settled whole (spatial index of `spaceIndex.ts`); in the others, only those that fit (including equal) in a rectangle that
 changed, before or after, are reviewed (`settleLocal.ts`): a marking's parent depends only on who contains it, on the ranks of equal
 rectangles and on the current parent. The sweep uses the positions and boxes of the markings of each space, kept per markings array
-(`settlePositions.ts`, filled on demand and passed from one operation to the next without sweeping the project). The perspectives and the
+(`settlePositions.ts`, filled on demand and passed from one operation to the next without sweeping the project: creations append to the space's entry, and a move or resize inside one space, not floating, keeps it too, copying the boxes on write so the previous array's entry, and so the undo and redo branches, stay intact; a change of space or of `floating` makes the spaces unknown again). A query of the spatial index walks the cells of its range, or the occupied cells of the size class when the range is larger, so a far-away marking does not stall every query. The perspectives and the
 "Came from…" marks are reconciled by `reconcilePerspectivesFrom`, the same algorithm over a lean view of the two projects (containers,
 canvas markings and replaced markings), instead of building the index of the whole project. The proof of equivalence is a randomized test of
 sequences of public operations (`tests/model/settleSequences.test.ts`, seed printed on failure), besides the randomized test of projects
 against the frozen reference (`tests/model/settleEquivalence.test.ts`). The clipping assumes what every model operation receives: a
-project from before that is already settled.
+project from before that is already settled. **Reading settles the project** (#1971): `deserializeParsed` (`src/model/serialization.ts`)
+returns `settleHierarchy(project)` for a valid project (the same object when there is nothing to change) and for a repaired one with
+nothing left unrepaired, in the app (`src/storage/loadProject.ts`) and in the MCP (`mcp/projects.ts`) alike, so a `mapping.json` with a
+wrong but valid `parentId` (edited by hand) opens with the hierarchy by geometry and the assumption above holds for it. Reading writes
+nothing: the corrected `parentId` reaches the disk on the next save caused by an edit, with `revision + 1`. Inside the settle, the
+container lookup (`containerLookup`) builds its id map on the first query and reuses it for the rest of the settle, and the first delta
+is reused by the reconciliation when the settle changed neither the markings nor the containers array.
 
 **Reconciliation of the perspectives.** At the end of the settle (`settleHierarchy`, unless `settle: false`), `reconcilePerspectives(before, after)`
 (`src/model/perspectiveReconcile.ts`) keeps `perspectives[].items` and `arrivals[]` consistent with the new geometry, without moving anything on
@@ -213,7 +219,7 @@ marking receives it divided by the scale and clamped to the container, and an it
 a descendant) does not receive a separate displacement. The previews use `settle: false`; on release, the final action repeats the operation with the
 settle and there is **one** undo entry. Dragging from the Palette uses `componentDropTarget` (`src/ui/componentTarget.ts`, pure: slot,
 container or canvas, and what to light up) and the `useComponentDrop` hook, with the MIME `application/x-mapping-component`; the **Add**
-button uses the same target from the selection.
+button uses the same target from the selection: with a plain marking (no slot) selected, **Add** targets its container, never the marking, so the new component is born with `parentId` null; it becomes a child of a plain marking only when geometry places it entirely inside (`settleHierarchy`), for example by dragging it in.
 
 The keyboard arrows move the selection through the pure operation `nudgeItems` (`src/model/multiSelection.ts`): 1 px, or 10 px with Shift, in the
 own space of each item (container marking in image pixels, at any scale; canvas marking, floating and container
@@ -559,7 +565,7 @@ Applies to every image that enters through the app (file, camera, paste, drag an
   outside `npm test` and coverage, in a step of the CI `build` job after `test:perf`; each test repeats up to twice (`retry: 2`, read from `GROWTH_RETRY`: `0` turns it off, and acceptance runs that way) as a safety net for the shared runner, not for "operations of a few ms that fluctuate", and prints in the
   log n, 4n, the two medians, the ratio, the ceiling and the quartiles of the pairwise ratios. The helper is `tests/support/growth.ts`, the same one and with the same ceiling in the growth cases of `tests/model/performance.test.ts` (project `perf-model`) and in the ceiling reading of `tests/mcp/batchPerf.test.ts`; the `test:scale` workers and `perf-model` start with `--expose-gc` and `--max-semi-space-size=128`, because without gc the pair does not isolate collection and with the default semi-space V8's _scavenge_ inflated the ratio to 5 to 8× with no quadratic loop at all. What is measured (each line is a case, n = 1,250 and 4n = 5,000 unless stated, and the log shows the ratio of each):
   - **Model** (`scale-model`, Node): `validateProject`; `serialize` + `deserialize`; index, pending items, indicators and visibility;
-    `buildListing`; `perspectiveView` of each perspective (`tests/scale/model/`). The `perspectiveView` cases are the exception to the sizes: they measure at **n = 2,500 and 4n = 10,000** markings (41 rounds), because that operation takes 0.3 to 0.5 ms at 1,250, where the cache advantage of n weighs the most and a loaded CI runner took the ratio past 6× with the code untouched (stage #1968); at 2,500 both sizes are larger than the cache and the run at n takes ~1 ms.
+    `buildListing`; `perspectiveView` of each perspective; `validateProject` on n small containers plus one 1,024 times larger, which the container overlap check by size class keeps linear (`tests/scale/model/`). The `perspectiveView` cases are the exception to the sizes: they measure at **n = 2,500 and 4n = 10,000** markings (41 rounds), because that operation takes 0.3 to 0.5 ms at 1,250, where the cache advantage of n weighs the most and a loaded CI runner took the ratio past 6× with the code untouched (stage #1968); at 2,500 both sizes are larger than the cache and the run at n takes ~1 ms.
   - **Session, derived state and viewer** (`scale-app`, jsdom; `tests/scale/app/`): saving an already open project (checking
     `revision` and content, writing `revision + 1`, in a fake storage) and opening the project; the editor's derived state
     (`createEditorDerived`: visible layers, indicators, visibility, pending items, list) on each new project version; the
