@@ -107,6 +107,14 @@ export function buildRectIndex<T>(
   return { containing };
 }
 
+/** The cell range a query looks at in a class (inclusive bounds). */
+interface CellRange {
+  readonly x0: number;
+  readonly x1: number;
+  readonly y0: number;
+  readonly y1: number;
+}
+
 /**
  * Collects into `out` the positions of the class's cells that may contain the point of `inner`.
  * The query range grows with the coordinates (the padding is relative to `|x|`, the step is the
@@ -121,24 +129,34 @@ function collectCells(
   padY: number,
   out: number[],
 ): void {
-  const x0 = Math.floor((inner.x - padX) / cls.sx) - 1;
-  const x1 = Math.floor((inner.x + padX) / cls.sx);
-  const y0 = Math.floor((inner.y - padY) / cls.sy) - 1;
-  const y1 = Math.floor((inner.y + padY) / cls.sy);
-  if ((x1 - x0 + 1) * (y1 - y0 + 1) > cls.cells.size) {
-    for (const [key, cell] of cls.cells) {
-      const column = Math.floor(key / CELL_STRIDE);
-      const cx = column - CELL_SHIFT;
-      const cy = key - column * CELL_STRIDE - CELL_SHIFT;
-      if (cx < x0 || cx > x1 || cy < y0 || cy > y1) continue;
-      for (const pos of cell) out.push(pos);
-    }
-    return;
-  }
-  for (let cx = x0; cx <= x1; cx++) {
-    for (let cy = y0; cy <= y1; cy++) {
+  const range: CellRange = {
+    x0: Math.floor((inner.x - padX) / cls.sx) - 1,
+    x1: Math.floor((inner.x + padX) / cls.sx),
+    y0: Math.floor((inner.y - padY) / cls.sy) - 1,
+    y1: Math.floor((inner.y + padY) / cls.sy),
+  };
+  const cells = (range.x1 - range.x0 + 1) * (range.y1 - range.y0 + 1);
+  if (cells > cls.cells.size) collectOccupied(cls, range, out);
+  else collectRange(cls, range, out);
+}
+
+/** Walks every cell of the range. */
+function collectRange(cls: SizeClass, range: CellRange, out: number[]): void {
+  for (let cx = range.x0; cx <= range.x1; cx++) {
+    for (let cy = range.y0; cy <= range.y1; cy++) {
       const cell = cls.cells.get(cellKey(cx, cy));
       if (cell) for (const pos of cell) out.push(pos);
     }
+  }
+}
+
+/** Walks the occupied cells of the class and keeps those inside the range. */
+function collectOccupied(cls: SizeClass, range: CellRange, out: number[]): void {
+  for (const [key, cell] of cls.cells) {
+    const column = Math.floor(key / CELL_STRIDE);
+    const cx = column - CELL_SHIFT;
+    const cy = key - column * CELL_STRIDE - CELL_SHIFT;
+    if (cx < range.x0 || cx > range.x1 || cy < range.y0 || cy > range.y1) continue;
+    for (const pos of cell) out.push(pos);
   }
 }
