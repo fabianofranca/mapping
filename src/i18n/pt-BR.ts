@@ -344,6 +344,7 @@ export const ptBR: Dictionary = {
     'O código do plugin roda isolado, sem rede, disco ou acesso aos seus projetos.',
   'format.specNotice':
     'Traz {count} formato(s) de arquivo; o código deles roda isolado, sem rede, disco ou acesso aos seus projetos.',
+  'format.error.unexpected': 'A exportação falhou por um motivo inesperado.',
   'format.error.save':
     'As alterações pendentes não puderam ser salvas, então nada foi exportado. Corrija o erro de salvamento e tente de novo.',
   'format.error.project': 'Não foi possível ler o projeto para este formato.',

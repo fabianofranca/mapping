@@ -94,6 +94,13 @@ type Answer = Readonly<Record<string, unknown>> & { readonly status: string };
 
 const STATUSES = new Set(['ok', 'error', 'missing', 'invalid', 'timeout']);
 
+/** The frame's `{ ready: true }`. An answer always has an `id` (the plugin can post anything, so `ready` alone is not it). */
+function isReadySignal(data: unknown): boolean {
+  if (typeof data !== 'object' || data === null) return false;
+  const record = data as Record<string, unknown>;
+  return record['ready'] === true && record['id'] === undefined;
+}
+
 function asAnswer(data: unknown, id: number): Answer | null {
   if (typeof data !== 'object' || data === null) return null;
   const record = data as Record<string, unknown>;
@@ -189,7 +196,7 @@ export function createFormatRunner(deps: FormatRunnerDeps): DisposableFormatRunn
   const onMessage = (event: { source: unknown; data: unknown }): void => {
     if (frame === null || event.source !== frame.window) return;
     const { data } = event;
-    if (typeof data === 'object' && data !== null && 'ready' in data) {
+    if (isReadySignal(data)) {
       ready?.();
       return;
     }
@@ -271,7 +278,15 @@ export function createFormatRunner(deps: FormatRunnerDeps): DisposableFormatRunn
     fn: FormatFunction,
     args: readonly unknown[],
   ): Promise<FormatOutcome> => {
-    const { payload, refused } = serialize(source, fn, args);
+    let serialized: Serialized;
+    try {
+      serialized = serialize(source, fn, args);
+    } catch {
+      return Promise.resolve(
+        failure('plugin-failed', 'the arguments cannot be sent as JSON'),
+      );
+    }
+    const { payload, refused } = serialized;
     if (refused !== null) return Promise.resolve(refused);
     const result = tail.then(() => call(source, fn, payload));
     tail = result;

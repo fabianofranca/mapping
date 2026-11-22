@@ -347,6 +347,7 @@ export const enUS = {
     'The plugin code runs isolated, without network, disk or access to your projects.',
   'format.specNotice':
     'Brings {count} file format(s); their code runs isolated, without network, disk or access to your projects.',
+  'format.error.unexpected': 'The export failed for an unexpected reason.',
   'format.error.save':
     'The pending changes could not be saved, so nothing was exported. Fix the save error and try again.',
   'format.error.project': 'The project could not be read for this format.',

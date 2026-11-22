@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/preact';
+import { act } from 'preact/test-utils';
 import type { Signal } from '@preact/signals';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FormatOutcome } from '../../src/model';
@@ -50,10 +51,13 @@ function setup(catalogs: ProjectCatalog[] | null) {
   (store.entries as Signal<readonly ProjectCatalog[] | null>).value = catalogs;
   Reflect.set(store, 'request', vi.fn());
   const onGenerated = vi.fn();
-  renderLive(harness, () => (
+  const view = renderLive(harness, () => (
     <FormatExportDialog onClose={vi.fn()} onGenerated={onGenerated} />
   ));
-  return { onGenerated };
+  const setEntries = (next: ProjectCatalog[]) => {
+    (store.entries as Signal<readonly ProjectCatalog[] | null>).value = next;
+  };
+  return { onGenerated, view, setEntries };
 }
 
 const exportButton = () => screen.getByRole('button', { name: 'Export' });
@@ -121,5 +125,55 @@ describe('FormatExportDialog', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('The plugin failed: boom (line 3, column 5)');
     expect(onGenerated).not.toHaveBeenCalled();
+  });
+
+  it('an export that rejects shows an error line and the dialog can run again', async () => {
+    run.mockRejectedValue(new Error('storage exploded'));
+    setup(
+      catalogsOf([
+        format('openapi', 'OpenAPI', 'project', 'function generate() {}', 'yaml'),
+      ]),
+    );
+    fireEvent.click(exportButton());
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('The export failed for an unexpected reason.');
+    expect((exportButton() as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('a run that ends after the dialog closed hands nothing over', async () => {
+    let finish: (outcome: FormatOutcome) => void = () => undefined;
+    run.mockReturnValue(new Promise<FormatOutcome>((resolve) => (finish = resolve)));
+    const { onGenerated, view } = setup(
+      catalogsOf([
+        format('openapi', 'OpenAPI', 'project', 'function generate() {}', 'yaml'),
+      ]),
+    );
+    fireEvent.click(exportButton());
+    view.unmount();
+    await act(async () => {
+      finish({ ok: true, value: 'late' });
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(onGenerated).not.toHaveBeenCalled();
+  });
+
+  it('the picked format follows its ref when the catalogs reload in another order', () => {
+    const openapi = format(
+      'openapi',
+      'OpenAPI',
+      'project',
+      'function generate() {}',
+      'yaml',
+    );
+    const csvFormat = format('csv', 'Attributes', 'container', 'function generate() {}');
+    const { setEntries } = setup(catalogsOf([openapi, csvFormat]));
+    fireEvent.change(screen.getByLabelText('Format'), { target: { value: '1' } });
+    expect(
+      (screen.getByLabelText('Format') as HTMLSelectElement).selectedOptions[0]?.text,
+    ).toBe('Data model › Attributes (.csv)');
+    act(() => setEntries(catalogsOf([csvFormat, openapi])));
+    expect(
+      (screen.getByLabelText('Format') as HTMLSelectElement).selectedOptions[0]?.text,
+    ).toBe('Data model › Attributes (.csv)');
   });
 });

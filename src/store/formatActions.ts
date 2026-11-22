@@ -113,6 +113,15 @@ export type ExportInFormatResult =
 
 const fail = (error: ExportInFormatError): ExportInFormatResult => ({ ok: false, error });
 
+/** The name of an image file without its folder and extension (`images/plan1.png` → `plan1`). */
+function stemOf(file: string | null): string | null {
+  const base = file
+    ?.split('/')
+    .pop()
+    ?.replace(/\.[^.]*$/, '');
+  return base === undefined || base === '' ? null : base;
+}
+
 /** What the plugin sees: the project (`target` null) or one container; the name of the file comes with it. */
 function targetOf(
   project: Project,
@@ -123,7 +132,10 @@ function targetOf(
   const found = project.containers.find((c) => c.id === container);
   return found === undefined
     ? null
-    : { target: found.id, name: found.name ?? project.project.name };
+    : {
+        target: found.id,
+        name: found.name ?? stemOf(found.file) ?? project.project.name,
+      };
 }
 
 /** The projection of the project for the plugin; `null` when it cannot be built (reported). */

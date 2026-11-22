@@ -109,6 +109,20 @@ describe('exportInFormat', () => {
     expect(result.file.name).toBe('Main.csv');
   });
 
+  it('scope container, a container with no name: the file name falls back to its image file', async () => {
+    const { deps } = setup();
+    const base = formatProject();
+    const project = {
+      ...base,
+      containers: base.containers.map((c) =>
+        c.id === 'C1' ? { ...c, name: null, file: 'images/plan1.png' } : c,
+      ),
+    };
+    const result = await exportInFormat({ ...deps, project: () => project }, csv, 'C1');
+    if (!result.ok) throw new Error('expected a file');
+    expect(result.file.name).toBe('plan1.csv');
+  });
+
   it('scope container without a container, or with one the project lacks: no run', async () => {
     const { deps, run } = setup();
     expect(await exportInFormat(deps, csv)).toEqual({

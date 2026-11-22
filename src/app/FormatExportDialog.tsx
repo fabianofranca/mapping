@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { Dialog, type FocusReturn } from '../ui/Dialog';
 import { useEditor } from '../ui/EditorContext';
@@ -7,6 +7,7 @@ import { Button, Select } from '../ui/controls';
 import { exportInFormat, formatChoices, type FormatChoice } from '../store/formatActions';
 import type { Project, ProjectContainer } from '../model';
 import { resolveSelection, type Selection } from '../store/ui';
+import { reportError } from '../utils/report';
 import { exportErrorText } from './formatErrors';
 import { runFormat } from './formatRunner';
 
@@ -128,23 +129,38 @@ function useFormatRun(
   const { session, store, derived } = useEditor();
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The dialog may close while the plugin runs: whatever comes after is dropped.
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
   const run = async () => {
     if (!choice || running) return;
     setRunning(true);
     setError(null);
-    const result = await exportInFormat(
-      {
-        flush: () => session.flush(),
-        project: () => store.committed.peek(),
-        run: runFormat,
-        drawings: (p) => derived.drawingsOf(p),
-      },
-      choice,
-      container,
-    );
-    setRunning(false);
-    if (result.ok) onGenerated(result.file);
-    else setError(exportErrorText(result.error));
+    try {
+      const result = await exportInFormat(
+        {
+          flush: () => session.flush(),
+          project: () => store.committed.peek(),
+          run: runFormat,
+          drawings: (p) => derived.drawingsOf(p),
+        },
+        choice,
+        container,
+      );
+      if (!alive.current) return;
+      if (result.ok) onGenerated(result.file);
+      else setError(exportErrorText(result.error));
+    } catch (failure) {
+      reportError('formatExport.run', failure);
+      if (alive.current) setError(t('format.error.unexpected'));
+    } finally {
+      if (alive.current) setRunning(false);
+    }
   };
   return { running, error, run };
 }
@@ -155,13 +171,14 @@ function useFormatPick() {
   const project = store.committed.value;
   const entries = session.catalogs.entries.value;
   const choices = entries === null ? null : formatChoices(entries, 'generate');
-  const [formatIndex, setFormatIndex] = useState(0);
+  const [pickedRef, setPickedRef] = useState<string | null>(null);
   const [container, setContainer] = useState<string | null>(null);
   useEffect(() => {
     session.catalogs.request();
   }, [session]);
   const containers = project?.containers ?? [];
-  const index = Math.min(formatIndex, Math.max((choices?.length ?? 1) - 1, 0));
+  // The pick follows the format's ref, not its position: the list reloads with the catalogs.
+  const index = Math.max(choices?.findIndex((c) => c.ref === pickedRef) ?? 0, 0);
   const choice = choices?.[index] ?? null;
   const containerId = containerIdOf(
     containers,
@@ -176,7 +193,7 @@ function useFormatPick() {
     containers,
     containerId: needsContainer ? containerId : null,
     needsContainer,
-    setFormatIndex,
+    setFormatRef: setPickedRef,
     setContainer,
   };
 }
@@ -225,7 +242,7 @@ export function FormatExportDialog({
         choices={pick.choices ?? []}
         value={pick.index}
         disabled={running}
-        onChange={pick.setFormatIndex}
+        onChange={(i) => pick.setFormatRef(pick.choices?.[i]?.ref ?? null)}
       />
       <ContainerSelect
         show={pick.needsContainer}

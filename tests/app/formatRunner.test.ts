@@ -292,6 +292,21 @@ describe('the frame', () => {
     expect(h.last().removed).toBe(true);
   });
 
+  it('an answer that carries a `ready` key is still the answer (the plugin can post anything)', async () => {
+    const h = harness();
+    const run = createFormatRunner(h.deps);
+    const result = run('x', 'generate', [{}]);
+    h.answer(await h.posted(), { status: 'ok', output: '"text"', ready: true });
+    expect(await result).toEqual({ ok: true, value: 'text' });
+  });
+
+  it('arguments JSON cannot serialize give an outcome, never a throw', async () => {
+    const h = harness();
+    const run = createFormatRunner(h.deps);
+    const outcome = await run('x', 'generate', [{ big: 1n }]);
+    expect(outcome).toMatchObject({ ok: false, failure: { code: 'plugin-failed' } });
+  });
+
   it('only messages from the frame window count: another window is ignored', async () => {
     const h = harness();
     const run = createFormatRunner(h.deps);
