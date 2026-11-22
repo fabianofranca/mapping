@@ -1,4 +1,4 @@
-# The e2e comments test waits for the settled selection box — [Não lançado] (MCP unchanged, schema v23 unchanged)
+# The e2e comments test waits for the settled selection box — 2026-11-22 (épico `epic/e2e-comments-settled-box`, PR #2649, MCP unchanged, schema v23 unchanged)
 
 ## Corrigido
 
