@@ -1,4 +1,4 @@
-# Variant slots, transparent icons, the preview reserve and the scratch folder — [Não lançado] (épico `epic/slots-icons-scratch`, PR #0, MCP 0.56.1, schema v23 unchanged)
+# Variant slots, transparent icons, the preview reserve and the scratch folder — [Não lançado] (épico `epic/slots-icons-scratch`, PR #2505, MCP 0.56.1, schema v23 unchanged)
 
 ## Corrigido
 
