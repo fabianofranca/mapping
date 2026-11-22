@@ -152,6 +152,8 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
    */
   'cv-component-placeholder': 'rgba(128, 128, 128, 0.25)',
   'cv-component-placeholder-line': 'rgba(128, 128, 128, 0.8)',
+  /** The X and the dashed outline of a remote image that failed (DX7); the same in both themes, ≥ 3 over the canvas background. */
+  'cv-component-image-failed': '#d9480f',
   'cv-component-unknown': '#d81b60',
   /** Fill of the box of an instance whose type has no component or does not exist (the outline and the text are `cv-component-unknown`). */
   'cv-component-unknown-fill': 'rgba(216, 27, 96, 0.06)',

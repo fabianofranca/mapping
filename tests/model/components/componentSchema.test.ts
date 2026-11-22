@@ -203,6 +203,41 @@ describe('component.schema.json', () => {
       expect(parseComponent(c).ok).toBe(true);
     });
 
+    it('accepts a package image path, a $switch and an $if of package paths (formatVersion 4 in parseComponent)', () => {
+      for (const src of [
+        'images/a.png',
+        'deep/er/B.JPEG',
+        {
+          $switch: 'kind',
+          cases: { a: 'img/a.png', b: 'img/b.webp' },
+          default: 'img/c.jpg',
+        },
+        { $if: { $has: 'x' }, then: 'img/a.png', else: 'img/b.png' },
+      ]) {
+        const c = { ...withImage(image({ src })), formatVersion: 4 };
+        expect(checkSchema(schema, c), JSON.stringify(src)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(src)).toBe(true);
+      }
+    });
+
+    it('rejects a bad package path and a $switch or $if with a URL or expression result', () => {
+      for (const src of [
+        '../a.png',
+        'a/../b.png',
+        '/a.png',
+        'C:/a.png',
+        'file:a.png',
+        'a\\b.png',
+        { $switch: 'kind', cases: { a: 'https://exemplo.invalid/a.png' } },
+        { $switch: 'kind', cases: { a: { $field: 'f' } } },
+        { $if: { $has: 'x' }, then: 'a.png', else: { $field: 'f' } },
+      ])
+        expect(
+          checkSchema(schema, withImage(image({ src }))).length,
+          JSON.stringify(src),
+        ).toBeGreaterThan(0);
+    });
+
     it('rejects image without src', () => {
       const node = image();
       delete node.src;
@@ -214,7 +249,7 @@ describe('component.schema.json', () => {
         { $concat: ['https://', { $field: 'host' }] },
         { $field: 'foto', default: 'https://exemplo.invalid/a.png' },
         'http://exemplo.invalid/a.png',
-        'a.png',
+        'a.gif',
       ])
         expect(
           checkSchema(schema, withImage(image({ src }))).length,
@@ -437,6 +472,38 @@ describe('component.schema.json', () => {
       }
     });
 
+    it('accepts shadow.inner as a boolean, alone and in a list, and rejects anything else (the parser too)', () => {
+      const ok = [
+        v4({
+          type: 'rect',
+          width: 10,
+          height: 10,
+          shadow: { color: '#000', inner: true },
+        }),
+        v4({
+          type: 'ellipse',
+          width: 10,
+          height: 10,
+          shadow: [
+            { color: '#000', blur: 2 },
+            { color: '#111', spread: 1, inner: true },
+          ],
+        }),
+      ];
+      for (const c of ok) {
+        expect(checkSchema(schema, c), JSON.stringify(c)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(c)).toBe(true);
+      }
+      const bad = v4({
+        type: 'rect',
+        width: 10,
+        height: 10,
+        shadow: { color: '#000', inner: 'yes' },
+      });
+      expect(checkSchema(schema, bad)).not.toEqual([]);
+      expect(parseComponent(bad).ok).toBe(false);
+    });
+
     it('rejects alpha outside 0..1, negative offset and unknown justify', () => {
       const bad = [
         v4({ type: 'rect', width: 1, height: 1, fill: t('x', { alpha: 2 }) }),
@@ -590,5 +657,107 @@ describe('component.schema.json — arcs on ellipse (FG6)', () => {
     expect(checkSchema(schema, component)).not.toEqual([]);
     template.children = [{ type: 'rect', width: 4, height: 4, sweepAngle: 90 }];
     expect(checkSchema(schema, component)).not.toEqual([]);
+  });
+
+  describe('radial and angular gradients (formatVersion 4)', () => {
+    const stops = [
+      { offset: 0, color: '#fff' },
+      { offset: 1, color: '#1a73e8' },
+    ];
+    const withFill = (fill: unknown): Record<string, unknown> => ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'glow',
+      name: 'Glow',
+      size: { width: 40, height: 40 },
+      template: { type: 'frame', fill, children: [] },
+    });
+
+    it('accepts linear, radial and angular, with and without the optional keys', () => {
+      for (const fill of [
+        { type: 'linear', angle: 90, stops },
+        { type: 'radial', stops },
+        { type: 'radial', center: [0.25, 1], radius: 12, stops },
+        { type: 'angular', stops },
+        { type: 'angular', center: [0, 0.5], angle: -90, stops },
+        { $if: { $field: 'on' }, then: { type: 'radial', stops }, else: 'none' },
+        {
+          type: 'angular',
+          stops: [
+            { offset: 0, color: { $field: 'from', default: '#fff' } },
+            { offset: 1, color: { $token: 'brand' } },
+          ],
+        },
+      ]) {
+        const c = withFill(fill);
+        expect(checkSchema(schema, c), JSON.stringify(fill)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(fill)).toBe(true);
+      }
+    });
+
+    it('rejects what the parser rejects', () => {
+      for (const fill of [
+        { type: 'conic', stops },
+        { type: 'radial', center: [0.5], stops },
+        { type: 'radial', center: [0.5, 2], stops },
+        { type: 'radial', radius: 0, stops },
+        { type: 'radial', radius: -3, stops },
+        { type: 'radial', stops: [stops[0]] },
+        { type: 'radial', angle: 90, stops },
+        { type: 'angular', radius: 10, stops },
+        { type: 'angular', stops: [{ offset: 2, color: '#fff' }, stops[1]] },
+      ]) {
+        const c = withFill(fill);
+        expect(checkSchema(schema, c).length, JSON.stringify(fill)).toBeGreaterThan(0);
+        expect(parseComponent(c).ok, JSON.stringify(fill)).toBe(false);
+      }
+    });
+  });
+
+  describe('grid track lists in columns and rows (formatVersion 4, DX6)', () => {
+    const withLayout = (layout: unknown): Record<string, unknown> => ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'list',
+      name: 'List',
+      size: { width: 200, height: 60 },
+      template: { type: 'frame', layout, children: [] },
+    });
+
+    it('accepts an integer and a list of px, fr and hug, literal or by expression (the parser too)', () => {
+      for (const layout of [
+        { type: 'grid', columns: 3 },
+        { type: 'grid', columns: [56, '1fr', '2.5fr', 'hug', 0] },
+        { type: 'grid', rows: ['hug', '1fr'] },
+        { type: 'grid', columns: { $field: 'c', default: [10, '1fr'] } },
+        {
+          type: 'grid',
+          columns: { $if: { $field: 'wide' }, then: [10, '1fr'], else: 2 },
+        },
+        {
+          type: 'grid',
+          rows: { $switch: 'k', cases: { a: [10, '1fr'] }, default: ['hug'] },
+        },
+      ]) {
+        const c = withLayout(layout);
+        expect(checkSchema(schema, c), JSON.stringify(layout)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(layout)).toBe(true);
+      }
+    });
+
+    it('rejects what the parser rejects: empty, over 24, "0fr", negative px and "auto"', () => {
+      for (const columns of [
+        [],
+        Array.from({ length: 25 }, () => 10),
+        [10, '0fr'],
+        [-1],
+        [10, 'auto'],
+        [true],
+      ]) {
+        const c = withLayout({ type: 'grid', columns });
+        expect(checkSchema(schema, c).length, JSON.stringify(columns)).toBeGreaterThan(0);
+        expect(parseComponent(c).ok, JSON.stringify(columns)).toBe(false);
+      }
+    });
   });
 });

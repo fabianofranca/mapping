@@ -172,7 +172,7 @@ jobs:
   # uploads the blob with the coverage data, without generating a report (the `coverage` job merges and reports).
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 8
     strategy:
       fail-fast: false
       matrix:

@@ -5,6 +5,7 @@ import type { SceneTextRun, TextNode } from '../../src/model/components/scene';
 import {
   capHeightOf,
   fontExtents,
+  layingFace,
   textPolygons,
   textWidth,
   type Polygon,
@@ -55,9 +56,12 @@ const rectPolygon = (x: number, y: number, w: number, h: number): Polygon => [
   { x, y: y + h },
 ];
 
-/** The vertical metrics of the node's font (the base of `cap-middle`), read from the same font that draws. */
-function capMetricsOf(book: FontBook, spec: FontSpec): CapMetrics {
-  const face = book.fontFor(spec.family, spec.weight, spec.italic);
+/**
+ * The vertical metrics of the node's font (the base of `cap-middle`), read from the face that lays the node's `text`
+ * out (the library font's, or the embedded one when its shaping throws).
+ */
+function capMetricsOf(book: FontBook, spec: FontSpec, text: string): CapMetrics {
+  const face = layingFace(book, text, spec);
   return { ...fontExtents(face, spec.size), capHeight: capHeightOf(face, spec.size) };
 }
 
@@ -75,15 +79,13 @@ function lineInk(
   lineHeight: number,
   decoration: 'underline' | 'line-through' | undefined,
 ): Polygon[] {
-  const face = book.fontFor(spec.family, spec.weight, spec.italic);
-  const { ascent, descent } = fontExtents(face, spec.size);
-  const baseline = lineBaseline(top, lineHeight, { ascent, descent });
-  const polygons = textPolygons(
-    face,
+  // The baseline is computed inside the guarded layout, from the face that lays the text out.
+  const { polygons, baseline } = textPolygons(
+    book.fontFor(spec.family, spec.weight, spec.italic),
     () => book.embeddedFor(spec.family, spec.weight),
     text,
     x,
-    baseline,
+    (face) => lineBaseline(top, lineHeight, fontExtents(face, spec.size)),
     spec,
   );
   if (decoration === undefined) return polygons;
@@ -130,9 +132,12 @@ function justifiedInk(
     x += textWidth(book, word, spec) + spaceWidth + extra;
   }
   if (decoration === undefined) return polygons;
-  const face = book.fontFor(spec.family, spec.weight, spec.italic);
-  const { ascent, descent } = fontExtents(face, spec.size);
-  const baseline = lineBaseline(top, lineHeight, { ascent, descent });
+  // The decoration belongs to the line: its baseline comes from the face that lays the whole line out.
+  const baseline = lineBaseline(
+    top,
+    lineHeight,
+    fontExtents(layingFace(book, line, spec), spec.size),
+  );
   return [...polygons, decorationBar(decoration, spec, 0, baseline, nodeWidth)];
 }
 
@@ -153,7 +158,7 @@ function plainInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextIn
     node,
     lines.length,
     lineHeight,
-    needsMetrics(node) ? capMetricsOf(book, spec) : undefined,
+    needsMetrics(node) ? capMetricsOf(book, spec, node.text) : undefined,
   );
   const widths = lines.map(widthOf);
   const block = widths.reduce((max, w) => Math.max(max, w), 0);
@@ -240,7 +245,7 @@ function richInk(node: TextNode, layout: RunLayout, book: FontBook): TextInk {
   const shift = richShift(
     node,
     layout,
-    needsMetrics(node) ? capMetricsOf(book, base) : undefined,
+    needsMetrics(node) ? capMetricsOf(book, base, node.text) : undefined,
   );
   const out: TextInk = { glyphs: [], boxes: [] };
   for (const line of layout.lines) {

@@ -2,7 +2,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MAX_PACKAGE_BYTES, MAX_PACKAGE_FILES } from '../../src/model';
 import { FOLDER_CONCURRENCY } from '../../src/storage/folderConcurrency';
-import { loadLibraryIssues, readSpecPackage } from '../../src/storage/specPackage';
+import {
+  loadLibraryIssues,
+  packageEntriesOf,
+  readSpecPackage,
+} from '../../src/storage/specPackage';
 import type { ProjectStorage } from '../../src/storage/types';
 
 function storageWith(paths: readonly string[]): ProjectStorage {
@@ -84,12 +88,16 @@ describe('loadLibraryIssues', () => {
 
 describe('readSpecPackage', () => {
   /** Fake Blob: declared size and a counter of `text()`. */
-  function fakeBlob(size: number, counter: { texts: number }): Blob {
+  function fakeBlob(size: number, counter: { texts: number; buffers?: number }): Blob {
     return {
       size,
       text: async () => {
         counter.texts++;
         return 'x';
+      },
+      arrayBuffer: async () => {
+        counter.buffers = (counter.buffers ?? 0) + 1;
+        return new Uint8Array([1, 2, 3]).buffer;
       },
     } as unknown as Blob;
   }
@@ -150,10 +158,51 @@ describe('readSpecPackage', () => {
     expect(await readSpecPackage(storage, 'specs/m3')).toEqual({
       entries: [
         { path: 'specs/m3/a.json', text: 'x' },
-        { path: 'specs/m3/b.png' },
+        { path: 'specs/m3/b.png', bytes: new Uint8Array([1, 2, 3]) },
         { path: 'specs/m3/c.md', text: 'x' },
       ],
       bytes: 15,
     });
+  });
+
+  it('reads the bytes of an image file within 1 MB (the validator checks format and dimensions) and only the size of a heavier one', async () => {
+    const counter = { texts: 0, buffers: 0 };
+    const paths = [
+      'specs/lib/images/a.PNG',
+      'specs/lib/images/b.webp',
+      'specs/lib/images/heavy.jpg',
+      'specs/lib/fonts/f.ttf',
+    ];
+    const storage = {
+      listSpecDir: async () => paths,
+      readSpecFile: async (p: string) =>
+        fakeBlob(p.endsWith('heavy.jpg') ? 1024 * 1024 + 1 : 5, counter),
+    } as unknown as ProjectStorage;
+    const read = await readSpecPackage(storage, 'specs/lib');
+    expect(read?.entries).toEqual([
+      { path: 'specs/lib/images/a.PNG', bytes: new Uint8Array([1, 2, 3]) },
+      { path: 'specs/lib/images/b.webp', bytes: new Uint8Array([1, 2, 3]) },
+      { path: 'specs/lib/images/heavy.jpg', size: 1024 * 1024 + 1 },
+      { path: 'specs/lib/fonts/f.ttf' },
+    ]);
+    // Only the two light images were read.
+    expect(counter.buffers).toBe(2);
+  });
+});
+
+describe('packageEntriesOf', () => {
+  it('an in-memory binary carries its size (an image is checked against 1 MB without reading it)', () => {
+    const entries = packageEntriesOf(
+      'specs/lib',
+      new Map<string, string | Blob>([
+        ['lib.spec.json', '{}'],
+        ['images/a.png', new Blob([new Uint8Array(7)])],
+      ]),
+    );
+    expect(entries.entries).toEqual([
+      { path: 'specs/lib/lib.spec.json', text: '{}' },
+      { path: 'specs/lib/images/a.png', size: 7 },
+    ]);
+    expect(entries.bytes).toBe(9);
   });
 });

@@ -285,7 +285,7 @@ describe('scene painting', () => {
     expect(pixel(raster, 20, 15)).toEqual(WHITE);
   });
 
-  it('gradient becomes the color of the first stop and image becomes a gray placeholder', () => {
+  it('gradient is painted per pixel (not as its first stop) and image becomes a gray placeholder', () => {
     const gradient: SceneNode = {
       ...baseNode({
         id: 'g',
@@ -321,7 +321,13 @@ describe('scene painting', () => {
     };
     const raster = canvas(20, 10);
     paint(raster, frame([gradient, image], { width: 20, height: 10 }));
-    expect(pixel(raster, 9, 5)).toEqual([255, 0, 0, 255]);
+    // The gradient runs from red (x = 0) to blue (x = 10): red on the left edge, blue on the right.
+    const [leftR, , leftB] = pixel(raster, 0, 5);
+    const [rightR, , rightB] = pixel(raster, 9, 5);
+    expect(leftR).toBeGreaterThan(240);
+    expect(leftB).toBeLessThan(15);
+    expect(rightR).toBeLessThan(15);
+    expect(rightB).toBeGreaterThan(240);
     const [r, g, b] = pixel(raster, 15, 5);
     expect(r).toBe(g);
     expect(g).toBe(b);

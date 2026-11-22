@@ -12,6 +12,7 @@ import { M3_FILES, M3_SCREEN } from '../../viewer/samples/samplesMaterial3';
 import type { Screen } from '../../src/model/components/screen';
 import { type Viewer, type ViewerOptions, createViewer } from '../../viewer';
 import { tokenValue } from '../../src/theme/tokens';
+import { pngBytes } from '../support/imageBytes';
 
 beforeAll(() => installFakeCanvas());
 
@@ -846,5 +847,197 @@ describe('rotation (EX3)', () => {
     const [a, b] = [local(0, 0), local(40, 10)];
     expect(Math.abs(a.x - b.x)).toBeCloseTo(10 * stage.getAbsoluteScale().x, 6);
     expect(Math.abs(a.y - b.y)).toBeCloseTo(40 * stage.getAbsoluteScale().y, 6);
+  });
+});
+
+describe('package images (DX5)', () => {
+  const ASSET = 'images/a.png';
+
+  function packageLibrary(specId: string, withBytes: boolean) {
+    const spec = {
+      format: 'mapping-spec',
+      formatVersion: 4,
+      id: specId,
+      name: specId,
+      version: 1,
+      layers: [
+        {
+          id: 'c',
+          name: 'C',
+          color: '#1E88E5',
+          annotationTypes: [
+            {
+              id: 'photo',
+              name: 'Photo',
+              component: 'components/photo.json',
+              fields: [],
+            },
+          ],
+        },
+      ],
+    };
+    const component = {
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'photo',
+      name: 'Photo',
+      size: { width: 100, height: 100 },
+      template: {
+        type: 'frame',
+        children: [{ type: 'image', name: 'pic', src: ASSET, width: 40, height: 40 }],
+      },
+    };
+    return loadLibrary([
+      { path: `${specId}.spec.json`, text: JSON.stringify(spec) },
+      { path: 'components/photo.json', text: JSON.stringify(component) },
+      ...(withBytes ? [{ path: ASSET, bytes: pngBytes(8, 4) }] : []),
+    ]);
+  }
+
+  const screen: Screen = {
+    id: 's',
+    name: 'S',
+    width: 200,
+    height: 200,
+    background: '#ffffff',
+    instances: [
+      {
+        id: 'i-photo',
+        typeId: 'photo',
+        box: { x: 0, y: 0, width: 100, height: 100 },
+        values: {},
+      },
+    ],
+  };
+
+  function stubDecode(fail = false) {
+    const bitmaps: { width: number; height: number; close: ReturnType<typeof vi.fn> }[] =
+      [];
+    const decode = vi.fn((...args: [Blob, unknown?]) => {
+      void args;
+      if (fail) return Promise.reject(new Error('cannot decode'));
+      const bitmap = { width: 8, height: 4, close: vi.fn() };
+      bitmaps.push(bitmap);
+      return Promise.resolve(bitmap);
+    });
+    vi.stubGlobal('createImageBitmap', decode);
+    const objectUrl = vi.fn(() => 'blob:x');
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: objectUrl }));
+    return { decode, bitmaps, objectUrl };
+  }
+
+  const imagesOf = (el: HTMLElement): Konva.Image[] =>
+    instanceNode(stageOf(el), 'i-photo').find<Konva.Image>('Image');
+
+  it('draws the image from the bytes of the library, without a URL', async () => {
+    const { decode, objectUrl } = stubDecode();
+    const el = container();
+    const viewer = make(el, { library: packageLibrary('pkg-a', true), screen });
+    expect(imagesOf(el)).toHaveLength(0);
+    await vi.waitFor(() => expect(imagesOf(el)).toHaveLength(1));
+    expect(decode).toHaveBeenCalledTimes(1);
+    expect(decode.mock.calls[0]?.[0]).toBeInstanceOf(Blob);
+    expect(decode.mock.calls[0]?.[1]).toEqual({ imageOrientation: 'from-image' });
+    expect(objectUrl).not.toHaveBeenCalled();
+    expect(viewer.warnings().size).toBe(0);
+  });
+
+  it('finds the bytes of a library whose spec is not at the root (paths relative to the spec)', async () => {
+    stubDecode();
+    const spec = JSON.stringify({
+      format: 'mapping-spec',
+      formatVersion: 4,
+      id: 'pkg-d',
+      name: 'pkg-d',
+      version: 1,
+      layers: [
+        {
+          id: 'c',
+          name: 'C',
+          color: '#1E88E5',
+          annotationTypes: [
+            {
+              id: 'photo',
+              name: 'Photo',
+              component: 'components/photo.json',
+              fields: [],
+            },
+          ],
+        },
+      ],
+    });
+    const component = JSON.stringify({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'photo',
+      name: 'Photo',
+      size: { width: 100, height: 100 },
+      template: {
+        type: 'frame',
+        children: [{ type: 'image', name: 'pic', src: ASSET, width: 40, height: 40 }],
+      },
+    });
+    const library = loadLibrary([
+      { path: 'lib/pkg-d.spec.json', text: spec },
+      { path: 'lib/components/photo.json', text: component },
+      { path: `lib/${ASSET}`, bytes: pngBytes(8, 4) },
+    ]);
+    const el = container();
+    make(el, { library, screen });
+    await vi.waitFor(() => expect(imagesOf(el)).toHaveLength(1));
+  });
+
+  it('without bytes it draws the placeholder and decodes nothing', async () => {
+    const { decode } = stubDecode();
+    const el = container();
+    make(el, { library: packageLibrary('pkg-a', false), screen });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(decode).not.toHaveBeenCalled();
+    expect(imagesOf(el)).toHaveLength(0);
+  });
+
+  it('a decode that fails leaves the placeholder with the decode warning', async () => {
+    const { decode } = stubDecode(true);
+    const el = container();
+    const viewer = make(el, { library: packageLibrary('pkg-a', true), screen });
+    await vi.waitFor(() => expect(viewer.warnings().get('i-photo')).toBeDefined());
+    expect(decode).toHaveBeenCalledTimes(1);
+    expect(imagesOf(el)).toHaveLength(0);
+    expect(viewer.warnings().get('i-photo')).toEqual([
+      'an embedded image could not be decoded',
+    ]);
+  });
+
+  it('a new library drops the previous bitmaps without closing them and draws from the new one', async () => {
+    const { bitmaps } = stubDecode();
+    const el = container();
+    const viewer = make(el, { library: packageLibrary('pkg-a', true), screen });
+    await vi.waitFor(() => expect(imagesOf(el)).toHaveLength(1));
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    try {
+      viewer.update({ library: packageLibrary('pkg-b', true) });
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(bitmaps[0]?.close).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+    await vi.waitFor(() => expect(bitmaps).toHaveLength(2));
+    await vi.waitFor(() => expect(imagesOf(el)).toHaveLength(1));
+    expect(imagesOf(el)[0]?.image()).toBe(bitmaps[1]);
+  });
+
+  it('dispose drops every bitmap without closing it (the garbage collector reclaims them)', async () => {
+    const { bitmaps } = stubDecode();
+    const el = container();
+    const viewer = make(el, { library: packageLibrary('pkg-a', true), screen });
+    await vi.waitFor(() => expect(imagesOf(el)).toHaveLength(1));
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    try {
+      viewer.dispose();
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(bitmaps[0]?.close).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
