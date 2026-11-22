@@ -15,7 +15,8 @@ import { expect, test } from '@playwright/test';
 import { build } from 'esbuild';
 import {
   PARITY_SIZE,
-  parityFontBytes,
+  INK_TOLERANCE,
+  parityFaces,
   parityKey,
   type ParityCase,
 } from '../support/shapingParity';
@@ -23,14 +24,21 @@ import {
 const ENTRY = `
 import { konvaMeasurer } from './src/canvas/components/konvaMeasurer';
 window.measureParity = async (fonts, cases, size) => {
-  for (const [name, base64] of Object.entries(fonts)) {
+  for (const { family, weight, base64 } of fonts) {
     const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-    const face = new FontFace('Parity' + name, bytes.buffer);
+    const face = new FontFace('Parity' + family, bytes.buffer, { weight });
     document.fonts.add(await face.load());
   }
+  // The ink of a case (stage #2448, BD2): the canvas' bounding box, from the origin and the baseline.
+  const ink = (c) => {
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.font = (c.italic ? 'italic ' : '') + (c.weight ?? 400) + ' ' + size + 'px Parity' + c.font;
+    const m = ctx.measureText(c.text);
+    return { left: -m.actualBoundingBoxLeft, right: m.actualBoundingBoxRight, top: -m.actualBoundingBoxAscent };
+  };
   const dom = (c) => {
     const span = document.body.appendChild(document.createElement('span'));
-    span.style.cssText = 'position:absolute;white-space:pre;text-rendering:geometricPrecision;font:' + size + 'px Parity' + c.font + ';letter-spacing:' + c.letterSpacing + 'px';
+    span.style.cssText = 'position:absolute;white-space:pre;text-rendering:geometricPrecision;font:' + (c.italic ? 'italic ' : '') + (c.weight ?? 400) + ' ' + size + 'px Parity' + c.font + ';letter-spacing:' + c.letterSpacing + 'px';
     if (c.direction) span.dir = c.direction;
     span.textContent = c.text;
     const left = span.getBoundingClientRect().left;
@@ -52,13 +60,18 @@ window.measureParity = async (fonts, cases, size) => {
     return { width, starts };
   };
   const konva = (c) => konvaMeasurer(c.text, {
-    family: 'Parity' + c.font, size, weight: 400, italic: false, lineHeight: size * 1.2,
+    family: 'Parity' + c.font, size, weight: c.weight ?? 400, italic: c.italic ?? false, lineHeight: size * 1.2,
     letterSpacing: c.letterSpacing,
     ...(c.direction ? { direction: c.direction } : {}),
   }).width;
   return cases.map((c) => {
     const measured = dom(c);
-    return { dom: measured.width, starts: measured.starts, konva: konva(c) };
+    return {
+      dom: measured.width,
+      starts: measured.starts,
+      konva: konva(c),
+      ink: c.ink ? ink(c) : undefined,
+    };
   });
 };
 `;
@@ -79,12 +92,11 @@ test('Chromium measures the parity cases within 0.1 px of the server', async ({
   const fixture = JSON.parse(
     readFileSync('tests/fixtures/shaping-parity.json', 'utf8'),
   ) as ParityCase[];
-  const fonts = Object.fromEntries(
-    Object.entries(parityFontBytes()).map(([name, bytes]) => [
-      name,
-      Buffer.from(bytes).toString('base64'),
-    ]),
-  );
+  const fonts = parityFaces().map((f) => ({
+    family: f.family,
+    weight: f.weight,
+    base64: Buffer.from(f.bytes).toString('base64'),
+  }));
   const widths = await page.evaluate(
     ([f, cases, size]) =>
       (
@@ -93,7 +105,14 @@ test('Chromium measures the parity cases within 0.1 px of the server', async ({
             a: unknown,
             b: unknown,
             c: unknown,
-          ) => Promise<{ dom: number; konva: number; starts: number[] }[]>;
+          ) => Promise<
+            {
+              dom: number;
+              konva: number;
+              starts: number[];
+              ink?: { left: number; right: number; top: number };
+            }[]
+          >;
         }
       ).measureParity(f, cases, size),
     [fonts, fixture, PARITY_SIZE] as const,
@@ -114,6 +133,17 @@ test('Chromium measures the parity cases within 0.1 px of the server', async ({
     }),
   );
   expect(startsOff).toEqual([]);
+  // The ink of the weight cases (stage #2448, BD2, decisions 12 to 14), within 1 px: the fake bold and the slant.
+  const inkOff = fixture.flatMap((c, i) => {
+    const chromium = widths[i]!.ink;
+    if (c.ink === undefined || chromium === undefined) return [];
+    return (['left', 'right', 'top'] as const).flatMap((edge) =>
+      !(Math.abs(chromium[edge] - c.ink![edge]) <= INK_TOLERANCE)
+        ? [`${parityKey(c)} ${edge}: server ${c.ink![edge]}, Chromium ${chromium[edge]}`]
+        : [],
+    );
+  });
+  expect(inkOff).toEqual([]);
   const konva = fixture
     .map((c, i) => ({ c, width: widths[i]!.konva }))
     .filter(({ c, width }) => Math.abs(width - c.width) > TOLERANCE)

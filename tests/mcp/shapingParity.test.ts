@@ -1,16 +1,22 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createFontBook, createMeasurer } from '../../mcp/image/textMeasurer';
+import { textPolygons } from '../../mcp/image/glyphs';
+import {
+  createFontBook,
+  createMeasurer,
+  type FontBook,
+} from '../../mcp/image/textMeasurer';
 import type { Face } from '../../mcp/image/harfbuzz';
 import type { MeasureFont } from '../../src/model/components/instantiate';
 import {
   BIDI_CASES,
-  PARITY_ALL_FONTS,
   PARITY_FONTS,
   PARITY_SIZE,
   PARITY_SPACINGS,
   PARITY_STRINGS,
-  parityFontBytes,
+  parityFaces,
+  WEIGHT_CASES,
+  INK_TOLERANCE,
   parityKey,
   type ExtraCase,
   type ParityCase,
@@ -22,15 +28,14 @@ import {
 const FIXTURE = 'tests/fixtures/shaping-parity.json';
 
 function measured(): ParityCase[] {
-  const bytes = parityFontBytes();
   const buffer = (b: Uint8Array) =>
     b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer;
-  const fonts = PARITY_ALL_FONTS.map((name) => ({
-    family: name,
-    weight: '400',
+  const fonts = parityFaces().map((f) => ({
+    family: f.family,
+    weight: f.weight,
     style: 'normal' as const,
-    path: `fonts/${name}.${name === 'roboto' ? 'woff2' : 'ttf'}`,
-    bytes: buffer(bytes[name]),
+    path: `fonts/${f.family}-${f.weight}.${f.ext}`,
+    bytes: buffer(f.bytes),
   }));
   const measure = createMeasurer(fonts);
   const book = createFontBook(fonts);
@@ -58,7 +63,42 @@ function measured(): ParityCase[] {
     width: measure(c.text, fontOf(c)).width,
     starts: startsOf(book.fontFor(c.font, 400, false), c),
   }));
-  return [...base, ...extra];
+  const weights: ParityCase[] = WEIGHT_CASES.map((c) => ({
+    ...c,
+    width: measure(c.text, fontOf(c)).width,
+    ink: inkOf(book, c, fontOf(c)),
+  }));
+  return [...base, ...extra, ...weights];
+}
+
+const monoBuffer = (): ArrayBuffer => {
+  const b = readFileSync('mcp/fonts/MappingMono-Regular.ttf');
+  return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer;
+};
+
+/** The bounding box of the ink the server draws, from the origin and the baseline (what `measureText` reports). */
+function inkOf(book: FontBook, c: ExtraCase, font: MeasureFont): ParityCase['ink'] {
+  const f = book.fontFor(c.font, font.weight, font.italic);
+  const { polygons } = textPolygons(
+    f,
+    () => book.embeddedFor(c.font, font.weight),
+    c.text,
+    0,
+    () => 0,
+    {
+      size: PARITY_SIZE,
+      letterSpacing: c.letterSpacing,
+      italic: font.italic,
+      weight: font.weight,
+    },
+    book.synthesis(c.font, font.weight, font.italic),
+  );
+  const pts = polygons.flat();
+  return {
+    left: Math.min(...pts.map((p) => p.x)),
+    right: Math.max(...pts.map((p) => p.x)),
+    top: Math.min(...pts.map((p) => p.y)),
+  };
 }
 
 /** The left edge (px) of each code point of the case, in logical order, from the face's glyph positions. */
@@ -93,10 +133,47 @@ describe('shaping parity fixture (server side)', () => {
     expect(moved.map((c) => `${parityKey(c)} = ${JSON.stringify(c.starts)}`)).toEqual([]);
   });
 
+  it('the weight cases come last: the 400 width with a wider ink, and the pair at 550 as Mono', () => {
+    const fixture = JSON.parse(readFileSync(FIXTURE, 'utf8')) as ParityCase[];
+    const tail = fixture.slice(-WEIGHT_CASES.length);
+    expect(tail.map(parityKey)).toEqual(WEIGHT_CASES.map(parityKey));
+    const get = (text: string, weight?: number, italic?: boolean) =>
+      tail.find(
+        (c) =>
+          c.font === 'sans' &&
+          c.text === text &&
+          c.weight === weight &&
+          c.italic === italic,
+      )!;
+    const plain = fixture.find(
+      (c) => c.font === 'sans' && c.text === 'Hamburgefonstiv' && c.letterSpacing === 0,
+    )!;
+    const bold = get('Hamburgefonstiv', 700);
+    expect(Math.abs(bold.width - plain.width)).toBeLessThan(0.1);
+    expect(
+      Math.abs(get('Hamburgefonstiv', undefined, true).width - plain.width),
+    ).toBeLessThan(0.1);
+    const mono = createMeasurer([
+      { family: 'm', weight: '400', style: 'normal', path: 'm.ttf', bytes: monoBuffer() },
+    ])('Hamburgefonstiv', {
+      family: 'm',
+      size: PARITY_SIZE,
+      weight: 400,
+      italic: false,
+      lineHeight: 120,
+      letterSpacing: 0,
+    }).width;
+    const pair = tail.find((c) => c.font === 'pair')!;
+    expect(Math.abs(pair.width - mono)).toBeLessThan(0.1);
+    expect(INK_TOLERANCE).toBe(1);
+  });
+
   it('the bidi cases come after the base cases, which keep their place', () => {
     const fixture = JSON.parse(readFileSync(FIXTURE, 'utf8')) as ParityCase[];
     const base = PARITY_FONTS.length * PARITY_STRINGS.length * PARITY_SPACINGS.length;
-    expect(fixture.slice(base).map(parityKey)).toEqual(BIDI_CASES.map(parityKey));
+    expect(fixture.slice(base, base + BIDI_CASES.length).map(parityKey)).toEqual(
+      BIDI_CASES.map(parityKey),
+    );
     expect(fixture.slice(0, base).every((c) => c.starts === undefined)).toBe(true);
   });
 
