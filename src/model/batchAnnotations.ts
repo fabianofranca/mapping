@@ -129,7 +129,7 @@ function refInside(
       : { annotationId, key: field, rowId: batchRowId(res, annotation, field, row, key) };
   }
   // Without `entry`, `key` or `row`: the whole annotation (fourth format).
-  if (row === undefined) return { annotationId };
+  if (field === undefined && row === undefined) return { annotationId };
   return refuse(
     'invalid-ref-value',
     `field ${key}: "row" requires "key" (the table); without "entry", "key" or "row", the reference is the whole annotation`,

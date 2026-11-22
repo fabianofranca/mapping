@@ -28,6 +28,7 @@ import {
   containerPageArg,
   guardMinSize,
   markingRootPageId,
+  refuseArrowAsMarking,
   resolveBeside,
   resolveItem,
   resolveLayer,
@@ -411,13 +412,7 @@ class ResultApplier {
   private updateMarking(op: UpdateMarkingOp): void {
     const rc = this.refContext();
     const id = resolveItem(rc, this.p, op.marking, 'm');
-    if (projectIndex(this.p).arrows.has(id)) {
-      throw new BatchRuleError(
-        'wrong-kind',
-        'the reference is to an arrow, not to a marking',
-        { hint: 'use update_arrow for the arrow' },
-      );
-    }
+    refuseArrowAsMarking(this.p, id, 'update_arrow');
     const { project } = updateBatchMarking(this.markingContext([]), this.p, id, op);
     this.touched.push({ kind: 'm', id });
     this.p = project;

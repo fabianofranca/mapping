@@ -386,3 +386,25 @@ describe('createBatchArrow', () => {
     );
   });
 });
+
+describe('a `ref` value that is not a pair, field or row', () => {
+  it('refuses a `key` that is not a string instead of citing the whole annotation', () => {
+    const error = thrown(() =>
+      updateBatchAnnotation(resolver(), formatProject(), {
+        annotation: 'A3',
+        values: { parent: { annotation: 'A4', key: null } },
+      }),
+    );
+    expect(error.code).toBe('invalid-ref-value');
+  });
+
+  it('cites the whole annotation when only `annotation` is given', () => {
+    const made = updateBatchAnnotation(resolver(), formatProject(), {
+      annotation: 'A3',
+      values: { parent: { annotation: 'A4' } },
+    });
+    expect(annotationOf(made.project, 'A3').values?.parent).toEqual({
+      annotationId: 'A4',
+    });
+  });
+});

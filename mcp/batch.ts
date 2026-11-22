@@ -21,6 +21,7 @@ import {
   addBatchBackgroundContainer,
   addBatchTypedAnnotation,
   annotationLabelOf,
+  refuseArrowAsMarking,
   batchRefValue,
   createBatchAnnotation,
   createBatchArrow,
@@ -1708,15 +1709,7 @@ class Batch {
 
   /** The id is an arrow's in a marking tool: a friendly error pointing to the right tool. */
   private requireNotArrow(id: string, tool: 'update_arrow' | 'delete_arrow'): void {
-    if (projectIndex(this.p).arrows.has(id)) {
-      throw new ToolError(
-        'wrong-kind',
-        'the reference is to an arrow, not to a marking',
-        {
-          hint: `use ${tool} for the arrow`,
-        },
-      );
-    }
+    this.rules(() => refuseArrowAsMarking(this.p, id, tool));
   }
 
   private createArrowOp(op: Extract<Operation, { op: 'create_arrow' }>): Step {
@@ -2000,10 +1993,12 @@ class Batch {
       cause instanceof ModelError ||
       cause instanceof BatchRuleError
     )) {
-      return new ToolError('plugin-output-invalid', failure.message, {
-        path,
-        resultOp: op,
-      });
+      const detail = cause instanceof Error ? cause.message : String(cause);
+      return new ToolError(
+        'plugin-output-invalid',
+        `${path}: a value of the plugin result has the wrong type (${detail})`,
+        { path, resultOp: op },
+      );
     }
     const error =
       cause instanceof BatchRuleError

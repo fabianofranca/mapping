@@ -366,3 +366,18 @@ export function resolveBeside(
   }
   return container(op.beside);
 }
+
+/** The id is an arrow's in a marking operation: the friendly error that points to the arrow's own operation. */
+export function refuseArrowAsMarking(
+  p: Project,
+  id: string,
+  tool: 'update_arrow' | 'delete_arrow',
+): void {
+  if (projectIndex(p).arrows.has(id)) {
+    throw new BatchRuleError(
+      'wrong-kind',
+      'the reference is to an arrow, not to a marking',
+      { hint: `use ${tool} for the arrow` },
+    );
+  }
+}
