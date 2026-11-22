@@ -13,6 +13,8 @@ import {
 } from '../../src/model/components/scene';
 import { createRaster, type Raster } from '../../mcp/image/raster';
 import { paintScene } from '../../mcp/image/sceneRaster';
+import type { PackageImages } from '../../mcp/image/packageImages';
+import { quadrants } from './images';
 
 const WHITE = [255, 255, 255, 255];
 const RED = [255, 0, 0, 255];
@@ -195,5 +197,63 @@ describe('FG5: scale and the shadow and the culling in the raster', () => {
     });
     expect(pixel(raster, 135, 20)).toEqual(RED);
     expect(pixel(raster, 145, 20)).toEqual(WHITE);
+  });
+});
+
+describe('grayscale on a package image in the raster (#2359)', () => {
+  const images: PackageImages = {
+    get: (spec, asset) =>
+      spec === 'lib' && asset === 'images/q.png' ? quadrants(40, 40) : undefined,
+    notes: [],
+  };
+  const component = (filter?: object) => ({
+    format: COMPONENT_FORMAT,
+    formatVersion: 4,
+    id: 'c',
+    name: 'C',
+    size: { width: 40, height: 40 },
+    template: {
+      type: 'frame',
+      ...(filter ? { filter } : {}),
+      layout: { type: 'row', align: 'center', justify: 'center' },
+      children: [
+        {
+          type: 'image',
+          name: 'img',
+          src: 'images/q.png',
+          fit: 'cover',
+          width: 40,
+          height: 40,
+        },
+      ],
+    },
+  });
+  const draw = (filter?: object) => {
+    const out = instantiate(
+      component(filter) as never,
+      {},
+      { x: 0, y: 0, width: 40, height: 40 },
+      { measure: approximateMeasurer },
+    );
+    const raster = canvas(40, 40);
+    paintScene(raster, [{ root: out.root, specId: 'lib' }], approximateMeasurer, {
+      scaleX: 1,
+      scaleY: 1,
+      clip: { x: 0, y: 0, width: 40, height: 40 },
+      images,
+    });
+    return raster;
+  };
+
+  it('amount 1: R = G = B in every pixel and the alpha is unchanged', () => {
+    const colored = draw();
+    expect(pixel(colored, 2, 2)).toEqual(RED);
+    const gray = draw({ grayscale: 1 });
+    for (let i = 0; i < gray.data.length; i += 4) {
+      expect(gray.data[i + 1]).toBe(gray.data[i]);
+      expect(gray.data[i + 2]).toBe(gray.data[i]);
+      expect(gray.data[i + 3]).toBe(255);
+    }
+    expect(pixel(gray, 2, 2)).not.toEqual(RED);
   });
 });
