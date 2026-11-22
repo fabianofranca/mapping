@@ -72,6 +72,15 @@ describe('dist-mcp/mapping-mcp.js (single file, over stdio)', () => {
     expect(notices).toContain(copying);
   });
 
+  it('carries the notice of bidi-js (MIT, stage #2448)', () => {
+    const text = readFileSync(bundle, 'utf8');
+    const notices = text.slice(text.indexOf('THIRD-PARTY NOTICES'));
+    expect(notices).toContain('== bidi-js ==');
+    expect(notices).toContain(
+      readFileSync('node_modules/bidi-js/LICENSE.txt', 'utf8').trim(),
+    );
+  });
+
   it('patches the HarfBuzz glue for CommonJS: the bundle URL replaces import.meta.url', () => {
     const text = readFileSync(bundle, 'utf8');
     expect(text).toContain('harfbuzzBundleUrl');

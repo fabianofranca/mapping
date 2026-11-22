@@ -1,5 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { describe, expect, it, vi } from 'vitest';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { initShaper, loadFace, variationsFor } from '../../mcp/image/harfbuzz';
 import { makeWoff } from '../support/woffFile';
 
@@ -150,5 +153,93 @@ describe('variationsFor', () => {
   it('a static face has no axes', async () => {
     await initShaper();
     expect(variationsFor(sansFace().axes, 700, 20)).toEqual([]);
+  });
+});
+
+// Stage #2448 (BD1, decisions 3 and 4): each directional run is shaped on its own and the runs come in visual order.
+// The font is Mapping Sans with U+05D0 to U+05D9 mapped to the glyphs of `A` to `J` (`gsub-font.mjs --rtl`).
+describe('shaping by directional run', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mapping-rtl-'));
+  let rtl: NonNullable<ReturnType<typeof loadFace>>;
+
+  beforeAll(async () => {
+    execFileSync('node', [
+      'scripts/testing/gsub-font.mjs',
+      join(dir, 'rtl.ttf'),
+      '--rtl',
+    ]);
+    await initShaper();
+    const face = loadFace(new Uint8Array(readFileSync(join(dir, 'rtl.ttf'))));
+    if (face === null) throw new Error('the --rtl test font must load');
+    rtl = face;
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  const clusters = (text: string, style?: Parameters<typeof rtl.positions>[2]) =>
+    rtl.positions(text, 100, style).map((p) => p.cluster);
+
+  it('positions gives the left edge and the cluster of each glyph, from the left', () => {
+    const at = rtl.positions('AB', 100);
+    expect(at.map((p) => p.cluster)).toEqual([0, 1]);
+    expect(at[0]!.x).toBe(0);
+    expect(at[1]!.x).toBeCloseTo(rtl.advance('A', 100), 6);
+  });
+
+  it('positions follows the letter spacing the path uses', () => {
+    const at = rtl.positions('ABC', 100, { letterSpacing: 4 });
+    expect(at[2]!.x).toBeCloseTo(rtl.advance('AB', 100, 400, true) + 8, 6);
+  });
+
+  it('a Hebrew run in a Latin line is reversed in place', () => {
+    expect(clusters('abc אבג def')).toEqual([0, 1, 2, 3, 6, 5, 4, 7, 8, 9, 10]);
+    // the glyphs are those of C B A, drawn from the left
+    expect(rtl.path('אבג', 0, 0, 100)).toEqual(rtl.path('CBA', 0, 0, 100));
+  });
+
+  it('a mixed line measures the sum of its runs', () => {
+    const runs = ['abc ', 'אבג', ' def'].reduce(
+      (sum, run) => sum + rtl.advance(run, 100),
+      0,
+    );
+    expect(rtl.advance('abc אבג def', 100)).toBeCloseTo(runs, 6);
+    const at = rtl.positions('abc אבג def', 100);
+    expect(at[4]!.x).toBeCloseTo(rtl.advance('abc ', 100), 6);
+    expect(at[7]!.x).toBeCloseTo(rtl.advance('abc אבג', 100), 6);
+  });
+
+  it('with the rtl direction, a number keeps its order and the runs come from the right', () => {
+    expect(clusters('אבג 123 דה', { direction: 'rtl' })).toEqual([
+      9, 8, 7, 4, 5, 6, 3, 2, 1, 0,
+    ]);
+  });
+
+  it('with the rtl direction, the period of a Latin sentence goes to the left', () => {
+    const at = rtl.positions('Pay invoice.', 100, { direction: 'rtl' });
+    expect(at[0]).toEqual({ cluster: 11, x: 0 });
+    expect(at[1]!.cluster).toBe(0);
+    expect(at[1]!.x).toBeCloseTo(rtl.advance('.', 100), 6);
+  });
+
+  it('advance takes the direction, and a plain Latin line is the same in both', () => {
+    expect(rtl.advance('Hamburgefonstiv', 100, 400, false, 'rtl')).toBeCloseTo(
+      rtl.advance('Hamburgefonstiv', 100),
+      6,
+    );
+    const mixed = rtl.advance('Pay invoice.', 100, 400, false, 'rtl');
+    expect(mixed).toBeCloseTo(rtl.advance('.', 100) + rtl.advance('Pay invoice', 100), 6);
+  });
+
+  it('a bracket in a right-to-left run is mirrored', () => {
+    expect(rtl.path('(', 0, 0, 100, { direction: 'rtl' })).toEqual(
+      rtl.path(')', 0, 0, 100),
+    );
+    expect(rtl.path('(', 0, 0, 100)).not.toEqual(rtl.path(')', 0, 0, 100));
+  });
+
+  it('the cache does not mix the directions', () => {
+    const ltr = rtl.advance('Pay invoice.', 100);
+    expect(rtl.advance('Pay invoice.', 100, 400, false, 'rtl')).toBeCloseTo(ltr, 6);
+    expect(clusters('Pay invoice.')).toEqual([...Array(12).keys()]);
+    expect(clusters('Pay invoice.', { direction: 'rtl' })[0]).toBe(11);
   });
 });

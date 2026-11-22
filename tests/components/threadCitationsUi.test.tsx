@@ -6,6 +6,7 @@ import { citationUrl, type CitationTarget, type Thread } from '../../src/model';
 import { clearIdentity, setIdentity } from '../../src/store/identity';
 import { locale } from '../../src/store/settings';
 import { selectedThreadId } from '../../src/store/threadUi';
+import { isToolWindowOpen } from '../../src/store/toolWindows';
 import { CommentsWindow } from '../../src/ui/comments/CommentsWindow';
 import { ThreadView } from '../../src/ui/comments/ThreadView';
 import { EditorContext } from '../../src/ui/EditorContext';
@@ -73,6 +74,7 @@ describe('Cited in', () => {
       }),
     );
     expect(selectedThreadId(h.ui)).toBe('tb1');
+    expect(isToolWindowOpen('conversation')).toBe(true);
   });
 
   it('thread that nobody cites does not show the line', async () => {

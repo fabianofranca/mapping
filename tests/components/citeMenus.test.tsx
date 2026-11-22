@@ -157,7 +157,7 @@ describe('simple typed field', () => {
     renderField('AB', 'texto', harness);
     await user.click(more());
     await user.click(screen.getByRole('menuitem', { name: t('comments.comment') }));
-    expect(harness.ui.composing.value?.anchor).toEqual({
+    expect(composingAnchor(harness.ui)).toEqual({
       kind: 'field',
       annotationId: 'AB',
       key: 'texto',
@@ -250,7 +250,7 @@ describe('pair (KeyValueGrid)', () => {
 
     await user.click(screen.getByRole('button', { name: 'Actions for pair name' }));
     await user.click(screen.getByRole('menuitem', { name: t('comments.comment') }));
-    expect(harness.ui.composing.value?.anchor).toEqual({
+    expect(composingAnchor(harness.ui)).toEqual({
       kind: 'entry',
       annotationId: 'AU',
       entryId: 'EN',
@@ -335,7 +335,7 @@ describe('row (TableField)', () => {
 
     await user.click(more());
     await user.click(screen.getByRole('menuitem', { name: t('comments.comment') }));
-    expect(harness.ui.composing.value?.anchor).toEqual({
+    expect(composingAnchor(harness.ui)).toEqual({
       kind: 'row',
       annotationId: 'AC',
       key: 'attributes',
@@ -375,7 +375,7 @@ describe('item (Tree and annotation card)', () => {
       screen.getByRole('button', { name: t('copy.itemActions', { name: 'Maçaneta' }) }),
     );
     await user.click(screen.getByRole('menuitem', { name: t('comments.comment') }));
-    expect(harness.ui.composing.value?.anchor).toEqual({ kind: 'marking', id: 'M2' });
+    expect(composingAnchor(harness.ui)).toEqual({ kind: 'marking', id: 'M2' });
 
     await user.click(
       screen.getByRole('button', {
@@ -383,7 +383,7 @@ describe('item (Tree and annotation card)', () => {
       }),
     );
     await user.click(screen.getByRole('menuitem', { name: t('comments.comment') }));
-    expect(harness.ui.composing.value?.anchor).toEqual({ kind: 'container', id: 'I2' });
+    expect(composingAnchor(harness.ui)).toEqual({ kind: 'container', id: 'I2' });
   });
 
   it('outside a folder, the Tree still cites and comments (no Copy reference)', async () => {
@@ -435,7 +435,7 @@ describe('item (Tree and annotation card)', () => {
       }),
     );
     await user.click(screen.getByRole('menuitem', { name: t('comments.comment') }));
-    expect(harness.ui.composing.value?.anchor).toEqual({
+    expect(composingAnchor(harness.ui)).toEqual({
       kind: 'annotation',
       id: 'A1',
     });

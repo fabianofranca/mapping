@@ -138,9 +138,9 @@ const MAX_ROUNDS = 8;
  * or absent page → the first page; a `pageId` on a container marking → `null`; a parent on
  * another page → the item becomes a root; an arrow between pages → removed, with its annotations
  * (the only repair that deletes, and it is listed); a repeated page name → the repeated one gets
- * " (2)", " (3)"… It only makes the project valid: it does not settle (the
- * next geometry operation does). What remains after the repairs (`validateProject` again) is
- * `unrepaired`.
+ * " (2)", " (3)"… It only makes the project valid: it does not settle (reading does:
+ * `deserializeParsed` settles the repaired project when `unrepaired` is empty). What remains
+ * after the repairs (`validateProject` again) is `unrepaired`.
  */
 export function repairProject(
   project: Project,

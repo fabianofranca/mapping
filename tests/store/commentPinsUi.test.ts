@@ -80,6 +80,21 @@ describe('pin visibility', () => {
     expect(derived.threads.pins.value[0]?.color).toBe('resolved');
   });
 
+  it('the selected pin follows ui.conversation, not the selection', () => {
+    const { ui, derived } = setup([OPEN, OTHER]);
+    ui.conversation.value = { kind: 'thread', id: OTHER.id };
+    expect(derived.threads.pins.value.map((g) => g.hostKey)).toEqual(['marking:M2']);
+    ui.selection.value = { kind: 'marking', id: 'M1' };
+    expect(derived.threads.pins.value.map((g) => g.hostKey)).toEqual(['marking:M2']);
+  });
+
+  it('the dashed draft pin follows ui.conversation', () => {
+    const { ui, project } = setup([]);
+    startComposing(ui, project, { kind: 'marking', id: 'M2' });
+    ui.selection.value = null;
+    expect(composingAnchor(ui)).toEqual({ kind: 'marking', id: 'M2' });
+  });
+
   it('the unread dot enters the group', () => {
     const store = createProjectStore({ now: () => NOW });
     store.load(sampleProject(), { readOnly: false });

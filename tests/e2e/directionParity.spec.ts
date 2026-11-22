@@ -1,8 +1,8 @@
 // R1 (#1096): Konva × MCP raster parity of the reading direction, in a real Chromium. The ink
 // box (bbox of the painted pixels) of the icon and of the path mirrored in rtl differs ≤ 0.5 px between
 // the two; rtl text with align right/left lands on the same physical side (the ink edge, ≤ 2 px:
-// the raster without fonts draws bars, Konva draws the glyphs). Known limit: the glyphs come out in the order
-// of the text, without bidi. Does not open the app: mounts Konva on a blank page (like shadowsGap.spec).
+// the raster without fonts draws bars, Konva draws the glyphs). The glyph order of a mixed-direction line (bidi) is
+// checked by `tests/e2e/shapingParity.spec.ts` against the DOM (stage #2448). Does not open the app: mounts Konva on a blank page (like shadowsGap.spec).
 import { expect, test, type Page } from '@playwright/test';
 import { build, type Plugin } from 'esbuild';
 
