@@ -223,9 +223,17 @@ function rootGroups(
     markingRoots.push(root);
     groupOf(root).markings.push(m);
   }
-  const annotationRoots = p.annotations.map((a) =>
-    markings.has(a.markingId) ? (rootOf.get(a.markingId) as string) : null,
-  );
+  // Annotations of a marking usually come together: the last target's root is reused instead of looked up again.
+  const annotationRoots: (string | null)[] = [];
+  let lastTarget: string | undefined;
+  let lastRoot: string | null = null;
+  for (const a of p.annotations) {
+    if (a.markingId !== lastTarget) {
+      lastTarget = a.markingId;
+      lastRoot = markings.has(lastTarget) ? (rootOf.get(lastTarget) as string) : null;
+    }
+    annotationRoots.push(lastRoot);
+  }
 
   const roots = [
     ...p.containers.filter((c) => c.parentId === null).map((c) => c.id),
