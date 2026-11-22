@@ -19,7 +19,7 @@ exist yet, cited whole. A folder (ends in `/` or `/**`, or exists at the reposit
 an existing document with sections but no anchor, and an anchor outside the form (in `docs/TESTING.md`, `R<n>`, `RP`, `RF`, `RA`, `RB`, a
 slug or `inicio`; in the others, a slug or `inicio`) give `ficha incompleta (toca: <first invalid citation>)` and go into
 `fichas a refazer:`, including on the already started stage, whose old citations stay in the comparison as today until the ficha is
-redone; the `exclusive=sim` line does not go through this validation (only the `?` makes it incomplete). `toca "<citations separated by commas>"` checks a list: `ok` (code 0) or one `inválida: <citation> — <reason>` line per citation (code 1).
+redone; the `exclusive=sim` line does not go through this validation (only the `?` makes it incomplete). A non-empty `toca=` whose citations are all ignored (`IGNORED_PREFIXES`, `IGNORED_EXACT`) normalizes to `?` (decision 8 of #2562): it is incomplete (the exclusive line too), a started one conflicts with every candidate, and `toca` and `conflito` print `inválida: <the list> — only ignored citations` (codes 1 and 2); an append-only citation is not ignored. `toca "<citations separated by commas>"` checks a list: `ok` (code 0) or one `inválida: <citation> — <reason>` line per citation (code 1).
 `conflito "<toca>" [--pasta <dir>] [--com "#N=<toca>"]…` (decision 9 of #1864, read-only, outside `apply`) checks a `toca` against
 the started and not merged stages of the folder, the ones `show` lists in `começar agora:` and each `--com`, with the same calculation as the queue:
 `livre` (code 0, also without `--pasta` and without `--com`), one `conflito: <citation> com #N (<status>|começa agora|fora do painel)` line
@@ -203,7 +203,7 @@ back as a fresh `aguardando` one (any other status is an Erro, code 2): it sets 
 A row that depends on a `recusada` one shows `dep #N recusada` in `vagas:` (`dep #N recusada, #K` with another open dependency; the state stays `dep`), and
 `show` prints `dependem de recusada: #M (#N); …` (or `nenhum`) right after `perguntas ao dono:`: the `aguardando` rows not yet started with a `recusada`
 row among their open dependencies. The question verb `soltar` is the first command of the `soltar`/`esperar` pair. A `toca=` with only ignored
-citations (`changelog/`, `docs/design-system/`, `mcp/version.ts`) is a ficha without a real `toca`: `outliers` counts it in `without ficha` and
+citations (`changelog/`, `docs/design-system/`, `mcp/version.ts`) is a `?` (stage #2562, decision 8), a ficha without a real `toca`: `outliers` counts it in `without ficha` and
 `is_process_stage` (the `processo` canary filter too) answers no. Every `row` with a `wait=merge pedido ao dono: …` and no `child` restarts `childAt`.
 Early start (stage #2373, phase EA1): a candidate whose only blockers are file conflicts (`first_conflict`) with eligible holders starts at once: a
 started row `em andamento` or `esperando dono` in `Testador`, `Correção` or `Fechamento`, not `exclusive=sim`, not `via-rapida` and with no `cedo`
@@ -218,7 +218,7 @@ without `cedo`, and every write rewrites its step to `espera merge de #S para te
 `esperando merge para testar: #E (espera #S); …` and `pode sincronizar: #E (#S mesclada; #T falhou); …` (the rows with every holder resolved, with each outcome:
 `mesclada`, `falhou`, `recusada`, `fora da fila`), each `nenhuma` when empty; the `em andamento` line of a row with `cedo` ends in ` · cedo: #S`. Once
 `cedo` is cleared the stage is an ordinary started one and opens the early start for another (the second level). `fichas a refazer:` also lists the
-non-final rows whose ficha has no `formato=` at all (it does not make the ficha incomplete and holds nothing; `formato=?` is a written value). A standalone note in `toca=` (a comma item that is only a parenthesized note, `a.ts,(novo),b.ts`; decision 4 of #2428) is dropped and also lists the row there, holding nothing; a note after its path (`x.ts (new, helper)`) is not one of them. The
+non-final rows whose ficha has no `formato=` at all (it does not make the ficha incomplete and holds nothing; `formato=?` is a written value). A standalone note in `toca=` (a comma item made only of balanced parenthesized groups, nested or adjacent: `a.ts,(novo),b.ts`, `(novo (ver #12))`, `(n)(m)`; decisions 4 of #2428 and 7 of #2562, read by one depth scan, `split_toca`) is dropped and also lists the row there, holding nothing; a note after its path (`x.ts (new, helper)`, `x.ts (novo (ver #12))`) is removed from the space before its `(` to the matching `)` and is not one of them; text outside the groups (`(a) x.ts (b)`) keeps it a citation. The
 session kind `sincronização` (`SESSION_KINDS`) has no ruler, signals or context ceiling, and `sinal` refuses it. Graph: `estado` `entrega` (reason =
 the step) for `esperando entrega`, `cedo` on every node (the holders still open, `#S, #T`, or "") and an arrow `{de: #S, para: #E, tipo: entrega}` for
 each open holder of a started row with `cedo`; a `começa cedo` candidate is in wave 0 like `começa`.
@@ -2490,36 +2490,101 @@ def norm_path(x):
     return x
 
 
-# A comma item that is only a parenthesized note (`a.ts,(novo),b.ts`; decisions 2 and 3 of #2428). The group keeps the comma before it.
-LOOSE_NOTE = re.compile(r"(^|,)\s*\([^)]*\)\s*(?=,|$)")
+def group_end(s, i):
+    """Index of the `)` that closes the `(` at `s[i]`, counting nested groups; -1 when it is never closed (that `(` is plain text)."""
+    depth = 0
+    for j in range(i, len(s)):
+        if s[j] == "(":
+            depth += 1
+        elif s[j] == ")":
+            depth -= 1
+            if depth == 0:
+                return j
+    return -1
+
+
+def split_depth0(raw):
+    """The comma-separated items of a raw `toca=`, splitting only at depth 0: a comma inside a balanced `(...)` stays in its item."""
+    items, cur, i = [], [], 0
+    while i < len(raw):
+        end = group_end(raw, i) if raw[i] == "(" else -1
+        if end >= 0:
+            cur.append(raw[i:end + 1])
+            i = end + 1
+            continue
+        if raw[i] == ",":
+            items.append("".join(cur))
+            cur = []
+        else:
+            cur.append(raw[i])
+        i += 1
+    items.append("".join(cur))
+    return items
+
+
+def scan_item(item):
+    """(text, is_note) of one comma item (decision 7 of #2562): a balanced `(...)` group at depth 0 preceded by a space is a note after the
+    path and leaves `text`; an item made only of such groups (`(novo (ver #12))`, `(n)(m)`) is a standalone note (`is_note`, `text` empty)."""
+    kept, outside, groups, i = [], [], 0, 0
+    while i < len(item):
+        end = group_end(item, i) if item[i] == "(" else -1
+        if end < 0:
+            kept.append(item[i])
+            outside.append(item[i])
+            i += 1
+            continue
+        groups += 1
+        if not (i > 0 and item[i - 1].isspace()):
+            kept.append(item[i:end + 1])
+        i = end + 1
+    if groups and not "".join(outside).strip():
+        return "", True
+    return "".join(kept), False
+
+
+def split_toca(raw):
+    """([citation texts], [standalone notes]) of a raw `toca=`: the single reading `norm_toca` and `loose_notes` share (decision 7 of #2562)."""
+    cites, notes = [], []
+    for item in split_depth0(raw):
+        text, is_note = scan_item(item)
+        if is_note:
+            notes.append(item.strip())
+        else:
+            cites.append(text)
+    return cites, notes
 
 
 def loose_notes(raw):
     """The standalone parenthesized notes of a raw `toca=` (a list; empty when there is none, also for `None`, `""` and `?`).
 
-    Read by `norm_toca` (which drops them) and by `redo_rows` (which lists the ficha): there is no second regex. A note after its
-    path (`x.ts (new, helper)`) is not one of them."""
+    Read by `redo_rows` (which lists the ficha); `norm_toca` drops them through the same `split_toca`. A note after its path
+    (`x.ts (new, helper)`) is not one of them."""
     if raw is None:
         return []
-    return [m.group(0).lstrip(",").strip() for m in LOOSE_NOTE.finditer(raw)]
+    return split_toca(raw)[1]
 
 
 def norm_toca(raw):
-    """Citations of a `toca=` already normalized, without the ones that do not count; `?` if it says nothing."""
+    """Citations of a `toca=` already normalized, without the ones that do not count; `?` if it says nothing.
+
+    A non-empty `toca=` whose citations are all dropped by IGNORED_PREFIXES or IGNORED_EXACT also gives `["?"]` (decision 8 of #2562);
+    one made only of standalone notes gives `[]`."""
     if raw is None or raw.strip() in ("", "?"):
         return ["?"]
-    # A note written as an item of its own ("a.ts,(novo),b.ts") is not a citation (decision 2 of #2428): drop it, keeping the comma,
-    # before the strip below, so a note with a comma inside it after a path ("x.ts (new, helper)") stays that path's note.
-    raw = LOOSE_NOTE.sub(r"\1", raw)
-    # A parenthesized note after the path ("x.ts (new method)") is not part of it.
-    raw = re.sub(r"\s+\([^)]*\)", "", raw)
-    out = []
-    for x in raw.split(","):
-        x = norm_path(x)
-        if not x or x in IGNORED_EXACT or x.startswith(IGNORED_PREFIXES):
+    out, ignored = [], 0
+    for x in (norm_path(t) for t in split_toca(raw)[0]):
+        if not x:
+            continue
+        if x in IGNORED_EXACT or x.startswith(IGNORED_PREFIXES):
+            ignored += 1
             continue
         out.append(x)
-    return out
+    return out if out or not ignored else ["?"]
+
+
+def only_ignored(raw):
+    """Is the raw `toca=` non-empty and not `?`, but normalizes to `?` because every citation is ignored (decision 8 of #2562)?"""
+    return raw is not None and raw.strip() not in ("", "?") and norm_toca(raw) == ["?"]
 
 
 def toca_list(plan):
@@ -2528,7 +2593,7 @@ def toca_list(plan):
 
 
 def has_toca(plan):
-    """Whether the ficha has a real `toca=`: not `?` and not only ignored citations (`toca_list` is `[]`), decision 5 of #2204."""
+    """Whether the ficha has a real `toca=`: not `?` (also when it has only ignored citations, decision 8 of #2562) and not only notes (`[]`)."""
     return toca_list(plan) not in (["?"], [])
 
 
@@ -2703,7 +2768,7 @@ def is_append_only(cite):
 
 def first_conflict(mine, other):
     """The citation of `mine` (or `?`) that touches the same place as one of `other`; the append-only ones of both sides do not count."""
-    if "?" in mine or "?" in other:  # before the filter: an empty list (only ignored or append-only citations) does not escape a started `?`
+    if "?" in mine or "?" in other:  # before the filter: an empty list (only notes or append-only citations) does not escape a started `?`
         return "?"
     for x in (c for c in mine if not is_append_only(c)):
         for y in (c for c in other if not is_append_only(c)):
@@ -3408,8 +3473,14 @@ def invalid_lines(cites):
     return out
 
 
+ONLY_IGNORED_REASON = "only ignored citations"
+
+
 def cmd_toca(a):
     """Checks a list of citations of the `toca=` (decision 7 of #1812): `ok` (0) or `inválida: … — <reason>` (1)."""
+    if only_ignored(a.cites):
+        print(f"inválida: {a.cites} — {ONLY_IGNORED_REASON}")
+        return 1
     bad = invalid_lines(norm_toca(a.cites))
     if bad:
         print("\n".join(bad))
@@ -3457,7 +3528,7 @@ def cmd_conflito(a):
     """Checks a `toca` against the queue (decision 9 of #1864): `livre` (0), `conflito: …` (1) or `inválida: …` (2)."""
     extra = parse_com(a.com)
     mine = norm_toca(a.toca)
-    bad = invalid_lines(mine)
+    bad = [f"inválida: {a.toca} — {ONLY_IGNORED_REASON}"] if only_ignored(a.toca) else invalid_lines(mine)
     if bad:
         print("\n".join(bad))
         return 2

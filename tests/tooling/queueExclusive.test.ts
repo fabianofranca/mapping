@@ -464,15 +464,16 @@ describe('painel.py — every .md of docs/ and of the root by section (TS1, deci
     expect(reason('AGENTS.md#a', 'AGENTS.md#b')).toBe('#2 começa');
   });
 
-  it('docs/TESTING-NUVEM.md by section; #blocos (ignored literal) does not count; docs/design-system/ does not count', () => {
+  it('docs/TESTING-NUVEM.md by section; #blocos (ignored literal) and docs/design-system/ are only ignored citations (a `?`)', () => {
     expect(
       reason('docs/TESTING-NUVEM.md#report', 'docs/TESTING-NUVEM.md#environment'),
     ).toBe('#2 começa');
+    // A started row with only ignored citations is a `?` (GW3, #2562, decision 8).
     expect(reason('docs/TESTING-NUVEM.md#blocos', 'docs/TESTING-NUVEM.md#report')).toBe(
-      '#2 começa',
+      '#2 arquivo ? com #1',
     );
     expect(reason('docs/design-system/x.md', 'docs/design-system/x.md')).toBe(
-      '#2 começa',
+      '#2 ficha incompleta (toca)',
     );
   });
 

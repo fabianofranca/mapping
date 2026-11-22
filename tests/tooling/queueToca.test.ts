@@ -453,6 +453,101 @@ describe('painel.py — standalone notes in toca (TN1, #2428)', () => {
   });
 });
 
+describe('painel.py — nested notes and only ignored citations in toca (GW3, #2562, decisions 7 and 8)', () => {
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'toca-'));
+    run('init', dir);
+    run('start', dir, '--paralelo', '9');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const NESTED = ['a.ts,(novo (ver #12)),b.ts', 'a.ts,(n)(m),b.ts'];
+
+  it('a nested or adjacent standalone note is no citation: complete ficha, listed to redo, holds no slot', () => {
+    for (const toca of NESTED) {
+      run('init', dir, '--force');
+      run('start', dir, '--paralelo', '9');
+      stage('#1', ficha('nenhuma', toca), 'status=em andamento');
+      stage('#2', ficha('nenhuma', 'c.ts,(novo (x))'));
+      expect(reasons()[0], toca).toBe('#2 começa');
+      expect(run('show', dir), toca).toContain('fichas a refazer: #1 #2');
+      stage('#3', ficha('nenhuma', toca));
+      expect(reasons().join('|'), toca).not.toContain('ficha incompleta');
+      const r = runRaw('toca', toca);
+      expect([r.status, r.stdout], toca).toEqual([0, 'ok\n']);
+    }
+  });
+
+  it('a note nested after its path is dropped whole: x.ts and b.ts count and no ) is left behind', () => {
+    const toca = 'x.ts (novo (ver #12)),b.ts';
+    stage('#1', ficha('nenhuma', toca), 'status=em andamento');
+    stage('#2', ficha('nenhuma', 'x.ts'));
+    stage('#3', ficha('nenhuma', 'b.ts'));
+    expect(reasons().slice(0, 2)).toEqual([
+      '#2 arquivo x.ts com #1',
+      '#3 arquivo b.ts com #1',
+    ]);
+    const r = runRaw('toca', toca);
+    expect([r.status, r.stdout]).toEqual([0, 'ok\n']);
+    expect(run('show', dir)).toContain('fichas a refazer: nenhuma');
+  });
+
+  it('text outside the groups keeps it a citation: (a) x.ts (b) is neither a note nor listed', () => {
+    stage('#1', ficha('nenhuma', '(a) x.ts (b)'), 'status=em andamento');
+    expect(run('show', dir)).toContain('fichas a refazer: nenhuma');
+    expect(runRaw('toca', '(a) x.ts (b)').stdout).toBe('ok\n');
+  });
+
+  it('the plain TN1 cases pass unchanged', () => {
+    for (const toca of ['a.ts,(novo),b.ts', 'x.ts (new, helper)']) {
+      const r = runRaw('toca', toca);
+      expect([r.status, r.stdout], toca).toEqual([0, 'ok\n']);
+    }
+  });
+
+  it('a toca with only ignored citations is ficha incompleta (toca), also on an exclusive row', () => {
+    for (const toca of ['changelog/x.md,docs/design-system/x.md', 'mcp/version.ts']) {
+      stage('#2', ficha('nenhuma', toca));
+      expect(
+        reasons().find((m) => m.startsWith('#2 ')),
+        toca,
+      ).toContain('ficha incompleta (toca)');
+      stage('#2', ficha('nenhuma', toca), 'exclusive=sim');
+      expect(
+        reasons().find((m) => m.startsWith('#2 ')),
+        toca,
+      ).toContain('ficha incompleta (toca)');
+    }
+  });
+
+  it('a started row with only ignored citations conflicts with every candidate', () => {
+    stage(
+      '#1',
+      ficha('nenhuma', 'changelog/x.md,docs/design-system/x.md'),
+      'status=em andamento',
+    );
+    stage('#2', ficha('nenhuma', 'src/other.ts'));
+    expect(reasons()[0]).toBe('#2 arquivo ? com #1');
+  });
+
+  it('painel.py toca refuses only ignored citations with the line and code 1', () => {
+    const r = runRaw('toca', 'changelog/x.md');
+    expect([r.status, r.stdout]).toEqual([
+      1,
+      'inválida: changelog/x.md — only ignored citations\n',
+    ]);
+  });
+
+  it('an append-only citation is not ignored: a toca with only append-only citations stays complete (#2314)', () => {
+    expect(reason('docs/MCP.md#tools')).toBe('#2 começa');
+    const r = runRaw('toca', 'docs/MCP.md#tools');
+    expect([r.status, r.stdout]).toEqual([0, 'ok\n']);
+  });
+});
+
 describe('the texts of the standalone note (TN1, #2428, decision 7)', () => {
   const queue = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
 
