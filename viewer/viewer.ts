@@ -21,6 +21,10 @@
  * receives each result (warnings and `error`). Without a library, or with `error`, nothing is
  * drawn.
  *
+ * Package images (the `image` node citing a file of the library): drawn from the bytes the host
+ * passed to `loadLibrary` (`Library.images`), decoded with `createImageBitmap`; on by default, with
+ * no URL and no network. Without bytes, or if the decode fails, the placeholder.
+ *
  * Fonts belong to the host: after a font loads, call `redraw()` to re-measure the texts. The
  * module does not register fonts and, by default, makes no network request.
  *
@@ -35,7 +39,11 @@ import { Group } from 'konva/lib/Group';
 import { Layer } from 'konva/lib/Layer';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Stage } from 'konva/lib/Stage';
-import { type Library, withHostTokens } from '../src/model/components/library';
+import {
+  type Library,
+  resolvePath,
+  withHostTokens,
+} from '../src/model/components/library';
 import type { Direction } from '../src/model/components/componentFormat';
 import type { HostFonts } from '../src/model/components/tokens';
 import { tokenValue } from '../src/theme/tokens';
@@ -45,6 +53,7 @@ import { type SourceResult, screenFromSource } from '../src/model/components/ori
 import type { AllowOrigin } from './allowOrigin';
 import { createViewerRemoteImages } from './remoteImages';
 import { VIEWER_LABELS } from './labels';
+import { createPackageImages } from '../src/storage/packageImages';
 import { konvaMeasurer } from '../src/canvas/components/konvaMeasurer';
 import {
   type InstanceWarnings,
@@ -191,6 +200,18 @@ const EMPTY_SCREEN: Screen = {
   instances: [],
 };
 
+/** The bytes of a package file of `library` (a copy: the cache owns what it reads), or `null`. */
+function packageBytes(
+  library: Library | undefined,
+  specId: string,
+  asset: string,
+): ArrayBuffer | null {
+  if (library?.specId !== specId) return null;
+  const bytes = library.images?.get(resolvePath(library.specPath, asset));
+  if (bytes === undefined) return null;
+  return bytes.slice().buffer;
+}
+
 export function createViewer(
   container: HTMLElement,
   options: ViewerOptions = {},
@@ -269,15 +290,22 @@ export function createViewer(
   const images = options.remoteImages
     ? createViewerRemoteImages(options.allowOrigin)
     : undefined;
+  let library: Library | undefined = options.library;
+  // Package images: the bytes the host handed to `loadLibrary` (`Library.images`), decoded with
+  // `createImageBitmap`; no URL, no `<img>`, no option. Without bytes, the placeholder.
+  const packageImages = createPackageImages({
+    read: (specId, asset) => Promise.resolve(packageBytes(library, specId, asset)),
+  });
   const renderer = new ScreenRenderer(screenGroup, {
     labels: VIEWER_LABELS,
     measure,
     pixelSafe: true,
+    specId: () => library?.specId,
+    packageImage: (specId, asset) => packageImages.resolve(specId, asset),
     ...(images ? { remoteImage: (url: string) => images.resolve(url) } : {}),
   });
   const selectionRects = new Map<string, Rect>();
 
-  let library: Library | undefined = options.library;
   let passedScreen: Screen | undefined = options.screen;
   let source: unknown = options.source;
   let sourceSystem: string | undefined = options.sourceSystem;
@@ -486,6 +514,11 @@ export function createViewer(
     if (renderer.refreshImage(url)) draw();
   });
 
+  const unsubscribePackageImages = packageImages.subscribe((key) => {
+    if (disposed) return;
+    if (renderer.refreshPackageImage(key)) draw();
+  });
+
   resolveScreen();
   if (library !== undefined || screen !== undefined) sync(false);
 
@@ -494,6 +527,7 @@ export function createViewer(
       if (disposed) return;
       let recompute = false;
       if ('library' in input && input.library !== library) {
+        if (library) packageImages.drop(library.specId);
         library = input.library;
         recompute = true;
       }
@@ -571,6 +605,8 @@ export function createViewer(
       disposed = true;
       observer?.disconnect();
       unsubscribeImages?.();
+      unsubscribePackageImages();
+      packageImages.clear();
       images?.dispose();
       if (typeof cancelAnimationFrame === 'function') {
         if (frame) cancelAnimationFrame(frame);

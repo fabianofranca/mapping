@@ -412,9 +412,9 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(guide).toMatch(/^- R15 uses the folder of its own `remotas`/m);
     });
 
-    it('has steps R15.1 to R15.12, in order, and none depends on the owner', () => {
+    it('has steps R15.1 to R15.13, in order, and none depends on the owner', () => {
       const codes = [...stepActions(r15).keys()];
-      expect(codes).toEqual(Array.from({ length: 12 }, (_, i) => `R15.${i + 1}`));
+      expect(codes).toEqual(Array.from({ length: 13 }, (_, i) => `R15.${i + 1}`));
       expect(/without a substitute/i.test(r15)).toBe(false);
     });
 
@@ -503,8 +503,8 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(r16).toContain('OutlinedButton');
     });
 
-    it('the cloud prompt lists the scripts up to R41', () => {
-      expect(prompt).toContain('R0 to R41');
+    it('the cloud prompt lists the scripts up to R42', () => {
+      expect(prompt).toContain('R0 to R42');
     });
   });
 
@@ -572,8 +572,8 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(r17).toContain('Apply zip…');
     });
 
-    it('the cloud prompt lists the scripts up to R41', () => {
-      expect(prompt).toContain('R0 to R41');
+    it('the cloud prompt lists the scripts up to R42', () => {
+      expect(prompt).toContain('R0 to R42');
     });
   });
 
@@ -647,12 +647,12 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(JSON.parse(block)).toEqual(JSON.parse(fixture));
     });
 
-    it('the cloud prompt lists the scripts up to R41', () => {
-      expect(prompt).toContain('R0 to R41');
+    it('the cloud prompt lists the scripts up to R42', () => {
+      expect(prompt).toContain('R0 to R42');
     });
 
-    it('the full-round order enumeration ends at R41, like the heading', () => {
-      expect(prompt).toContain('R5, R8 and R9 to R41.');
+    it('the full-round order enumeration ends at R42, like the heading', () => {
+      expect(prompt).toContain('R5, R8 and R9 to R42.');
       expect(prompt).not.toContain('R9 to R27');
     });
   });

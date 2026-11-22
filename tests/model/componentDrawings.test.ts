@@ -59,6 +59,17 @@ function screen(): Project {
 }
 
 describe('createDrawingCache: what it draws and in which order', () => {
+  it('each drawing carries the id of the specialization its component belongs to', () => {
+    const drawings = createDrawingCache()(screen(), catalog, approximateMeasurer, 0);
+    expect([...drawings.values()].map((d) => d.specId)).toEqual([
+      SPEC_ID,
+      SPEC_ID,
+      SPEC_ID,
+      SPEC_ID,
+    ]);
+    expect(catalog.get(SPEC_ID)?.specId).toBe(SPEC_ID);
+  });
+
   it('one drawing per marking with a component, parents before children, siblings in array order', () => {
     const p = screen();
     const drawings = createDrawingCache()(p, catalog, approximateMeasurer, 0);

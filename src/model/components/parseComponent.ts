@@ -19,6 +19,8 @@ import {
   type ComponentFile,
 } from './componentFormat';
 import { checkRemoteImageUrl } from '../remoteImages';
+import { MAX_TRACKS, parseTrack } from './gridLayout';
+import { isPackageImagePath } from './imagePath';
 import { isValidFontFamily } from './fontFamily';
 import {
   ANCHOR_FIELDS,
@@ -298,12 +300,48 @@ const checkCornerRadius = tokenCheck('number', (v, p, out) => {
   add(out, p, 'expected a number greater than or equal to 0 or a list of 4 numbers');
 });
 
+/** A gradient's `center`: two numbers from 0 to 1 (fractions of the box). */
+function checkGradientCenter(value: unknown, path: string, out: Ctx): void {
+  const ok =
+    Array.isArray(value) &&
+    value.length === 2 &&
+    value.every((n) => isFiniteNumber(n) && n >= 0 && n <= 1);
+  if (!ok) add(out, path, 'expected two numbers from 0 to 1');
+}
+
+/** The keys each gradient type accepts, besides `type` and `stops`. */
+const GRADIENT_KEYS: Readonly<Record<string, readonly string[]>> = {
+  linear: ['angle'],
+  radial: ['center', 'radius'],
+  angular: ['center', 'angle'],
+};
+
+/** The optional keys and `angle` of a gradient of the given type. */
+function checkGradientKeys(type: string, v: Rec, p: string, out: Ctx): void {
+  if (type === 'linear') {
+    if (!isFiniteNumber(v.angle)) add(out, join(p, 'angle'), 'expected a number');
+    return;
+  }
+  if ('center' in v) checkGradientCenter(v.center, join(p, 'center'), out);
+  if (type === 'radial') {
+    if ('radius' in v && !(isFiniteNumber(v.radius) && v.radius > 0))
+      add(out, join(p, 'radius'), 'expected a number greater than 0');
+  } else if ('angle' in v && !isFiniteNumber(v.angle)) {
+    add(out, join(p, 'angle'), 'expected a number');
+  }
+}
+
 const checkFill = tokenCheck('color', (v, p, out) => {
   if (typeof v === 'string') return checkColor(v, p, out);
   if (!isRecord(v)) return add(out, p, 'expected a color or gradient');
-  checkKeys(v, ['type', 'angle', 'stops'], p, out);
-  if (v.type !== 'linear') add(out, join(p, 'type'), 'expected "linear"');
-  if (!isFiniteNumber(v.angle)) add(out, join(p, 'angle'), 'expected a number');
+  const type =
+    typeof v.type === 'string' && Object.hasOwn(GRADIENT_KEYS, v.type)
+      ? v.type
+      : undefined;
+  checkKeys(v, ['type', 'stops', ...(GRADIENT_KEYS[type ?? 'linear'] ?? [])], p, out);
+  if (type === undefined)
+    add(out, join(p, 'type'), 'expected "linear", "radial" or "angular"');
+  else checkGradientKeys(type, v, p, out);
   const stops = join(p, 'stops');
   if (!Array.isArray(v.stops)) return add(out, stops, 'expected a list of stops');
   if (v.stops.length < 2) add(out, stops, 'expected at least 2 stops');
@@ -768,9 +806,14 @@ function checkGap(
 }
 
 /** A shadow (object): `color`, `x`, `y`, `blur` and `spread`. */
-function checkShadowItem(value: unknown, path: string, out: Ctx): void {
+function checkShadowItem(
+  value: unknown,
+  path: string,
+  out: Ctx,
+  nodeType?: string,
+): void {
   if (!isRecord(value)) return add(out, path, 'expected an object');
-  checkKeys(value, ['color', 'x', 'y', 'blur', 'spread'], path, out);
+  checkKeys(value, ['color', 'x', 'y', 'blur', 'spread', 'inner'], path, out);
   if (!('color' in value)) add(out, join(path, 'color'), 'required field');
   else checkExpr(value.color, join(path, 'color'), checkColor, out);
   if ('x' in value) checkLiteralOrToken(value.x, join(path, 'x'), checkNumber, out);
@@ -779,14 +822,31 @@ function checkShadowItem(value: unknown, path: string, out: Ctx): void {
     checkLiteralOrToken(value.blur, join(path, 'blur'), checkNonNegative, out);
   if ('spread' in value)
     checkLiteralOrToken(value.spread, join(path, 'spread'), checkNumber, out);
+  if ('inner' in value) checkInner(value.inner, join(path, 'inner'), nodeType, out);
 }
 
+/** `shadow.inner`: a literal boolean, `true` only on frame, rect and ellipse (v4). */
+function checkInner(
+  value: unknown,
+  path: string,
+  nodeType: string | undefined,
+  out: Ctx,
+): void {
+  if (typeof value !== 'boolean') return add(out, path, 'expected true or false');
+  if (value && nodeType !== undefined && !INNER_SHADOW_TYPES.includes(nodeType))
+    add(out, path, 'only valid on frame, rect and ellipse');
+}
+
+const INNER_SHADOW_TYPES: readonly string[] = ['frame', 'rect', 'ellipse'];
+
 /** `shadow`: one shadow or, in v4, a list of 1 to 4 (the version is checked separately). */
-function checkShadow(value: unknown, path: string, out: Ctx): void {
-  if (!Array.isArray(value)) return checkShadowItem(value, path, out);
+function checkShadow(value: unknown, path: string, out: Ctx, nodeType?: string): void {
+  if (!Array.isArray(value)) return checkShadowItem(value, path, out, nodeType);
   if (value.length < 1 || value.length > MAX_SHADOWS)
     return add(out, path, `expected 1 to ${MAX_SHADOWS} shadows`);
-  value.forEach((item: unknown, i) => checkShadowItem(item, `${path}[${i}]`, out));
+  value.forEach((item: unknown, i) =>
+    checkShadowItem(item, `${path}[${i}]`, out, nodeType),
+  );
 }
 
 /** `font.maxLines`: an integer greater than or equal to 1. */
@@ -943,15 +1003,34 @@ function checkNoneLayout(value: Rec, path: string, out: Ctx): void {
     checkExpr(value.justify, join(path, 'justify'), oneOf(NONE_JUSTIFIES), out);
 }
 
-/** The values of the track keys present: `columns`/`rows` integers, `min*` numbers greater than 0. */
+const TRACK_ITEM_EXPECTED = 'expected a number ≥ 0, "<n>fr" or "hug"';
+
+/**
+ * `columns`/`rows` (v4): an integer ≥ 1 or a list of 1 to 24 tracks (px, `"<n>fr"` or `"hug"`);
+ * an item outside the set is an error at its own path. The checks of the tokens do not apply
+ * (a `$token` still gives the integer).
+ */
+const checkTrackCount = tokenCheck('number', (v, p, out) => {
+  if (!Array.isArray(v)) {
+    if (!Number.isInteger(v) || (v as number) < 1)
+      add(out, p, 'expected an integer greater than or equal to 1 or a list of tracks');
+    return;
+  }
+  if (v.length < 1 || v.length > MAX_TRACKS) add(out, p, 'expected 1 to 24 tracks');
+  v.forEach((item: unknown, i) => {
+    if (parseTrack(item) === undefined) add(out, `${p}[${i}]`, TRACK_ITEM_EXPECTED);
+  });
+});
+
+/** The values of the track keys present: `columns`/`rows` integers or lists, `min*` numbers greater than 0. */
 function checkTrackKeys(value: Rec, path: string, out: Ctx): void {
   for (const key of GRID_TRACK_KEYS) {
     if (!(key in value)) continue;
-    const integer = key === 'columns' || key === 'rows';
+    const count = key === 'columns' || key === 'rows';
     checkExpr(
       value[key],
       join(path, key),
-      integer ? checkPositiveInteger : checkPositiveNumber,
+      count ? checkTrackCount : checkPositiveNumber,
       out,
     );
   }
@@ -1240,7 +1319,7 @@ function checkNode(
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
   if ('fill' in value) checkExpr(value.fill, join(path, 'fill'), checkFill, out);
   if ('stroke' in value) checkStroke(value.stroke, join(path, 'stroke'), out, type);
-  if ('shadow' in value) checkShadow(value.shadow, join(path, 'shadow'), out);
+  if ('shadow' in value) checkShadow(value.shadow, join(path, 'shadow'), out, type);
   if ('cornerRadius' in value)
     checkExpr(value.cornerRadius, join(path, 'cornerRadius'), checkCornerRadius, out);
 
@@ -1397,28 +1476,68 @@ function checkIconNode(value: Rec, path: string, out: Ctx): void {
 }
 
 /**
- * `image` (formatVersion 3): `src` required and restricted (a literal `https://` URL or exactly
- * `{ "$field": "<field>" }`), `fit` and no `hug` (checked in `checkNodeSizes`: the layout does
- * not depend on the downloaded image).
+ * The results of a `$switch` (`cases`, `default`) or `$if` (`then`, `else`) of `src`, or
+ * `undefined` when `src` is not one of those two. A missing `then` counts as a result that is
+ * not a path.
+ */
+function imageSrcResults(src: unknown): readonly unknown[] | undefined {
+  if (!isRecord(src)) return undefined;
+  if ('$switch' in src) {
+    const cases = isRecord(src.cases) ? Object.values(src.cases) : [undefined];
+    return 'default' in src ? [...cases, src.default] : cases;
+  }
+  if ('$if' in src) return 'else' in src ? [src.then, src.else] : [src.then];
+  return undefined;
+}
+
+/** Is `src` a `$switch` or `$if` whose every result is a literal package image path? */
+function isPathExpression(src: unknown): boolean {
+  const results = imageSrcResults(src);
+  return (
+    results !== undefined &&
+    results.every((r) => typeof r === 'string' && isPackageImagePath(r))
+  );
+}
+
+/** `src` as a `$switch` or `$if` of package paths: the keys of the expression (field, condition) are checked. */
+function checkImagePathExpression(src: Rec, at: string, out: Ctx): void {
+  if ('$switch' in src) {
+    checkKeys(src, ['$switch', 'cases', 'default'], at, out);
+    checkFieldKey(src.$switch, join(at, '$switch'), out);
+  } else {
+    checkKeys(src, ['$if', 'then', 'else'], at, out);
+    checkCondition(src.$if, join(at, '$if'), out);
+  }
+}
+
+/** `src` of the `image` node: see `checkImage`. */
+function checkImageSrc(src: unknown, at: string, out: Ctx): void {
+  if (typeof src === 'string') {
+    if (isPackageImagePath(src)) return;
+    const check = checkRemoteImageUrl(src, { allowHttp: false, allowLocalNetwork: true });
+    if (!check.ok) add(out, at, `expected an absolute https:// URL (${check.reason})`);
+  } else if (isRecord(src) && Object.keys(src).length === 1 && '$field' in src) {
+    checkFieldKey(src.$field, join(at, '$field'), out);
+  } else if (isRecord(src) && imageSrcResults(src) !== undefined) {
+    if (isPathExpression(src)) checkImagePathExpression(src, at, out);
+    else add(out, at, 'in $switch and $if every result must be a package image path');
+  } else {
+    add(out, at, 'src only accepts literal text or { "$field": "<field>" }');
+  }
+}
+
+/**
+ * `image` (formatVersion 3 and 4): `src` required and restricted: a literal `https://` URL, exactly
+ * `{ "$field": "<field>" }` or, in formatVersion 4, an image file of the package (a literal
+ * path, or a `$switch` or `$if` whose every result is a literal path), `fit` and no `hug`
+ * (checked in `checkNodeSizes`: the layout does not depend on the downloaded image). The package
+ * path before version 4 is flagged by `imageSrcVersionIssues`.
  * A local host is not a format error here: the app's policy decides at run time.
  */
 function checkImage(value: Rec, path: string, out: Ctx): void {
   const at = join(path, 'src');
   if (!('src' in value)) add(out, at, 'required field');
-  else {
-    const src = value.src;
-    if (typeof src === 'string') {
-      const check = checkRemoteImageUrl(src, {
-        allowHttp: false,
-        allowLocalNetwork: true,
-      });
-      if (!check.ok) add(out, at, `expected an absolute https:// URL (${check.reason})`);
-    } else if (isRecord(src) && Object.keys(src).length === 1 && '$field' in src) {
-      checkFieldKey(src.$field, join(at, '$field'), out);
-    } else {
-      add(out, at, 'src only accepts literal text or { "$field": "<field>" }');
-    }
-  }
+  else checkImageSrc(value.src, at, out);
   if ('fit' in value)
     oneOf(['cover', 'contain', 'fill', ...IMAGE_FITS_V4])(
       value.fit,
@@ -1619,6 +1738,60 @@ function shadowListVersionIssues(version: unknown, template: unknown): Component
   const walk = (node: unknown, at: string): void => {
     if (!isRecord(node)) return;
     if (Array.isArray(node.shadow)) addIssue(out, join(at, 'shadow'), V4_ONLY_MESSAGE);
+    if (Array.isArray(node.children))
+      node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'));
+  };
+  walk(template, 'template');
+  return out;
+}
+
+/** `shadow.inner` (v4) in a version before 4: `only allowed with formatVersion 4`, at the key's path. */
+function innerShadowVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return out;
+  const walk = (node: unknown, at: string): void => {
+    if (!isRecord(node)) return;
+    const shadows = Array.isArray(node.shadow) ? node.shadow : [node.shadow];
+    const list = Array.isArray(node.shadow);
+    shadows.forEach((item: unknown, i) => {
+      if (isRecord(item) && 'inner' in item)
+        addIssue(
+          out,
+          join(list ? `${join(at, 'shadow')}[${i}]` : join(at, 'shadow'), 'inner'),
+          V4_ONLY_MESSAGE,
+        );
+    });
+    if (Array.isArray(node.children))
+      node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'));
+  };
+  walk(template, 'template');
+  return out;
+}
+
+/**
+ * The radial and angular gradients (v4) in a `fill` of a version before 4: `only allowed with
+ * formatVersion 4`, at the `type`'s path. It looks through the results of `$switch` (`cases`,
+ * `default`) and `$if` (`then`, `else`), where a `fill` accepts a gradient.
+ */
+function gradientVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return out;
+  const results = (value: unknown, at: string): void => {
+    if (!isRecord(value)) return;
+    if (value.type === 'radial' || value.type === 'angular')
+      return addIssue(out, join(at, 'type'), V4_ONLY_MESSAGE);
+    for (const key of ['then', 'else', 'default']) results(value[key], join(at, key));
+    if (isRecord(value.cases))
+      for (const [name, c] of Object.entries(value.cases))
+        results(c, join(join(at, 'cases'), name));
+  };
+  const walk = (node: unknown, at: string): void => {
+    if (!isRecord(node)) return;
+    results(node.fill, join(at, 'fill'));
     if (Array.isArray(node.children))
       node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
     if (node.type === 'repeat') walk(node.template, join(at, 'template'));
@@ -1970,6 +2143,26 @@ function componentNodeVersionIssues(
   return nodesOfTypes(template, 'template', ['component']).map((node) =>
     issueOf(node.path, V4_ONLY_MESSAGE),
   );
+}
+
+/** A package image path in `src` (literal, or the results of a `$switch` or `$if`) in formatVersion 3: `only allowed with formatVersion 4`, at the `src` path. */
+function imageSrcVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  if (version !== 3) return [];
+  const out: ComponentIssue[] = [];
+  const walk = (node: unknown, at: string): void => {
+    if (!isRecord(node)) return;
+    if (node.type === 'image') {
+      const src = node.src;
+      const literal = typeof src === 'string' && isPackageImagePath(src);
+      if (literal || isPathExpression(src))
+        addIssue(out, join(at, 'src'), V4_ONLY_MESSAGE);
+    }
+    if (Array.isArray(node.children))
+      node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'));
+  };
+  walk(template, 'template');
+  return out;
 }
 
 /** The `icon` node in a version before 4: `only allowed with formatVersion 4`, at the `type`'s path. */
@@ -2334,6 +2527,8 @@ function collectIssues(
       ),
     );
     issues.push(...shadowListVersionIssues(version, template));
+    issues.push(...innerShadowVersionIssues(version, template));
+    issues.push(...gradientVersionIssues(version, template));
     issues.push(...noneAlignVersionIssues(version, template));
     issues.push(...tokenVersionIssues(version, template));
     issues.push(...paddingSpacingVersionIssues(version, template));
@@ -2347,6 +2542,7 @@ function collectIssues(
         add(out, node.path, 'the image node only exists in formatVersion 3');
       }
     }
+    issues.push(...imageSrcVersionIssues(version, template));
     issues.push(...iconVersionIssues(version, template));
     issues.push(...componentNodeVersionIssues(version, template));
     issues.push(...slotVersionIssues(version, template));

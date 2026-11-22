@@ -14,8 +14,8 @@ import {
 import type { ComponentDrawings } from './componentDrawings';
 import { typeSlots } from './specSlots';
 import type { InstanceAnchor } from './components/anchor';
-import { placeCells, trackCount, trackOffset, trackSize } from './components/gridLayout';
-import { lineExtents } from './components/gridPlan';
+import { placeCells, trackCount, type Track } from './components/gridLayout';
+import { lineExtents, slotTrackGeometry } from './components/gridPlan';
 import { WRAP_EPS, breakLines, stackLines } from './components/wrapLines';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
 import { fitComponentSize, sizingFollowsContent } from './components/sizing';
@@ -258,10 +258,21 @@ function scaledLayout(layout: ResolvedSlotLayout, density: number): ResolvedSlot
     },
     gap: px(layout.gap),
     lineGap: px(layout.lineGap),
-    grid:
-      grid === undefined || grid.min === undefined
-        ? grid
-        : { ...grid, min: px(grid.min) },
+    grid: grid === undefined ? grid : scaledGrid(grid, px),
+  };
+}
+
+/** The grid's measures in image pixels: the `min` of the adaptive grid and the px tracks of a list. */
+function scaledGrid(
+  grid: NonNullable<ResolvedSlotLayout['grid']>,
+  px: (units: number) => number,
+): NonNullable<ResolvedSlotLayout['grid']> {
+  const scaleTrack = (track: Track): Track =>
+    track.kind === 'px' ? { kind: 'px', px: px(track.px) } : track;
+  return {
+    ...grid,
+    ...(grid.min === undefined ? {} : { min: px(grid.min) }),
+    ...(grid.tracks === undefined ? {} : { tracks: grid.tracks.map(scaleTrack) }),
   };
 }
 
@@ -926,6 +937,10 @@ function gridAxes(slot: SlotBox): GridAxes {
   };
 }
 
+/** The child's extent on the tracks' axis (width in the vertical grid). */
+const trackExtent = (axes: GridAxes, r: Rect): number =>
+  axes.vertical ? r.width : r.height;
+
 /** The child's extent on the flow line (height in the vertical grid). */
 const flowExtent = (axes: GridAxes, r: Rect): number =>
   axes.vertical ? r.height : r.width;
@@ -951,7 +966,6 @@ function mirroredInSlot(slot: SlotBox, rect: Rect): Rect {
 function gridSlotRect(kids: readonly Marking[], slot: SlotBox, size: Size): Rect {
   const axes = gridAxes(slot);
   const count = trackCount(slot.grid ?? {}, axes.tContent, slot.gap);
-  const track = trackSize(axes.tContent, count, slot.gap);
   const { cells, lines } = placeCells(
     kids.map(() => 1),
     count,
@@ -962,8 +976,15 @@ function gridSlotRect(kids: readonly Marking[], slot: SlotBox, size: Size): Rect
     kids.map((kid) => flowExtent(axes, kid.rect)),
   );
   const tops = stackLines([...extents, 0], slot.lineGap, false).tops;
+  const tracks = slotTrackGeometry(
+    slot.grid?.tracks,
+    cells,
+    kids.map((kid) => trackExtent(axes, kid.rect)),
+    axes.tContent,
+    { count, gap: slot.gap },
+  );
   const at = (line: number, trackIndex: number): Rect => {
-    const t = axes.tStart + trackOffset(trackIndex, track, slot.gap);
+    const t = axes.tStart + tracks.offsetOf(trackIndex);
     const f = axes.fStart + (tops[line] ?? 0);
     const [x, y] = axes.vertical ? [t, f] : [f, t];
     return mirroredInSlot(slot, { x: Math.round(x), y: Math.round(y), ...size });

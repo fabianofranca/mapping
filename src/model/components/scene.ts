@@ -111,6 +111,17 @@ export type Paint =
     }
   | {
       /**
+       * Angular (sweep) gradient: the stops cover the full turn around `center` (local px),
+       * clockwise from `angle` (degrees, 0 = pointing right, like the linear convention).
+       */
+      readonly type: 'angular';
+      readonly center: Point;
+      readonly angle: number;
+      readonly stops: readonly GradientStop[];
+      readonly opacity?: number;
+    }
+  | {
+      /**
        * Image, with two sources that do not mix. `src` is only the embedded image (`data:`),
        * a legacy of the lab and the Figma/SVG converters. `url` is the remote URL coming from the
        * component's `image` node: the model never downloads it nor applies the policy (whoever
@@ -119,6 +130,12 @@ export type Paint =
       readonly type: 'image';
       readonly src?: string;
       readonly url?: string;
+      /**
+       * Image file of the library package (formatVersion 4 `image` node), as the path from the
+       * package root with `/`, as written (the extension is checked case-insensitively). It does
+       * not mix with `url`. Whoever draws reads the file; without one, the placeholder.
+       */
+      readonly asset?: string;
       /** How the image fills the box (absent = `cover`). */
       readonly fit?: ImageFit;
       readonly opacity?: number;
@@ -180,7 +197,7 @@ export interface Shadow {
   readonly offset: Point;
   readonly blur: number;
   readonly spread?: number;
-  /** Inner shadow: the 2D canvas does not have it; the renderer ignores it and warns. */
+  /** Inner shadow (CSS `inset`): drawn inside the shape (frame, rect, ellipse), clipped by it. */
   readonly inner?: boolean;
 }
 

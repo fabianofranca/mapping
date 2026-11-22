@@ -96,6 +96,12 @@ export const catalogEnUS = {
   'catalog.drawWarning.stroke-radial-first-color':
     'Stroke with a radial gradient drawn with its first color.',
   'catalog.drawWarning.stroke-image-gray': 'Stroke with an image drawn in gray.',
+  'catalog.drawWarning.angular-gradient-unsupported':
+    'Angular gradient is not supported by this browser: drawn with its first color.',
+  'catalog.drawWarning.remote-image-failed':
+    'The remote image from {origin} did not load (server without CORS, unreachable, or image too large). Diagnostics › Remote images shows the reason.',
+  'catalog.drawWarning.remote-image-opaque':
+    'The remote image from {origin} loaded without CORS: it only shows on the main canvas.',
 } as const;
 
 // portuguese-guard:begin pt-BR part of the bilingual module (decision 2 of #741)
@@ -193,5 +199,11 @@ export const catalogPtBR: Record<keyof typeof catalogEnUS, string> = {
   'catalog.drawWarning.stroke-radial-first-color':
     'Traço com gradiente radial desenhado com a primeira cor.',
   'catalog.drawWarning.stroke-image-gray': 'Traço com imagem desenhado em cinza.',
+  'catalog.drawWarning.angular-gradient-unsupported':
+    'Gradiente angular não é suportado por este navegador: desenhado com a primeira cor.',
+  'catalog.drawWarning.remote-image-failed':
+    'A imagem remota de {origin} não carregou (servidor sem CORS, inacessível ou imagem grande demais). Diagnóstico › Imagens remotas mostra o motivo.',
+  'catalog.drawWarning.remote-image-opaque':
+    'A imagem remota de {origin} carregou sem CORS: ela só aparece na tela principal.',
 };
 // portuguese-guard:end

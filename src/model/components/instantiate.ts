@@ -145,23 +145,28 @@ import {
 } from './tokens';
 import {
   alignInCell,
+  parseTrackList,
   placeCells,
   spanExtent,
   trackCount,
   trackOffset,
   trackSize,
   type GridCell,
+  type Track,
 } from './gridLayout';
 import {
   TRACK_KEYS,
   lineExtents,
   maxCellOf,
+  needsNaturals,
+  slotTrackGeometry,
   isTrackAbsent,
   numericValue,
   validTrack,
   type GridTracks,
 } from './gridPlan';
 import { breakLines, stackLines } from './wrapLines';
+import { isPackageImagePath } from './imagePath';
 import {
   layoutRuns,
   measureRichText,
@@ -175,6 +180,7 @@ import {
   type CornerRadius,
   type FrameNode,
   type Matrix,
+  type GradientStop,
   type Paint,
   type PathNode,
   type SceneNode,
@@ -1284,8 +1290,13 @@ function createEngine(
     };
   };
 
-  /** A grid track: an invalid value falls to a single track (`columns: 1`, `rows: 1`) with the warning. */
+  /**
+   * A grid track: `columns`/`rows` take an integer or a track list (v4); an invalid value falls to
+   * a single track (`columns: 1`, `rows: 1`) with the warning.
+   */
   const trackOf = (entry: (typeof TRACK_KEYS)[number], value: unknown): GridTracks => {
+    const list = entry.field === 'count' ? parseTrackList(value) : undefined;
+    if (list !== undefined) return { count: list.length, list, vertical: entry.vertical };
     const valid = validTrack(entry.field, value);
     if (valid !== undefined)
       return entry.field === 'count'
@@ -2668,8 +2679,50 @@ function createEngine(
   const gridTolerance = (space: GridSpace): number =>
     space.kids.some((kid) => kid.node.type === 'text') ? TEXT_TOLERANCE : EPS;
 
+  /**
+   * The tracks' axis with a track list: px, `hug` (the largest span 1 child of the track) and `fr`
+   * (what is left), the cells of `span` tracks, the child aligned within the cell. The `hug` of the
+   * grid on this axis is `listHugExtent`.
+   */
+  const solveTrackList = (
+    space: GridSpace,
+    axis: Axis,
+    others: readonly number[] | null,
+    list: readonly Track[],
+  ): GridAxis => {
+    const { layout, kids, cells } = space;
+    const known = gridContent(space, axis);
+    const naturals = needsNaturals(list, known)
+      ? kids.map((_, i) => gridKidSize(space, i, axis, null, others))
+      : [];
+    const geometry = slotTrackGeometry(list, cells, naturals, known, {
+      count: list.length,
+      gap: layout.gap,
+    });
+    const total = space.known[axis] ?? geometry.used + padAxis(layout, axis);
+    const extents = cells.map((cell) => geometry.spanOf(cell.track, cell.span));
+    const sizes = kids.map((_, i) =>
+      gridKidSize(space, i, axis, extents[i] ?? 0, others),
+    );
+    const excess = maxOf(sizes.map((size, i) => size - (extents[i] ?? 0)));
+    if (known !== null && excess > gridTolerance(space))
+      warnShort('engine.contentTooBig', nodeName(space.frame), excess);
+    const start = axis === 'w' ? layout.pad.left : layout.pad.top;
+    const align = gridAlign(space, axis);
+    return {
+      total,
+      sizes,
+      offsets: sizes.map(
+        (size, i) =>
+          start +
+          geometry.offsetOf(cells[i]?.track ?? 0) +
+          alignInCell(align, extents[i] ?? 0, size).pos,
+      ),
+    };
+  };
+
   /** The tracks' axis: equal tracks, cells of `span` tracks, the child aligned within the cell. */
-  const solveTracks = (
+  const solveEqualTracks = (
     space: GridSpace,
     axis: Axis,
     others: readonly number[] | null,
@@ -2711,6 +2764,18 @@ function createEngine(
           alignInCell(align, extents[i] ?? 0, size).pos,
       ),
     };
+  };
+
+  /** The tracks' axis: a track list (v4) or equal tracks. */
+  const solveTracks = (
+    space: GridSpace,
+    axis: Axis,
+    others: readonly number[] | null,
+  ): GridAxis => {
+    const list = space.layout.grid?.list;
+    return list === undefined
+      ? solveEqualTracks(space, axis, others)
+      : solveTrackList(space, axis, others, list);
   };
 
   /** The flow lines' axis: each with the extent of its largest child, stacked with the `lineGap`. */
@@ -2891,12 +2956,38 @@ function createEngine(
 
   // --- style ----------------------------------------------------------------------------
 
+  const stopsOf = (gradient: GradientSpec): GradientStop[] =>
+    gradient.stops.map((stop) => ({
+      offset: stop.offset,
+      color: ev<Color>(stop.color, 'none'),
+    }));
+
   /**
-   * Linear gradient by the SVG/Figma convention (not CSS's `linear-gradient`): the angle grows
-   * clockwise with the y axis pointing down (0° = left→right, 90° = top→bottom); the line passes
-   * through the center of the box, with a length that covers the corners.
+   * The paint of a gradient, in the node's local px. The linear one follows the SVG/Figma
+   * convention (not CSS's `linear-gradient`): the angle grows clockwise with the y axis pointing
+   * down (0° = left→right, 90° = top→bottom); the line passes through the center of the box, with
+   * a length that covers the corners. The radial one is a circle (default radius: half the
+   * smaller side) and the angular one sweeps the turn clockwise from its start angle.
    */
   const gradientPaint = (gradient: GradientSpec, w: number, h: number): Paint => {
+    if (gradient.type === 'radial') {
+      const [fx, fy] = gradient.center ?? [0.5, 0.5];
+      return {
+        type: 'radial',
+        center: { x: fx * w, y: fy * h },
+        radius: gradient.radius ?? Math.min(w, h) / 2,
+        stops: stopsOf(gradient),
+      };
+    }
+    if (gradient.type === 'angular') {
+      const [fx, fy] = gradient.center ?? [0.5, 0.5];
+      return {
+        type: 'angular',
+        center: { x: fx * w, y: fy * h },
+        angle: gradient.angle ?? 0,
+        stops: stopsOf(gradient),
+      };
+    }
     const rad = (gradient.angle * Math.PI) / 180;
     const dx = Math.cos(rad);
     const dy = Math.sin(rad);
@@ -2907,18 +2998,21 @@ function createEngine(
       type: 'linear',
       start: { x: cx - (dx * length) / 2, y: cy - (dy * length) / 2 },
       end: { x: cx + (dx * length) / 2, y: cy + (dy * length) / 2 },
-      stops: gradient.stops.map((stop) => ({
-        offset: stop.offset,
-        color: ev<Color>(stop.color, 'none'),
-      })),
+      stops: stopsOf(gradient),
     };
   };
+
+  const isGradient = (value: unknown): value is GradientSpec =>
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    (value.type === 'linear' || value.type === 'radial' || value.type === 'angular');
 
   const fillsOf = (fill: Expr<FillSpec> | undefined, w: number, h: number): Paint[] => {
     const value = ev<FillSpec>(fill, 'none');
     if (typeof value === 'string')
       return isNone(value) ? [] : [{ type: 'solid', color: value }];
-    if (typeof value === 'object' && value !== null && value.type === 'linear')
+    if (isGradient(value))
       return value.stops.length > 0 ? [gradientPaint(value, w, h)] : [];
     return [];
   };
@@ -2999,7 +3093,7 @@ function createEngine(
     return sides.length > 0 && sides.length < STROKE_SIDES.length ? sides : undefined;
   };
 
-  /** One shadow of the list (or the only one): color `none` gives no shadow; `spread` only enters when it is not 0. */
+  /** One shadow of the list (or the only one): color `none` gives no shadow; `spread` only enters when it is not 0 and `inner` when it is true. */
   const shadowOf = (shadow: ShadowSpec, scale: number): Shadow[] => {
     const color = str(shadow.color, 'none');
     if (isNone(color)) return [];
@@ -3015,6 +3109,7 @@ function createEngine(
         },
         blur: Math.max(0, blur) / scale,
         ...(spread !== 0 ? { spread } : {}),
+        ...(shadow.inner === true ? { inner: true } : {}),
       },
     ];
   };
@@ -3495,15 +3590,19 @@ function createEngine(
     h: number,
   ): SceneNode => {
     const raw = typeof node.src === 'string' ? node.src : ev<unknown>(node.src, '');
-    const url = typeof raw === 'string' ? raw.trim() : '';
+    const text = typeof raw === 'string' ? raw.trim() : '';
+    // A package file draws from the package; an http(s) text from the web (the policy is the
+    // renderer's); anything else, the placeholder.
+    const source = isPackageImagePath(text)
+      ? { asset: text }
+      : /^https?:\/\//i.test(text)
+        ? { url: text }
+        : {};
     const stroke = strokeOf(node.stroke, 'inside', 1);
     const base = common(node, id, x, y, w, h);
     return {
       ...base,
-      fills: [
-        ...base.fills,
-        { type: 'image', fit: node.fit ?? 'cover', ...(url === '' ? {} : { url }) },
-      ],
+      fills: [...base.fills, { type: 'image', fit: node.fit ?? 'cover', ...source }],
       ...(stroke ? { stroke } : {}),
       type: 'rect',
       cornerRadius: radiusOf(node),

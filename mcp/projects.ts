@@ -19,6 +19,11 @@ import {
 } from '../src/model';
 import { resolvePath, type LoadedFont } from '../src/model/components/library';
 import { ToolError } from './errors';
+import {
+  loadPackageImages,
+  type ImageNeed,
+  type ImageResolver,
+} from './image/packageImages';
 import { createFontBook, type FontBook } from './image/textMeasurer';
 import { Roots, resolveProjectFile } from './paths';
 
@@ -371,6 +376,29 @@ async function loadFontBook(
   const book = createFontBook(loaded);
   fontCache.set(key, book);
   return book;
+}
+
+/**
+ * Finds the package images of `loaded`'s applied specializations on disk (`specs/<id>/<path>`, with the
+ * file stamps of `fileStamp`, like the fonts) and decodes them: cached by stamp, refused beyond the
+ * limits of decision 12 of stage #1903 (`mcp/image/packageImages.ts`). The decoding is on demand, only for
+ * the images a drawing cites; the drawing key does not count them because the instantiation never reads
+ * the pixels.
+ */
+export function packageImageResolver(roots: Roots, loaded: LoadedProject): ImageResolver {
+  return async (refs) => {
+    const needs: ImageNeed[] = [];
+    for (const { specId, asset } of refs) {
+      const applied = loaded.project.specializations.find((s) => s.id === specId);
+      const found =
+        applied === undefined
+          ? null
+          : await fileStamp(roots, loaded.location.dir, resolvePath(applied.file, asset));
+      const { real, size, stamp } = found ?? { real: '', size: 0, stamp: '' };
+      needs.push({ specId, asset, file: found === null ? null : { real, size, stamp } });
+    }
+    return loadPackageImages(needs);
+  };
 }
 
 /** FNV-1a (32 bits) of a text, in hex: enough to tell a changed file apart. */

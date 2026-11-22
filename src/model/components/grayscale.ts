@@ -61,6 +61,7 @@ function paintOf(paint: Paint, amount: number): Paint {
       return { ...paint, color: grayscaleColor(paint.color, amount) };
     case 'linear':
     case 'radial':
+    case 'angular':
       return {
         ...paint,
         stops: paint.stops.map((stop) => ({

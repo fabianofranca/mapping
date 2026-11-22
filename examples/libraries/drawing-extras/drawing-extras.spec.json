@@ -1,0 +1,171 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 15,
+  "id": "drawing-extras",
+  "name": "Drawing extras",
+  "version": 1,
+  "description": "Example of the drawing extras of the component format: radial and angular gradients in a node's fill, next to the linear one, a gradient chosen by a $switch, the inner shadow of a node's shadow, images of the library package in an image node's src and a grid whose columns have different sizes. The Gradients component draws four swatches that read their two colors from fields; the Inner shadow component draws a sunken field and two buttons; the Logo component draws three package images (PNG, JPEG and WebP from the images folder): a fixed one, one chosen by a $switch and one named by a field; the Uneven grid component draws a list row with a px, a 1fr and a hug column and a 12-column grid with spans.",
+  "layers": [
+    {
+      "id": "ui",
+      "name": "Interface",
+      "color": "#7C3AED",
+      "annotationTypes": [
+        {
+          "id": "gradients",
+          "name": "Gradients",
+          "description": "Swatches of a radial, an angular and a linear gradient, and a main swatch whose gradient type follows the kind field.",
+          "component": "components/gradients.json",
+          "doc": "docs/gradients.md",
+          "fields": [
+            {
+              "key": "kind",
+              "label": "Kind",
+              "description": "The gradient type of the main swatch: radial, angular or linear.",
+              "type": "enum",
+              "options": ["radial", "angular", "linear"],
+              "default": "radial"
+            },
+            {
+              "key": "from",
+              "label": "From",
+              "description": "The first color of every gradient.",
+              "type": "string",
+              "default": "#F59E0B"
+            },
+            {
+              "key": "to",
+              "label": "To",
+              "description": "The last color of every gradient; it continues beyond the radius of the radial one.",
+              "type": "string",
+              "default": "#7C3AED"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Angular sweep",
+              "values": {
+                "kind": "angular",
+                "from": "#22C55E",
+                "to": "#2563EB"
+              }
+            }
+          ]
+        },
+        {
+          "id": "inner-shadow",
+          "name": "Inner shadow",
+          "description": "A sunken text field, a raised button and a pressed button: the inner shadow (CSS inset) of a rect, alone and in a list.",
+          "component": "components/inner-shadow.json",
+          "doc": "docs/inner-shadow.md",
+          "fields": [
+            {
+              "key": "text",
+              "label": "Text",
+              "description": "The text inside the sunken field.",
+              "type": "string",
+              "default": "Search"
+            },
+            {
+              "key": "accent",
+              "label": "Accent",
+              "description": "The color of the raised and the pressed button.",
+              "type": "string",
+              "default": "#2563EB"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Green accent",
+              "values": {
+                "text": "Filter",
+                "accent": "#16A34A"
+              }
+            }
+          ]
+        },
+        {
+          "id": "logo",
+          "name": "Logo",
+          "description": "Three images of the package: a fixed logo, an image chosen by the variant field and an image whose package path is the source field.",
+          "component": "components/logo.json",
+          "doc": "docs/logo.md",
+          "fields": [
+            {
+              "key": "variant",
+              "label": "Variant",
+              "description": "The image of the middle slot, chosen by a $switch: png, jpeg or webp.",
+              "type": "enum",
+              "options": ["png", "jpeg", "webp"],
+              "default": "png"
+            },
+            {
+              "key": "source",
+              "label": "Source",
+              "description": "A package image path (images/logo.png, images/photo.jpg or images/pattern.webp) drawn in the last slot.",
+              "type": "string",
+              "default": "images/logo.png"
+            }
+          ],
+          "examples": [
+            {
+              "name": "WebP pattern",
+              "values": {
+                "variant": "webp",
+                "source": "images/pattern.webp"
+              }
+            }
+          ]
+        },
+        {
+          "id": "uneven-grid",
+          "name": "Uneven grid",
+          "description": "A list row with a 56 px leading column, a 1fr text column and a hug trailing column, and a 12-column grid whose cells span 8, 4 or 3 tracks.",
+          "component": "components/uneven-grid.json",
+          "doc": "docs/uneven-grid.md",
+          "fields": [
+            {
+              "key": "title",
+              "label": "Title",
+              "description": "The first line of the list row.",
+              "type": "string",
+              "default": "Weekly report"
+            },
+            {
+              "key": "subtitle",
+              "label": "Subtitle",
+              "description": "The second line of the list row; it takes the width the other two columns leave.",
+              "type": "string",
+              "default": "Updated 2 hours ago"
+            },
+            {
+              "key": "trailing",
+              "label": "Trailing",
+              "description": "The text of the last column, which hugs it.",
+              "type": "string",
+              "default": "12:40"
+            },
+            {
+              "key": "accent",
+              "label": "Accent",
+              "description": "The color of the leading square and of the darker cells of the 12-column grid.",
+              "type": "string",
+              "default": "#7C3AED"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Long subtitle",
+              "values": {
+                "title": "Design review",
+                "subtitle": "Moved to the big room",
+                "trailing": "Mon 09:30",
+                "accent": "#0EA5E9"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

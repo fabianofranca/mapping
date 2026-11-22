@@ -1,0 +1,115 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "inner-shadow",
+  "name": "Inner shadow",
+  "description": "A sunken text field and two buttons: a raised one (an outer shadow) and a pressed one (a list of two inner shadows).",
+  "size": {
+    "width": 360,
+    "height": 72
+  },
+  "minSize": {
+    "width": 300,
+    "height": 56
+  },
+  "preview": {
+    "text": "Search",
+    "accent": "#2563EB"
+  },
+  "template": {
+    "type": "frame",
+    "name": "inner-shadow",
+    "layout": {
+      "type": "row",
+      "gap": 12,
+      "padding": 12,
+      "align": "center"
+    },
+    "cornerRadius": 12,
+    "fill": "#F9FAFB",
+    "stroke": {
+      "color": "#D1D5DB",
+      "width": 1
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "field",
+        "width": "fill",
+        "height": 40,
+        "cornerRadius": 8,
+        "fill": "#EEF0F3",
+        "shadow": {
+          "color": "#00000040",
+          "x": 0,
+          "y": 2,
+          "blur": 4,
+          "inner": true
+        },
+        "layout": {
+          "type": "row",
+          "padding": [0, 12],
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "text",
+            "text": {
+              "$field": "text"
+            },
+            "font": {
+              "size": 14,
+              "weight": 500,
+              "lineHeight": 20
+            },
+            "color": "#374151"
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "raised",
+        "width": 40,
+        "height": 40,
+        "cornerRadius": 20,
+        "fill": {
+          "$field": "accent"
+        },
+        "shadow": {
+          "color": "#00000059",
+          "x": 0,
+          "y": 3,
+          "blur": 6
+        }
+      },
+      {
+        "type": "rect",
+        "name": "pressed",
+        "width": 40,
+        "height": 40,
+        "cornerRadius": 20,
+        "fill": {
+          "$field": "accent"
+        },
+        "shadow": [
+          {
+            "color": "#00000073",
+            "x": 0,
+            "y": 3,
+            "blur": 6,
+            "inner": true
+          },
+          {
+            "color": "#FFFFFF40",
+            "x": 0,
+            "y": -1,
+            "blur": 0,
+            "spread": 1,
+            "inner": true
+          }
+        ]
+      }
+    ]
+  }
+}

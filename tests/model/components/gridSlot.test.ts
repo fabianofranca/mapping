@@ -189,6 +189,117 @@ describe('layoutChildren in a grid', () => {
   });
 });
 
+describe('a track list in the grid slot (DX6, decisions 21 to 24 of #1903)', () => {
+  const slot = box(10, 20, 400, 300);
+  const px = (value: number) => ({ kind: 'px', px: value });
+  const fr = (value: number) => ({ kind: 'fr', fr: value });
+  const HUG = { kind: 'hug' };
+
+  it('resolveSlotLayout reads a list in columns and rows', () => {
+    expect(resolve({ columns: [60, '1fr', 'hug'] }).grid).toEqual({
+      count: 3,
+      tracks: [px(60), fr(1), HUG],
+      orientation: 'vertical',
+    });
+    expect(resolve({ rows: ['2.5fr', 0] }).grid).toEqual({
+      count: 2,
+      tracks: [fr(2.5), px(0)],
+      orientation: 'horizontal',
+    });
+  });
+
+  it('an invalid list by expression falls to one track; a valid one applies', () => {
+    const n = { $field: 'n' };
+    expect(resolve({ columns: n }, { n: [10, 'auto'] }).grid).toEqual({
+      count: 1,
+      orientation: 'vertical',
+    });
+    expect(resolve({ columns: n }, { n: [] }).grid).toEqual({
+      count: 1,
+      orientation: 'vertical',
+    });
+    expect(resolve({ columns: n }, { n: [30, '1fr'] }).grid?.tracks).toEqual([
+      px(30),
+      fr(1),
+    ]);
+  });
+
+  it('[60, "1fr", "2fr"] in 400 px with gap 8: the children go to 60, 108 and 216 px tracks', () => {
+    const layout = resolve({ columns: [60, '1fr', '2fr'], gap: 8, justify: 'stretch' });
+    const out = layoutChildren(slot, layout, kids(4));
+    // free = 400 − 60 − 16 = 324 → 108 and 216; starts 0, 68, 184.
+    expect(out.map((b) => [b.x, b.width])).toEqual([
+      [10, 60],
+      [78, 108],
+      [194, 216],
+      [10, 60],
+    ]);
+    expect(out[3]?.y).toBe(50);
+  });
+
+  it('a hug track measures the children placed in it', () => {
+    const layout = resolve({ columns: ['hug', '1fr'], gap: 8, justify: 'stretch' });
+    const out = layoutChildren(slot, layout, [
+      kid(40, 30),
+      kid(50, 30),
+      kid(70, 30),
+      kid(10, 30),
+    ]);
+    // hug = max(40, 70) = 70; fr = 400 − 70 − 8 = 322.
+    expect(out.map((b) => [b.x, b.width])).toEqual([
+      [10, 70],
+      [88, 322],
+      [10, 70],
+      [88, 322],
+    ]);
+  });
+
+  it('justify aligns inside the cell of each track', () => {
+    const layout = resolve({ columns: [100, '1fr'], justify: 'center' });
+    const out = layoutChildren(slot, layout, [kid(40, 30), kid(40, 30)]);
+    expect(out[0]?.x).toBe(10 + 30);
+    expect(out[1]?.x).toBe(10 + 100 + (300 - 40) / 2);
+  });
+
+  it('rows as a list in the horizontal grid: the tracks are the lines', () => {
+    const layout = resolve({ rows: [40, '1fr', 'hug'], gap: 10, lineGap: 4 });
+    const out = layoutChildren(box(0, 0, 400, 300), layout, [
+      kid(50, 30),
+      kid(50, 30),
+      kid(50, 20),
+      kid(60, 30),
+    ]);
+    // hug row = 20; fr = 300 − 40 − 20 − 20 = 220; starts 0, 50, 280.
+    expect(out.map((b) => [b.x, b.y])).toEqual([
+      [0, 0],
+      [0, 50],
+      [0, 280],
+      [54, 0],
+    ]);
+  });
+
+  it('reverse and the integer path stay unchanged', () => {
+    const layout = resolve({ columns: [60, '1fr'], reverse: true });
+    const out = layoutChildren(slot, layout, [kid(10, 10), kid(20, 10), kid(30, 10)]);
+    expect(out[2]).toMatchObject({ x: 10, y: 20 });
+    expect(out[1]).toMatchObject({ x: 70, y: 20 });
+    expect(out[0]).toMatchObject({ x: 10, y: 30 });
+  });
+
+  it('contentExtent hugs px + hug tracks + gaps; with fr, the largest need ÷ n × the fr total', () => {
+    const noFr = resolve({ columns: [40, 'hug'], gap: 8 });
+    expect(contentExtent(noFr, [kid(10, 10), kid(70, 20)], null)).toEqual({
+      width: 40 + 8 + 70,
+      height: 20,
+    });
+    const withFr = resolve({ columns: [40, '1fr', '2fr'], gap: 10 });
+    // max(50 / 1, 120 / 2) = 60 → 180; 40 + 180 + 20.
+    expect(contentExtent(withFr, [kid(30, 10), kid(50, 10), kid(120, 10)], null)).toEqual(
+      { width: 240, height: 10 },
+    );
+  });
+});
+
 describe('contentExtent in a grid', () => {
   it('hugs n × the largest child and the sum of the lines', () => {
     const layout = resolve({ columns: 3, gap: 8, lineGap: 4 });
@@ -352,6 +463,41 @@ describe('layoutScreen with a grid slot', () => {
     ]);
     expect(at('a')).toMatchObject({ x: 0, y: 0 });
     expect(at('b')).toMatchObject({ x: 0, y: 15 });
+    expect(at('c')).toMatchObject({ x: 30, y: 0 });
+  });
+});
+
+describe('layoutScreen with a track list in the grid slot (DX6)', () => {
+  it('the screen without geometry puts each child in its track', () => {
+    const { result, at } = run(
+      { type: 'grid', columns: [50, '1fr', 'hug'], gap: 10, justify: 'stretch' },
+      [1, 2, 3, 4].map((n) => node(`k${n}`, n % 3 === 0 ? 'small' : 'fixed')),
+    );
+    expect(result.warnings).toEqual([]);
+    // hug = 30 (`small`); fr = 320 − 50 − 30 − 20 = 220; starts 0, 60, 290.
+    expect(at('k1')).toMatchObject({ x: 0, y: 0 });
+    expect(at('k2')).toMatchObject({ x: 60, y: 0 });
+    expect(at('k3')).toMatchObject({ x: 290, y: 0, width: 30 });
+    expect(at('k4')).toMatchObject({ x: 0, y: 40 });
+  });
+
+  it('a stretched child fills its cell', () => {
+    const { at } = run(
+      { type: 'grid', columns: [50, '1fr'], gap: 10, justify: 'stretch' },
+      [node('a', 'filler'), node('b', 'filler')],
+    );
+    expect(at('a')).toMatchObject({ x: 0, width: 50 });
+    expect(at('b')).toMatchObject({ x: 60, width: 260 });
+  });
+
+  it('rows as a list in the horizontal grid', () => {
+    const { at } = run({ type: 'grid', rows: [20, '1fr'], gap: 5 }, [
+      node('a', 'small'),
+      node('b', 'small'),
+      node('c', 'small'),
+    ]);
+    expect(at('a')).toMatchObject({ x: 0, y: 0 });
+    expect(at('b')).toMatchObject({ x: 0, y: 25 });
     expect(at('c')).toMatchObject({ x: 30, y: 0 });
   });
 });

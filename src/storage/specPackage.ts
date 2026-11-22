@@ -6,7 +6,9 @@ import {
   type PackageEntry,
   type Project,
 } from '../model';
+import { isImagePath } from '../model/components/imagePath';
 import { validateLibrary, type LibraryIssue } from '../model/library';
+import { MAX_IMAGE_BYTES } from '../model/libraryImages';
 import { mapLimit } from '../utils/mapLimit';
 import { reportError } from '../utils/report';
 import { FOLDER_CONCURRENCY } from './folderConcurrency';
@@ -25,7 +27,22 @@ export interface AppLibraryIssue extends Omit<LibraryIssue, 'code'> {
 /** Problems of the applied library (levels 1 and 2) by specialization id. */
 export type LibraryIssues = ReadonlyMap<string, readonly AppLibraryIssue[]>;
 
-/** Reads all the files of `specs/<id>/`: text of the `.json` and `.md`, the others only as present. */
+/**
+ * One file as the validator receives it: the text of a text file; the bytes of an image up to 1 MB
+ * (it checks format and dimensions) or only the size of a heavier one (the size alone is the error);
+ * any other binary only as present.
+ */
+async function entryOf(path: string, blob: Blob): Promise<PackageEntry> {
+  if (isTextPackageFile(path)) return { path, text: await blob.text() };
+  if (!isImagePath(path)) return { path };
+  if (blob.size > MAX_IMAGE_BYTES) return { path, size: blob.size };
+  return { path, bytes: new Uint8Array(await blob.arrayBuffer()) };
+}
+
+/**
+ * Reads all the files of `specs/<id>/`: text of the `.json`, `.md` and `.js`, the bytes of the images
+ * (`.png`, `.jpg`, `.jpeg`, `.webp`, up to 1 MB), the others only as present.
+ */
 export async function readSpecPackage(
   storage: ProjectStorage,
   dir: string,
@@ -44,10 +61,7 @@ export async function readSpecPackage(
     total += blob.size;
     if (!packageWithinLimits(0, total)) overflow = true;
     if (overflow) return null;
-    const entry: PackageEntry = isTextPackageFile(path)
-      ? { path, text: await blob.text() }
-      : { path };
-    return { entry, size: blob.size };
+    return { entry: await entryOf(path, blob), size: blob.size };
   });
   if (overflow) return null;
   const entries: PackageEntry[] = [];
@@ -84,7 +98,8 @@ export function packageEntriesOf(
       entries.push({ path, text: data });
     } else {
       bytes += data.size;
-      entries.push({ path });
+      // The size lets the validator refuse an image over 1 MB without reading it.
+      entries.push({ path, size: data.size });
     }
   }
   return { entries, bytes };

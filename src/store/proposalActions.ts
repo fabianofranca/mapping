@@ -30,7 +30,7 @@ import { imageMimeType, type ProjectStorage } from '../storage/types';
 import { mapLimit } from '../utils/mapLimit';
 import { reportError } from '../utils/report';
 import type { HistoryLink, LinkResult, ProjectStore } from './history';
-import { validatePackage } from './packageValidation';
+import { packageImageBytes, validatePackage } from './packageValidation';
 import type { SpecPackageFiles } from './project';
 import type { ProposalErrorCode, ProposalStore, RemoveProposalError } from './proposals';
 
@@ -296,7 +296,11 @@ async function readProposalPackage(
   }
   files.set(pkg.file.slice(pkg.dir.length + 1), serializeSpec(pkg.spec));
   const previous = base.specializations.find((s) => s.id === pkg.specId)?.spec;
-  const report = validatePackage(files, previous ?? undefined);
+  const report = validatePackage(
+    files,
+    previous ?? undefined,
+    await packageImageBytes(files),
+  );
   return report.ok ? files : 'package-invalid';
 }
 
