@@ -1,4 +1,4 @@
-# Code review of the growth tests and the local settle — [Não lançado] (épico `epic/cr-scale-settle`, PR #1971, MCP 0.56.2, schema v20)
+# Code review of the growth tests and the local settle — 2026-11-22 (épico `epic/cr-scale-settle`, PR #2539, MCP 0.57.3, schema v23 unchanged)
 
 ## Corrigido
 

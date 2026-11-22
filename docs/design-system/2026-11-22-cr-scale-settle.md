@@ -1,4 +1,4 @@
-# Code review of the growth tests and the local settle — [Não lançado] (épico `epic/cr-scale-settle`)
+# Code review of the growth tests and the local settle — 2026-11-22 (épico `epic/cr-scale-settle`)
 
 ## Pendências
 
