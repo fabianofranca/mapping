@@ -186,6 +186,47 @@ export function reservedContainers(
   });
 }
 
+/** What a new proposal keeps free: the `images/` names and the canvas space of the others. */
+export interface ProposalReserve {
+  readonly reservedImages: Set<string>;
+  readonly reservedContainers: ProjectContainer[];
+}
+
+/**
+ * The reserve of a new proposal: the files in `images/` and the containers that the stored
+ * proposals can still apply (`reservedImages` and `reservedContainers` of each one). The open
+ * proposal whose id is `supersededId` counts as `superseded`, the state it will have: its accepted
+ * ones stay reserved and the pending ones are released. A proposal of another status does not change.
+ * `propose_changes` uses it with the previous one of `supersedes`; `plan_changes` and the batch-only
+ * preview use it without one (`newProposalReserveAt`).
+ */
+export function newProposalReserve(
+  stored: readonly StoredProposal[],
+  supersededId: string | null,
+): ProposalReserve {
+  const reservedImagesSet = new Set<string>();
+  const reservedSpace: ProjectContainer[] = [];
+  for (const item of stored) {
+    const becomesSuperseded = item.id === supersededId && item.proposal.status === 'open';
+    const status = becomesSuperseded ? 'superseded' : item.proposal.status;
+    for (const file of reservedImages(item.proposal, status)) reservedImagesSet.add(file);
+    reservedSpace.push(...reservedContainers(item.proposal, status));
+  }
+  return { reservedImages: reservedImagesSet, reservedContainers: reservedSpace };
+}
+
+/**
+ * The reserve of a batch that is not (yet) a proposal: that of a `propose_changes` without
+ * `supersedes`, from the proposals stored in the project. One that cannot be read (`broken`) reserves nothing.
+ */
+export async function newProposalReserveAt(
+  roots: Roots,
+  location: ProjectLocation,
+): Promise<ProposalReserve> {
+  const { proposals } = await listStored(roots, location);
+  return newProposalReserve(proposals, null);
+}
+
 /** Can the change still be applied, for a proposal in `status` (the rule of `reservedImages`)? */
 function stillApplicable(p: Proposal, c: Change, status: ProposalStatus): boolean {
   if (Object.hasOwn(p.applied, c.id)) return false;
