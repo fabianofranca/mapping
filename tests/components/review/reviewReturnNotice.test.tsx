@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, screen } from '@testing-library/preact';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EditorDialogs } from '../../../src/app/useEditorDialogs';
 import { useExitReview } from '../../../src/app/useExitReview';
 import { t } from '../../../src/i18n';
@@ -97,5 +97,22 @@ describe('ReviewReturnNotice', () => {
       await h.session.proposals.scan();
     });
     expect(notice()).toBeNull();
+  });
+
+  it('scrolls itself into view when it appears, so it is not left above a scrolled Details', async () => {
+    const scrollIntoView = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scrollIntoView;
+    try {
+      await mount();
+      expect(scrollIntoView).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole('button', { name: 'Exit review' }));
+      expect(notice()).toBeTruthy();
+      expect(scrollIntoView).toHaveBeenCalledTimes(1);
+      const target = scrollIntoView.mock.instances[0] as Element;
+      expect(target.contains(notice())).toBe(true);
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
   });
 });

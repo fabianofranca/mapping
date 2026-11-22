@@ -8,6 +8,10 @@
 
 - **Docs and test scripts (CV4, stage #1881):** `docs/COMMENT-FORMAT.md` and `docs/AGENT-GUIDE.md` now say that the person can keep writing in an existing conversation while reviewing its proposal, and that a tweak asked there is fixed with `revise_proposal` in the same proposal plus a `post_message`. These two files are release inputs, so the MCP gets a **patch** (the header says "no change" until the epic closing picks the number; no tool, argument, error code or format changes; the number is chosen at the epic closing). R22 was rewritten in place for the **Conversation** window, and the new script **R43 — Conversation during review** runs alone in block 6 of the full round (R41 and R42 were already taken).
 
+## Corrigido
+
+- **The notice scrolls into view (CL1, stage #1881):** after **Exit review** the "proposal is still open" notice at the top of Details no longer stays above the visible part when Details was scrolled during the review. The R22 and R43 test scripts now match the real behavior (pins off keep the selected pin, **Comment** arms before the click, `create_marking`, `drop`, the example's real rows).
+
 ## Alterado
 
 - **Budget:** the `dist/index.html` ceiling went up 16 KiB, from 2408448 to 2424832, by the budget rule; above the limits, `bug` #2552 for the owner to review.
