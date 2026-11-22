@@ -52,14 +52,17 @@ test('the pins are born hidden, Comment opens the draft and the click on the pin
   await composer.press('Control+Enter');
   await expect.poll(() => pins(host)).toBe(1);
 
-  // Turning Conversations off hides the pin (the conversation stays in the Conversation window).
+  // Turning Conversations off hides the pins, but the conversation in the Conversation window
+  // keeps its own pin (it does not follow the selection: stage #1881, decision 6).
   const elsewhere = await canvasPoint(page, 0.9);
   await page.mouse.click(elsewhere.x, elsewhere.y);
   await conversations.click();
   await expect(conversations).toHaveAttribute('aria-pressed', 'false');
-  await expect.poll(() => pins(host)).toBe(0);
-  // Turning it on again brings the pin back.
+  await expect(page.getByText('What is the variant?')).toBeVisible();
+  await expect.poll(() => pins(host)).toBe(1);
+  // Turning it on again keeps the pin.
   await conversations.click();
+  await expect(conversations).toHaveAttribute('aria-pressed', 'true');
   await expect.poll(() => pins(host)).toBe(1);
 
   // The click on the pin (top right corner of the marking, outside) opens the conversation in the Conversation window.
