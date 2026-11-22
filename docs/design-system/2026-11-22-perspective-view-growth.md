@@ -1,4 +1,4 @@
-# The view of a perspective reads roots from the index — [Não lançado] (épico `epic/perspective-view-growth`)
+# The view of a perspective reads roots from the index — 2026-11-22 (épico `epic/perspective-view-growth`)
 
 ## Pendências
 
@@ -6,7 +6,7 @@ DS impact: none. The epic only changes the project index and the perspective vie
 
 ## Sincronização
 
-Nothing to write to the **Mapping** artifact: the epic does not change a component, token or icon of the app.
+Sem impacto: nothing to write to the **Mapping** artifact; the epic does not change a component, token or icon of the app.
 
 ## Ficou sem gravar
 

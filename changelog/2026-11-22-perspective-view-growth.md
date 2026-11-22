@@ -1,4 +1,4 @@
-# The view of a perspective reads roots from the index — [Não lançado] (épico `epic/perspective-view-growth`, PR #2687, MCP 0.57.8, schema v23)
+# The view of a perspective reads roots from the index — 2026-11-22 (épico `epic/perspective-view-growth`, PR #2687, MCP 0.57.8, schema v23)
 
 ## Corrigido
 
