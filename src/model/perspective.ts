@@ -130,42 +130,74 @@ function movedMarking(m: Marking, d: CanvasPosition): Marking {
   return { ...m, rect: { ...m.rect, x: m.rect.x + d.x, y: m.rect.y + d.y } };
 }
 
-function buildView(p: Project, perspective: Perspective): Project {
-  const index = projectIndex(p);
-  const shifts = viewShifts(index, perspective);
-  // The roots come from the index by position: no hashing of each id, no reading of the annotations of what leaves.
-  const { containerRoots, markingRoots, annotationRoots } = index;
+type Shifts = ReadonlyMap<string, CanvasPosition>;
 
-  const containers: ProjectContainer[] = [];
-  for (let i = 0; i < p.containers.length; i++) {
-    const d = shifts.get(containerRoots[i]!);
-    if (d) containers.push(movedContainer(p.containers[i]!, d));
+/** What of `items` stays in the view, by the root of each position (`roots[i]` is the root of `items[i]`), moved by the shift of that root. */
+function shiftedItems<T>(
+  items: readonly T[],
+  roots: readonly string[],
+  shifts: Shifts,
+  move: (item: T, d: CanvasPosition) => T,
+): T[] {
+  const kept: T[] = [];
+  for (let i = 0; i < items.length; i++) {
+    const d = shifts.get(roots[i]!);
+    if (d) kept.push(move(items[i]!, d));
   }
-  const markings: Marking[] = [];
-  for (let i = 0; i < p.markings.length; i++) {
-    const d = shifts.get(markingRoots[i]!);
-    if (d) markings.push(movedMarking(p.markings[i]!, d));
-  }
-  const arrows: Arrow[] = [];
-  const keptArrows = new Set<string>();
-  for (const a of p.arrows) {
+  return kept;
+}
+
+/** The arrows with both ends in the view; their ids go in `keptArrows`. */
+function arrowsInView(
+  index: ProjectIndex,
+  arrows: readonly Arrow[],
+  shifts: Shifts,
+  keptArrows: Set<string>,
+): Arrow[] {
+  const kept: Arrow[] = [];
+  for (const a of arrows) {
     const fromRoot = index.rootOf.get(a.from) ?? '';
     const toRoot = index.rootOf.get(a.to) ?? '';
     const d = shifts.get(fromRoot);
     const next =
       d && shifts.has(toRoot) ? arrowInView(index, a, d, fromRoot === toRoot) : null;
     if (!next) continue;
-    arrows.push(next);
+    kept.push(next);
     keptArrows.add(next.id);
   }
-  // A marking's annotation stays with its root; the object is read only for those on an arrow (or on nothing).
-  const annotations: Annotation[] = [];
+  return kept;
+}
+
+/** A marking's annotation stays with its root; the object is read only for those on an arrow (or on nothing). */
+function annotationsInView(
+  p: Project,
+  annotationRoots: readonly (string | null)[],
+  shifts: Shifts,
+  keptArrows: ReadonlySet<string>,
+): Annotation[] {
+  const kept: Annotation[] = [];
   for (let i = 0; i < p.annotations.length; i++) {
     const root = annotationRoots[i]!;
     const a = p.annotations[i]!;
-    if (root !== null ? shifts.has(root) : keptArrows.has(a.markingId))
-      annotations.push(a);
+    if (root !== null ? shifts.has(root) : keptArrows.has(a.markingId)) kept.push(a);
   }
+  return kept;
+}
+
+function buildView(p: Project, perspective: Perspective): Project {
+  const index = projectIndex(p);
+  const shifts = viewShifts(index, perspective);
+  // The roots come from the index by position: no hashing of each id, no reading of the annotations of what leaves.
+  const containers = shiftedItems(
+    p.containers,
+    index.containerRoots,
+    shifts,
+    movedContainer,
+  );
+  const markings = shiftedItems(p.markings, index.markingRoots, shifts, movedMarking);
+  const keptArrows = new Set<string>();
+  const arrows = arrowsInView(index, p.arrows, shifts, keptArrows);
+  const annotations = annotationsInView(p, index.annotationRoots, shifts, keptArrows);
   return { ...p, containers, markings, arrows, annotations };
 }
 
