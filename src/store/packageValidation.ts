@@ -1,8 +1,19 @@
-import { toLibraryFiles, type PackageEntry, type Spec } from '../model';
+import {
+  formatCheckIssues,
+  reportWithFormatChecks,
+  specFileOf,
+  toLibraryFiles,
+  type FormatRunner,
+  type PackageEntry,
+  type PackageReader,
+  type Spec,
+  type TextMeasurer,
+} from '../model';
 import { isImagePath } from '../model/components/imagePath';
 import { MAX_IMAGE_BYTES } from '../model/libraryImages';
-import { validateLibrary, type LibraryReport } from '../model/library';
+import { validateLibrary, type LibraryIssue, type LibraryReport } from '../model/library';
 import type { SpecPackageFiles } from './project';
+import { textMeasurer } from './textMeasure';
 
 // Validation of a library package already read into memory. Pure (no DOM): the import
 // (`src/ui/specPackageImport.ts`) and the application of a proposal (`proposalActions.ts`) call
@@ -66,4 +77,69 @@ export function validatePackage(
     ...(previous ? { previous } : {}),
     level: 3,
   });
+}
+
+// ---------------------------------------------------------------------------- the file formats
+
+/** What the format checks need from the app: the executor (the sandbox) and, optionally, the text measurer. */
+export interface PackageFormatDeps {
+  readonly run: FormatRunner;
+  /** The measurer of the drawings that give the projection its slots; the app's own by default. */
+  readonly measure?: () => TextMeasurer;
+}
+
+/** Reads a package file as text (a Blob is read); `null` when the package has none. */
+export function packageTextReader(files: SpecPackageFiles): PackageReader {
+  return async (path) => {
+    const data = files.get(path);
+    if (data === undefined) return null;
+    return typeof data === 'string' ? data : data.text();
+  };
+}
+
+/**
+ * The report with the problems of the specialization's file formats added (stage #2035, decision 13):
+ * the plugin loads and defines a function, and its examples round-trip or apply. They run on an
+ * explicit action only (applying or updating a package, opening a library from the home screen),
+ * never when a project opens (decision 10). A problem is an error, so `ok` turns false.
+ */
+export function withFormatChecks(
+  files: SpecPackageFiles,
+  report: LibraryReport,
+  deps: PackageFormatDeps,
+): Promise<LibraryReport> {
+  const specPath =
+    report.spec === undefined
+      ? undefined
+      : specFileOf(libraryInputFiles(files), report.spec);
+  return reportWithFormatChecks(
+    report,
+    specPath,
+    packageTextReader(files),
+    (pkg, read, level) =>
+      formatCheckIssues(pkg, read, level, {
+        run: deps.run,
+        measure: (deps.measure ?? (() => textMeasurer.peek()))(),
+      }),
+  );
+}
+
+/** The three levels and, after them, the format checks (asynchronous: the plugins run isolated). */
+export async function validatePackageWithFormats(
+  files: SpecPackageFiles,
+  previous: Spec | undefined,
+  imageBytes: PackageImageBytes | undefined,
+  deps: PackageFormatDeps,
+): Promise<LibraryReport> {
+  return withFormatChecks(files, validatePackage(files, previous, imageBytes), deps);
+}
+
+/** Only the problems the format checks add to `report` (the Catalog of a library shows them after its own). */
+export async function formatIssuesOf(
+  files: SpecPackageFiles,
+  report: LibraryReport,
+  deps: PackageFormatDeps,
+): Promise<readonly LibraryIssue[]> {
+  const checked = await withFormatChecks(files, report, deps);
+  return checked.issues.slice(report.issues.length);
 }

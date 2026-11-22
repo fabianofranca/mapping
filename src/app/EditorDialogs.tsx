@@ -28,6 +28,7 @@ import { closeProject } from './controller';
 import { ExportDialog } from './ExportDialog';
 import { FormatExportDialog } from './FormatExportDialog';
 import { FormatImportDialog } from './FormatImportDialog';
+import { runFormat } from './formatRunner';
 import type { EditorDialog, EditorDialogs as Dialogs } from './useEditorDialogs';
 import { Button } from '../ui/controls';
 import { ExitReviewDialog } from '../ui/review/ExitReviewDialog';
@@ -93,6 +94,7 @@ function renderDialog(
           project={project}
           readOnly={readOnly}
           bundled={[NOTES_LIBRARY]}
+          formatRunner={runFormat}
           onClose={close}
         />
       );

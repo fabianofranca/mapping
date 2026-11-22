@@ -1,124 +1,33 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { approximateMeasurer, formatCheckIssues, type Spec } from '../../src/model';
 import {
-  approximateMeasurer,
-  formatCheckIssues,
-  parseSpecText,
-  type FormatFunction,
-  type FormatOutcome,
-  type FormatRunner,
-  type Spec,
-} from '../../src/model';
+  FORMAT_LIB_SPEC_FILE,
+  NOTES,
+  NOTES_EXAMPLE,
+  NOTES_PLUGIN,
+  behaviorsOf,
+  fail,
+  notesParse,
+  notesSpecOf,
+  ok,
+  runnerOf,
+  type Behavior,
+} from '../support/notesFormat';
 
 // The format checks of the model (stage #2035, AF5): levels 2 and 3 of the formats with an injected
 // runner. The fake runner stands in for the plugin of `tests/fixtures/format-library/` (the `notes`
 // format, a line per item); the same cases run against QuickJS in `tests/mcp/formatPlugins.test.ts`.
 
-const DIR = 'tests/fixtures/format-library';
-const EXAMPLE = readFileSync(`${DIR}/examples/notes.txt`, 'utf8');
-
-function specOf(edit?: (spec: Record<string, unknown>) => void): Spec {
-  const data = JSON.parse(
-    readFileSync(`${DIR}/format-library.spec.json`, 'utf8'),
-  ) as Record<string, unknown>;
-  edit?.(data);
-  const parsed = parseSpecText(JSON.stringify(data));
-  if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
-  return parsed.spec;
-}
-
-const PLUGIN = 'plugins/notes.js';
-
-interface Row {
-  readonly values: { readonly key: string; readonly value: string };
-}
-interface Annotation {
-  readonly name?: string;
-  readonly values: { readonly title?: string };
-  readonly rows: { readonly tags?: readonly Row[] };
-}
-interface Input {
-  readonly annotations: readonly Annotation[];
-}
-
-const ok = (value: unknown): FormatOutcome => ({ ok: true, value });
-const fail = (message: string, phase?: 'load' | 'call'): FormatOutcome => ({
-  ok: false,
-  failure: { code: 'plugin-failed', message, ...(phase ? { phase } : {}) },
-});
-
-function notesGenerate(input: Input): string {
-  return (
-    input.annotations
-      .map((a) =>
-        [a.values.title ?? a.name ?? '']
-          .concat((a.rows.tags ?? []).map((r) => `  ${r.values.key}=${r.values.value}`))
-          .join('\n'),
-      )
-      .join('\n') + '\n'
-  );
-}
-
-function notesParse(text: string): unknown {
-  const items: { title: string; tags: { key: string; value: string }[] }[] = [];
-  for (const line of text.split(/\r?\n/)) {
-    if (line.trim() === '') continue;
-    if (line.startsWith(' ')) {
-      const cut = line.indexOf('=');
-      items[items.length - 1]!.tags.push({
-        key: line.slice(2, cut),
-        value: line.slice(cut + 1),
-      });
-    } else {
-      items.push({ title: line, tags: [] });
-    }
-  }
-  return {
-    operations: [
-      {
-        op: 'add_container',
-        as: '$notes',
-        name: 'Notes',
-        width: 400,
-        height: 600,
-        background: '#FFFFFF',
-      },
-      ...items.map((item, index) => ({
-        op: 'create_marking',
-        container: '$notes',
-        rect: { x: 10, y: 10 + index * 60, width: 200, height: 50 },
-        annotation: {
-          type: 'format-lib/item',
-          values: { title: item.title, tags: item.tags },
-        },
-      })),
-    ],
-    warnings: [],
-  };
-}
-
-/** What a plugin source (the text `read` gives) does when run; the fake of QuickJS. */
-type Behavior = (fn: FormatFunction, args: readonly unknown[]) => FormatOutcome;
-
-const NOTES: Behavior = (fn, args) =>
-  fn === 'generate'
-    ? ok(notesGenerate(args[0] as Input))
-    : ok(notesParse(args[0] as string));
-
-function runnerOf(behaviors: Record<string, Behavior>): FormatRunner {
-  return (source, fn, args) => {
-    const behavior = behaviors[source];
-    return Promise.resolve(
-      behavior === undefined ? fail('unknown plugin') : behavior(fn, args),
-    );
-  };
-}
+const FILES: Record<string, string> = {
+  [NOTES_PLUGIN]: 'NOTES',
+  'examples/notes.txt': NOTES_EXAMPLE,
+};
+const specOf = notesSpecOf;
+const PLUGIN = NOTES_PLUGIN;
 
 function reader(files: Record<string, string>) {
   return (path: string): Promise<string | null> => Promise.resolve(files[path] ?? null);
 }
-
-const FILES = { [PLUGIN]: 'NOTES', 'examples/notes.txt': EXAMPLE };
 
 async function issuesOf(options: {
   behavior?: Behavior;
@@ -128,25 +37,14 @@ async function issuesOf(options: {
 }) {
   const files = options.files ?? FILES;
   return formatCheckIssues(
-    { spec: options.spec ?? specOf(), specPath: 'format-library.spec.json' },
+    { spec: options.spec ?? specOf(), specPath: FORMAT_LIB_SPEC_FILE },
     reader(files),
     options.level ?? 3,
     {
-      run: runnerOf({ NOTES: options.behavior ?? NOTES, ...behaviorsOf(files) }),
+      run: runnerOf({ ...behaviorsOf(files), NOTES: options.behavior ?? NOTES }),
       measure: approximateMeasurer,
     },
   );
-}
-
-/** Every plugin text other than `NOTES` that the case writes is its own behavior key (it throws on load). */
-function behaviorsOf(files: Record<string, string>): Record<string, Behavior> {
-  const found: Record<string, Behavior> = {};
-  for (const text of Object.values(files)) {
-    if (text.startsWith('THROWS-ON-LOAD'))
-      found[text] = () => fail('Error: boom', 'load');
-    if (text === 'EMPTY') found[text] = (fn) => fail(`the plugin does not define ${fn}`);
-  }
-  return found;
 }
 
 describe('formatCheckIssues', () => {
