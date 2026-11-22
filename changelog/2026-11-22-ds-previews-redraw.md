@@ -1,4 +1,4 @@
-# Redraw the DS previews of review and notices — 2026-11-22 (épico `epic/ds-previews-redraw`, PR #0, MCP unchanged, schema v23)
+# Redraw the DS previews of review and notices — 2026-11-22 (épico `epic/ds-previews-redraw`, PR #2605, MCP unchanged, schema v23)
 
 ## Alterado
 
