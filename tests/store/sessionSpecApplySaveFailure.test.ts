@@ -61,7 +61,7 @@ describe('applying a specialization package when the write fails (R17.3)', () =>
   it.each(['mapping', 'specFile', 'spec'])(
     'a failing %s write leaves the status on error, never saved',
     async (target) => {
-      const root = new MemoryDirectory();
+      const root = new MemoryDirectory('p');
       const failing = { on: true, target };
       session = await start(root, failing);
       expect(
@@ -77,7 +77,7 @@ describe('applying a specialization package when the write fails (R17.3)', () =>
   );
 
   it('a failed write followed by a no-op flush does not read as saved', async () => {
-    const root = new MemoryDirectory();
+    const root = new MemoryDirectory('p');
     const failing = { on: true, target: 'mapping' };
     session = await start(root, failing);
     session.actions.applySpecialization(material3Spec(), material3Package());
