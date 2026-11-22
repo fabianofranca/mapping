@@ -42,6 +42,7 @@ import { componentTypes, type ComponentType } from './componentMarkings';
 import type { TextMeasurer } from './components/instantiate';
 import { ModelError } from './errors';
 import type { FormatInput, FormatOperation, FormatResult } from './formatPlugin';
+import { checkFormatValueTypes } from './formatValues';
 import { refImageLabel, shortCode } from './itemRef';
 import { projectIndex } from './projectIndex';
 import { projectLayerFor } from './specLookup';
@@ -108,9 +109,9 @@ export interface FormatApplyOptions {
 
 type Alias = { readonly kind: AliasKind; readonly id: string } | RowAliasTarget;
 
-// The operations as the rules take them. A result's values come from a plugin: the caller checks their types
-// (the MCP with the operations' schema) before handing the result over; a rule that trips on a wrong type
-// still gives `plugin-output-invalid` at the operation's index.
+// The operations as the rules take them. A result's values come from a plugin: `run` checks their types
+// (`checkFormatValueTypes`) before any rule reads them; a rule that still trips on a wrong type gives
+// `plugin-output-invalid` at the operation's index.
 type AddContainerOp = Parameters<typeof addBatchBackgroundContainer>[1] &
   ContainerSettingsArgs & {
     readonly as?: string;
@@ -156,6 +157,8 @@ class ResultApplier {
   }
 
   run(result: FormatResult): FormatApplyOutcome {
+    const wrongType = this.firstWrongType(result);
+    if (wrongType !== null) return wrongType;
     for (const [i, op] of result.operations.entries()) {
       this.index = i;
       try {
@@ -173,6 +176,29 @@ class ResultApplier {
       warnings: result.warnings ?? [],
       rolesCleared: this.rolesCleared,
     };
+  }
+
+  /**
+   * Before anything is applied: the first value of the wrong type, as the error of its operation. A
+   * plugin's values are never read by a rule until their types are right.
+   */
+  private firstWrongType(result: FormatResult): FormatApplyOutcome | null {
+    for (const [index, op] of result.operations.entries()) {
+      const problem = checkFormatValueTypes(op, index);
+      if (problem === null) continue;
+      return {
+        ok: false,
+        error: {
+          index,
+          op: op.op,
+          code: 'plugin-output-invalid',
+          message: problem.message,
+          details: { path: problem.path },
+          cause: new Error(problem.message),
+        },
+      };
+    }
+    return null;
   }
 
   /** The thrown error as the result's error at `operations[index]`. */

@@ -27,6 +27,7 @@ import { selectItems } from '../store/ui';
 import { closeProject } from './controller';
 import { ExportDialog } from './ExportDialog';
 import { FormatExportDialog } from './FormatExportDialog';
+import { FormatImportDialog } from './FormatImportDialog';
 import type { EditorDialog, EditorDialogs as Dialogs } from './useEditorDialogs';
 import { Button } from '../ui/controls';
 import { ExitReviewDialog } from '../ui/review/ExitReviewDialog';
@@ -277,6 +278,8 @@ function renderDialog(
           }
         />
       );
+    case 'importFormat':
+      return <FormatImportDialog onClose={close} />;
     case 'exitReview':
       return <ExitReviewDialog onClose={close} />;
     case 'newPerspective':

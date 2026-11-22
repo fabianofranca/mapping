@@ -22,7 +22,7 @@ import type {
   TextMeasurer,
 } from '../model';
 import { ModelError } from '../model/errors';
-import type { ActionResult, Operation, ProjectStore } from './history';
+import type { ActionResult, Operation, ProjectStore, StoreErrorCode } from './history';
 import * as view from './perspectiveGestures';
 import { openPerspectiveIn, type ArrivalInfo } from './perspectives';
 import { textMeasurer } from './textMeasure';
@@ -62,6 +62,26 @@ export interface ActionDeps {
  * `page-arrow-crossing` (an arrow crosses) or `page-anchor-crossing` (only anchors do), and both
  * lists (the dialog lists them, with "Go to the arrow" and "Go to the marking").
  */
+/**
+ * Result of `importFormat` (stage #2035, AF4): what the import created and changed; a store refusal
+ * (`read-only`, `reviewing`, `no-project`, `principal-only`, …) or `format-apply`, the first operation
+ * of the result that the model's rules refused (the project stays as it was).
+ */
+export type ImportFormatResult =
+  | {
+      readonly ok: true;
+      readonly value: {
+        readonly created: readonly model.AppliedItem[];
+        readonly updated: readonly model.AppliedItem[];
+      };
+    }
+  | { readonly ok: false; readonly error: StoreErrorCode }
+  | {
+      readonly ok: false;
+      readonly error: 'format-apply';
+      readonly failure: model.FormatApplyError;
+    };
+
 export type MoveRootsResult =
   | ActionResult
   | {
@@ -1044,6 +1064,36 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       ),
     removeSpecialization: (specId: string, mode: SpecRemovalMode, texts?: LabelTexts) =>
       store.apply((p) => model.removeSpecialization(p, specId, mode, { newId, texts })),
+
+    /**
+     * Import from a format (stage #2035, AF4, decisions 4 and 12): applies the plugin's result, already
+     * checked by `checkFormatResult`, to the current project in one commit: one undo entry for the whole
+     * import. `input` is the projection the plugin read (the result's references are its). The plugin is
+     * not run again. All or nothing: a result that a rule refuses changes nothing. Refused while the
+     * project is read-only or in review, and with an "Only me" perspective open (what it creates lands in
+     * Main).
+     */
+    importFormat: (
+      input: Pick<model.FormatInput, 'project'>,
+      result: model.FormatResult,
+    ): ImportFormatResult => {
+      const current = store.project.peek();
+      if (!current) return { ok: false, error: 'no-project' };
+      if (store.readOnly.peek()) return { ok: false, error: 'read-only' };
+      if (store.reviewing.peek()) return { ok: false, error: 'reviewing' };
+      if (viewFor(current) !== null) return { ok: false, error: 'principal-only' };
+      const outcome = model.applyFormatResult(current, result, {
+        input,
+        catalog: catalog(),
+        measure: measure(),
+        page: deps.page?.(),
+      });
+      if (!outcome.ok)
+        return { ok: false, error: 'format-apply', failure: outcome.error };
+      const applied = store.apply(() => outcome.project);
+      if (!applied.ok) return applied;
+      return { ok: true, value: { created: outcome.created, updated: outcome.updated } };
+    },
 
     // Typed annotations
     addTypedAnnotation: (

@@ -309,8 +309,143 @@ describe('applyFormatResult: refusals', () => {
     );
     expect(error.index).toBe(1);
     expect(error.code).toBe('plugin-output-invalid');
-    expect(error.message.startsWith('operations[1]: ')).toBe(true);
-    expect(error.details).toEqual({ path: 'operations[1]' });
+    expect(error.message.startsWith('operations[1].entries: ')).toBe(true);
+    expect(error.details).toEqual({ path: 'operations[1].entries' });
+  });
+});
+
+// The types of the values (stage #2035, AF4): a result comes from a plugin, so a wrong type is
+// refused at its path before any rule reads it (a text where a number goes would otherwise be taken
+// as truthy or coerced), all or nothing, with the project untouched.
+describe('applyFormatResult: the types of the values', () => {
+  const wrong: [string, FormatOperation, string][] = [
+    [
+      'a fractional rect side',
+      op('create_marking', {
+        container: 'c1',
+        rect: { x: 1.5, y: 0, width: 20, height: 20 },
+      }),
+      'operations[0].rect.x',
+    ],
+    [
+      'a text size',
+      op('add_container', { width: '100', height: 100, background: '#FFFFFF' }),
+      'operations[0].width',
+    ],
+    [
+      'a size out of the range',
+      op('add_container', { width: 20001, height: 100, background: '#FFFFFF' }),
+      'operations[0].width',
+    ],
+    [
+      'a text for a flag',
+      op('update_marking', { marking: 'm2', locked: 'yes' }),
+      'operations[0].locked',
+    ],
+    [
+      'a number for a name',
+      op('update_marking', { marking: 'm2', name: 5 }),
+      'operations[0].name',
+    ],
+    [
+      'a fractional move',
+      op('update_marking', { marking: 'm2', move: { dx: 1.5, dy: 0 } }),
+      'operations[0].move.dx',
+    ],
+    [
+      'an unknown anchor side',
+      op('update_marking', { marking: 'm2', anchor: { to: 'm3', side: 'sideways' } }),
+      'operations[0].anchor.side',
+    ],
+    [
+      'a list where the values go',
+      op('create_annotation', { marking: 'm2', layer: 'L1', values: [1] }),
+      'operations[0].values',
+    ],
+    [
+      'an entry without a value',
+      op('create_annotation', { marking: 'm2', layer: 'L1', entries: [{ key: 'k' }] }),
+      'operations[0].entries[0].value',
+    ],
+    [
+      'a number for an owner',
+      op('update_annotation', { annotation: 'a3', owner: 3 }),
+      'operations[0].owner',
+    ],
+    [
+      'an unknown arrow style',
+      op('create_arrow', { from: 'm1', to: 'm4', style: 'wavy' }),
+      'operations[0].style',
+    ],
+    [
+      'a number for an end',
+      op('create_arrow', { from: 'm1', to: 4 }),
+      'operations[0].to',
+    ],
+    [
+      'a text for a source',
+      op('create_marking', {
+        container: 'c1',
+        rect: { x: 0, y: 0, width: 20, height: 20 },
+        source: 'figma',
+      }),
+      'operations[0].source',
+    ],
+  ];
+
+  it.each(wrong)('refuses %s at its path', (_label, operation, path) => {
+    const base = formatProject();
+    const error = failure(apply(base, [operation]));
+    expect(error.index).toBe(0);
+    expect(error.code).toBe('plugin-output-invalid');
+    expect(error.details).toEqual({ path });
+    expect(error.message.startsWith(`${path}: `)).toBe(true);
+  });
+
+  it('names the operation that has the wrong type and leaves the project as it was', () => {
+    const base = formatProject();
+    const error = failure(
+      apply(base, [
+        op('update_marking', { marking: 'm2', name: 'fine' }),
+        op('update_marking', { marking: 'm2', locked: 'yes' }),
+      ]),
+    );
+    expect(error.index).toBe(1);
+    expect(error.op).toBe('update_marking');
+    expect(error.details).toEqual({ path: 'operations[1].locked' });
+  });
+
+  it('checks the types before the rules: a bad type wins over an unknown reference', () => {
+    const error = failure(
+      apply(formatProject(), [op('update_marking', { marking: 'nope', locked: 'yes' })]),
+    );
+    expect(error.code).toBe('plugin-output-invalid');
+  });
+
+  it('accepts null where the MCP does (a name, a source, an anchor, an owner, a role) and the plain values', () => {
+    const done = success(
+      apply(formatProject(), [
+        op('update_marking', { marking: 'm2', name: null, source: null, anchor: null }),
+        op('update_annotation', {
+          annotation: 'f2',
+          owner: null,
+          role: null,
+          entries: [{ key: 'k', value: 'v' }],
+        }),
+        op('create_arrow', { from: 'm1', to: 'm4', style: 'elbow', name: 'x' }),
+        op('add_container', {
+          width: 120,
+          height: 80,
+          background: '#FFFFFF',
+          density: 2,
+          direction: 'rtl',
+          drawingMode: null,
+          center: { x: 10, y: -5 },
+          source: { system: 'figma', id: '1:2', url: null },
+        }),
+      ]),
+    );
+    expect(done.created.length).toBeGreaterThan(0);
   });
 });
 

@@ -1,6 +1,11 @@
 import { t } from '../i18n';
 import { FORMAT_PLUGIN_LIMITS, type FormatFailure } from '../model';
-import type { ExportInFormatError } from '../store/formatActions';
+import {
+  applyErrorAt,
+  type ExportInFormatError,
+  type ImportInFormatError,
+} from '../store/formatActions';
+import type { ImportFormatResult } from '../store/project';
 
 // The messages of the format plugins' failures (the error codes of #1923, shown through `t()`).
 // The plugin's own text (an error it threw, the limit that was passed) goes in as `{message}`.
@@ -39,5 +44,62 @@ export function exportErrorText(error: ExportInFormatError): string {
       return t('format.error.container');
     case 'plugin':
       return formatFailureText(error.failure);
+  }
+}
+
+/** Why an import from a format gave no preview. */
+export function importErrorText(error: ImportInFormatError): string {
+  switch (error.kind) {
+    case 'extension':
+      return t('format.import.error.extension', { extension: error.extension });
+    case 'size':
+      return t('format.import.error.size', {
+        size: FORMAT_PLUGIN_LIMITS.parseTextBytes / (1024 * 1024),
+      });
+    case 'read':
+      return t('format.import.error.read');
+    case 'save':
+      return t('format.import.error.save');
+    case 'project':
+      return t('format.error.project');
+    case 'container':
+      return t('format.import.error.container');
+    case 'plugin':
+      return formatFailureText(error.failure);
+    case 'result':
+      return resultErrorText(error);
+    case 'apply':
+      return t('format.import.error.apply', { path: error.path, message: error.message });
+  }
+}
+
+/** A result that breaks the contract: the first problem at its path, and how many more there are. */
+function resultErrorText(
+  error: Extract<ImportInFormatError, { kind: 'result' }>,
+): string {
+  const at = `${error.path}: ${error.message}`;
+  const first =
+    error.code === 'plugin-limit'
+      ? t('format.error.plugin-limit', { message: error.message })
+      : t('format.error.plugin-output-invalid', { message: at });
+  return error.more > 0
+    ? `${first} ${t('format.import.error.more', { count: error.more })}`
+    : first;
+}
+
+/** Why the Import action refused or failed: the store's refusal, or the rule that broke. */
+export function importActionErrorText(
+  result: Extract<ImportFormatResult, { readonly ok: false }>,
+): string {
+  switch (result.error) {
+    case 'read-only':
+    case 'reviewing':
+      return t('format.import.error.locked');
+    case 'principal-only':
+      return t('format.import.error.principalOnly');
+    case 'format-apply':
+      return t('format.import.error.apply', applyErrorAt(result.failure));
+    default:
+      return t('format.import.error.unexpected');
   }
 }

@@ -2,9 +2,9 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { readFile } from 'node:fs/promises';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import JSZip from 'jszip';
-import { canvasPoint, createProject, watchViolations } from './helpers';
+import { canvasPoint, createProject, exportMapping, watchViolations } from './helpers';
 
 // Stage #2035 (AF3): Export in a format runs the specialization's plugin in the sandbox of the
 // page (a hidden `sandbox="allow-scripts"` iframe that starts a Worker per call). These tests run
@@ -55,13 +55,17 @@ async function packageZip(): Promise<Buffer> {
 }
 
 /** Specializations › Apply zip…, confirming the package window. */
-async function applyPackage(page: Page, zip: Buffer): Promise<void> {
+async function applyPackage(
+  page: Page,
+  zip: Buffer,
+  name = 'format-library.zip',
+): Promise<void> {
   await page
     .locator('.main-bar')
     .getByRole('button', { name: 'Specializations', exact: true })
     .click();
   await page.locator('input[type=file][accept=".zip,application/zip"]').setInputFiles({
-    name: 'format-library.zip',
+    name,
     mimeType: 'application/zip',
     buffer: zip,
   });
@@ -207,5 +211,178 @@ test.describe('Export in a format: failures', () => {
     await openProject(page, '/');
     const dialog = await runFormat(page, 'big-output');
     await expect(dialog.getByRole('alert')).toContainText('went past a limit');
+  });
+});
+
+// Stage #2035 (AF4): Import from a format. Preview runs `parse` in the sandbox on the projection of the
+// project and shows what would be created and changed; Import applies that result in one undo entry.
+
+const DATA_MODEL = join(process.cwd(), 'examples', 'libraries', 'data-model');
+const NOTES_TEXT = 'Alpha\n  color=red\nBeta\n';
+
+async function openImportDialog(page: Page, format: string, extension: string) {
+  await page.getByRole('button', { name: /: project actions$/ }).click();
+  await page.getByRole('menuitem', { name: 'Import from a format…' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Import from a format' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel('Format').selectOption({ label: format });
+  await expect(dialog.locator('input[type=file]')).toHaveAttribute(
+    'accept',
+    `.${extension}`,
+  );
+  return dialog;
+}
+
+/** The counts the preview table shows: `{ Containers: ['1', '0'], … }` (created, changed). */
+async function previewCounts(dialog: Locator): Promise<Record<string, string[]>> {
+  const rows = dialog.getByRole('table').locator('tbody tr');
+  await expect(rows.first()).toBeVisible();
+  const counts: Record<string, string[]> = {};
+  for (const row of await rows.all()) {
+    const cells = await row.locator('th, td').allTextContents();
+    counts[cells[0] ?? ''] = cells.slice(1);
+  }
+  return counts;
+}
+
+async function previewFile(dialog: Locator, name: string, text: string) {
+  await dialog.locator('input[type=file]').setInputFiles({
+    name,
+    mimeType: 'text/plain',
+    buffer: Buffer.from(text),
+  });
+  await dialog.getByRole('button', { name: 'Preview', exact: true }).click();
+}
+
+/** Export → Download reads `mapping.json`; the export dialog closes itself, so the keyboard goes back to the app. */
+const countOf = async (page: Page) => {
+  const { mapping } = await exportMapping(page);
+  await expect(page.getByRole('dialog')).toBeHidden();
+  return {
+    containers: mapping.containers.length,
+    markings: mapping.markings.length,
+    annotations: mapping.annotations.length,
+  };
+};
+
+const undoKey = (page: Page) => page.keyboard.press('Control+z');
+const redoKey = (page: Page) => page.keyboard.press('Control+Shift+z');
+
+for (const [where, url] of [
+  ['http', '/'],
+  ['file://', FILE_URL],
+] as const) {
+  test.describe(`Import from a format (${where})`, () => {
+    test.use({ actionTimeout: 10_000 });
+
+    test('notes: preview counts, Import, Ctrl+Z, Ctrl+Y, and re-importing creates nothing new', async ({
+      page,
+    }) => {
+      test.setTimeout(60_000);
+      const violations = await openProject(page, url);
+      const before = await countOf(page);
+      const dialog = await openImportDialog(page, 'Format library › Notes (.txt)', 'txt');
+      await expect(
+        dialog.getByRole('button', { name: 'Import', exact: true }),
+      ).toBeDisabled();
+      await previewFile(dialog, 'notes.txt', NOTES_TEXT);
+      expect(await previewCounts(dialog)).toEqual({
+        Containers: ['1', '0'],
+        Markings: ['2', '0'],
+        Annotations: ['2', '0'],
+        Arrows: ['0', '0'],
+      });
+      await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+      await expect(dialog).toBeHidden();
+      const imported = await countOf(page);
+      expect(imported).toEqual({
+        containers: before.containers + 1,
+        markings: before.markings + 2,
+        annotations: before.annotations + 2,
+      });
+
+      // One Ctrl+Z restores the project before the import; Ctrl+Y brings it back.
+      await undoKey(page);
+      expect(await countOf(page)).toEqual(before);
+      await redoKey(page);
+      expect(await countOf(page)).toEqual(imported);
+
+      // The same file again creates nothing new: it only changes (the annotations it finds by title).
+      const again = await openImportDialog(page, 'Format library › Notes (.txt)', 'txt');
+      await previewFile(again, 'notes.txt', NOTES_TEXT);
+      expect(await previewCounts(again)).toEqual({
+        Containers: ['0', '0'],
+        Markings: ['0', '0'],
+        Annotations: ['0', '2'],
+        Arrows: ['0', '0'],
+      });
+      expect(violations()).toEqual([]);
+    });
+
+    test('a file with another extension is refused, with no run', async ({ page }) => {
+      await openProject(page, url);
+      const dialog = await openImportDialog(page, 'Format library › Notes (.txt)', 'txt');
+      await previewFile(dialog, 'notes.json', '{}');
+      await expect(dialog.getByRole('alert')).toContainText('Choose a .txt file');
+      await expect(
+        dialog.getByRole('button', { name: 'Import', exact: true }),
+      ).toBeDisabled();
+    });
+  });
+}
+
+test.describe('Import from a format: a library from a zip', () => {
+  test.use({ actionTimeout: 10_000 });
+
+  test('data-model: the OpenAPI example imports, undoes and redoes in one step each', async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    const violations = await watchViolations(page);
+    await createProject(page, PROJECT, '/');
+    const zip = new JSZip();
+    const add = (dir: string) => {
+      for (const entry of readdirSync(join(DATA_MODEL, dir), { withFileTypes: true })) {
+        const path = dir === '' ? entry.name : `${dir}/${entry.name}`;
+        if (entry.isDirectory()) add(path);
+        else zip.file(path, readFileSync(join(DATA_MODEL, path)));
+      }
+    };
+    add('');
+    await applyPackage(
+      page,
+      await zip.generateAsync({ type: 'nodebuffer' }),
+      'data-model.zip',
+    );
+    await page.evaluate(SAVE_PICKER_OFF);
+    const before = await countOf(page);
+    const dialog = await openImportDialog(page, 'Data model › OpenAPI (.yaml)', 'yaml');
+    await previewFile(
+      dialog,
+      'shop.openapi.yaml',
+      readFileSync(join(DATA_MODEL, 'examples', 'shop.openapi.yaml'), 'utf8'),
+    );
+    const counts = await previewCounts(dialog);
+    expect(counts).toEqual({
+      Containers: ['1', '0'],
+      Markings: ['6', '0'],
+      Annotations: ['6', '0'],
+      Arrows: ['0', '0'],
+    });
+    expect(Number(counts['Annotations']?.[0])).toBeGreaterThan(0);
+    await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+    await expect(dialog).toBeHidden();
+    const imported = await countOf(page);
+    expect(imported.containers).toBe(
+      before.containers + Number(counts['Containers']?.[0]),
+    );
+    expect(imported.annotations).toBe(
+      before.annotations + Number(counts['Annotations']?.[0]),
+    );
+    await undoKey(page);
+    expect(await countOf(page)).toEqual(before);
+    await redoKey(page);
+    expect(await countOf(page)).toEqual(imported);
+    expect(violations()).toEqual([]);
   });
 });
