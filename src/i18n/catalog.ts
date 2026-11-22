@@ -114,6 +114,8 @@ export const catalogEnUS = {
   'catalog.drawWarning.image-without-pixels':
     'Image without pixels drawn as a placeholder.',
   'catalog.drawWarning.image-decode-failed': 'An embedded image could not be decoded.',
+  'catalog.drawWarning.package-image-refused':
+    'A package image is over the limits (1 MB, 2048 px per side) or is not in the format of its extension: drawn as a placeholder.',
   'catalog.drawWarning.stroke-extra-paints': 'Only the first stroke paint was used.',
   'catalog.drawWarning.stroke-align-centered':
     'Inside/outside stroke on a path or line was centered.',
@@ -242,6 +244,8 @@ export const catalogPtBR: Record<keyof typeof catalogEnUS, string> = {
     'Imagem sem pixels desenhada como reservado.',
   'catalog.drawWarning.image-decode-failed':
     'Uma imagem embutida não pôde ser decodificada.',
+  'catalog.drawWarning.package-image-refused':
+    'Uma imagem do pacote passa dos limites (1 MB, 2048 px por lado) ou não está no formato da sua extensão: desenhada como reservado.',
   'catalog.drawWarning.stroke-extra-paints':
     'Só o primeiro preenchimento do traço foi usado.',
   'catalog.drawWarning.stroke-align-centered':

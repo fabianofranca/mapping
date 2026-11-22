@@ -204,7 +204,7 @@ If the file remains invalid, the app and MCP treat it as unreadable: they do not
 
 - **Exported zip:** carries `comments/` and `comments/resolved/`. On import **only those two paths** come in, with a valid id (the file name, without the extension, follows the `id` rule; no `..`). The text of an invalid file comes back identical on exporting again, like the proposal's: nothing is lost for not being understood.
 - **Local project** (IndexedDB): the keys are the same paths. Writing marks the project as "not exported". In the local project the conversation works between people, without an agent, and is not watched (there is no `stat` to compare).
-- **Read-only:** in a project opened only for reading (`readOnly`), the conversations are also read-only. The person reads, but does not write, resolve or delete. During the review of a proposal, the conversations are also read-only (the review shows the proposed project, and an anchor that exists only in the preview would become orphan).
+- **Read-only:** in a project opened only for reading (`readOnly`), the conversations are also read-only. The person reads, but does not write, resolve or delete. During the review of a proposal, an existing conversation stays writable: the person replies, resolves and reopens it (the file `comments/…` gains the change, `mapping.json` and the proposal do not). What waits for the end of the review is what could point to something that only exists in the preview: opening a new conversation (**New conversation**, **Comment**), deleting, and citing an item that exists only in the proposed project (an anchor there would become orphan).
 
 ## Validity rules
 

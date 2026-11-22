@@ -187,17 +187,6 @@
   font: var(--t-text-small);
 }
 
-.thread-standalone {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.thread-standalone-title {
-  margin: 0;
-  font: var(--t-text-heading);
-}
-
 /* Citations (Comments stage, CM5): the live chip in messages and the one in the composer editor */
 .citation-chip {
   display: inline;
@@ -281,6 +270,19 @@
   white-space: nowrap;
 }
 
+/* "In review" and "Revised · N to check" on the card of the proposal under review (stage #1881) */
+.proposal-card-review {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  color: var(--color-text-muted);
+}
+
+.proposal-card-review b {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
 /* "from thread <chip>" on the proposal row (Proposals window) */
 .proposal-row-thread {
   display: flex;
@@ -288,4 +290,26 @@
   gap: var(--space-1);
   min-width: 0;
   font: var(--t-text-small);
+}
+
+/* Conversation window (stage #1881, CV2): anchor line, thread and composer share the body. */
+.conversation-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.conversation-anchor {
+  margin: 0;
+  color: var(--color-text-muted);
+  font: var(--t-text-small);
+}
+
+.thread-section-empty {
+  margin: 0;
+}
+
+/* "The proposal is still open" notice at the top of Details (stage #1881, decision 20) */
+.review-return-notice {
+  margin: var(--space-2);
 }

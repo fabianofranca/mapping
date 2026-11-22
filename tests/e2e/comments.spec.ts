@@ -39,6 +39,10 @@ test('the pins are born hidden, Comment opens the draft and the click on the pin
   await drawMarking(page, center);
   await setMode(page, 'Navigate');
   const conversations = page.getByRole('button', { name: 'Conversations', exact: true });
+  const conversationWindow = page.getByRole('region', {
+    name: 'Conversation',
+    exact: true,
+  });
   await expect(conversations).toHaveAttribute('aria-pressed', 'false');
   expect(await pins(host)).toBe(0);
 
@@ -52,19 +56,22 @@ test('the pins are born hidden, Comment opens the draft and the click on the pin
   await composer.press('Control+Enter');
   await expect.poll(() => pins(host)).toBe(1);
 
-  // Turning Conversations off hides the pin (the conversation stays in Details).
+  // Turning Conversations off hides the pins, but the conversation in the Conversation window
+  // keeps its own pin (it does not follow the selection: stage #1881, decision 6).
   const elsewhere = await canvasPoint(page, 0.9);
   await page.mouse.click(elsewhere.x, elsewhere.y);
   await conversations.click();
   await expect(conversations).toHaveAttribute('aria-pressed', 'false');
-  await expect.poll(() => pins(host)).toBe(0);
-  // Turning it on again brings the pin back.
+  await expect(conversationWindow.getByText('What is the variant?')).toBeVisible();
+  await expect.poll(() => pins(host)).toBe(1);
+  // Turning it on again keeps the pin.
   await conversations.click();
+  await expect(conversations).toHaveAttribute('aria-pressed', 'true');
   await expect.poll(() => pins(host)).toBe(1);
 
-  // The click on the pin (top right corner of the marking, outside) opens the conversation in Details.
+  // The click on the pin (top right corner of the marking, outside) opens the conversation in the Conversation window.
   await page.mouse.click(center.x + 60 + 22, center.y - 40 - 10);
-  await expect(page.getByText('What is the variant?')).toBeVisible();
+  await expect(conversationWindow.getByText('What is the variant?')).toBeVisible();
   await expect(
     page.getByRole('textbox', { name: /Reply as Marina Alves/ }),
   ).toBeVisible();
@@ -355,6 +362,47 @@ test('the chip is live: renaming the target changes the name and deleting the ta
   await expect(broken).toHaveCount(1);
 });
 
+/**
+ * The center of the selection box in page pixels, read once the box has settled.
+ *
+ * `data-selection-box` is published by the frame that draws, and a layout change
+ * (a tool window closing) only reaches it a frame or two later: the
+ * `ResizeObserver` fires in the frame after the layout and the redraw that
+ * publishes the attribute comes in the next one. A single read can therefore
+ * return the old box and the click lands next to the marking. The poll reads the
+ * attribute, waits two animation frames and reads it again, and ends when both
+ * reads are equal and not `null`.
+ */
+async function settledSelectionBox(
+  page: Page,
+  host: Locator,
+): Promise<{ x: number; y: number }> {
+  let text = '';
+  await expect
+    .poll(async () => {
+      const [first, second] = await page.evaluate(async () => {
+        const el = document.querySelector('.canvas-host')!;
+        const read = (): string | null => el.getAttribute('data-selection-box');
+        const before = read();
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        );
+        return [before, read()];
+      });
+      text = second ?? '';
+      return first !== null && first === second;
+    })
+    .toBe(true);
+  const [left, top, width, height] = text.match(/-?\d+(\.\d+)?/g)!.map(Number) as [
+    number,
+    number,
+    number,
+    number,
+  ];
+  const hostBox = (await host.boundingBox())!;
+  return { x: hostBox.x + left + width / 2, y: hostBox.y + top + height / 2 };
+}
+
 test('with no identity, New conversation, Comment and the menu Comment lead to the notice with the focus', async ({
   page,
 }) => {
@@ -383,18 +431,17 @@ test('with no identity, New conversation, Comment and the menu Comment lead to t
   await page.getByRole('button', { name: 'New conversation' }).click();
   await expectNotice();
 
-  // (2) Details closed: the armed Comment, then the click on the selected marking.
-  await page.keyboard.press('Control+Shift+Digit3');
+  // (2) Conversation window closed: the armed Comment, then the click on the selected marking.
+  await page.getByRole('button', { name: 'Close the Conversation window' }).click();
   await expect(notice).toBeHidden();
-  const box = (await host.getAttribute('data-selection-box'))!
-    .match(/-?\d+(\.\d+)?/g)!
-    .map(Number) as [number, number, number, number];
-  const hostBox = (await host.boundingBox())!;
+  const center = await settledSelectionBox(page, host);
   await page.getByRole('button', { name: 'Comment', exact: true }).first().click();
-  await page.mouse.click(
-    hostBox.x + box[0] + box[2] / 2,
-    hostBox.y + box[1] + box[3] / 2,
-  );
+  await page.mouse.click(center.x, center.y);
+  await expect(
+    page
+      .getByRole('region', { name: 'Conversation', exact: true })
+      .getByText('on Register'),
+  ).toBeVisible();
   await expectNotice();
 
   // (3) The Comment of the ⋯ of the style field.

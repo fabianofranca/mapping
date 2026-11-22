@@ -3,6 +3,7 @@ import {
   EMPTY_CATALOG,
   componentPaths,
   loadSpecComponents,
+  hasLoadedPackage,
   rawMessage,
   packageDirOf,
   type ComponentCatalog,
@@ -73,11 +74,6 @@ export interface ComponentLibraryDeps {
 const keyOf = (s: { readonly id: string; readonly version: number }): string =>
   `${s.id}@${s.version}`;
 
-/** Specialization with a folder package and loaded content: the only one that has components. */
-function hasPackage(s: ProjectSpecialization): boolean {
-  return s.spec !== null && packageDirOf(s.file) !== null;
-}
-
 /** Font declared by the specialization (`spec.fonts`) as the font registry receives it (no bytes). */
 export function fontDeclaration(
   specFile: string,
@@ -107,7 +103,7 @@ function declaredFonts(p: Project | null): DeclaredFont[] {
   const out: DeclaredFont[] = [];
   if (!p) return out;
   for (const owner of p.specializations) {
-    if (!hasPackage(owner)) continue;
+    if (!hasLoadedPackage(owner)) continue;
     for (const font of owner.spec?.fonts ?? []) {
       out.push({ owner, font: fontDeclaration(owner.file, font) });
     }
@@ -204,7 +200,7 @@ export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLib
   async function readImage(specId: string, asset: string): Promise<ArrayBuffer | null> {
     const owner = deps.project.peek()?.specializations.find((s) => s.id === specId);
     const dir = owner === undefined ? null : packageDirOf(owner.file);
-    if (owner === undefined || dir === null || !hasPackage(owner)) return null;
+    if (owner === undefined || dir === null || !hasLoadedPackage(owner)) return null;
     return readBytes(owner, `${dir}/${asset}`);
   }
 
@@ -245,7 +241,7 @@ export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLib
     if (!p) return;
     const have = entries.peek();
     for (const owner of p.specializations) {
-      if (!hasPackage(owner)) continue;
+      if (!hasLoadedPackage(owner)) continue;
       const key = keyOf(owner);
       if ((have.has(key) && !stale.has(key)) || loading.has(key)) continue;
       loading.add(key);
@@ -319,7 +315,7 @@ export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLib
   const stopImages = effect(() => {
     const next = new Map<string, number>();
     for (const owner of deps.project.value?.specializations ?? []) {
-      if (hasPackage(owner)) next.set(owner.id, owner.version);
+      if (hasLoadedPackage(owner)) next.set(owner.id, owner.version);
     }
     for (const [id, version] of imageVersions) {
       if (next.get(id) !== version) images.drop(id);

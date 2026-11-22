@@ -565,6 +565,32 @@ describe.each(FORMS)('queue panel page: "Progress" card (PA1), %s', (_forma, wra
     expect(card('#2')?.querySelector('.mot')).toBeNull();
   });
 
+  it('a combined reason (`dep #A; arquivo x com #B`) shows next to "waits for" with both tags; a pure `dep` stays hidden', () => {
+    mount(
+      {
+        grafoNos: wrap([
+          graphNode({ issue: '#1', onda: 0 }),
+          graphNode({ issue: '#2', onda: 0 }),
+          graphNode({ issue: '#3', onda: 1, motivo: 'dep #1; arquivo x com #2' }),
+          graphNode({ issue: '#4', onda: 1, motivo: 'dep #1, #2' }),
+        ]),
+        grafoSetas: wrap([
+          { de: '#1', para: '#3', tipo: 'dep' },
+          { de: '#2', para: '#3', tipo: 'arquivo' },
+          { de: '#1', para: '#4', tipo: 'dep' },
+          { de: '#2', para: '#4', tipo: 'dep' },
+        ]),
+      },
+      [],
+    );
+    expect(waits('#3').map((w) => w.n)).toEqual(['#1', '#2']);
+    expect(card('#3')?.querySelector('.mot')?.textContent).toBe(
+      'dep #1; arquivo x com #2',
+    );
+    expect(waits('#4').map((w) => w.n)).toEqual(['#1', '#2']);
+    expect(card('#4')?.querySelector('.mot')).toBeNull();
+  });
+
   it('without an arrow (or in wave 0) the why is the reason of the node', () => {
     mount();
     expect(card('#1')?.querySelector('.mot')?.textContent).toBe('D2 implementando');

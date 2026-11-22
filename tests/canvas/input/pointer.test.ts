@@ -1,3 +1,4 @@
+import { composingAnchor } from '../../../src/store/threadUi';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createInteractionState } from '../../../src/canvas/frame';
 import {
@@ -467,14 +468,14 @@ describe('PointerInput: middle button and Ctrl+click (CR canvas/store, items 16 
     });
     s.ui.commentArm.value = { mode: 'navigate' };
     s.click(1050, 50);
-    expect(s.ui.composing.value?.anchor).toMatchObject({
+    expect(composingAnchor(s.ui)).toMatchObject({
       kind: 'point',
       containerId: null,
       pageId: 'PG2',
     });
     s.ui.commentArm.value = { mode: 'navigate' };
     s.click(250, 250);
-    expect(s.ui.composing.value).not.toBeNull();
+    expect(composingAnchor(s.ui)).not.toBeNull();
     s.cleanup();
   });
 
@@ -484,7 +485,7 @@ describe('PointerInput: middle button and Ctrl+click (CR canvas/store, items 16 
     s.fire('pointerdown', 250, 250, { button: 1 });
     s.fire('pointerup', 250, 250, { button: 1 });
     expect(s.ui.commentArm.value).toEqual({ mode: 'navigate' });
-    expect(s.ui.composing.value).toBeNull();
+    expect(composingAnchor(s.ui)).toBeNull();
     s.cleanup();
   });
 

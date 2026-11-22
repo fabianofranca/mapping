@@ -24,6 +24,8 @@ import { ToolError } from '../../mcp/errors';
 import { Roots } from '../../mcp/paths';
 import {
   listStored,
+  newProposalReserve,
+  newProposalReserveAt,
   reservedImages,
   reviseStored,
   updateStored,
@@ -164,41 +166,42 @@ describe('updateStored', () => {
   });
 });
 
+// Proposal with four image creations: accepted, pending, rejected and applied.
+function withImages(): Proposal {
+  const base = createProject({
+    name: 'P',
+    now: NOW,
+    firstLayer: { id: 'L1', name: 'Layer 1', color: '#D32F2F' },
+  });
+  let after = base;
+  for (const [id, file] of [
+    ['I1', 'images/accepted.webp'],
+    ['I2', 'images/pending.webp'],
+    ['I3', 'images/rejected.webp'],
+    ['I4', 'images/applied.webp'],
+  ] as const) {
+    after = addContainer(after, { id, file, width: 100, height: 100 });
+  }
+  const proposal = buildProposal(base, after, {
+    id: 'prop-img',
+    title: 'Images',
+    createdAt: NOW,
+  });
+  const changeOf = (id: string) => proposal.changes.find((c) => c.entityId === id)!.id;
+  return {
+    ...proposal,
+    decisions: {
+      [changeOf('I1')]: { state: 'accepted', at: NOW },
+      [changeOf('I3')]: { state: 'rejected', at: NOW },
+      [changeOf('I4')]: { state: 'accepted', at: NOW },
+    },
+    applied: { [changeOf('I4')]: { at: NOW } },
+  };
+}
+
 // Names in `images/` that a proposal still reserves (phase 8.5, M5): what can still be
 // applied. In a `superseded` one, only the accepted ones (PROPOSAL-FORMAT.md, "States").
 describe('reservedImages', () => {
-  function withImages(): Proposal {
-    const base = createProject({
-      name: 'P',
-      now: NOW,
-      firstLayer: { id: 'L1', name: 'Layer 1', color: '#D32F2F' },
-    });
-    let after = base;
-    for (const [id, file] of [
-      ['I1', 'images/accepted.webp'],
-      ['I2', 'images/pending.webp'],
-      ['I3', 'images/rejected.webp'],
-      ['I4', 'images/applied.webp'],
-    ] as const) {
-      after = addContainer(after, { id, file, width: 100, height: 100 });
-    }
-    const proposal = buildProposal(base, after, {
-      id: 'prop-img',
-      title: 'Images',
-      createdAt: NOW,
-    });
-    const changeOf = (id: string) => proposal.changes.find((c) => c.entityId === id)!.id;
-    return {
-      ...proposal,
-      decisions: {
-        [changeOf('I1')]: { state: 'accepted', at: NOW },
-        [changeOf('I3')]: { state: 'rejected', at: NOW },
-        [changeOf('I4')]: { state: 'accepted', at: NOW },
-      },
-      applied: { [changeOf('I4')]: { at: NOW } },
-    };
-  }
-
   it('open: pending and accepted not applied', () => {
     expect(reservedImages(withImages()).sort()).toEqual([
       'images/accepted.webp',
@@ -218,6 +221,95 @@ describe('reservedImages', () => {
     for (const status of ['applied', 'withdrawn', 'rejected'] as const) {
       expect(reservedImages({ ...withImages(), status })).toEqual([]);
     }
+  });
+});
+
+// The reserve of a new proposal (stage #2523): what `propose_changes`, `plan_changes` and the
+// batch-only preview keep free: the `images/` names and the canvas space of the proposals that
+// can still be applied.
+describe('newProposalReserve', () => {
+  const stored = (proposal: Proposal) => ({ id: proposal.id, proposal, text: '' });
+  const open = () => withImages();
+  const ACCEPTED = 'images/accepted.webp';
+  const PENDING = 'images/pending.webp';
+
+  it('an open proposal reserves its pending and accepted files and creations', () => {
+    const reserve = newProposalReserve([stored(open())], null);
+    expect([...reserve.reservedImages].sort()).toEqual([ACCEPTED, PENDING]);
+    expect(reserve.reservedContainers.map((c) => c.id).sort()).toEqual(['I1', 'I2']);
+  });
+
+  it('with its id as `supersededId`, only the accepted ones stay reserved', () => {
+    const reserve = newProposalReserve([stored(open())], 'prop-img');
+    expect([...reserve.reservedImages]).toEqual([ACCEPTED]);
+    expect(reserve.reservedContainers.map((c) => c.id)).toEqual(['I1']);
+  });
+
+  it('another id as `supersededId` changes nothing', () => {
+    const reserve = newProposalReserve([stored(open())], 'other');
+    expect([...reserve.reservedImages].sort()).toEqual([ACCEPTED, PENDING]);
+    expect(reserve.reservedContainers).toHaveLength(2);
+  });
+
+  it('a withdrawn or applied proposal reserves nothing, even when it is the superseded one', () => {
+    for (const status of ['withdrawn', 'applied'] as const) {
+      const done = stored({ ...open(), status });
+      for (const supersededId of [null, 'prop-img']) {
+        const reserve = newProposalReserve([done], supersededId);
+        expect(reserve.reservedImages.size).toBe(0);
+        expect(reserve.reservedContainers).toEqual([]);
+      }
+    }
+  });
+
+  it('a superseded proposal on disk keeps only its accepted ones', () => {
+    const reserve = newProposalReserve(
+      [stored({ ...open(), status: 'superseded' as const })],
+      null,
+    );
+    expect([...reserve.reservedImages]).toEqual([ACCEPTED]);
+    expect(reserve.reservedContainers.map((c) => c.id)).toEqual(['I1']);
+  });
+
+  it('gathers every proposal and no stored proposal gives an empty reserve', () => {
+    const other = withImages();
+    const second = {
+      ...other,
+      id: 'prop-2',
+      changes: other.changes.map((c) =>
+        c.entity === 'image' && c.kind === 'create'
+          ? {
+              ...c,
+              to: {
+                ...(c.to as object),
+                file: `${String((c.to as { file: string }).file)}`.replace(
+                  'images/',
+                  'images/b-',
+                ),
+              },
+            }
+          : c,
+      ),
+    };
+    const reserve = newProposalReserve([stored(open()), stored(second)], 'prop-img');
+    expect(reserve.reservedImages.has(ACCEPTED)).toBe(true);
+    expect(reserve.reservedImages.has(PENDING)).toBe(false);
+    expect(reserve.reservedImages.has('images/b-pending.webp')).toBe(true);
+    expect(newProposalReserve([], null)).toEqual({
+      reservedImages: new Set(),
+      reservedContainers: [],
+    });
+  });
+
+  it('newProposalReserveAt reads the stored proposals of the project (a broken one reserves nothing)', async () => {
+    const { roots, dir, location } = setup();
+    const proposal = open();
+    await writeNewProposal(roots, location, proposal, new Map());
+    mkdirSync(join(dir, 'proposals', 'broken'), { recursive: true });
+    writeFileSync(join(dir, 'proposals', 'broken', 'proposal.json'), '{ not json');
+    const reserve = await newProposalReserveAt(roots, location);
+    expect([...reserve.reservedImages].sort()).toEqual([ACCEPTED, PENDING]);
+    expect(reserve.reservedContainers.map((c) => c.id).sort()).toEqual(['I1', 'I2']);
   });
 });
 

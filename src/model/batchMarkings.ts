@@ -5,6 +5,7 @@ import { fitMarking, snapToAnchor } from './componentArrange';
 import {
   componentFileMinSize,
   componentMinSize,
+  componentTypeName,
   markingComponent,
   type ComponentCatalog,
 } from './componentCatalog';
@@ -942,7 +943,8 @@ export function createBatchMarking(
     annotationId: made.annotationId,
     marking: created,
     typeRef: target.typeRef,
-    componentName: target.component?.name ?? null,
+    componentName:
+      target.typeRef === null ? null : componentTypeName(p, target.typeRef),
   };
 }
 

@@ -10,14 +10,14 @@ import { describe, expect, it } from 'vitest';
  * raised the ceiling by 500 (to 200,500): the additions of R23.12 and R23.13 (dark theme) took
  * block 5 to 200.2 thousand, and the five blocks of that time were already stuck to the ceiling. Stage #824 (ID8, English
  * translation plus the new steps R8.6 and R11.15) left it as it was: the largest block, 3, measures 200,463. CL1 of #1134
- * (#2012) raised it by another 500 (to 201,000): the text fixes of R3.19, R11.4, R17.32, R17.59 and R29.10 took block 5 to 200.7 thousand. TX1 of #2081 raised it by 6,000 (to 207,000): the `texto` type of the notes library (R12.45 to R12.53) took block 3 from 199.5 to 207.0 thousand. TX2 raised it by another 6,000 (to 213,000): the update steps R12.54 to R12.56 took block 3 to 210.6 thousand.
+ * (#2012) raised it by another 500 (to 201,000): the text fixes of R3.19, R11.4, R17.32, R17.59 and R29.10 took block 5 to 200.7 thousand. TX1 of #2081 raised it by 6,000 (to 207,000): the `texto` type of the notes library (R12.45 to R12.53) took block 3 from 199.5 to 207.0 thousand. TX2 raised it by another 6,000 (to 213,000): the update steps R12.54 to R12.56 took block 3 to 210.6 thousand. Stage #2193 (BR1) rebalanced the blocks instead of raising the ceiling again: five scripts changed block and the largest block measures 207,328; the sync SM1 with #1881 (R43) moved R40 and R2 and left it at 211,398.
  */
 const MAX_BLOCK_GUIDE_CHARS = 213_000;
 
 /**
  * Stage #1533 (TE1, decisions 3 and 5): the limit above measures what the tester reads, the block's guide without the
  * on-demand sections (`mandatoryOnly`: the mandatory base plus the test scripts), and the base of each block
- * (without the test scripts, which come out through `passo`) has up to 45 thousand characters (the largest base, block 2, measures 43,773 after the translation).
+ * (without the test scripts, which come out through `passo`) has up to 45 thousand characters (the largest base, block 2, measures 43,076 after the rebalance of #2193).
  */
 const MAX_BLOCK_BASE_CHARS = 45_000;
 
@@ -26,7 +26,7 @@ const CLOUD = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
 
 const STEP_RE = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^|]*\|/;
 
-/** The steps of the main test scripts (R0 to R42), in the order of the guide, outside the on-demand test scripts. */
+/** The steps of the main test scripts (R0 to R43), in the order of the guide, outside the on-demand test scripts. */
 function guideSteps(): string[] {
   const lines = GUIDE.split('\n');
   const start = lines.findIndex((l) => /^## 8\. Test scripts/.test(l));
@@ -118,14 +118,14 @@ const blockOf = (step: string): number[] =>
   blocks.filter((b) => b.steps.includes(step)).map((b) => b.n);
 
 describe('split of the full round into blocks (stages #424, #841 and #2024)', () => {
-  it('the guide has the steps from R0 to R42 and the table has 6 blocks numbered 1 to 6', () => {
+  it('the guide has the steps from R0 to R43 and the table has 6 blocks numbered 1 to 6', () => {
     expect(steps.length).toBeGreaterThan(200);
     expect(steps.some((s) => s.startsWith('R17.'))).toBe(true);
     expect(steps.some((s) => s.startsWith('R26.'))).toBe(true);
     expect(blocks.map((b) => b.n)).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
-  it('every step from R0 to R42 is in exactly one block, and R0 in all of them', () => {
+  it('every step from R0 to R43 is in exactly one block, and R0 in all of them', () => {
     for (const s of steps) {
       const where = blockOf(s);
       if (scriptOf(s) === 'R0') expect(where, s).toEqual([1, 2, 3, 4, 5, 6]);
@@ -194,6 +194,24 @@ describe('split of the full round into blocks (stages #424, #841 and #2024)', ()
       expect(text, name).not.toMatch(/in block 1[^.\n]{0,40}visual pass/i);
       expect(text, name).not.toMatch(/(goes|does) only in block 1/);
     }
+  });
+
+  it('the "What to run" line names every block except the one with the visual pass (stage #2193)', () => {
+    const owner = blocks.find((b) => b.visual) as Block;
+    const m =
+      /in blocks ([\d, and]+), the report says "Visual pass: in block (\d+)"/.exec(CLOUD);
+    expect(m, 'the "Full round in blocks" line of "What to run"').not.toBeNull();
+    expect(Number((m as RegExpExecArray)[2])).toBe(owner.n);
+    const named = ((m as RegExpExecArray)[1] as string).match(/\d+/g)?.map(Number);
+    expect(named).toEqual(blocks.map((b) => b.n).filter((n) => n !== owner.n));
+  });
+
+  it('the block that docs/FLOW.md names in "only block N has R21" holds R21 (stage #2193)', () => {
+    const flow = readFileSync('docs/FLOW.md', 'utf8');
+    const m = /only block (\d+) has R21/.exec(flow);
+    expect(m, 'the "only block N has R21" sentence of docs/FLOW.md').not.toBeNull();
+    const block = blocks.find((b) => b.n === Number((m as RegExpExecArray)[1]));
+    expect(block?.scripts).toContain('R21');
   });
 
   it('the test scripts of each block are accepted by round-guide.mjs', async () => {

@@ -130,7 +130,7 @@ describe('canvas context menu', () => {
     expect(composingAnchor(h.ui)).toEqual({ kind: 'marking', id: 'M1' });
   });
 
-  it('Comment and Comment here open the Details when they were closed', async () => {
+  it('Comment and Comment here open the Conversation window, not Details', async () => {
     const h = await setup();
     const menus = [
       {
@@ -146,12 +146,14 @@ describe('canvas context menu', () => {
     ] as const;
     const names = [t('comments.here'), t('comments.comment')];
     for (const [i, menu] of menus.entries()) {
+      hideToolWindow('conversation');
       hideToolWindow('details');
-      expect(isToolWindowOpen('details')).toBe(false);
+      expect(isToolWindowOpen('conversation')).toBe(false);
       h.ui.canvasMenu.value = { x: 10, y: 10, ...menu };
       const view = mount(h, <CanvasContextMenu />);
       fireEvent.click(screen.getByRole('menuitem', { name: names[i]! }));
-      expect(isToolWindowOpen('details')).toBe(true);
+      expect(isToolWindowOpen('conversation')).toBe(true);
+      expect(isToolWindowOpen('details')).toBe(false);
       view.unmount();
     }
   });

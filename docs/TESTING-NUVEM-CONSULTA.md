@@ -4,7 +4,7 @@ Excerpts of the tester prompt ([`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md)) that
 
 ## Subagent per batch
 
-The tester's main session does not run steps: it hands each **batch** to a **subagent** (the `Agent` tool, the same model as the session, Sonnet) on the same machine, with the same Chrome, the same disk and the same `cloud.mjs run` server (with the `ctx`), and **one batch at a time, never two at once**, in the order of the round list (stage [#1639](https://github.com/fabianofranca/mapping/issues/1639)). The chains (`principal`, `loja`, `telas`) stay intact, because the folder and the `ctx` are the same.
+The tester's main session does not run steps: it hands each **batch** to a **subagent** (the `Agent` tool with `model: "sonnet"` and medium effort, whatever the session's model: the tester runs on Haiku medium, and this is the arrangement canary C measured) on the same machine, with the same Chrome, the same disk and the same `cloud.mjs run` server (with the `ctx`), and **one batch at a time, never two at once**, in the order of the round list (stage [#1639](https://github.com/fabianofranca/mapping/issues/1639)). The notice's `; subagentes <n> <modelo> <esforço>, …` reports what was really used. The chains (`principal`, `loja`, `telas`) stay intact, because the folder and the `ctx` are the same.
 
 **The batches.** **R0** (whole, or only R0.1 by the mode's rule) and **section 6** (test repository and MCP) are batches of their own; the **visual pass** is the `visual` batch; the scripts of the list come from `node scripts/testing/round-guide.mjs --faixas <list without R0>`, which prints one line per batch, in the order of the guide: a script of up to 20 steps is one batch (`R13`), and above that come consecutive ranges of up to 20 steps (`R25.1-R25.20`, `R25.21-R25.40`…); a requested range (`R6.3-R6.7`) is respected and is only split above 20; the step that `passo` joins to the previous one (R22.6a with R22.6) is not separated. Small scripts are not joined.
 
@@ -14,22 +14,22 @@ The tester's main session does not run steps: it hands each **batch** to a **sub
 You run batch <batch> of the Mapping app's test round, as a subagent of the tester's main session. There is no owner to ask: whatever blocks the batch goes into the report.
 
 Batch data
-- Batch: <R25.21-R25.40 | R13 | R0 | R0.1 | secao6 | visual>
+- Batch: <R25.21-R25.40 | R13 | R0 | R0.1 | secao6 | visual> (batch k of n, from `--faixas`)
 - Working folder: ~/mapping-testes/<YYYY-MM-DD>-<target>/ (`apoio/` is <folder>/apoio; captures go to <folder>/anexos/)
 - Script project folder: <folder>/<name> (the `run` one)
-- Mode: <modo dirigido | modo completo, bloco k de n | modo dirigido, grupo k de n | retest>
+- Mode: <modo dirigido | modo completo, bloco k de n | modo dirigido, grupo k de n | retest>, copied verbatim from the message: the same line in every batch, never derived from the batch number
 - Next free finding number: <k.n | n>
 
 What to read, in this order
 1. `docs/TESTING-NUVEM.md` whole and `apoio/guia-base.md` whole (in pieces below 25 thousand tokens).
-2. `node scripts/testing/cloud.mjs passo <Rn> --preparo` (every script batch, the first range included) and then the batch's steps in groups of up to 8, with `cloud.mjs passo <Rn.a>-<Rn.b>`; the expected result comes from the printed excerpt, not from memory.
+2. `node scripts/testing/cloud.mjs passo <Rn> --preparo` (every script batch, the first range included) and then the batch's steps in groups of up to 8, with `cloud.mjs passo <Rn.a>-<Rn.b>`; a range brings the labeled Setup blocks of its steps (the batch or calls the step cites as "above"), and `--preparo` is still needed for the rest of the Setup (functions, variables); the expected result comes from the printed excerpt, not from memory.
 3. The on-demand sections with `cloud.mjs secao <key>`, at the moment their line in the base says.
 
 How to act
-The rules of "How to act", "Check and record" and "Never" of `docs/TESTING-NUVEM.md` apply to you as they do to the main session: one `run` per group of up to 8 steps, one `check` per expected result on Screen, the `state()` at the end for the Disk, the Reproduction of each ❌ run twice.
+The rules of "How to act", "Check and record" and "Never" of `docs/TESTING-NUVEM.md` apply to you as they do to the main session: one `run` per group of up to 8 steps, one `await check(...)` per expected result on Screen, always with `await`, the `state()` at the end for the Disk, the Reproduction of each ❌ run twice.
 
 What to write
-- In `apoio/relato-<batch>.md`, in the template of section 10 of the guide: the batch's rows of the steps table (consecutive ✅ without a note as a one-line range; ❌, "not executed (reason)" and steps with a note on their own line) and the findings, **already with the final code** (<k.n | n>, in order from the free number), the severity of the guide's scale and the Reproduction of each ❌.
+- In `apoio/relato-<batch>.md`, in the template of section 10 of the guide: the batch's rows of the steps table (consecutive ✅ without a note as a one-line range; ❌, "not executed (reason)" and steps with a note on their own line) and the findings, **already with the final code** (<k.n | n>, in order from the free number), the severity of the guide's scale, the cause (`produto` or `roteiro`) next to the severity, and the Reproduction of each ❌.
 - The captures and attachments in `anexos/`.
 - At the end of the file, a line "Calls: passo <n>, secao <n>; guia.md read through Read: yes|no", plus what got in the way (ambiguous step, workaround, own `.mjs`).
 
@@ -37,10 +37,10 @@ What not to do
 Do not post anything on GitHub, do not notify anyone, do not use `mark` (the script's `start` and `end` belong to the main session), do not edit `relato.md` nor anything in the repository.
 
 What to return (one line only)
-<batch>: N ✅, N ❌, N not executed; findings: <code severity short title…> or none; <full path of the file>
+<batch>: N ✅, N ❌, N not executed; findings: <code severity cause short title…> or none (e.g. `findings: 3.2 low roteiro R17.48 issues.new not empty`); <full path of the file>
 ```
 
-**Assembly.** The main session appends each `apoio/relato-<batch>.md` to `relato.md` with `cat >>`, **without opening the file**: the totals and the findings come from the return line, and the codes already arrive right. `mark(apoioDir, '<script>', 'start' | 'end')` is the main session's: before the script's first batch and after the last. For the ❌ attachments (the evidence on the `evidencias` branch and the `mapping.json` in a code block), it reads only the finding, through the excerpt of the file that `relato-<batch>.md` points to.
+**Assembly.** The main session appends each `apoio/relato-<batch>.md` to `relato.md` with `cat >>`, **without opening the file**: the totals and the findings come from the return line, and the codes already arrive right; the main session counts `roteiro` apart without opening the file, from the cause in each finding. `mark(apoioDir, '<script>', 'start' | 'end')` is the main session's: before the script's first batch and after the last. For the ❌ attachments (the evidence on the `evidencias` branch and the `mapping.json` in a code block), it reads only the finding, through the excerpt of the file that `relato-<batch>.md` points to.
 
 **The subagent that fails.** A subagent that returns without finishing the batch (error, tool, limit) is replaced **once** by a new one, with the same briefing and the request to start at the step after the last one saved in `relato-<batch>.md`. If the second one also fails, the rest of the batch stays "not executed (subagent failed: <reason>)", and the fact goes to "What got in the way".
 
@@ -64,7 +64,7 @@ The other scripts use folders of their own and can go to any group. `tests/tooli
 
 1. Generate the round guide only with the group's scripts: `node scripts/testing/round-guide.mjs <scripts of the group> --out …/apoio/guia.md`; read `guia-base.md` whole and ask for the scripts through `passo` and the on-demand sections through `secao` (item 3). The environment, the working folders, the Chrome profile and MCP are yours and nobody else's: groups share no folder, profile nor port (like the blocks).
 2. **R0:** **group 1** runs the **whole R0** first; groups 2 onward run only **R0.1** (build id of the commit) and, from the rest of R0, the steps that the group's scripts depend on (the retest rule), never the whole R0. Then, the group's scripts, in the order of the guide.
-3. Report in the template of section 10: `Modo: dirigido, grupo k de n (<scripts>)`; the first line of the comment is "Directed round — group k of n"; the findings are numbered `k.1`, `k.2`… (the code carries the group, so the retest finds where it came from).
+3. Report in the template of section 10: `Modo: dirigido, grupo k de n (<scripts>)`; the first line of the comment is "Directed round — group k of n"; the findings are numbered `k.1`, `k.2`… (the code carries the group, so the retest finds where it came from). In this mode the `k` of `grupo k de n` comes only from the message; the `batch k of n` of `--faixas` numbers the batches inside the session and never changes it.
 4. The notice to the coordinator (item 5 of "Delivery") cites the group: `Grupo k de n: relato em` <link>: …
 
 "Group" does not collide with the "Part i of n" of comments above 65 thousand characters: a long report becomes "Directed round — group k of n · Part i of n".
@@ -75,7 +75,7 @@ The other scripts use folders of their own and can go to any group. `tests/tooli
 
 Visual pass detail: the rule of who does it in each mode is in "What to run", in the prompt.
 
-**Default list:** the eight windows (**Marking tree**, **Layers**, **Details**, **List**, **Incomplete**, **Diagnostics**, **Proposals** and **Comments**) and the dialogs **Settings**, **Export project**, **Specializations**, **Folder unavailable** and **Exit the review?**. It also includes the breadcrumbs bar with **Fit selection**, enabled (with a marking selected) and disabled (without a selection), with the **Shift+2** tooltip, at 1280×720 and at 900×720.
+**Default list:** the nine windows (**Marking tree**, **Layers**, **Details**, **Conversation**, **List**, **Incomplete**, **Diagnostics**, **Proposals** and **Comments**; **Conversation** stacked under Details, outside and inside the review, at 1280×720 and at 900×720, and the notice at the top of Details after leaving the review, with Details scrolled down during the review: the notice must be in view) and the dialogs **Settings**, **Export project**, **Specializations**, **Folder unavailable** and **Exit the review?**. It also includes the breadcrumbs bar with **Fit selection**, enabled (with a marking selected) and disabled (without a selection), with the **Shift+2** tooltip, at 1280×720 and at 900×720.
 
 **Perspectives:** R23.12 and R23.13 bring their own pass (picker open, **New perspective…**, **Manage perspectives…**, the delete confirmation, the **Send to perspective** menu and the Main one with the arrival area), at 1280×720 and at 900×720. They are part of R23, come into any round that runs it (block 5 in the round in blocks) and do not change the default list above.
 
@@ -97,9 +97,17 @@ Why: the limit is the **size of each block's generated guide**: up to 200 thousa
 
 **Stage #1081 (A4, 2026-11-15):** R2 (4,098 characters, independent of the other scripts) moved from block 3 to block 2: with R29.10 and R29.11 (the Material 3 steps of the Accessibility script) block 3 would have gone to 202,323, above the ceiling. After the move the guides measure 198,237 (block 1), 199,997 (2), 198,225 (3), 198,630 (4) and 199,864 (5) against the 200,500 ceiling, which does not change; the steps are 160, 143, 147, 169 and 140.
 
-**Sixth block (stage #2024, from #883, PG6):** R30 (Pages, with its own visual pass) did not fit any of the 5 blocks (guides of 198,917, 200,056, 198,921, 198,864 and 200,957 against the ceiling of 201,000, measured on 2026-11-17; R0 + R30 is 64,930, R0 alone 39,859, so R30 adds about 25,000; block 5 with R30 would be 226,028). It became the **sixth fixed block** of the table (`R0, section 6 and R30`, the ceiling unchanged, the five other rows unchanged): `node scripts/testing/round-guide.mjs R0 R30 --out …/apoio/guia.md`, report "Full round — block 6 of 6", findings `6.1`, `6.2`…. **Rule for new scripts:** a new script goes into the block with the most room under the ceiling (today block 6); if none has room, it is an owner decision.
+**Sixth block (stage #2024, from #883, PG6):** R30 (Pages, with its own visual pass) did not fit any of the 5 blocks (guides of 198,917, 200,056, 198,921, 198,864 and 200,957 against the ceiling of 201,000, measured on 2026-11-17; R0 + R30 is 64,930, R0 alone 39,859, so R30 adds about 25,000; block 5 with R30 would be 226,028). It became the **sixth fixed block** of the table (`R0, section 6 and R30`, the ceiling unchanged, the five other rows unchanged): `node scripts/testing/round-guide.mjs R0 R30 --out …/apoio/guia.md`, report "Full round — block 6 of 6", findings `6.1`, `6.2`…. **Rule for new scripts:** a new script goes into the block with the most room under the ceiling (today block 1, 9,531 of margin after #2193); if none has room, it is an owner decision.
 
 **HC5 of #2164 (2026-11-20):** the six `copy-field` steps of R19 (R19.30 to R19.35) took block 3 to 214,087 characters, above the ceiling of 213,000 (it does not change). R27 (11 steps, self-contained: its own `m3-rtl` library) moved from block 3 to block 6 (`R0, section 6, R27, R29, R30, R38, R39 and R40`), which has the most room; the Steps column is 148, 147 and 86 for blocks 2, 3 and 6.
+
+**Rebalance (stage #2193, BR1, 2026-11-22):** the blocks sat at the ceiling (guides of 203,469, 209,579, 198,525, 209,789, 209,039 and 205,063 against 213,000, margins of 9,531, 3,421, 14,475, 3,211, 3,961 and 7,937; the smallest was block 4). Five independent scripts changed block: R2 from block 2 to 3, R18 from 3 to 4, R28 from 4 to 3, R11 from 5 to 6 and R29 from 6 to 5. The guides become 203,469, 205,481, 206,688, 205,724, 207,328 and 206,774 (margins of 9,531, 7,519, 6,312, 7,276, 5,672 and 6,226; the smallest goes from 3,211 to 5,672), the Steps column 163, 141, 159, 172, 146 and 151, and the largest base is block 2's, 42,772. Why: option C, rebalancing instead of raising the ceiling (213,000 unchanged); the chains, the visual pass (block 4) and R21 (block 5) stay where they are, and block 1 receives nothing.
+
+**CV4 of #1881 (2026-11-22):** the new script R43 (Conversation during review, 10 steps; R41 was already Container classes and R42 is on `main`, so the next free number was R43) went into block 6, the one with the most room (199,441 characters of the guide against the ceiling of 213,000, `mandatoryOnly`); block 6 went from 135 to 145 steps. The R22 rewrite took block 4 from 209,789 to 210,758, still under the ceiling, so R22 stayed in block 4 (no move).
+
+**Sync SM1 of #2193 with #1881 (2026-11-22):** R43 (11,826 characters) did not fit any block of the rebalance, whose margins were 5,672 to 9,531 (the same guides measured after `main` took R22 and R43: 204,515, 205,481, 206,688, 206,858, 207,328 and 206,774). Three scripts changed block from the table of BR1: R43 went into block 6, R40 from block 6 to 3 and R2 went back from block 3 to 2 (the chains of section 8 stay in block 1 and block 4). The guides become 204,515, 209,579, 211,398, 206,858, 207,328 and 209,792 (margins of 8,485, 3,421, 1,602, 6,142, 5,672 and 3,208; the ceiling of 213,000 is unchanged), the Steps column 163, 148, 158, 172, 146 and 155.
+
+**Sync SM2 of #2193 with `main` (2026-11-22):** after `main` took the guide changes of #2617 and the other epics, block 3 measured 214,021 characters, over the ceiling of 213,000 (the others: 204,668, 209,732, 207,011, 208,125 and 209,945). R28 went from block 3 to 1 and R15 from block 1 to 3 (neither is in a chain of section 8). The guides become 210,611, 209,732, 208,078, 207,011, 208,125 and 209,945 (the smallest margin is 3,055, block 6; the ceiling is unchanged), the Steps column 169, 148, 153, 172, 146 and 155.
 
 **Baseline of the lean flow (stage #1533, commit `7a11ccb`, reports at [#1543](https://github.com/fabianofranca/mapping/issues/1543); cost and context measurement of stage #1712, read from `get_session` on 2026-11-13):** the final context is the `context_usage.used_tokens` and the cost is the `cost_usd` of each "Testador — testador-enxuto, bloco k de 5" session; the retests are "Reteste — testador-enxuto (CL1, #1603)" and "(CL2, #1606)". Block 4's context, which the session itself did not measure (`used_tokens` 0), is the one read from `get_session` afterwards.
 

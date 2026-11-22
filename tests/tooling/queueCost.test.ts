@@ -156,7 +156,7 @@ describe('painel.py cost (FM3, decision 5)', () => {
       dir,
       'sess_b',
       'usd=1',
-      'ctx=1000',
+      'ctx=150000',
       'model=claude-sonnet-5-5',
       'effort=medium',
       'served=claude-opus-5-5',
@@ -170,16 +170,16 @@ describe('painel.py cost (FM3, decision 5)', () => {
   });
 
   it('kind is required when the id is new', () => {
-    const r = tryRun('cost', dir, 'sess_c', 'usd=1', 'ctx=10');
+    const r = tryRun('cost', dir, 'sess_c', 'usd=1', 'ctx=100000');
     expect(r.code).toBe(2);
     expect(r.err).toMatch(/kind/);
     expect(sessions()).toHaveLength(0);
   });
 
   it.each([
-    ['usd', ['usd=expensive', 'ctx=10']],
+    ['usd', ['usd=expensive', 'ctx=100000']],
     ['ctx', ['usd=1', 'ctx=lots']],
-    ['usd missing', ['ctx=10']],
+    ['usd missing', ['ctx=100000']],
   ])('%s non-numeric or missing exits with code 2 and writes nothing', (_n, args) => {
     const r = tryRun('cost', dir, 'sess_d', ...args, 'kind=fase');
     expect(r.code).toBe(2);
@@ -189,7 +189,7 @@ describe('painel.py cost (FM3, decision 5)', () => {
   it('goes in an apply, and costs does not', () => {
     const ok = spawnSync('python3', [SCRIPT, 'apply', dir, '-'], {
       encoding: 'utf8',
-      input: 'cost sess_e usd=1 ctx=5 kind=coordenador\n',
+      input: 'cost sess_e usd=1 ctx=50000 kind=coordenador\n',
     });
     expect(ok.status).toBe(0);
     const bad = spawnSync('python3', [SCRIPT, 'apply', dir, '-'], {
@@ -216,16 +216,16 @@ describe('review findings (FM3)', () => {
       dir,
       'sess_m',
       'usd=1',
-      'ctx=10',
+      'ctx=100000',
       'model=claude-sonnet-5-5',
       'effort=high',
       'served=claude-opus-5-5',
       'kind=coordenador',
     );
-    runAt('2026-11-11T13:00:00Z', 'cost', dir, 'sess_m', 'usd=2', 'ctx=20');
+    runAt('2026-11-11T13:00:00Z', 'cost', dir, 'sess_m', 'usd=2', 'ctx=200000');
     expect(sessions()[0]!.cost).toEqual({
       usd: 2,
-      ctx: 20,
+      ctx: 200000,
       model: 'claude-sonnet-5-5',
       effort: 'high',
       served: 'claude-opus-5-5',
@@ -243,7 +243,7 @@ describe('review findings (FM3)', () => {
     run('session', dir, '#10', 'sess_p', 'kind=fase');
     const file = path.join(dir, 'meta.json');
     const m = json('meta');
-    (m[0]!.sessions as Entry[])[0]!.cost = { ctx: 1 };
+    (m[0]!.sessions as Entry[])[0]!.cost = { ctx: 100000 };
     writeFileSync(file, JSON.stringify(m));
     expect(run('show', dir)).toMatch(/^custo: US\$ 0\.00 em 1 sessões$/m);
     expect(run('costs', dir)).toMatch(/^custo total: US\$ 0\.00 em 1 sessões$/m);
@@ -256,10 +256,10 @@ describe('review findings (FM3)', () => {
     ] as const) {
       runAt('2026-11-11T10:00:00Z', 'row', dir, issue, 'title=X');
       runAt('2026-11-11T11:00:00Z', 'session', dir, issue, id, 'kind=testador');
-      runAt('2026-11-11T11:00:00Z', 'cost', dir, id, 'usd=1', 'ctx=1');
+      runAt('2026-11-11T11:00:00Z', 'cost', dir, id, 'usd=1', 'ctx=100000');
     }
     runAt('2026-11-11T11:00:00Z', 'session', dir, '#10', 'c', 'kind=fase');
-    runAt('2026-11-11T11:00:00Z', 'cost', dir, 'c', 'usd=1', 'ctx=1');
+    runAt('2026-11-11T11:00:00Z', 'cost', dir, 'c', 'usd=1', 'ctx=100000');
     const out = run('costs', dir);
     expect(out.indexOf('#10:')).toBeLessThan(out.indexOf('#999:'));
     expect(out.indexOf('#999:')).toBeLessThan(out.indexOf('#1000:'));
@@ -303,7 +303,7 @@ function seed(): void {
   runAt(t, 'session', dir, '#10', 'f2', 'kind=fase', 'label=FM2');
   runAt(t, 'session', dir, '#20', 't1', 'kind=testador');
   const c = (id: string, usd: string) =>
-    runAt('2026-11-11T12:00:00Z', 'cost', dir, id, `usd=${usd}`, 'ctx=1000');
+    runAt('2026-11-11T12:00:00Z', 'cost', dir, id, `usd=${usd}`, 'ctx=150000');
   c('f1', '2');
   c('f2', '4');
   c('t1', '5');
@@ -329,12 +329,12 @@ describe('painel.py costs and the custo: line of show (FM3, decisions 5 and 26)'
       dir,
       'old',
       'usd=50',
-      'ctx=1',
+      'ctx=100000',
       'kind=fase',
       'issue=#10',
     );
     runAt('2026-11-11T14:00:00Z', 'session', dir, '#20', 'f3', 'kind=fase');
-    runAt('2026-11-11T14:30:00Z', 'cost', dir, 'f3', 'usd=1', 'ctx=1');
+    runAt('2026-11-11T14:30:00Z', 'cost', dir, 'f3', 'usd=1', 'ctx=100000');
     const all = run('costs', dir);
     expect(all).toMatch(/US\$ 62\.00 em 5 sessões/);
     const since = run('costs', '--desde', '2026-11-11T11:00:00Z', dir);
@@ -474,7 +474,7 @@ describe('docs: the effort of create_session (FM3, decision 6)', () => {
 
 describe('painel.py cost and upgrade (findings of the closing review)', () => {
   it('the cost of a new session (without created) enters costs --desde by the cost time', () => {
-    runAt('2026-11-11T10:00:00Z', 'cost', dir, 's1', 'usd=1', 'ctx=10', 'kind=fase');
+    runAt('2026-11-11T10:00:00Z', 'cost', dir, 's1', 'usd=1', 'ctx=100000', 'kind=fase');
     const out = run('costs', dir, '--desde', '2026-11-11T00:00:00Z');
     expect(out).toMatch(/1[,.]00/);
   });
@@ -486,7 +486,7 @@ describe('painel.py cost and upgrade (findings of the closing review)', () => {
       dir,
       's1',
       'usd=1',
-      'ctx=10',
+      'ctx=100000',
       'kind=fase',
       'issue= #10 ',
     );

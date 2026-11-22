@@ -37,6 +37,7 @@
     "Raised to 2,392,064 (2,336 KiB) by the budget rule (2026-11-21, epic `container-context`): excess of 5536 bytes, growth of 20713 bytes over `main`. Above the limits: raises since the owner review above 64 KiB.",
     "Raised to 2,408,448 (2,352 KiB) by the budget rule (2026-11-21, epic `container-context`): excess of 5866 bytes, growth of 37427 bytes over `main`. Above the limits: growth above 32 KiB over `main`; raises since the owner review above 64 KiB.",
     "Raised to 2,441,216 (2,384 KiB) by the budget rule (2026-11-22, epic `drawing-extras`): excess of 19188 bytes, growth of 22542 bytes over `main`. Above the limits: excess above 14 KiB; raises since the owner review above 64 KiB.",
+    "Raised to 2,424,832 (2,368 KiB) by the budget rule (2026-11-22, epic `conversation-during-review`): excess of 606 bytes, growth of -18622 bytes over `main`. Above the limits: raises since the owner review above 64 KiB.",
     "Raised to 2,457,600 (2,400 KiB) by the budget rule (2026-11-22, epic `format-plugins-app`): excess of 8845 bytes, growth of 16511 bytes over `main`.",
     "Raised to 2,523,136 (2,464 KiB) by the budget rule (2026-11-22, epic `format-plugins-app`): excess of 47221 bytes, growth of 70649 bytes over `main`. Above the limits: excess above 14 KiB; growth above 32 KiB over `main`; raises since the owner review above 64 KiB."
   ]
