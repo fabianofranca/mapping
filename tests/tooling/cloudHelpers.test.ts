@@ -564,6 +564,7 @@ describe('scripts/testing/ listed in the repository', () => {
         'slots.mjs',
         'sombras.mjs',
         'tokens.mjs',
+        'variable-font.mjs',
       ].sort(),
     );
   });
