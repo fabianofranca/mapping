@@ -41,9 +41,15 @@ beforeAll(async () => {
   base = mkdtempSync(join(tmpdir(), 'mapping-package-resolver-'));
   const dir = join(base, 'telas');
   mkdirSync(join(dir, 'specs', 'images'), { recursive: true });
+  mkdirSync(join(dir, 'specs', 'unloaded', 'images'), { recursive: true });
   cpSync(EXAMPLE, join(dir, 'specs', 'drawing-extras'), { recursive: true });
   // The image a non-package specialization would cite: `specs/plain.json` + `images/logo.png`.
   cpSync(join(EXAMPLE, 'images', 'logo.png'), join(dir, 'specs', 'images', 'logo.png'));
+  // The same for a package folder whose spec did not load: only `spec: null` can refuse it.
+  cpSync(
+    join(EXAMPLE, 'images', 'logo.png'),
+    join(dir, 'specs', 'unloaded', 'images', 'logo.png'),
+  );
   const parsed = parseSpecText(
     readFileSync(join(EXAMPLE, 'drawing-extras.spec.json'), 'utf8'),
   );
