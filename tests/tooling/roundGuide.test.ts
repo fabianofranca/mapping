@@ -1071,3 +1071,33 @@ describe('round-guide.mjs: the setup of a test script (#1639, TC1, decision 4)',
     expect(e?.quando).toBe('before the first batch (R0)');
   });
 });
+
+// Stage #2450 (TC1, decision 4): group and batch numbers no longer mix.
+describe('TESTING-NUVEM-CONSULTA.md: group and batch numbers (#2450, TC1)', () => {
+  const CONSULTA = readFileSync('docs/TESTING-NUVEM-CONSULTA.md', 'utf8');
+  const batchData = CONSULTA.slice(
+    CONSULTA.indexOf('Batch data'),
+    CONSULTA.indexOf('What to read, in this order'),
+  );
+  const groups = CONSULTA.slice(
+    CONSULTA.indexOf('## Directed round in groups'),
+    CONSULTA.indexOf('## Visual pass'),
+  );
+
+  it("the briefing's `Mode:` line is copied verbatim from the message, the same in every batch", () => {
+    expect(batchData).toContain('copied verbatim from the message');
+    expect(batchData).toContain('the same line in every batch');
+    expect(batchData).toContain('never derived from the batch number');
+  });
+
+  it('the `Batch:` line carries the token and the `batch k of n` of `--faixas`', () => {
+    expect(batchData).toMatch(/- Batch: <[^>]*>.*\(batch k of n/);
+  });
+
+  it('item 3 of the group mode: the `k` of the group comes only from the message', () => {
+    expect(groups).toContain('the `k` of `grupo k de n` comes only from the message');
+    expect(groups).toContain(
+      'the `batch k of n` of `--faixas` numbers the batches inside the session and never changes it',
+    );
+  });
+});
