@@ -20,6 +20,12 @@ import { unionRect } from './minimap';
 import { reviewMarks, type ReviewCanvas, type ReviewShape } from './reviewMarks';
 import { sameRect } from './viewState';
 
+/** A ghost marking's own rect and space in the preview. */
+export interface GhostSpot {
+  readonly rect: Rect;
+  readonly containerId: string | null;
+}
+
 export interface QuickGhost {
   readonly proposalId: string;
   /** Drawings of ONLY the created and changed markings (one without a drawing is absent). */
@@ -28,6 +34,8 @@ export interface QuickGhost {
   readonly review: ReviewCanvas;
   /** Union (canvas units) of the ghost markings at their preview positions; `null` when none resolves. */
   readonly box: Rect | null;
+  /** Where each ghost marking sits in the preview (the renderer places its line and badges from it). */
+  readonly spots: ReadonlyMap<string, GhostSpot>;
   /** Number of ghost markings (created + changed). */
   readonly items: number;
 }
@@ -49,6 +57,19 @@ function boxOf(view: QuickReviewView, ids: ReadonlySet<string>): Rect | null {
     box = box ? unionRect(box, rect) : rect;
   }
   return box;
+}
+
+function spotsOf(
+  view: QuickReviewView,
+  ids: ReadonlySet<string>,
+): ReadonlyMap<string, GhostSpot> {
+  const { markings } = projectIndex(view.preview);
+  const spots = new Map<string, GhostSpot>();
+  for (const id of ids) {
+    const marking = markings.get(id);
+    if (marking) spots.set(id, { rect: marking.rect, containerId: marking.containerId });
+  }
+  return spots;
 }
 
 /** Changes that no longer match the project (the same rule as the review's conflicts). */
@@ -77,7 +98,7 @@ function reviewOf(
   });
   const markings = new Map([...all.markings].filter(([id]) => ids.has(id)));
   const ghosts = all.ghosts.filter((g: ReviewShape) =>
-    ids.has(g.key.split(':')[1] ?? ''),
+    ids.has(g.key.slice(g.key.indexOf(':') + 1)),
   );
   return { view: 'proposed', markings, images: new Map(), ghosts, removed: [] };
 }
@@ -107,6 +128,7 @@ export function quickGhost(
     drawings: new Map([...drawings].filter(([id]) => ids.has(id))),
     review: reviewOf(view, committed, ids),
     box: boxOf(view, ids),
+    spots: spotsOf(view, ids),
     items: ids.size,
   };
   cache.set(view, { drawings, committed, result });
@@ -148,6 +170,19 @@ function sameReview(a: ReviewCanvas, b: ReviewCanvas): boolean {
   });
 }
 
+function sameSpots(
+  a: ReadonlyMap<string, GhostSpot>,
+  b: ReadonlyMap<string, GhostSpot>,
+): boolean {
+  if (a.size !== b.size) return false;
+  for (const [id, spot] of a) {
+    const other = b.get(id);
+    if (!other || other.containerId !== spot.containerId) return false;
+    if (!sameRect(other.rect, spot.rect)) return false;
+  }
+  return true;
+}
+
 const drawingTexts = new WeakMap<object, string>();
 
 /** The drawing as text (memoized by object): the drawings of an edited project are new objects with the same content. */
@@ -187,6 +222,7 @@ export function sameGhost(a: QuickGhost, b: QuickGhost): boolean {
     a.proposalId === b.proposalId &&
     a.items === b.items &&
     sameRect(a.box, b.box) &&
+    sameSpots(a.spots, b.spots) &&
     sameDrawings(a.drawings, b.drawings) &&
     sameReview(a.review, b.review)
   );

@@ -9,6 +9,8 @@ import type { Placement } from '../../model';
 import type { ComponentLayerRenderer } from '../components/componentLayer';
 import type { Frame, QuickFrame } from '../frame';
 import { sameGhost } from '../quickGhost';
+import { visibleArea } from '../frame';
+import { GhostBodyRenderer } from './ghostBody';
 import { ReviewRenderer } from './review';
 
 /** Builds the drawings renderer for a parent; `onLoaded` runs when an embedded image finishes. */
@@ -29,8 +31,10 @@ const MAX_CACHE_SIDE = 4096;
 
 export class QuickGhostRenderer {
   private readonly drawingsGroup = new Konva.Group({ listening: false });
+  private readonly bodyGroup = new Konva.Group({ listening: false });
   private readonly reviewGroup = new Konva.Group({ listening: false });
   private drawings: ComponentLayerRenderer;
+  private readonly body: GhostBodyRenderer;
   private readonly review: ReviewRenderer;
   private drawn: QuickFrame | null = null;
   private tokens: Frame['tokens'] | null = null;
@@ -43,9 +47,10 @@ export class QuickGhostRenderer {
     private readonly group: Konva.Group,
     private readonly makeDrawings: MakeDrawings,
   ) {
-    group.add(this.drawingsGroup, this.reviewGroup);
+    group.add(this.drawingsGroup, this.bodyGroup, this.reviewGroup);
     group.filters([Grayscale]);
     this.drawings = makeDrawings(this.drawingsGroup, () => this.markStale());
+    this.body = new GhostBodyRenderer(this.bodyGroup);
     this.review = new ReviewRenderer(this.reviewGroup);
   }
 
@@ -110,14 +115,20 @@ export class QuickGhostRenderer {
     }
     this.drawings.render(quick.ghost.drawings, () => true, placements, scale, null);
     this.drawings.setZoom(scale);
-    this.review.render(
+    const size = { width: 2 * HALF_CANVAS * scale, height: 2 * HALF_CANVAS * scale };
+    const viewport = { x: HALF_CANVAS * scale, y: HALF_CANVAS * scale, scale };
+    this.body.render(
       {
-        project: quick.preview,
         review: quick.ghost.review,
+        spots: quick.ghost.spots,
         tokens,
-        size: { width: 2 * HALF_CANVAS * scale, height: 2 * HALF_CANVAS * scale },
-        viewport: { x: HALF_CANVAS * scale, y: HALF_CANVAS * scale, scale },
+        zoom: scale,
+        view: visibleArea(size, viewport),
       },
+      placements,
+    );
+    this.review.render(
+      { project: quick.preview, review: quick.ghost.review, tokens, size, viewport },
       placements,
     );
     this.group.opacity(tokens.opacity.ghost);
@@ -137,6 +148,22 @@ export class QuickGhostRenderer {
     if (this.drawn === null) return false;
     this.releaseCache();
     this.drawings.render(new Map(), () => true, placements, frame.viewport.scale, null);
+    this.body.render(
+      {
+        review: {
+          view: 'proposed',
+          markings: new Map(),
+          images: new Map(),
+          ghosts: [],
+          removed: [],
+        },
+        spots: new Map(),
+        tokens: frame.tokens,
+        zoom: frame.viewport.scale,
+        view: { x: 0, y: 0, width: 1, height: 1 },
+      },
+      placements,
+    );
     this.review.render(
       {
         project: null,
@@ -180,7 +207,8 @@ export class QuickGhostRenderer {
       const box = this.group.getClientRect({ skipTransform: true });
       if (!(box.width > 0 && box.height > 0)) return;
       const side = Math.max(box.width, box.height);
-      const pixelRatio = Math.max(0.05, Math.min(scale, MAX_CACHE_SIDE / side));
+      const density = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+      const pixelRatio = Math.max(0.05, Math.min(scale * density, MAX_CACHE_SIDE / side));
       this.group.cache({ pixelRatio });
     } catch {
       this.releaseCache();

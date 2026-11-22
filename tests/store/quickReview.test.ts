@@ -317,6 +317,20 @@ describe('QuickReviewState.accept', () => {
   });
 });
 
+describe('peek (QR2)', () => {
+  it('is reset when the quick review ends, so the next one starts with the ghost', async () => {
+    const h = await open();
+    h.ui.quickPeek.value = true;
+    expect(h.quick.current.value).not.toBeNull();
+    dismissQuick(h.ui, 'P1', 0);
+    expect(h.quick.current.value).toBeNull();
+    expect(h.ui.quickPeek.value).toBe(false);
+    showQuickAgain(h.ui, 'P1');
+    expect(h.quick.current.value).not.toBeNull();
+    expect(h.ui.quickPeek.value).toBe(false);
+  });
+});
+
 describe('Reject on this device (decision 8)', () => {
   it('hides the ghost and writes nothing to proposal.json', async () => {
     const h = await open();

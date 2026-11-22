@@ -16,6 +16,7 @@ import {
   type Proposal,
 } from '../../src/model';
 import type { QuickReviewView } from '../../src/store/quickReview';
+import { sameRect } from '../../src/canvas/viewState';
 import { sampleProject } from '../model/fixtures';
 import { propose } from '../model/proposalFixtures';
 
@@ -182,6 +183,41 @@ describe('quickBoxCss and sameGhost', () => {
     expect(
       quickBoxCss({ x: 10, y: 20, width: 30, height: 40 }, { x: 5, y: -5, scale: 2 }),
     ).toEqual({ x: 25, y: 35, width: 60, height: 80 });
+  });
+
+  it('sameGhost: a ghost marking that moves inside the same union box is a different ghost', () => {
+    const corner = (id: string, x: number, y: number, w = 10, h = 10) => ({
+      id,
+      containerId: 'I1',
+      rect: { x, y, width: w, height: h },
+    });
+    const build = (innerX: number) => {
+      let after = createMarking(base, corner('M8', 0, 0, 10, 10));
+      after = createMarking(after, corner('M7', 500, 500, 10, 10));
+      after = createMarking(after, corner('M6', innerX, 200, 10, 10));
+      return quickGhost(viewOf(propose(base, after)), base, drawingsOf());
+    };
+    const a = build(100);
+    const b = build(300);
+    expect(sameRect(a.box, b.box)).toBe(true);
+    expect(sameGhost(a, b)).toBe(false);
+    expect(sameGhost(a, build(100))).toBe(true);
+  });
+
+  it('a changed marking whose id contains a colon keeps its ghost', () => {
+    const colon = {
+      ...base,
+      markings: base.markings.map((m) => (m.id === 'M2' ? { ...m, id: 'M:2' } : m)),
+    };
+    const after = setMarkingRect(colon, 'M:2', {
+      x: 1210,
+      y: 1210,
+      width: 400,
+      height: 200,
+    });
+    const ghost = quickGhost(viewOf(propose(colon, after), colon), colon, drawingsOf());
+    expect(ghost.review.ghosts).toHaveLength(1);
+    expect(ghost.review.markings.has('M:2')).toBe(true);
   });
 
   it('sameGhost: an edit elsewhere rebuilds the preview but not the ghost', () => {

@@ -1,11 +1,13 @@
 import { effect } from '@preact/signals';
 import type Konva from 'konva/lib/Core';
+import type { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CanvasController } from '../../src/canvas/CanvasController';
 import * as ghostModule from '../../src/canvas/quickGhost';
 import {
   createMarking,
   renameMarking,
+  setMarkingRect,
   type Project,
   type Proposal,
   type Rect,
@@ -64,8 +66,8 @@ describe('CanvasController: quick review', () => {
     for (const spy of spies.splice(0)) spy.mockRestore();
   });
 
-  function setup(withQuick = true) {
-    const { base, proposal } = scenario();
+  function setup(withQuick = true, custom?: { base: Project; proposal: Proposal }) {
+    const { base, proposal } = custom ?? scenario();
     const editor = editorFor(base);
     const { quick, enabled } = fakeQuick(editor.store, proposal);
     const container = document.createElement('div');
@@ -106,6 +108,19 @@ describe('CanvasController: quick review', () => {
     return track(vi.spyOn(group, 'cache'));
   }
 
+  const scaleOf = (controller: CanvasController): number =>
+    (controller as unknown as { view: { scale: number } }).view.scale;
+
+  const placementOf = (controller: CanvasController, id: string) => {
+    const at = (
+      controller as unknown as {
+        placements: ReadonlyMap<string, { x: number; y: number; scale: number }>;
+      }
+    ).placements.get(id);
+    if (!at) throw new Error('placement');
+    return at;
+  };
+
   const wheel = (container: HTMLElement, deltaY: number) =>
     container.dispatchEvent(
       new WheelEvent('wheel', { deltaY, clientX: 190, clientY: 350 }),
@@ -132,6 +147,83 @@ describe('CanvasController: quick review', () => {
     const badges = group.find('Path').length;
     expect(badges).toBeGreaterThanOrEqual(2); // created and changed badges
     expect(group.visible()).toBe(true);
+  });
+
+  it('a created marking with no drawing gets a dashed body outline in the ghost group', () => {
+    const t = setup();
+    const body = t.ghost().findOne('.ghost-body-M9') as KonvaRect | undefined;
+    expect(body).toBeDefined();
+    const tokens = (
+      t.controller as unknown as {
+        tokens: { peek(): { line: string } };
+      }
+    ).tokens.peek();
+    const zoom = scaleOf(t.controller);
+    expect(body?.stroke()).toBe(tokens.line);
+    expect(body?.dash()).toEqual([6 / zoom, 4 / zoom]);
+    expect(body?.strokeWidth()).toBeCloseTo(1 / zoom);
+    const at = placementOf(t.controller, 'I1');
+    expect(body?.getAttr('x')).toBeCloseTo(at.x + NEW_RECT.x * at.scale);
+    expect(body?.getAttr('y')).toBeCloseTo(at.y + NEW_RECT.y * at.scale);
+    expect(body?.width()).toBeCloseTo(NEW_RECT.width * at.scale);
+    expect(t.ghost().findOne('.ghost-body-inner-M9')?.visible()).toBe(false);
+  });
+
+  it('a changed marking gets the double line (thick stroke and an inner thread)', () => {
+    const t = setup();
+    const body = t.ghost().findOne('.ghost-body-M2') as KonvaRect | undefined;
+    const inner = t.ghost().findOne('.ghost-body-inner-M2') as KonvaRect | undefined;
+    const zoom = scaleOf(t.controller);
+    expect(body?.strokeWidth()).toBeCloseTo(3 / zoom);
+    expect(body?.dash()).toEqual([]);
+    expect(inner?.strokeWidth()).toBeCloseTo(1 / zoom);
+  });
+
+  it('a marking outside the ghost area is skipped, like the review marks', () => {
+    const base = sampleProject();
+    let after = createMarking(base, {
+      id: 'M9',
+      containerId: null,
+      rect: { x: 5e7, y: 5e7, width: 100, height: 100 },
+    });
+    after = createMarking(after, {
+      id: 'M8',
+      containerId: null,
+      rect: { x: -5000, y: -5000, width: 100, height: 100 },
+    });
+    const t = setup(true, { base, proposal: propose(base, after) });
+    expect(t.ghost().findOne('.ghost-body-M8')).toBeDefined();
+    expect(t.ghost().findOne('.ghost-body-M9')).toBeUndefined();
+  });
+
+  it('a moved marking has its body at the new position', () => {
+    const base = sampleProject();
+    const moved = { x: 1210, y: 1210, width: 400, height: 200 };
+    const after = setMarkingRect(renameMarking(base, 'M2', 'Handle'), 'M2', moved);
+    const proposal = propose(base, after);
+    const t = setup(true, { base, proposal });
+    const body = t.ghost().findOne('.ghost-body-M2') as KonvaRect | undefined;
+    expect(body).toBeDefined();
+    const at = placementOf(t.controller, 'I1');
+    expect(body?.getAttr('x')).toBeCloseTo(at.x + 1210 * at.scale);
+    expect(body?.getAttr('y')).toBeCloseTo(at.y + 1210 * at.scale);
+  });
+
+  it('the cache pixel ratio follows the screen density, before the size cap', () => {
+    const ratios: number[] = [];
+    for (const dpr of [1, 2]) {
+      vi.stubGlobal('devicePixelRatio', dpr);
+      const t = setup();
+      const spy = cacheSpy(t.ghost());
+      wheel(t.container, -40);
+      flush();
+      const arg = spy.mock.calls.at(-1)?.[0] as { pixelRatio: number } | undefined;
+      ratios.push(arg?.pixelRatio ?? 0);
+      for (const c of controllers.splice(0)) c.destroy();
+    }
+    vi.stubGlobal('devicePixelRatio', 1);
+    expect(ratios[0]).toBeGreaterThan(0);
+    expect(ratios[1]).toBeCloseTo(2 * (ratios[0] ?? 0));
   });
 
   it('caches the ghost on the zoom, not on pan, and not on an edit that does not touch it', () => {

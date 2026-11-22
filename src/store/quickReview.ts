@@ -193,6 +193,12 @@ export function createQuickReview(deps: QuickReviewDeps): QuickReviewState {
     if (next) ui.quickDismissed.value = next;
   });
 
+  // The peek belongs to one quick review: when it ends (Accept, Reject, the conversation closes, a
+  // page switch) the next one starts with the ghost.
+  const stopPeekReset = effect(() => {
+    if (current.value === null && ui.quickPeek.peek()) ui.quickPeek.value = false;
+  });
+
   return {
     current,
     accepting,
@@ -219,6 +225,9 @@ export function createQuickReview(deps: QuickReviewDeps): QuickReviewState {
         accepting.value = false;
       }
     },
-    dispose: stopClearing,
+    dispose: () => {
+      stopClearing();
+      stopPeekReset();
+    },
   };
 }
