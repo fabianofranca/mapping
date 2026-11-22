@@ -23,7 +23,7 @@
 //     decided again once.
 //   PR gate (`PreToolUse`, with or without `agent_id`): a `fase` session above `GATILHO` (strictly more)
 //     that opens a PR (`opensPullRequest`: `create_pull_request`, `gh pr create` or a POST `gh api
-//     …/pulls`) gets `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny",
+//     …/pulls`, with `gh` in command position and an explicit method deciding over a body flag) gets `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny",
 //     "permissionDecisionReason":"<text>"}}`, on every attempt. Exempt: the last session of its phase
 //     (`Retomada por contexto (<k> de <N>)` with k equal to N, `MARCADOR_RETOMADA`), the coordinator, the
 //     tester and any other session. The gate reads the state for the role and writes it only to record a
@@ -143,11 +143,20 @@ export function sessionRole(texts) {
   return texts.some((raw) => MARCADOR_TESTADOR.test(raw.trimStart())) ? 'testador' : null;
 }
 
-const GH_API = /(?:^|[\s;&|(])gh\s+api\b/;
+// `gh` must be in command position (start, or after `;`, `&`, `|`, `(`, a backtick or a line break, with
+// optional `NAME=value` prefixes): a commit message, an `echo` or a `grep` that only mentions it is not a call.
+const GH_START = /(?:^|[;&|(`\n])\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*gh\s+/;
+const GH_API = new RegExp(`${GH_START.source}api\\b`);
+const PR_CREATE = new RegExp(`${GH_START.source}pr\\s+create\\b`);
 const PULLS_PATH = /repos\/[^\s/'"]+\/[^\s/'"]+\/pulls(?=[\s'"?]|$)/;
 const BODY_FLAG = /(?:^|\s)(?:-[fF]|--field|--raw-field|--input)(?=[\s=]|$)/;
-const POST_FLAG = /(?:^|\s)(?:-X\s*|--method[\s=]+)POST\b/i;
-const PR_CREATE = /(?:^|[\s;&|(])gh\s+pr\s+create\b/;
+const METHOD_FLAG = /(?:^|\s)(?:-X\s*|--method[\s=]+)([A-Za-z]+)/i;
+
+/** An explicit method decides; with none, a body flag makes `gh api` a POST. */
+function postsBody(command) {
+  const method = METHOD_FLAG.exec(command);
+  return method ? method[1].toUpperCase() === 'POST' : BODY_FLAG.test(command);
+}
 
 /** Whether a tool call opens a pull request: the create tool, `gh pr create` or a POST `gh api …/pulls`. */
 export function opensPullRequest(toolName, toolInput) {
@@ -156,11 +165,7 @@ export function opensPullRequest(toolName, toolInput) {
   const command = toolInput?.command;
   if (typeof command !== 'string') return false;
   if (PR_CREATE.test(command)) return true;
-  return (
-    GH_API.test(command) &&
-    PULLS_PATH.test(command) &&
-    (BODY_FLAG.test(command) || POST_FLAG.test(command))
-  );
+  return GH_API.test(command) && PULLS_PATH.test(command) && postsBody(command);
 }
 
 /** Call label to attribute the jumps: `Bash: <40 characters>`, `Read: <file>`, … */
@@ -462,7 +467,9 @@ export function handleGate(input, env = process.env) {
   const state = loadState(file); // a corrupted state throws: the gate fails open
   const papel = resolveRole(state, transcript);
   if (papel === null) return null;
-  if (state?.papel !== papel)
+  // A subagent's `transcript_path` may be its own: its call never writes the role.
+  const subagent = typeof input.agent_id === 'string' && input.agent_id !== '';
+  if (!subagent && state?.papel !== papel)
     saveState(file, {
       ...state,
       fase: papel === 'fase',

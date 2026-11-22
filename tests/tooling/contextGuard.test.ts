@@ -973,6 +973,33 @@ describe('CG1 — opensPullRequest (decision 2)', () => {
     expect(opensPr('Bash', { command })).toBe(false);
   });
 
+  it.each([
+    'git commit -m "gate refuses gh pr create above the trigger"',
+    "echo 'gh pr create'",
+    'grep -n "gh pr create" docs/FLOW.md',
+    'echo gh api repos/o/r/pulls -f title=t',
+    'gh api repos/o/r/pulls -X GET -f head=o:b -f state=open',
+    'gh api --method GET repos/o/r/pulls -f state=open',
+  ])(
+    'review: Bash that only mentions a PR open, or lists with GET, does not open one: %s',
+    (command) => {
+      expect(opensPr('Bash', { command })).toBe(false);
+    },
+  );
+
+  it.each([
+    'cd /x && gh pr create --base b',
+    'git push -u origin b; gh pr create',
+    'git push || gh pr create',
+    'echo done | gh pr create --body-file -',
+    'GH_TOKEN=x gh pr create',
+    '(gh pr create)',
+    'git status\ngh pr create',
+    'cd /x && gh api repos/o/r/pulls -f title=t',
+  ])('review: Bash with gh in command position still opens a PR: %s', (command) => {
+    expect(opensPr('Bash', { command })).toBe(true);
+  });
+
   it('every other tool passes, and malformed input is not a PR', () => {
     for (const name of [
       'mcp__github__merge_pull_request',
@@ -1103,6 +1130,12 @@ describe('CG1 — the PR gate (decisions 1, 3, 4 and 5)', () => {
     silent(hook(box, { ...CREATE_PR, transcript_path: join(box.tmp, 'missing.jsonl') }));
     silent(hook(box, { ...CREATE_PR, transcript_path: '' }));
     silent(hook(box, { ...CREATE_PR, tool_input: undefined, tool_name: 'Bash' }));
+  });
+
+  it('review: a subagent call (agent_id) never writes the role to the state', () => {
+    const box = sandbox([userLine('You are a subagent.'), measure(TRIGGER + 1)]);
+    silent(hook(box, { ...CREATE_PR, agent_id: 'agent-1' }));
+    expect(existsSync(box.state)).toBe(false);
   });
 
   it('a corrupted state does not break the gate: it fails open', () => {
