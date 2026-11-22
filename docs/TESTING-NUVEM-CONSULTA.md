@@ -22,7 +22,7 @@ Batch data
 
 What to read, in this order
 1. `docs/TESTING-NUVEM.md` whole and `apoio/guia-base.md` whole (in pieces below 25 thousand tokens).
-2. `node scripts/testing/cloud.mjs passo <Rn> --preparo` (every script batch, the first range included) and then the batch's steps in groups of up to 8, with `cloud.mjs passo <Rn.a>-<Rn.b>`; the expected result comes from the printed excerpt, not from memory.
+2. `node scripts/testing/cloud.mjs passo <Rn> --preparo` (every script batch, the first range included) and then the batch's steps in groups of up to 8, with `cloud.mjs passo <Rn.a>-<Rn.b>`; a range brings the labeled Setup blocks of its steps (the batch or calls the step cites as "above"), and `--preparo` is still needed for the rest of the Setup (functions, variables); the expected result comes from the printed excerpt, not from memory.
 3. The on-demand sections with `cloud.mjs secao <key>`, at the moment their line in the base says.
 
 How to act

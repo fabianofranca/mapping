@@ -580,6 +580,61 @@ describe('round-guide.mjs: base, index and excerpts (#1232, GL1)', () => {
   });
 
   describe('guideExcerpt', () => {
+    describe('labeled Setup blocks (stage #2450, TC2)', () => {
+      it('a range brings the labeled block of the steps it contains, after the rows', async () => {
+        const { guideExcerpt } = await load();
+        const guide = await guideOf(['R17']);
+        const out = guideExcerpt(guide, ['R17.41-R17.48']);
+        const label = 'Setup block of R17.48 (from the R17 Setup):';
+        expect(out).toContain(label);
+        expect(out).toContain('"name": "Anchors"');
+        expect(out.indexOf(label)).toBeGreaterThan(out.indexOf('| R17.48 '));
+        expect(out).not.toContain('Setup block of R17.53');
+      });
+
+      it('a single step brings its block', async () => {
+        const { guideExcerpt } = await load();
+        const guide = await guideOf(['R17']);
+        expect(guideExcerpt(guide, ['R17.53'])).toContain(
+          'Setup block of R17.53 (from the R17 Setup):',
+        );
+        expect(guideExcerpt(guide, ['R17.4'])).toContain(
+          'Setup block of R17.4 (from the R17 Setup):',
+        );
+      });
+
+      it('a range without a labeled step brings no block', async () => {
+        const { guideExcerpt } = await load();
+        const guide = await guideOf(['R17']);
+        expect(guideExcerpt(guide, ['R17.49-R17.52'])).not.toContain('Setup block of');
+      });
+
+      it('every step that cites a batch or calls "above" has a labeled block in its Setup', () => {
+        const sections = GUIDE.split(/^(?=### R\d+ )/m).filter((x) =>
+          /^### R\d+ /.test(x),
+        );
+        const missing: string[] = [];
+        for (const sec of sections) {
+          const id = /^### (R\d+)/.exec(sec)![1];
+          const labeled = new Set(
+            [
+              ...sec.matchAll(
+                /^The (?:batch|calls) of (R\d+\.\d+[a-z]?)\b[^\n]*\n\n```/gm,
+              ),
+            ].map((m) => m[1]),
+          );
+          for (const row of sec.matchAll(
+            /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^\n]*$/gm,
+          )) {
+            if (/\b(?:batch|calls) above\b/.test(row[0]) && !labeled.has(row[1])) {
+              missing.push(`${id}: ${row[1]}`);
+            }
+          }
+        }
+        expect(missing).toEqual([]);
+      });
+    });
+
     it('R22: the "What it covers", the setup and a Steps line in place of the step lines', async () => {
       const { guideExcerpt } = await load();
       const guide = await guideOf(['R22']);

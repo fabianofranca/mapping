@@ -2760,7 +2760,7 @@ const CLI_HELP = [
   ],
   [
     'passo <item…> [--guia=<file>] [--preparo]',
-    'prints from the round guide (<APOIO>/guia.md) a test script (R12), a step (R12.4) or a range (R12.1-R12.8), without opening Chrome; with --preparo, only the part of the whole script before the first step (title, What it covers, Setup and code blocks: the functions of a script that the range does not bring); an item the round guide does not have comes from docs/TESTING.md, with the first line saying so; over 25 thousand characters, cuts and says how to continue',
+    'prints from the round guide (<APOIO>/guia.md) a test script (R12), a step (R12.4) or a range (R12.1-R12.8), without opening Chrome (a range or a step also brings the labeled Setup blocks of its steps: the "The batch of R<n>.<k>" paragraphs with their code fence); with --preparo, only the part of the whole script before the first step (title, What it covers, Setup and code blocks: the functions of a script that the range does not bring); an item the round guide does not have comes from docs/TESTING.md, with the first line saying so; over 25 thousand characters, cuts and says how to continue',
   ],
   [
     'secao [<key…>] [--guia=<file>]',
