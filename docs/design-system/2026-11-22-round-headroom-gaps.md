@@ -1,4 +1,4 @@
-# Seventh block of the full round and tester-script gaps — [Não lançado] (épico `epic/round-headroom-gaps`)
+# Seventh block of the full round and tester-script gaps — 2026-11-22 (épico `epic/round-headroom-gaps`)
 
 ## Pendências
 
