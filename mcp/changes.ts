@@ -26,6 +26,7 @@ import { Refs } from './items';
 import { membershipView } from './membership';
 import type { Operation } from './operations';
 import { Roots, resolveProjectFile } from './paths';
+import { newProposalReserveAt } from './proposalStore';
 import { readSpecInput } from './library';
 import {
   loadProject,
@@ -359,7 +360,11 @@ export async function planChanges(
   operations: readonly Operation[],
   now: () => number,
 ): Promise<Record<string, unknown>> {
-  const prepared = await prepareBatch(roots, location, operations, { now });
+  // As a `propose_changes` without `supersedes` would: the names and the space of the open proposals are taken.
+  const prepared = await prepareBatch(roots, location, operations, {
+    now,
+    ...(await newProposalReserveAt(roots, location)),
+  });
   const report = batchReport(prepared);
   if (!prepared.valid) {
     return {
