@@ -47,6 +47,7 @@ export const TOKENS: CanvasTokens = {
   component: {
     placeholderFill: 'rgba(120, 121, 122, 0.25)',
     placeholderLine: 'rgba(120, 121, 122, 0.8)',
+    failedLine: '#d9480f',
     unknownLine: '#d81b61',
     unknownFill: 'rgba(216, 27, 97, 0.06)',
     slotOpacity: 0.6,
