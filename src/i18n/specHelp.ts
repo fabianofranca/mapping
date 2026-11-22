@@ -1489,7 +1489,7 @@ const enUS: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'A fileFormats plugin is a text file of the package, read by the app and by the MCP server and copied with the package to specs/<id>/. It only ever runs isolated: it sees only its input, returns text or operations (which become a proposal for review), has no disk, network or storage, and has a time limit. The MCP server runs it (export_format, import_format and validate_library); the app does not run plugins yet.',
+        text: 'A fileFormats plugin is a text file of the package, read by the app and by the MCP server and copied with the package to specs/<id>/. It only ever runs isolated: it sees only its input, returns text or operations (which become a proposal for review), has no disk, network or storage, and has a time limit. The MCP server runs it (export_format, import_format and validate_library) and the app runs it too, isolated (Export in a format, Import from a format and the validation of a package).',
       },
       { kind: 'code', code: FILE_FORMATS_EXCERPT },
       {
@@ -2401,7 +2401,7 @@ const ptBR: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'Um plugin de fileFormats é um arquivo de texto do pacote, lido pelo app e pelo servidor MCP e copiado com o pacote para specs/<id>/. Ele só roda isolado: vê apenas a sua entrada, devolve texto ou operações (que viram uma proposta para revisão), não tem disco, rede nem armazenamento e tem tempo limite. O servidor MCP o executa (export_format, import_format e validate_library); o app ainda não executa plugins.',
+        text: 'Um plugin de fileFormats é um arquivo de texto do pacote, lido pelo app e pelo servidor MCP e copiado com o pacote para specs/<id>/. Ele só roda isolado: vê apenas a sua entrada, devolve texto ou operações (que viram uma proposta para revisão), não tem disco, rede nem armazenamento e tem tempo limite. O servidor MCP o executa (export_format, import_format e validate_library) e o app também o executa, isolado (Exportar em um formato, Importar de um formato e a validação de um pacote).',
       },
       { kind: 'code', code: FILE_FORMATS_EXCERPT },
       {

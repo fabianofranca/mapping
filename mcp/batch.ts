@@ -158,7 +158,7 @@ import { builtinFontBook, measurerFor } from './image/textMeasurer';
 import { prepareImage } from './imagePrepare';
 import { Refs } from './items';
 import { containersNamed } from './markingList';
-import { MODEL_ERROR_MESSAGES, describeModelError } from './modelErrors';
+import { describeModelError, modelErrorMessage } from './modelErrors';
 import { measuredTree, planMeasured } from './importMeasured';
 import { importText, pluginOperations } from './formatImport';
 import {
@@ -647,7 +647,7 @@ class Batch {
         index,
         op,
         code: error.code,
-        message: MODEL_ERROR_MESSAGES[error.code],
+        message: modelErrorMessage(error),
         ...describeModelError(error, this.refs()),
       };
     }

@@ -43,7 +43,8 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-.dialog-title {
+/* Two classes: a dialog opened inside a tool window must not take that window's `h2` margin and font. */
+.dialog-header .dialog-title {
   min-width: 0;
   margin: 0;
   font: var(--t-text-title);

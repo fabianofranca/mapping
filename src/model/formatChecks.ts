@@ -11,6 +11,7 @@ import { applyFormatResult } from './formatApply';
 import { buildFormatInput } from './formatInput';
 import type {
   FormatCallContext,
+  FormatFailure,
   FormatFunction,
   FormatInput,
   FormatOutcome,
@@ -169,6 +170,18 @@ function context(found: Found): FormatCallContext {
   return { format: found.ref, pluginPath: found.pluginPath };
 }
 
+/**
+ * The failure's message with where the plugin threw (`plugins/a.js:1:100`), as the MCP server words it; a runner
+ * whose message already carries the place (QuickJS) is left as it is.
+ */
+function locatedMessage(found: Found, failure: FormatFailure): string {
+  const { message, line, column } = failure;
+  if (line === undefined || column === undefined || message.includes(found.pluginPath)) {
+    return message;
+  }
+  return `${message} (${found.pluginPath}:${line}:${column})`;
+}
+
 function callPlugin(
   memory: Memory,
   found: Found,
@@ -193,7 +206,8 @@ async function valueOf(
     );
   }
   const outcome = await callPlugin(memory, found, fn, args);
-  if (!outcome.ok) throw new CheckError(outcome.failure.code, outcome.failure.message);
+  if (!outcome.ok)
+    throw new CheckError(outcome.failure.code, locatedMessage(found, outcome.failure));
   return outcome.value;
 }
 
@@ -230,10 +244,14 @@ async function definedFunctions(
   input: FormatInput,
 ): Promise<Defined | string> {
   const generated = await callPlugin(memory, found, 'generate', [input]);
+  // A plugin that went past the time limit would go past it again on `parse`: one wait, not two.
+  if (!generated.ok && generated.failure.code === 'plugin-timeout') {
+    return codedText(generated.failure.code, generated.failure.message);
+  }
   const parsed = await callPlugin(memory, found, 'parse', ['', input]);
   for (const run of [generated, parsed]) {
     if (!run.ok && run.failure.phase === 'load') {
-      return codedText(run.failure.code, run.failure.message);
+      return codedText(run.failure.code, locatedMessage(found, run.failure));
     }
   }
   const defines = (run: FormatOutcome) =>
@@ -291,7 +309,7 @@ async function applyExample(
 ): Promise<ExampleApplied> {
   const input = emptyInput(memory, found);
   const run = await callPlugin(memory, found, 'parse', [text, input]);
-  if (!run.ok) return failed(run.failure.code, run.failure.message);
+  if (!run.ok) return failed(run.failure.code, locatedMessage(found, run.failure));
   const checked = checkFormatResult(run.value, input);
   if (!checked.ok) {
     const first = checked.problems[0]!;

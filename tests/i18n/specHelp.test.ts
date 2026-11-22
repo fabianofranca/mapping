@@ -192,4 +192,18 @@ describe('specializations help: version and structure', () => {
     ]);
     expect(text.filter((t) => portuguese.test(t))).toEqual([]);
   });
+
+  it('the file format plugins are said to run in the app too, isolated (CL1-F6)', () => {
+    const plugins = (locale: 'pt-BR' | 'en-US') =>
+      specHelpSections(locale)
+        .flatMap((s) => s.blocks)
+        .flatMap((b) => (b.kind === 'p' ? [b.text] : []))
+        .filter((text) => text.includes('fileFormats'));
+    for (const locale of ['pt-BR', 'en-US'] as const) {
+      const text = plugins(locale).join('\n');
+      expect(text).not.toMatch(/does not run plugins yet|ainda não executa plugins/);
+    }
+    expect(plugins('en-US').join('\n')).toMatch(/the app runs it too, isolated/);
+    expect(plugins('pt-BR').join('\n')).toMatch(/o app também o executa, isolado/);
+  });
 });
