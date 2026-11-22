@@ -1,4 +1,4 @@
-# Cloud tester guide and helpers — [Não lançado] (épico `epic/tester-guide-gaps`)
+# Cloud tester guide and helpers — 2026-11-22 (épico `epic/tester-guide-gaps`)
 
 ## Pendências
 
