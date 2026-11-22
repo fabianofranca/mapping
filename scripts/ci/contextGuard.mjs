@@ -1,24 +1,40 @@
-// Claude Code `PostToolUse` hook (stage #1856, phase GC1; coordinator role: stage #2228, phase CH1):
-// measures the main thread's context after every tool call and, above the role's trigger, injects
-// the session-switch notice. Node only, no dependencies; the measure is that of `contextUsage.mjs`
-// (`lastContext`).
-//   Wired in `.claude/settings.json`: node "$CLAUDE_PROJECT_DIR/scripts/ci/contextGuard.mjs"
-//     Reads the hook input (JSON) from stdin. Only acts in the cloud (`CLAUDE_CODE_REMOTE=true`) and on
-//     the main thread (no `agent_id`), in one of two roles decided once from the transcript's initial
-//     prompt (`sessionRole`; a phase prompt is checked first):
-//       - `fase`: a phase or fix session (the prompt opens with `MARCADOR` or with the coordinator's
-//         short prompt), trigger `GATILHO` (270 thousand);
-//       - `coordenador`: the queue coordinator (the prompt is the `/implementar-fila` command,
-//         `MARCADOR_COORDENADOR`), trigger `GATILHO_COORDENADOR` (320 thousand).
-//     Any other session (tester, supervisor, fast track, owner's chat) is silent (`nenhum`).
-//     With the context above the role's trigger, and at every +`PASSO` after the last notice, it
-//     writes to stdout
-//     `{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"<notice>"}}`.
-//     The state lives in `<os.tmpdir()>/context-guard/<session_id>.json`: `papel` (`fase`,
-//     `coordenador` or `nenhum`), `fase` (true only for a phase), `contexto`, `ferramenta`,
-//     `ultimoAviso`, `saltos` (the 3 largest) and `erro`. An old state without `papel` is a phase when
-//     `fase` is true, and otherwise decided again once.
-//     Always exit code 0: the hook never blocks or delays a call, and any failure only silences it.
+// Claude Code context hook (stage #1856, phase GC1; coordinator role: stage #2228, phase CH1; PR gate and
+// tester role: stage #2474, phase CG1). Node only, no dependencies; the measure is that of
+// `contextUsage.mjs` (`lastContext`).
+//   Wired in `.claude/settings.json`, the same command in two events:
+//     node "$CLAUDE_PROJECT_DIR/scripts/ci/contextGuard.mjs"
+//   Reads the hook input (JSON) from stdin and branches on `hook_event_name`: `PreToolUse` runs the PR
+//   gate; `PostToolUse`, or no field, runs the notice. Only acts in the cloud (`CLAUDE_CODE_REMOTE=true`).
+//   Three roles, decided once from the transcript's initial prompt (`sessionRole`; checked in this order):
+//     - `fase`: a phase or fix session (the prompt opens with `MARCADOR` or with the coordinator's short
+//       prompt), trigger `GATILHO` (270 thousand);
+//     - `coordenador`: the queue coordinator (the prompt is the `/implementar-fila` command,
+//       `MARCADOR_COORDENADOR`), trigger `GATILHO_COORDENADOR` (320 thousand);
+//     - `testador`: the cloud tester (the prompt opens with `Read `docs/TESTING-NUVEM.md` and run` in
+//       one of the `modo` forms, `MARCADOR_TESTADOR`), trigger `GATILHO_TESTADOR` (250 thousand).
+//     Any other session (supervisor, fast track, owner's chat) is silent (`nenhum`).
+//   Notice (`PostToolUse`, main thread only, no `agent_id`): with the context above the role's trigger,
+//     and at every +`PASSO` after the last notice, it writes to stdout
+//     `{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"<notice>"}}`; a compaction
+//     (context back at the trigger or below) resets it. The state lives in
+//     `<os.tmpdir()>/context-guard/<session_id>.json`: `papel` (`fase`, `coordenador`, `testador` or
+//     `nenhum`), `fase` (true only for a phase), `contexto`, `ferramenta`, `ultimoAviso`, `saltos` (the
+//     3 largest) and `erro`. An old state without `papel` is a phase when `fase` is true, and otherwise
+//     decided again once.
+//   PR gate (`PreToolUse`, with or without `agent_id`): a `fase` session above `GATILHO` (strictly more)
+//     that opens a PR (`opensPullRequest`: `create_pull_request`, `gh pr create` or a POST `gh api
+//     …/pulls`, with `gh` in command position and an explicit method deciding over a body flag) gets `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny",
+//     "permissionDecisionReason":"<text>"}}`, on every attempt. Exempt: the last session of its phase
+//     (`Retomada por contexto (<k> de <N>)` with k equal to N, `MARCADOR_RETOMADA`), the coordinator, the
+//     tester and any other session. The gate reads the state for the role and writes it only to record a
+//     role it had to decide, or the `erro`: it never touches `contexto`, `ferramenta`, `ultimoAviso` or
+//     `saltos`, so the jumps of the notice stay right.
+//   Known limit: the call is recognized by its text (best effort): `gh` inside a quoted string (`bash -c '...'`)
+//     or a raw `curl` to the pulls endpoint is not seen.
+//   Known limit: the gate measures the `transcript_path` it receives; if that is a subagent's own
+//     transcript the measure is lower and the call goes through.
+//   Always exit code 0: the hook never blocks or delays a call except by the gate's deny, and any failure
+//   (an error, an undecided role, no measure, outside the cloud) only silences it.
 import {
   closeSync,
   mkdirSync,
@@ -43,6 +59,8 @@ export const GATILHO = 270000;
  * 350 thousand and the switch itself adds about 10 thousand.
  */
 export const GATILHO_COORDENADOR = 320000;
+/** Context above which the hook warns the cloud tester (single source; its ceiling is 300,000). */
+export const GATILHO_TESTADOR = 250000;
 /** The notice repeats at every rise of this much context since the last one. */
 export const PASSO = 10000;
 /** First sentence of the "For the phase session" message of `docs/FLOW.md`. */
@@ -54,11 +72,24 @@ export const MARCADOR = 'Você é o agente da fase ';
 export const MARCADOR_FILA = /^Fase \S+ — .* da etapa #\d+ \(sub-issue #\d+\)/;
 /**
  * The coordinator's initial prompt: the text, after `trimStart`, starts with `/implementar-fila`
- * followed by whitespace or the end (what `create_session` sends to the successor), or it contains
- * the form Claude Code records for a typed slash command.
+ * followed by whitespace or the end (what `create_session` sends to the successor), or it starts with
+ * the form Claude Code records for a typed slash command (an optional `<command-message>` first). Both
+ * are anchored to the start of the block: a prompt that only quotes the tag is not a coordinator.
  */
 export const MARCADOR_COORDENADOR =
-  /^\/implementar-fila(?:\s|$)|<command-name>\/implementar-fila<\/command-name>/;
+  /^(?:\/implementar-fila(?:\s|$)|(?:<command-message>[^<]*<\/command-message>\s*)?<command-name>\/implementar-fila<\/command-name>)/;
+/**
+ * The resume line the coordinator adds to a successor phase (`docs/FLOW.md`, item 3 of "For the phase
+ * session"): `Retomada por contexto (<k> de <N>)`.
+ */
+export const MARCADOR_RETOMADA = /Retomada por contexto \((\d+) de (\d+)\)/;
+/**
+ * The tester's initial prompt (`docs/FLOW.md`, "For the tester"; `docs/TESTING-NUVEM.md#inicio`): the text,
+ * after `trimStart`, starts with ``Read `docs/TESTING-NUVEM.md` and run `` followed by `in modo` or
+ * `the modo`, with or without a backtick before `modo`.
+ */
+export const MARCADOR_TESTADOR =
+  /^Read `docs\/TESTING-NUVEM\.md` and run (?:in|the) `?modo/;
 /** The hook reads only the end of the transcript, up to this many bytes. */
 export const TAIL_BYTES = 2 * 1024 * 1024;
 /** The initial prompt is searched for at the start of the transcript, up to this many bytes. */
@@ -107,12 +138,60 @@ export function isPhasePrompt(texts) {
   });
 }
 
-/** The role of the session by the initial prompt's texts: `fase`, `coordenador` or `null` (silent). */
+/** The role of the session by the initial prompt's texts: `fase`, `coordenador`, `testador` or `null` (silent). */
 export function sessionRole(texts) {
   if (isPhasePrompt(texts)) return 'fase';
-  return texts.some((raw) => MARCADOR_COORDENADOR.test(raw.trimStart()))
-    ? 'coordenador'
-    : null;
+  if (texts.some((raw) => MARCADOR_COORDENADOR.test(raw.trimStart())))
+    return 'coordenador';
+  return texts.some((raw) => MARCADOR_TESTADOR.test(raw.trimStart())) ? 'testador' : null;
+}
+
+// `gh` must be in command position (start, or after `;`, `&`, `|`, `(`, a backtick or a line break, with
+// optional shell keywords (`then`, `do`, `else`, `{`, ...), wrappers (`env`, `sudo`, `timeout <n>`, ...) and
+// `NAME=value` prefixes): a commit message, an `echo` or a `grep` that only mentions it is not a call.
+// Best effort: a command inside a quoted string (`bash -c '...'`) or a raw HTTP call (`curl`) is not seen.
+const WRAPPERS =
+  '(?:(?:then|do|else|elif|time|command|exec|sudo|nohup|env|!|\\{)\\s+|timeout\\s+\\S+\\s+)*';
+const GH_START = new RegExp(
+  `(?:^|[;&|(\`\\n])\\s*${WRAPPERS}(?:[A-Za-z_][A-Za-z0-9_]*=\\S*\\s+)*gh\\s+`,
+);
+const GH_API = new RegExp(`${GH_START.source}api\\b`);
+const PR_CREATE = new RegExp(`${GH_START.source}pr\\s+create(?![\\w-])`);
+const PULLS_PATH = /repos\/[^\s/'"]+\/[^\s/'"]+\/pulls(?=[\s'"?]|$)/;
+const BODY_FLAG = /(?:^|\s)(?:-[fF]|--field|--raw-field|--input)(?=[\s=]|$)/;
+const METHOD_FLAG = /(?:^|\s)(?:-X\s*|--method[\s=]+)([A-Za-z]+)/i;
+
+/** An explicit method decides; with none, a body flag makes `gh api` a POST. */
+function postsBody(command) {
+  const method = METHOD_FLAG.exec(command);
+  return method ? method[1].toUpperCase() === 'POST' : BODY_FLAG.test(command);
+}
+
+/** The text of the `gh api` call alone: from its match to the next command separator outside quotes. */
+function apiSegment(command) {
+  const found = GH_API.exec(command);
+  if (found === null) return null;
+  const rest = command.slice(found.index + found[0].length);
+  let quote = null;
+  for (let i = 0; i < rest.length; i += 1) {
+    const char = rest[i];
+    if (quote !== null) {
+      if (char === quote) quote = null;
+    } else if (char === '"' || char === "'") quote = char;
+    else if (';&|\n)`'.includes(char)) return rest.slice(0, i);
+  }
+  return rest;
+}
+
+/** Whether a tool call opens a pull request: the create tool, `gh pr create` or a POST `gh api …/pulls`. */
+export function opensPullRequest(toolName, toolInput) {
+  if (toolName === 'mcp__github__create_pull_request') return true;
+  if (toolName !== 'Bash') return false;
+  const command = toolInput?.command;
+  if (typeof command !== 'string') return false;
+  if (PR_CREATE.test(command)) return true;
+  const segment = apiSegment(command);
+  return segment !== null && PULLS_PATH.test(segment) && postsBody(segment);
 }
 
 /** Call label to attribute the jumps: `Bash: <40 characters>`, `Read: <file>`, … */
@@ -159,6 +238,7 @@ export function warningText(contexto, jumps) {
     `hand over now (steps 1 to 5 of the handover), with <n> = ${mil}; ` +
     `a phase that opens several PRs hands over between a merged PR and the next one. ` +
     `With the phase's last PR open, or in session 5 of 5, carry on. ` +
+    `The \`/code-review\` of item 10 and the fixes of its findings come before the PR and are not the PR open; above the trigger the hook refuses to open the PR. ` +
     `Largest jumps (approximate): ${saltos}. Subagent: ignore this notice.`
   );
 }
@@ -175,21 +255,70 @@ export function coordinatorWarningText(contexto, jumps) {
     `This counts as "above 35%" of "Session switch" in .claude/skills/implementar-fila/SKILL.md: ` +
     `hand the coordination over now, in this turn, after the lineage check ("Lineage limit"), ` +
     `without rereading a changed SKILL.md. ` +
-    `With no room in the lineage, the owner's path of "Lineage limit" applies once, and the later notices do not repeat it. ` +
+    `With no room in the lineage, follow the owner's path of "Lineage limit" and keep working. This hook cannot see the lineage and repeats this notice every ${PASSO / 1000} thousand: if the \`current\` of the panel already says "aguardando o dono abrir a sessão nova da fila", the owner was notified, so do not send it again. ` +
     `A session that already handed over (no longer the registered coordinator) ignores this notice. ` +
     `Largest jumps (approximate): ${saltos}. Subagent: ignore this notice.`
   );
 }
+
+/** The tester's notice text (one line), with the context and the session's largest jumps. */
+export function testerWarningText(contexto, jumps) {
+  const mil = Math.ceil(contexto / 1000);
+  const saltos =
+    jumps.length > 0
+      ? jumps.map((j) => `${j.rotulo} +${j.mil} thousand`).join('; ')
+      : 'none recorded';
+  return (
+    `Context hook: this tester session is at ${mil} thousand, above its trigger of ${GATILHO_TESTADOR / 1000} thousand ` +
+    `(ceiling ${TETO_MIL} thousand; "Context up to 300 thousand" of docs/TESTING-NUVEM.md). ` +
+    `From now on every remaining batch runs in a subagent, and the main thread reads only its summary line, ` +
+    `not the guide, the captures, the \`runs\` or the reports. ` +
+    `A subagent assembles the report from the files of \`apoio/\`. ` +
+    `The round goes on, with no step marked "not executed" for context. ` +
+    `Largest jumps (approximate): ${saltos}. Subagent: ignore this notice.`
+  );
+}
+
+const WARNING_TEXTS = {
+  fase: warningText,
+  coordenador: coordinatorWarningText,
+  testador: testerWarningText,
+};
+const TRIGGERS = {
+  fase: GATILHO,
+  coordenador: GATILHO_COORDENADOR,
+  testador: GATILHO_TESTADOR,
+};
 
 /** The JSON that Claude Code reads from the hook's stdout. */
 export function warningOutput(contexto, jumps, papel = 'fase') {
   return JSON.stringify({
     hookSpecificOutput: {
       hookEventName: 'PostToolUse',
-      additionalContext:
-        papel === 'coordenador'
-          ? coordinatorWarningText(contexto, jumps)
-          : warningText(contexto, jumps),
+      additionalContext: (WARNING_TEXTS[papel] ?? warningText)(contexto, jumps),
+    },
+  });
+}
+
+/** The PR gate's refusal text (one line). */
+export function gateText(contexto) {
+  const mil = Math.ceil(contexto / 1000);
+  return (
+    `Context gate: this phase session is at ${mil} thousand, above the trigger of ${GATILHO / 1000} thousand. ` +
+    `The PR is not opened above the trigger (sub-item "Phase context ceiling" of item 3 of "For the phase session", docs/FLOW.md). ` +
+    `Hand over now (steps 1 to 5 of the handover), with <n> = ${mil}; the successor opens the PR. ` +
+    `The /code-review of item 10 and the fixes of its findings are not "the PR open". ` +
+    `Subagent: return to the phase session without opening the PR.`
+  );
+}
+
+/** The JSON that refuses a `PreToolUse` call. */
+export function gateOutput(contexto) {
+  return JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'deny',
+      permissionDecisionReason: gateText(contexto),
     },
   });
 }
@@ -248,17 +377,22 @@ function readInput(raw) {
   return input;
 }
 
-/** Decides the session's role by the initial prompt (`nenhum` when silent); `null` while the transcript does not have it yet. */
-function decideRole(transcript) {
+/** The texts of the transcript's initial prompt, or `null` while it does not have one yet. */
+function readFirstPrompt(transcript) {
   const size = statSync(transcript).size;
-  const texts = firstPrompt(
+  return firstPrompt(
     readRange(transcript, 0, Math.min(size, HEAD_BYTES)),
     size > HEAD_BYTES,
   );
+}
+
+/** Decides the session's role by the initial prompt (`nenhum` when silent); `null` while the transcript does not have it yet. */
+function decideRole(transcript) {
+  const texts = readFirstPrompt(transcript);
   return texts === null ? null : (sessionRole(texts) ?? 'nenhum');
 }
 
-const PAPEIS = ['fase', 'coordenador', 'nenhum'];
+const PAPEIS = ['fase', 'coordenador', 'testador', 'nenhum'];
 
 /** The role kept in the state, or decided from the transcript (`null`: not decidable yet). */
 function resolveRole(state, transcript) {
@@ -317,7 +451,7 @@ export function handle(input, env = process.env) {
         ? state.saltos
         : [];
   // Context that returns to the role's trigger or below (compaction) resets the notice: the next crossing warns.
-  const gatilho = papel === 'coordenador' ? GATILHO_COORDENADOR : GATILHO;
+  const gatilho = TRIGGERS[papel];
   const lastWarning =
     contexto > gatilho && Number.isFinite(state?.ultimoAviso) ? state.ultimoAviso : null;
   const warn = shouldWarn(contexto, lastWarning, gatilho);
@@ -331,6 +465,51 @@ export function handle(input, env = process.env) {
     erro: erroEstado(erro) ?? state?.erro ?? null,
   });
   return warn ? warningOutput(contexto, jumps, papel) : null;
+}
+
+/** Whether the initial prompt carries the resume line of the phase's last session (`k` equal to `N`). */
+function isLastSession(transcript) {
+  const texts = readFirstPrompt(transcript) ?? [];
+  for (const text of texts) {
+    const found = MARCADOR_RETOMADA.exec(text);
+    if (found && found[1] === found[2]) return true;
+  }
+  return false;
+}
+
+/**
+ * Handles one `PreToolUse` call: returns the refusal JSON, or `null` to let the call through. Writes the
+ * state only to record the role it had to decide; throws on any failure (the caller turns it into silence).
+ */
+export function handleGate(input, env = process.env) {
+  if (env.CLAUDE_CODE_REMOTE !== 'true') return null;
+  if (!opensPullRequest(input.tool_name, input.tool_input)) return null;
+  const sessionId = input.session_id;
+  if (typeof sessionId !== 'string' || !SESSION_ID.test(sessionId)) return null;
+  const transcript = input.transcript_path;
+  if (typeof transcript !== 'string' || transcript === '') return null;
+
+  const file = statePath(sessionId);
+  const state = loadState(file); // a corrupted state throws: the gate fails open
+  const papel = resolveRole(state, transcript);
+  if (papel === null) return null;
+  // A subagent's `transcript_path` may be its own: its call never writes the role.
+  const subagent = typeof input.agent_id === 'string' && input.agent_id !== '';
+  if (!subagent && state?.papel !== papel)
+    saveState(file, {
+      ...state,
+      fase: papel === 'fase',
+      papel,
+      ultimoAviso: state?.ultimoAviso ?? null,
+      saltos: Array.isArray(state?.saltos) ? state.saltos : [],
+      erro: state?.erro ?? null,
+    });
+  if (papel !== 'fase') return null;
+
+  const contexto = measureTranscript(transcript);
+  if (contexto === null || contexto <= GATILHO) return null;
+  if (isLastSession(transcript)) return null;
+  return gateOutput(contexto);
 }
 
 function erroEstado(mensagem) {
@@ -363,7 +542,9 @@ function main() {
   let raw = '';
   try {
     raw = readFileSync(0, 'utf8');
-    const out = handle(readInput(raw));
+    const input = readInput(raw);
+    const out =
+      input.hook_event_name === 'PreToolUse' ? handleGate(input) : handle(input);
     if (out !== null) process.stdout.write(`${out}\n`);
   } catch (error) {
     recordError(raw, error);

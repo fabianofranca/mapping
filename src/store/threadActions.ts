@@ -17,8 +17,9 @@ import type { ThreadStore, ThreadStoreError } from './threads';
 
 // Thread actions (Comments stage): open, append, resolve, reopen and delete. They are the
 // only ones that change a thread in the app; writing belongs to `ThreadStore`. Each one refuses without
-// writing when the project is read-only, when a proposal review is open (decision 26)
-// or when the identity is missing (decision 11). `kind` never comes from the caller: the app only builds the
+// writing when the project is read-only or when the identity is missing (decision 11); open,
+// remove and removeMany also refuse while a proposal review is open (stage #1881, decisions 12
+// and 26): replying, resolving and reopening stay available there. `kind` never comes from the caller: the app only builds the
 // `human` author, with the name and e-mail from Settings (decision 12; ratchet in
 // `tests/tooling/threadAuthors.test.ts`). None of this goes through the undo history nor
 // `mapping.json`.
@@ -75,10 +76,11 @@ export function createThreadActions(deps: ThreadActionsDeps): ThreadActions {
   const { store, threads, now, newId } = deps;
 
   /** Who can write now, or the reason for not being able to. */
-  const writer = ():
-    { ok: true; me: Identity } | { ok: false; error: ThreadActionError } => {
+  const writer = (
+    refuseInReview = false,
+  ): { ok: true; me: Identity } | { ok: false; error: ThreadActionError } => {
     if (store.readOnly.value) return { ok: false, error: 'read-only' };
-    if (store.reviewing.value) return { ok: false, error: 'reviewing' };
+    if (refuseInReview && store.reviewing.value) return { ok: false, error: 'reviewing' };
     const me = deps.identity.value;
     return me === null ? { ok: false, error: 'no-identity' } : { ok: true, me };
   };
@@ -106,7 +108,7 @@ export function createThreadActions(deps: ThreadActionsDeps): ThreadActions {
 
   return {
     async open(anchor, text) {
-      const who = writer();
+      const who = writer(true);
       if (!who.ok) return who;
       const clean = cleanText(text);
       if (!clean.ok) return clean;
@@ -157,7 +159,7 @@ export function createThreadActions(deps: ThreadActionsDeps): ThreadActions {
     },
 
     async remove(threadId) {
-      const who = writer();
+      const who = writer(true);
       if (!who.ok) return who;
       const result = await threads.remove(threadId);
       if (result.ok) forget(threadId);
@@ -165,7 +167,7 @@ export function createThreadActions(deps: ThreadActionsDeps): ThreadActions {
     },
 
     async removeMany(threadIds) {
-      const who = writer();
+      const who = writer(true);
       if (!who.ok) return who;
       const result = await threads.removeMany(threadIds);
       for (const id of result.removed) forget(id);

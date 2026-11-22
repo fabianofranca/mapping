@@ -1,5 +1,10 @@
 import { t } from '../i18n';
-import type { CitationTarget, ThreadAnchor } from '../model';
+import {
+  liveLabel,
+  type CitationContext,
+  type CitationTarget,
+  type ThreadAnchor,
+} from '../model';
 import {
   canCopyItems,
   citationTargetOf,
@@ -10,8 +15,8 @@ import { composerOpen, insertCitation } from '../store/composerBridge';
 import { startComposing } from '../store/threadUi';
 import type { ActionMenuItem } from './ActionMenu';
 import { Button } from './controls';
+import { useCitationContext } from './comments/citationContext';
 import { useEditor } from './EditorContext';
-import { openToolWindow } from './toolWindowLayout';
 
 // "Cite in the conversation", "Comment" and "Copy reference" in the menus of a target (Comments stage,
 // CM5, decision 32): field, pair, row, annotation, item, layer and thread. A single definition of
@@ -37,20 +42,36 @@ interface CiteActions {
   copy(target: CopyTarget): MenuAction;
 }
 
+/** Whether `target` exists in the context's project (the citation resolves to a live name). */
+function existsIn(ctx: CitationContext, target: CitationTarget): boolean {
+  return !liveLabel(ctx, { found: true, target }, '').broken;
+}
+
 /** The menu actions, read from the current state (re-renders when the composer opens or closes). */
 export function useCiteActions(): CiteActions {
   const editor = useEditor();
   const { ui, store, review } = editor;
   const composer = composerOpen.value;
   const locked = store.locked.value;
+  const reviewing = store.reviewing.value;
+  // The project outside the proposal, with every thread and proposal that exists (decision 15).
+  const base = useCitationContext({ base: true });
   return {
     copyable: canCopyItems(editor),
-    cite: (target) => ({
-      label: t('cite.insert'),
-      disabled: !composer,
-      title: composer ? undefined : t('cite.needComposer'),
-      run: () => void insertCitation(target),
-    }),
+    cite: (target) => {
+      // In a review, only what exists outside the proposal can be cited (decision 15).
+      const onlyInProposal = reviewing && base !== null && !existsIn(base, target);
+      return {
+        label: t('cite.insert'),
+        disabled: !composer || onlyInProposal,
+        title: onlyInProposal
+          ? t('cite.onlyInProposal')
+          : composer
+            ? undefined
+            : t('cite.needComposer'),
+        run: () => void insertCitation(target),
+      };
+    },
     comment: (anchor) => ({
       label: t('comments.comment'),
       disabled: locked,
@@ -58,7 +79,6 @@ export function useCiteActions(): CiteActions {
         const project = review.derived.shownProject.peek();
         if (!project) return;
         startComposing(ui, project, anchor);
-        openToolWindow('details');
       },
     }),
     copy: (target) => ({

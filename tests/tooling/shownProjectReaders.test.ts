@@ -92,6 +92,8 @@ const ALLOWLIST = [
   // The reference preview shows the real project (PG3): the item lives on a page the open one cuts away.
   'src/ui/RefPreviewWindow.tsx',
   'src/ui/review/ReviewPanel.tsx',
+  // Citations in a review (stage #1881, decision 15): the `@` list and "Cite in the conversation" only offer what exists in the committed project (`CiteMenuItems.tsx` reads it through `useCitationContext({ base: true })`).
+  'src/ui/comments/citationContext.ts',
   // `CompareDialog`: the "before" image is the committed one by definition.
   'src/ui/review/ReviewCanvasControls.tsx',
   // `useReviewNames`: needs the current one and the preview (before/after names).

@@ -1,8 +1,12 @@
 // R1 (#1096): the MCP raster draws the rtl mirror (matrix with negative scaleX) of the icon and of the
 // path in the right box (fill, stroke, dashed and cap) and puts rtl text on the physical side of
-// `align`. Known limit: glyphs come out in text order, without bidi. Pixel parity
+// `align`. Stage #2448 (BD1): the glyphs of a mixed-direction line come out in visual order (UAX #9). Pixel parity
 // with Konva is in tests/e2e/directionParity.spec.ts.
-import { describe, expect, it } from 'vitest';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createRaster, type Raster } from '../../mcp/image/raster';
 import { paintScene } from '../../mcp/image/sceneRaster';
 import { textBars } from '../../mcp/image/textBars';
@@ -151,7 +155,7 @@ describe('raster: rtl text on the physical side of align', () => {
     expect(left!.x).toBe(0);
   });
 
-  it('the painted glyph falls on the same side (without bidi: text order)', () => {
+  it('the painted glyph falls on the same side', () => {
     const raster = createRaster(60, 20);
     raster.data.fill(255);
     paintScene(raster, [{ root: textNode('right', 'rtl') }], measure, {
@@ -165,5 +169,72 @@ describe('raster: rtl text on the physical side of align', () => {
       for (let x = 0; x < 60; x++)
         if (raster.data[(y * 60 + x) * 4 + 1]! < 128) right = Math.max(right, x);
     expect(right).toBeGreaterThanOrEqual(55);
+  });
+});
+
+// Stage #2448 (BD1, decisions 6 and 8): a line with several directions is drawn in visual order. The font is Mapping
+// Sans with the Hebrew letters mapped to `A` to `J` (`gsub-font.mjs --rtl`), so the drawing of a Hebrew line must
+// equal the drawing of the Latin line that reads the same on the screen.
+describe('raster: mixed-direction text in visual order', () => {
+  let dir: string;
+  let rtlBook: ReturnType<typeof createFontBook>;
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'mapping-rtl-raster-'));
+    execFileSync('node', [
+      'scripts/testing/gsub-font.mjs',
+      join(dir, 'rtl.ttf'),
+      '--rtl',
+    ]);
+    const file = new Uint8Array(readFileSync(join(dir, 'rtl.ttf')));
+    rtlBook = createFontBook([
+      {
+        family: 'Rtl',
+        weight: '400',
+        style: 'normal',
+        path: 'fonts/Rtl.ttf',
+        bytes: file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength),
+      },
+    ]);
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  function drawn(text: string, align: TextNode['style']['align'], direction?: 'rtl') {
+    const node = textNode(align, direction);
+    const wide: TextNode = {
+      ...node,
+      width: 200,
+      height: 24,
+      text,
+      style: { ...node.style, fontFamily: 'Rtl', fontSize: 20, lineHeight: 24 },
+    };
+    const raster = createRaster(200, 24);
+    raster.data.fill(255);
+    paintScene(raster, [{ root: wide }], measurerFor(rtlBook), {
+      scaleX: 1,
+      scaleY: 1,
+      clip: { x: 0, y: 0, width: 200, height: 24 },
+      fonts: rtlBook,
+    });
+    return raster.data;
+  }
+
+  it('abc בגד def in ltr: the Hebrew run is reversed in place', () => {
+    // (the letters stay off `A`: the font kerns a space and `A`, and the runs are shaped apart)
+    expect(drawn('abc בגד def', 'left')).toEqual(drawn('abc DCB def', 'left'));
+    expect(drawn('abc בגד def', 'left')).not.toEqual(drawn('abc BCD def', 'left'));
+  });
+
+  it('in rtl a number keeps its order and the runs come from the right', () => {
+    expect(drawn('אבג 123 דה', 'right', 'rtl')).toEqual(drawn('ED 123 CBA', 'right'));
+  });
+
+  it('in rtl the period of a Latin sentence is on the left', () => {
+    expect(drawn('Pay invoice.', 'right', 'rtl')).toEqual(drawn('.Pay invoice', 'right'));
+  });
+
+  it('a Latin line without Hebrew in ltr is drawn as before (the same bytes)', () => {
+    const plain = drawn('Hamburgefonstiv 123', 'left');
+    expect(plain).toEqual(drawn('Hamburgefonstiv 123', 'left', undefined));
+    expect(plain.some((v) => v < 128)).toBe(true);
   });
 });

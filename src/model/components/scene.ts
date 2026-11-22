@@ -215,7 +215,7 @@ export interface TextStyle {
   /**
    * `rtl` when the text reads right to left (the `align` is already physical, resolved by the
    * direction). Absent = `ltr`. The drawing passes the direction to the text renderer; the MCP
-   * raster aligns by the physical side and draws the glyphs in text order (no bidi).
+   * raster aligns by the physical side and lays the glyphs out in visual order (bidi, run by run).
    */
   readonly direction?: 'rtl';
   readonly verticalAlign: 'top' | 'middle' | 'bottom' | 'cap-middle';
