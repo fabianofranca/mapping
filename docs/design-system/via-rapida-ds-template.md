@@ -10,4 +10,4 @@ Sem impacto: the epic only changes the text of the `via-rapida` skill and its te
 
 ## Ficou sem gravar
 
-Nada.
+None.
