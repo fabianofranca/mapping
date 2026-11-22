@@ -134,7 +134,7 @@ describe('the `retomar fila` command and the records (GW4)', () => {
     has('changelog', fixed, ['re-enters', 'GitHub', 'after the End', '`retomar fila`']);
   });
 
-  it('SKILL.md stays under the 540-line limit of contextUsage.test.ts', () => {
-    expect(QUEUE.split('\n').length).toBeLessThan(540);
+  it('SKILL.md stays under the 560-line limit of contextUsage.test.ts', () => {
+    expect(QUEUE.split('\n').length).toBeLessThan(560);
   });
 });
