@@ -1360,7 +1360,7 @@ describe('CG2 — docs/FLOW.md: the PR gate in the phase session (decision 8)', 
 
   it('the /code-review and the fixes of its findings never count as the PR open', () => {
     expect(ceiling).toMatch(
-      /Once the phase PR is open[^.]*there is no switch[^.]*\.[^.]*the `\/code-review` and the fixes of its findings come before the PR and never count as the PR open/,
+      /Once the phase PR is open[^.]*there is no switch[^.]*\.[^.]*[Tt]he `\/code-review` and the fixes of its findings come before the PR and never count as the PR open/,
     );
   });
 
