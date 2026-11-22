@@ -1,4 +1,4 @@
-# The e2e comments test waits for the settled selection box — [Não lançado] (épico `epic/e2e-comments-settled-box`, MCP unchanged, schema v23 unchanged)
+# The e2e comments test waits for the settled selection box — [Não lançado] (MCP unchanged, schema v23 unchanged)
 
 ## Corrigido
 
