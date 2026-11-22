@@ -375,6 +375,22 @@ describe('CM1 — flow texts that use the measure (decisions 5 to 10)', () => {
     expect(context).toContain('or calling the owner');
   });
 
+  it('CG2: TESTING-NUVEM paragraph describes the hook notice from 250 thousand and what it asks (decision 8 of #2474)', () => {
+    expect(context).toContain('250 thousand');
+    expect(context).toContain('`scripts/ci/contextGuard.mjs`');
+    expect(context).toContain('every remaining batch runs in a subagent');
+    expect(context).toContain('reads only its summary line');
+    expect(context).toContain('the guide, the captures, the `runs` or the reports');
+    expect(context).toContain('assembles the report from the files of `apoio/`');
+    expect(context).toContain('no step marked "not executed" for context');
+    // It keeps what the other tests read: the ceiling, the measure, no call to the owner, no moved scripts.
+    expect(context).toContain('300 thousand');
+    expect(context).toContain('`node scripts/ci/contextUsage.mjs`');
+    expect(context).toContain('before handing over each batch');
+    expect(context).not.toMatch(/\bcalls? the owner/);
+    expect(context).not.toMatch(/move (test )?scripts/);
+  });
+
   it('TESTING-NUVEM: the notice ends with "; contexto <mil> mil" in the three formats', () => {
     expect(notice).toContain('`; contexto <n> mil`');
     expect(notice).toContain('`; contexto sem medida (<reason>)`');
@@ -465,8 +481,8 @@ describe('CM1 — flow texts that use the measure (decisions 5 to 10)', () => {
       '`pkill -f chrome` (it kills the shell itself and makes Chrome restore tabs)',
     );
     expect(cloud).toContain('(for example, the 25,000 cut or a missing excerpt)');
-    // The ceiling went from 32,000 to 32,500 in stage #1712 (restoring the wording from before PR #1709) and to 33,200 in #2261 (the cause rule of "Check and record") and to 33,500 in #2450 (the `await check` rule).
-    expect(cloud.length).toBeLessThanOrEqual(33_500);
+    // The ceiling went from 32,000 to 32,500 in stage #1712 (restoring the wording from before PR #1709), to 33,200 in #2261 (the cause rule of "Check and record"), to 33,550 in #2474 (the hook notice of "Context up to 300 thousand") and to 33,850 in #2450 (the `await check` rule, on top of the hook notice).
+    expect(cloud.length).toBeLessThanOrEqual(33_850);
   });
 
   it('CL1.5: the hardened measure catches the text that goes back to the old measure (mutation)', () => {
