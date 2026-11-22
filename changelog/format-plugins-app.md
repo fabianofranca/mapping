@@ -8,6 +8,7 @@
 - The `dist/index.html` ceiling rose 16 KiB, from 2441216 to 2457600, by the budget rule.
 - The `dist/index.html` ceiling rose 64 KiB, from 2457600 to 2523136, by the budget rule; above the limits, `bug` #2656 for the owner to review.
 - The `dist/index.html` ceiling rose 16 KiB, from 2523136 to 2539520, by the budget rule, after bringing `main` into the epic; above the limits, `bug` for the owner to review.
+- `sdui-backend` and `measured` libraries at `formatVersion` 22: no `origins`; the SDUI Button lost its external-system example and `examples/libraries/sdui-backend/examples/` keeps only `home.sdui.json`. Test scripts R10.11, R25.58 and R32.1/R41.1 follow the new numbers.
 
 ## Corrigido
 
@@ -15,6 +16,7 @@
 
 ## Adicionado
 
+- `examples/libraries/measured/`: the measured page format as a `dom` file format (parse-only plugin `plugins/dom.js`, `version` 1), replacing the `origins` of the old `measured` specialization; the sample page moved to `examples/libraries/measured/examples/page.measured.json`. Test script R44 covers it end to end (validate, `import_format`, app, no proposal created).
 - **Export in a format** (project menu, when an applied specialization declares a file format): pick a format (and a container, for a format of scope `container`), and the app runs the specialization's `generate` and offers the text as `<project or container name>.<extension>` to save or share, like the zip. The project does not change and the export does not count as an export of the project. Specializations that declare file formats show a notice saying their code runs isolated, without network, disk or access to your projects.
 - The plugin runs in a sandbox: a hidden iframe (`sandbox="allow-scripts"`, opaque origin) that starts a new Worker for every call, with no `fetch`, `XMLHttpRequest`, `WebSocket`, `importScripts`, `indexedDB`, `caches`, timers or `navigator`, a time limit (5 s) and size limits. The CSP of `dist/index.html` gains `worker-src blob:` and the hash of the sandbox bootstrap; Trusted Types accepts exactly the sandbox document. Nothing else about the CSP changes, and the guide and the viewer demo (`static` profile) are untouched.
 - **Import from a format** (project menu, next to Export in a format; disabled while the project is read-only): pick a format that reads files, the target container (for a format of scope `container`; "None" lets the plugin create it) and the file, then **Preview** runs the plugin's `parse` on the project and shows how many containers, markings, annotations and arrows would be created and changed, with the plugin's warnings, or the error with its path. **Import** applies exactly that result in one step: one `Ctrl+Z` undoes the whole import, the created markings become the selection and the view goes to them. A file with another extension or above 4 MiB is refused before it is read, and the pending changes are saved before the plugin runs (if the save fails, nothing runs).
