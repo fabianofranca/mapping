@@ -1,4 +1,4 @@
-# Redraw the DS previews of review and notices — [Não lançado] (épico `epic/ds-previews-redraw`)
+# Redraw the DS previews of review and notices — 2026-11-22 (épico `epic/ds-previews-redraw`)
 
 ## Pendências
 
@@ -21,4 +21,4 @@ PV2 wrote the last two (artifact version 106, id `1795349334-38f6`, `lastChange`
 
 ## Ficou sem gravar
 
-None so far.
+Nothing: PV1 and PV2 wrote every preview in the Mapping artifact (versions 105 and 106).
