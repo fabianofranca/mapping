@@ -17,7 +17,11 @@ import { messageText } from '../modelMessage';
 import { Button, TextField } from '../controls';
 import { TypedForm } from '../TypedForm';
 import { drawWarningText } from './drawWarnings';
-import type { CatalogRenderer } from './renderer';
+import {
+  type CatalogImages,
+  type CatalogRenderer,
+  packageImageOptions,
+} from './renderer';
 
 // Catalog Playground: the type's fields (TypedForm) next to the drawing, which is redone at
 // every change, at most once per frame. The size goes from `minSize` to double the `size`.
@@ -28,6 +32,9 @@ interface PlaygroundProps {
   readonly renderer: CatalogRenderer;
   /** Changes when the fonts finish loading: redraws. */
   readonly fontsEpoch?: number;
+  /** The specialization and its package images (absent = the placeholder). */
+  readonly specId?: string;
+  readonly images?: CatalogImages;
 }
 
 interface Drawn {
@@ -35,10 +42,17 @@ interface Drawn {
   readonly warnings: readonly ModelMessage[];
 }
 
-export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps) {
+export function Playground({
+  entry,
+  renderer,
+  fontsEpoch = 0,
+  specId = '',
+  images,
+}: PlaygroundProps) {
   const component = entry.component;
   // A remote image that finishes loading (or the consent that changes) redraws the preview.
-  const imagesEpoch = renderer.imagesEpoch.value;
+  const imagesEpoch = renderer.imagesEpoch.value + (images?.epoch ?? 0);
+  const imageSource = images?.source;
   const initial = entry.previewValues ?? {};
   const [values, setValues] = useState<Readonly<Record<string, unknown>>>(initial);
   // Axes the user pinned by typing; the `hug` ones outside this follow the content.
@@ -72,6 +86,7 @@ export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps)
         }
         const renderWarnings: ModelMessage[] = [];
         const url = renderer.rasterize(drawing.root, {
+          ...packageImageOptions(specId, imageSource),
           onWarnings: (found) =>
             renderWarnings.push(...found.map((w) => rawMessage(drawWarningText(w)))),
         });
@@ -84,7 +99,17 @@ export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps)
       }
     });
     return () => cancelAnimationFrame(frame);
-  }, [entry, component, values, size, renderer, fontsEpoch, imagesEpoch]);
+  }, [
+    entry,
+    component,
+    values,
+    size,
+    renderer,
+    fontsEpoch,
+    imagesEpoch,
+    specId,
+    imageSource,
+  ]);
 
   const range = useMemo(
     () => (component === null ? null : playgroundSizeRange(component)),

@@ -197,4 +197,60 @@ describe('PreviewController', () => {
     const { internals } = mount();
     expect(internals.frame?.tokens).toEqual(readCanvasTokens());
   });
+
+  describe('package images (DX5)', () => {
+    function fakeImages() {
+      let listener: ((key: string) => void) | null = null;
+      const images = {
+        resolve: vi.fn(() => ({ state: 'loading' as const })),
+        subscribe: vi.fn((l: (key: string) => void) => {
+          listener = l;
+          return () => {
+            listener = null;
+          };
+        }),
+        drop: vi.fn(),
+        clear: vi.fn(),
+        size: 0,
+        bytes: 0,
+      };
+      return {
+        images,
+        emit: (key: string) => listener?.(key),
+        has: () => listener !== null,
+      };
+    }
+
+    it('redoes the drawings that cite an image when it finishes, in one frame, and stops listening when destroyed', () => {
+      const { images, emit, has } = fakeImages();
+      const container = document.createElement('div');
+      Object.defineProperty(container, 'clientWidth', { value: 800 });
+      Object.defineProperty(container, 'clientHeight', { value: 600 });
+      document.body.append(container);
+      const controller = new PreviewController({
+        container,
+        project: cutProject(),
+        itemId: 'M5',
+        display: createDisplayImages<ImageBitmap>(() => new Promise(() => undefined)),
+        drawings: NO_DRAWINGS,
+        packageImages: images,
+      });
+      flush();
+      const layer = (
+        controller as unknown as {
+          componentLayer: { refreshPackageImages(keys: ReadonlySet<string>): boolean };
+        }
+      ).componentLayer;
+      const refresh = vi.spyOn(layer, 'refreshPackageImages');
+      expect(has()).toBe(true);
+      emit('lib\0images/logo.png');
+      emit('lib\0images/logo.png');
+      expect(frames).toHaveLength(1);
+      flush();
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(refresh.mock.calls[0]?.[0]).toEqual(new Set(['lib\0images/logo.png']));
+      controller.destroy();
+      expect(has()).toBe(false);
+    });
+  });
 });

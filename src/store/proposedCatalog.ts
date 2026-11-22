@@ -233,6 +233,8 @@ export function createProposedComponents(
   return {
     catalog,
     fontsEpoch,
+    // The applied libraries' images: a proposal's own package images show once it is applied.
+    images: base.images,
     whenIdle,
     dispose() {
       disposed = true;

@@ -44,6 +44,7 @@ export function CatalogScreen({ library }: CatalogScreenProps) {
             specId={library.specId}
             version={library.version}
             fontsEpoch={library.fontsEpoch.value}
+            images={{ source: library.images, epoch: library.imagesEpoch.value }}
             project={null}
             layout="split"
           />

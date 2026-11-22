@@ -78,6 +78,7 @@ import {
 import type { SceneNode } from '../model/components/scene';
 import type { ProjectStore } from './history';
 import * as imagePermissions from './imagePermissions';
+import type { PackageImages } from '../storage/packageImages';
 import { NO_PERSPECTIVE, projectInPerspective } from './perspectiveShown';
 import { markingDisplay, showComponentsOnPhotos } from './settings';
 import { memoizedTextMeasurer, textMeasurer } from './textMeasure';
@@ -246,6 +247,8 @@ export interface ComponentSources {
   readonly catalog: ReadonlySignal<ComponentCatalog>;
   /** Rises on every font registration: the drawings are remeasured. */
   readonly fontsEpoch: ReadonlySignal<number>;
+  /** The package images of the applied libraries (absent = every package image is the placeholder). */
+  readonly images?: PackageImages;
 }
 
 const NO_ISSUES: ReadonlyMap<string, readonly AnnotationIssue[]> = new Map();

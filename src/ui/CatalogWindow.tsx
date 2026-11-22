@@ -96,6 +96,10 @@ function CatalogComponents({ onOpenSpecs }: CatalogWindowProps) {
         specId={current.specId}
         version={current.version}
         fontsEpoch={session.components.fontsEpoch.value}
+        images={{
+          source: session.components.images,
+          epoch: session.components.imagesEpoch.value,
+        }}
         project={project}
         layout="list"
         onAddToScreen={(typeId) => add(current.specId, typeId)}

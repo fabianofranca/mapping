@@ -10,6 +10,7 @@ import { embeddedImageEpoch } from '../../canvas/components/imageLoader';
 import { sharedRemoteImageSource } from '../../canvas/components/remoteImages';
 import { readCanvasTokens } from '../../canvas/theme';
 import type { TextMeasurer } from '../../model';
+import type { PackageImages, PackageImageView } from '../../storage/packageImages';
 
 // What the Catalog uses to measure text and rasterize drawings. Injectable in the tests (jsdom
 // has no real canvas); in production it uses Konva isolated in `src/canvas/components/`.
@@ -24,6 +25,26 @@ export interface CatalogRenderer {
    * remote images): enters the gallery cache key, like the fonts epoch.
    */
   readonly imagesEpoch: ReadonlySignal<number>;
+}
+
+/**
+ * The package images the Catalog draws (decision 18 of stage #1903): the decoded-image source of the
+ * library and its epoch, which rises when an image finishes (a gallery entry is redone then).
+ */
+export interface CatalogImages {
+  readonly source: PackageImages;
+  readonly epoch: number;
+}
+
+/** The rasterizer options that bind the drawing to the library's package images. */
+export function packageImageOptions(
+  specId: string,
+  source: PackageImages | undefined,
+):
+  | { specId: string; packageImage: (spec: string, asset: string) => PackageImageView }
+  | Record<string, never> {
+  if (source === undefined) return {};
+  return { specId, packageImage: (spec, asset) => source.resolve(spec, asset) };
 }
 
 export function createCatalogRenderer(

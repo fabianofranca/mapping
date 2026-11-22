@@ -3,6 +3,7 @@ import type { LoadedFont } from '../../src/model/components/library';
 import type { FontRegistry } from '../../src/storage/fonts';
 import { openLibraryPreview } from '../../src/store/libraryPreview';
 import { material3Package } from '../storage/packageFixture';
+import { pngBytes } from '../support/imageBytes';
 
 // B5: library opened without a project: catalog and fonts in memory.
 
@@ -55,5 +56,30 @@ describe('openLibraryPreview', () => {
     expect(preview.name).toBe('');
     expect(preview.catalog.report.errors.length).toBeGreaterThan(0);
     preview.dispose();
+  });
+
+  it('decodes the package images from the files in memory, bumps the images epoch and frees them on close', async () => {
+    const close = vi.fn();
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn(() => Promise.resolve({ width: 8, height: 4, close })),
+    );
+    try {
+      const files = new Map(material3Package());
+      files.set('images/logo.png', new Blob([pngBytes(8, 4) as BlobPart]));
+      const { registry } = fakeRegistry();
+      const preview = openLibraryPreview(files, { fonts: registry });
+      expect(preview.images.resolve('material3', 'images/logo.png')).toEqual({
+        state: 'loading',
+      });
+      await vi.waitFor(() => expect(preview.imagesEpoch.value).toBe(1));
+      expect(preview.images.resolve('material3', 'images/logo.png').state).toBe('ready');
+      // Another specialization or a file that is not in the package: a failure, not a read.
+      expect(preview.images.resolve('other', 'images/logo.png').state).not.toBe('ready');
+      preview.dispose();
+      expect(preview.images.size).toBe(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

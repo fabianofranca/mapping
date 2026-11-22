@@ -45,6 +45,7 @@ export function PreviewHost(props: {
       itemId: latest.current.itemId,
       display,
       drawings: drawingsOf(latest.current.project),
+      ...(components.images ? { packageImages: components.images } : {}),
     });
     controller.current = preview;
     // The drawings depend on the catalog, the fonts and the UI locale (`annotation.untitled`): the

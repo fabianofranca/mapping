@@ -29,6 +29,7 @@ import { SpecTokensInfo } from './SpecTokensInfo';
 import { UpdateImpact } from './UpdateImpact';
 import {
   canPickDirectory,
+  packageImageBytes,
   pickPackageDirectory,
   readPackageFromDirectory,
   readPackageFromZip,
@@ -208,12 +209,15 @@ export function SpecsDialog({
       }
       const files = result.files;
       const spec = readPackageSpec(files);
+      // The image files are checked with their bytes: the limits of decision 12 (stage #1903)
+      // block the apply.
+      const imageBytes = await packageImageBytes(files);
       if (!spec) {
         setStep({
           kind: 'package',
           spec: null,
           decision: 'apply',
-          report: validatePackage(files),
+          report: validatePackage(files, undefined, imageBytes),
           files,
         });
         return;
@@ -229,7 +233,7 @@ export function SpecsDialog({
         kind: 'package',
         spec,
         decision,
-        report: validatePackage(files, previous),
+        report: validatePackage(files, previous, imageBytes),
         files,
       });
     } finally {

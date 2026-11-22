@@ -14,6 +14,7 @@ import {
 import { readHostFonts } from '../canvas/theme';
 import { resolvePath, type LoadedFont } from '../model/components/library';
 import { createFontRegistry, type FontRegistry, type FontStatus } from '../storage/fonts';
+import { createPackageImages, type PackageImages } from '../storage/packageImages';
 import { reportError } from '../utils/report';
 import { createFontSync } from './fontSync';
 import { createPendingTracker } from './pendingTracker';
@@ -30,6 +31,14 @@ export interface ComponentLibrary {
   readonly fontsEpoch: ReadonlySignal<number>;
   /** Status of each declared source (for Diagnostics). */
   readonly fonts: ReadonlySignal<readonly FontStatus[]>;
+  /**
+   * The package images of the applied specializations (decision 18 of stage #1903): the bytes are
+   * read on demand from the session copy or `specs/<id>/` and decoded with a limit; the drawing
+   * asks for `(specId, asset)` and gets the placeholder until the bitmap is ready.
+   */
+  readonly images: PackageImages;
+  /** Goes up whenever a package image finishes (or fails): the drawings that cite it redraw. */
+  readonly imagesEpoch: ReadonlySignal<number>;
   /** Resolves when what was requested has finished loading (tests). */
   whenIdle(): Promise<void>;
   /**
@@ -57,6 +66,8 @@ export interface ComponentLibraryDeps {
   ) => ReadonlyMap<string, string | Blob> | undefined;
   /** Default: `createFontRegistry()`. */
   readonly fonts?: FontRegistry;
+  /** Default: `createPackageImages(...)`, reading through `readBytes`. */
+  readonly images?: PackageImages;
 }
 
 const keyOf = (s: { readonly id: string; readonly version: number }): string =>
@@ -152,6 +163,7 @@ export function sameCatalog(a: ComponentCatalog, b: ComponentCatalog): boolean {
 
 export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLibrary {
   const registry = deps.fonts ?? createFontRegistry();
+  const imagesEpoch = signal(0);
   /** By `id@version`: undoing an update finds the previous one again. */
   const entries = signal<ReadonlyMap<string, SpecComponents>>(new Map());
   const fontStatus = signal<readonly FontStatus[]>([]);
@@ -186,6 +198,14 @@ export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLib
         : hit.arrayBuffer();
     }
     return deps.readBytes(path);
+  }
+
+  /** The bytes of a package image: `asset` is the path from the package root, as the component wrote it. */
+  async function readImage(specId: string, asset: string): Promise<ArrayBuffer | null> {
+    const owner = deps.project.peek()?.specializations.find((s) => s.id === specId);
+    const dir = owner === undefined ? null : packageDirOf(owner.file);
+    if (owner === undefined || dir === null || !hasPackage(owner)) return null;
+    return readBytes(owner, `${dir}/${asset}`);
   }
 
   function cachedFile(
@@ -289,13 +309,35 @@ export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLib
     );
   });
 
+  const images = deps.images ?? createPackageImages({ read: readImage });
+  const stopImageEpoch = images.subscribe(() => {
+    imagesEpoch.value++;
+  });
+  // A new version (or the removal) of a specialization frees its decoded bitmaps; its drawings
+  // are redone from the new catalog and ask for the images again.
+  let imageVersions = new Map<string, number>();
+  const stopImages = effect(() => {
+    const next = new Map<string, number>();
+    for (const owner of deps.project.value?.specializations ?? []) {
+      if (hasPackage(owner)) next.set(owner.id, owner.version);
+    }
+    for (const [id, version] of imageVersions) {
+      if (next.get(id) !== version) images.drop(id);
+    }
+    imageVersions = next;
+  });
+
   return {
     catalog,
     fontsEpoch: epoch,
     fonts: fontStatus,
+    images,
+    imagesEpoch,
     whenIdle,
     invalidate() {
       current += 1;
+      images.clear();
+      imagesEpoch.value++;
       loading.clear();
       for (const key of entries.peek().keys()) stale.add(key);
       generation.value++;
@@ -304,6 +346,9 @@ export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLib
       disposed = true;
       stopEntries();
       stopFonts();
+      stopImages();
+      stopImageEpoch();
+      images.clear();
       registry.clear();
     },
   };

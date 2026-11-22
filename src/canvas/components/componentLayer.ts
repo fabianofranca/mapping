@@ -6,7 +6,12 @@ import { IDENTITY_PLACEMENT, type Placement, type Rect } from '../../model';
 import type { ScreenAnchor } from '../../model/components/componentFormat';
 import type { ClipShape } from '../../model/componentDrawings';
 import type { CornerRadius, FrameNode } from '../../model/components/scene';
-import { type RemoteImageResult, type RenderPalette, renderScene } from './renderScene';
+import {
+  type PackageImageResult,
+  type RemoteImageResult,
+  type RenderPalette,
+  renderScene,
+} from './renderScene';
 
 /** What the renderer draws for each marking (the model's `ComponentDrawing` has this shape). */
 export interface LayerDrawing {
@@ -15,6 +20,8 @@ export interface LayerDrawing {
   readonly containerId: string | null;
   /** Scene instantiated in the marking's rectangle, in image pixels. */
   readonly root: FrameNode;
+  /** The specialization the component belongs to: it names the package images the scene cites. */
+  readonly specId?: string;
   /**
    * Drawing in screen pixels: `root` measures the component's `size` at the origin and is anchored at
    * `anchor` in the marking's `rect` (space pixels), with a fixed size at any zoom.
@@ -57,6 +64,8 @@ export interface ComponentLayerOptions {
   readonly onImageLoaded?: () => void;
   /** Resolves the URL of the component's `image` node (app gates + loader); see `renderScene`. */
   readonly remoteImage?: (url: string) => RemoteImageResult;
+  /** Resolves a package image `(specId, asset)` (the library's bytes, decoded); see `renderScene`. */
+  readonly packageImage?: (specId: string, asset: string) => PackageImageResult;
 }
 
 interface Mounted {
@@ -64,6 +73,8 @@ interface Mounted {
   readonly node: Konva.Group;
   /** Remote URLs the drawing uses (to redo only it when the image changes). */
   readonly imageUrls: readonly string[];
+  /** Keys of the package images the drawing uses (to redo only it when one finishes decoding). */
+  readonly packageKeys: readonly string[];
   /** How many images (`Konva.Image`) the drawing actually has (the placeholder does not count). */
   readonly images: number;
 }
@@ -339,21 +350,46 @@ export class ComponentLayerRenderer {
    * Returns `true` if any was redone.
    */
   refreshImages(urls: ReadonlySet<string> | null): boolean {
+    return this.redoWhere((entry) => {
+      if (entry.imageUrls.length === 0) return false;
+      return urls === null || entry.imageUrls.some((url) => urls.has(url));
+    });
+  }
+
+  /**
+   * Redoes only the drawings that use any of the package image `keys` (`packageImageKey`: the image
+   * finished decoding or failed), or all those that use a package image when `keys` is `null`
+   * (a library changed). Returns `true` if any was redone.
+   */
+  refreshPackageImages(keys: ReadonlySet<string> | null): boolean {
+    return this.redoWhere((entry) => {
+      if (entry.packageKeys.length === 0) return false;
+      return keys === null || entry.packageKeys.some((key) => keys.has(key));
+    });
+  }
+
+  /** Redraws each mounted drawing `wanted` accepts; the new node takes the old one's place in the order. */
+  private redoWhere(wanted: (entry: Mounted) => boolean): boolean {
     let changed = false;
     for (const [markingId, entry] of this.mounted) {
-      if (entry.imageUrls.length === 0) continue;
-      if (urls !== null && !entry.imageUrls.some((url) => urls.has(url))) continue;
+      if (!wanted(entry)) continue;
       const parent = entry.node.getParent();
       const index = entry.node.zIndex();
       entry.node.destroy();
-      const { node, imageUrls, images } = this.draw(entry.drawing);
+      const { node, imageUrls, packageKeys, images } = this.draw(entry.drawing);
       if (parent) {
         parent.add(node);
         node.zIndex(index);
         const placement = placementOf(this.placements, entry.drawing.containerId);
         if (placement) placeScreen(node, entry.drawing, placement.scale, this.zoom);
       }
-      this.mounted.set(markingId, { drawing: entry.drawing, node, imageUrls, images });
+      this.mounted.set(markingId, {
+        drawing: entry.drawing,
+        node,
+        imageUrls,
+        packageKeys,
+        images,
+      });
       if (parent && this.isMirror(parent)) this.dragChanged = true;
       else changed = true;
     }
@@ -426,9 +462,15 @@ export class ComponentLayerRenderer {
     const reused = current ? this.reuse(current, drawing, home, group) : null;
     if (reused !== null) return reused;
     current?.node.destroy();
-    const { node, imageUrls, images } = this.draw(drawing);
+    const { node, imageUrls, packageKeys, images } = this.draw(drawing);
     home.add(node);
-    this.mounted.set(drawing.markingId, { drawing, node, imageUrls, images });
+    this.mounted.set(drawing.markingId, {
+      drawing,
+      node,
+      imageUrls,
+      packageKeys,
+      images,
+    });
     return parent === null ? into : this.touchedBy(parent, group) | into;
   }
 
@@ -457,9 +499,10 @@ export class ComponentLayerRenderer {
   private draw(drawing: LayerDrawing): {
     node: Konva.Group;
     imageUrls: readonly string[];
+    packageKeys: readonly string[];
     images: number;
   } {
-    const { root, imageUrls } = renderScene(
+    const { root, imageUrls, packageImages } = renderScene(
       { root: drawing.root, warnings: [] },
       {
         palette: this.options.placeholder,
@@ -468,6 +511,8 @@ export class ComponentLayerRenderer {
         // The main canvas does not read pixels: an `opaque` image (no CORS) shows up.
         pixelSafe: false,
         ...(this.options.remoteImage ? { remoteImage: this.options.remoteImage } : {}),
+        ...(drawing.specId === undefined ? {} : { specId: drawing.specId }),
+        ...(this.options.packageImage ? { packageImage: this.options.packageImage } : {}),
       },
     );
     root.listening(false);
@@ -476,7 +521,12 @@ export class ComponentLayerRenderer {
         ? clipped(root, drawing.clip, drawing.clipShape)
         : root;
     node.setAttr('markingId', drawing.markingId);
-    return { node, imageUrls, images: root.find('Image').length };
+    return {
+      node,
+      imageUrls,
+      packageKeys: packageImages,
+      images: root.find('Image').length,
+    };
   }
 }
 

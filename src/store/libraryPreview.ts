@@ -1,6 +1,7 @@
 import { signal, type ReadonlySignal } from '@preact/signals';
 import { buildCatalog, packageSpecNameOf, type Catalog } from '../model';
 import { createFontRegistry, type FontRegistry } from '../storage/fonts';
+import { createPackageImages, type PackageImages } from '../storage/packageImages';
 import { reportError } from '../utils/report';
 import { fontDeclaration } from './componentLibrary';
 import { libraryInputFiles } from './packageValidation';
@@ -18,6 +19,10 @@ export interface LibraryPreview {
   readonly catalog: Catalog;
   /** Rises when the fonts finish registering: the drawings are remeasured. */
   readonly fontsEpoch: ReadonlySignal<number>;
+  /** The package images, decoded from the files in memory (decision 18 of stage #1903). */
+  readonly images: PackageImages;
+  /** Rises when a package image finishes (or fails): the gallery redraws. */
+  readonly imagesEpoch: ReadonlySignal<number>;
   dispose(): void;
 }
 
@@ -54,14 +59,29 @@ export function openLibraryPreview(
     })();
   }
 
+  const imagesEpoch = signal(0);
+  const images = createPackageImages({
+    read: async (specId, asset) => {
+      const data = specId === spec?.id ? files.get(asset) : undefined;
+      return data === undefined || typeof data === 'string' ? null : data.arrayBuffer();
+    },
+  });
+  const stopImagesEpoch = images.subscribe(() => {
+    imagesEpoch.value++;
+  });
+
   return {
     name: spec?.name ?? '',
     specId: spec?.id ?? '',
     version: spec?.version ?? 0,
     catalog,
     fontsEpoch: epoch,
+    images,
+    imagesEpoch,
     dispose() {
       disposed = true;
+      stopImagesEpoch();
+      images.clear();
       registry.clear();
     },
   };
