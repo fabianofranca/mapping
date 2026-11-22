@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { textWidth } from '../../mcp/image/glyphs';
+import { textInk } from '../../mcp/image/textLayout';
+import { baseNode, type TextNode } from '../../src/model/components/scene';
 import { guardedLayout } from '../../mcp/image/fontSubstitutions';
 import type { Face } from '../../mcp/image/harfbuzz';
 import {
@@ -57,6 +59,26 @@ describe('the library font book', () => {
     expect(book.embeddedFor('Gsub, monospace', 400)).toBe(sans);
     // A mono family first: the mono face, as `fontFor` resolves it.
     expect(book.embeddedFor('monospace, Gsub', 400)).toBe(mono);
+  });
+
+  // Stage #2267, decision 1: a monospace name falls back to Mapping Mono, library family or not.
+  it('a monospace library family falls back to Mapping Mono (bold from 600)', () => {
+    const book = createFontBook([{ ...gsubEntry(), family: 'JetBrains Mono' }]);
+    const plain = createFontBook();
+    expect(book.fontFor('JetBrains Mono', 400, false)).not.toBe(
+      book.embeddedFor('JetBrains Mono', 400),
+    );
+    expect(book.embeddedFor('JetBrains Mono', 400)).toBe(
+      plain.embeddedFor('monospace', 400),
+    );
+    expect(book.embeddedFor('JetBrains Mono', 700)).toBe(
+      plain.embeddedFor('monospace', 700),
+    );
+    expect(book.embeddedFor('JetBrains Mono', 400)).not.toBe(
+      plain.embeddedFor('sans-serif', 400),
+    );
+    // A library family that is not a mono name stays on the sans.
+    expect(book.embeddedFor('Gsub', 400)).toBe(plain.embeddedFor('sans-serif', 400));
   });
 });
 
@@ -139,5 +161,132 @@ describe('the book guards the text it measures', () => {
     expect(measure('zzz', font).width).toBeCloseTo(embedded.advance('zzz', 14), 6);
     face.advance = real;
     expect(measure('iii', font).width).toBeCloseTo(real('iii', 14), 6);
+  });
+});
+
+// Stage #2267, decision 2 (#2268): the metrics come from the face that lays the text out.
+describe('a library face that throws is drawn and measured with the embedded face, metrics included', () => {
+  const acme = () => {
+    // Mapping Mono under the family `Acme`: its ascent and descent differ from Mapping Sans, the embedded stand-in.
+    const mono = new Uint8Array(readFileSync('mcp/fonts/MappingMono-Regular.ttf'));
+    return {
+      family: 'Acme',
+      weight: '400',
+      style: 'normal' as const,
+      path: 'fonts/Acme.ttf',
+      bytes: mono.buffer.slice(
+        mono.byteOffset,
+        mono.byteOffset + mono.byteLength,
+      ) as ArrayBuffer,
+    };
+  };
+  const breakFace = (face: Face): (() => void) => {
+    const own = face as { advance: Face['advance']; path: Face['path'] };
+    const { advance, path } = own;
+    own.advance = () => {
+      throw new Error('boom');
+    };
+    own.path = () => {
+      throw new Error('boom');
+    };
+    return () => {
+      own.advance = advance;
+      own.path = path;
+    };
+  };
+  const node = (
+    family: string,
+    text: string,
+    style: Partial<TextNode['style']> = {},
+  ): TextNode => ({
+    ...baseNode({
+      id: 't',
+      name: 't',
+      width: 200,
+      height: 60,
+      transform: [1, 0, 0, 1, 0, 0],
+    }),
+    type: 'text',
+    text,
+    style: {
+      fontFamily: family,
+      fontSize: 14,
+      fontWeight: 400,
+      italic: false,
+      lineHeight: 20,
+      align: 'left',
+      verticalAlign: 'top',
+      ...style,
+    },
+  });
+  const polygonsOf = (book: ReturnType<typeof createFontBook>, n: TextNode) =>
+    textInk(n, measurerFor(book), book).glyphs.map((g) => g.polygons);
+
+  it.each([
+    ['the baseline', {}],
+    ['the underline', { decoration: 'underline' as const }],
+    ['cap-middle', { verticalAlign: 'cap-middle' as const }],
+    ['the baseline padding', { baselineTop: 4 }],
+  ])('%s come from the embedded face', (_name, style) => {
+    const book = createFontBook([acme()]);
+    const restore = breakFace(book.fontFor('Acme', 400, false));
+    const drawn = polygonsOf(book, node('Acme', 'Hello', style));
+    restore();
+    // Mapping Sans is what a family that resolves to nothing draws with.
+    expect(drawn).toEqual(
+      polygonsOf(createFontBook(), node('sans-serif', 'Hello', style)),
+    );
+  });
+
+  it('a justified line and its decoration come from the embedded face', () => {
+    const book = createFontBook([acme()]);
+    const restore = breakFace(book.fontFor('Acme', 400, false));
+    const style = { align: 'justify' as const, decoration: 'line-through' as const };
+    const text = 'one two three four five six seven eight nine ten';
+    const drawn = polygonsOf(book, { ...node('Acme', text, style), width: 150 });
+    restore();
+    const expected = polygonsOf(createFontBook(), {
+      ...node('sans-serif', text, style),
+      width: 150,
+    });
+    expect(drawn).toEqual(expected);
+  });
+
+  it('a monospace library family that throws is drawn with Mapping Mono and its baseline', () => {
+    const book = createFontBook([{ ...gsubEntry(), family: 'JetBrains Mono' }]);
+    const restore = breakFace(book.fontFor('JetBrains Mono', 400, false));
+    const drawn = polygonsOf(
+      book,
+      node('JetBrains Mono', 'Hello', { decoration: 'underline' }),
+    );
+    restore();
+    expect(drawn).toEqual(
+      polygonsOf(
+        createFontBook(),
+        node('monospace', 'Hello', { decoration: 'underline' }),
+      ),
+    );
+  });
+
+  it('the measurer takes the baseline of the face that lays the text out, and the library face again once it works', () => {
+    const book = createFontBook([acme()]);
+    const measure = measurerFor(book);
+    const font = {
+      family: 'Acme',
+      size: 14,
+      weight: 400,
+      italic: false,
+      letterSpacing: 0,
+      lineHeight: 20,
+    };
+    const baselineWith = (face: Face) =>
+      10 + ((face.ascender - -face.descender) * (14 / face.unitsPerEm)) / 2;
+    const library = book.fontFor('Acme', 400, false);
+    const embedded = book.embeddedFor('Acme', 400);
+    const restore = breakFace(library);
+    expect(measure('broken', font).firstBaseline).toBeCloseTo(baselineWith(embedded), 6);
+    restore();
+    expect(measure('working', font).firstBaseline).toBeCloseTo(baselineWith(library), 6);
+    expect(baselineWith(library)).not.toBeCloseTo(baselineWith(embedded), 3);
   });
 });

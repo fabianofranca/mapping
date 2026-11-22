@@ -770,7 +770,7 @@ describe('timeout-minutes on every ci.yml job', () => {
   const table: Record<string, number> = {
     epic: 3,
     static: 4,
-    test: 6,
+    test: 8,
     coverage: 3,
     build: 7,
     check: 2,

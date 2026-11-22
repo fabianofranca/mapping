@@ -8,7 +8,10 @@ import {
 import { ToolError } from './errors';
 import { encodeImage } from './image/codecs';
 import { hexToRgb } from './image/compose';
-import { declaredModes, paintContainerDrawings } from './image/containerDrawing';
+import {
+  declaredModes,
+  paintContainerDrawingsWithImages,
+} from './image/containerDrawing';
 import { MAX_PIXELS, MIME, type ImageFormat } from './image/formats';
 import { clampRect, createRaster, crop, resize, type PixelRect } from './image/raster';
 import { loadImage, rectJson, scaleRect, sizeWarning, urlFields } from './imageTools';
@@ -16,6 +19,7 @@ import type { ImageResult, ImageSource } from './imageTools';
 import type { ImageServer } from './imageServer';
 import type { Refs } from './items';
 import type { Roots } from './paths';
+import { packageImageResolver } from './projects';
 
 // `render_marking` and `render_container` (decision 32): the components' drawing as PNG, with real
 // text, at the requested zoom and mode. It is the server's drawing, not a capture of the app.
@@ -147,9 +151,14 @@ async function renderRegion(
   );
   const scaleX = width / region.width;
   const scaleY = height / region.height;
-  const drawn = paintContainerDrawings(
+  const drawn = await paintContainerDrawingsWithImages(
     raster,
-    { project: refs.project, catalog: refs.loaded.catalog, fonts: refs.loaded.fonts },
+    {
+      project: refs.project,
+      catalog: refs.loaded.catalog,
+      fonts: refs.loaded.fonts,
+      images: packageImageResolver(roots, refs.loaded),
+    },
     container.id,
     {
       scaleX,
@@ -164,6 +173,7 @@ async function renderRegion(
       ...(options.direction === undefined ? {} : { direction: options.direction }),
     },
   );
+  const warnings = [warning, ...drawn.notes].filter((w) => w !== undefined);
   const bytes = await encodeImage(raster, format);
   return {
     json: {
@@ -176,9 +186,9 @@ async function renderRegion(
       drawingMode: options.drawingMode ?? null,
       direction: options.direction ?? null,
       region: rectJson(region),
-      drawings: drawn,
-      ...(warning === undefined ? {} : { warning }),
-      note: "the server's drawing (bundled free font or the library's), not a capture of the app; a remote image becomes a placeholder and the gradient takes the first color",
+      drawings: drawn.count,
+      ...(warnings.length === 0 ? {} : { warning: warnings.join('; ') }),
+      note: "the server's drawing (bundled free font or the library's), not a capture of the app; the images of the library package are drawn from its files; a remote image becomes a placeholder",
       ...(await urlFields(images, bytes, format, 'drawing')),
     },
     image: { bytes, mimeType: MIME[format] },

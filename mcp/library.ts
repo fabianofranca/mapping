@@ -3,6 +3,8 @@ import { basename, dirname, join } from 'node:path';
 import { NOTES_LIBRARY } from '../libraries/notas';
 import { parseSpecText, type BundledLibrary, type Spec } from '../src/model';
 import { resolvePath } from '../src/model/components/library';
+import { isImagePath } from '../src/model/components/imagePath';
+import { MAX_IMAGE_BYTES } from '../src/model/libraryImages';
 import type { pluginIssues as PluginIssues } from './pluginChecks';
 import {
   validateLibrary,
@@ -23,7 +25,7 @@ import { MAX_FONT_BYTES } from './projects';
 
 // Library package (Library stage, B2): `validate_library` reads the package FOLDER and calls
 // `validateLibrary` (`src/model/library.ts`), the same function as the app and the skill. Here only
-// the disk is read: `.json`/`.md`/`.js` texts (the `.js` is a format plugin, `formatVersion` 20; the server never runs it), the rest becomes `binary: true` without reading the content.
+// the disk is read: `.json`/`.md`/`.js` texts (the `.js` is a format plugin, `formatVersion` 20; the server never runs it), an image (PNG, JPEG, WebP) up to 1 MB is read (its bytes are checked); an image over 1 MB is only measured; the rest becomes `binary: true` without reading the content.
 // Symbolic links are never followed (the folder and the files must actually be inside the
 // roots). Read-only; nothing is applied to any project.
 
@@ -134,6 +136,23 @@ export interface ReadPackageOptions {
   readonly real?: string;
 }
 
+/**
+ * A binary of the package as `validateLibrary` takes it. An image up to 1 MB goes with its bytes
+ * (already read when `read` is given); a larger one is not read: only its size goes, so the
+ * validator can say "larger than 1 MB" without the content. Other binaries carry nothing.
+ */
+async function binaryEntry(
+  file: Walked,
+  read: Uint8Array | undefined,
+): Promise<LibraryFile> {
+  if (!isImagePath(file.path)) return { path: file.path, binary: true };
+  if (file.size > MAX_IMAGE_BYTES) {
+    return { path: file.path, binary: true, size: file.size };
+  }
+  const bytes = read ?? (await readFile(file.real));
+  return { path: file.path, binary: true, bytes, size: bytes.length };
+}
+
 /** Reads the package folder: `path` is the folder or the specialization file inside it. */
 export async function readPackage(
   roots: Roots,
@@ -170,7 +189,9 @@ export async function readPackage(
   for (const file of walked) {
     if (!isTextPath(file.path)) {
       if (options.raw) raw.set(file.path, await readFile(file.real));
-      files.push({ path: file.path, binary: true });
+      files.push(
+        await binaryEntry(file, options.raw === true ? raw.get(file.path) : undefined),
+      );
       continue;
     }
     if (file.size > MAX_TEXT_FILE_BYTES) {

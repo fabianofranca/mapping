@@ -18,7 +18,8 @@ export const componentMessages = {
   'component.expectedRadius':
     'expected a number greater than or equal to 0 or a list of 4 numbers',
   'component.expectedFill': 'expected a color or gradient',
-  'component.expectedLinear': 'expected "linear"',
+  'component.expectedGradientType': 'expected "linear", "radial" or "angular"',
+  'component.expectedGradientCenter': 'expected two numbers from 0 to 1',
   'component.expectedStops': 'expected a list of stops',
   'component.expectedTwoStops': 'expected at least 2 stops',
   'component.expectedObject': 'expected an object',
@@ -61,6 +62,10 @@ export const componentMessages = {
   'component.offsetOnlyShapes':
     'only valid in frame, rect and ellipse (this is {nodeType})',
   'component.expectedInteger1': 'expected an integer greater than or equal to 1',
+  'component.expectedTrackCount':
+    'expected an integer greater than or equal to 1 or a list of tracks',
+  'component.expectedTrackItem': 'expected a number ≥ 0, "<n>fr" or "hug"',
+  'component.expectedTrackListSize': 'expected 1 to 24 tracks',
   'component.expectedPadding':
     'expected a number, a list of 2 or a list of 4 numbers (greater than or equal to 0)',
   'component.expectedGap':
@@ -79,6 +84,8 @@ export const componentMessages = {
   'component.expectedNodes': 'expected a list of nodes',
   'component.expectedHttps': 'expected an absolute https:// URL ({reason})',
   'component.srcOnlyLiteral': 'src only accepts literal text or { "$field": "<field>" }',
+  'component.imageSrcResults':
+    'in $switch and $if every result must be a package image path',
   'component.expectedInteger0': 'expected an integer greater than or equal to 0',
   'component.countOrField': 'use count or field, not both',
   'component.repeatTemplateFrame': 'the template of a row must be of type "frame"',
@@ -94,6 +101,8 @@ export const componentMessages = {
     'expected the name of the provided color (non-empty text)',
   'component.gapNotWithSides': 'gap is not valid with sides',
   'component.expectedShadowCount': 'expected 1 to {max} shadows',
+  'component.expectedTrueOrFalse': 'expected true or false',
+  'component.innerShadowNodes': 'only valid on frame, rect and ellipse',
   'component.gapNodeNotFound': 'node not found: {name}',
   'component.gapNotInRepeat': 'stroke.gap cannot be used inside a repeat',
   'component.gapNotSelf': 'stroke.gap.node cannot name the node itself: {name}',

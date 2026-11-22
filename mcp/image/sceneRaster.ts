@@ -22,7 +22,15 @@ import {
   type Shadow,
   type TextNode,
 } from '../../src/model/components/scene';
-import { MAX_SHADOW_PIXELS, compositeShadow, dashPaths } from './effects';
+import {
+  MAX_SHADOW_PIXELS,
+  compositeInnerShadow,
+  compositeShadow,
+  dashPaths,
+} from './effects';
+import { gradientShader, type Shader } from './gradientShader';
+import { imageShader } from './imageShader';
+import type { PackageImages } from './packageImages';
 import { createRaster, type PixelRect, type Raster } from './raster';
 import { textBars, type TextBar } from './textBars';
 import { textInk } from './textLayout';
@@ -32,8 +40,8 @@ export { textBars, type TextBar };
 
 // Simplified drawing of a component scene, in pixels, for `get_marking_image` on a blank
 // screen. The server has no fonts or canvas: shapes become polygons filled by
-// scanline with (smoothed) coverage, the gradient becomes the color of the first stop, the image becomes
-// a gray placeholder. With `view.fonts` the text is drawn with the font's glyphs (wrapping, `…`
+// scanline with (smoothed) coverage, the gradient is painted per pixel (a shader), the image becomes
+// a gray placeholder (a package image, with `view.images`, is sampled into the shape). With `view.fonts` the text is drawn with the font's glyphs (wrapping, `…`
 // and runs); without it, it becomes bars (one per line, in the text color). Stroke with `align`, dashes,
 // `cap`/`join` and `sides`, and blurred shadow. Pure: no disk.
 
@@ -44,6 +52,11 @@ export interface SceneView {
   readonly clip: PixelRect;
   /** Fonts for drawing the text; absent = the text becomes bars (the simplified drawing). */
   readonly fonts?: FontBook;
+  /**
+   * The decoded package images (an `image` paint's `asset`); absent, or an image it does not hold =
+   * the placeholder. The drawing's `specId` says which package an `asset` belongs to.
+   */
+  readonly images?: PackageImages;
   /** Where the image's origin (0, 0) sits in the raster, in raster pixels (default 0, 0). */
   readonly originX?: number;
   readonly originY?: number;
@@ -114,7 +127,10 @@ function clamp255(value: number): number {
   return Math.min(255, Math.max(0, Math.round(value)));
 }
 
-/** The solid color the fill becomes (gradient: the first stop; image: placeholder). */
+/**
+ * The solid color a paint becomes where only one color fits (a stroke, the text): the gradient's
+ * first stop, or the placeholder of an image. A fill uses `fillSource`, which paints the gradients.
+ */
 function paintColor(paint: Paint): Color | null {
   let base: Color | null;
   switch (paint.type) {
@@ -123,6 +139,7 @@ function paintColor(paint: Paint): Color | null {
       break;
     case 'linear':
     case 'radial':
+    case 'angular':
       base = paint.stops[0] ? parseColor(paint.stops[0].color) : null;
       break;
     case 'image':
@@ -131,6 +148,20 @@ function paintColor(paint: Paint): Color | null {
   }
   if (base === null) return null;
   return { rgb: base.rgb, alpha: base.alpha * (paint.opacity ?? 1) };
+}
+
+/**
+ * What a fill paints with: the color of a solid or image paint (the caller applies the node's
+ * opacity), or the shader of a gradient, which takes the node's `matrix` (local → raster) and the
+ * accumulated `opacity` itself. `null` when the paint draws nothing.
+ */
+function fillSource(
+  paint: Paint,
+  matrix: Matrix,
+  opacity: number,
+): Color | Shader | null {
+  if (paint.type === 'image' || paint.type === 'solid') return paintColor(paint);
+  return gradientShader(paint, matrix, opacity, parseColor);
 }
 
 // ---------------------------------------------------------------------------
@@ -692,16 +723,18 @@ function blend(raster: Raster, index: number, color: Color, coverage: number): v
 /**
  * Fills the polygons (in raster pixels) with the even-odd or non-zero rule, within
  * `clip`. The coverage of each pixel comes from `SUBSAMPLES` vertical samples with exact
- * horizontal coverage.
+ * horizontal coverage. `source` is a solid color (the fast path) or a shader, which gives the
+ * color of each pixel from its center.
  */
 export function fillPolygons(
   raster: Raster,
   polygons: readonly Polygon[],
   rule: 'nonzero' | 'evenodd',
-  color: Color,
+  source: Color | Shader,
   clip: PixelRect,
 ): void {
-  if (color.alpha <= 0) return;
+  const solid = typeof source === 'function' ? undefined : source;
+  if (solid !== undefined && solid.alpha <= 0) return;
   const edges: Edge[] = [];
   let minX = Infinity;
   let maxX = -Infinity;
@@ -777,7 +810,9 @@ export function fillPolygons(
     }
     for (let x = 0; x < width; x++) {
       const c = coverage[x]!;
-      if (c > 0) blend(raster, (y * raster.width + bx0 + x) * 4, color, Math.min(1, c));
+      if (c <= 0) continue;
+      const color = solid ?? (source as Shader)(bx0 + x + 0.5, y + 0.5);
+      blend(raster, (y * raster.width + bx0 + x) * 4, color, Math.min(1, c));
     }
   }
 }
@@ -862,12 +897,17 @@ function cutStrip(node: TextNode): Polygon {
   ];
 }
 
+/** The decoded package image of an `asset` of one specialization's package. */
+type ImageLookup = (asset: string) => Raster | undefined;
+
 class Painter {
   constructor(
     private readonly raster: Raster,
     private readonly measure: TextMeasurer,
     private readonly scale: number,
     private readonly fonts?: FontBook,
+    /** The package image of an `asset` for the drawing's specialization (absent = the placeholder). */
+    private readonly images?: ImageLookup,
   ) {}
 
   paint(node: SceneNode, parent: Matrix, opacity: number, clip: PixelRect): void {
@@ -884,18 +924,20 @@ class Painter {
     const fillable = node.type !== 'line' || node.closed;
     if (fillable && node.type !== 'text') {
       for (const paint of node.fills) {
-        const color = paintColor(paint);
-        if (color === null) continue;
+        if (this.packageImage(node, paint, matrix, alpha, clip)) continue;
+        const source = fillSource(paint, matrix, alpha);
+        if (source === null) continue;
         this.fill(
           shapes.map((s) => s.points),
           matrix,
           rule,
-          color,
+          source,
           alpha,
           clip,
         );
       }
     }
+    this.innerShadows(node, shapes, matrix, alpha, clip);
     this.strokeNode(node, shapes, matrix, alpha, clip);
     if (node.type === 'text') this.text(node, matrix, alpha, clip);
 
@@ -982,7 +1024,8 @@ class Painter {
     if (x1 <= x0 || y1 <= y0) return;
     const [width, height] = [x1 - x0, y1 - y0];
     const layer = createRaster(width, height);
-    draw(new Painter(layer, this.measure, this.scale, this.fonts), translate(-x0, -y0), {
+    const inner = new Painter(layer, this.measure, this.scale, this.fonts, this.images);
+    draw(inner, translate(-x0, -y0), {
       x: region.x - x0,
       y: region.y - y0,
       width: region.width,
@@ -1046,6 +1089,83 @@ class Painter {
       const rule = node.type === 'path' ? node.fillRule : 'nonzero';
       this.shadow(casting, shadow, matrix, { rule, color, alpha, clip });
     }
+  }
+
+  /**
+   * The inner shadows (CSS `inset`) of a `frame`, `rect` or `ellipse`, above the fill and below the
+   * stroke: the first of the list stays on top, so the last one is painted first.
+   */
+  private innerShadows(
+    node: SceneNode,
+    shapes: Subpath[],
+    matrix: Matrix,
+    alpha: number,
+    clip: PixelRect,
+  ): void {
+    const boxed =
+      node.type === 'frame' || node.type === 'rect' || node.type === 'ellipse';
+    if (!boxed || shapes.length === 0) return;
+    for (const shadow of [...node.effects].reverse()) {
+      const color = parseColor(shadow.color);
+      if (!shadow.inner || color === null) continue;
+      this.innerShadow(node, shapes, shadow, matrix, { color, alpha, clip });
+    }
+  }
+
+  /**
+   * One inner shadow: the inverted mask of the hole (the shape shrunk by `spread`, shifted by the
+   * offset), blurred and multiplied by the shape's coverage.
+   */
+  private innerShadow(
+    node: SceneNode,
+    shapes: Subpath[],
+    shadow: Shadow,
+    matrix: Matrix,
+    paint: { color: Color; alpha: number; clip: PixelRect },
+  ): void {
+    const [a, b, c, d] = matrix;
+    const ratio = Math.sqrt(Math.abs(a * d - b * c)) / this.scale;
+    const nodeScale = Math.abs(ratio - 1) < 1e-9 || !Number.isFinite(ratio) ? 1 : ratio;
+    const scale = this.scale * nodeScale;
+    const sigma = (shadow.blur * scale) / 2;
+    const margin = Math.ceil(sigma * 3) + 2;
+    const outline = shapes.map((sub) => this.toRaster(sub.points, matrix));
+    const hole = spreadShapes(node, shapes, -(shadow.spread ?? 0)).map((sub) =>
+      this.toRaster(
+        sub.points.map((p) => ({ x: p.x + shadow.offset.x, y: p.y + shadow.offset.y })),
+        matrix,
+      ),
+    );
+    const edge = bounds(outline.flat());
+    const box: PixelRect = {
+      x: Math.floor(edge.x) - margin,
+      y: Math.floor(edge.y) - margin,
+      width: Math.ceil(edge.width) + 2 * margin,
+      height: Math.ceil(edge.height) + 2 * margin,
+    };
+    if (box.width * box.height > MAX_SHADOW_PIXELS) return;
+    const whole: PixelRect = { x: 0, y: 0, width: box.width, height: box.height };
+    const coverage = (polygons: Polygon[]): Float32Array => {
+      const temp = createRaster(box.width, box.height);
+      fillPolygons(
+        temp,
+        polygons.map((poly) => poly.map((p) => ({ x: p.x - box.x, y: p.y - box.y }))),
+        'nonzero',
+        { rgb: [0, 0, 0], alpha: 1 },
+        whole,
+      );
+      const mask = new Float32Array(box.width * box.height);
+      for (let i = 0; i < mask.length; i++) mask[i] = temp.data[i * 4 + 3]! / 255;
+      return mask;
+    };
+    compositeInnerShadow(
+      this.raster,
+      { hole: coverage(hole), inside: coverage(outline) },
+      box,
+      sigma,
+      { rgb: paint.color.rgb, alpha: paint.color.alpha * paint.alpha },
+      paint.clip,
+    );
   }
 
   /** One shadow: the shape's mask (`casting`), blurred and shifted, composed onto the raster. */
@@ -1146,11 +1266,45 @@ class Painter {
     }
   }
 
+  /**
+   * Paints an `image` paint with a package `asset` whose pixels the view holds: the image is sampled
+   * into its own box (`fit`), rounded by the node's radius like the app's image. Only a `rect` takes the
+   * image (as in the app, where any other shape draws the placeholder). `false` = not a package image
+   * the view holds (the caller paints the placeholder).
+   */
+  private packageImage(
+    node: SceneNode,
+    paint: Paint,
+    matrix: Matrix,
+    opacity: number,
+    clip: PixelRect,
+  ): boolean {
+    if (node.type !== 'rect' || paint.type !== 'image' || paint.asset === undefined) {
+      return false;
+    }
+    const raster = this.images?.(paint.asset);
+    if (raster === undefined) return false;
+    const source = imageShader(
+      paint,
+      raster,
+      { width: node.width, height: node.height },
+      matrix,
+      opacity,
+    );
+    if (source === null) return true;
+    const { placed } = source;
+    const outline = roundedRect(placed.width, placed.height, node.cornerRadius).map(
+      (p) => ({ x: p.x + placed.x, y: p.y + placed.y }),
+    );
+    this.fill([outline], matrix, 'nonzero', source.shader, opacity, clip);
+    return true;
+  }
+
   private fill(
     polygons: readonly Polygon[],
     matrix: Matrix,
     rule: 'nonzero' | 'evenodd',
-    color: Color,
+    source: Color | Shader,
     opacity: number,
     clip: PixelRect,
   ): void {
@@ -1159,7 +1313,10 @@ class Painter {
       this.raster,
       polygons.map((poly) => this.toRaster(poly, matrix)),
       rule,
-      { rgb: color.rgb, alpha: color.alpha * opacity },
+      // A shader already carries the opacity (`fillSource`).
+      typeof source === 'function'
+        ? source
+        : { rgb: source.rgb, alpha: source.alpha * opacity },
       clip,
     );
   }
@@ -1317,6 +1474,8 @@ const ANCHOR_FRACTION: Record<ScreenAnchor, readonly [number, number]> = {
 /** Drawing (the instantiated scene of a marking) for `paintScene`. */
 export interface SceneDrawing {
   readonly root: SceneNode;
+  /** The specialization whose package the scene's `asset` images belong to (absent = no package images). */
+  readonly specId?: string;
   /**
    * Drawing in screen pixels (the component's `screen`): `root` measures the `size` at the origin and is
    * anchored at `anchor` in the marking's `rect` (image pixels). In the server's image one design pixel
@@ -1363,6 +1522,42 @@ function drawingBase(drawing: SceneDrawing, view: SceneView): Matrix {
   ];
 }
 
+/** The decoded images of `specId`'s package, as the painters look them up. */
+function imageLookup(
+  images: PackageImages | undefined,
+  specId: string | undefined,
+): ImageLookup | undefined {
+  if (images === undefined || specId === undefined) return undefined;
+  return (asset) => images.get(specId, asset);
+}
+
+/**
+ * The painters of one `paintScene`: one per specialization (each has its own package images) and per
+ * scale (the container's density, and 1 for a screen drawing), not one per drawing.
+ */
+class PainterPool {
+  private readonly pools = new Map<string, Map<number, Painter>>();
+
+  constructor(
+    private readonly raster: Raster,
+    private readonly measure: TextMeasurer,
+    private readonly view: SceneView,
+  ) {}
+
+  get(specId: string | undefined, scale: number): Painter {
+    const key = specId ?? '';
+    const byScale = this.pools.get(key) ?? new Map<number, Painter>();
+    this.pools.set(key, byScale);
+    let painter = byScale.get(scale);
+    if (painter === undefined) {
+      const lookup = imageLookup(this.view.images, specId);
+      painter = new Painter(this.raster, this.measure, scale, this.view.fonts, lookup);
+      byScale.set(scale, painter);
+    }
+    return painter;
+  }
+}
+
 /**
  * Paints the scenes onto `raster`, in order (the last ones end up on top), only within
  * `view.clip`. A scene whose box does not touch the region is ignored.
@@ -1374,10 +1569,7 @@ export function paintScene(
   view: SceneView,
 ): void {
   const scale = Math.sqrt(view.scaleX * view.scaleY);
-  const painter = new Painter(raster, measure, scale, view.fonts);
-  const screenPainter = new Painter(raster, measure, 1, view.fonts);
-  // One painter per root scale (the container's density), not one per drawing.
-  const scaled = new Map<number, Painter>();
+  const pool = new PainterPool(raster, measure, view);
   const clip = intersect(view.clip, {
     x: 0,
     y: 0,
@@ -1405,20 +1597,14 @@ export function paintScene(
       continue;
     }
     if (drawing.screen !== undefined) {
-      screenPainter.paint(root, base, 1, clip);
+      pool.get(drawing.specId, 1).paint(root, base, 1, clip);
       continue;
     }
     // The density (the scene root's scale) goes into the painter's scale: the shadow and the minimum stroke
     // are measured in output pixels, not in component units.
     const [a, b, c, d] = root.transform;
     const rootScale = Math.sqrt(Math.abs(a * d - b * c));
-    let drawer = painter;
-    if (rootScale !== 1) {
-      drawer =
-        scaled.get(rootScale) ??
-        new Painter(raster, measure, scale * rootScale, view.fonts);
-      scaled.set(rootScale, drawer);
-    }
+    const drawer = pool.get(drawing.specId, scale * rootScale);
     const region = slotClip(drawing.clip, base, clip);
     const shapes = shapePolygons(drawing, base);
     if (shapes.length === 0) drawer.paint(root, base, 1, region);

@@ -391,7 +391,7 @@ const ANCHOR_KEYS = [
 const LAYOUT_KEYS = ['gap', 'padding', 'align', 'justify'] as const;
 const STROKE_KEYS = ['color', 'width', 'align', 'dash', 'scale'] as const;
 const FILTER_KEYS = ['grayscale'] as const;
-const SHADOW_KEYS = ['color', 'x', 'y', 'blur'] as const;
+const SHADOW_KEYS = ['color', 'x', 'y', 'blur', 'inner'] as const;
 const FONT_KEYS = [
   'family',
   'size',
@@ -431,6 +431,8 @@ const ENUM_VALUES = {
   'image.fit': ['cover', 'contain', 'fill'],
   'repeat.direction': ['column', 'row'],
 } as const;
+/** A literal `image.src` that cites a package image: not a URL and ending in an image extension. */
+const PACKAGE_IMAGE_PATH = /^(?!https?:).*\.(png|jpe?g|webp)$/i;
 /** Shapes of a value: `size` (width/height of the node), `padding`, `fill`, `cornerRadius` etc. */
 const SHAPE_FEATURES = [
   'size=px',
@@ -445,14 +447,24 @@ const SHAPE_FEATURES = [
   'layout.padding=pair',
   'layout.padding=quad',
   'layout.padding=item-expression',
+  'layout.tracks=list',
+  'layout.track=px',
+  'layout.track=fr',
+  'layout.track=hug',
   'font.letterSpacing=percent',
   'fill=color',
   'fill=none',
   'fill=gradient',
+  'fill=gradient.linear',
+  'fill=gradient.radial',
+  'fill=gradient.angular',
+  'fill=gradient.expression',
   'cornerRadius=number',
   'cornerRadius=quad',
   'image.src=literal',
   'image.src=$field',
+  'image.src=package',
+  'image.src=$switch',
   'root.preview=table',
   'root.anchor.align=corner-end',
   'expr.$field.default',
@@ -567,6 +579,11 @@ function recordKeys(
   keys: readonly string[],
   out: Set<string>,
 ) {
+  // A list (a `shadow` list) counts each item.
+  if (Array.isArray(value)) {
+    for (const item of value) recordKeys(prefix, item, keys, out);
+    return;
+  }
   if (!isRec(value)) return;
   for (const key of keys) if (key in value) out.add(`${prefix}.${key}`);
 }
@@ -583,6 +600,19 @@ function layoutFeatures(layout: unknown, out: Set<string>): void {
     else if (Array.isArray(leaf)) {
       out.add(leaf.length === 2 ? 'layout.padding=pair' : 'layout.padding=quad');
       if (leaf.some(isRec)) out.add('layout.padding=item-expression');
+    }
+  }
+  // the grid's `columns`/`rows` as a track list (formatVersion 4): px, `"<n>fr"` and `"hug"` items
+  for (const key of ['columns', 'rows'] as const) {
+    for (const leaf of leaves(layout[key])) {
+      if (!Array.isArray(leaf)) continue;
+      out.add('layout.tracks=list');
+      for (const track of leaf) {
+        if (typeof track === 'number') out.add('layout.track=px');
+        else if (track === 'hug') out.add('layout.track=hug');
+        else if (typeof track === 'string' && track.endsWith('fr'))
+          out.add('layout.track=fr');
+      }
     }
   }
 }
@@ -625,7 +655,15 @@ function nodeFeatures(node: unknown, out: Set<string>): void {
   for (const leaf of leaves(node.fill)) {
     if (leaf === 'none') out.add('fill=none');
     else if (typeof leaf === 'string') out.add('fill=color');
-    else if (isRec(leaf)) out.add('fill=gradient');
+    else if (isRec(leaf)) {
+      out.add('fill=gradient');
+      if (typeof leaf.type === 'string') out.add(`fill=gradient.${leaf.type}`);
+    }
+  }
+  // a gradient that is the result of an expression (`$switch`/`$if`) in `fill`
+  if (isRec(node.fill) && !('type' in node.fill)) {
+    if (leaves(node.fill).some((leaf) => isRec(leaf) && 'stops' in leaf))
+      out.add('fill=gradient.expression');
   }
   for (const leaf of leaves(node.cornerRadius)) {
     if (typeof leaf === 'number') out.add('cornerRadius=number');
@@ -639,8 +677,15 @@ function nodeFeatures(node: unknown, out: Set<string>): void {
     }
   }
   if (type === 'image') {
-    if (typeof node.src === 'string') out.add('image.src=literal');
-    else if (isRec(node.src) && '$field' in node.src) out.add('image.src=$field');
+    if (typeof node.src === 'string') {
+      // a package image path (not an `https://` URL) is `package`; any other literal is a URL
+      out.add(
+        PACKAGE_IMAGE_PATH.test(node.src) ? 'image.src=package' : 'image.src=literal',
+      );
+    } else if (isRec(node.src) && '$field' in node.src) out.add('image.src=$field');
+    else if (isRec(node.src) && ('$switch' in node.src || '$if' in node.src)) {
+      out.add('image.src=$switch');
+    }
   }
   // expressions and conditions in the node attributes (not in the children, visited below)
   const { children, template, fallback, ...rest } = node;

@@ -21,6 +21,7 @@ import {
 } from '../../src/model';
 import { fontWarningText } from '../../mcp/library';
 import { NOW } from '../model/fixtures';
+import { jpegBytes, pngBytes } from '../support/imageBytes';
 import { errorOf, ok } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
@@ -41,7 +42,13 @@ interface Validated {
   valid: boolean;
   path: string;
   spec?: Record<string, unknown>;
-  summary: { level: number; types: number; components: number; docs: number };
+  summary: {
+    level: number;
+    types: number;
+    components: number;
+    docs: number;
+    images: number;
+  };
   errors: Issue[];
   warnings: Issue[];
   moreErrors?: number;
@@ -285,6 +292,121 @@ describe('validate_library with the image node', () => {
     expect(result.errors.map((e) => e.message).join('\n')).toMatch(
       /the image src reads "foto"/,
     );
+  });
+});
+
+describe('validate_library with package images', () => {
+  const MB = 1024 * 1024;
+
+  /** A one-type package whose component cites the given image paths; the images are written by `put`. */
+  function imagePackage(
+    name: string,
+    cited: string[],
+    put: (dir: string) => void,
+  ): string {
+    const dir = join(root, 'images', name);
+    mkdirSync(join(dir, 'components'), { recursive: true });
+    mkdirSync(join(dir, 'images'), { recursive: true });
+    writeFileSync(
+      join(dir, 'pic.spec.json'),
+      JSON.stringify({
+        format: 'mapping-spec',
+        formatVersion: 7,
+        id: 'pic',
+        name: 'Pic',
+        version: 1,
+        layers: [
+          {
+            id: 'l',
+            name: 'L',
+            color: '#112233',
+            annotationTypes: [
+              {
+                id: 'pic',
+                name: 'Pic',
+                component: 'components/pic.json',
+                fields: [{ key: 'name', type: 'string' }],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    writeFileSync(
+      join(dir, 'components', 'pic.json'),
+      JSON.stringify({
+        format: 'mapping-component',
+        formatVersion: 4,
+        id: 'pic',
+        name: 'Pic',
+        size: { width: 200, height: 60 },
+        minSize: { width: 100, height: 40 },
+        template: {
+          type: 'frame',
+          layout: { type: 'row' },
+          children: [
+            { type: 'text', text: { $field: 'name' } },
+            ...cited.map((src) => ({ type: 'image', src, width: 24, height: 24 })),
+          ],
+        },
+      }),
+    );
+    put(dir);
+    return `images/${name}`;
+  }
+
+  it('reads the cited images, validates them and counts them in the summary', async () => {
+    const path = imagePackage('ok', ['images/a.png', 'images/b.jpg'], (dir) => {
+      writeFileSync(join(dir, 'images', 'a.png'), pngBytes(32, 32));
+      writeFileSync(join(dir, 'images', 'b.jpg'), jpegBytes(32, 32));
+      writeFileSync(join(dir, 'images', 'unused.png'), pngBytes(32, 32));
+    });
+    const result = ok(await mcp.call<Validated>('validate_library', { path }));
+    expect(result.errors).toEqual([]);
+    expect(result.summary.images).toBe(2);
+  });
+
+  it('checks the content: a JPEG named .png is not the format of its extension', async () => {
+    const path = imagePackage('wrong-format', ['images/a.png'], (dir) => {
+      writeFileSync(join(dir, 'images', 'a.png'), jpegBytes(32, 32));
+    });
+    const result = ok(await mcp.call<Validated>('validate_library', { path }));
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        file: 'components/pic.json',
+        path: 'template.children[1].src',
+        message: 'image is not PNG, JPEG or WebP: images/a.png',
+      }),
+    );
+  });
+
+  it('a missing image is "file not found"', async () => {
+    const path = imagePackage('missing', ['images/none.png'], () => {});
+    const result = ok(await mcp.call<Validated>('validate_library', { path }));
+    expect(result.errors.map((e) => e.message)).toEqual([
+      'file not found: images/none.png',
+    ]);
+  });
+
+  it('measures an image over 1 MB without reading its content (garbage content, only the size error)', async () => {
+    // Zeros are not an image: if the server read them, `image is not PNG, JPEG or WebP` would come too.
+    const path = imagePackage('heavy', ['images/a.png'], (dir) => {
+      writeFileSync(join(dir, 'images', 'a.png'), new Uint8Array(MB + 1));
+    });
+    const result = ok(await mcp.call<Validated>('validate_library', { path }));
+    expect(result.errors.map((e) => e.message)).toEqual([
+      'image larger than 1 MB: images/a.png',
+    ]);
+  });
+
+  it('refuses an image over 2048 px with its real size', async () => {
+    const path = imagePackage('wide', ['images/a.png'], (dir) => {
+      writeFileSync(join(dir, 'images', 'a.png'), pngBytes(4000, 100));
+    });
+    const result = ok(await mcp.call<Validated>('validate_library', { path }));
+    expect(result.errors.map((e) => e.message)).toEqual([
+      'image larger than 2048 px: images/a.png (4000×100)',
+    ]);
   });
 });
 

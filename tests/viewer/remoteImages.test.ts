@@ -178,6 +178,24 @@ describe('remote images of the viewer', () => {
     expect(FakeImage.requested()).toEqual([`${CDN}/a.png`]);
   });
 
+  it('a failed image draws the failure look (DX7): dashed outline in failedLine, overridable by the palette', () => {
+    vi.stubGlobal('Image', FakeImage);
+    const outlines = (): Konva.Rect[] =>
+      Konva.stages
+        .flatMap((stage) => stage.find<Konva.Rect>('Rect'))
+        .filter((rect) => (rect.dash() ?? []).length > 0);
+    const viewer = make({ remoteImages: true, allowOrigin: () => true }, [
+      `${CDN}/a.png`,
+    ]);
+    // Still loading: the neutral placeholder, no dashed outline.
+    expect(outlines()).toEqual([]);
+    FakeImage.created[0]?.onerror?.();
+    viewer.redraw();
+    expect(outlines()).toHaveLength(1);
+    expect(outlines()[0]?.stroke()).toBe('#d9480f');
+    expect(outlines()[0]?.dash()).toEqual([4, 3]);
+  });
+
   it('with more distinct URLs than the cache (64), it does not enter continuous reloading', async () => {
     vi.stubGlobal('Image', FakeImage);
     const urls = Array.from({ length: 70 }, (_, i) => `${CDN}/p${i}.png`);

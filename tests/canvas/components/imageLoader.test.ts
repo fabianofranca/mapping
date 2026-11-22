@@ -195,6 +195,24 @@ describe('RemoteImageLoader', () => {
     expect(loader.request(url(1), CORS).state).toBe('failed');
   });
 
+  it('the epoch rises when an image fails (failed and too-large), for the gallery to redraw', async () => {
+    const { loader, images } = setup();
+    loader.request(url(1), CORS);
+    loader.request(url(2), CORS);
+    images[0]!.naturalWidth = 0;
+    images[1]!.naturalWidth = 8193;
+    images[1]!.naturalHeight = 10;
+    const before = loader.epoch.peek();
+    images[0]?.load();
+    await settle();
+    expect(loader.request(url(1), CORS).state).toBe('failed');
+    expect(loader.epoch.peek()).toBe(before + 1);
+    images[1]?.load();
+    await settle();
+    expect(loader.request(url(2), CORS).state).toBe('too-large');
+    expect(loader.epoch.peek()).toBe(before + 2);
+  });
+
   it('at most 6 in parallel; the queue advances when one finishes', async () => {
     const { loader, images } = setup();
     for (let i = 0; i < 8; i += 1) loader.request(url(i), CORS);

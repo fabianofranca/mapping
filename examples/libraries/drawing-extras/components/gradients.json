@@ -1,0 +1,202 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "gradients",
+  "name": "Gradients",
+  "description": "Four swatches: a radial, an angular and a linear gradient, and a main swatch whose gradient type is chosen by the kind field.",
+  "size": {
+    "width": 360,
+    "height": 96
+  },
+  "minSize": {
+    "width": 200,
+    "height": 48
+  },
+  "preview": {
+    "kind": "angular",
+    "from": "#F59E0B",
+    "to": "#7C3AED"
+  },
+  "template": {
+    "type": "frame",
+    "name": "gradients",
+    "layout": {
+      "type": "row",
+      "gap": 12,
+      "padding": 12,
+      "align": "center"
+    },
+    "cornerRadius": 12,
+    "fill": "#FFFFFF",
+    "stroke": {
+      "color": "#D1D5DB",
+      "width": 1
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "main",
+        "width": 72,
+        "height": 72,
+        "cornerRadius": 8,
+        "fill": {
+          "$switch": "kind",
+          "cases": {
+            "radial": {
+              "type": "radial",
+              "center": [0.5, 0.5],
+              "radius": 36,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": {
+                    "$field": "from"
+                  }
+                },
+                {
+                  "offset": 1,
+                  "color": {
+                    "$field": "to"
+                  }
+                }
+              ]
+            },
+            "angular": {
+              "type": "angular",
+              "center": [0.5, 0.5],
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": {
+                    "$field": "from"
+                  }
+                },
+                {
+                  "offset": 1,
+                  "color": {
+                    "$field": "to"
+                  }
+                }
+              ]
+            },
+            "linear": {
+              "type": "linear",
+              "angle": 90,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": {
+                    "$field": "from"
+                  }
+                },
+                {
+                  "offset": 1,
+                  "color": {
+                    "$field": "to"
+                  }
+                }
+              ]
+            }
+          },
+          "default": {
+            "type": "radial",
+            "center": [0.5, 0.5],
+            "radius": 36,
+            "stops": [
+              {
+                "offset": 0,
+                "color": {
+                  "$field": "from"
+                }
+              },
+              {
+                "offset": 1,
+                "color": {
+                  "$field": "to"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "type": "frame",
+        "name": "radial",
+        "width": 72,
+        "height": 72,
+        "cornerRadius": 8,
+        "fill": {
+          "type": "radial",
+          "center": [0.5, 0.5],
+          "radius": 36,
+          "stops": [
+            {
+              "offset": 0,
+              "color": {
+                "$field": "from"
+              }
+            },
+            {
+              "offset": 1,
+              "color": {
+                "$field": "to"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "frame",
+        "name": "angular",
+        "width": 72,
+        "height": 72,
+        "cornerRadius": 8,
+        "fill": {
+          "type": "angular",
+          "center": [0.5, 0.5],
+          "angle": 0,
+          "stops": [
+            {
+              "offset": 0,
+              "color": {
+                "$field": "from"
+              }
+            },
+            {
+              "offset": 1,
+              "color": {
+                "$field": "to"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "frame",
+        "name": "linear",
+        "width": 72,
+        "height": 72,
+        "cornerRadius": 8,
+        "fill": {
+          "type": "linear",
+          "angle": 90,
+          "stops": [
+            {
+              "offset": 0,
+              "color": {
+                "$field": "from"
+              }
+            },
+            {
+              "offset": 1,
+              "color": {
+                "$field": "to"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -151,6 +151,7 @@ export async function readPackageFromZip(zipFile: Blob): Promise<PackageReadResu
 // re-exported.
 export {
   libraryInputFiles,
+  packageImageBytes,
   readPackageSpec,
   validatePackage,
 } from '../store/packageValidation';

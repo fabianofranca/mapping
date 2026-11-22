@@ -1,3 +1,4 @@
+import { isImagePath } from './components/imagePath';
 import type { LibraryFile } from './library';
 import type { Spec, SpecAnnotationType } from './spec';
 
@@ -88,12 +89,16 @@ export interface PackageEntry {
   readonly path: string;
   /** Content of the text files (`isTextPackageFile`). */
   readonly text?: string;
+  /** Content of the image files (`isImagePath`); other binaries are never read. */
+  readonly bytes?: Uint8Array;
+  /** Byte length of an image file read without content. */
+  readonly size?: number;
 }
 
 /**
  * Builds `LibraryInput.files` from the files of `specs/<id>/`: the path becomes relative to the
  * package folder. Files outside `dir` are ignored; a text file without `text` (not read) is
- * left out; the others enter as a present binary.
+ * left out; the others enter as a present binary (an image file carries its `bytes` and `size`).
  */
 export function toLibraryFiles(
   dir: string,
@@ -103,14 +108,25 @@ export function toLibraryFiles(
   const files: LibraryFile[] = [];
   for (const entry of entries) {
     if (!entry.path.startsWith(prefix) || entry.path.length === prefix.length) continue;
-    const path = entry.path.slice(prefix.length);
-    if (isTextPackageFile(path)) {
-      if (entry.text !== undefined) files.push({ path, text: entry.text });
-    } else {
-      files.push({ path, binary: true });
-    }
+    const file = libraryFileOf(entry.path.slice(prefix.length), entry);
+    if (file !== undefined) files.push(file);
   }
   return files;
+}
+
+/** One entry as a library file: text, an image with its content, or a present binary; `undefined` for an unread text. */
+function libraryFileOf(path: string, entry: PackageEntry): LibraryFile | undefined {
+  if (isTextPackageFile(path)) {
+    return entry.text === undefined ? undefined : { path, text: entry.text };
+  }
+  if (!isImagePath(path)) return { path, binary: true };
+  const size = entry.bytes?.length ?? entry.size;
+  return {
+    path,
+    binary: true,
+    ...(entry.bytes === undefined ? {} : { bytes: entry.bytes }),
+    ...(size === undefined ? {} : { size }),
+  };
 }
 
 /**

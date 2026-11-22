@@ -81,6 +81,12 @@ const spec = (withFonts: boolean) => ({
           fields: [],
         },
         {
+          id: 'acme',
+          name: 'Acme label',
+          component: 'components/acme.json',
+          fields: [{ key: 'label', type: 'string', default: 'Confirm payment now' }],
+        },
+        {
           id: 'face',
           name: 'Label',
           component: 'components/face.json',
@@ -235,6 +241,10 @@ async function workspace(withFonts: boolean): Promise<Workspace> {
   writeFileSync(join(lib, 'components', 'dir.json'), JSON.stringify(dirComponent));
   writeFileSync(join(lib, 'components', 'nest.json'), JSON.stringify(nestComponent));
   writeFileSync(
+    join(lib, 'components', 'acme.json'),
+    JSON.stringify(component('acme', 'Acme')),
+  );
+  writeFileSync(
     join(lib, 'components', 'face.json'),
     JSON.stringify(component('face', { $token: 'face' })),
   );
@@ -374,14 +384,26 @@ describe('plan_changes: drawing proof per instance', () => {
     expect(overflows(reply)).toEqual([]);
   });
 
-  it('(approximate) without the library fonts; with them, not', async () => {
-    const ops = [SCREEN, create({ x: 10, y: 10, width: 60, height: 20 })];
-    const without = overflows(await plan(approx, ops));
-    const withFonts = overflows(await plan(real, ops));
+  // Stage #2267, decision 5: `approximate` is per drawing, from the families of its scene's text.
+  it('(approximate) without the library fonts; a drawing in a library family, not', async () => {
+    const ops = (type: string) => [
+      SCREEN,
+      create({ x: 10, y: 10, width: 60, height: 20 }, type),
+    ];
+    const without = overflows(await plan(approx, ops('lib/acme')));
+    const withFonts = overflows(await plan(real, ops('lib/acme')));
     expect(without[0]!.message).toContain('(approximate)');
     expect(without[0]!.approximate).toBe(true);
     expect(withFonts[0]!.message).not.toContain('(approximate)');
     expect(withFonts[0]!.approximate).toBeUndefined();
+  });
+
+  it('with library fonts, a drawing whose text is not in that family is still (approximate)', async () => {
+    const items = overflows(
+      await plan(real, [SCREEN, create({ x: 10, y: 10, width: 60, height: 20 })]),
+    );
+    expect(items[0]!.message).toContain('(approximate)');
+    expect(items[0]!.approximate).toBe(true);
   });
 
   it('an update_marking that shrinks generates the item; a marking not touched by the batch does not', async () => {
