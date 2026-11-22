@@ -924,6 +924,7 @@ class Batch {
    * the index or sorting the codes of the whole project: the cost does not grow with it, and a batch of
    * a thousand creations stays linear. It only holds for a marking with no parent and no other id starting
    * the same; in the other cases it falls back to `markingLabel` (which decides the name and code from the whole project).
+   * `typeName` comes from `componentTypeName` (the same rule as `markingName`, with no catalog).
    */
   private createdMarkingLabel(
     before: Project,
@@ -931,10 +932,12 @@ class Batch {
     marking: Marking,
     typeName: string | null,
   ): string {
-    const fast =
-      marking.parentId === null && project.arrows === before.arrows
+    // The prefix map follows every creation (with or without a parent), so the next top-level one does not rebuild it.
+    const code =
+      project.arrows === before.arrows
         ? this.freshCode(before, project, marking.id)
         : null;
+    const fast = marking.parentId === null ? code : null;
     if (fast === null) return this.markingLabel(project, marking.id);
     const name = marking.name ?? `${typeName ?? 'Marking'} ${fast}`;
     return [this.refs(project).imageLabelNoIndex(marking.containerId), name].join(' › ');

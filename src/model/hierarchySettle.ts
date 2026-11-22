@@ -154,8 +154,16 @@ type ContainerLookup = (id: string) => ProjectContainer | undefined;
  * Reconciles the perspectives only with what changed between `reference` and `settled`; when in
  * doubt, with everything.
  */
-function reconcileSettled(reference: Project, settled: Project): Project {
-  const delta = reference === settled ? null : settleDelta(reference, settled);
+function reconcileSettled(
+  reference: Project,
+  settled: Project,
+  known?: { readonly delta: SettleDelta | null },
+): Project {
+  const delta = known
+    ? known.delta
+    : reference === settled
+      ? null
+      : settleDelta(reference, settled);
   return delta
     ? reconcilePerspectivesFrom(reference, settled, delta)
     : reconcilePerspectives(reference, settled);
@@ -479,7 +487,7 @@ function spaceCandidates(w: Work, delta: SettleDelta | null): Iterable<number> {
  * conversion, set by set (`landSet`), so the clipped settle and the whole one give the same result.
  */
 function moveToSpaces(w: Work, delta: SettleDelta | null): void {
-  const lookup = containerLookup(w.p.containers, delta === null);
+  const lookup = containerLookup(w.p.containers);
   const moves: Move[] = [];
   for (const i of spaceCandidates(w, delta)) {
     const move = moveOf(w.p, w.list.at(i), i, lookup);
@@ -505,18 +513,20 @@ function moveToSpaces(w: Work, delta: SettleDelta | null): void {
 }
 
 /**
- * Whoever finds the container by id. The whole project queries once per marking (map); the
- * clipping, a few times (linear search, which does not build a map on every operation).
+ * Whoever finds the container by id. The id map is built on the first query and reused for the
+ * rest of the settle, so it is never worse than one linear search and never searches per
+ * candidate.
  */
-function containerLookup(
-  list: readonly ProjectContainer[],
-  many: boolean,
-): ContainerLookup {
-  if (!many) return (id) => list.find((c) => c.id === id);
-  // With repeated ids (invalid project) the first one holds, as in the project index.
-  const byId = new Map<string, ProjectContainer>();
-  for (const c of list) if (!byId.has(c.id)) byId.set(c.id, c);
-  return (id) => byId.get(id);
+function containerLookup(list: readonly ProjectContainer[]): ContainerLookup {
+  let byId: Map<string, ProjectContainer> | null = null;
+  return (id) => {
+    if (byId === null) {
+      // With repeated ids (invalid project) the first one holds, as in the project index.
+      byId = new Map();
+      for (const c of list) if (!byId.has(c.id)) byId.set(c.id, c);
+    }
+    return byId.get(id);
+  };
 }
 
 /**
@@ -707,9 +717,16 @@ export function settleIf(p: Project, options?: SettleOptions): Project {
  * `options.before` (the operation called by another, or the end of a gesture) takes precedence
  * over the `before` here.
  *
- * Only the spaces the operation affected are settled (`affectedSpaces`, #882): the rest of the
- * project keeps the same objects. The result is that of the full settle (`settleHierarchy(next)`)
- * of an already settled `before`, which is what every model operation receives.
+ * Only what the operation touched is settled: `settleDelta` compares the markings and containers
+ * of the two projects, `delta.full` names the spaces settled in full and `dirty` collects what
+ * changed in the others, which `settleLocal` settles clipped to that. The rest of the project
+ * keeps the same objects. The result is that of the full settle (`settleHierarchy(next)`) of an
+ * already settled `before`, which is what every model operation receives (and what reading a
+ * `mapping.json` gives, through `deserializeParsed`).
+ *
+ * When the settle changed neither array and the reference is `before`, the reconciliation
+ * reuses the first delta: `settleDelta` only compares those two arrays, so a second one would
+ * be equal.
  */
 export function settleFrom(
   before: Project,
@@ -727,7 +744,28 @@ export function settleFrom(
   rememberTable(before, geometry, delta, table);
   const touched = delta === null ? null : (table.touched ?? []);
   const settled = releaseStrandedAnchors(geometry, touched, before);
-  return reconcileSettled(merged.before ?? next, settled);
+  const reference = merged.before ?? next;
+  const known = reusableDelta(reference, before, next, settled, delta);
+  return reconcileSettled(reference, settled, known);
+}
+
+/**
+ * The first delta, when the reconciliation can reuse it: the reference is `before` and the settle
+ * kept `next`'s markings and containers arrays (the only thing `settleDelta` compares).
+ */
+function reusableDelta(
+  reference: Project,
+  before: Project,
+  next: Project,
+  settled: Project,
+  delta: SettleDelta | null,
+): { readonly delta: SettleDelta | null } | undefined {
+  const same =
+    reference === before &&
+    settled !== before &&
+    settled.markings === next.markings &&
+    settled.containers === next.containers;
+  return same ? { delta } : undefined;
 }
 
 /** Members of a marking: the markings and containers whose parent it is, in array order. */

@@ -44,6 +44,20 @@ export { INVALID_REF_HINT, KIND_NOT_FOUND, KIND_WITH_ARTICLE };
 
 const PATH_SEPARATOR = ' › ';
 
+/**
+ * The one rule of a container's label: "Canvas" for a canvas marking (`null`), the id itself when
+ * the container is gone, otherwise its readable name or "Container". `imageLabel` and
+ * `imageLabelNoIndex` only differ in how they find `image`.
+ */
+function containerLabelOf(
+  containerId: string | null,
+  image: Project['containers'][number] | undefined,
+): string {
+  if (containerId === null) return CANVAS_LABEL;
+  if (!image) return containerId;
+  return refImageLabel(image) ?? CONTAINER_LABEL;
+}
+
 /** `mapping://` references and readable labels of the items of a loaded project. */
 export class Refs {
   readonly project: Project;
@@ -58,18 +72,22 @@ export class Refs {
 
   /** Label of the container; a canvas marking (`null`) is "Canvas". */
   imageLabel(containerId: string | null): string {
-    if (containerId === null) return CANVAS_LABEL;
-    const image = projectIndex(this.project).containers.get(containerId);
-    if (!image) return containerId;
-    return refImageLabel(image) ?? CONTAINER_LABEL;
+    return containerLabelOf(
+      containerId,
+      containerId === null
+        ? undefined
+        : projectIndex(this.project).containers.get(containerId),
+    );
   }
 
   /** `imageLabel` without the project index (the MCP batch labels the marking it just created without rebuilding it). */
   imageLabelNoIndex(containerId: string | null): string {
-    if (containerId === null) return CANVAS_LABEL;
-    const image = this.project.containers.find((c) => c.id === containerId);
-    if (!image) return containerId;
-    return refImageLabel(image) ?? CONTAINER_LABEL;
+    return containerLabelOf(
+      containerId,
+      containerId === null
+        ? undefined
+        : this.project.containers.find((c) => c.id === containerId),
+    );
   }
 
   /** Arrow text: its name or "From → To" ("Arrow <code>" if an end is gone). */

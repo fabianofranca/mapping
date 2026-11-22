@@ -248,6 +248,7 @@ export function measureFontOf(style: TextNode['style']): Parameters<TextMeasurer
     italic: style.italic,
     lineHeight: lineHeightOf(style),
     letterSpacing: style.letterSpacing ?? 0,
+    ...(style.direction ? { direction: style.direction } : {}),
   };
 }
 
@@ -283,8 +284,8 @@ export function plainLines(
  * by the block (`cutLineLeft`, decision 30).
  *
  * `align` is already physical (the engine resolved `start`/`end` by direction), so `rtl` text lands on the
- * right side without reading `style.direction`. Known limit: the glyphs come out in the text's order, without
- * bidi (neither reordering nor contextual Arabic shaping); only Konva (the browser) does the bidi.
+ * right side without reading `style.direction`. The glyphs are reordered and shaped run by run with the node's
+ * direction (`mcp/image/harfbuzz.ts`, stage #2448); the limits that remain are in `docs/COMPONENT-FORMAT.md`.
  */
 export function lineLeft(node: TextNode, width: number, blockWidth = width): number {
   const { align } = node.style;

@@ -286,7 +286,7 @@ describe('docs/TESTING.md (guide for whoever tests by hand)', () => {
     expect(rt).toContain('does not run in the cloud');
     expect(rt).toContain('folder:');
     expect(guide).toMatch(/\| on demand \| RT — Folder on an Android tablet/);
-    expect(guide).toContain('today RP, RF, RA, RB and RT');
+    expect(guide).toContain('today RP, RF, RA, RB, RT and RQ');
   });
 
   it('every step that asks Claude Code for something has [person] in the Action (M4)', () => {
@@ -503,8 +503,8 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(r16).toContain('OutlinedButton');
     });
 
-    it('the cloud prompt lists the scripts up to R42', () => {
-      expect(prompt).toContain('R0 to R42');
+    it('the cloud prompt lists the scripts up to R43', () => {
+      expect(prompt).toContain('R0 to R43');
     });
   });
 
@@ -572,8 +572,8 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(r17).toContain('Apply zip…');
     });
 
-    it('the cloud prompt lists the scripts up to R42', () => {
-      expect(prompt).toContain('R0 to R42');
+    it('the cloud prompt lists the scripts up to R43', () => {
+      expect(prompt).toContain('R0 to R43');
     });
   });
 
@@ -647,12 +647,12 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(JSON.parse(block)).toEqual(JSON.parse(fixture));
     });
 
-    it('the cloud prompt lists the scripts up to R42', () => {
-      expect(prompt).toContain('R0 to R42');
+    it('the cloud prompt lists the scripts up to R43', () => {
+      expect(prompt).toContain('R0 to R43');
     });
 
-    it('the full-round order enumeration ends at R42, like the heading', () => {
-      expect(prompt).toContain('R5, R8 and R9 to R42.');
+    it('the full-round order enumeration ends at R43, like the heading', () => {
+      expect(prompt).toContain('R5, R8 and R9 to R43.');
       expect(prompt).not.toContain('R9 to R27');
     });
   });
@@ -1039,7 +1039,7 @@ describe('TS2 — prompt with the round guide, foreground, state() and grouped r
     for (const text of [
       'cloud.mjs serve',
       '`ctx`',
-      '`check(label, condition, detail?)`',
+      '`await check(label, condition, detail?)`',
       'run --novo',
       'paletteDrag(page, type, to, { capture, group })',
     ]) {
@@ -1426,9 +1426,9 @@ describe('lean docs/TESTING-NUVEM.md and TESTING-NUVEM-CONSULTA.md (#1533, TE1)'
   const cloud = read('docs/TESTING-NUVEM.md');
   const consulta = read('docs/TESTING-NUVEM-CONSULTA.md');
 
-  // The ceiling went from 32,000 to 32,500 in stage #1712 (restoring the wording from before PR #1709) and to 33,200 in #2261 (the cause rule of "Check and record").
-  it('TESTING-NUVEM.md has up to 33,200 characters', () => {
-    expect(cloud.length).toBeLessThanOrEqual(33_200);
+  // The ceiling went from 32,000 to 32,500 in stage #1712 (restoring the wording from before PR #1709), to 33,200 in #2261 (the cause rule of "Check and record"), to 33,550 in #2474 (the hook notice of "Context up to 300 thousand") and to 33,850 in #2450 (the `await check` rule, on top of the hook notice).
+  it('TESTING-NUVEM.md has up to 33,850 characters', () => {
+    expect(cloud.length).toBeLessThanOrEqual(33_850);
   });
 
   it('the CONSULTA brings the keys and TESTING-NUVEM.md points to the secao of each one', () => {
@@ -1624,3 +1624,70 @@ describe('CL1 — script text of R3.19, R11.4, R17.32, R17.59 and R29.10 (#1134,
     expect(r).not.toContain('**Height** `40`');
   });
 });
+
+describe('SF1 — script text from the round on main 5d2fef9 (#2591)', () => {
+  const guide = read('docs/TESTING.md');
+  const nuvem = read('docs/TESTING-NUVEM.md');
+  const row = (code: string): string =>
+    guide.split('\n').find((l) => l.startsWith(`| ${code} |`)) ?? '';
+  const r30 = guide.slice(guide.indexOf('### R30 — Pages'), guide.indexOf('### R32 — '));
+
+  it('R1.23 quotes the Convert warning of the app, with count 1', () => {
+    const warning = enUS['spec.removeBroken'].replace('{count}', '1');
+    expect(row('R1.23')).toContain(warning);
+    expect(row('R1.23')).not.toContain('left broken');
+  });
+
+  it('R30.2 expects the same schema as R30.1', () => {
+    const status = /`schema v(\d+)`/.exec(row('R30.1'))?.[1];
+    expect(status).toBeDefined();
+    expect(row('R30.2')).toContain(`\`schema ${status}\``);
+  });
+
+  it('the R30 Setup presses Save in Identity and cites the identity.saved text', () => {
+    const setup = r30.slice(0, r30.indexOf('| Step |'));
+    expect(setup).toContain('**Save**');
+    expect(setup).toContain(enUS['identity.saved']);
+  });
+
+  it('R30.9 names the Also show in submenu and its checkbox', () => {
+    const r = row('R30.9');
+    expect(r).toContain(`**${perspectiveMenuHeading()}**`);
+    expect(r).not.toContain('**Send to perspective** › **Analytics**');
+  });
+
+  it('R30.12 names an unambiguous target, checks the anchor and says how to rerun', () => {
+    const r = row('R30.12');
+    expect(r).toContain('data-selection-box');
+    expect(r).toContain('Canvas · Flows');
+    expect(r).toMatch(/new `PROJ`/);
+  });
+
+  it('R3.19 fetches its commit by the full SHA and builds mat-main in the working folder', () => {
+    const r = row('R3.19');
+    expect(r).toContain('4c9258e23609b5d17714081ef979a853d09e77ec');
+    expect(r).toContain('git -C "$REPO" fetch --depth=1 origin');
+    expect(r).not.toContain('at the app repository root');
+  });
+
+  it('R3.6a became the on-demand script RQ', () => {
+    expect(row('R3.6a')).toBe('');
+    const rq = guide.indexOf('#### RQ — ');
+    expect(rq).toBeGreaterThan(guide.indexOf('#### RT — '));
+    expect(guide.slice(rq, guide.indexOf('## 9. '))).toMatch(
+      /\| RQ\.1 \|[^\n]*\*\*\[person\]\*\*/,
+    );
+    expect(guide).toContain('| on demand | RQ — ');
+  });
+
+  it('docs/TESTING-NUVEM.md lists RQ and allows the git fetch that a step asks for', () => {
+    expect(nuvem).toContain('**RP**, **RF**, **RA**, **RB**, **RT**, **RQ**');
+    expect(nuvem).toContain('(without RP, RF, RA, RB, RT and RQ)');
+    expect(nuvem).toMatch(/`git fetch` that a step asks for/);
+  });
+});
+
+function perspectiveMenuHeading(): string {
+  const src = read('src/i18n/perspectives.ts');
+  return /'perspective\.menu\.sendHeading': '([^']+)'/.exec(src)?.[1] ?? '';
+}

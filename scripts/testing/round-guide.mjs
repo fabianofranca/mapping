@@ -512,6 +512,29 @@ function wholeScript(section, rows) {
   return entries;
 }
 
+/**
+ * The labeled Setup blocks of a script (stage #2450, TC2): a paragraph line that starts with `The
+ * batch of R<n>.<k>` or `The calls of R<n>.<k>`, followed by a code fence, belongs to that step.
+ * Maps the step code to the lines (paragraph, blank lines and the whole fence).
+ */
+function labeledBlocks(lines) {
+  const blocks = new Map();
+  let fence = false;
+  lines.forEach((line, i) => {
+    if (/^\s*(`{3,}|~{3,})/.test(line)) fence = !fence;
+    if (fence) return;
+    const code = /^The (?:batch|calls) of (R\d+\.\d+[a-z]?)\b/.exec(line)?.[1];
+    if (!code) return;
+    let open = i + 1;
+    while (open < lines.length && !lines[open].trim()) open += 1;
+    if (!/^\s*(`{3,}|~{3,})/.test(lines[open] ?? '')) return;
+    let close = open + 1;
+    while (close < lines.length && !/^\s*(`{3,}|~{3,})/.test(lines[close])) close += 1;
+    blocks.set(code, lines.slice(i, close + 1));
+  });
+  return blocks;
+}
+
 /** The lines from the first to the last requested step, with the table header of the first. */
 function stepRange(section, rows, item, guideId) {
   const codes = rows.map((r) => r.code);
@@ -548,6 +571,19 @@ function stepRange(section, rows, item, guideId) {
   const stepAt = new Map(rows.map((r) => [r.i, r.code]));
   for (let i = first; i <= rows[b].i; i += 1) {
     entries.push({ text: section.lines[i], code: stepAt.get(i) });
+  }
+  const blocks = labeledBlocks(section.lines);
+  for (let n = a; n <= b; n += 1) {
+    const block = blocks.get(codes[n]);
+    if (!block) continue;
+    entries.push(
+      { text: '', code: codes[n] },
+      {
+        text: `Setup block of ${codes[n]} (from the ${guideId} Setup):`,
+        code: codes[n],
+      },
+    );
+    for (const text of block) entries.push({ text, code: codes[n] });
   }
   return entries;
 }

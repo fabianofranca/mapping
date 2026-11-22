@@ -1,6 +1,7 @@
 import {
   Blob,
   Buffer as ShapeBuffer,
+  Direction,
   DrawFuncs,
   Font,
   Face as HbFace,
@@ -13,6 +14,7 @@ import {
 import wasmBytes from 'wasm:harfbuzz';
 import { CAP_HEIGHT_RATIO } from '../../src/model/components/baseline';
 import { MEASURE_CACHE_LIMIT } from '../../src/model/components/measureCache';
+import { bidiRuns } from './bidi';
 import { fontSfnt } from './woff';
 
 // HarfBuzz (WebAssembly) behind a synchronous face API: the shaping engine of the browser, for the server's measurer
@@ -39,6 +41,15 @@ export interface FaceStyle {
   readonly letterSpacing?: number;
   /** CSS weight; a variable font follows it on its `wght` axis (default 400). */
   readonly weight?: number;
+  /** The base direction of the text (absent = `ltr`): the runs are reordered by it (UAX #9). */
+  readonly direction?: 'rtl';
+}
+
+/** The left edge (px) and the cluster of a glyph of the laid-out text. */
+export interface GlyphPosition {
+  /** Offset (UTF-16) of the glyph's cluster in the text. */
+  readonly cluster: number;
+  readonly x: number;
 }
 
 /** The range of a variation axis, in the font's user units. */
@@ -78,9 +89,16 @@ export interface Face {
   readonly axes: Readonly<Record<string, AxisRange>>;
   /**
    * Width of the one-line text shaped as a whole (kerning included, no letter spacing), at `size` (px) and CSS
-   * `weight`. `spaced` shapes it as letter-spaced text is: without `liga`, `clig` and `calt`.
+   * `weight`. `spaced` shapes it as letter-spaced text is: without `liga`, `clig` and `calt`. `direction` is the
+   * text's base direction: each directional run is shaped on its own (stage #2448).
    */
-  advance(text: string, size: number, weight?: number, spaced?: boolean): number;
+  advance(
+    text: string,
+    size: number,
+    weight?: number,
+    spaced?: boolean,
+    direction?: 'rtl',
+  ): number;
   /** The outlines of the text with the baseline origin at (`x`, `baseline`), at `size` (px). */
   path(
     text: string,
@@ -89,6 +107,8 @@ export interface Face {
     size: number,
     style?: FaceStyle,
   ): PathCommand[];
+  /** The glyphs of the text from the left, as `path` lays them out: their cluster and left edge (px, from 0). */
+  positions(text: string, size: number, style?: FaceStyle): GlyphPosition[];
 }
 
 /** HarfBuzz positions are integers in 1/64 of a font unit with this scale: sub-unit precision for variable fonts. */
@@ -233,11 +253,17 @@ class HarfBuzzFace implements Face {
     return top > 0 ? top * k : CAP_HEIGHT_RATIO * size;
   }
 
-  advance(text: string, size: number, weight = 400, spaced = false): number {
-    const key = `${this.variationKey(weight, size)}|${spaced ? 's' : ''}|${text}`;
+  advance(
+    text: string,
+    size: number,
+    weight = 400,
+    spaced = false,
+    direction?: 'rtl',
+  ): number {
+    const key = `${this.variationKey(weight, size)}|${spaced ? 's' : ''}|${direction ?? ''}|${text}`;
     let units = this.widths.get(key);
     if (units === undefined) {
-      units = this.shaped(text, weight, size, spaced).reduce(
+      units = this.shaped(text, weight, size, spaced, direction).reduce(
         (sum, glyph) => sum + glyph.advance,
         0,
       );
@@ -257,21 +283,51 @@ class HarfBuzzFace implements Face {
   ): PathCommand[] {
     const commands: PathCommand[] = [];
     const spacing = style.letterSpacing ?? 0;
-    const glyphs = this.shaped(text, style.weight ?? 400, size, spacing !== 0);
+    const glyphs = this.shaped(
+      text,
+      style.weight ?? 400,
+      size,
+      spacing !== 0,
+      style.direction,
+    );
     const k = size / (this.unitsPerEm * SCALE_SUBDIVISIONS);
-    const gap = spacing / k;
-    let pen = 0;
-    glyphs.forEach((glyph, i) => {
+    this.pens(glyphs, spacing / k).forEach((pen, i) => {
+      const glyph = glyphs[i]!;
       this.font.drawGlyph(glyph.id, drawFunctions(), {
         commands,
         ox: x + (pen + glyph.x) * k,
         oy: baseline - glyph.y * k,
         k,
       } satisfies Pen);
-      pen += glyph.advance;
-      if (glyphs[i + 1]?.cluster !== glyph.cluster) pen += gap;
     });
     return commands;
+  }
+
+  positions(text: string, size: number, style: FaceStyle = {}): GlyphPosition[] {
+    const spacing = style.letterSpacing ?? 0;
+    const glyphs = this.shaped(
+      text,
+      style.weight ?? 400,
+      size,
+      spacing !== 0,
+      style.direction,
+    );
+    const k = size / (this.unitsPerEm * SCALE_SUBDIVISIONS);
+    return this.pens(glyphs, spacing / k).map((pen, i) => ({
+      cluster: glyphs[i]!.cluster,
+      x: pen * k,
+    }));
+  }
+
+  /** The pen position (font scale units) before each glyph; the letter-spacing `gap` goes after each cluster. */
+  private pens(glyphs: readonly Placed[], gap: number): number[] {
+    let pen = 0;
+    return glyphs.map((glyph, i) => {
+      const at = pen;
+      pen += glyph.advance;
+      if (glyphs[i + 1]?.cluster !== glyph.cluster) pen += gap;
+      return at;
+    });
   }
 
   /** The variation settings of (`weight`, `size`) as a key; `''` for a font without the axes. */
@@ -291,12 +347,34 @@ class HarfBuzzFace implements Face {
     this.applied = key;
   }
 
-  /** Shapes `text` as a whole; one entry per glyph with its advance and offsets (font scale units). */
-  private shaped(text: string, weight: number, size: number, spaced: boolean): Placed[] {
+  /**
+   * Shapes `text` run by run (the directional runs of `bidiRuns`, in visual order); one entry per glyph with its
+   * advance and offsets (font scale units). Each run is added with its offset into the whole text, so the context
+   * and the clusters refer to the whole text, and its direction is set before `guessSegmentProperties` picks the
+   * script and the language. HarfBuzz gives a right-to-left run in visual order and mirrors its brackets.
+   */
+  private shaped(
+    text: string,
+    weight: number,
+    size: number,
+    spaced: boolean,
+    direction?: 'rtl',
+  ): Placed[] {
     this.applyVariations(weight, size);
+    return bidiRuns(text, direction ?? 'ltr').flatMap((run) =>
+      this.shapedRun(text, run, spaced),
+    );
+  }
+
+  private shapedRun(
+    text: string,
+    run: { start: number; end: number; rtl: boolean },
+    spaced: boolean,
+  ): Placed[] {
     const buffer = this.buffer;
     buffer.clearContents();
-    buffer.addText(text);
+    buffer.addText(text, run.start, run.end - run.start);
+    buffer.setDirection(run.rtl ? Direction.RTL : Direction.LTR);
     buffer.guessSegmentProperties();
     shape(this.font, buffer, spaced ? SPACED_FEATURES : undefined);
     const infos = buffer.getGlyphInfos();

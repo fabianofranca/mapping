@@ -83,6 +83,13 @@ describe('editor shortcuts', () => {
   });
 
   // Ctrl+Shift+number is the official shortcut.
+  it('the Conversation window has no number: no digit toggles it', () => {
+    for (let n = 0; n <= 9; n++) {
+      const found = shortcutFor(key(String(n), { ctrl: true, shift: true }));
+      expect(found).not.toEqual({ kind: 'toggle-window', window: 'conversation' });
+    }
+  });
+
   it('tool windows: Ctrl+Shift+number and Alt+number', () => {
     expect(shortcutFor(key('1', { ctrl: true, shift: true }))).toEqual({
       kind: 'toggle-window',
@@ -344,7 +351,7 @@ describe('ariaKeys', () => {
     const labels = [
       ...Object.values(SHORTCUT_LABELS),
       ...Object.values(REVIEW_KEYS),
-      ...TOOL_WINDOWS.map(toolWindowShortcut),
+      ...TOOL_WINDOWS.map(toolWindowShortcut).filter((l): l is string => l !== null),
     ];
     for (const label of labels) {
       expect(ariaKeys(label), label).toMatch(/^((Control|Alt|Shift|Meta)\+)*[^+\s]+$/);

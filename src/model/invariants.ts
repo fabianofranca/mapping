@@ -182,36 +182,92 @@ function rootProblem(
   return ids.roots.has(root) ? null : 'not-root';
 }
 
+/** Size class of a rectangle: the smallest `e` with `2^e >= max(1, width, height)`. */
+function sizeClass(r: Rect): number {
+  const size = Math.max(1, r.width, r.height);
+  let e = Math.ceil(Math.log2(size));
+  while (2 ** e < size) e++;
+  return e;
+}
+
+/** The cell range (at most 2 per axis, since the rectangle fits in a cell of its own class or a larger one) of class `e` that `r` touches. */
+function cellsOf(r: Rect, e: number): [number, number, number, number] {
+  const cell = 2 ** e;
+  return [
+    Math.floor(r.x / cell),
+    Math.floor((r.x + r.width) / cell),
+    Math.floor(r.y / cell),
+    Math.floor((r.y + r.height) / cell),
+  ];
+}
+
+/** The indices in the cells of `grid` (class `e`) that `r` touches. */
+function* candidatesIn(
+  grid: Map<string, number[]> | undefined,
+  r: Rect,
+  e: number,
+): Generator<number> {
+  if (!grid) return;
+  const [x0, x1, y0, y1] = cellsOf(r, e);
+  for (let x = x0; x <= x1; x++) {
+    for (let y = y0; y <= y1; y++) yield* grid.get(`${x},${y}`) ?? [];
+  }
+}
+
+type SizeGrids = Map<number, Map<string, number[]>>;
+
+/** One grid per size class, each rectangle in the cells of its own class (buckets grow with `push`). */
+function gridsBySize(rects: Rect[], classOf: number[]): SizeGrids {
+  const grids: SizeGrids = new Map();
+  rects.forEach((r, i) => {
+    if (!Number.isFinite(r.x + r.y + r.width + r.height)) return;
+    const e = sizeClass(r);
+    classOf[i] = e;
+    const grid = grids.get(e) ?? new Map<string, number[]>();
+    grids.set(e, grid);
+    const [x0, x1, y0, y1] = cellsOf(r, e);
+    for (let x = x0; x <= x1; x++) {
+      for (let y = y0; y <= y1; y++) {
+        const key = `${x},${y}`;
+        const bucket = grid.get(key);
+        if (bucket) bucket.push(i);
+        else grid.set(key, [i]);
+      }
+    }
+  });
+  return grids;
+}
+
 /**
  * For each container (by index), the later indices, ascending, whose canvas rectangle overlaps
- * it. Groups by grid cells the size of the largest container (each rectangle falls in up to 4
- * cells) and only compares neighbors: it grows linearly with scattered containers, instead of
- * comparing every pair.
+ * it (containers on different pages never do). One grid per size class: a rectangle goes into
+ * the cells (at most 4) of the class with the smallest power-of-two cell that holds it, and looks
+ * for overlaps in its own class and in every larger one (at most 4 cells per class), so a pair is
+ * found from the smaller rectangle's side and one large container among many small ones does not
+ * put them all in the same cell. It grows linearly with scattered containers; what stays quadratic
+ * is many containers stacked on the same spot (they share every cell). No global maximum.
  */
 function overlappingContainers(containers: Project['containers']): number[][] {
   // Each page is its own canvas (v21): containers on different pages never overlap.
   const rects = containers.map((c) => imageCanvasRect(c, c.placement));
   const pages = containers.map((c) => c.pageId);
-  const size = Math.max(1, ...rects.map((r) => Math.max(r.width, r.height)));
   const found = rects.map(() => new Set<number>());
-  const cells = new Map<string, number[]>();
-  const cell = (v: number) => Math.floor(v / size);
-  rects.forEach((r, i) => {
-    const x1 = cell(r.x + r.width);
-    const y1 = cell(r.y + r.height);
-    if (!Number.isFinite(x1 + y1 + r.x + r.y)) return;
-    for (let x = cell(r.x); x <= x1; x++) {
-      for (let y = cell(r.y); y <= y1; y++) {
-        const key = `${x},${y}`;
-        const bucket = cells.get(key) ?? [];
-        for (const j of bucket) {
-          if (pages[j] === pages[i] && rectsOverlap(rects[j] as Rect, r))
-            found[j]?.add(i);
-        }
-        cells.set(key, [...bucket, i]);
+  const classOf: number[] = [];
+  const grids = gridsBySize(rects, classOf);
+  const present = [...grids.keys()].sort((a, b) => a - b);
+  const markFrom = (i: number, own: number): void => {
+    const r = rects[i] as Rect;
+    for (const e of present) {
+      if (e < own) continue;
+      for (const j of candidatesIn(grids.get(e), r, e)) {
+        // Same class: each pair is seen from both sides, keep one; a larger class is only seen from here.
+        if (j === i || (e === own && j < i)) continue;
+        if (pages[j] === pages[i] && rectsOverlap(rects[j] as Rect, r))
+          found[Math.min(i, j)]?.add(Math.max(i, j));
       }
     }
-  });
+  };
+  classOf.forEach((own, i) => markFrom(i, own));
   return found.map((set) => [...set].sort((a, b) => a - b));
 }
 

@@ -8,6 +8,7 @@ import {
   type Marking,
   type Project,
 } from '../../src/model';
+import { imageCanvasRect, rectsOverlap } from '../../src/model/geometry';
 import { sampleProject } from './fixtures';
 
 function codes(p: Project) {
@@ -531,5 +532,83 @@ describe('images-overlap', () => {
       .filter((i) => i.code === 'images-overlap')
       .map((i) => `${i.id}:${i.otherId}`);
     expect(found).toEqual(expected);
+  });
+  /** Containers with the given canvas rectangles, compared with the all-against-all `rectsOverlap` check. */
+  function expectSamePairs(
+    rects: { x: number; y: number; width: number; height: number }[],
+  ): number {
+    const base = sampleProject();
+    const template = base.containers[0];
+    if (!template) throw new Error('fixture');
+    const containers = rects.map((r, i) => ({
+      ...template,
+      id: `X${i}`,
+      file: `images/x${i}.png`,
+      width: r.width,
+      height: r.height,
+      placement: { x: r.x, y: r.y, scale: 1 },
+    }));
+    const expected: string[] = [];
+    containers.forEach((a, i) => {
+      for (const b of containers.slice(i + 1)) {
+        if (
+          rectsOverlap(imageCanvasRect(a, a.placement), imageCanvasRect(b, b.placement))
+        ) {
+          expected.push(`${a.id}:${b.id}`);
+        }
+      }
+    });
+    const found = validateProject({
+      ...base,
+      containers,
+      markings: [],
+      annotations: [],
+      arrows: [],
+    })
+      .filter((i) => i.code === 'images-overlap')
+      .map((i) => `${i.id}:${i.otherId}`);
+    expect(found).toEqual(expected);
+    return expected.length;
+  }
+
+  function seeded(seed: number): (max: number) => number {
+    let state = seed;
+    return (max) => {
+      state = (state * 1103515245 + 12345) % 2147483648;
+      return state % max;
+    };
+  }
+
+  it('finds the same pairs with a container 64 times larger among many small ones', () => {
+    const next = seeded(11);
+    const rects = Array.from({ length: 200 }, () => ({
+      x: next(40) * 500,
+      y: next(40) * 500,
+      width: 100 + next(300),
+      height: 100 + next(300),
+    }));
+    rects.push({ x: 2000, y: 2000, width: 25600, height: 25600 });
+    expect(expectSamePairs(rects)).toBeGreaterThan(10);
+  });
+
+  it('finds the same pairs with containers of the same position and size', () => {
+    const rects = Array.from({ length: 30 }, () => ({
+      x: 300,
+      y: 300,
+      width: 200,
+      height: 150,
+    }));
+    expect(expectSamePairs(rects)).toBe((30 * 29) / 2);
+  });
+
+  it('finds the same pairs with random sizes from 1 to 10,000 px', () => {
+    const next = seeded(23);
+    const rects = Array.from({ length: 300 }, () => ({
+      x: next(20000) - 5000,
+      y: next(20000) - 5000,
+      width: 1 + next(10000),
+      height: 1 + next(10000),
+    }));
+    expect(expectSamePairs(rects)).toBeGreaterThan(100);
   });
 });

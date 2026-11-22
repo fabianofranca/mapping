@@ -1521,6 +1521,36 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'owner-chat',
   },
   {
+    term: 'Arquivamento: <k> sessões concluídas esperam (o modo Auto negou). Responda "pode arquivar" para eu arquivar estas e as próximas desta sessão.',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'pode arquivar',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: 'não arquive',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    term: '<rótulo>: arquivamento negado (Auto)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'arquivamento negado (Auto)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
+    term: 'arquivamento autorizado pelo dono (<k> arquivadas)',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'session-notices',
+  },
+  {
     term: '#<n> — a direção para o ciclo de CI da <código> toca <arquivo>, fora do “Toca em:”. Responda `ampliar #<n>` para mandar a direção ou `manter #<n>`.',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
@@ -1552,6 +1582,12 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   },
   {
     term: 'mesclar #<n>',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
+    // A command the coordinator matches in the owner's own chat message after the End (stage #2293, decision 11).
+    term: 'retomar fila',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
   },
@@ -3367,6 +3403,12 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
       'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
   },
   {
+    path: 'tests/tooling/queueGraphWaves.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|, 'não'\)/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
+  },
+  {
     path: 'tests/tooling/queueImport.test.ts',
     pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
     reason:
@@ -3393,6 +3435,12 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
   {
     path: 'tests/tooling/queueGraph.test.ts',
     pattern: /\bde: '[^']*'(, para: |\s*\})|\bpara: |para: string/,
+    reason:
+      '`para` is a key of the graph arrows that painel.py emits (`de`, `para`, `tipo`), frozen vocabulary of decision 16',
+  },
+  {
+    path: 'tests/tooling/queueGraphWaves.test.ts',
+    pattern: /\{ de: '#\d+', para: '#\d+', tipo: '[a-z]+' \}|para: string/,
     reason:
       '`para` is a key of the graph arrows that painel.py emits (`de`, `para`, `tipo`), frozen vocabulary of decision 16',
   },

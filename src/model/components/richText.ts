@@ -148,6 +148,7 @@ function createContext(
       italic: font.italic,
       letterSpacing: font.letterSpacing,
       lineHeight: runLineHeight(base, font),
+      ...(base.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
     };
   };
   const textWidth = (run: number, text: string): number => {

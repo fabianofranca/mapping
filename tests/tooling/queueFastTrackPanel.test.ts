@@ -363,7 +363,7 @@ describe('painel.py reentra: a refused row comes back (#2204, decision 3)', () =
       'phases=VR:open',
     );
     run('session', dir, issue, 'sess-7', 'kind=via-rapida', 'label=VR');
-    run('cost', dir, 'sess-7', 'usd=2.5', 'ctx=1000');
+    run('cost', dir, 'sess-7', 'usd=2.5', 'ctx=150000');
     run('row', dir, issue, 'status=recusada', 'step=recusada: grande demais');
   }
 

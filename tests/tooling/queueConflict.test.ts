@@ -57,6 +57,12 @@ describe('painel.py conflito (VR1, #1864)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
+  it('a toca with only ignored citations is refused as invalid with code 2 (GW3, #2562, decision 8)', () => {
+    const r = conflict('changelog/x.md');
+    expect(r.stdout).toBe('inválida: changelog/x.md — only ignored citations\n');
+    expect(r.status).toBe(2);
+  });
+
   it('without --pasta or --com it gives livre and 0', () => {
     const r = conflict(SECTION);
     expect(r.stdout).toBe('livre\n');
@@ -172,7 +178,8 @@ describe('painel.py conflito (VR1, #1864)', () => {
       'mcp/version.ts',
       'docs/TESTING-NUVEM.md#blocos',
     ].join(', ');
-    const r = conflict(ignored, '--com', `#9=${ignored}`);
+    // With a real citation next to them (a toca with only ignored ones is refused, GW3 decision 8).
+    const r = conflict(`src/a.ts, ${ignored}`, '--com', `#9=src/b.ts, ${ignored}`);
     expect(r.stdout).toBe('livre\n');
     expect(r.status).toBe(0);
   });

@@ -40,7 +40,7 @@ function StripButton({ id }: { readonly id: ToolWindowId }) {
       badge={badge > 0 ? String(badge) : undefined}
       tooltip={name}
       tooltipPlacement="end"
-      shortcut={toolWindowShortcut(id)}
+      shortcut={toolWindowShortcut(id) ?? undefined}
       pressed={open}
       onClick={() => toggleToolWindowFocus(id)}
       data-strip-window={id}

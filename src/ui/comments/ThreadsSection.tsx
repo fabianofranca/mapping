@@ -1,19 +1,13 @@
 import { t } from '../../i18n';
 import { initials, threadSubject, type Project, type ThreadAnchor } from '../../model';
 import type { ThreadEntry } from '../../store/threadDerived';
-import {
-  composingAnchor,
-  selectedThreadId,
-  selectThread,
-  startComposing,
-} from '../../store/threadUi';
+import { selectedThreadId, selectThread, startComposing } from '../../store/threadUi';
 import { Button } from '../controls';
 import { Section } from '../DetailsSection';
 import { useEditor } from '../EditorContext';
 import { anchorLabel } from './anchorLabel';
-import { Composer } from './Composer';
+import { showAndFocusToolWindow } from '../toolWindowLayout';
 import { useThreadAccess } from './threadAccess';
-import { ThreadView } from './ThreadView';
 
 interface ThreadsSectionProps {
   /** The item (marking, container or arrow) whose threads the section shows. */
@@ -55,7 +49,10 @@ function ThreadList({ entries, project, itemId, selectedId }: ThreadListProps) {
               class={`thread-row${isUnread ? ' thread-row-unread' : ''}`}
               aria-current={thread.id === selectedId}
               title={isUnread ? t('thread.unread') : undefined}
-              onClick={() => selectThread(ui, project, thread)}
+              onClick={() => {
+                selectThread(ui, project, thread);
+                showAndFocusToolWindow('conversation');
+              }}
             >
               <span class="thread-avatar" aria-hidden="true">
                 {first ? initials(first.author) : ''}
@@ -79,100 +76,56 @@ function ThreadList({ entries, project, itemId, selectedId }: ThreadListProps) {
   );
 }
 
-interface SectionView {
-  /** The threads in view: the open ones and the chosen resolved one. */
+interface BodyProps extends ThreadsSectionProps {
   readonly visible: readonly ThreadEntry[];
   readonly selectedId: string | null;
-  readonly composing: ThreadAnchor | null;
-  readonly openCount: number;
-  /** The thread shown in full: the chosen one or the only one; none while composing. */
-  readonly shown: ThreadEntry | null;
-}
-
-function viewOf(
-  entries: readonly ThreadEntry[],
-  selectedId: string | null,
-  composing: ThreadAnchor | null,
-): SectionView {
-  const visible = entries.filter(
-    (e) => e.thread.resolved === null || e.thread.id === selectedId,
-  );
-  const chosen = visible.find((e) => e.thread.id === selectedId);
-  const only = visible.length === 1 ? visible[0] : undefined;
-  return {
-    visible,
-    selectedId,
-    composing,
-    openCount: entries.filter((e) => e.thread.resolved === null).length,
-    shown: composing === null ? (chosen ?? only ?? null) : null,
-  };
-}
-
-interface BodyProps extends ThreadsSectionProps {
-  readonly view: SectionView;
   readonly project: Project;
 }
 
-function SectionBody({ view, project, itemId, anchor, onOpenSettings }: BodyProps) {
-  const { ui } = useEditor();
-  const { composing, visible, shown, selectedId } = view;
-  if (composing !== null) {
+function SectionBody({ visible, selectedId, project, itemId }: BodyProps) {
+  if (visible.length === 0) {
     return (
-      <Composer
-        target={{ kind: 'new', anchor: composing }}
-        autoFocus
-        onOpenSettings={onOpenSettings}
-        onCancel={() => (ui.composing.value = null)}
-      />
+      <p class="thread-section-empty muted" role="status">
+        {t('thread.sectionEmpty')}
+      </p>
     );
   }
-  if (visible.length === 0) {
-    return <Composer target={{ kind: 'new', anchor }} onOpenSettings={onOpenSettings} />;
-  }
   return (
-    <>
-      {visible.length > 1 && (
-        <ThreadList
-          entries={visible}
-          project={project}
-          itemId={itemId}
-          selectedId={selectedId}
-        />
-      )}
-      {shown && (
-        <ThreadView
-          key={shown.thread.id}
-          thread={shown.thread}
-          where={whereOf(project, itemId, shown.thread.anchor)}
-          onOpenSettings={onOpenSettings}
-        />
-      )}
-    </>
+    <ThreadList
+      entries={visible}
+      project={project}
+      itemId={itemId}
+      selectedId={selectedId}
+    />
   );
 }
 
 /**
- * "Threads" section of the Details (decision 18): with no open thread, the composer; with one, all
- * of it; with more than one, the list and the chosen one below. A resolved one only shows when
- * chosen. Hidden in proposal review.
+ * "Conversations" section of the Details (stage #1881, decision 9): the list of the item's open
+ * conversations (plus the window's one, if resolved). A row opens the conversation in the
+ * Conversation window and **New** opens its composer there; the section never shows a thread or a
+ * composer. Hidden in proposal review.
  */
 export function ThreadsSection(props: ThreadsSectionProps) {
   const { ui, derived, store, review } = useEditor();
-  const { can } = useThreadAccess();
+  const { canStart } = useThreadAccess();
   const project = review.derived.shownProject.value;
   if (!project || store.reviewing.value || review.proposalId.value !== null) return null;
 
   const entries = derived.threads.byItem.value.get(props.itemId) ?? [];
-  const view = viewOf(entries, selectedThreadId(ui), composingAnchor(ui));
-  const showNew = can && view.composing === null && view.visible.length > 0;
+  const selectedId = selectedThreadId(ui);
+  const visible = entries.filter(
+    (e) => e.thread.resolved === null || e.thread.id === selectedId,
+  );
+  const openCount = entries.filter((e) => e.thread.resolved === null).length;
 
   return (
     <Section
       section={{ kind: 'comments' }}
       title={t('thread.section')}
-      count={view.openCount}
+      count={openCount}
       actions={
-        showNew ? (
+        canStart ? (
           <Button
             size="sm"
             title={t('thread.newHint')}
@@ -183,7 +136,12 @@ export function ThreadsSection(props: ThreadsSectionProps) {
         ) : undefined
       }
     >
-      <SectionBody {...props} view={view} project={project} />
+      <SectionBody
+        {...props}
+        visible={visible}
+        selectedId={selectedId}
+        project={project}
+      />
     </Section>
   );
 }

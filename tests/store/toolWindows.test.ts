@@ -5,7 +5,12 @@ import {
   RESIZE_STEP,
   WINDOW_LIMITS,
   bottomToolWindow,
-  clampLayersHeight,
+  clampStackedHeight,
+  conversationWindowHeight,
+  resetConversationWindowHeight,
+  resizeConversationWindow,
+  WINDOW_NUMBER,
+  WINDOW_SIDE,
   clampWindowSize,
   fitSideWidths,
   hideToolWindow,
@@ -155,11 +160,11 @@ describe('tamanhos', () => {
 
 describe('divider between Tree and Layers', () => {
   it('neither window goes below the minimum', () => {
-    expect(clampLayersHeight(10, 800)).toBe(96);
-    expect(clampLayersHeight(900, 800)).toBe(704);
-    expect(clampLayersHeight(300, 800)).toBe(300);
+    expect(clampStackedHeight(10, 800, 96)).toBe(96);
+    expect(clampStackedHeight(900, 800, 96)).toBe(704);
+    expect(clampStackedHeight(300, 800, 96)).toBe(300);
     // Column smaller than the two minimum heights: the minimum applies.
-    expect(clampLayersHeight(300, 150)).toBe(96);
+    expect(clampStackedHeight(300, 150, 96)).toBe(96);
   });
 
   it('resizes, clamps and goes back to the default', () => {
@@ -348,5 +353,50 @@ describe('malformed stored layout (#943)', () => {
       localStorage.removeItem('mapping.toolWindows');
       vi.resetModules();
     }
+  });
+});
+
+describe('Conversation window (right column)', () => {
+  const reset2 = () => {
+    hideToolWindow('conversation');
+    resetConversationWindowHeight(800);
+  };
+  beforeEach(reset2);
+
+  it('is on the right and stacks with Details, in either order', () => {
+    expect(WINDOW_SIDE.conversation).toBe('right');
+    showToolWindow('conversation');
+    expect(openWindowsOf('right')).toEqual(['details', 'conversation']);
+    hideToolWindow('details');
+    expect(openWindowsOf('right')).toEqual(['conversation']);
+    showToolWindow('details');
+    expect(openWindowsOf('right')).toEqual(['details', 'conversation']);
+    expect(isToolWindowOpen('details')).toBe(true);
+  });
+
+  it('has no shortcut number and never comes from toolWindowByNumber', () => {
+    expect(WINDOW_NUMBER.conversation).toBeNull();
+    for (let n = 0; n <= 10; n++) expect(toolWindowByNumber(n)).not.toBe('conversation');
+  });
+
+  it('stores its height, clamped to 160 each in the right column, and resets', () => {
+    const initial = conversationWindowHeight.value;
+    expect(initial).toBe(
+      Number.parseInt(tokenValue('size-tw-conversation', 'light'), 10),
+    );
+    expect(initial).toBe(320);
+    resizeConversationWindow(initial + RESIZE_STEP, 800);
+    expect(conversationWindowHeight.value).toBe(initial + RESIZE_STEP);
+    resizeConversationWindow(10, 800);
+    expect(conversationWindowHeight.value).toBe(160);
+    resizeConversationWindow(10_000, 800);
+    expect(conversationWindowHeight.value).toBe(640);
+    resetConversationWindowHeight(800);
+    expect(conversationWindowHeight.value).toBe(initial);
+  });
+
+  it('clampStackedHeight keeps 160 in the right column and 96 in the left', () => {
+    expect(clampStackedHeight(10, 800, 160)).toBe(160);
+    expect(clampStackedHeight(10, 800, 96)).toBe(96);
   });
 });

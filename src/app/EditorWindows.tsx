@@ -17,6 +17,10 @@ import {
   useCopyErrors,
 } from '../ui/DiagnosticsView';
 import { CommentsHeaderActions, CommentsWindow } from '../ui/comments/CommentsWindow';
+import {
+  ConversationStateBadge,
+  ConversationWindow,
+} from '../ui/comments/ConversationWindow';
 import { IncompleteView } from '../ui/IncompleteView';
 import { NoticesView } from '../ui/NoticesView';
 import { ListView } from '../ui/ListView';
@@ -80,6 +84,14 @@ function Window({
       return (
         <ToolWindow id={id}>
           <EditorPanel {...panel} />
+        </ToolWindow>
+      );
+    case 'conversation':
+      return (
+        <ToolWindow id={id} stacked={stacked} actions={<ConversationStateBadge />}>
+          <ConversationWindow
+            onOpenSettings={() => panel.dialogs.show({ kind: 'settings' })}
+          />
         </ToolWindow>
       );
     case 'list':
@@ -156,7 +168,7 @@ function DiagnosticsHeaderActions() {
 
 export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
   const left = openWindowsOf('left');
-  const right = openWindowOf('right');
+  const right = openWindowsOf('right');
   const bottom = openWindowOf('bottom');
   const toolWindow = (id: ToolWindowId, stacked = false) => (
     <Window key={id} id={id} stacked={stacked} panel={panel} onSelect={onSelect} />
@@ -212,7 +224,16 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
           {canvas}
           {bottom && toolWindow(bottom)}
         </div>
-        {right && toolWindow(right)}
+        {right.length > 0 && (
+          // The width belongs to the column: stacked Details and Conversation share it.
+          <div
+            class="tool-column tool-column-right"
+            data-tool-column
+            style={{ width: `${sideWidth('right')}px` }}
+          >
+            {right.map((id, i) => toolWindow(id, i > 0))}
+          </div>
+        )}
       </div>
       <ToolStrip side="right" />
     </div>

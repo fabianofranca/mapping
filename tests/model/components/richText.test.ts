@@ -742,6 +742,17 @@ describe('reading direction in the runs (R2, #1107)', () => {
     expect(first!.x).toBeCloseTo(last!.width, 9);
   });
 
+  it('the pieces are measured with the node direction, as they are drawn', () => {
+    const seen: (string | undefined)[] = [];
+    const spy: typeof approximateMeasurer = (text, font) => {
+      seen.push(font.direction);
+      return approximateMeasurer(text, font);
+    };
+    layoutRuns(runs, { ...BASE, direction: 'rtl' }, spy, 200);
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((d) => d === 'rtl')).toBe(true);
+  });
+
   it('without direction (or in ltr) nothing changes', () => {
     const plain = layoutRuns(runs, BASE, approximateMeasurer, 100);
     expect(plain.lines[0]!.pieces[0]!.x).toBe(0);

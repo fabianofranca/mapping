@@ -1,4 +1,11 @@
-import { fontExtents, layingFace, textWidth } from './glyphs';
+import {
+  EMBEDDED_SLANT,
+  fontExtents,
+  layingFace,
+  LIBRARY_SLANT,
+  textWidth,
+  type Synthesis,
+} from './glyphs';
 import { loadFace, type Face } from './harfbuzz';
 import monoBold from 'font:mono-bold';
 import mono from 'font:mono';
@@ -70,14 +77,50 @@ function weightRange(weight: string): [number, number] {
   return [low, parts[1] ?? low];
 }
 
-/** The distance from a weight to a range (0 if inside it). */
-const gap = (weight: number, c: Candidate) =>
-  weight < c.low ? c.low - weight : weight > c.high ? weight - c.high : 0;
+/** The weight range and style of a face: what `matchFace` reads. */
+export interface FaceRange {
+  readonly low: number;
+  readonly high: number;
+  readonly italic: boolean;
+}
+
+/** Weight from which Blink emboldens a face whose top weight is lighter. */
+const SYNTHETIC_BOLD_FROM = 600;
+
+/**
+ * The face CSS picks for a weight and a style (CSS Fonts 4, 5.2; stage #2448, decision 11). The style comes first; a
+ * weight inside a face's range matches it; from 400 to 500 the faces up to 500 come first, ascending, then the lighter
+ * ones, descending, then the heavier ones; below 400 the lighter ones, descending, then the heavier, ascending; above
+ * 500 the heavier ones, ascending, then the lighter ones, descending. A tie goes to the first face.
+ */
+export function matchFace<T extends FaceRange>(
+  faces: readonly T[],
+  weight: number,
+  italic: boolean,
+): T | undefined {
+  const styled = faces.filter((f) => f.italic === italic);
+  const pool = styled.length > 0 ? styled : faces;
+  const inside = pool.find((f) => f.low <= weight && weight <= f.high);
+  if (inside !== undefined) return inside;
+  const lighter = pool.filter((f) => f.high < weight).sort((a, b) => b.high - a.high);
+  const heavier = pool.filter((f) => f.low > weight).sort((a, b) => a.low - b.low);
+  if (weight < 400) return [...lighter, ...heavier][0];
+  if (weight > 500) return [...heavier, ...lighter][0];
+  const upTo500 = heavier.filter((f) => f.low <= 500);
+  const above = heavier.filter((f) => f.low > 500);
+  return [...upTo500, ...lighter, ...above][0];
+}
 
 /** A font reader: the embedded one and the library's (`fonts` with bytes). */
 export interface FontBook {
   /** The font that draws/measures `family` with the requested weight and style. */
   fontFor(family: string, weight: number, italic: boolean): Face;
+  /**
+   * What the drawing adds to the face `fontFor` returns (stage #2448, decisions 12 and 13): synthetic bold (a library
+   * face whose top weight is below 600, asked for from 600) and the slant of a face that is not italic (0.25 for a
+   * library face, 0.2 for the embedded fonts). The advance does not change.
+   */
+  synthesis(family: string, weight: number, italic: boolean): Synthesis;
   /** The embedded font for `family` and `weight`: where a text goes when its library font cannot lay it out. */
   embeddedFor(family: string, weight: number): Face;
   /**
@@ -118,33 +161,54 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
     const candidate = candidateOf(entry);
     if (candidate !== null) candidates.push(candidate);
   }
-  const fromLibrary = (name: string, weight: number, italic: boolean): Face | null => {
-    const same = candidates.filter((c) => c.family === name.toLowerCase());
-    const best = [...same].sort(
-      (a, b) =>
-        Number(b.italic === italic) - Number(a.italic === italic) ||
-        gap(weight, a) - gap(weight, b),
-    )[0];
-    return best?.font ?? null;
-  };
+  const fromLibrary = (name: string, weight: number, italic: boolean): Candidate | null =>
+    matchFace(
+      candidates.filter((c) => c.family === name.toLowerCase()),
+      weight,
+      italic,
+    ) ?? null;
   const hasFamily = (name: string): boolean =>
     candidates.some((c) => c.family === name.toLowerCase());
   // The first name `resolve` stops on: a library family or a mono name (`undefined` = the sans).
   const stopName = (family: string): string | undefined =>
     familyNames(family).find((name) => hasFamily(name) || MONO_FAMILY.test(name));
-  const resolved = new Map<string, Face>();
-  const resolve = (family: string, weight: number, italic: boolean): Face => {
-    const names = familyNames(family);
-    for (const name of names) {
-      const hit = fromLibrary(name, weight, italic);
-      if (hit !== null) return hit;
-      if (MONO_FAMILY.test(name)) {
-        const b = builtinFonts();
-        return weight >= BOLD_FROM ? b.monoBold : b.mono;
-      }
-    }
+  const embeddedSynthesis = (italic: boolean): Synthesis => ({
+    bold: false,
+    slant: italic ? EMBEDDED_SLANT : 0,
+  });
+  const embeddedOf = (family: string, weight: number): Face => {
     const b = builtinFonts();
+    const mono = familyNames(family).some((n) => !hasFamily(n) && MONO_FAMILY.test(n));
+    if (mono) return weight >= BOLD_FROM ? b.monoBold : b.mono;
     return weight >= BOLD_FROM ? b.sansBold : b.sans;
+  };
+  const resolved = new Map<string, { face: Face; synthesis: Synthesis }>();
+  const resolve = (family: string, weight: number, italic: boolean) => {
+    for (const name of familyNames(family)) {
+      const hit = fromLibrary(name, weight, italic);
+      if (hit !== null)
+        return {
+          face: hit.font,
+          synthesis: {
+            bold: weight >= SYNTHETIC_BOLD_FROM && hit.high < SYNTHETIC_BOLD_FROM,
+            slant: italic && !hit.italic ? LIBRARY_SLANT : 0,
+          },
+        };
+      if (MONO_FAMILY.test(name)) break;
+    }
+    return {
+      face: embeddedOf(family, weight),
+      synthesis: embeddedSynthesis(italic),
+    };
+  };
+  const entryFor = (family: string, weight: number, italic: boolean) => {
+    const key = `${family}|${weight}|${italic}`;
+    let hit = resolved.get(key);
+    if (hit === undefined) {
+      hit = resolve(family, weight, italic);
+      resolved.set(key, hit);
+    }
+    return hit;
   };
   return {
     hasLibraryFonts: candidates.length > 0,
@@ -162,15 +226,8 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
       return weight >= BOLD_FROM ? b.sansBold : b.sans;
     },
     // Cache by family/weight/italic: the measurer asks for the font once per word.
-    fontFor(family, weight, italic) {
-      const key = `${family}|${weight}|${italic}`;
-      let font = resolved.get(key);
-      if (font === undefined) {
-        font = resolve(family, weight, italic);
-        resolved.set(key, font);
-      }
-      return font;
-    },
+    fontFor: (family, weight, italic) => entryFor(family, weight, italic).face,
+    synthesis: (family, weight, italic) => entryFor(family, weight, italic).synthesis,
   };
 }
 

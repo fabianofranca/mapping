@@ -19,7 +19,7 @@ exist yet, cited whole. A folder (ends in `/` or `/**`, or exists at the reposit
 an existing document with sections but no anchor, and an anchor outside the form (in `docs/TESTING.md`, `R<n>`, `RP`, `RF`, `RA`, `RB`, a
 slug or `inicio`; in the others, a slug or `inicio`) give `ficha incompleta (toca: <first invalid citation>)` and go into
 `fichas a refazer:`, including on the already started stage, whose old citations stay in the comparison as today until the ficha is
-redone; the `exclusive=sim` line does not go through this validation (only the `?` makes it incomplete). `toca "<citations separated by commas>"` checks a list: `ok` (code 0) or one `inválida: <citation> — <reason>` line per citation (code 1).
+redone; the `exclusive=sim` line does not go through this validation (only the `?` makes it incomplete). A non-empty `toca=` whose citations are all ignored (`IGNORED_PREFIXES`, `IGNORED_EXACT`) normalizes to `?` (decision 8 of #2562): it is incomplete (the exclusive line too), a started one conflicts with every candidate, and `toca` and `conflito` print `inválida: <the list> — only ignored citations` (codes 1 and 2); an append-only citation is not ignored. `toca "<citations separated by commas>"` checks a list: `ok` (code 0) or one `inválida: <citation> — <reason>` line per citation (code 1).
 `conflito "<toca>" [--pasta <dir>] [--com "#N=<toca>"]…` (decision 9 of #1864, read-only, outside `apply`) checks a `toca` against
 the started and not merged stages of the folder, the ones `show` lists in `começar agora:` and each `--com`, with the same calculation as the queue:
 `livre` (code 0, also without `--pasta` and without `--com`), one `conflito: <citation> com #N (<status>|começa agora|fora do painel)` line
@@ -64,14 +64,18 @@ carries (without `publishing`, from an old panel, it prints "nada em voo" and st
 of #1595). `touch DIR` marks the three files again.
 Cost (decisions 5 and 26 of #1532): `session DIR '#n' <id> kind=<type> [label=<code>]` adds `{id, issue, kind, label,
 created}` to `meta.sessions` (without `kind`, only the row's `sessions`, as before); `cost DIR <id> usd= ctx= [model= effort=
-served=] [issue= kind=]` writes the session's cost (`kind` required with a new id); `costs [--desde <ISO>] DIR` reads only the `meta`
+served=] [issue= kind=]` writes the session's cost (`kind` required with a new id); `ctx` is the token count
+(`context_usage.used_tokens`), never thousands, so `cost` refuses a `ctx` from 1 to 1000 (code 2, `erro: ctx= is the token count
+(context_usage.used_tokens), not thousands: <v>`, nothing written; inside `apply` an `Erro` with the line number) and still takes `ctx=0`
+(no measure; decision 14 of #2293); `costs [--desde <ISO>] DIR` reads only the `meta`
 and prints the total, one line per kind (sessions, US$, median) and one per stage (with `--desde`, only those with `created` from
-the date on); `show` brings the `custo:` line.
+the date on; the line of a stage in `meta.partialCost` ends in ` (partial: imported)`, decisions 12 and 13 of #2293); `show` brings the `custo:` line.
 `outliers [--desde <ISO>] DIR` (decisions 3 to 9 of #1937, read-only, outside `apply`) reads the queue and the meta: for the `concluída` stages
 with a valid `fases=` and a `toca=` other than `?` (with `--desde`, `started` from the date on) it divides the stage cost by the planned
 phases and lists, per group (`process` by `is_process_stage`, else `product`), those strictly above `OUTLIER_FACTOR` times the group
 median, with the cause: the session kind that went furthest above the group's median in that kind. A group under `OUTLIER_MIN_BASE` stages
-flags nothing; a stage without a usable ficha (and one only in `meta.merged`) enters `without ficha`.
+flags nothing; a stage without a usable ficha (and one only in `meta.merged`) enters `without ficha`. A stage in `meta.partialCost` (below) is
+out of the base and counted in the header's `, partial: <k>` (decision 13 of #2293).
 Tester ceiling (decision 9 of #1639): a `cost` of a `testador` or `reteste` session with `ctx` above TESTER_CONTEXT_LIMIT
 is written as always, exits with 0 and prints `acima do teto do testador (300 mil): <id> <ctx>`; `show` brings `testador acima do teto: <stage> <label> <ctx in thousands>k; …` (or `nenhum`), only for the stages not `concluída` or `recusada` and outside `meta.merged`.
 Current session of each role (decision 7 of #1532): `role DIR <coordenador|supervisor> <id> [link=<url>]` writes
@@ -110,7 +114,9 @@ log. The holds use the `upgrade` conversion; the `pausada pelo dono` (the transi
 records what came over. `import` does not go into `apply`. The canaries (`meta.canarios`) come over with their baseline frozen (stage #2260): the old panel's own
 "before" becomes the canary's `base` (`fonte: import`) when it has sessions, otherwise an old `base` stays; and the canary's sessions come with them, the ones whose id
 is in the `sessoes` of a carried canary whole (`cost`, `sinais`, `canario`) and, of the same stages, the others without `cost`, so `k/n`, the canary side and the rework
-ruler survive the switch and `custo:` counts only the canary's own; the `log` line then ends in `sessões de canário <k>`.
+ruler survive the switch and `custo:` counts only the canary's own; the `log` line then ends in `sessões de canário <k>`. The cost the import does not
+bring leaves those stages partial (decision 12 of #2293): `meta.partialCost` is a sorted list, without repeats and absent when empty, of the union of the
+imported rows with `started`, the stages of the carried canary sessions and the old panel's own `partialCost`.
 Plan phases (stage #1705): `phases` keeps `<code>:<state>` separated by `|`, with the states `todo` (to do: only comes
 from the ficha), `open` (open, with the session created) and `ok` (merged into the epic). Every write (`Sessao.flush`) completes the rows
 from the ficha (`fases=`): its phases come first, in its order, with the state they already had (or `todo`), and then the `open`
@@ -121,16 +127,23 @@ Queue graph (stage #1761): every write writes, right after `vagas` and `vagasIte
 (`show` does not change). Node: `{issue, titulo, onda, rank, estado, motivo, fase, feitas, total}` of each non-`concluída` row, in
 the order wave, `rank` (`null` last) and `order`; `estado` is `rodando`, `dono`, `arquivo`, `dep`, `exclusiva`, `segurada`, `livre`
 or `ficha`, read from the reason that `slots_plan` gave the candidate. Waves, in rounds: wave 0 has the started ones and those that start now; in
-each round enter those that depend only on nodes already placed (those waiting for a file, slot or the running exclusive stay in 1), and the
-exclusive stage at the front (the first by `order`, without `hold` and with a complete ficha) enters alone after the ordinary ones that come before
-it and before those it holds (`estado` `exclusiva`, reason `segurada para a exclusiva #N`); in a cycle, what is left enters
-together in the last one.
+each round enter, in `order`, those that depend only on nodes already placed and have no file (`first_conflict`) and no schema (both
+`changes_schema`) in common with the ones already in that round; the rest wait for the next round, so a wave is a set of stages that
+can run together (stage #2293). A row with `hold` or an incomplete ficha enters its round without the check, neither blocking nor
+blocked. The slots do not cut a wave (`Vagas k/N` already shows them). The exclusive stage at the front (the first by `order`, without
+`hold` and with a complete ficha) enters alone after the ordinary ones that come before it and before those it holds (`estado`
+`exclusiva`, reason `segurada para a exclusiva #N`); in a cycle, what is left enters together in the last one.
 `rank` (1, 2, 3…): the `aguardando` without `started`, except `segurada` and `ficha`, by wave and `order`; the others stay `null`. Arrow
 `{de, para, tipo}` (the arrow runs from the holder to the held one): `dep` by the ficha's `dep=` between nodes (without `:main` or `meta.merged`), only the
-transitive reduction, and `arquivo` from `#N` when the reason is `arquivo <x> com #N` or `schema com #N`.
+transitive reduction, and `arquivo` (see below). Every blocker (stage #2293, decisions 4 and 5): a node that is not started, is outside wave 0 and
+is not `segurada` or `ficha` has in its `motivo` all its blockers, read from the waves already assigned and joined by `; `: the open dependencies
+(`dep #A, #B`, with `#N recusada`, as in `plan_block`), then one `arquivo <citation> com #N` per earlier-wave node (wave, then `order`) that shares a
+file with it (the citation of `first_conflict`), then one `schema com #N` per earlier-wave node that shares only the schema. The `exclusiva` state keeps
+the `slots_plan` reason first; with no blocker the `slots_plan` reason stays (`vagas cheias`). Each of those file and schema blockers is one `arquivo`
+arrow to the node, each pair once; the single `holder` arrow of the reason stays only for the other nodes. `estado` and `rank` do not change.
 Usage and quality (stage #1889, decisions 2 to 7): every write refreshes `meta.uso`, one entry per key (`papel`, `modelo`, `esforco`) of
 the sessions with a `cost`: the model is the family of the id in `cost.model` (`Haiku`, `Sonnet`, `Opus`, `Fable`; another id as it came),
-the effort as written; with `sessoes`, `usd`, `pct`, `medianaSessao`, `medianaEtapa` (only merged stages), `ctxMediano`, `acimaTeto`
+the effort as written; with `sessoes`, `usd`, `pct`, `medianaSessao`, `medianaEtapa` (only merged stages, without those in `meta.partialCost`), `ctxMediano`, `acimaTeto`
 (`ctx` > 300000 in `fase`, `correção`, `testador` and `reteste`), `intervencoes` (`dono` plus the context switches), `sinais` (the signals added
 up) and, for the roles with a rework ruler (`fase`, `correção`, `testador`, `reteste`): `decididas`, `comRetrabalho`, `sequencia` (decided sessions in
 a row without rework, from the most recent back) and `candidato` (the step below, from CLEAN_STREAK = 10 in a row). `uso [--desde <ISO>] DIR`
@@ -167,7 +180,7 @@ The canary counts `n` in sessions, and in `fase` and `correção` in distinct ph
 `encerrado` (every stage of the canary decided), `revertido` as soon as the rework reaches `volta` (at any time, with one `log` line written
 once: `canário <id> revertido: <k> retrabalhos (<ids>)`) and `terminado pelo dono`. Rework of a canary: `reteste`, each `falso` `high`/`medium` in
 its sessions; `fase`, a `correção` in the stage of one of its sessions (once per stage) and each `ciclo`; another role, the ruler of decision 6.
-`resumo` = `{antes, canario, medida, veredito}`: each side has `sessoes` (with a cost), `medianaSessao`, `medianaEtapa`, `decididas` and `comRetrabalho`
+`resumo` = `{antes, canario, medida, veredito}`: each side has `sessoes` (with a cost), `medianaSessao`, `medianaEtapa` (without the partial stages of the panel it reads), `decididas` and `comRetrabalho`
 (decision 6) and, for `testador` and `reteste`, `passos` (`ok` + `falha` over the sessions that have either written), `usdPorPasso` (their US$ ÷
 `passos`, 3 decimals), `xFalso`, `naoExec`, `xFalsoPct` (100 × `xFalso` ÷ `falha`) and `naoExecPct` (100 × `naoExec` ÷ (`ok` + `falha` + `naoExec`)), the
 last four over the sessions that have `naoExec` written (`xFalso` absent counts 0; None without such a session or with a 0 denominator); the other roles have
@@ -196,7 +209,7 @@ back as a fresh `aguardando` one (any other status is an Erro, code 2): it sets 
 A row that depends on a `recusada` one shows `dep #N recusada` in `vagas:` (`dep #N recusada, #K` with another open dependency; the state stays `dep`), and
 `show` prints `dependem de recusada: #M (#N); …` (or `nenhum`) right after `perguntas ao dono:`: the `aguardando` rows not yet started with a `recusada`
 row among their open dependencies. The question verb `soltar` is the first command of the `soltar`/`esperar` pair. A `toca=` with only ignored
-citations (`changelog/`, `docs/design-system/`, `mcp/version.ts`) is a ficha without a real `toca`: `outliers` counts it in `without ficha` and
+citations (`changelog/`, `docs/design-system/`, `mcp/version.ts`) is a `?` (stage #2562, decision 8), a ficha without a real `toca`: `outliers` counts it in `without ficha` and
 `is_process_stage` (the `processo` canary filter too) answers no. Every `row` with a `wait=merge pedido ao dono: …` and no `child` restarts `childAt`.
 Early start (stage #2373, phase EA1): a candidate whose only blockers are file conflicts (`first_conflict`) with eligible holders starts at once: a
 started row `em andamento` or `esperando dono` in `Testador`, `Correção` or `Fechamento`, not `exclusive=sim`, not `via-rapida` and with no `cedo`
@@ -211,7 +224,7 @@ without `cedo`, and every write rewrites its step to `espera merge de #S para te
 `esperando merge para testar: #E (espera #S); …` and `pode sincronizar: #E (#S mesclada; #T falhou); …` (the rows with every holder resolved, with each outcome:
 `mesclada`, `falhou`, `recusada`, `fora da fila`), each `nenhuma` when empty; the `em andamento` line of a row with `cedo` ends in ` · cedo: #S`. Once
 `cedo` is cleared the stage is an ordinary started one and opens the early start for another (the second level). `fichas a refazer:` also lists the
-non-final rows whose ficha has no `formato=` at all (it does not make the ficha incomplete and holds nothing; `formato=?` is a written value). A standalone note in `toca=` (a comma item that is only a parenthesized note, `a.ts,(novo),b.ts`; decision 4 of #2428) is dropped and also lists the row there, holding nothing; a note after its path (`x.ts (new, helper)`) is not one of them. The
+non-final rows whose ficha has no `formato=` at all (it does not make the ficha incomplete and holds nothing; `formato=?` is a written value). A standalone note in `toca=` (a comma item made only of balanced parenthesized groups, nested or adjacent: `a.ts,(novo),b.ts`, `(novo (ver #12))`, `(n)(m)`; decisions 4 of #2428 and 7 of #2562, read by one depth scan, `split_toca`) is dropped and also lists the row there, holding nothing; a note after its path (`x.ts (new, helper)`, `x.ts (novo (ver #12))`) is removed from the space before its `(` to the matching `)` and is not one of them; text outside the groups (`(a) x.ts (b)`) keeps it a citation. The
 session kind `sincronização` (`SESSION_KINDS`) has no ruler, signals or context ceiling, and `sinal` refuses it. Graph: `estado` `entrega` (reason =
 the step) for `esperando entrega`, `cedo` on every node (the holders still open, `#S, #T`, or "") and an arrow `{de: #S, para: #E, tipo: entrega}` for
 each open holder of a started row with `cedo`; a `começa cedo` candidate is in wave 0 like `começa`.
@@ -828,6 +841,15 @@ def to_number(k, v, conv):
     return x
 
 
+CTX_THOUSANDS_MAX = 1000  # a real session never ends at or below 1,000 tokens; in thousands, 1,000 is already the 1M context
+
+
+def check_ctx_tokens(raw, ctx):
+    """Decision 14 of #2293: `ctx` is `context_usage.used_tokens`; 1 to 1000 is a value in thousands (0 is "no measure")."""
+    if 1 <= ctx <= CTX_THOUSANDS_MAX:
+        raise Erro(f"ctx= is the token count (context_usage.used_tokens), not thousands: {raw}")
+
+
 def cmd_cost(a):
     s = open_session(a.dir)
     pairs = parse_pairs(a.pairs)
@@ -839,6 +861,7 @@ def cmd_cost(a):
             raise Erro(f"falta {k}=")
     usd = to_number("usd", pairs["usd"], float)
     ctx = to_number("ctx", pairs["ctx"], lambda v: int(float(v)))
+    check_ctx_tokens(pairs["ctx"], ctx)
     if "kind" in pairs:
         validate_choice("kind", pairs["kind"], SESSION_KINDS)
     if "issue" in pairs:
@@ -909,10 +932,15 @@ def cost_summary(meta):
     return f"{money(sum(usd_of(e) for e in es))} em {len(es)} sessões"
 
 
+PARTIAL_MARK = " (partial: imported)"
+
+
 def cmd_costs(a):
     since = check_iso(a.desde) if a.desde else None
     m = load(a.dir, "meta")
-    es = costed(m[0] if m else {}, since)
+    meta = m[0] if m else {}
+    partial = partial_stages(meta)
+    es = costed(meta, since)
     if not es:
         print("custo total: —")
         return
@@ -927,9 +955,9 @@ def cmd_costs(a):
             v = by_kind[k]
             print(f"  {k}: {len(v)} sessões, {money(sum(v))}, mediana {money(statistics.median(v))}")
     print("por etapa:")
-    for k in sorted(by_issue, key=lambda i: (not i.startswith("#"), int(i[1:]) if i[1:].isdigit() else 0, i)):
+    for k in sorted(by_issue, key=issue_order):
         v = by_issue[k]
-        print(f"  {k}: {len(v)} sessões, {money(sum(v))}")
+        print(f"  {k}: {len(v)} sessões, {money(sum(v))}{PARTIAL_MARK if k in partial else ''}")
 
 
 # --- usage and quality per role x model x effort (stage #1889, phase QM1) ---
@@ -1004,6 +1032,12 @@ def severe_escaped(meta):
     return {x.get("etapa") for x in meta.get("escapados") or [] if x.get("sev") in ("high", "medium")}
 
 
+def partial_stages(meta):
+    """`meta.partialCost` (decision 12 of #2293) as a set: the stages whose cost the import did not bring whole; missing or invalid, none."""
+    v = meta.get("partialCost")
+    return {i for i in v if isinstance(i, str)} if isinstance(v, list) else set()
+
+
 class Ruler:
     """The rework ruler (decision 6), over every session of `meta.sessions`, with a cost or not: a stage counts only
     when decided (`concluída` in the queue or in `meta.merged`)."""
@@ -1012,6 +1046,7 @@ class Ruler:
         self.okey = chronology(meta)
         self.escaped = severe_escaped(meta)
         self.decided = set(meta.get("merged") or []) | {r["issue"] for r in q if r["status"] == "concluída"}
+        self.measured = self.decided - partial_stages(meta)  # the stages whose per-stage cost is whole (decision 13 of #2293)
         self.stages = {}
         for e in meta.get("sessions") or []:
             if e.get("issue"):
@@ -1078,7 +1113,7 @@ def switch_successors(meta):
 
 
 def stage_median(es, decided):
-    """Median, among the decided stages, of what the key spent in each one; None with no decided stage."""
+    """Median, among the decided stages (`Ruler.measured`: without the partial ones), of what the key spent in each one; None with none."""
     sums = {}
     for e in es:
         if e.get("issue") in decided:
@@ -1123,7 +1158,7 @@ def usage_row(key, es, total, ruler, switches):
         "papel": papel, "modelo": modelo, "esforco": esforco, "sessoes": len(es),
         "usd": round(usd, 2), "pct": round(100 * usd / total, 1) if total else 0.0,
         "medianaSessao": round(statistics.median([usd_of(e) for e in es]), 2),
-        "medianaEtapa": stage_median(es, ruler.decided),
+        "medianaEtapa": stage_median(es, ruler.measured),
         "ctxMediano": int(round(statistics.median(ctx))) if ctx else None,
         "acimaTeto": over_ceiling(papel, es),
         "intervencoes": sums.get("dono", 0) + trocas,
@@ -1480,16 +1515,21 @@ def canary_base(a):
 
 
 def outlier_base(q, meta, since):
-    """The `concluída` rows with a valid `fases=` and a `toca=` other than `?` (and `started` from `since` on), and the
-    count of the stages that stay out for lack of a ficha (rows without one, and those only in `meta.merged`)."""
+    """The `concluída` rows with a valid `fases=` and a `toca=` other than `?` (and `started` from `since` on), the
+    count of the stages that stay out for lack of a ficha (rows without one, and those only in `meta.merged`) and the
+    count of those out because their cost is partial (`meta.partialCost`, decision 13 of #2293)."""
+    partial = partial_stages(meta)
     rows = [r for r in q if r.get("status") == "concluída" and not (since and (r.get("started") or "") < since)]
+    partial_rows = [r for r in rows if r.get("issue") in partial]
+    rows = [r for r in rows if r.get("issue") not in partial]
     base = [r for r in rows if plan_phase_codes(r.get("plan") or "") and has_toca(r.get("plan") or "")]
     queued = {r.get("issue") for r in q}
     merged_only = {i for i in meta.get("merged") or [] if i not in queued}
     if since:  # a merged-only stage has no row: it counts only with a session created from `since` on
         recent = {e.get("issue") for e in meta.get("sessions") or [] if (e.get("created") or "") >= since}
         merged_only &= recent
-    return base, len(rows) - len(base) + len(merged_only)
+    partial_only = merged_only & partial
+    return base, len(rows) - len(base) + len(merged_only - partial_only), len(partial_rows) + len(partial_only)
 
 
 def stage_kind_costs(meta, issues):
@@ -1555,9 +1595,9 @@ def cmd_outliers(a):
     since = check_iso(a.desde) if a.desde else None
     q, m = load(a.dir, "queue"), load(a.dir, "meta")
     meta = m[0] if m else {}
-    base, without = outlier_base(q, meta, since)
+    base, without, partial = outlier_base(q, meta, since)
     costs = stage_kind_costs(meta, [r["issue"] for r in base])
-    print(f"outliers (since {since or 'all'}): {len(base)} stages in the base, without ficha: {without}")
+    print(f"outliers (since {since or 'all'}): {len(base)} stages in the base, without ficha: {without}, partial: {partial}")
     for name, rows in (("product", [r for r in base if not is_process_stage(r)]),
                        ("process", [r for r in base if is_process_stage(r)])):
         print("\n".join(outlier_group(name, rows, meta, costs)))
@@ -1744,7 +1784,7 @@ def side_summary(es, ruler, papel):
     flags = [v for v in (ruler.verdict(e) for e in es) if v is not None]
     usd = [usd_of(e) for e in es]
     out = {"sessoes": len(es), "medianaSessao": round(statistics.median(usd), 2) if usd else None,
-           "medianaEtapa": stage_median(es, ruler.decided), "decididas": len(flags), "comRetrabalho": sum(flags)}
+           "medianaEtapa": stage_median(es, ruler.measured), "decididas": len(flags), "comRetrabalho": sum(flags)}
     out.update({**step_figures(es), **noise_figures(es)} if papel in STEP_KINDS else NO_FIGURES)
     return out
 
@@ -2295,6 +2335,21 @@ def carry_canary_sessions(old_meta, meta):
     return sum(1 for e in sessions if e.get("id") in ids)
 
 
+def issue_order(issue):
+    """Sort key of `#<n>` ids: numbers in order, anything else after."""
+    return not issue.startswith("#"), int(issue[1:]) if issue[1:].isdigit() else 0, issue
+
+
+def carry_partial_cost(old_meta, meta, rows):
+    """Decision 12 of #2293: `meta.partialCost`, the stages whose old cost the import does not bring: the rows with `started`, the
+    stages of the carried canary sessions and the old panel's own list (a sorted list without repeats; no key when empty)."""
+    ids = {sid for c in meta.get("canarios") or [] for sid in c.get("sessoes") or []}
+    partial = partial_stages(old_meta) | {r["issue"] for r in rows if r.get("started")}
+    partial |= {e["issue"] for e in meta.get("sessions") or [] if e.get("id") in ids and e.get("issue")}
+    if partial:
+        meta["partialCost"] = sorted(partial, key=issue_order)
+
+
 def carry_questions(old_meta, meta, rows):
     """Brings the open owner questions of the rows `import` kept; those of the others are dropped."""
     issues = {r["issue"] for r in rows}
@@ -2339,6 +2394,7 @@ def cmd_import(a):
     carry_quality(old_m, meta)
     freeze_bases(old_q, old_m, meta)
     kept = carry_canary_sessions(old_m, meta)
+    carry_partial_cost(old_m, meta, rows)
     carry_questions(old_m, meta, rows)
     running = sum(1 for r in rows if carries_session(r))
     tail = f"; sessões de canário {kept}" if meta.get("canarios") else ""
@@ -2483,36 +2539,103 @@ def norm_path(x):
     return x
 
 
-# A comma item that is only a parenthesized note (`a.ts,(novo),b.ts`; decisions 2 and 3 of #2428). The group keeps the comma before it.
-LOOSE_NOTE = re.compile(r"(^|,)\s*\([^)]*\)\s*(?=,|$)")
+def group_end(s, i):
+    """Index of the `)` that closes the `(` at `s[i]`, counting nested groups; -1 when it is never closed (that `(` is plain text)."""
+    depth = 0
+    for j in range(i, len(s)):
+        if s[j] == "(":
+            depth += 1
+        elif s[j] == ")":
+            depth -= 1
+            if depth == 0:
+                return j
+    return -1
+
+
+def split_depth0(raw):
+    """The comma-separated items of a raw `toca=`, splitting only at depth 0: a comma inside a balanced `(...)` stays in its item."""
+    items, cur, i = [], [], 0
+    while i < len(raw):
+        end = group_end(raw, i) if raw[i] == "(" else -1
+        if end >= 0:
+            cur.append(raw[i:end + 1])
+            i = end + 1
+            continue
+        if raw[i] == ",":
+            items.append("".join(cur))
+            cur = []
+        else:
+            cur.append(raw[i])
+        i += 1
+    items.append("".join(cur))
+    return items
+
+
+def scan_item(item):
+    """(text, is_note) of one comma item (decision 7 of #2562): a balanced `(...)` group at depth 0 preceded by a space is a note after the
+    path and leaves `text`; an item made only of such groups (`(novo (ver #12))`, `(n)(m)`) is a standalone note (`is_note`, `text` empty)."""
+    kept, outside, groups, i = [], [], 0, 0
+    while i < len(item):
+        end = group_end(item, i) if item[i] == "(" else -1
+        if end < 0:
+            kept.append(item[i])
+            outside.append(item[i])
+            i += 1
+            continue
+        groups += 1
+        if not (i > 0 and item[i - 1].isspace()):
+            kept.append(item[i:end + 1])
+        i = end + 1
+    if groups and not "".join(outside).strip():
+        return "", True
+    return "".join(kept), False
+
+
+def split_toca(raw):
+    """([citation texts], [standalone notes]) of a raw `toca=`: the single reading `norm_toca` and `loose_notes` share (decision 7 of #2562)."""
+    cites, notes = [], []
+    for item in split_depth0(raw):
+        text, is_note = scan_item(item)
+        if is_note:
+            notes.append(item.strip())
+        else:
+            cites.append(text)
+    return cites, notes
 
 
 def loose_notes(raw):
     """The standalone parenthesized notes of a raw `toca=` (a list; empty when there is none, also for `None`, `""` and `?`).
 
-    Read by `norm_toca` (which drops them) and by `redo_rows` (which lists the ficha): there is no second regex. A note after its
-    path (`x.ts (new, helper)`) is not one of them."""
+    Read by `redo_rows` (which lists the ficha); `norm_toca` drops them through the same `split_toca`. A note after its path
+    (`x.ts (new, helper)`) is not one of them."""
     if raw is None:
         return []
-    return [m.group(0).lstrip(",").strip() for m in LOOSE_NOTE.finditer(raw)]
+    return split_toca(raw)[1]
 
 
 def norm_toca(raw):
-    """Citations of a `toca=` already normalized, without the ones that do not count; `?` if it says nothing."""
+    """Citations of a `toca=` already normalized, without the ones that do not count; `?` if it says nothing.
+
+    A non-empty `toca=` whose citations are all dropped by IGNORED_PREFIXES or IGNORED_EXACT also gives `["?"]` (decision 8 of #2562);
+    one made only of standalone notes gives `[]`."""
     if raw is None or raw.strip() in ("", "?"):
         return ["?"]
-    # A note written as an item of its own ("a.ts,(novo),b.ts") is not a citation (decision 2 of #2428): drop it, keeping the comma,
-    # before the strip below, so a note with a comma inside it after a path ("x.ts (new, helper)") stays that path's note.
-    raw = LOOSE_NOTE.sub(r"\1", raw)
-    # A parenthesized note after the path ("x.ts (new method)") is not part of it.
-    raw = re.sub(r"\s+\([^)]*\)", "", raw)
-    out = []
-    for x in raw.split(","):
-        x = norm_path(x)
-        if not x or x in IGNORED_EXACT or x.startswith(IGNORED_PREFIXES):
+    out, ignored = [], 0
+    for x in (norm_path(t) for t in split_toca(raw)[0]):
+        if not x:
+            continue
+        if x in IGNORED_EXACT or x.startswith(IGNORED_PREFIXES):
+            ignored += 1
             continue
         out.append(x)
-    return out
+    return out if out or not ignored else ["?"]
+
+
+def only_ignored(raw):
+    """Is the raw `toca=` non-empty and not `?`, but normalizes to `?` because every citation is ignored (decision 8 of #2562)?"""
+    if raw is None or raw.strip() in ("", "?") or norm_toca(raw) != ["?"]:
+        return False
+    return not any(norm_path(t) == "?" for t in split_toca(raw)[0])  # a literal `?` in the list is a `?`, not an ignored citation
 
 
 def toca_list(plan):
@@ -2521,7 +2644,7 @@ def toca_list(plan):
 
 
 def has_toca(plan):
-    """Whether the ficha has a real `toca=`: not `?` and not only ignored citations (`toca_list` is `[]`), decision 5 of #2204."""
+    """Whether the ficha has a real `toca=`: not `?` (also when it has only ignored citations, decision 8 of #2562) and not only notes (`[]`)."""
     return toca_list(plan) not in (["?"], [])
 
 
@@ -2696,7 +2819,7 @@ def is_append_only(cite):
 
 def first_conflict(mine, other):
     """The citation of `mine` (or `?`) that touches the same place as one of `other`; the append-only ones of both sides do not count."""
-    if "?" in mine or "?" in other:  # before the filter: an empty list (only ignored or append-only citations) does not escape a started `?`
+    if "?" in mine or "?" in other:  # before the filter: an empty list (only notes or append-only citations) does not escape a started `?`
         return "?"
     for x in (c for c in mine if not is_append_only(c)):
         for y in (c for c in other if not is_append_only(c)):
@@ -2880,6 +3003,11 @@ def plan_block(r, merged, done, refused=()):
     miss = row_incomplete(r)
     if miss:
         return "ficha incompleta (" + ", ".join(miss) + ")"
+    return dep_reason(r, merged, done, refused)
+
+
+def dep_reason(r, merged, done, refused=()):
+    """`dep #A, #B recusada` for the open dependencies of the ficha (`#N recusada` for a refused row); "" with none open."""
     miss = [d + " recusada" if d in refused else d for d in open_deps(r, merged, done)]
     return "dep " + ", ".join(miss) if miss else ""
 
@@ -3087,18 +3215,47 @@ def eligible_exclusive(r):
             and not row_incomplete(r))
 
 
+def unplannable(r):
+    """A row with `hold` or an incomplete ficha: it has no reliable `toca=`, so the wave check skips it both ways (decision 2 of #2293)."""
+    return bool(r.get("hold") or row_incomplete(r))
+
+
+def wave_key(r):
+    """What the wave check reads from a row, computed once per round: (skips the check, `toca=` citations, changes the schema)."""
+    plan = r.get("plan", "")
+    return unplannable(r), toca_list(plan), changes_schema(plan)
+
+
+def wave_conflict(a, b):
+    """Two `wave_key`s that cannot share a wave: a file in common (`first_conflict`) or both change the schema (decision 1 of #2293)."""
+    if a[0] or b[0]:
+        return False
+    return first_conflict(a[1], b[1]) is not None or (a[2] and b[2])
+
+
+def pack_round(rows):
+    """The rows of `rows` (taken in `order`) that fit in one round: each one with no conflict with those already placed."""
+    placed, keys = [], []
+    for r in sorted(rows, key=lambda x: x["order"]):
+        key = wave_key(r)
+        if not any(wave_conflict(key, k) for k in keys):
+            placed.append(r)
+            keys.append(key)
+    return placed
+
+
 def wave_round(pending, ready):
     """The rows of a round of the waves; `E` is the first eligible exclusive stage among the ready ones (decision 6 of #1813).
 
-    Entering are the ordinary ones that come before `E` in `order`, plus the ordinary ones with `hold` or an incomplete ficha (in any
-    position); with none of them, `E` alone; without `E`, all the ordinary ones; with neither ordinary ones nor `E`, the first ready one; in a cycle,
+    Candidates are the ordinary ones that come before `E` in `order`, plus the ordinary ones with `hold` or an incomplete ficha (in any
+    position); of those, `pack_round` keeps the ones with no file or schema in common (the rest wait for the next round). With none of
+    them, `E` alone; without `E`, all the ordinary ones; with neither ordinary ones nor `E`, the first ready one; in a cycle,
     what is left enters together.
     """
     front = next((r for r in ready if eligible_exclusive(r)), None)
     plain = [r for r in ready if r.get("exclusive") != "sim"]
-    before = [r for r in plain if front is None or r["order"] < front["order"]
-              or r.get("hold") or row_incomplete(r)]
-    return before or ([front] if front else ready[:1]) or pending
+    before = [r for r in plain if front is None or r["order"] < front["order"] or unplannable(r)]
+    return pack_round(before) or ([front] if front else ready[:1]) or pending
 
 
 def assign_waves(rows, wave, deps):
@@ -3113,6 +3270,53 @@ def assign_waves(rows, wave, deps):
         ready = [r for r in pending if all(d in wave for d in deps[r["issue"]])]
         for r in wave_round(pending, ready):
             wave[r["issue"]] = w
+
+
+def file_blockers(mine, earlier):
+    """`(files, schemas)` of the earlier nodes that `mine` (a `wave_key`) shares a file or the schema with (decision 4 of #2293).
+
+    `files` is `[(#N, "arquivo <citation> com #N")]`, the citation being the one `first_conflict` returns; `schemas` is
+    `[(#N, "schema com #N")]` of the nodes that share only the schema (a pair with a file in common is listed once, as in `schema_block`,
+    which runs only without a file conflict). `earlier` is `[(#N, wave_key, wave)]` by wave, then `order`. A wave 0 node always counts (the
+    slots read the started ones whatever their ficha); a later one counts only when plannable (decision 2 of #2293)."""
+    files, schemas = [], []
+    for issue, (skip, toca, schema), w in earlier:
+        if skip and w:
+            continue
+        cite = first_conflict(mine[1], toca)
+        if cite:
+            files.append((issue, f"arquivo {cite} com {issue}"))
+        elif mine[2] and schema:
+            schemas.append((issue, f"schema com {issue}"))
+    return files, schemas
+
+
+def node_blockers(r, placed, wave, ctx):
+    """`(reason parts, holders)` of a node of decision 4 of #2293, from the waves already assigned: the `dep` part (`dep_reason`), then the
+    `arquivo` items, then the `schema` ones. `holders` are the file and schema blockers (the `arquivo` arrows). `placed` is
+    `[(#N, wave_key, wave)]` of every node by wave, then `order` (computed once); `ctx` is `(merged, done, refused)`."""
+    w = wave[r["issue"]]
+    files, schemas = file_blockers(wave_key(r), [t for t in placed if t[2] < w])
+    held = files + schemas
+    parts = [dep_reason(r, *ctx)] + [text for _, text in held]
+    return [p for p in parts if p], [h for h, _ in held]
+
+
+def blocker_graph(r, why, placed, wave, ctx):
+    """`(motivo, holders)` of a node of decision 4: the blockers joined by `; `; the `exclusiva` state keeps the `slots_plan` reason
+    first (`dep` parts that it already carries are not repeated); with no blocker the `slots_plan` reason stays (`vagas cheias`)."""
+    parts, holders = node_blockers(r, placed, wave, ctx)
+    if candidate_state(r, why) == "exclusiva":
+        parts = [why] + [p for p in parts if not (why.startswith("dep ") and p.startswith("dep "))]
+    return ("; ".join(parts) if parts else why), holders
+
+
+def graph_blockers(nodes, state, wave, q, meta):
+    """`{issue: (motivo, holders)}` of every node of decision 4 of #2293: not started, outside wave 0, not `segurada` or `ficha`."""
+    ctx = (set(meta.get("merged", [])), {r["issue"] for r in q if r["status"] == "concluída"}, refused_issues(q))
+    placed = [(k, wave_key(nodes[k]), wave[k]) for k in sorted(nodes, key=lambda k: (wave[k], nodes[k]["order"]))]
+    return {k: blocker_graph(r, state[k][1], placed, wave, ctx) for k, r in nodes.items()
+            if not is_started(r) and wave[k] and state[k][0] not in ("segurada", "ficha")}
 
 
 def first_open_phase(r):
@@ -3140,6 +3344,7 @@ def queue_graph(q, meta, reasons):
     wave = {r["issue"]: 0 for r in rows
             if is_started(r) or reasons.get(r["issue"], ("", ""))[0].startswith(STARTS_NOW)}
     assign_waves(rows, wave, deps)
+    blocked = graph_blockers(nodes, state, wave, q, meta)
     ranked = sorted((r for r in rows if not is_started(r) and state[r["issue"]][0] not in ("segurada", "ficha")),
                     key=lambda r: (wave[r["issue"]], r["order"]))
     rank = {r["issue"]: i for i, r in enumerate(ranked, 1)}
@@ -3149,15 +3354,14 @@ def queue_graph(q, meta, reasons):
     edges = []
     for k in nodes:
         edges += [(d, k, "dep") for d in reduce_deps(k, deps, anc)]
-        holder = reasons.get(k, ("", ""))[1]
-        if holder and holder in nodes:
-            edges.append((holder, k, "arquivo"))
+        holders = blocked[k][1] if k in blocked else [reasons.get(k, ("", ""))[1]]
+        edges += [(h, k, "arquivo") for h in holders if h and h in nodes]
         if is_started(nodes[k]):
             edges += [(h, k, "entrega") for h in open_holders(nodes[k], q, merged) if h in nodes]
     edges.sort(key=lambda e: (pos[e[1]], pos[e[0]]))
     graph_nodes = [{
         "issue": r["issue"], "titulo": r.get("title", ""), "onda": wave[r["issue"]],
-        "rank": rank.get(r["issue"]), "estado": state[r["issue"]][0], "motivo": state[r["issue"]][1],
+        "rank": rank.get(r["issue"]), "estado": state[r["issue"]][0], "motivo": blocked.get(r["issue"], (None,))[0] or state[r["issue"]][1],
         "fase": first_open_phase(r), "feitas": r.get("phasesDone", 0), "total": r.get("phasesTotal", 0),
         "cedo": ", ".join(open_holders(r, q, merged)),
     } for r in listed]
@@ -3320,8 +3524,14 @@ def invalid_lines(cites):
     return out
 
 
+ONLY_IGNORED_REASON = "only ignored citations"
+
+
 def cmd_toca(a):
     """Checks a list of citations of the `toca=` (decision 7 of #1812): `ok` (0) or `inválida: … — <reason>` (1)."""
+    if only_ignored(a.cites):
+        print(f"inválida: {a.cites} — {ONLY_IGNORED_REASON}")
+        return 1
     bad = invalid_lines(norm_toca(a.cites))
     if bad:
         print("\n".join(bad))
@@ -3369,7 +3579,7 @@ def cmd_conflito(a):
     """Checks a `toca` against the queue (decision 9 of #1864): `livre` (0), `conflito: …` (1) or `inválida: …` (2)."""
     extra = parse_com(a.com)
     mine = norm_toca(a.toca)
-    bad = invalid_lines(mine)
+    bad = [f"inválida: {a.toca} — {ONLY_IGNORED_REASON}"] if only_ignored(a.toca) else invalid_lines(mine)
     if bad:
         print("\n".join(bad))
         return 2

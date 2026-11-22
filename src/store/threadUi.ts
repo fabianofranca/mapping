@@ -1,27 +1,20 @@
 import { batch } from '@preact/signals';
-import {
-  hostOf,
-  resolveAnchor,
-  type Project,
-  type Thread,
-  type ThreadAnchor,
-} from '../model';
+import { hostOf, type Project, type Thread, type ThreadAnchor } from '../model';
 import { showToolWindow } from './toolWindows';
 import { expandSections, type EditorUi, type Selection } from './ui';
 
 // Thread selection and drafts (Comments stage, decisions 19 and 20): UI-only state.
 
-/** Id of the selected thread, as long as the selection in which it was chosen stays the same. */
+/** Id of the conversation in the window, if it is an existing one. */
 export function selectedThreadId(ui: EditorUi): string | null {
-  const chosen = ui.thread.value;
-  return chosen !== null && chosen.selection === ui.selection.value ? chosen.id : null;
+  const target = ui.conversation.value;
+  return target !== null && target.kind === 'thread' ? target.id : null;
 }
 
-/** The anchor of the new-thread draft, as long as the selection in which it was born stays the
- * same. */
+/** The anchor of the new-conversation draft in the window, if there is one. */
 export function composingAnchor(ui: EditorUi): ThreadAnchor | null {
-  const draft = ui.composing.value;
-  return draft !== null && draft.selection === ui.selection.value ? draft.anchor : null;
+  const target = ui.conversation.value;
+  return target !== null && target.kind === 'new' ? target.anchor : null;
 }
 
 /** Key of the draft of a reply (the thread) or of a new thread (the anchor). */
@@ -48,23 +41,19 @@ function selectionFor(project: Project, anchor: ThreadAnchor): Selection {
   return { kind: host.kind === 'container' ? 'image' : host.kind, id: host.id };
 }
 
-/** Does the thread live on a selectable item (marking, container or arrow)? */
-export function hasItemHost(project: Project, anchor: ThreadAnchor): boolean {
-  return selectionFor(project, anchor) !== null;
-}
-
 /**
- * Chooses a thread (from the window, the pin or a chip): selects its item, opens the Threads
- * section and, on an annotation, field, pair or row, moves focus there. A thread without an item
- * (layer, point, orphan) leaves the selection empty and opens by itself in the Details.
+ * Chooses a conversation (from the list, the pin or a chip): shows it in the Conversation window,
+ * selects its item, opens the Conversations section and, on an annotation, field, pair or row,
+ * moves focus there. A conversation without an item (layer, point, orphan) leaves the selection
+ * empty.
  */
 export function selectThread(ui: EditorUi, project: Project, thread: Thread): void {
   const anchor = thread.anchor;
   const target = selectionFor(project, anchor);
   batch(() => {
-    ui.composing.value = null;
     ui.selection.value = target;
-    ui.thread.value = { id: thread.id, selection: ui.selection.peek() };
+    ui.conversation.value = { kind: 'thread', id: thread.id };
+    showToolWindow('conversation');
     expandSections(ui, [{ kind: 'comments' }]);
     if (anchor.kind === 'annotation') ui.focusAnnotation.value = anchor.id;
     if (anchor.kind === 'field' || anchor.kind === 'row') {
@@ -72,6 +61,17 @@ export function selectThread(ui: EditorUi, project: Project, thread: Thread): vo
       ui.focusField.value = anchor.key;
     }
     if (anchor.kind === 'entry') ui.focusAnnotation.value = anchor.annotationId;
+  });
+}
+
+/**
+ * Shows a conversation in the Conversation window without touching the selection (the review:
+ * the window opens the thread, the canvas and the Details stay where they are).
+ */
+export function showConversation(ui: EditorUi, threadId: string): void {
+  batch(() => {
+    ui.conversation.value = { kind: 'thread', id: threadId };
+    showToolWindow('conversation');
   });
 }
 
@@ -83,9 +83,9 @@ export function startComposing(
 ): void {
   const target = selectionFor(project, anchor);
   batch(() => {
-    ui.thread.value = null;
     ui.selection.value = target;
-    ui.composing.value = { anchor, selection: ui.selection.peek() };
+    ui.conversation.value = { kind: 'new', anchor };
+    showToolWindow('conversation');
     // A new thread turns the pins on (decision 24): the draft at the point shows the dashed pin.
     ui.commentPins.value = true;
     expandSections(ui, [{ kind: 'comments' }]);
@@ -122,15 +122,13 @@ export function placeComment(ui: EditorUi, project: Project, anchor: ThreadAncho
   batch(() => {
     cancelComment(ui);
     startComposing(ui, project, anchor);
-    // The draft lives in the Details: with them closed it would show nowhere.
-    showToolWindow('details');
   });
 }
 
 /**
- * Click on a pin (decision 24): with one thread, selects it (item and thread in the Details; on
- * the point, only the thread); with several on the same item, selects the item and opens the
- * list.
+ * Click on a pin (decision 24): with one conversation, opens it in the window (and selects its
+ * item); with several on the same item, selects the item and opens the list, leaving the window
+ * as it is.
  */
 export function activatePin(
   ui: EditorUi,
@@ -145,15 +143,7 @@ export function activatePin(
   }
   const target = selectionFor(project, first.anchor);
   batch(() => {
-    ui.composing.value = null;
     ui.selection.value = target;
-    ui.thread.value = null;
     expandSections(ui, [{ kind: 'comments' }]);
   });
-}
-
-/** Is the anchor orphaned or without an item (layer, point)? Those cases open by themselves in
- * the Details. */
-export function isStandalone(project: Project, anchor: ThreadAnchor): boolean {
-  return !hasItemHost(project, anchor) || resolveAnchor(project, anchor).orphan;
 }

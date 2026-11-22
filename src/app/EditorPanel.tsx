@@ -5,16 +5,13 @@ import {
   selectedItems,
   type AnnotationLocation,
 } from '../store/ui';
-import {
-  StandaloneThreadPanel,
-  hasStandaloneThread,
-} from '../ui/comments/StandaloneThreadPanel';
 import { useEditor } from '../ui/EditorContext';
 import { ArrowPanel } from '../ui/ArrowPanel';
 import { MarkingPanel } from '../ui/MarkingPanel';
 import { MultiSelectionPanel } from '../ui/MultiSelectionPanel';
 import { SelectionPanel } from '../ui/SelectionPanel';
 import { ReviewPanel } from '../ui/review/ReviewPanel';
+import { ReviewReturnNotice } from '../ui/review/ReviewReturnNotice';
 import type { EditorDialogs } from './useEditorDialogs';
 
 export interface EditorPanelProps {
@@ -24,14 +21,23 @@ export interface EditorPanelProps {
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
 
-/** Details: the window on the right. */
-export function EditorPanel({
+/** Details: the window on the right, with the way back to a review that was left at the top. */
+export function EditorPanel(props: EditorPanelProps) {
+  return (
+    <>
+      <ReviewReturnNotice />
+      <EditorPanelBody {...props} />
+    </>
+  );
+}
+
+function EditorPanelBody({
   busy,
   dialogs,
   onReplace,
   onGoToAnnotation,
 }: EditorPanelProps) {
-  const { store, ui, display, review, derived } = useEditor();
+  const { store, ui, display, review } = useEditor();
   // The project in view: outside the review, the confirmed one (the panel fields update when
   // the gesture is released, not during); in the review, what the Current/Proposed view shows.
   const project = review.derived.shownProject.value;
@@ -47,15 +53,6 @@ export function EditorPanel({
     );
   }
   const openSettings = () => dialogs.show({ kind: 'settings' });
-  // Thread without an item (layer, loose point, orphan): opens by itself, in place of the
-  // selection panel.
-  if (hasStandaloneThread(ui, project, derived.threads.entries.value)) {
-    return (
-      <div class="tab-panel">
-        <StandaloneThreadPanel onOpenSettings={openSettings} />
-      </div>
-    );
-  }
   const readOnly = store.locked.value;
   const items = existingItems(project, selectedItems(ui));
   if (items.length > 1) {
