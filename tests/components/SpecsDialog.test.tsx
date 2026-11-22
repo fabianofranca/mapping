@@ -133,8 +133,20 @@ describe('SpecsDialog', () => {
     const withFormats: Spec = {
       ...libSpec(1, { c: [buttonType()] }, { formatVersion: 20 }),
       fileFormats: [
-        { id: 'notes', name: 'Notes', extension: 'txt', plugin: 'plugins/notes.js', contract: 1 },
-        { id: 'list', name: 'List', extension: 'csv', plugin: 'plugins/list.js', contract: 1 },
+        {
+          id: 'notes',
+          name: 'Notes',
+          extension: 'txt',
+          plugin: 'plugins/notes.js',
+          contract: 1,
+        },
+        {
+          id: 'list',
+          name: 'List',
+          extension: 'csv',
+          plugin: 'plugins/list.js',
+          contract: 1,
+        },
       ],
     };
     setup(applySpecialization(emptyProject(), withFormats, { newId: () => `LS${++n}` }));

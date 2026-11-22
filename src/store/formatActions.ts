@@ -1,6 +1,7 @@
 import {
   buildFormatInput,
   type FormatFailure,
+  type FormatInput,
   type FormatFunction,
   type FormatRunner,
   type FormatSlotDrawings,
@@ -112,6 +113,39 @@ export type ExportInFormatResult =
 
 const fail = (error: ExportInFormatError): ExportInFormatResult => ({ ok: false, error });
 
+/** What the plugin sees: the project (`target` null) or one container; the name of the file comes with it. */
+function targetOf(
+  project: Project,
+  choice: FormatChoice,
+  container: string | null | undefined,
+): { readonly target: string | null; readonly name: string } | null {
+  if (choice.scope !== 'container') return { target: null, name: project.project.name };
+  const found = project.containers.find((c) => c.id === container);
+  return found === undefined
+    ? null
+    : { target: found.id, name: found.name ?? project.project.name };
+}
+
+/** The projection of the project for the plugin; `null` when it cannot be built (reported). */
+function projectionOf(
+  deps: ExportInFormatDeps,
+  project: Project,
+  choice: FormatChoice,
+  target: string | null,
+): FormatInput | null {
+  try {
+    const drawings = deps.drawings?.(project);
+    return buildFormatInput(project, choice.ref, {
+      projectName: project.project.name,
+      ...(target === null ? {} : { target }),
+      ...(drawings === undefined ? {} : { drawings }),
+    });
+  } catch (error) {
+    reportError('formatActions.projection', error);
+    return null;
+  }
+}
+
 /**
  * Exports the project (scope `project`) or the container `container` (scope `container`, the id)
  * in `choice`'s format: saves, builds the projection, runs `generate` and returns the text as
@@ -126,24 +160,10 @@ export async function exportInFormat(
   if (!saved.ok) return fail({ kind: 'save' });
   const project = deps.project();
   if (project === null) return fail({ kind: 'project' });
-  const target = choice.scope === 'container' ? (container ?? null) : null;
-  const found =
-    target === null ? undefined : project.containers.find((c) => c.id === target);
-  if (choice.scope === 'container' && found === undefined) {
-    return fail({ kind: 'container' });
-  }
-  let input;
-  try {
-    const drawings = deps.drawings?.(project);
-    input = buildFormatInput(project, choice.ref, {
-      projectName: project.project.name,
-      ...(target === null ? {} : { target }),
-      ...(drawings === undefined ? {} : { drawings }),
-    });
-  } catch (error) {
-    reportError('formatActions.projection', error);
-    return fail({ kind: 'project' });
-  }
+  const found = targetOf(project, choice, container);
+  if (found === null) return fail({ kind: 'container' });
+  const input = projectionOf(deps, project, choice, found.target);
+  if (input === null) return fail({ kind: 'project' });
   const outcome = await deps.run(choice.plugin, 'generate', [input]);
   if (!outcome.ok) return fail({ kind: 'plugin', failure: outcome.failure });
   if (typeof outcome.value !== 'string') {
@@ -155,8 +175,7 @@ export async function exportInFormat(
       },
     });
   }
-  const name = found?.name ?? project.project.name;
-  const file = new File([outcome.value], exportFileName(name, choice.extension), {
+  const file = new File([outcome.value], exportFileName(found.name, choice.extension), {
     type: 'text/plain;charset=utf-8',
   });
   return { ok: true, file };

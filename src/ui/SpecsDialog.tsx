@@ -477,7 +477,9 @@ export function SpecsDialog({
                 {entry.spec && <SpecTokensInfo spec={entry.spec} />}
                 {(entry.spec?.fileFormats?.length ?? 0) > 0 && (
                   <p class="muted">
-                    {t('format.specNotice', { count: entry.spec?.fileFormats?.length ?? 0 })}
+                    {t('format.specNotice', {
+                      count: entry.spec?.fileFormats?.length ?? 0,
+                    })}
                   </p>
                 )}
                 {entry.spec?.platforms && entry.spec.platforms.length > 0 && (

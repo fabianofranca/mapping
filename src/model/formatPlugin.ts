@@ -50,10 +50,7 @@ export type FormatFunction = 'generate' | 'parse';
 
 /** The codes of a failed call (the error codes of #1923, decision 9). */
 export type FormatFailureCode =
-  | 'plugin-failed'
-  | 'plugin-timeout'
-  | 'plugin-limit'
-  | 'plugin-output-invalid';
+  'plugin-failed' | 'plugin-timeout' | 'plugin-limit' | 'plugin-output-invalid';
 
 /**
  * A failed call: the code, the plugin's own message and, for an error thrown by the plugin's

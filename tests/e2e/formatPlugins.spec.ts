@@ -78,7 +78,9 @@ async function openFormatDialog(page: Page, format: string) {
   await page.getByRole('menuitem', { name: 'Export in a format…' }).click();
   const dialog = page.getByRole('dialog', { name: 'Export in a format' });
   await expect(dialog).toBeVisible();
-  await dialog.getByLabel('Format').selectOption({ label: `Format library › ${format} (.txt)` });
+  await dialog
+    .getByLabel('Format')
+    .selectOption({ label: `Format library › ${format} (.txt)` });
   return dialog;
 }
 
@@ -167,7 +169,9 @@ test.describe('Export in a format: failures', () => {
     // The page was never blocked: a click on the canvas goes through.
     const point = await canvasPoint(page);
     await page.mouse.click(point.x, point.y);
-    await dialog.getByLabel('Format').selectOption({ label: 'Format library › Notes (.txt)' });
+    await dialog
+      .getByLabel('Format')
+      .selectOption({ label: 'Format library › Notes (.txt)' });
     await dialog.getByRole('button', { name: 'Export', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Download' })).toBeVisible({
       timeout: 15_000,
@@ -194,7 +198,9 @@ test.describe('Export in a format: failures', () => {
   test('promise: plugin-output-invalid', async ({ page }) => {
     await openProject(page, '/');
     const dialog = await runFormat(page, 'promise');
-    await expect(dialog.getByRole('alert')).toContainText('returned something the app cannot use');
+    await expect(dialog.getByRole('alert')).toContainText(
+      'returned something the app cannot use',
+    );
   });
 
   test('big-output: plugin-limit', async ({ page }) => {

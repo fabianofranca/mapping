@@ -40,7 +40,8 @@ function harness(options: { autoReady?: boolean } = {}) {
     createFrame: () => {
       const frame = new FakeFrame();
       frames.push(frame);
-      if (options.autoReady !== false) queueMicrotask(() => emit(frame.window, { ready: true }));
+      if (options.autoReady !== false)
+        queueMicrotask(() => emit(frame.window, { ready: true }));
       return frame;
     },
     listen: (next) => {
@@ -81,7 +82,11 @@ describe('the limits are checked before anything is sent', () => {
   it('a plugin over 1 MiB is plugin-limit and no frame is created', async () => {
     const h = harness();
     const run = createFormatRunner(h.deps);
-    const outcome = await run('x'.repeat(FORMAT_PLUGIN_LIMITS.pluginBytes + 1), 'generate', [{}]);
+    const outcome = await run(
+      'x'.repeat(FORMAT_PLUGIN_LIMITS.pluginBytes + 1),
+      'generate',
+      [{}],
+    );
     expect(outcome).toMatchObject({ ok: false, failure: { code: 'plugin-limit' } });
     expect(outcome.ok === false && outcome.failure.message).toContain('pluginBytes');
     expect(h.frames).toHaveLength(0);
@@ -96,15 +101,17 @@ describe('the limits are checked before anything is sent', () => {
     expect(tooBig.ok === false && tooBig.failure.message).toContain('parseTextBytes');
     const projection = { big: 'a'.repeat(FORMAT_PLUGIN_LIMITS.projectionBytes) };
     const generate = await run('function generate(){}', 'generate', [projection]);
-    expect(generate.ok === false && generate.failure.message).toContain('projectionBytes');
+    expect(generate.ok === false && generate.failure.message).toContain(
+      'projectionBytes',
+    );
     expect(h.frames).toHaveLength(0);
   });
 
   it('the size is counted in UTF-8 bytes, not in characters', async () => {
     const h = harness();
     const run = createFormatRunner(h.deps);
-    // 'é' is 2 bytes: 600,000 of them are over 1 MiB, but only 600,000 characters.
-    const source = 'é'.repeat(600_000);
+    // '€' is 3 bytes: 400,000 of them are over 1 MiB, but only 400,000 characters.
+    const source = '€'.repeat(400_000);
     const outcome = await run(source, 'generate', [{}]);
     expect(outcome).toMatchObject({ ok: false, failure: { code: 'plugin-limit' } });
   });
@@ -153,7 +160,9 @@ describe('a call', () => {
     h.answer(await h.posted(), { status: 'ok', output: JSON.stringify(text) });
     const outcome = await big;
     expect(outcome).toMatchObject({ ok: false, failure: { code: 'plugin-limit' } });
-    expect(outcome.ok === false && outcome.failure.message).toContain('generatedTextBytes');
+    expect(outcome.ok === false && outcome.failure.message).toContain(
+      'generatedTextBytes',
+    );
 
     const notJson = run('function parse(){}', 'parse', ['t', {}]);
     h.answer(await h.posted(2), { status: 'ok', output: '{nope' });
@@ -189,7 +198,10 @@ describe('a call', () => {
       failure: { code: 'plugin-failed', message: expect.stringContaining('parse') },
     });
     const invalid = run('x', 'generate', [{}]);
-    h.answer(await h.posted(2), { status: 'invalid', message: 'generate returned a Promise' });
+    h.answer(await h.posted(2), {
+      status: 'invalid',
+      message: 'generate returned a Promise',
+    });
     expect(await invalid).toEqual({
       ok: false,
       failure: { code: 'plugin-output-invalid', message: 'generate returned a Promise' },
@@ -201,7 +213,10 @@ describe('a call', () => {
     const run = createFormatRunner(h.deps);
     const result = run('x', 'generate', [{}]);
     h.answer(await h.posted(), { status: 'timeout' });
-    expect(await result).toMatchObject({ ok: false, failure: { code: 'plugin-timeout' } });
+    expect(await result).toMatchObject({
+      ok: false,
+      failure: { code: 'plugin-timeout' },
+    });
     expect(h.last().removed).toBe(false);
   });
 });
@@ -246,7 +261,10 @@ describe('the frame', () => {
     await vi.advanceTimersByTimeAsync(FORMAT_PLUGIN_LIMITS.timeoutMs + 999);
     expect(h.last().removed).toBe(false);
     await vi.advanceTimersByTimeAsync(2);
-    expect(await result).toMatchObject({ ok: false, failure: { code: 'plugin-timeout' } });
+    expect(await result).toMatchObject({
+      ok: false,
+      failure: { code: 'plugin-timeout' },
+    });
     expect(h.last().removed).toBe(true);
   });
 

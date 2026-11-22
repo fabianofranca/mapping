@@ -66,10 +66,7 @@ function sandboxHashes(profile: CspProfile): string[] {
 function fixedDirectives(profile: CspProfile): Directive[] {
   if (profile === 'static') return [...STATIC_DIRECTIVES];
   return [
-    ...STATIC_DIRECTIVES.map(([name, value]): Directive => [
-      name,
-      appValue(name, value),
-    ]),
+    ...STATIC_DIRECTIVES.map(([name, value]): Directive => [name, appValue(name, value)]),
     ...TRUSTED_TYPES_DIRECTIVES,
   ];
 }

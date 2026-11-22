@@ -239,7 +239,13 @@ export function createFormatRunner(deps: FormatRunnerDeps): DisposableFormatRunn
         settle(failure('plugin-timeout', 'the plugin went past the time limit'));
       }, FORMAT_PLUGIN_LIMITS.timeoutMs + FRAME_MARGIN_MS);
       waiting = { id, fn, settle };
-      live.post({ id, source, fn, args: payload, timeoutMs: FORMAT_PLUGIN_LIMITS.timeoutMs });
+      live.post({
+        id,
+        source,
+        fn,
+        args: payload,
+        timeoutMs: FORMAT_PLUGIN_LIMITS.timeoutMs,
+      });
     });
 
   const call = async (

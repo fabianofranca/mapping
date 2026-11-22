@@ -27,15 +27,15 @@ function generate() {
   });
   var report = { found: found, fetch: 'none', indexedDB: 'none' };
   try {
-    fetch('https://example.invalid/leak');
+    globalThis.fetch('https://example.invalid/leak');
     report.fetch = 'called';
-  } catch (error) {
+  } catch {
     report.fetch = 'threw';
   }
   try {
-    indexedDB.open('mapping');
+    globalThis.indexedDB.open('mapping');
     report.indexedDB = 'called';
-  } catch (error) {
+  } catch {
     report.indexedDB = 'threw';
   }
   return JSON.stringify(report);

@@ -349,7 +349,8 @@ export const ptBR: Dictionary = {
   'format.error.project': 'Não foi possível ler o projeto para este formato.',
   'format.error.container': 'Escolha um container para exportar.',
   'format.error.plugin-failed': 'O plugin falhou: {message}',
-  'format.error.plugin-failed.at': 'O plugin falhou: {message} (linha {line}, coluna {column})',
+  'format.error.plugin-failed.at':
+    'O plugin falhou: {message} (linha {line}, coluna {column})',
   'format.error.plugin-timeout': 'O plugin passou do limite de tempo de {seconds} s.',
   'format.error.plugin-limit': 'O plugin passou de um limite: {message}',
   'format.error.plugin-output-invalid':

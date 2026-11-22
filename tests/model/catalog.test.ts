@@ -581,7 +581,13 @@ describe('file formats (stage #2035, AF3)', () => {
             { name: 'gone', file: 'examples/gone.md' },
           ],
         },
-        { id: 'csv', name: 'CSV', extension: 'csv', plugin: 'plugins/csv.js', contract: 1 },
+        {
+          id: 'csv',
+          name: 'CSV',
+          extension: 'csv',
+          plugin: 'plugins/csv.js',
+          contract: 1,
+        },
       ],
       [
         { path: 'plugins/notes.js', text: PLUGIN },

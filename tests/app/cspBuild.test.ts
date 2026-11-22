@@ -218,7 +218,7 @@ describe('CSP of index.html (build)', () => {
     const html = injectCsp(BUILT, 'static');
     expect(verifyCsp(html, 'static')).toEqual([]);
     const withHash = html.replace(
-      "script-src ",
+      'script-src ',
       `script-src ${cspHash(SANDBOX_BOOTSTRAP)} `,
     );
     expect(verifyCsp(withHash, 'static')).toEqual([

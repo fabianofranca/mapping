@@ -4,10 +4,182 @@ import { Dialog, type FocusReturn } from '../ui/Dialog';
 import { useEditor } from '../ui/EditorContext';
 import { imageLabel } from '../ui/labels';
 import { Button, Select } from '../ui/controls';
-import { exportInFormat, formatChoices } from '../store/formatActions';
-import { resolveSelection } from '../store/ui';
+import { exportInFormat, formatChoices, type FormatChoice } from '../store/formatActions';
+import type { Project, ProjectContainer } from '../model';
+import { resolveSelection, type Selection } from '../store/ui';
 import { exportErrorText } from './formatErrors';
 import { runFormat } from './formatRunner';
+
+/** The container the selection is in (the selected container, or the one of the selected marking). */
+function selectedContainer(project: Project | null, selection: Selection): string | null {
+  const selected = resolveSelection(project, selection);
+  if (selected?.kind === 'image') return selected.image.id;
+  if (selected?.kind === 'marking') return selected.image?.id ?? null;
+  return null;
+}
+
+/** The chosen container if the project still has it; else the selection's; else the first. */
+function containerIdOf(
+  containers: readonly ProjectContainer[],
+  chosen: string | null,
+  fallback: string | null,
+): string | null {
+  const has = (id: string | null) => id !== null && containers.some((c) => c.id === id);
+  if (has(chosen)) return chosen;
+  return has(fallback) ? fallback : (containers[0]?.id ?? null);
+}
+
+function FormatSelect({
+  choices,
+  value,
+  disabled,
+  onChange,
+}: {
+  readonly choices: readonly FormatChoice[];
+  readonly value: number;
+  readonly disabled: boolean;
+  readonly onChange: (index: number) => void;
+}) {
+  if (choices.length === 0) return null;
+  return (
+    <Select
+      label={t('format.export.format')}
+      value={String(value)}
+      disabled={disabled}
+      onChange={(e) => onChange(Number(e.currentTarget.value))}
+    >
+      {choices.map((c, i) => (
+        <option key={c.ref} value={String(i)}>
+          {t('format.export.option', {
+            spec: c.specName,
+            format: c.name,
+            extension: c.extension,
+          })}
+        </option>
+      ))}
+    </Select>
+  );
+}
+
+function ContainerSelect({
+  show,
+  containers,
+  value,
+  disabled,
+  onChange,
+}: {
+  readonly show: boolean;
+  readonly containers: readonly ProjectContainer[];
+  readonly value: string | null;
+  readonly disabled: boolean;
+  readonly onChange: (id: string) => void;
+}) {
+  if (!show) return null;
+  return (
+    <Select
+      label={t('format.export.container')}
+      value={value ?? ''}
+      disabled={disabled}
+      onChange={(e) => onChange(e.currentTarget.value)}
+    >
+      {containers.map((c) => (
+        <option key={c.id} value={c.id}>
+          {imageLabel(c)}
+        </option>
+      ))}
+    </Select>
+  );
+}
+
+/** What the dialog says besides the pickers: reading, none, running and the error line. */
+function Messages({
+  choices,
+  running,
+  error,
+}: {
+  readonly choices: readonly FormatChoice[] | null;
+  readonly running: boolean;
+  readonly error: string | null;
+}) {
+  return (
+    <>
+      {choices === null && <p class="muted">{t('format.export.loading')}</p>}
+      {choices?.length === 0 && <p class="notice">{t('format.export.none')}</p>}
+      {running && (
+        <p class="muted" role="status">
+          {t('format.export.running')}
+        </p>
+      )}
+      {error !== null && (
+        <p class="notice notice-error" role="alert">
+          {error}
+        </p>
+      )}
+    </>
+  );
+}
+
+/** Runs the export of `choice` (and `container`, for scope `container`) and keeps the state of the run. */
+function useFormatRun(
+  choice: FormatChoice | null,
+  container: string | null,
+  onGenerated: (file: File) => void,
+) {
+  const { session, store, derived } = useEditor();
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const run = async () => {
+    if (!choice || running) return;
+    setRunning(true);
+    setError(null);
+    const result = await exportInFormat(
+      {
+        flush: () => session.flush(),
+        project: () => store.committed.peek(),
+        run: runFormat,
+        drawings: (p) => derived.drawingsOf(p),
+      },
+      choice,
+      container,
+    );
+    setRunning(false);
+    if (result.ok) onGenerated(result.file);
+    else setError(exportErrorText(result.error));
+  };
+  return { running, error, run };
+}
+
+/** What is picked: the format (the first one by default) and, for scope `container`, the container. */
+function useFormatPick() {
+  const { session, store, ui } = useEditor();
+  const project = store.committed.value;
+  const entries = session.catalogs.entries.value;
+  const choices = entries === null ? null : formatChoices(entries, 'generate');
+  const [formatIndex, setFormatIndex] = useState(0);
+  const [container, setContainer] = useState<string | null>(null);
+  useEffect(() => {
+    session.catalogs.request();
+  }, [session]);
+  const containers = project?.containers ?? [];
+  const index = Math.min(formatIndex, Math.max((choices?.length ?? 1) - 1, 0));
+  const choice = choices?.[index] ?? null;
+  const containerId = containerIdOf(
+    containers,
+    container,
+    selectedContainer(project, ui.selection.value),
+  );
+  const needsContainer = choice?.scope === 'container';
+  return {
+    choices,
+    index,
+    choice,
+    containers,
+    containerId: needsContainer ? containerId : null,
+    needsContainer,
+    setFormatIndex,
+    setContainer,
+  };
+}
 
 /**
  * Export in a format (stage #2035, decisions 5, 7 and 11): the formats with `generate` of the
@@ -25,52 +197,14 @@ export function FormatExportDialog({
   readonly onGenerated: (file: File) => void;
   readonly returnFocus?: FocusReturn;
 }) {
-  const { session, store, ui, derived } = useEditor();
-  const project = store.committed.value;
-  const entries = session.catalogs.entries.value;
-  const choices = entries === null ? null : formatChoices(entries, 'generate');
-  const [formatIndex, setFormatIndex] = useState(0);
-  const [container, setContainer] = useState<string | null>(null);
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    session.catalogs.request();
-  }, [session]);
-
-  const containers = project?.containers ?? [];
-  const choice = choices?.[formatIndex] ?? choices?.[0] ?? null;
-  const selected = resolveSelection(project, ui.selection.value);
-  const defaultContainer =
-    selected?.kind === 'image'
-      ? selected.image.id
-      : selected?.kind === 'marking'
-        ? (selected.image?.id ?? null)
-        : null;
-  const containerId =
-    container !== null && containers.some((c) => c.id === container)
-      ? container
-      : (defaultContainer ?? containers[0]?.id ?? null);
-  const needsContainer = choice?.scope === 'container';
-
-  const run = async () => {
-    if (!choice || running) return;
-    setRunning(true);
-    setError(null);
-    const result = await exportInFormat(
-      {
-        flush: () => session.flush(),
-        project: () => store.committed.peek(),
-        run: runFormat,
-        drawings: (p) => derived.drawingsOf(p),
-      },
-      choice,
-      needsContainer ? containerId : null,
-    );
-    setRunning(false);
-    if (result.ok) onGenerated(result.file);
-    else setError(exportErrorText(result.error));
-  };
+  const pick = useFormatPick();
+  const { running, error, run } = useFormatRun(
+    pick.choice,
+    pick.containerId,
+    onGenerated,
+  );
+  const blocked =
+    pick.choice === null || running || (pick.needsContainer && !pick.containerId);
 
   return (
     <Dialog
@@ -80,63 +214,27 @@ export function FormatExportDialog({
       actions={
         <>
           <Button onClick={onClose}>{t('common.cancel')}</Button>
-          <Button
-            variant="primary"
-            disabled={choice === null || running || (needsContainer && !containerId)}
-            onClick={() => void run()}
-          >
+          <Button variant="primary" disabled={blocked} onClick={() => void run()}>
             {t('format.export.run')}
           </Button>
         </>
       }
     >
       <p class="muted">{t('format.isolation')}</p>
-      {choices === null && <p class="muted">{t('format.export.loading')}</p>}
-      {choices !== null && choices.length === 0 && (
-        <p class="notice">{t('format.export.none')}</p>
-      )}
-      {choices !== null && choices.length > 0 && (
-        <Select
-          label={t('format.export.format')}
-          value={String(choices.indexOf(choice ?? choices[0]!))}
-          disabled={running}
-          onChange={(e) => setFormatIndex(Number(e.currentTarget.value))}
-        >
-          {choices.map((c, i) => (
-            <option key={c.ref} value={String(i)}>
-              {t('format.export.option', {
-                spec: c.specName,
-                format: c.name,
-                extension: c.extension,
-              })}
-            </option>
-          ))}
-        </Select>
-      )}
-      {needsContainer && (
-        <Select
-          label={t('format.export.container')}
-          value={containerId ?? ''}
-          disabled={running}
-          onChange={(e) => setContainer(e.currentTarget.value)}
-        >
-          {containers.map((c) => (
-            <option key={c.id} value={c.id}>
-              {imageLabel(c)}
-            </option>
-          ))}
-        </Select>
-      )}
-      {running && (
-        <p class="muted" role="status">
-          {t('format.export.running')}
-        </p>
-      )}
-      {error !== null && (
-        <p class="notice notice-error" role="alert">
-          {error}
-        </p>
-      )}
+      <FormatSelect
+        choices={pick.choices ?? []}
+        value={pick.index}
+        disabled={running}
+        onChange={pick.setFormatIndex}
+      />
+      <ContainerSelect
+        show={pick.needsContainer}
+        containers={pick.containers}
+        value={pick.containerId}
+        disabled={running}
+        onChange={pick.setContainer}
+      />
+      <Messages choices={pick.choices} running={running} error={error} />
     </Dialog>
   );
 }

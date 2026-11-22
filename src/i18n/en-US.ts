@@ -352,7 +352,8 @@ export const enUS = {
   'format.error.project': 'The project could not be read for this format.',
   'format.error.container': 'Choose a container to export.',
   'format.error.plugin-failed': 'The plugin failed: {message}',
-  'format.error.plugin-failed.at': 'The plugin failed: {message} (line {line}, column {column})',
+  'format.error.plugin-failed.at':
+    'The plugin failed: {message} (line {line}, column {column})',
   'format.error.plugin-timeout': 'The plugin went past the time limit of {seconds} s.',
   'format.error.plugin-limit': 'The plugin went past a limit: {message}',
   'format.error.plugin-output-invalid':

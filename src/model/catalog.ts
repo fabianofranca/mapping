@@ -489,19 +489,17 @@ function formatsOf(
     ...(format.description === undefined ? {} : { description: format.description }),
     plugin: resolve(format.plugin),
     pluginText: texts.get(resolve(format.plugin)) ?? null,
-    examples: (format.examples ?? []).map(
-      (example): CatalogFormatExample => ({
-        name: example.name,
-        file: resolve(example.file),
-        text: texts.get(resolve(example.file)) ?? null,
-        ...(example.input === undefined
-          ? {}
-          : {
-              input: resolve(example.input),
-              inputText: texts.get(resolve(example.input)) ?? null,
-            }),
-      }),
-    ),
+    examples: (format.examples ?? []).map((example): CatalogFormatExample => ({
+      name: example.name,
+      file: resolve(example.file),
+      text: texts.get(resolve(example.file)) ?? null,
+      ...(example.input === undefined
+        ? {}
+        : {
+            input: resolve(example.input),
+            inputText: texts.get(resolve(example.input)) ?? null,
+          }),
+    })),
   }));
 }
 
