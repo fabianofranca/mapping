@@ -1,4 +1,4 @@
-# Conversation during review — [Não lançado] (épico `epic/conversation-during-review`, PR #2536, MCP no change, schema v18)
+# Conversation during review — 2026-11-22 (épico `epic/conversation-during-review`, PR #2538, MCP 0.57.2, schema v18)
 
 ## Adicionado
 
