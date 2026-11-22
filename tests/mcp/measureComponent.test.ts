@@ -55,7 +55,15 @@ function writeProject(name: string, extra: Record<string, unknown>): void {
         id: 'notes',
         name: 'Notes',
         color: '#00796B',
-        annotationTypes: [{ id: 'note', name: 'Note', fields: [] }],
+        annotationTypes: [
+          { id: 'note', name: 'Note', fields: [] },
+          {
+            id: 'acme-label',
+            name: 'Acme label',
+            component: 'components/acme-label.json',
+            fields: [{ key: 'label', type: 'string', default: 'Ok' }],
+          },
+        ],
       },
     ],
   };
@@ -68,6 +76,32 @@ function writeProject(name: string, extra: Record<string, unknown>): void {
       JSON.stringify(component),
     );
   }
+  // A `hug` button whose text is set in `Acme` (a library font in `fonted`, a plain name in `telas`).
+  writeFileSync(
+    join(dir, 'specs', 'fit', 'components', 'acme-label.json'),
+    JSON.stringify({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'acme-label',
+      name: 'acme-label',
+      size: { width: 120, height: 40 },
+      sizing: { width: 'hug', height: 'hug' },
+      template: {
+        type: 'frame',
+        layout: { type: 'column', padding: 8 },
+        children: [
+          {
+            type: 'text',
+            name: 'label',
+            text: { $field: 'label', default: '' },
+            width: 'hug',
+            height: 'hug',
+            font: { family: 'Acme', size: 14, lineHeight: 20 },
+          },
+        ],
+      },
+    }),
+  );
   let p = createProject({
     name: 'Screens',
     now: NOW,
@@ -153,16 +187,41 @@ describe('measure_component: the response', () => {
     expect(r.pixels.width).toBeGreaterThanOrEqual(r.units.width * 3);
   });
 
-  it('approximate is false when the project has a library font', async () => {
-    const r = ok(
+  const inFonted = async (type: string) =>
+    ok(
       await mcp.call<Measure>('measure_component', {
         project: 'fonted',
         specId: FIT_SPEC_ID,
-        type: 'fit-hug',
+        type,
         values: { label: LONG_LABEL },
       }),
     );
-    expect(r.approximate).toBe(false);
+
+  // Stage #2267, decision 4: `approximate` follows the families the text is measured with, not the project's fonts.
+  it('approximate is false when the text is set in a library font', async () => {
+    expect((await inFonted('acme-label')).approximate).toBe(false);
+  });
+
+  it('approximate stays true in a project with a library font when the text is not set in it', async () => {
+    expect((await inFonted('fit-hug')).approximate).toBe(true);
+  });
+
+  it('approximate is true for a family that is not a library font, and false for a component with no text', async () => {
+    const r = ok(await measure('acme-label', { values: { label: LONG_LABEL } }));
+    expect(r.approximate).toBe(true);
+    // A slot-only component measures no text.
+    const noText = ok(await measure('fit-row-none'));
+    expect(noText.approximate).toBe(false);
+  });
+
+  it('a slot component that follows the content keeps its size and says it is the empty slots', async () => {
+    const r = ok(await measure('fit-row-none'));
+    expect(r.follows).toEqual({ width: false, height: true });
+    expect(r.hint).toMatch(/empty/i);
+    expect(r.hint).toMatch(/born at the component's `size`/);
+    expect(r.hint).toMatch(/Arrange|fit_marking/);
+    const nominal = ok(await measure('fit-slot-px'));
+    expect(nominal.hint).toBeUndefined();
   });
 
   it('a fixed component answers with its size, follows false and a hint', async () => {

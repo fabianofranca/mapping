@@ -9,10 +9,15 @@ import { isRecord } from './isRecord';
 import { drawingValues } from './componentValues';
 import { componentForDrawing, drawOptions } from './drawingMode';
 import { effectiveDensity, unitsToPixels } from './density';
-import type { ComponentCatalog } from './componentCatalog';
+import { hasSlotComponent, type ComponentCatalog } from './componentCatalog';
 import type { TextMeasurer } from './components/instantiate';
 import type { ComponentFile } from './components/componentFormat';
-import { fitComponentSize, followedAxes, resolveSizing } from './components/sizing';
+import {
+  fitComponentSize,
+  followedAxes,
+  resolveSizing,
+  sizingFollowsContent,
+} from './components/sizing';
 
 // `measure_component` (decision 9 of #2089): the size a component has for given field values, in
 // component units and in image pixels, without a marking and without a batch. Pure: it builds a
@@ -39,6 +44,12 @@ export interface ComponentMeasure {
   /** The axes that follow the content (or an expression's px). */
   readonly follows: { readonly width: boolean; readonly height: boolean };
   readonly messages: readonly ModelMessage[];
+  /**
+   * The component has a slot and an axis that follows the content: the size is the one with the slots empty (the
+   * empty slot measures its `fallback`), while a new instance is born at the component's `size` (stage #2267,
+   * decision 6).
+   */
+  readonly emptySlot: boolean;
 }
 
 /** The project with a scratch annotation of the type: its defaults plus `values`, which are checked. */
@@ -147,6 +158,8 @@ export function measureComponentSize(
   const units =
     fitted === undefined ? base : { width: fitted.width, height: fitted.height };
   const density = effectiveDensity(project, args.containerId);
+  const reserved = { direction: drawn.direction, container: drawn.container };
+  const sizing = resolveSizing(component, values, drawn.tokens, reserved);
   return {
     units,
     pixels: {
@@ -154,12 +167,9 @@ export function measureComponentSize(
       height: unitsToPixels(units.height, density),
     },
     density,
-    follows: followedAxes(
-      resolveSizing(component, values, drawn.tokens, {
-        direction: drawn.direction,
-        container: drawn.container,
-      }),
-    ),
+    follows: followedAxes(sizing),
     messages: [...warnings, ...(fitted?.messages ?? [])],
+    emptySlot:
+      hasSlotComponent(component) && sizingFollowsContent(component, values, reserved),
   };
 }
