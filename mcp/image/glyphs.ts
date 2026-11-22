@@ -11,8 +11,16 @@ import type { FontBook } from './textMeasurer';
 export type Polygon = readonly Point[];
 
 const CURVE_STEPS = 8;
-/** Slant of the synthetic italic (the embedded font has no italic): ~11.3°. */
-const ITALIC_SLANT = 0.2;
+/** Slant of the synthetic italic of the embedded fonts (they have no italic): ~11.3°. */
+export const EMBEDDED_SLANT = 0.2;
+/** Slant of the synthetic italic of a library face that is not italic: Chromium's skew, 0.25 (stage #2448). */
+export const LIBRARY_SLANT = 0.25;
+
+/** What the drawing adds to a face (stage #2448): synthetic bold and the slant (0 = none). */
+export interface Synthesis {
+  readonly bold: boolean;
+  readonly slant: number;
+}
 
 function cubic(p0: Point, c1: Point, c2: Point, p1: Point, out: Point[]): void {
   for (let i = 1; i <= CURVE_STEPS; i++) {
@@ -80,10 +88,77 @@ export function pathPolygons(commands: readonly PathCommand[]): Polygon[] {
 }
 
 /** Slants the polygons around the baseline (synthetic italic). */
-export function slant(polygons: readonly Polygon[], baseline: number): Polygon[] {
+export function slant(
+  polygons: readonly Polygon[],
+  baseline: number,
+  by: number = EMBEDDED_SLANT,
+): Polygon[] {
   return polygons.map((poly) =>
-    poly.map((p) => ({ x: p.x + (baseline - p.y) * ITALIC_SLANT, y: p.y })),
+    poly.map((p) => ({ x: p.x + (baseline - p.y) * by, y: p.y })),
   );
+}
+
+/** Skia's fake-bold ratio: 1/24 up to 9 px, 1/32 from 36 px, linear in between. */
+function boldRatio(size: number): number {
+  if (size <= 9) return 1 / 24;
+  if (size >= 36) return 1 / 32;
+  return 1 / 24 + ((size - 9) / 27) * (1 / 32 - 1 / 24);
+}
+
+/** The sign of the sum of the signed areas of the contours: the orientation of the font's outlines. */
+function orientation(polygons: readonly Polygon[]): number {
+  let area = 0;
+  for (const poly of polygons)
+    poly.forEach((p, i) => {
+      const q = poly[(i + 1) % poly.length]!;
+      area += p.x * q.y - q.x * p.y;
+    });
+  return area < 0 ? -1 : 1;
+}
+
+/** Miter limit of the fake bold's joins: beyond it the corner is beveled. */
+const MITER_LIMIT = 4;
+
+function embolden1(poly: Polygon, d: number, sign: number): Point[] {
+  const pts = poly.filter((p, i) => {
+    const q = poly[(i + 1) % poly.length]!;
+    return p.x !== q.x || p.y !== q.y;
+  });
+  const n = pts.length;
+  if (n < 3) return [...pts];
+  // The outward normal of each edge `i` (from point `i` to `i + 1`).
+  const normals = pts.map((p, i) => {
+    const q = pts[(i + 1) % n]!;
+    const dx = q.x - p.x;
+    const dy = q.y - p.y;
+    const len = Math.hypot(dx, dy);
+    return { x: (sign * dy) / len, y: (-sign * dx) / len };
+  });
+  const out: Point[] = [];
+  pts.forEach((p, i) => {
+    const a = normals[(i + n - 1) % n]!;
+    const b = normals[i]!;
+    const dot = a.x * b.x + a.y * b.y;
+    // miter length / stroke width = 1 / cos(turn / 2), with cos² = (1 + dot) / 2
+    if (1 + dot > 2 / (MITER_LIMIT * MITER_LIMIT)) {
+      const k = d / (1 + dot);
+      out.push({ x: p.x + (a.x + b.x) * k, y: p.y + (a.y + b.y) * k });
+    } else {
+      out.push({ x: p.x + a.x * d, y: p.y + a.y * d });
+      out.push({ x: p.x + b.x * d, y: p.y + b.y * d });
+    }
+  });
+  return out;
+}
+
+/**
+ * Synthetic bold (stage #2448, decision 12): each contour moves outward by `size × ratio / 2` (Skia's fake bold) with
+ * miter joins up to a limit of 4 and a bevel beyond it. "Outward" follows the orientation of the text's contours.
+ */
+export function embolden(polygons: readonly Polygon[], size: number): Polygon[] {
+  const d = (size * boldRatio(size)) / 2;
+  const sign = orientation(polygons);
+  return polygons.map((poly) => embolden1(poly, d, sign));
 }
 
 export interface GlyphStyle {
@@ -131,11 +206,19 @@ export function textPolygons(
   x: number,
   baselineOf: (face: Face) => number,
   style: GlyphStyle,
+  synthesis: Synthesis = { bold: false, slant: style.italic ? EMBEDDED_SLANT : 0 },
 ): TextOutline {
   const { value } = guardedLayoutWith(face, fallback, (f) => {
     const baseline = baselineOf(f);
-    const polygons = laidOut(f, text, x, baseline, style);
-    return { polygons: style.italic ? slant(polygons, baseline) : polygons, baseline };
+    // The fallback face is an embedded one: it never gets synthetic bold, and leans like the embedded fonts.
+    const syn =
+      f === face ? synthesis : { bold: false, slant: style.italic ? EMBEDDED_SLANT : 0 };
+    const laid = laidOut(f, text, x, baseline, style);
+    const bold = syn.bold ? embolden(laid, style.size) : laid;
+    return {
+      polygons: syn.slant !== 0 ? slant(bold, baseline, syn.slant) : bold,
+      baseline,
+    };
   });
   return value;
 }

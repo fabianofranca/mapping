@@ -326,3 +326,35 @@ describe('library font formats', () => {
     expect(book.hasLibraryFonts).toBe(true);
   });
 });
+
+describe('weights between library faces (stage #2448, BD2)', () => {
+  const mono = arrayBuffer(
+    new Uint8Array(readFileSync('mcp/fonts/MappingMono-Regular.ttf')),
+  );
+  const face = (weight: string, bytes: ArrayBuffer) => ({
+    family: 'pair',
+    weight,
+    style: 'normal' as const,
+    path: `pair-${weight}.ttf`,
+    bytes,
+  });
+  const measure = createMeasurer([
+    face('400', arrayBuffer(sansBytes)),
+    face('900', mono),
+  ]);
+  const at = (weight: number) =>
+    measure('Hamburgefonstiv', { ...font, family: 'pair', size: 100, weight }).width;
+
+  it('550 measures with the 900 face, as in Chromium; 300 and 450 with the 400 one', () => {
+    expect(at(550)).toBeGreaterThan(at(450) + 100);
+    expect(at(300)).toBe(at(400));
+    expect(at(450)).toBe(at(400));
+  });
+
+  it('a family with only a 400 face keeps its width at weight 700 (synthetic bold does not move the advance)', () => {
+    const only = createMeasurer([face('400', arrayBuffer(sansBytes))]);
+    const width = (weight: number) =>
+      only('Hamburgefonstiv', { ...font, family: 'pair', size: 100, weight }).width;
+    expect(width(700)).toBe(width(400));
+  });
+});

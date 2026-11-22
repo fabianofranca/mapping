@@ -89,6 +89,7 @@ function lineInk(
     x,
     (face) => lineBaseline(top, lineHeight, fontExtents(face, spec.size)),
     spec,
+    book.synthesis(spec.family, spec.weight, spec.italic),
   );
   if (decoration === undefined) return polygons;
   return [

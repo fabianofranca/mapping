@@ -239,5 +239,87 @@
     "direction": "rtl",
     "width": 200,
     "starts": [133.30078125, 100, 33.30078125, 0]
+  },
+  {
+    "font": "sans",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "width": 755.908203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 755.56640625,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "sans",
+    "text": "H",
+    "letterSpacing": 0,
+    "width": 72.216796875,
+    "ink": {
+      "left": 8.203125,
+      "right": 64.0625,
+      "top": -68.798828125
+    }
+  },
+  {
+    "font": "sans",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "weight": 700,
+    "width": 755.908203125,
+    "ink": {
+      "left": 6.640625,
+      "right": 757.8176816700512,
+      "top": -74.0234375
+    }
+  },
+  {
+    "font": "sans",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "italic": true,
+    "width": 755.908203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 768.7744140625,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "sans",
+    "text": "H",
+    "letterSpacing": 0,
+    "weight": 700,
+    "width": 72.216796875,
+    "ink": {
+      "left": 6.640625,
+      "right": 65.625,
+      "top": -70.361328125
+    }
+  },
+  {
+    "font": "sans",
+    "text": "H",
+    "letterSpacing": 0,
+    "italic": true,
+    "width": 72.216796875,
+    "ink": {
+      "left": 8.203125,
+      "right": 81.26220703125,
+      "top": -68.798828125
+    }
+  },
+  {
+    "font": "pair",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
+    "weight": 550,
+    "width": 900.146484375,
+    "ink": {
+      "left": 7.91015625,
+      "right": 896.728515625,
+      "top": -72.4609375
+    }
   }
 ]
