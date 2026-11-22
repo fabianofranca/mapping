@@ -1,4 +1,4 @@
-# Queue graph waves — [Não lançado] (épico `epic/queue-graph-waves`, PR #0, MCP unchanged, schema v23)
+# Queue graph waves — 2026-11-22 (épico `epic/queue-graph-waves`, PR #2627, MCP unchanged, schema v23)
 
 ## Corrigido
 

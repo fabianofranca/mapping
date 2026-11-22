@@ -1,4 +1,4 @@
-# Queue graph waves — [Não lançado] (épico `epic/queue-graph-waves`)
+# Queue graph waves — 2026-11-22 (épico `epic/queue-graph-waves`)
 
 ## Pendências
 

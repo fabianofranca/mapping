@@ -10,7 +10,7 @@ import { PROTOCOL_TERMS } from './portugueseAllowlist';
 
 const read = (path: string): string => readFileSync(path, 'utf8');
 const QUEUE = read('.claude/skills/implementar-fila/SKILL.md');
-const CHANGELOG = read('changelog/queue-graph-waves.md');
+const CHANGELOG = read('changelog/2026-11-22-queue-graph-waves.md');
 
 const has = (label: string, text: string, parts: string[]): void => {
   for (const p of parts) expect(text, `${label}: ${p}`).toContain(p);
