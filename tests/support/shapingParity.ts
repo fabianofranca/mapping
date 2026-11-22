@@ -56,6 +56,10 @@ export const BIDI_CASES: readonly ExtraCase[] = [
  * width is the 400 one and whose ink is compared within 1 px; and the CSS matching on the `pair` family.
  */
 export const WEIGHT_CASES: readonly ExtraCase[] = [
+  // The references: the same text upright at 400, whose ink the others are compared against (the browser rounds the
+  // bounds of `measureText` by its own rule, so only the difference to the reference is stable across machines).
+  { font: 'sans', text: 'Hamburgefonstiv', letterSpacing: 0 },
+  { font: 'sans', text: 'H', letterSpacing: 0 },
   ...(['Hamburgefonstiv', 'H'] as const).flatMap((text) => [
     { font: 'sans', text, letterSpacing: 0, weight: 700 } as const,
     { font: 'sans', text, letterSpacing: 0, italic: true } as const,
@@ -63,7 +67,7 @@ export const WEIGHT_CASES: readonly ExtraCase[] = [
   { font: 'pair', text: 'Hamburgefonstiv', letterSpacing: 0, weight: 550 },
 ];
 
-/** The ink of the weight cases is compared within this many px. */
+/** The ink of the weight cases is compared within this many px, as a difference to the upright 400 reference. */
 export const INK_TOLERANCE = 1;
 
 /** The font faces to register: `pair` has two (Mapping Sans at 400, Mapping Mono at 900). */

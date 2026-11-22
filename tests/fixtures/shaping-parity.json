@@ -244,6 +244,28 @@
     "font": "sans",
     "text": "Hamburgefonstiv",
     "letterSpacing": 0,
+    "width": 755.908203125,
+    "ink": {
+      "left": 8.203125,
+      "right": 755.56640625,
+      "top": -72.4609375
+    }
+  },
+  {
+    "font": "sans",
+    "text": "H",
+    "letterSpacing": 0,
+    "width": 72.216796875,
+    "ink": {
+      "left": 8.203125,
+      "right": 64.0625,
+      "top": -68.798828125
+    }
+  },
+  {
+    "font": "sans",
+    "text": "Hamburgefonstiv",
+    "letterSpacing": 0,
     "weight": 700,
     "width": 755.908203125,
     "ink": {

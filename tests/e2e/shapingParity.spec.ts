@@ -133,15 +133,40 @@ test('Chromium measures the parity cases within 0.1 px of the server', async ({
     }),
   );
   expect(startsOff).toEqual([]);
-  // The ink of the weight cases (stage #2448, BD2, decisions 12 to 14), within 1 px: the fake bold and the slant.
-  const inkOff = fixture.flatMap((c, i) => {
-    const chromium = widths[i]!.ink;
-    if (c.ink === undefined || chromium === undefined) return [];
-    return (['left', 'right', 'top'] as const).flatMap((edge) =>
-      !(Math.abs(chromium[edge] - c.ink![edge]) <= INK_TOLERANCE)
-        ? [`${parityKey(c)} ${edge}: server ${c.ink![edge]}, Chromium ${chromium[edge]}`]
-        : [],
+  // The ink of the weight cases (stage #2448, BD2, decisions 12 to 14), within 1 px: the fake bold and the slant. The
+  // browser rounds the bounds of `measureText` by its own rule (whole pixels on a Linux CI), so each case is compared
+  // by its difference to the same text upright at 400, which both sides measure.
+  const reference = (c: ParityCase) =>
+    fixture.findIndex(
+      (r) =>
+        r.ink !== undefined &&
+        r.font === c.font &&
+        r.text === c.text &&
+        r.weight === undefined &&
+        !r.italic,
     );
+  const inkOff = fixture.flatMap((c, i) => {
+    const r = reference(c);
+    const chromium = widths[i]!.ink;
+    const chromiumRef = r < 0 ? undefined : widths[r]!.ink;
+    if (
+      c.ink === undefined ||
+      r < 0 ||
+      r === i ||
+      chromium === undefined ||
+      chromiumRef === undefined
+    )
+      return [];
+    const ref = fixture[r]!.ink!;
+    return (['left', 'right', 'top'] as const).flatMap((edge) => {
+      const server = c.ink![edge] - ref[edge];
+      const browser = chromium[edge] - chromiumRef[edge];
+      return !(Math.abs(browser - server) <= INK_TOLERANCE)
+        ? [
+            `${parityKey(c)} ${edge}: server ${server}, Chromium ${browser} (against the 400 reference)`,
+          ]
+        : [];
+    });
   });
   expect(inkOff).toEqual([]);
   const konva = fixture
