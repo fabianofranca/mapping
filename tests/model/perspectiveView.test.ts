@@ -6,11 +6,15 @@ import {
   perspectiveView,
   rootFootprint,
   rootPosition,
+  addAnnotation,
+  type Arrow,
+  type Marking,
   type Perspective,
   type Project,
 } from '../../src/model';
 import { arrowBase, withArrow } from './arrowFixtures';
-import { multiProjectAnnotated } from './multiSelectionFixtures';
+import { mk, multiProjectAnnotated, rect } from './multiSelectionFixtures';
+import { buildScaleProject } from './scaleProject';
 
 // The project as seen from a perspective (v16, decision 3). Geometry of `multiProject` (see
 // tests/model/multiSelectionFixtures.ts): roots D and E (containers), G (canvas marking that
@@ -203,4 +207,165 @@ describe('root of an item and count', () => {
       markings: 0,
     });
   });
+});
+
+describe('perspectiveView: the same view as the plain filter by root (decision 4)', () => {
+  /**
+   * The reference: today's semantics written as a plain filter by `perspectiveRootOf`. The first item of each
+   * root that is a root wins; a container, marking or arrow stays when its root (the `from` and `to` roots of an arrow) is
+   * shifted; an annotation stays when its target stays.
+   */
+  function reference(p: Project, view: Perspective): Project {
+    const shifts = new Map<string, { x: number; y: number }>();
+    for (const item of view.items) {
+      if (shifts.has(item.root) || perspectiveRootOf(p, item.root) !== item.root)
+        continue;
+      const at = rootPosition(p, item.root)!;
+      const whole = p.markings.some((m) => m.id === item.root);
+      const dx = item.x - at.x;
+      const dy = item.y - at.y;
+      shifts.set(
+        item.root,
+        whole && !p.containers.some((c) => c.id === item.root)
+          ? { x: Math.round(dx) || 0, y: Math.round(dy) || 0 }
+          : { x: dx, y: dy },
+      );
+    }
+    const shiftOf = (id: string) => shifts.get(perspectiveRootOf(p, id) ?? '');
+    const still = (d: { x: number; y: number }) => d.x === 0 && d.y === 0;
+    const containers = p.containers
+      .filter((c) => shiftOf(c.id))
+      .map((c) => {
+        const d = shiftOf(c.id)!;
+        return still(d)
+          ? c
+          : {
+              ...c,
+              placement: {
+                ...c.placement,
+                x: c.placement.x + d.x,
+                y: c.placement.y + d.y,
+              },
+            };
+      });
+    const markings = p.markings
+      .filter((m) => shiftOf(m.id))
+      .map((m): Marking => {
+        const d = shiftOf(m.id)!;
+        return still(d) || m.containerId !== null
+          ? m
+          : { ...m, rect: { ...m.rect, x: m.rect.x + d.x, y: m.rect.y + d.y } };
+      });
+    const arrows = p.arrows
+      .filter((a) => shiftOf(a.from) && shiftOf(a.to))
+      .map((a): Arrow => {
+        const d = shiftOf(a.from)!;
+        const from = p.markings.find((m) => m.id === a.from)!;
+        const to = p.markings.find((m) => m.id === a.to)!;
+        if (a.points.length === 0) return a;
+        if (from.containerId !== null && from.containerId === to.containerId) return a;
+        if (perspectiveRootOf(p, from.id) !== perspectiveRootOf(p, to.id))
+          return { ...a, points: [] };
+        if (still(d)) return a;
+        return { ...a, points: a.points.map((pt) => ({ x: pt.x + d.x, y: pt.y + d.y })) };
+      });
+    const kept = new Set([...markings, ...arrows].map((x) => x.id));
+    const annotations = p.annotations.filter((a) => kept.has(a.markingId));
+    return { ...p, containers, markings, arrows, annotations };
+  }
+
+  /** Same content as the reference, and the items that do not move are the project's own objects. */
+  function expectSameView(p: Project, view: Perspective) {
+    const actual = perspectiveView(p, view);
+    const expected = reference(p, view);
+    expect(actual).toEqual(expected);
+    expect(actual.containers.map((c) => c.id)).toEqual(
+      expected.containers.map((c) => c.id),
+    );
+    expect(actual.annotations.length).toBe(expected.annotations.length);
+    actual.annotations.forEach((a, i) => expect(a).toBe(expected.annotations[i]));
+    // What does not move is the project's own object (identity kept), not a copy.
+    const sameAs = <T extends object>(
+      got: readonly T[],
+      original: readonly T[],
+      want: readonly T[],
+    ) =>
+      got.forEach((item, i) => {
+        if (original.includes(want[i]!)) expect(item).toBe(want[i]);
+      });
+    sameAs(actual.containers, p.containers, expected.containers);
+    sameAs(actual.markings, p.markings, expected.markings);
+    sameAs(actual.arrows, p.arrows, expected.arrows);
+  }
+
+  it('the scale fixture (250 markings), with both perspectives', () => {
+    const p = buildScaleProject({ markings: 250 });
+    expect(p.perspectives).toHaveLength(2);
+    for (const view of p.perspectives) {
+      expect(perspectiveView(p, view).markings.length).toBeGreaterThan(0);
+      expectSameView(p, view);
+    }
+  });
+
+  /** Arrows r1 (inside A), r2 (A to B), r4 (a1 to H) and r5 (N to H, floating to canvas), annotated, plus orphans. */
+  function handMade(): Project {
+    let p = withArrows();
+    p = withArrow(p, 'r5', 'N', 'H', { points: [{ x: 10, y: 10 }] });
+    for (const [id, markingId] of [
+      ['ar1', 'r1'],
+      ['ar2', 'r2'],
+      ['ar4', 'r4'],
+      ['ar5', 'r5'],
+      ['aH', 'H'],
+      ['aN', 'N'],
+    ] as const) {
+      p = addAnnotation(p, { id, markingId, layerId: 'L1' });
+    }
+    // A repeated marking id (invalid project): it takes the root of that id.
+    return {
+      ...p,
+      markings: [...p.markings, mk('a1', 'B', rect(5, 5, 20, 20))],
+      // An annotation whose target does not exist; and `aA`, on a container id: neither is a marking or an arrow (invalid project).
+      annotations: [
+        ...p.annotations,
+        { ...p.annotations[0]!, id: 'lost', markingId: 'nowhere' },
+        { ...p.annotations[0]!, id: 'aA', markingId: 'A' },
+      ],
+    };
+  }
+
+  it.each([
+    ['an arrow that stays and one that leaves', [['G', -100, -100]]],
+    [
+      'both ends of the arrow between roots',
+      [
+        ['G', 3, 7],
+        ['H', 400, 1300],
+      ],
+    ],
+    [
+      'a repeated item and an item that is not a root',
+      [
+        ['G', 1, 1],
+        ['G', 9, 9],
+        ['a1', 0, 0],
+        ['zzz', 0, 0],
+      ],
+    ],
+    [
+      'containers and markings with no shift',
+      [
+        ['A', 0, 0],
+        ['B', 2000, 0],
+        ['H', 400, 1300],
+        ['N', 100, 1300],
+      ],
+    ],
+    ['nothing', []],
+  ] as [string, [string, number, number][]][])(
+    'hand-made project: %s',
+    (_name, items) => {
+      expectSameView(handMade(), perspective(...items));
+    },
+  );
 });
