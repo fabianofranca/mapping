@@ -8,11 +8,10 @@ import { MemoryDirectory } from '../../storage/memoryFs';
 import { GROWTH_OPTIONS, expectLinearGrowthAsync } from '../../support/growth';
 
 // Session cases of the growth test (#881): saving an already open project and opening it, 1,250 × 5,000 markings.
-async function folderWith(markings: number) {
+function folderWith(markings: number): MemoryDirectory {
   const root = new MemoryDirectory('scale');
-  const text = serialize(buildScaleProject({ markings }));
-  root.put('mapping.json', text);
-  return { root };
+  root.put('mapping.json', serialize(buildScaleProject({ markings })));
+  return root;
 }
 
 const storageOf = (root: MemoryDirectory) =>
@@ -39,7 +38,7 @@ describe('session growth (n = 1,250, 4n = 5,000 markings)', () => {
       const sessions: ProjectSession[] = [];
       let counter = 0;
       // Proof that the measurement is the real save: the file comes out with revision + 1 and the new name.
-      const { root: probeRoot } = await folderWith(25);
+      const probeRoot = folderWith(25);
       const probe = await open(probeRoot);
       probe.actions.renameProject('Probe');
       expect((await probe.flush()).ok).toBe(true);
@@ -47,23 +46,27 @@ describe('session growth (n = 1,250, 4n = 5,000 markings)', () => {
       expect(saved.revision).toBe(1);
       expect(saved.project.name).toBe('Probe');
       await probe.close();
-      await expectLinearGrowthAsync('session: save', {
-        build: async (n) => {
-          const { root } = await folderWith(n);
-          const session = await open(root);
-          sessions.push(session);
-          return { root, session };
-        },
-        // The edit happens outside the measured time; the measurement is the save.
-        prepare: ({ session }) => {
-          session.actions.renameProject(`Scale ${++counter}`);
-        },
-        run: async ({ session }) => {
-          const saved = await session.flush();
-          if (!saved.ok) throw new Error('the save failed');
-        },
-      });
-      for (const session of sessions) await session.close();
+      // A retry reruns this function: the sessions of each attempt are closed even when the ratio fails.
+      try {
+        await expectLinearGrowthAsync('session: save', {
+          build: async (n) => {
+            const root = folderWith(n);
+            const session = await open(root);
+            sessions.push(session);
+            return { root, session };
+          },
+          // The edit happens outside the measured time; the measurement is the save.
+          prepare: ({ session }) => {
+            session.actions.renameProject(`Scale ${++counter}`);
+          },
+          run: async ({ session }) => {
+            const saved = await session.flush();
+            if (!saved.ok) throw new Error('the save failed');
+          },
+        });
+      } finally {
+        for (const session of sessions) await session.close();
+      }
     },
   );
 
@@ -73,7 +76,7 @@ describe('session growth (n = 1,250, 4n = 5,000 markings)', () => {
     async () => {
       let last: ProjectSession | null = null;
       await expectLinearGrowthAsync('session: open', {
-        build: async (n) => folderWith(n),
+        build: (n) => ({ root: folderWith(n) }),
         // The session of the previous round is dropped first (outside the measured time), so the heap does not grow with the rounds.
         prepare: async () => {
           await last?.close();
