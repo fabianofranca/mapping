@@ -123,15 +123,16 @@ describe('migration v12 → v13 (no inheritance)', () => {
     expect(out.markings).toEqual([{ id: 'M1', floating: true }, null]);
   });
 
-  it("the migration does not settle: the markings' `parentId` stays as is, the containers' is null", () => {
-    // In v12 the parent was a chosen datum: M3 points to M1 even with M2 (smaller) containing it.
+  it("the migration keeps `floating` false and the containers' `parentId` null; reading then settles the markings", () => {
+    // In v12 the parent was a chosen datum: M3 points to M1 even with M2 (smaller) containing it;
+    // reading settles the project (#1971), so it comes out under M2.
     const raw = v12Raw();
     raw.markings = raw.markings.map((m: Raw) =>
       m.id === 'M3' ? { ...m, parentId: 'M1' } : m,
     );
     const result = load(JSON.stringify(raw));
     expect(result.migratedFrom).toBe(12);
-    expect(marking(result.project, 'M3').parentId).toBe('M1');
+    expect(marking(result.project, 'M3').parentId).toBe('M2');
     expect(result.project.markings.every((m) => !m.floating)).toBe(true);
     expect(result.project.containers.every((c) => c.parentId === null)).toBe(true);
   });
@@ -225,13 +226,13 @@ describe('opening a v13 (earlier than the membership fields)', () => {
     expect(JSON.parse(saved).markings.at(-1).floating).toBe(true);
   });
 
-  it('a v13 does not settle on reading: a valid parent that is not the smallest opens as is', () => {
+  it('a v13 settles on reading: a valid parent that is not the smallest comes out as the smallest', () => {
     const data = JSON.parse(serialize(sampleProject())) as Raw;
     data.markings = data.markings.map((m: Raw) =>
       m.id === 'M3' ? { ...m, parentId: 'M1' } : m,
     );
     const result = load(JSON.stringify(data));
-    expect(marking(result.project, 'M3').parentId).toBe('M1');
+    expect(marking(result.project, 'M3').parentId).toBe('M2');
   });
 
   it('a container marking with a negative `x` is no longer a schema error: it is the `rect-out-of-image` invariant, repairable', () => {
