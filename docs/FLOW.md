@@ -250,10 +250,10 @@ The retest of a stage is **a single session**, with the findings of **all** the 
 When the **Testador** section of the last phase's sub-issue asks for the full round, the orchestrator (the **coordinator**) creates one tester session per block at once, one per block of the table in [`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md) ("Full round in blocks"). Each one uses `list_environments` ("Mapping - testes"), `create_session` with the repository's `source_url`, `source_revision` = `epic/<name>`, the same commit in all the blocks and the title "Testador — <target>, bloco <k> de <n>". Message of block `<k>` (1 to `<n>`):
 
 ```text
-Read `docs/TESTING-NUVEM.md` and run the modo completo, bloco <k> de <n>. Passada visual: <list from the sub-issue, in block 4; "no bloco 4" in blocks 1, 2, 3, 5 and 6>. Branch `epic/<name>`, commit `<hash>`. Relato na sub-issue #<last phase>. Tag da release: <mcp-v…-rc.n, or "sem R21">. Coordenador: `<coordinator session id>`.
+Read `docs/TESTING-NUVEM.md` and run the modo completo, bloco <k> de <n>. Passada visual: <list from the sub-issue, in block 4; "no bloco 4" in blocks 1, 2, 3, 5, 6 and 7>. Branch `epic/<name>`, commit `<hash>`. Relato na sub-issue #<last phase>. Tag da release: <mcp-v…-rc.n, or "sem R21">. Coordenador: `<coordinator session id>`.
 ```
 
-- **Release tag:** only block 5 has R21; in blocks 1 to 4 and 6 the blank is `sem R21`, and in 5 it is the epic's rc (in a round on `main`, the latest stable).
+- **Release tag:** only block 5 has R21; in blocks 1 to 4, 6 and 7 the blank is `sem R21`, and in 5 it is the epic's rc (in a round on `main`, the latest stable).
 - **Fallback check:** schedules a 60 min `send_later` and only goes on with **one notice per block** (each citing the block). A block that did not report by then: same as the phase that does not report (**Limits** paragraph of "Orchestrator — step by step").
 - **With one notice per block,** it posts the summary (below) in the same sub-issue. The coordinator does not rewrite the reports.
 - **With ❌,** the usual flow: one fix phase with the findings of all the blocks (codes `k.n`, with the link to each one's comment) and the directed retest in a single session ("Retest together"), for the findings `k.n` of all the blocks, in the retest message above.
@@ -285,13 +285,14 @@ Branch `<branch>`, commit `<hash>`.
 | 4     | N   | N   | N            | <min>           | <ctx>k  |
 | 5     | N   | N   | N            | <min>           | <ctx>k  |
 | 6     | N   | N   | N            | <min>           | <ctx>k  |
+| 7     | N   | N   | N            | <min>           | <ctx>k  |
 | Total | N   | N   | N            | <sum of blocks> | —       |
 
 - **Findings by severity:** blocks N, high N, medium N, low N.
   - <k.n> — <title> — <severity> — <comment link>
 - **Context:** above the ceiling (300 thousand): <block or group, ctx> or none.
 - **Time:** sum of the blocks <min>; wall time <min> (from the creation of the first block to the last notice). Each block's times are the ones in the report ("Time per script"); without the data, "time not measured".
-- **Reports:** block 1 <link>, block 2 <link>, block 3 <link>, block 4 <link>, block 5 <link>, block 6 <link>.
+- **Reports:** block 1 <link>, block 2 <link>, block 3 <link>, block 4 <link>, block 5 <link>, block 6 <link>, block 7 <link>.
 
 <attribution footer>
 ```

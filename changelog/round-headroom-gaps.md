@@ -1,0 +1,5 @@
+# Seventh block of the full round and tester-script gaps — [Não lançado] (épico `epic/round-headroom-gaps`, PR #2625, MCP unchanged, schema v23)
+
+## Alterado
+
+- **The full round has a seventh block (for whoever runs the tester, #2625, RH1):** the six blocks sat at 210,056, 209,930, 208,204, 207,137, 208,251 and 212,138 characters against the ceiling of 213,000 (margins of 862 to 5,863), and R25 alone takes 205,832, so any new step broke `roundBlocks.test.ts`. The table of `docs/TESTING-NUVEM.md` goes to seven blocks with the ceiling unchanged: R25 is alone in block 2, and block 7 takes R2, R18, R19, R20, R28 and R30 (six scripts moved, none of them in a chain). The guides become 190,379, 205,832, 159,917, 191,525, 179,116, 181,026 and 188,348 (at least 20,000 of margin in every block except R25's). The visual pass stays in block 4 and R21 in block 5; `docs/FLOW.md` (block message, release tag line and summary template) and the "What to run" line follow the new count, and the measures are in `docs/TESTING-NUVEM-CONSULTA.md`, "Block history".
