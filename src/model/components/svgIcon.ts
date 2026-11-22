@@ -193,7 +193,11 @@ function parsePaint(value: string): Paint | undefined {
   if (text === 'none') return NONE;
   if (text === 'currentcolor') return { kind: 'current' };
   const color = normalizeColor(text);
-  return color === undefined ? undefined : { kind: 'color', value: color };
+  if (color === undefined) return undefined;
+  // Decision 4: a fully transparent paint (alpha 0) paints nothing, so it is `none`.
+  return color.length === 9 && color.endsWith('00')
+    ? NONE
+    : { kind: 'color', value: color };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -526,6 +530,7 @@ function paintResolver(
   for (const { style } of shapes)
     for (const paint of [style.fill, style.stroke])
       if (paint.kind === 'color') literals.add(paint.value);
+  // A fully transparent paint is already `none` (`parsePaint`), so it is not in this set.
   // The `icon` node color has no alpha, so a lone color with alpha keeps its literal.
   const [only] = literals;
   const single = colors !== 'keep' && literals.size === 1 && only?.length === 7;

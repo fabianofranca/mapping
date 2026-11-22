@@ -763,8 +763,9 @@ describe('svgToIcon: review fixes', () => {
   it('a single color with alpha keeps its literal: the icon node color has no alpha', () => {
     const half = convert(svg('<path d="M0 0h4v4z" fill="rgba(0, 0, 0, 0.5)"/>'));
     expect(half.icon.paths[0]?.fill).toBe('#00000080');
-    const clear = convert(svg('<path d="M0 0h4v4z" fill="transparent"/>'));
-    expect(clear.icon.paths[0]?.fill).toBe('#00000000');
+    expect(problemsOf(svg('<path d="M0 0h4v4z" fill="transparent"/>'))).toEqual([
+      'the SVG has no shape',
+    ]);
   });
 
   it('a single opaque color still becomes true next to a path without alpha', () => {
@@ -782,5 +783,49 @@ describe('svgToIcon: review fixes', () => {
       svg('<path d="M0 0h4v4z" fill="none"/><path d="M5 5h4v4z"/><line x2="4"/>'),
     );
     expect(result.icon.paths.map((p) => p.d)).toEqual(['M5 5h4v4z']);
+  });
+});
+
+describe('svgToIcon: transparent is not a color (decision 4)', () => {
+  const clearBox = (fill: string) =>
+    `<path d="M4 4h16v16H4z" fill="#000"/><rect width="24" height="24" fill="${fill}"/>`;
+
+  it.each(['transparent', '#0000', '#00000000', 'rgba(0, 0, 0, 0)', 'rgb(0 0 0 / 0%)'])(
+    'a %s rect is dropped and the one color follows the node',
+    (fill) => {
+      const result = convert(svg(clearBox(fill)));
+      expect(result.icon.paths).toEqual([{ d: 'M4 4h16v16H4z', fill: true }]);
+    },
+  );
+
+  it('a transparent stroke on a filled path gives no stroke', () => {
+    const result = convert(
+      svg('<path d="M0 0h4v4z" fill="#000" stroke="transparent" stroke-width="2"/>'),
+    );
+    expect(result.icon.paths).toEqual([{ d: 'M0 0h4v4z', fill: true }]);
+  });
+
+  it('a transparent fill with a stroke gives fill false', () => {
+    const result = convert(
+      svg('<path d="M0 0h4v4z" fill="transparent" stroke="#000" stroke-width="2"/>'),
+    );
+    expect(result.icon.paths[0]?.fill).toBe(false);
+    expect(result.icon.paths[0]?.stroke).toBe(true);
+  });
+
+  it('a file with only transparent shapes has no shape', () => {
+    expect(
+      problemsOf(svg('<rect width="4" height="4" fill="transparent" stroke="#0000"/>')),
+    ).toEqual(['the SVG has no shape']);
+  });
+
+  it('#00000080 alone keeps its literal', () => {
+    const result = convert(svg('<path d="M0 0h4v4z" fill="#00000080"/>'));
+    expect(result.icon.paths[0]?.fill).toBe('#00000080');
+  });
+
+  it('colors keep drops the transparent shape too', () => {
+    const result = convert(svg(clearBox('transparent')), { colors: 'keep' });
+    expect(result.icon.paths).toEqual([{ d: 'M4 4h16v16H4z', fill: '#000000' }]);
   });
 });
