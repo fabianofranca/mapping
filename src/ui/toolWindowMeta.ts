@@ -23,6 +23,7 @@ const META: Readonly<Record<ToolWindowId, ToolWindowMeta>> = {
   tree: { icon: 'tree', title: () => t('panel.treeTitle'), tab: () => t('panel.tree') },
   layers: { icon: 'layers', title: () => t('layer.title') },
   details: { icon: 'panelRight', title: () => t('panel.details') },
+  conversation: { icon: 'conversation', title: () => t('conversation.title') },
   list: { icon: 'list', title: () => t('list.title'), tab: () => t('view.list') },
   incomplete: { icon: 'checklist', title: () => t('incomplete.title') },
   notices: { icon: 'warning', title: () => t('notices.title') },
@@ -36,9 +37,10 @@ export function toolWindowMeta(id: ToolWindowId): ToolWindowMeta {
   return META[id];
 }
 
-/** The window's official shortcut (Ctrl+Shift+N, Ctrl also on macOS). */
-export function toolWindowShortcut(id: ToolWindowId): string {
-  return `Ctrl+Shift+${WINDOW_NUMBER[id]}`;
+/** The window's official shortcut (Ctrl+Shift+N, Ctrl also on macOS); `null` without a number. */
+export function toolWindowShortcut(id: ToolWindowId): string | null {
+  const n = WINDOW_NUMBER[id];
+  return n === null ? null : `Ctrl+Shift+${n}`;
 }
 
 /**

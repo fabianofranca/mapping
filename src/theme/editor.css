@@ -263,6 +263,12 @@
   background: var(--color-accent);
 }
 
+/* Right column: Details on top and Conversation below share the same width (stage #1881). */
+.conversation-empty {
+  margin: 0;
+  padding: var(--space-3);
+}
+
 /* Tree and Layers: the rows take the whole width of the window. */
 .tool-window[data-window='tree'] .tool-window-body,
 .tool-window[data-window='layers'] .tool-window-body {

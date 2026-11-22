@@ -31,7 +31,10 @@ const row = (key: TranslationKey, ...combos: KeyCombo[]): ShortcutRow => ({
 
 /** Desktop editor shortcuts, by group, in the current language. */
 export function shortcutGroups(): readonly ShortcutGroup[] {
-  const windows = [...TOOL_WINDOWS].sort((a, b) => WINDOW_NUMBER[a] - WINDOW_NUMBER[b]);
+  // Windows without a number (the Conversation one) have no shortcut and stay out of the list.
+  const windows = TOOL_WINDOWS.filter((id) => WINDOW_NUMBER[id] !== null).sort(
+    (a, b) => (WINDOW_NUMBER[a] ?? 0) - (WINDOW_NUMBER[b] ?? 0),
+  );
   return [
     {
       id: 'windows',
@@ -39,7 +42,10 @@ export function shortcutGroups(): readonly ShortcutGroup[] {
       rows: [
         ...windows.map((id): ShortcutRow => ({
           label: t('shortcuts.toggleWindow', { window: toolWindowMeta(id).title() }),
-          combos: [combo(toolWindowShortcut(id)), ['Alt', String(WINDOW_NUMBER[id])]],
+          combos: [
+            combo(toolWindowShortcut(id) ?? ''),
+            ['Alt', String(WINDOW_NUMBER[id])],
+          ],
         })),
         row('shortcuts.hideWindow', ['Shift', 'Esc']),
         row('shortcuts.resizeWindow', ['Ctrl', 'Shift', '←↑→↓']),

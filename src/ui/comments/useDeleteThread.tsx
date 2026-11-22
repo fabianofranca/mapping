@@ -22,7 +22,7 @@ export interface DeleteThread {
 }
 
 export function useDeleteThread(): DeleteThread {
-  const { session } = useEditor();
+  const { session, ui } = useEditor();
   const [pending, setPending] = useState<Thread | null>(null);
   const [error, setError] = useState<string | null>(null);
   // A removal in flight: a second click in the same tick (the ref, not the state) is ignored.
@@ -36,6 +36,11 @@ export function useDeleteThread(): DeleteThread {
     try {
       const result = await session.threadActions.remove(thread.id);
       setError(result.ok ? null : actionErrorText(result.error));
+      // The window drops the conversation that was deleted (decision 6).
+      const shown = ui.conversation.peek();
+      if (result.ok && shown?.kind === 'thread' && shown.id === thread.id) {
+        ui.conversation.value = null;
+      }
       return result.ok;
     } finally {
       running.current = false;

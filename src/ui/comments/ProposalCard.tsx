@@ -31,7 +31,22 @@ function cardAction(row: ProposalRow): 'review' | 'view' | null {
   }
 }
 
-export function ProposalCard({ proposalId }: { readonly proposalId: string }) {
+/** The review state line: "Revised · N to check" (revised changes not yet checked), or nothing. */
+function revisedText(row: ProposalRow): string | null {
+  if (row.revised === 0) return null;
+  return row.revised === 1
+    ? t('thread.proposal.revisedOne')
+    : t('thread.proposal.revisedMany', { count: row.revised });
+}
+
+export function ProposalCard({
+  proposalId,
+  threadId,
+}: {
+  readonly proposalId: string;
+  /** The conversation the card is in: reviewing from it keeps that conversation in the window. */
+  readonly threadId?: string;
+}) {
   const editor = useEditor();
   const row = editor.review.derived.rows.value.find((r) => r.proposal.id === proposalId);
   if (!row) {
@@ -43,7 +58,9 @@ export function ProposalCard({ proposalId }: { readonly proposalId: string }) {
     );
   }
   const { title } = row.proposal;
-  const action = cardAction(row);
+  const underReview = editor.review.proposalId.value === proposalId;
+  const revised = revisedText(row);
+  const action = underReview ? null : cardAction(row);
   const label = action === null ? '' : t(`proposals.action.${action}`);
   return (
     <div
@@ -59,13 +76,19 @@ export function ProposalCard({ proposalId }: { readonly proposalId: string }) {
           {title}
         </b>
         <span class="muted proposal-card-state">{proposalStateText(row)}</span>
+        {underReview && (
+          <span class="proposal-card-review">
+            <b>{t('thread.proposal.inReview')}</b>
+            {revised !== null && <span>{revised}</span>}
+          </span>
+        )}
       </div>
       {action !== null && (
         <Button
           size="sm"
           variant={action === 'review' ? 'primary' : 'default'}
           aria-label={`${label}: ${title}`}
-          onClick={() => openReviewIn(editor, row.proposal.id)}
+          onClick={() => openReviewIn(editor, row.proposal.id, threadId)}
         >
           {label}
         </Button>

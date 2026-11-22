@@ -18,7 +18,10 @@ import {
   setCaret,
   typeIn,
 } from './composerHelpers';
+import { richScenario } from '../store/proposalHarness';
+import { useCiteActions } from '../../src/ui/CiteMenuItems';
 import { createHarness, type Harness } from './harness';
+import { openReviewHarness } from './review/reviewHarness';
 
 // The citation editor (Comments stage, CM5, decision 30): contenteditable with chips, the `@`
 // that opens the picker, Enter that breaks the line and Ctrl+Enter that submits, paste as plain text.
@@ -464,5 +467,101 @@ describe('CitationEditor › composer bridge', () => {
     expect(seen).toEqual([]);
     expect(editor.childNodes.length).toBe(0);
     caretAtEnd(editor);
+  });
+});
+
+describe('CitationEditor › in the proposal review (decision 15)', () => {
+  // M5 "Botão" only exists in the proposal (richScenario).
+  function CiteProbe() {
+    const cite = useCiteActions().cite({ kind: 'marking', id: 'M5' });
+    const existing = useCiteActions().cite({ kind: 'marking', id: 'M1' });
+    return (
+      <>
+        <button
+          type="button"
+          data-testid="only"
+          disabled={cite.disabled}
+          title={cite.title}
+        >
+          x
+        </button>
+        <button
+          type="button"
+          data-testid="existing"
+          disabled={existing.disabled}
+          title={existing.title}
+        >
+          y
+        </button>
+      </>
+    );
+  }
+
+  async function openReview() {
+    const { proposal } = richScenario();
+    const h = await openReviewHarness({ proposals: [proposal] });
+    expect(h.review.open('P1').ok).toBe(true);
+    render(
+      <EditorContext.Provider value={h.context}>
+        <Host seen={[]} />
+        <CiteProbe />
+      </EditorContext.Provider>,
+    );
+    return h;
+  }
+
+  it('the @ list has no item that only the proposal creates', async () => {
+    await openReview();
+    const editor = screen.getByRole('textbox', { name: LABEL });
+    typeIn(editor, '@');
+    const names = screen.getAllByRole('option').map((o) => o.textContent ?? '');
+    // pt-BR kept: shared fixture data asserted by tests/store (richScenario)
+    expect(names.some((n) => n.startsWith('Botão'))).toBe(false);
+    expect(names.length).toBeGreaterThan(0);
+  });
+
+  it('Cite in the conversation on such a target is disabled with the hint', async () => {
+    await openReview();
+    const only = screen.getByTestId('only') as HTMLButtonElement;
+    expect(only.disabled).toBe(true);
+    expect(only.title).toBe(t('cite.onlyInProposal'));
+    expect((screen.getByTestId('existing') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('proposals and conversations that exist stay citable (only preview-only items are disabled)', async () => {
+    function Probe() {
+      const actions = useCiteActions();
+      const targets = {
+        proposal: actions.cite({ kind: 'proposal', id: 'P1' }),
+        thread: actions.cite({ kind: 'thread', id: 'c1' }),
+        gone: actions.cite({ kind: 'thread', id: 'nope' }),
+        item: actions.cite({ kind: 'marking', id: 'M5' }),
+      };
+      return (
+        <>
+          {Object.entries(targets).map(([key, action]) => (
+            <button key={key} type="button" data-testid={key} disabled={action.disabled}>
+              x
+            </button>
+          ))}
+        </>
+      );
+    }
+    const { proposal } = richScenario();
+    const h = await openReviewHarness({ proposals: [proposal] });
+    await h.session.threads.create(sampleThread({ id: 'c1' }));
+    expect(h.review.open('P1').ok).toBe(true);
+    render(
+      <EditorContext.Provider value={h.context}>
+        <Host seen={[]} />
+        <Probe />
+      </EditorContext.Provider>,
+    );
+    const disabled = (id: string) =>
+      (screen.getByTestId(id) as HTMLButtonElement).disabled;
+    expect(disabled('proposal')).toBe(false);
+    expect(disabled('thread')).toBe(false);
+    expect(disabled('gone')).toBe(true);
+    expect(disabled('item')).toBe(true);
   });
 });
