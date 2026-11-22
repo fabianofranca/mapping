@@ -54,8 +54,6 @@ import {
   alignInCell,
   placeCells,
   trackCount,
-  trackOffset,
-  trackSize,
   parseTrackList,
   type Track,
 } from './gridLayout';

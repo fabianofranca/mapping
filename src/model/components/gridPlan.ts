@@ -4,6 +4,8 @@
  * `gridLayout.ts`; here, the measurement ones: the largest cell (`hug`) and the extent of each flow line.
  */
 import {
+  cellExtent,
+  spanExtent,
   trackOffset,
   trackOffsets,
   trackSize,
@@ -140,6 +142,8 @@ export function needsNaturals(
 export interface TrackGeometry {
   readonly offsetOf: (track: number) => number;
   readonly extentOf: (track: number) => number;
+  /** The extent of the `span` tracks that start at `track`, with the gaps between them. */
+  readonly spanOf: (track: number, span: number) => number;
   /** The tracks and the gaps. */
   readonly used: number;
 }
@@ -166,6 +170,7 @@ export function slotTrackGeometry(
     return {
       offsetOf: (track) => trackOffset(track, size, gap),
       extentOf: () => size,
+      spanOf: (_track, span) => spanExtent(size, span, gap),
       used: count * size + gap * (count - 1),
     };
   }
@@ -176,6 +181,7 @@ export function slotTrackGeometry(
   return {
     offsetOf: (track) => offsets[track] ?? 0,
     extentOf: (track) => sizes[track] ?? 0,
+    spanOf: (track, span) => cellExtent(sizes, track, span, gap),
     used: sizes.reduce((sum, size) => sum + size, 0) + gap * (sizes.length - 1),
   };
 }

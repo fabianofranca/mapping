@@ -144,25 +144,21 @@ import {
 } from './tokens';
 import {
   alignInCell,
-  cellExtent,
   parseTrackList,
   placeCells,
   spanExtent,
   trackCount,
   trackOffset,
-  trackOffsets,
   trackSize,
-  trackSizes,
   type GridCell,
   type Track,
 } from './gridLayout';
 import {
   TRACK_KEYS,
-  hugTrackSizes,
   lineExtents,
-  listHugExtent,
   maxCellOf,
   needsNaturals,
+  slotTrackGeometry,
   isTrackAbsent,
   numericValue,
   validTrack,
@@ -2687,14 +2683,12 @@ function createEngine(
     const naturals = needsNaturals(list, known)
       ? kids.map((_, i) => gridKidSize(space, i, axis, null, others))
       : [];
-    const hugs = hugTrackSizes(list, cells, naturals);
-    const content = known ?? listHugExtent(list, cells, naturals, hugs, layout.gap);
-    const tracks = trackSizes(list, content, layout.gap, hugs);
-    const total = space.known[axis] ?? content + padAxis(layout, axis);
-    const extents = cells.map((cell) =>
-      cellExtent(tracks, cell.track, cell.span, layout.gap),
-    );
-    const starts = trackOffsets(tracks, layout.gap);
+    const geometry = slotTrackGeometry(list, cells, naturals, known, {
+      count: list.length,
+      gap: layout.gap,
+    });
+    const total = space.known[axis] ?? geometry.used + padAxis(layout, axis);
+    const extents = cells.map((cell) => geometry.spanOf(cell.track, cell.span));
     const sizes = kids.map((_, i) =>
       gridKidSize(space, i, axis, extents[i] ?? 0, others),
     );
@@ -2709,21 +2703,19 @@ function createEngine(
       offsets: sizes.map(
         (size, i) =>
           start +
-          (starts[cells[i]?.track ?? 0] ?? 0) +
+          geometry.offsetOf(cells[i]?.track ?? 0) +
           alignInCell(align, extents[i] ?? 0, size).pos,
       ),
     };
   };
 
   /** The tracks' axis: equal tracks, cells of `span` tracks, the child aligned within the cell. */
-  const solveTracks = (
+  const solveEqualTracks = (
     space: GridSpace,
     axis: Axis,
     others: readonly number[] | null,
   ): GridAxis => {
     const { layout, kids, cells, count } = space;
-    if (layout.grid?.list !== undefined)
-      return solveTrackList(space, axis, others, layout.grid.list);
     const known = gridContent(space, axis);
     const track =
       known === null
@@ -2760,6 +2752,18 @@ function createEngine(
           alignInCell(align, extents[i] ?? 0, size).pos,
       ),
     };
+  };
+
+  /** The tracks' axis: a track list (v4) or equal tracks. */
+  const solveTracks = (
+    space: GridSpace,
+    axis: Axis,
+    others: readonly number[] | null,
+  ): GridAxis => {
+    const list = space.layout.grid?.list;
+    return list === undefined
+      ? solveEqualTracks(space, axis, others)
+      : solveTrackList(space, axis, others, list);
   };
 
   /** The flow lines' axis: each with the extent of its largest child, stacked with the `lineGap`. */
