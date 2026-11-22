@@ -44,11 +44,16 @@ import {
   type MarkingComponent,
 } from './componentCatalog';
 import { drawingValues } from './componentValues';
+import {
+  withContainer,
+  sameContainer,
+  type InstanceContainer,
+} from './components/container';
 import type { ModelMessage } from './modelMessage';
 import { DEFAULT_LABEL_TEXTS } from './refs';
 import { effectiveDensity, unitSpaceOf, type UnitSpace } from './density';
 import { effectiveDirection } from './direction';
-import { effectiveDrawingMode, instanceAnchorOf } from './drawingMode';
+import { effectiveDrawingMode, instanceAnchorOf, readContainerOf } from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
 import {
@@ -234,6 +239,11 @@ interface Entry {
   readonly density: number;
   /** Effective reading direction of the marking (`ltr` by default): `rtl` mirrors the drawing. */
   readonly direction: ReadingDirection;
+  /**
+   * The container's size and classes (`$container.*`, decision 17 of #1901): only for a component that reads
+   * them, so a change in the container never redraws the others.
+   */
+  readonly container: InstanceContainer | undefined;
   /**
    * The marking's anchor (side and target rectangle); `undefined` without an anchor (decision
    * 15).
@@ -611,8 +621,8 @@ function instanceAnchor(
 }
 
 /**
- * The `instantiate` options of a marking: only carries `tokens`, `provided`, `direction` and
- * `anchor` when present.
+ * The `instantiate` options of a marking: only carries `tokens`, `provided`, `direction`,
+ * `anchor` and `container` when present.
  */
 function instantiateOptions(
   markingId: string,
@@ -621,6 +631,7 @@ function instantiateOptions(
   provided: ProvidedValues,
   direction: ReadingDirection,
   anchor: InstantiateOptions['anchor'],
+  container: InstanceContainer | undefined,
 ): InstantiateOptions {
   return {
     measure,
@@ -629,6 +640,7 @@ function instantiateOptions(
     ...(provided === NO_PROVIDED ? {} : { provided }),
     ...(direction === 'rtl' ? { direction } : {}),
     ...(anchor === undefined ? {} : { anchor }),
+    ...(container === undefined ? {} : { container }),
   };
 }
 
@@ -867,6 +879,7 @@ interface DrawInput {
   readonly received: Received;
   readonly density: number;
   readonly direction: ReadingDirection;
+  readonly container: InstanceContainer | undefined;
   readonly anchor: DrawingAnchor | undefined;
 }
 
@@ -891,10 +904,19 @@ function instantiateWithSlots(
   // children's space.
   if (screen || componentSlots(mc.component).length === 0)
     return { instantiated: probe, plan: undefined };
-  const plan = planSlots(mc, values, tokens, kids, input.slotDefs, space, probe.root, {
-    target,
-    options,
-  });
+  const plan = planSlots(
+    mc,
+    withContainer(values, input.container),
+    tokens,
+    kids,
+    input.slotDefs,
+    space,
+    probe.root,
+    {
+      target,
+      options,
+    },
+  );
   if (!plan.needsFinal) return { instantiated: probe, plan };
   const instantiated = instantiate(mc.component, values, target, {
     ...options,
@@ -935,7 +957,7 @@ function slotFacts(
 
 function draw(input: DrawInput): Drawn {
   const { mc, markingId, containerId, rect, valueWarnings, received } = input;
-  const { measure, mode, provided, density, direction, anchor } = input;
+  const { measure, mode, provided, density, direction, anchor, container } = input;
   const tokens =
     mode === undefined ? undefined : mc.component.resolvedTokensByMode?.[mode];
   const screen = mc.component.screen;
@@ -953,6 +975,7 @@ function draw(input: DrawInput): Drawn {
       provided,
       direction,
       instanceAnchor(anchor, rect, mc.component, space.density),
+      container,
     ),
   );
   const { messages, provides } = instantiated;
@@ -1114,6 +1137,7 @@ export function createDrawingCache(): DrawingCache {
       const density = effectiveDensity(p, marking.containerId);
       const direction = effectiveDirection(p, marking.containerId);
       const anchor = anchorOfMarking(marking, markingsById);
+      const container = readContainerOf(p, mc.component, marking.containerId);
       const before = entries.get(marking.id);
       if (
         before !== undefined &&
@@ -1127,6 +1151,7 @@ export function createDrawingCache(): DrawingCache {
         before.mode === mode &&
         before.density === density &&
         before.direction === direction &&
+        sameContainer(before.container, container) &&
         sameAnchor(before.anchor, anchor) &&
         shallowEqual(before.values, values) &&
         before.valueWarnings.length === valueWarnings.length &&
@@ -1171,6 +1196,7 @@ export function createDrawingCache(): DrawingCache {
         received,
         density,
         direction,
+        container,
         anchor,
       });
       const stableClips = stableSlotClips(before?.slotClips, slotClips);
@@ -1197,6 +1223,7 @@ export function createDrawingCache(): DrawingCache {
         mode,
         density,
         direction,
+        container,
         anchor,
         kids,
         slotDefs,

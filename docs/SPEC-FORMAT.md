@@ -1,6 +1,6 @@
-# Specialization format (`formatVersion` 1 to 20)
+# Specialization format (`formatVersion` 1 to 21)
 
-The format of the file that defines layers and annotation types (and, in `formatVersion` 2, the code platforms and the instantiation code of the types; in 3, the external sources; in 4, the **library**: components, documents, examples, fonts, executable origins and the version contract; in 5, the repository of each platform; in 6, the ready-made container sizes; in 7, the floating type; in 8, the text suggestions; in 9, the code variants; in 10, the notices; in 11, the children by layer and group, the link roles and the document in an external repository; in 12, the role migration steps; in 13, the children of the layer itself; in 14, the whole annotation as the target of a `ref`; in 15, the design tokens; in 16, the signatures and the field models; in 17, the named slots; in 18, the accessibility; in 19, the `copy-field` migration step; in 20, the file formats). The "Help → Specializations" page of the app is a condensed version of this document (a test guarantees that the section titles and the code blocks match).
+The format of the file that defines layers and annotation types (and, in `formatVersion` 2, the code platforms and the instantiation code of the types; in 3, the external sources; in 4, the **library**: components, documents, examples, fonts, executable origins and the version contract; in 5, the repository of each platform; in 6, the ready-made container sizes; in 7, the floating type; in 8, the text suggestions; in 9, the code variants; in 10, the notices; in 11, the children by layer and group, the link roles and the document in an external repository; in 12, the role migration steps; in 13, the children of the layer itself; in 14, the whole annotation as the target of a `ref`; in 15, the design tokens; in 16, the signatures and the field models; in 17, the named slots; in 18, the accessibility; in 19, the `copy-field` migration step; in 20, the file formats; in 21, the container classes). The "Help → Specializations" page of the app is a condensed version of this document (a test guarantees that the section titles and the code blocks match).
 
 ## What a specialization is
 
@@ -19,7 +19,8 @@ A **specialization** is a JSON file that defines **mandatory layers** and the **
 - `formatVersion` 18 is 17 plus the **accessibility** (`accessibility`): at the root, the minimum touch target in component units; on a type, the accessibility `role`, the `label` (which fields give the accessible name), the `touchTarget` and the `parts` (icons and table items that come by field). The audit that reads them gives the pending item `accessible-label-missing` and the warning `touch-target-small` (see "Accessibility (`accessibility`)"). The keys are outside the version contract; before 18 they are the usual error `only allowed with formatVersion 18`.
 - `formatVersion` 19 is 18 plus the **`copy-field` migration step**, in `migrations`: it copies the value of a field (or of a `table` column) into another one on the annotations that match a condition, so a library update can **split** one field into two without losing the values (see "Version contract"). Version 19 is additive: versions 1 to 18 are still accepted unchanged, and a `copy-field` step in an earlier version is the error `only allowed with formatVersion 19`, at the path `migrations[i].steps[j].op`. Only a specialization that declares the step moves up to 19.
 - `formatVersion` 20 is 19 plus the **file formats** (`fileFormats`): at the root, a list of the file formats that the specialization knows how to read and write (`yaml`, `csv`, an OpenAPI document…), each one handled by a **plugin**, a `.js` file of the package (see "File formats (`formatVersion` 20)"). It makes the specialization a package. The key is outside the version contract; before 20 it is the usual error `only allowed with formatVersion 20`, at `fileFormats`. Version 20 is additive: versions 1 to 19 are still accepted unchanged, and `origins` stays as it was. Only a specialization that declares `fileFormats` moves up to 20.
-- `formatVersion` 2 is 1 plus the instantiation code (platforms and `code`: how to create an instance of each type). Import accepts versions 1 to 20; a v1 specialization is a v2 without platforms and without `code` (see "Platforms and code").
+- `formatVersion` 21 is 20 plus the **container classes**: `containerClasses` at the root (named sets of classes, **computed** from the container's size or **chosen** per container), `classes` on a ready-made size of `containers` (the choice the size carries) and `appliesIn` on the type (the classes the type is meant for); see "Container classes (`formatVersion` 21)" in the section "Containers (ready-made sizes)" and "What the type applies to". The keys are outside the version contract; before 21 each one is the usual error `only allowed with formatVersion 21`, at its own path. Version 21 also brings `accessibility.variants` on the type (the role and the label of an `enum` field's option; see "Role and label per case" in "Accessibility (`accessibility`)"), outside the version contract like the other keys, with the same error `only allowed with formatVersion 21` at `…accessibility.variants`. Version 21 is additive: versions 1 to 20 are still accepted unchanged. Only a specialization that declares one of these keys moves up to 21.
+- `formatVersion` 2 is 1 plus the instantiation code (platforms and `code`: how to create an instance of each type). Import accepts versions 1 to 21; a v1 specialization is a v2 without platforms and without `code` (see "Platforms and code").
 - `formatVersion` 3 is 2 plus `sources`: which elements of an external system each type corresponds to and which source property each field comes from (see "Sources (sources)").
 - `formatVersion` 4 is 3 plus the **library**: the type points to a component (`component`), a document (`doc`) and examples (`examples`); the root gains `fonts`, `origins` and `migrations`; the `sources` gain `path`, `slot` and `ignore` (see "Sources (sources)", "Library: the package", "Version contract" and "Library validation"). Versions 1, 2 and 3 are still accepted unchanged: each v4 key in an earlier version is the error `only allowed with formatVersion 4`, at the exact path.
 - `formatVersion` 5 is 4 plus `repo` on the platforms: the library's repository on each platform (`url`, `urlTemplate`, `ref`), which provides the link and the revision of the file of each `symbol` (see "Platforms and code"). Versions 1 to 4 are still accepted unchanged: `repo` in an earlier version is the error `only allowed with formatVersion 5`, at the exact path.
@@ -35,7 +36,7 @@ Supporting files:
 - `docs/spec.schema.json`: JSON Schema (draft 2020-12). It validates only the **structure**; the rules between elements (unique ids, `allowedChildren` with the clauses and the `groups`, `requiresOwner`, `childRoles`, the `repo` of `docRepos`, `labelField`, `rowLabel`, compatible `default`, declared platforms, keys of `params` and `values`, `sources` only from version 3, `values` of the origins only on `enum` and with targets in the `options`, `path` and `slot` only on a system declared in `origins`, `ignore` on a system declared in `origins` or next to `signature` (v16), `examples` in one mode only, the `migrations` steps consistent with the types and fields) are only checked by the app's validator (`src/model/spec.ts`, which is the source of truth).
 - `docs/component.schema.json`: JSON Schema of the component file (`docs/COMPONENT-FORMAT.md`).
 - `examples/specs/sdui.json` (`formatVersion` 12) and `examples/specs/data-model.json` (`formatVersion` 1): complete examples.
-- `examples/libraries/sdui-backend/`: the **executable origin** example (v20, 6 types; the `version` stays 3, `fileFormats` is outside the version contract): the `sdui` file format (`plugins/sdui.js`, scope `container`, with the round-trip example `examples/home.sdui.json`) next to `origins`, which stays unchanged; `origins` with `booleans`, `background.values` and roots with `anchor`, `margin` and `scrim`; type `sources` (`slot`, `ignore`, `id`) and field and column `sources` (`path`, `values`); examples of the external system (`examples[].system` and `file`) and the example screen; and `migrations` with the six steps. It is the example of `origins`, `sources` and `migrations`, and of a file format with components (see "File formats (`formatVersion` 20)").
+- `examples/libraries/sdui-backend/`: the **executable origin** example (v21, 6 types; the `version` is 4, `fileFormats`, `containerClasses` and `appliesIn` are outside the version contract): the `sdui` file format (`plugins/sdui.js`, scope `container`, with the round-trip example `examples/home.sdui.json`) next to `origins`, which stays unchanged; `origins` with `booleans`, `background.values` and roots with `anchor`, `margin` and `scrim`; type `sources` (`slot`, `ignore`, `id`) and field and column `sources` (`path`, `values`); examples of the external system (`examples[].system` and `file`) and the example screen; and `migrations` with the six steps. It is the example of `origins`, `sources` and `migrations`, and of a file format with components (see "File formats (`formatVersion` 20)"). It also declares the two container class sets of "Container classes (`formatVersion` 21)": `platform` (chosen: `android`, `ios`, `web`) and `window` (by `width`: `compact` below 600, `medium` below 840, `expanded`); the Phone size chooses `android` and the new Web desktop size (1440 × 900) chooses `web`; `sdui-sheet` is meant for `android` and `ios` and `sdui-fab` for the `compact` and `medium` windows.
 - `examples/libraries/data-model/`: the **file formats** example (v20, no components): the `class` and `endpoint` types and two `fileFormats` with a `generate` and `parse` plugin each, an OpenAPI 3.0.3 YAML and a CSV of the attributes (see "File formats (`formatVersion` 20)").
 - `examples/libraries/sdui-backend/`: a small library package with the executable origin (`origins`, `sources` and `migrations`, with the example screen of a fictional external system; see "Library: the package"). What each example shows is in `examples/README.md`.
 - `libraries/material3-compose/`: **ready-to-use** library (v18, not embedded: applied from the folder or the zip) of Material 3 for Jetpack Compose, with the composable of each type in `code` and `variants` where the variant switches the symbol; pinned to `compose.material3` 1.4.0.
@@ -400,7 +401,7 @@ Up to v10, a type's `doc` is an `.md` file **inside the package**. When the comp
 - `path` follows the rules of `code`'s `path`: relative to the repository root, `/` as the separator, no `.`, `..` or leading `/`. In addition it ends in **`.md`** and **has no `#`** (the anchor inside the document is not part of the file path).
 - **The package does not carry the document.** The `doc` object does not count as a cited package file: a specialization whose only cited files are external documents is valid as a **standalone file** (see "Library: the package"), and level 1 of package validation does not check the external document (the app does not download it; whoever reads it reaches it through the repository).
 - **Outside the version contract:** adding, changing or removing `docRepos`, and switching the `doc` between text and object, is compatible and never requires a migration (see "Version contract"); `diffSpecs` produces no difference.
-- **Warning** (`specWarnings`; it does not block): a `docRepos` repository that no `doc` uses.
+- **Warning** (`specWarnings`; it does not block): a `docRepos` repository that no `doc` uses, neither a type's nor a library document's (see "Library documents (`formatVersion` 21)").
 - Only from `formatVersion` 11 (in an earlier version the error is `only allowed with formatVersion 11`, at the path `docRepos` or `layers[0].annotationTypes[0].doc`, the latter when the `doc` is an object).
 
 ## References and tags
@@ -558,7 +559,7 @@ On some platforms the variant of a component changes **what is called**, not a p
 **How the case combines with the base** (the `code` entry without `variants`):
 
 - The case's `symbol`, `path` and `notes` **replace** those of the base (only the ones the case declares; the rest comes from the base).
-- The case's `params` and `values` **add to** those of the base, key by key: the case adds or replaces the entry for that key (in `values`, the case's translation for a field replaces the base's for that field). The exception is a case with its own `signature` (formatVersion 16): the base `params` that its sheet lacks (a parameter it does not have, a factory argument it does not expand or a position beyond its parameters) are **not inherited**, so the generated code never passes a parameter the case's composable does not take (see "`variants`: what the case replaces and what it adds"). The case's own `params` always stay.
+- The case's `params`, `values` and `slots` **add to** those of the base, key by key: the case adds or replaces the entry for that key (in `values`, the case's translation for a field replaces the base's for that field). The exception is a case with its own `signature` (formatVersion 16): the base `params` that its sheet lacks (a parameter it does not have, a factory argument it does not expand or a position beyond its parameters) and the base `slots` whose parameter its sheet lacks with `role: slot` are **not inherited**, so the generated code never passes a parameter the case's composable does not take (see "`variants`: what the case replaces and what it adds"). The case's own `params` and `slots` always stay.
 - When the annotation has a value in the field, that value chooses the case. Without a value, the field's `default` applies; without `default`, the base. A value without a case also uses the base.
 - **One level only.** One field chooses the variant and the case has no `variants`. Two dimensions (for example, style and size) become an `enum` that joins them (`filled-large`) or two types, like the FAB and the Extended FAB in Compose.
 - The resolved result never carries `variants`: the MCP server (`get_code_hints`, `get_marking`, `get_annotation`, `find_by_code`) and the Details' "Definition" show the code **already resolved** for the annotation's variant; `get_specialization`, `get_component` and the Catalog show the raw JSON (the Catalog also lists the variant → symbol table). The usage detail is in [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
@@ -631,7 +632,7 @@ Before 16 the value is opaque text (parameter name, JSON field name…) and noth
 
 In a `variants` case, `signature` and `ignore` **replace** those of the base (the case points to the sheet of the other symbol, such as `OutlinedButton`). `params`, `values`, `calls` and `formats` **add up**, key by key, and the case's `calls` replaces the base's for the same parameter. The `unmapped` and the `code` that the MCP returns already come out resolved by the case.
 
-**A case with its own readable sheet does not inherit what that sheet lacks.** The base's `params` entries that the case does not redeclare and that its sheet lacks (the test is the one of the `parameter outside the signature` warning: a name, a factory argument that the sheet's factory or the `fieldModels` expansion does not have, a positional beyond the sheet) are left out of the resolved `code`: `get_code_hints` writes no argument for them and `code.params` has no entry for them. The field's value stays in the annotation's `values`. In Material 3, `top-app-bar` with `style = center` and `subtitle` filled resolves to `CenterAlignedTopAppBar` without `subtitle`, which that composable does not take; the `small` one keeps it. The case's own `params` are not left out, even if its sheet lacks them (the warning below). A case without its own sheet, or whose sheet cannot be read, keeps today's behavior: it uses the base's sheet, and the base's `params` were already checked against it. Only `params` is affected: `calls`, `formats` and `values` stay, because without the parameter they produce nothing.
+**A case with its own readable sheet does not inherit what that sheet lacks.** The base's `params` entries that the case does not redeclare and that its sheet lacks (the test is the one of the `parameter outside the signature` warning: a name, a factory argument that the sheet's factory or the `fieldModels` expansion does not have, a positional beyond the sheet) are left out of the resolved `code`: `get_code_hints` writes no argument for them and `code.params` has no entry for them. The field's value stays in the annotation's `values`. In Material 3, `top-app-bar` with `style = center` and `subtitle` filled resolves to `CenterAlignedTopAppBar` without `subtitle`, which that composable does not take; the `small` one keeps it. The case's own `params` are not left out, even if its sheet lacks them (the warning below). A case without its own sheet, or whose sheet cannot be read, keeps today's behavior: it uses the base's sheet, and the base's `params` were already checked against it. The base's `slots` entries the case does not redeclare follow the same rule: one whose parameter the sheet lacks with `role: slot` (compared by `name` and by the call name, the test of the slot warning) is left out, and `get_code_hints` names that slot's argument by the slot's `id`, the documented fallback; the case's own `slots` always stay. Only `params` and `slots` are affected: `calls`, `formats` and `values` stay, because without the parameter they produce nothing.
 
 ### Example
 
@@ -770,14 +771,14 @@ A component can have several `slot` nodes, each with its own `id` (`docs/COMPONE
 }
 ```
 
-| Key       | Where                            | Description                                                                                                                                                                                                                     |
-| --------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `slots`   | type                             | List of `{ id, name?, description?, accepts?, max? }`, one entry per slot of the component, unique `id`. A slot that is not listed accepts every type and has no `max`.                                                         |
-| `id`      | `slots` entry (required)         | The `id` of a `slot` node of the component: `[a-z][a-zA-Z0-9_-]*`. The only slot of a component that has no `id` cannot be declared.                                                                                            |
-| `name`    | `slots` entry                    | Name shown for the slot; without it, the slot's literal `label` and then its `id`.                                                                                                                                              |
-| `accepts` | `slots` entry                    | Type ids and `{ layer, groups? }` clauses, resolved like `allowedChildren` (an id of the own layer is allowed; a clause covers the types of the layer, or of its groups). Not empty; without the key the slot accepts any type. |
-| `max`     | `slots` entry                    | How many children the slot holds: an integer ≥ 1; without the key, no limit.                                                                                                                                                    |
-| `slots`   | `code` entry and `variants` case | Slot id → name of the parameter (or lambda) that receives the slot's children. Without an entry the parameter is the slot's `id`. The case's entries are added to the base's, key by key. Outside the version contract.         |
+| Key       | Where                            | Description                                                                                                                                                                                                                                                                                                                                 |
+| --------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `slots`   | type                             | List of `{ id, name?, description?, accepts?, max? }`, one entry per slot of the component, unique `id`. A slot that is not listed accepts every type and has no `max`.                                                                                                                                                                     |
+| `id`      | `slots` entry (required)         | The `id` of a `slot` node of the component: `[a-z][a-zA-Z0-9_-]*`. The only slot of a component that has no `id` cannot be declared.                                                                                                                                                                                                        |
+| `name`    | `slots` entry                    | Name shown for the slot; without it, the slot's literal `label` and then its `id`.                                                                                                                                                                                                                                                          |
+| `accepts` | `slots` entry                    | Type ids and `{ layer, groups? }` clauses, resolved like `allowedChildren` (an id of the own layer is allowed; a clause covers the types of the layer, or of its groups). Not empty; without the key the slot accepts any type.                                                                                                             |
+| `max`     | `slots` entry                    | How many children the slot holds: an integer ≥ 1; without the key, no limit.                                                                                                                                                                                                                                                                |
+| `slots`   | `code` entry and `variants` case | Slot id → name of the parameter (or lambda) that receives the slot's children. Without an entry the parameter is the slot's `id`. The case's entries are added to the base's, key by key; in a case with its own readable `signature`, the base's entries whose parameter that sheet lacks are not inherited. Outside the version contract. |
 
 **What the declaration does.** A child marking is in the slot its rectangle falls in (the geometry decides; nothing is written to the project). The type of the child only chooses among the slots that the geometry already gives: the slot that accepts the type explicitly comes first, then the ones without `accepts`. `max` makes a slot full: a new child created without geometry goes to the next slot that accepts it. `get_code_hints` puts each child inside the right parameter (see [`MCP.md`](MCP.md)).
 
@@ -786,7 +787,7 @@ A component can have several `slot` nodes, each with its own `id` (`docs/COMPONE
 - `slots` and `code.<platform>.slots` only from `formatVersion` 17 (before that, `only allowed with formatVersion 17`, at the exact path of the key);
 - `id` follows the pattern above and is unique in the type; `accepts` is not empty and its items are existing type ids or clauses with an existing layer and groups (the `allowedChildren` errors); `max` is an integer ≥ 1;
 - in the package (`validate_library`): each `id` of `slots` and each key of `code.<platform>.slots` (and of the `variants` cases) must be a slot of the type's component, otherwise the error `slot does not exist in the component: <id>` at the `id` or at the key; a component whose slots have no `id` gives `slots: the component has no slot with an id`; a type without a `component` is not checked;
-- with a `signature` sheet, each parameter in `code.<platform>.slots` must exist in the sheet with `role: slot`, otherwise the warning `parameter outside the signature` at the key.
+- with a `signature` sheet, each parameter in `code.<platform>.slots` must exist in the sheet with `role: slot`, otherwise the warning `parameter outside the signature` at the key. In a `variants` case with its own `signature`, only the case's own `slots` are checked against its sheet: the base entries the sheet lacks are not inherited, so they do not warn.
 
 **Importing the signature.** The importer (`plan_signature_import`) links each `role: slot` parameter to the slot of the same normalized name (lowercase, letters and digits only: `navigation_icon` matches `navigationIcon`) when the type has a component with named slots, and in a `formatVersion` 17 specialization. It writes the `code.slots` entry **only when the name in the call differs from the slot's `id`**, never overwrites an entry that already exists, takes the linked parameter out of the `unmapped`, and returns the links in `slotLinks` (`via: "name"` or `"slots"`). Importing the same sheet twice gives the same specialization.
 
@@ -849,7 +850,7 @@ From `formatVersion` 18 the specialization says, per type, **what a person using
 **Keys.**
 
 - **At the root:** `accessibility: { touchTarget? }`, the default touch target of every type that has an interactive `role` and does not declare its own.
-- **On the type:** `accessibility: { role?, label?, touchTarget?, parts? }`. Every key is optional.
+- **On the type:** `accessibility: { role?, label?, touchTarget?, parts?, variants? }`. Every key is optional. `variants` is from `formatVersion` 21 (see "Role and label per case").
 - `accessibility` is **outside the version contract**: adding, changing or removing it never produces a difference or a migration step. Without `accessibility` in the specialization the audit is empty.
 
 ### `role`
@@ -914,6 +915,55 @@ Example minimums, which live **only in the documentation and in the skill**, nev
 
 **Density.** The minimum is in units and the rectangle is in image pixels, so the audit converts: minimum in pixels = `ceil(width × density)` by `ceil(height × density)`, where `density` is the container's effective density (`add_container` and `update_container` set it; a marking inside another container uses that container's). A 108 × 120 px button in a 3x container is 36 × 40 units; against 44 × 44 the minimum is 132 × 132 px. The audit tolerates **1 px per axis**, like the slot tolerance. A marking whose owner is an **arrow** has no rectangle: only its label is audited, never its touch target.
 
+### Role and label per case (`variants`)
+
+Some components change their **role** or their **accessible name** with an `enum` field: a chip is a `button` when it is an assist chip and a `checkbox` when it is a filter or an input chip; a segmented control is a `radio` group with a single choice and `checkbox` items with several. `variants` is the same mechanism as `code.variants` ("Code variants (`variants`)"), applied to `accessibility`. From `formatVersion` 21, `accessibility: { …, variants: { field, cases } }`:
+
+- `field`: the `key` of an `enum` field of the type, at the top level (a `table` column does not count).
+- `cases`: an object of field value (one of its `options`) → case, with at least one case. A case has `role`, `label` or both; an empty case is an error.
+
+```json
+{
+  "id": "chip",
+  "name": "Chip",
+  "fields": [
+    { "key": "label", "name": "Label", "type": "string" },
+    {
+      "key": "kind",
+      "name": "Kind",
+      "type": "enum",
+      "options": ["assist", "filter", "input"],
+      "default": "assist"
+    }
+  ],
+  "accessibility": {
+    "role": "button",
+    "label": { "fields": ["label"] },
+    "touchTarget": { "width": 48, "height": 48, "mode": "expanded" },
+    "variants": {
+      "field": "kind",
+      "cases": {
+        "filter": { "role": "checkbox" },
+        "input": { "role": "checkbox" }
+      }
+    }
+  }
+}
+```
+
+**Resolution, per marking.**
+
+- The annotation's value of `field` chooses the case; with no value, the field's `default`; with neither, or with a value that has no case, the **base** (the `accessibility` entry without `variants`) applies.
+- The case **replaces** `role` and/or `label` (the whole `label`, never field by field); what the case does not declare stays from the base. In the example, an `assist` chip is a `button` and a `filter` chip is a `checkbox`, both named by `label`.
+- `label.required` defaults by the **resolved** role: required for an interactive role, optional otherwise. A `filter` chip with no label is therefore pending as a `checkbox` with a required label (`accessible-label-missing`), the same as a `button`.
+- `touchTarget` and `parts` **stay from the base**: a case cannot declare them. The touch target is audited only when the **resolved** role is interactive.
+- The audit, the Incomplete count, the Details, `get_code_hints` (its `accessibility.role` and `label`) and the `audit` and `issues` of the MCP reads follow the case. `get_component`, and the type in `get_marking` and `get_annotation`, carry `accessibility.variants` with **each case resolved**: the effective role, the label with `required` filled and the `touchTarget` when the role is interactive.
+- **One level only**, as in `code.variants`: two dimensions become an `enum` that joins them.
+- Warning `label-without-role` also applies to a case whose resolved role is absent or `none` and that declares a `label`, at `…accessibility.variants.cases.<option>.label`.
+- Outside the version contract: adding, changing or removing `variants` produces no `diffSpecs` difference and needs no migration; the `version` does not rise.
+
+**Validation rules** (errors at `…accessibility.variants`): `only allowed with formatVersion 21` before 21; `"x" is not a field of the type` and `"x" must be an enum field of the type` at `field`; `declare at least one case` when `cases` is empty; `"v" is not in the options of "field"` at the case; `empty case: declare role or label`; `role "x" is invalid; use …` for a role off the list; a `label` field that is not a field of the type or not `string` or `enum`; any other key in `variants` or in a case, `touchTarget` and `parts` included, is `unknown key: <key>`.
+
 ### The audit
 
 The audit is a pure function of the project and the specialization (`accessibilityAudit`, `src/model/accessibility.ts`) and gives two different things:
@@ -950,6 +1000,54 @@ At the root, optional; list of objects with:
 - `background`: optional; `#RRGGBB` color. Without it, the container is born white (`#FFFFFF`).
 
 Version 5 is still accepted: a specialization without `containers` only appears in the list with **Custom** and **Selection size**. The list is outside the version contract (adding, changing or removing sizes is never breaking and never requires a migration).
+
+### Container classes (`formatVersion` 21)
+
+`formatVersion` 21 adds **container classes**: named **sets** of classes that the library declares at the root with `containerClasses`, and that a type can be restricted to with `appliesIn` (see "What the type applies to"). The library names the sets and the classes (a window size class, a platform, a form factor): the format knows no breakpoint and no platform.
+
+- A set with `by` (`"width"` or `"height"`) is **computed** from the container's size in **units**: its size in pixels divided by its density (`density` of the container). Every class but the last has `below` (a number above 0, in units, strictly increasing along the list), and the class is the first whose `below` is greater than that number, otherwise the last. A container 1080 px wide at density 3 is 360 units wide: `compact`, with `below: 600`. A container exactly on a `below` falls in the next class. The class is never stored.
+- A set without `by` is **chosen** per container (a platform, for example), and a ready-made size can carry the choice with `classes`.
+
+```json
+{
+  "formatVersion": 21,
+  "containerClasses": [
+    {
+      "id": "platform",
+      "name": "Platform",
+      "classes": [
+        { "id": "android", "name": "Android" },
+        { "id": "ios", "name": "iOS" },
+        { "id": "web", "name": "Web" }
+      ]
+    },
+    {
+      "id": "window",
+      "name": "Window",
+      "by": "width",
+      "classes": [
+        { "id": "compact", "name": "Compact", "below": 600 },
+        { "id": "medium", "name": "Medium", "below": 840 },
+        { "id": "expanded", "name": "Expanded" }
+      ]
+    }
+  ],
+  "containers": [
+    {
+      "id": "phone",
+      "name": "Phone",
+      "width": 412,
+      "height": 917,
+      "classes": { "platform": "android" }
+    }
+  ]
+}
+```
+
+- `containerClasses`: at the root, optional, `formatVersion` 21 only. A list of sets `{ id, name, by?, classes }`. `id` is in the format `[a-z0-9-]+` and unique in the specialization; `width` and `height` are reserved (error `reserved name: width and height are read by $container.width and $container.height`, at `containerClasses[i].id`); `name` is non-empty text. `by` is `"width"` or `"height"`. `classes` is a non-empty list of `{ id, name, below? }`, with `id` in the format `[a-z0-9-]+` and unique in the set and `name` non-empty. In a computed set every class but the last has `below`; the errors sit at the class (`containerClasses[i].classes[j]`): `below is required in every class but the last`, `the last class has no below`, `below must increase along the list`. In a chosen set `below` is the error `below only in a set with by`, at `…classes[j].below`. Any other key is `unknown key: <key>`.
+- `classes` on a ready-made size: optional, `formatVersion` 21 only. The choice the size carries, `{ "<set>": "<class>" }`, only for **chosen** sets of the same specialization. Errors at `containers[i].classes.<set>`: `the set "x" does not exist`, `the set "x" is computed by width: it is not chosen` (or `height`), `"c" is not a class of "x"`. The **New container** dialog creates the container with that choice; `add_container` does not read ready-made sizes (the agent passes `classes` itself).
+- A set is read by the types and the components **of its own specialization**: the set of another specialization has its own thresholds and classes.
+- `containerClasses`, `classes` on a ready-made size and `appliesIn` are outside the version contract (they produce no `diffSpecs` difference and need no migration). Through the model API, `computedClassOf(set, units)` gives the class of a computed set for a size in units.
 
 ## Floating type
 
@@ -999,6 +1097,22 @@ Use `floating` only for what is a comment or loose annotation that does not belo
 
 - `appliesTo`: list of `"marking"` and/or `"arrow"`, optional; non-empty and duplicate-free. Only from `formatVersion` 7 (in an earlier version the error is `only allowed with formatVersion 7`, at the path `layers[0].annotationTypes[0].appliesTo`).
 - Through the model API, `typeAppliesTo(type, 'marking' | 'arrow')` answers whether the type applies to the item.
+
+### Container classes a type is meant for (`appliesIn`, `formatVersion` 21)
+
+`formatVersion` 21 restricts a type to **container classes** with `appliesIn` on the type (see "Container classes (`formatVersion` 21)"): the classes the type is meant for, so that a bottom sheet is not placed in a web window or a floating button in an expanded one. A marking whose container has a class in a listed set must have one of the listed classes (**any of the listed ones inside a set, all the sets together**). A marking with no class in that set (a marking on the canvas, a floating one, or one in a container with no choice in a chosen set) is not checked, and neither is an annotation on an arrow. A marking outside the listed classes is flagged as a pending item.
+
+```json
+{
+  "id": "sheet",
+  "name": "Sheet",
+  "appliesIn": { "platform": ["android", "ios"] },
+  "fields": [{ "key": "title", "label": "Title", "type": "string" }]
+}
+```
+
+- `appliesIn`: `{ "<set>": ["<class>", …] }`, optional, a non-empty object, `formatVersion` 21 only (in an earlier version the error is `only allowed with formatVersion 21`, at the path `layers[0].annotationTypes[0].appliesIn`). Each key is a set of the **same specialization**; each list is non-empty, without repetition, of classes of that set. Errors at the path `…appliesIn.<set>`: `the set "x" does not exist`, `"c" is not a class of "x"`, `cannot be empty`, `repeated values`.
+- A type that does not apply to markings in a container (`appliesTo: ["arrow"]`) or a `floating` type cannot have it: `appliesIn only on a type that applies to markings in a container`, at `…appliesIn`.
 
 **The "floating that points" pattern.** A data table (fired events, properties) that describes an element of a screen is a **floating** type whose component draws the table (`repeat`, see `docs/COMPONENT-FORMAT.md`). It sits beside the screen and is linked to the element (a button) by an **arrow**; the data lives in the floating table's annotation, and whoever reads the mapping reaches it through the arrows leaving the element. If the relation itself has data (the deep link that the transition opens, the event that it fires), it is a type applied to the arrow. The **notes** library brings the generic **Table** (title and key/value rows) for this, without a specialization.
 
@@ -1249,6 +1363,7 @@ The folder names (`components/`, `docs/`, `examples/`, `fonts/`) are a conventio
 | ----------------------------------------------- | --------------- | ---------------------------------------- |
 | `component`                                     | annotation type | `.json` (one component)                  |
 | `doc` (text)                                    | annotation type | `.md`                                    |
+| `documents[].doc` (text)                        | root            | `.md` (a library document)               |
 | `examples[].file`                               | annotation type | `.json` (the node of an external system) |
 | `origins[].examples[].file`                     | source          | `.json` (a whole screen)                 |
 | `fonts[].file`                                  | root            | `.ttf`, `.otf`, `.woff`, or `.woff2`     |
@@ -1352,6 +1467,32 @@ The contract between Mapping and the plugin (the script shape, `generate` and `p
 
 **The plugin only ever runs isolated.** It sees only its input, returns text or operations (which become a proposal for the person to review), has no disk, network or storage, and has a time limit. The MCP server runs it (`export_format`, the `import_format` operation of the batch and the examples of `validate_library`, see "Library validation"); the app does not run a plugin yet: it validates the declaration and the presence of the package files.
 
+### Library documents (`formatVersion` 21)
+
+A library has general rules that belong to no single type: naming conventions, a glossary, composition rules. Hanging them on some type's `doc`, or leaving an unreferenced `.md` in the folder (a `validate_library` warning), hides them from the agents and from the person. `formatVersion` 21 declares them at the root, in `documents`:
+
+```json
+{
+  "docRepos": [{ "id": "handbook", "url": "https://example.com/team/handbook" }],
+  "documents": [
+    { "id": "conventions", "name": "Event conventions", "doc": "docs/conventions.md" },
+    {
+      "id": "glossary",
+      "name": "Glossary",
+      "doc": { "repo": "handbook", "path": "docs/glossary.md" }
+    }
+  ]
+}
+```
+
+- `documents`: a **non-empty** list of strict `{ id, name, doc }`. `id` follows `[a-z0-9-]+` and is **unique** in the specialization; `name` is non-empty text (it is what the Catalog lists); the library names its documents, the format gives no fixed set.
+- `doc` follows **the type's `doc` rules**: text (`"docs/conventions.md"`) is a `.md` file of the package, and an object `{ "repo": "<docRepos id>", "path": "<path>" }` is a file in a declared repository (same `path` rules: relative, `/`, no `.`, `..`, leading `/` or `#`, ending in `.md`). The errors sit at `documents[i].doc` (and `documents[i].doc.repo` for a repository that is not in `docRepos`).
+- **A text document is a cited package file:** level 1 of the package validation checks it (`file not found: docs/conventions.md`, at `documents[i].doc`), a `.md` that a document cites is no longer "unreferenced", and it makes the specialization a **package** (`usesPackageFiles`): a standalone `.json` cannot carry one, like a type's text `doc`. A `{ repo, path }` document is not a package file and is not read at level 1 (`validate_library` with `docClones` checks it like a type's external document).
+- **A `{ repo, path }` document counts as a use of its `docRepos` repository:** no `unused-doc-repo` warning when only a document cites it.
+- **Outside the version contract:** adding, changing or removing a document is compatible and never requires a migration; `diffSpecs` produces no difference.
+- **Who reads them:** `get_specialization` already returns `documents`; the MCP tool `get_library_document` reads one by `id` (the text, or the link and a `hint` for an external one without a clone); the app lists them under **Documents** in the Catalog (home screen and the project's **Catalog** window). A markdown link `mapping://<type>` in a document opens the type; there is no link to another document.
+- Only from `formatVersion` 21 (in an earlier version the error is `only allowed with formatVersion 21`, at the path `documents`).
+
 ## Design tokens
 
 `tokens` (`formatVersion` 15, optional, at the root) holds the library's named **design values**: colors, radii, spacings, and font families. Format 4 components read each value with `{ "$token": "name" }` (see `docs/COMPONENT-FORMAT.md`), instead of repeating the literal in each node. Changing the value in a single place changes the whole design. A number token is also valid in `sizing.width`/`sizing.height`, in each item of a `padding` list and in `font.letterSpacing` (px); a percent `letterSpacing` text is not a token kind.
@@ -1451,7 +1592,7 @@ For color, `{ "$token": "scrim", "alpha": 0.32 }` multiplies the alpha of the to
 
 A v11 that removes a role is rejected until it moves up to `formatVersion` 12 with the step that covers it. **Renamed owner:** when the type was renamed (`rename-type`), the roles are **not** compared between the old and the new type; a role that annotations use and that does not exist in the new type becomes `unknown-role` when migrating, and the author can declare `rename-role` with the new `id`, **after** the `rename-type`.
 
-**Outside the contract**, on purpose: `fileFormats` (`formatVersion` 20, the plugins and their examples), `accessibility` (`formatVersion` 18, at the root and on the type), `slots` of the type and `code.<platform>.slots` (`formatVersion` 17), `fieldModels`, `signature`, `ignore`, `calls`, `formats`, and the paths and positionals in `params` (`formatVersion` 16; what a signature import adds, an optional field or an `enum` option, is additive like any other), layers, `labelField`, `allowedChildren` (including the `{ layer, groups }` clause and, in 13, the children of the layer itself), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef`, `notices`, `accepts.annotations`, `groups` (of the layer and of the type), the `name` and `description` of a role, the order of `childRoles`, `childRolesLabel` and `docRepos`, switching the `doc` between text and object, and removing a `component`, a `doc`, an example, or a font. None of this produces a difference. A rename is indistinguishable from remove + add; whoever renames **declares** it in a `rename-*` step, and that is what sets it apart from a removal.
+**Outside the contract**, on purpose: `accessibility.variants` (`formatVersion` 21), `containerClasses`, `classes` on a ready-made size and `appliesIn` (`formatVersion` 21), `fileFormats` (`formatVersion` 20, the plugins and their examples), `accessibility` (`formatVersion` 18, at the root and on the type), `slots` of the type and `code.<platform>.slots` (`formatVersion` 17), `fieldModels`, `signature`, `ignore`, `calls`, `formats`, and the paths and positionals in `params` (`formatVersion` 16; what a signature import adds, an optional field or an `enum` option, is additive like any other), layers, `labelField`, `allowedChildren` (including the `{ layer, groups }` clause and, in 13, the children of the layer itself), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef`, `notices`, `accepts.annotations`, `groups` (of the layer and of the type), the `name` and `description` of a role, the order of `childRoles`, `childRolesLabel` and `docRepos`, switching the `doc` between text and object, and removing a `component`, a `doc`, an example, or a font. None of this produces a difference. A rename is indistinguishable from remove + add; whoever renames **declares** it in a `rename-*` step, and that is what sets it apart from a removal.
 
 ### `migrations`
 
@@ -1777,7 +1918,7 @@ The packages `libraries/material3-compose/` and `examples/libraries/sdui-backend
 
 Error messages carry the path, e.g.: `layers[1].annotationTypes[0].fields[2].type: "numero" is invalid; use "string", "number", "date", "enum", "table" or "ref"`.
 
-- `format`, `formatVersion` (1 to 20), `id`, `name`, and `version` are required; `version` is an integer ≥ 1;
+- `format`, `formatVersion` (1 to 21), `id`, `name`, and `version` are required; `version` is an integer ≥ 1;
 - layer ids are unique; type ids are unique across the whole specialization; `key` is unique in the type and in the columns; no `key` starting with `_`;
 - `allowedChildren` only references existing types **in another layer** (from `formatVersion` 13, also in the owner's own layer, including the type itself);
 - every type with `requiresOwner: true` appears in the `allowedChildren` of some **other** type (in v11, in the **resolved** set of children of some owner: by id, by whole layer, or by group); a type that only lists itself does not satisfy this (`nenhum outro tipo o aceita como filho`);
@@ -1796,6 +1937,9 @@ Error messages carry the path, e.g.: `layers[1].annotationTypes[0].fields[2].typ
 - **v5, `repo`:** only in `formatVersion` 5, inside an entry of `platforms` (in an earlier version the error is `only allowed with formatVersion 5`, at the path `platforms[0].repo`); `url` required, starting with `http://` or `https://`, no spaces; `urlTemplate` optional, also `http(s)://` and with `{path}`; `ref` optional, non-empty text; any other property in `repo` is rejected;
 - **v11, children by layer and group:** only from `formatVersion` 11 (in an earlier version the error is `only allowed with formatVersion 11`, at the path `…annotationTypes[n].allowedChildren[k]` for the clause, `layers[n].groups`, and `…annotationTypes[m].groups`); each item of `allowedChildren` is a type id or a strict `{ layer, groups? }` clause (another property is an error, and so is `groups: []`); errors: a `layer` that is not a layer of the specialization, a `layer` that is the owner's own layer (`children must be in another layer`), and a nonexistent group in the clause's layer; `requiresOwner` is checked against the resolved set; `layers[n].groups`: `id` non-empty and unique in the layer, `name` non-empty; `annotationTypes[m].groups`: a non-empty list, without repeats, only of groups of the layer itself (a group that does not exist in the layer is an error); **warnings:** 20 or more ids as text in the same `allowedChildren` (`N types listed one by one; a { layer, groups } clause covers the layer or the groups`; with 19, no) and a declared group that no type uses (see "Children by layer and group");
 - **v13, children in the layer itself:** the `{ layer }` clause of the type's own layer and the id of a type in the same layer (including the type itself) are only accepted from `formatVersion` 13; in an earlier version the errors are `layer "x" is the type's own layer; children must be in another layer` (at the path `…allowedChildren[k].layer`) and `type "x" is in the same layer; children must be in another layer`; the rest of the `allowedChildren` rules (nonexistent layer and groups, `requiresOwner` in the resolved set) does not change (see "Children by layer and group");
+- **v21, `containerClasses`, `classes` on a ready-made size and `appliesIn`:** only from `formatVersion` 21 (in an earlier version the error is `only allowed with formatVersion 21`, at the path of each key); a set has a unique `id` in the format `[a-z0-9-]+` that is never `width` or `height`, a non-empty `name` and a non-empty list of classes with `id` unique in the set; `by` is `"width"` or `"height"`; in a computed set (with `by`) every class but the last has `below`, a number above 0 that increases along the list (the error is at the class: `below is required in every class but the last`, `the last class has no below`, `below must increase along the list`), and in a chosen set `below` is the error `below only in a set with by`; `classes` on a ready-made size names a chosen set of the specialization and one of its classes; `appliesIn` is a non-empty object whose keys are sets of the specialization and whose values are non-empty lists, without repetition, of classes of that set (at `…appliesIn.<set>`), and only on a type that applies to markings and is not `floating`; any other key in a set or a class is `unknown key: <key>`.
+- **v21, `accessibility.variants`:** only from `formatVersion` 21 (in an earlier version the error is `only allowed with formatVersion 21`, at `…accessibility.variants`); `field` is an `enum` field of the type at the top level (`"x" is not a field of the type`, `"x" must be an enum field of the type`); `cases` has at least one case (`declare at least one case`) and each key is one of the field's options (`"v" is not in the options of "field"`); a case declares `role`, `label` or both (`empty case: declare role or label`); `role` is on the list (`role "x" is invalid; use …`); the `label.fields` of a case are `string` or `enum` fields of the type; any other key, `touchTarget` and `parts` included, is `unknown key: <key>`; the warning `label-without-role` also covers a case whose resolved role is absent or `none` and that declares a `label`; see "Role and label per case (`variants`)";
+- **v21, `documents`:** only from `formatVersion` 21 (in an earlier version the error is `only allowed with formatVersion 21`, at the path `documents`); a non-empty list of strict `{ id, name, doc }` (another key is an error, at its exact path); `id` in the format `[a-z0-9-]+` and unique (`id "x" repeated`, at `documents[i].id`); `name` non-empty; `doc` with the rules of the type's `doc` (a package `.md`, or `{ repo, path }` with a `repo` declared in `docRepos`: `repository "x" is not declared in docRepos`, at `documents[i].doc.repo`); a text `doc` is a cited package file (`file not found` at level 1 of the package validation) and a `{ repo, path }` one counts as a use of its repository (see "Library documents (`formatVersion` 21)");
 - **v20, `fileFormats`:** only from `formatVersion` 20 (in an earlier version the error is `only allowed with formatVersion 20`, at the path `fileFormats`); a list of strict objects (another key is `unknown key: <key>`, at its exact path); `id` is `[a-z0-9][a-z0-9-]*` and unique, `name` is non-empty, `extension` is `[a-z0-9]+`, `plugin` is a package path ending in `.js`, `contract` is required and only `1`, `scope` is `project` or `container`; each example has a non-empty `name`, unique in the format, a `file` that is a package path and an optional `input` that is a `.json` package path; level 1 of the library validator checks that the plugin, the example files and the `input` exist in the package and that the plugin has at most 1 MiB (error at `fileFormats[i].plugin`); nothing here runs a plugin (see "File formats (`formatVersion` 20)");
 - **v19, `copy-field` step in `migrations`:** only from `formatVersion` 19 (in an earlier version the error is `only allowed with formatVersion 19`, at the path `migrations[i].steps[j].op`); strict keys `type`, `from`, `to` and `when?`; `type` is a type of this version and `to` is a field (or column) of it; `from` may not exist; `from` and `to` are both fields or both columns of the same table, never a `table` field and never the same (at `…steps[j].to`, or `…steps[j].from` for a `table` field); `when` is not empty, each key is a top-level field of the type that is not a `table` or `ref`, each value is text, a number or a non-empty list of them, and in an `enum` field each value is one of the options (at `…steps[j].when.<key>`); warning: a `from` that was not a field of the type in the previous version;
 - **v12, role steps in `migrations`:** `rename-role`, `remove-role`, and `set-role` only from `formatVersion` 12 (in a version from 4 to 11 the error is `only allowed with formatVersion 12`, at the path `migrations[i].steps[j].op`); the message of an invalid `op` lists the nine steps; strict keys (`rename-role`: `type`, `from`, `to`; `remove-role`: `type`, `role`, `mode`; `set-role`: `type`, `role`, optional `childType`); `rename-role`: `type` is a type of this version with `childRoles`, `to` is a role of it and `from` is not; `remove-role`: `type` is a type of this version (it may no longer have `childRoles`), `role` is not a role of it, and `mode` is `clear` or `unlink`; `set-role`: `type` has `childRoles`, `role` is a role of it, and `childType`, if present, only has its id format checked (a nonexistent type is a no-op); **warning** (level 2, with the previous version): `rename-role.from` or `remove-role.role` that was not a role of the type in that version, considering the owner's `rename-type`; contract: `removed-role`, `roles-required`, and `added-role` (see "Version contract");

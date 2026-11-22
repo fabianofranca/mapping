@@ -3378,6 +3378,12 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
       'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
   },
   {
+    path: 'tests/tooling/queueApplyStartsNow.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|formato=não/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` values that the engine matches (decision 2 of #741)',
+  },
+  {
     path: 'tests/tooling/queueSlots.test.ts',
     pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
     reason:

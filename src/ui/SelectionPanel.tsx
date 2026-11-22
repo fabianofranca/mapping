@@ -22,6 +22,7 @@ import { MovePageControl } from './MovePageControl';
 import { PerspectivesSection, usePrincipalOnly } from './PerspectivesSection';
 import { Section } from './DetailsSection';
 import { Icon } from './icons';
+import { ContainerClassField } from './ContainerClassField';
 import { ContainerDensityField } from './ContainerDensityField';
 import { ContainerDirectionField } from './ContainerDirectionField';
 import { ContainerDrawingModeField } from './ContainerDrawingModeField';
@@ -184,6 +185,7 @@ export function SelectionPanel({
           )}
           <ContainerDrawingModeField image={image} disabled={disabled} />
           <ContainerDirectionField image={image} disabled={disabled} />
+          <ContainerClassField image={image} disabled={disabled} />
           <ContainerDensityField
             key={image.id}
             image={image}

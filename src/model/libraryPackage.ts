@@ -33,19 +33,16 @@ export function isPackageFile(file: string): boolean {
 /**
  * Does the specialization cite package files? Only then does it need the whole folder. It cites
  * when it is `formatVersion` 4 or higher and has some type with `component`, a text `doc` or
- * `examples`, or `fonts`, `origins`, `icons` or `fileFormats` at the root, or some signature sheet (`signature`
+ * `examples`, or `fonts`, `origins`, `icons`, `fileFormats` or a text document in `documents` at the root, or some signature sheet (`signature`
  * in `code`, in a `variants` case or in the type's `sources`; v16). `migrations` does not count
  * (it is only the version contract), nor does the object `doc` (`{ repo, path }`, the document
- * lives in another repository). `fileFormats` counts (the plugin is a package file; v20). v1 to v3
+ * lives in another repository), in a type or in `documents`. `fileFormats` counts (the plugin is a package file; v20). v1 to v3
  * never cite. One that does not cite counts as a
  * standalone file (`specs/<id>.json`), like v1 to v3.
  */
 export function usesPackageFiles(spec: Spec): boolean {
   if (spec.formatVersion < 4) return false;
-  if (spec.fonts !== undefined && spec.fonts.length > 0) return true;
-  if (spec.origins !== undefined && spec.origins.length > 0) return true;
-  if (spec.icons !== undefined) return true;
-  if (spec.fileFormats !== undefined && spec.fileFormats.length > 0) return true;
+  if (citesRootFiles(spec)) return true;
   return spec.layers.some((layer) =>
     layer.annotationTypes.some(
       (type) =>
@@ -55,6 +52,14 @@ export function usesPackageFiles(spec: Spec): boolean {
         citesSignature(type),
     ),
   );
+}
+
+/** Does the root cite package files (`fonts`, `origins`, `icons`, `fileFormats`, a text `documents` entry)? */
+function citesRootFiles(spec: Spec): boolean {
+  const lists = [spec.fonts, spec.origins, spec.fileFormats];
+  if (lists.some((list) => list !== undefined && list.length > 0)) return true;
+  if (spec.icons !== undefined) return true;
+  return (spec.documents ?? []).some((document) => typeof document.doc === 'string');
 }
 
 /** Does the type cite a signature sheet (in `code`, in a `variants` case or in `sources`)? */

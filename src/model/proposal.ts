@@ -17,6 +17,7 @@ import {
   sourceSchema,
 } from './schema';
 import { PLATFORM_ID_RE, formatSpecPath, specSchema, type SpecIssue } from './spec';
+import { CONTAINER_CLASS_ID_RE } from './containerClasses';
 import { READING_DIRECTIONS, type JsonValue } from './types';
 
 // Format of the change proposal (stage 4): `proposals/<id>/proposal.json`, `formatVersion` 4 on
@@ -28,7 +29,9 @@ import { READING_DIRECTIONS, type JsonValue } from './types';
 export const PROPOSAL_FORMAT = 'mapping-proposal';
 export const PROPOSAL_FORMAT_VERSION = 4;
 /**
- * Versions read, from 1 to 10: 10 adds the pages (the `page` entity, the `pageId` in the value of a
+ * Versions read, from 1 to 11: 11 adds the container classes (the container's `classes` field and the
+ * `classes` in the value of a created container, schema v23) and is only written when the proposal
+ * uses them (it includes what 10 and the earlier ones have); 10 adds the pages (the `page` entity, the `pageId` in the value of a
  * created or removed container and canvas marking, and the composite `page` change, schema v21)
  * and is only written when the proposal uses them (it includes what 9 and the earlier ones
  * have); 9 adds the marking's anchor (the marking's `anchor` field and
@@ -47,7 +50,7 @@ export const PROPOSAL_FORMAT_VERSION = 4;
  * `add_container` to the `operations`; 1 is still valid. Creation writes 4 (6, with the drawing
  * mode).
  */
-export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const;
 
 /**
  * Proposal version that carries the drawing mode (schema v18): the `project` entity (field
@@ -185,9 +188,35 @@ function hasPageId(value: JsonValue): boolean {
 }
 
 /**
- * The `formatVersion` that creation or revision writes: 10 with pages, 9 with an anchor, 8 with a direction, 7
+ * Proposal version that carries the container classes (schema v23): the container's `classes` field
+ * (the whole map set id → class id, or `null`) and the `classes` in the value of a created container.
+ * An earlier version would silently drop the created container's `classes` (and refuse the new
+ * field); so a proposal that uses it is written as 11, following the pattern of the drawing mode (6).
+ */
+export const PROPOSAL_CONTAINER_CLASSES_FORMAT_VERSION = 11;
+
+/** Does the proposal use the container classes (so that only `formatVersion` 11 represents it)? */
+export function usesContainerClasses(changes: readonly Change[]): boolean {
+  return changes.some(
+    (c) =>
+      c.entity === 'image' &&
+      (c.field === 'classes' || hasContainerClasses(c.to) || hasContainerClasses(c.from)),
+  );
+}
+
+function hasContainerClasses(value: JsonValue): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    (value as { readonly classes?: JsonValue }).classes != null
+  );
+}
+
+/**
+ * The `formatVersion` that creation or revision writes: 11 with container classes, 10 with pages, 9 with an anchor, 8 with a direction, 7
  * with a density, 6 with a drawing mode, otherwise `fallback` (4 on creation, 5 on revision).
- * `current` is the version of the proposal being rewritten: a 6, 7, 8, 9 or 10 never goes down.
+ * `current` is the version of the proposal being rewritten: a 6, 7, 8, 9, 10 or 11 never goes down.
  */
 export function proposalFormatVersionFor(
   changes: readonly Change[],
@@ -205,6 +234,7 @@ const VERSIONS_BY_FEATURE: readonly (readonly [
   (typeof PROPOSAL_FORMAT_VERSIONS)[number],
   (changes: readonly Change[]) => boolean,
 ])[] = [
+  [PROPOSAL_CONTAINER_CLASSES_FORMAT_VERSION, usesContainerClasses],
   [PROPOSAL_PAGES_FORMAT_VERSION, usesPages],
   [PROPOSAL_ANCHOR_FORMAT_VERSION, proposalUsesAnchor],
   [PROPOSAL_DIRECTION_FORMAT_VERSION, proposalUsesDirection],
@@ -295,6 +325,7 @@ export const IMAGE_FIELDS = [
   'drawingMode',
   'density',
   'direction',
+  'classes',
   'page',
 ] as const;
 /**
@@ -595,6 +626,7 @@ const drawingModeName = z
   .regex(/^[a-z0-9][a-z0-9-]*$/, 'use [a-z0-9][a-z0-9-]*');
 
 const readingDirection = z.enum(READING_DIRECTIONS);
+const containerClassName = z.string().regex(CONTAINER_CLASS_ID_RE);
 
 /**
  * The `project` entity (formatVersion 6): what of the project is proposed, the drawing mode and,
@@ -630,6 +662,7 @@ const imageFieldSchemas: Record<(typeof IMAGE_FIELDS)[number], z.ZodType> = {
   drawingMode: drawingModeName.nullable(),
   density: z.number().min(0.5).max(8).nullable(),
   direction: readingDirection.nullable(),
+  classes: z.record(containerClassName, containerClassName).nullable(),
   page: z.object({ pageId: id, position: placementSchema }),
 };
 
@@ -956,8 +989,9 @@ export const proposalSchema = z
         z.literal(8),
         z.literal(9),
         z.literal(10),
+        z.literal(11),
       ],
-      { error: 'must be 1, 2, 3, 4, 5, 6, 7, 8, 9 or 10' },
+      { error: 'must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 or 11' },
     ),
     id: proposalId,
     title: z.string().trim().min(1, 'cannot be empty'),

@@ -3,6 +3,7 @@ import {
   ENTRIES_FIELD_PREFIX,
   VALUES_FIELD_PREFIX,
   annotationTitle,
+  containerClassSets,
   fieldLabel,
   fieldOf,
   findSpecType,
@@ -323,6 +324,7 @@ const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
   'image.drawingMode': 'review.field.drawingMode',
   'image.density': 'review.field.density',
   'image.direction': 'review.field.direction',
+  'image.classes': 'review.field.classes',
   'page.name': 'review.field.name',
   'page.position': 'review.field.position',
   'marking.page': 'review.field.page',
@@ -619,6 +621,26 @@ function directionText(entity: Change['entity'], value: JsonValue): string {
   return t(entity === 'image' ? 'direction.followProject' : 'review.value.direction.ltr');
 }
 
+/**
+ * The container's chosen classes as "Platform: Android, Window: Expanded": the set and class names come
+ * from the applied specializations (the project "as it would be" first); an id nobody declares shows as
+ * it is. No choice (`null`) is the empty value.
+ */
+function classesText(names: ReviewNames, value: JsonValue): string {
+  if (!isRecord(value) || Object.keys(value).length === 0) return t('review.value.empty');
+  const sets = [
+    ...(names.preview ? containerClassSets(names.preview) : []),
+    ...containerClassSets(names.current),
+  ];
+  return Object.entries(value)
+    .map(([setId, classId]) => {
+      const set = sets.find((s) => s.id === setId);
+      const found = set?.classes.find((c) => c.id === classId);
+      return `${set?.name ?? setId}: ${found?.name ?? String(classId)}`;
+    })
+    .join(', ');
+}
+
 /** The `project` entity: the drawing mode and, when pinned, "Direction: …". */
 function projectSummary(value: Record<string, JsonValue>): string {
   const parts = [
@@ -697,6 +719,7 @@ export function valueParts(
     return [{ text: formatDensity(typeof value === 'number' ? value : 1) }];
   }
   if (field === 'direction') return [{ text: directionText(c.entity, value) }];
+  if (field === 'classes') return [{ text: classesText(names, value) }];
   if (field === 'page' && isRecord(value))
     return [{ text: pageValueText(names, value, value === c.to) }];
   if (field === 'anchor' && value !== null) return [{ text: anchorText(names, value) }];

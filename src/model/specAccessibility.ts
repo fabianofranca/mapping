@@ -9,6 +9,9 @@ import { addSpecIssue, specMsg, type SpecMsg } from './specIssueCode';
 /** First `formatVersion` of `accessibility`. */
 export const ACCESSIBILITY_VERSION = 18;
 
+/** First `formatVersion` of `accessibility.variants` (role and label per case of an enum field). */
+export const ACCESSIBILITY_VARIANTS_VERSION = 21;
+
 export const ACCESSIBILITY_ROLES = [
   'button',
   'link',
@@ -68,11 +71,24 @@ export interface SpecAccessibilityPart {
   role?: AccessibilityRole;
 }
 
+/** What a case of `accessibility.variants` replaces: the role and/or the whole label of the base. */
+export interface SpecAccessibilityCase {
+  role?: AccessibilityRole;
+  label?: SpecAccessibilityLabel;
+}
+
+/** Role and label per case of an enum field of the type (`formatVersion` 21); the shape of `code.variants`. */
+export interface SpecAccessibilityVariants {
+  field: string;
+  cases: Record<string, SpecAccessibilityCase>;
+}
+
 export interface SpecTypeAccessibility {
   role?: AccessibilityRole;
   label?: SpecAccessibilityLabel;
   touchTarget?: SpecTouchTarget | false;
   parts?: SpecAccessibilityPart[];
+  variants?: SpecAccessibilityVariants;
 }
 
 /** `accessibility` at the root of the specialization. */
@@ -119,6 +135,23 @@ const partShape = z
   })
   .strict();
 
+const caseShape = z
+  .object({ role: roleShape.optional(), label: labelShape.optional() })
+  .strict();
+
+const variantsShape = z
+  .object({
+    field: z
+      .string({
+        error: (issue) => (issue.input === undefined ? 'required' : 'must be text'),
+      })
+      .min(1, 'cannot be empty'),
+    cases: z.record(z.string(), caseShape, {
+      error: (issue) => (issue.input === undefined ? 'required' : 'must be an object'),
+    }),
+  })
+  .strict();
+
 /** `accessibility` of the root: the shape; the version is in `checkAccessibilityKeys`. */
 export const accessibilityShape = z
   .object({ touchTarget: touchTargetShape.optional() })
@@ -131,6 +164,7 @@ export const typeAccessibilityShape = z
     label: labelShape.optional(),
     touchTarget: z.union([touchTargetShape, z.literal(false)]).optional(),
     parts: z.array(partShape).optional(),
+    variants: variantsShape.optional(),
   })
   .strict();
 
@@ -141,6 +175,7 @@ interface RawField {
   readonly key: string;
   readonly type: string;
   readonly columns?: readonly unknown[] | undefined;
+  readonly options?: readonly string[] | undefined;
 }
 
 interface RawLabel {
@@ -155,11 +190,22 @@ interface RawPart {
   readonly touchTarget?: unknown;
 }
 
+interface RawCase {
+  readonly role?: string | undefined;
+  readonly label?: RawLabel | undefined;
+}
+
+interface RawVariants {
+  readonly field: string;
+  readonly cases: Readonly<Record<string, RawCase>>;
+}
+
 interface RawTypeAccessibility {
   readonly role?: string | undefined;
   readonly label?: RawLabel | undefined;
   readonly touchTarget?: unknown;
   readonly parts?: readonly RawPart[] | undefined;
+  readonly variants?: RawVariants | undefined;
 }
 
 interface RawType {
@@ -321,9 +367,68 @@ function checkParts(
   });
 }
 
+/** The options of the `variants` field; `undefined` (with the error at `field`) when it is not an enum of the type. */
+function variantsOptions(
+  variants: RawVariants,
+  fields: ReadonlyMap<string, RawField>,
+  path: Path,
+  add: Add,
+): readonly string[] | undefined {
+  const field = fields.get(variants.field);
+  if (field === undefined) {
+    add([...path, 'field'], specMsg('spec.notTypeField', { key: variants.field }));
+  } else if (field.type !== 'enum') {
+    add([...path, 'field'], specMsg('spec.codeFieldNotEnum', { key: variants.field }));
+  } else {
+    return field.options ?? [];
+  }
+  return undefined;
+}
+
+function checkCase(
+  kase: RawCase,
+  path: Path,
+  fields: ReadonlyMap<string, RawField>,
+  add: Add,
+): void {
+  if (kase.role === undefined && kase.label === undefined) {
+    add(path, specMsg('spec.accessibilityVariantEmptyCase'));
+    return;
+  }
+  checkRole(kase.role, [...path, 'role'], add);
+  if (kase.label !== undefined) {
+    checkLabelKeys(
+      kase.label.fields,
+      fieldTypes(fields),
+      [...path, 'label', 'fields'],
+      add,
+    );
+  }
+}
+
+/** `variants`: the field is an `enum` of the type, the cases use its options, each case changes the role or the label. */
+function checkVariants(
+  variants: RawVariants,
+  fields: ReadonlyMap<string, RawField>,
+  path: Path,
+  add: Add,
+): void {
+  const options = variantsOptions(variants, fields, path, add);
+  const entries = Object.entries(variants.cases);
+  if (entries.length === 0) add([...path, 'cases'], specMsg('spec.variantsNoCases'));
+  for (const [value, kase] of entries) {
+    const casePath = [...path, 'cases', value];
+    if (options !== undefined && !options.includes(value)) {
+      add(casePath, specMsg('spec.notInOptionsOf', { value, field: variants.field }));
+    }
+    checkCase(kase, casePath, fields, add);
+  }
+}
+
 function checkTypeAccessibility(
   a: RawTypeAccessibility,
   type: RawType,
+  spec: RawSpec,
   path: Path,
   add: Add,
 ): void {
@@ -337,6 +442,13 @@ function checkTypeAccessibility(
     checkLabelKeys(a.label.fields, fieldTypes(fields), [...path, 'label', 'fields'], add);
   }
   checkParts(a.parts ?? [], [...path, 'parts'], fields, add);
+  if (a.variants === undefined) return;
+  if (spec.formatVersion < ACCESSIBILITY_VARIANTS_VERSION) {
+    const only = specMsg('spec.onlyFormat', {
+      version: String(ACCESSIBILITY_VARIANTS_VERSION),
+    });
+    add([...path, 'variants'], only);
+  } else checkVariants(a.variants, fields, [...path, 'variants'], add);
 }
 
 /**
@@ -355,7 +467,7 @@ export function checkAccessibilityKeys(spec: RawSpec, ctx: z.RefinementCtx): voi
       if (type.accessibility === undefined) return;
       const path: Path = ['layers', li, 'annotationTypes', ti, 'accessibility'];
       if (!current) add(path, only);
-      else checkTypeAccessibility(type.accessibility, type, path, add);
+      else checkTypeAccessibility(type.accessibility, type, spec, path, add);
     });
   });
 }

@@ -363,9 +363,17 @@ function sameIssue(x: AnnotationIssue, y: AnnotationIssue): boolean {
     x.rowId === y.rowId &&
     x.column === y.column &&
     samePart(x, y) &&
-    sameSlotIssue(x, y)
+    sameSlotIssue(x, y) &&
+    sameContainerClassIssue(x, y)
   );
 }
+
+/** The set, the class and the allowed classes of `outside-container-class`, as one comparable text. */
+const containerClassKey = (i: AnnotationIssue): string =>
+  [i.set?.id, i.class?.id, ...(i.allowed ?? []).map((c) => c.id)].join('/');
+
+const sameContainerClassIssue = (x: AnnotationIssue, y: AnnotationIssue): boolean =>
+  containerClassKey(x) === containerClassKey(y);
 
 /** The part of `accessible-label-missing` (its id and name). */
 function samePart(x: AnnotationIssue, y: AnnotationIssue): boolean {

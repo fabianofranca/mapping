@@ -179,6 +179,14 @@ const densityField = z
     "Density: how many image pixels one component unit is worth (dp, pt, px at 1x), from 0.5 to 8; 3 for a 1080 px capture of a 360 dp phone (image width ÷ width of the finished size). The component's `size` and `minSize` are in units and the `rect` in pixels (`rect` = units × `density`). `null` goes back to 1 (in `update_container`); absent does not change.",
   );
 
+const classesField = z
+  .record(z.string(), z.string().nullable())
+  .nullable()
+  .optional()
+  .describe(
+    'Container classes the container is in: a map `set id → class id` of the CHOSEN sets (`containerClasses` without `by` in `get_specialization`), e.g. `{ "platform": "android" }`. In `update_container` a set not named stays as it is, `null` for a set removes it and `classes: null` removes them all; absent does not change. A set that is computed (`by`), one no applied specialization declares or a class the set does not declare is `invalid-arguments` (`chosenSets` lists the sets and their classes). A computed set follows the container\'s size ÷ `density` by itself (see `effectiveClasses` in `get_container`).',
+  );
+
 /** Fields of `update_container` (and of the old `update_image`). */
 const updateContainerFields = {
   name: name.optional(),
@@ -198,6 +206,7 @@ const updateContainerFields = {
   drawingMode: drawingModeField,
   direction: directionField,
   density: densityField,
+  classes: classesField,
   markingsLocked: z
     .boolean()
     .optional()
@@ -407,6 +416,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     drawingMode: drawingModeField,
     direction: directionField,
     density: densityField,
+    classes: classesField,
     name: z
       .string()
       .optional()

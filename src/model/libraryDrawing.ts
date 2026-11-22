@@ -7,6 +7,8 @@ import type {
 import { attachResolvedComponents, resolvedFields } from './components/nesting';
 import { type Box, approximateMeasurer, instantiate } from './components/instantiate';
 import { isDirectionSensitive } from './components/direction';
+import { containerReads, type InstanceContainer } from './components/container';
+import type { SpecContainerClassSet } from './containerClasses';
 import { type Library, type TextFile, loadLibrary } from './components/library';
 import { type Origin, screenFromSource } from './components/origin';
 import type { IconSet } from './components/icons';
@@ -111,6 +113,16 @@ const inRtl = (message: ModelMessage): ModelMessage => {
   const params = { reason: message.text };
   const text = fillTemplate(MODEL_MESSAGE_TEMPLATES['engine.inRtl'], params);
   return modelMessage('engine.inRtl', params, text, message);
+};
+
+/**
+ * The warning that only a container class gives, with its prefix ("in container window=expanded: ..."): the
+ * author sees which class to fix. The `container` is `<set>=<class>`.
+ */
+const inContainer = (message: ModelMessage, container: string): ModelMessage => {
+  const params = { container, reason: message.text };
+  const text = fillTemplate(MODEL_MESSAGE_TEMPLATES['engine.inContainer'], params);
+  return modelMessage('engine.inContainer', params, text, message);
 };
 
 /** The case proved: one proof code per case and per whether there is a mode (see `drawCode`). */
@@ -273,6 +285,7 @@ function proveCase(
   modes: readonly DrawingMode[],
   boxes: readonly Box[],
   fitted: boolean,
+  sets: readonly SpecContainerClassSet[],
   out: LibraryIssue[],
 ): void {
   const keys = new Set(type.fields.map((f) => f.key));
@@ -295,20 +308,23 @@ function proveCase(
       },
       detail,
     );
-  const run = (direction: Direction): ModeResult[] =>
+  const run = (direction: Direction, container?: InstanceContainer): ModeResult[] =>
     modes.map(({ mode, tokens }, i): ModeResult => {
       try {
         const { messages } = instantiate(component, drawCase.values, boxes[i] as Box, {
           measure: approximateMeasurer,
           ...(tokens === undefined ? {} : { tokens }),
           ...(direction === 'rtl' ? { direction } : {}),
+          ...(container === undefined ? {} : { container }),
         });
         // The `sizing` warning does not depend on the text measurement or the direction: it is
         // reported without the `(approximate)` suffix and only in the `ltr` pass.
         const sizing =
           fitted || direction === 'rtl'
             ? []
-            : resolveSizing(component, drawCase.values, tokens).messages;
+            : resolveSizing(component, drawCase.values, tokens, {
+                ...(container === undefined ? {} : { container }),
+              }).messages;
         return {
           mode,
           box: boxes[i] as Box,
@@ -357,34 +373,63 @@ function proveCase(
   emit(ltr);
   // The `rtl` pass only runs on the direction-sensitive component (`isDirectionSensitive`): on
   // the others it would cost double to repeat, mirrored, the same warnings as `ltr`.
-  if (isDirectionSensitive(component)) emit(rtlOnly(ltr, run('rtl')));
+  if (isDirectionSensitive(component)) emit(beyond(ltr, run('rtl'), inRtl));
+  // A component that reads the container is proved once per class of each set it reads (the sum, not the
+  // product) beside the pass without a container; only what a class gives beyond that pass is reported.
+  for (const pass of containerPasses(component, sets))
+    emit(
+      beyond(ltr, run('ltr', pass.container), (message) =>
+        inContainer(message, pass.label),
+      ),
+    );
+}
+
+interface ContainerPass {
+  /** `<set>=<class>`, what the message cites. */
+  readonly label: string;
+  readonly container: InstanceContainer;
+}
+
+/** One pass per class of each set (declared by the specialization) that the component reads. */
+function containerPasses(
+  component: ComponentFile,
+  sets: readonly SpecContainerClassSet[],
+): ContainerPass[] {
+  const reads = containerReads(component);
+  return sets
+    .filter((set) => reads.has(set.id))
+    .flatMap((set) =>
+      set.classes.map((cls) => ({
+        label: `${set.id}=${cls.id}`,
+        container: { classes: { [set.id]: cls.id } },
+      })),
+    );
 }
 
 /**
- * What `rtl` gives beyond the `ltr` of the same mode: new warnings with the "in rtl" prefix; an
- * `rtl`-only error likewise.
+ * What another pass (`rtl`, a container class) gives beyond the `ltr` pass of the same mode: new warnings with
+ * the pass's prefix (`wrap`); an error only that pass throws likewise.
  */
-function rtlOnly(ltr: readonly ModeResult[], rtl: readonly ModeResult[]): ModeResult[] {
-  return rtl.map((r, i) => {
-    const base = ltr[i] as ModeResult;
+function beyond(
+  base: readonly ModeResult[],
+  other: readonly ModeResult[],
+  wrap: (message: ModelMessage) => ModelMessage,
+): ModeResult[] {
+  return other.map((r, i) => {
+    const first = base[i] as ModeResult;
     if (r.error !== undefined) {
       return {
         ...r,
         error: undefined,
-        texts: base.error === undefined ? rtlError(r.error) : [],
+        texts:
+          first.error === undefined
+            ? [wrap(templateMessage('library.drawFailed', { error: r.error }))]
+            : [],
       };
     }
-    const seen = new Set(base.texts.map((t) => t.text));
-    return { ...r, texts: r.texts.filter((t) => !seen.has(t.text)).map(inRtl) };
+    const seen = new Set(first.texts.map((t) => t.text));
+    return { ...r, texts: r.texts.filter((t) => !seen.has(t.text)).map(wrap) };
   });
-}
-
-/**
- * The exception only `rtl` throws, as an "in rtl" warning (the proof goes on; the `ltr` error
- * already counts).
- */
-function rtlError(error: string): ModelMessage[] {
-  return [inRtl(templateMessage('library.drawFailed', { error }))];
 }
 
 function typeDrawing(
@@ -394,6 +439,7 @@ function typeDrawing(
   specPath: string,
   basePath: string,
   modes: readonly DrawingMode[],
+  sets: readonly SpecContainerClassSet[],
   out: LibraryIssue[],
 ): void {
   const box: Box = { x: 0, y: 0, ...component.size };
@@ -405,6 +451,7 @@ function typeDrawing(
       modes,
       modes.map(() => box),
       false,
+      sets,
       out,
     );
     // Component with an axis that depends on the content: the same case at the fitted size.
@@ -418,6 +465,7 @@ function typeDrawing(
         modes,
         fits.map((fit) => fit ?? box),
         true,
+        sets,
         out,
       );
   }
@@ -592,7 +640,16 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
       if (loaded === undefined) return;
       const component =
         ctx.icons === undefined ? loaded : { ...loaded, resolvedIcons: ctx.icons };
-      typeDrawing(type, component, componentPath, specPath, basePath, modes, out);
+      typeDrawing(
+        type,
+        component,
+        componentPath,
+        specPath,
+        basePath,
+        modes,
+        spec.containerClasses ?? [],
+        out,
+      );
       out.push(
         ...missingImageValues(ctx, component, component.preview, {
           file: componentPath,

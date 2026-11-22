@@ -371,3 +371,75 @@ describe('entry through the main bar', () => {
     ).toBe(true);
   });
 });
+
+// Stage #1901, CX3 (decision 15): a ready-made size carries a choice of container classes.
+describe('New container dialog: container classes of a ready-made size', () => {
+  const CLASS_SPEC: Spec = {
+    format: 'mapping-spec',
+    formatVersion: 21,
+    id: 'cls',
+    name: 'Classes',
+    version: 1,
+    containerClasses: [
+      {
+        id: 'platform',
+        name: 'Platform',
+        classes: [
+          { id: 'android', name: 'Android' },
+          { id: 'web', name: 'Web' },
+        ],
+      },
+    ],
+    containers: [
+      {
+        id: 'phone',
+        name: 'Phone',
+        width: 360,
+        height: 800,
+        classes: { platform: 'android' },
+      },
+      {
+        id: 'web-desktop',
+        name: 'Web',
+        width: 1440,
+        height: 900,
+        classes: { platform: 'web' },
+      },
+      { id: 'plain', name: 'Plain', width: 300, height: 300 },
+    ],
+    layers: [],
+  };
+
+  it('creates the container with the classes of the chosen ready-made size', async () => {
+    const harness = createHarness(applySpecialization(sampleProject(), CLASS_SPEC));
+    const { user } = renderDialog(harness);
+    await user.type(field(t('container.name')), 'Home');
+    await user.selectOptions(
+      inDialog().getByLabelText(t('container.preset')),
+      'cls:web-desktop',
+    );
+    await submit(user);
+    expect(harness.project().containers.at(-1)?.classes).toEqual({ platform: 'web' });
+  });
+
+  it('a size without classes, Custom and an edited size create none', async () => {
+    const harness = createHarness(applySpecialization(sampleProject(), CLASS_SPEC));
+    const { user } = renderDialog(harness);
+    await user.type(field(t('container.name')), 'A');
+    await user.selectOptions(
+      inDialog().getByLabelText(t('container.preset')),
+      'cls:plain',
+    );
+    await submit(user);
+    expect(harness.project().containers.at(-1)?.classes).toBeUndefined();
+  });
+
+  it('editing the size after choosing it drops the classes (the size is Custom)', async () => {
+    const harness = createHarness(applySpecialization(sampleProject(), CLASS_SPEC));
+    const { user } = renderDialog(harness);
+    await user.type(field(t('container.name')), 'B');
+    await user.type(field(t('container.width')), '1');
+    await submit(user);
+    expect(harness.project().containers.at(-1)?.classes).toBeUndefined();
+  });
+});

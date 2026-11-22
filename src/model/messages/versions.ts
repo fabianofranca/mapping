@@ -15,6 +15,8 @@ export const versionMessages = {
     'the repository "{repo}" in docRepos is declared, but no `doc` uses it',
   'versions.labelWithoutRole':
     'the type "{typeId}" declares `label` without a role: it has no effect until the type has a role other than `none`',
+  'versions.labelWithoutRoleCase':
+    'the type "{typeId}" declares `label` in the case "{value}" without a role: it has no effect until the case has a role other than `none`',
   'versions.legacyFormat': '"{legacy}" is the old name of the format; use "mapping-spec"',
   'versions.typeWithoutCode':
     'the type "{typeId}" has no `code`: no platform says how to create an instance of it',

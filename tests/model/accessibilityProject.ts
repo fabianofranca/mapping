@@ -1,5 +1,5 @@
 // A project built on the accessibility test library (`tests/fixtures/accessibility/`, stage #1126):
-// a `button` (role + label), a `bar` (two field parts and an `actions` slot), an `icon-button`
+// a `button` (role + label), a `chip` (role and label per case), a `bar` (two field parts and an `actions` slot), an `icon-button`
 // and `tabs` (a table part), in a container of 1080 x 2400 px. Shared by the derived-state tests and the
 // component tests of the app (stage #1127, A2).
 import { readFileSync } from 'node:fs';
@@ -36,7 +36,7 @@ export const a11ySpec: Spec = (() => {
 /** The components of the library, as the session loads them. */
 export const a11yCatalog: ComponentCatalog = (() => {
   const texts = new Map(
-    ['bar', 'button', 'icon-button', 'tabs'].map((id) => [
+    ['bar', 'button', 'chip', 'icon-button', 'tabs'].map((id) => [
       `specs/${A11Y_SPEC_ID}/components/${id}.json`,
       read(`components/${id}.json`),
     ]),
