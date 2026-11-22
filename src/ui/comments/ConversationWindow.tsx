@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../../i18n';
-import { userKey, userLabel, type Thread } from '../../model';
+import { userLabel, type Thread } from '../../model';
 import { identity } from '../../store/identity';
 import type { ThreadEntry } from '../../store/threadDerived';
 import { composingAnchor, selectedThreadId } from '../../store/threadUi';
@@ -39,7 +39,10 @@ function linkedTo(thread: Thread, proposalId: string | null): boolean {
 /** Whether the message's author is this device's identity. */
 function isMine(author: Thread['messages'][number]['author']): boolean {
   const me = identity.value;
-  return me !== null && userKey(author) === userKey({ kind: 'human', ...me });
+  const email = (value: string | null): string => (value ?? '').trim().toLowerCase();
+  return (
+    me !== null && author.kind === 'human' && email(author.email) === email(me.email)
+  );
 }
 
 /**
