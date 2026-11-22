@@ -17,6 +17,7 @@ import type { DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
 import { type PageState } from '../store/pages';
 import type { ProjectActions } from '../store/project';
+import type { QuickReviewState, QuickReviewView } from '../store/quickReview';
 import type { ReviewState } from '../store/review';
 import { locale, showArrows } from '../store/settings';
 import type { PerspectiveState } from '../store/perspectives';
@@ -27,8 +28,10 @@ import { formatSelectionBox, formatViewport, selectionScreenBox } from './select
 import {
   formatArrowHandles,
   formatContainerBoxes,
+  formatQuickReview,
   formatSelection,
 } from './hostAttributes';
+import { quickBoxCss, quickGhost } from './quickGhost';
 import { composingAnchor, selectedThreadId } from '../store/threadUi';
 import {
   itemsOf,
@@ -42,6 +45,7 @@ import {
   COMPONENT_KEYS,
   IMAGE_KEYS,
   OVERLAY_KEYS,
+  QUICK_KEYS,
   cancelFrame,
   createInteractionState,
   requestFrame,
@@ -51,6 +55,7 @@ import {
   type Frame,
   type HoverLock,
   type InteractionState,
+  type QuickFrame,
   type ViewFrame,
 } from './frame';
 import { arrowShape, visibleArrowShapes, type ArrowShape } from './arrowGeometry';
@@ -74,13 +79,14 @@ import { OverlayRenderer } from './renderers/overlay';
 import { CommentPinRenderer } from './renderers/commentPins';
 import { ArrivalRenderer } from './renderers/arrivals';
 import { arrivalMarks } from './arrivals';
+import { QuickGhostRenderer } from './renderers/quickGhost';
 import { ReviewRenderer } from './renderers/review';
 import { pinHit, pinPlaces, pointCanvas, type PinPlace } from './commentPins';
 import { proposedDisplay, reviewMarks, type ReviewCanvas } from './reviewMarks';
 import { readCanvasTokens, watchTheme, type CanvasTokens } from './theme';
 import { clampZoom, type Point, type Viewport } from './viewport';
 import { ViewportController } from './viewportController';
-import { sameCursor, type CanvasViewState } from './viewState';
+import { sameCursor, sameRect, type CanvasViewState } from './viewState';
 
 export type { DropTarget } from './frame';
 
@@ -114,6 +120,12 @@ export interface CanvasControllerOptions {
    * project (or the current one, in the Current view) with the review marks.
    */
   readonly review?: ReviewState;
+  /**
+   * Quick review (stage #1932, QR2): the canvas draws the translucent ghost of the markings the
+   * proposal creates or changes (or, in peek, the proposed result) and publishes its box. Without it,
+   * none.
+   */
+  readonly quick?: QuickReviewState;
   /**
    * Open perspective (stage #659, PE2): the canvas draws its project in view (the roots it
    * shows, where it places them) and does not start what is only for the Main one. Without it, the Main one.
@@ -193,6 +205,14 @@ function addFiles(
   }
 }
 
+/** `data-quick-review`: the quick review on the canvas; `null` (absent) without one. */
+function quickReviewText(frame: Frame): string | null {
+  const quick = frame.quickGhost;
+  return quick
+    ? formatQuickReview(quick.ghost.proposalId, quick.mode, quick.ghost.items)
+    : null;
+}
+
 function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
   if (a.size !== b.size) return false;
   for (const value of a) if (!b.has(value)) return false;
@@ -206,6 +226,7 @@ export class CanvasController {
   private readonly derived: EditorDerived;
   private readonly viewState: CanvasViewState;
   private readonly review: ReviewState | null;
+  private readonly quick: QuickReviewState | null;
   private readonly perspective: PerspectiveState | null;
   private readonly page: PageState | null;
   private readonly remoteImages: RemoteImageSource;
@@ -271,6 +292,7 @@ export class CanvasController {
   private readonly arrows: ArrowRenderer;
   private readonly overlay: OverlayRenderer;
   private readonly reviewLayer: ReviewRenderer;
+  private readonly quickRenderer: QuickGhostRenderer;
   private readonly pinLayer: CommentPinRenderer;
   private readonly arrivalLayer: ArrivalRenderer;
   /** The minimap changed size: the arrival stamp is redone in the next frame. */
@@ -291,11 +313,16 @@ export class CanvasController {
     // the store's project, not from the confirmed one. In the review the perspective is the Completa
     // (switching is locked) but the page is free.
     if (!review || review.proposalId.value === null) {
-      return projectInPerspective(
-        this.store.project.value,
-        this.perspective?.id.value ?? null,
-        this.page?.id.value,
-      );
+      // Quick review in peek (decision 11): the canvas draws the proposed result, cut by the open page.
+      const peek = this.peekView();
+      if (peek) {
+        return projectInPerspective(
+          proposedDisplay(peek.preview, peek.proposal),
+          null,
+          this.page?.id.value,
+        );
+      }
+      return this.liveProject.value;
     }
     const shown = review.derived.shownProject.value;
     const proposal = review.derived.proposal.value;
@@ -305,6 +332,59 @@ export class CanvasController {
       return projectInPerspective(this.store.project.value, null, this.page?.id.value);
     }
     return proposedDisplay(shown, proposal);
+  });
+
+  /** The store's project (with the gesture preview), cut by the open perspective and page. */
+  private readonly liveProject = computed(() =>
+    projectInPerspective(
+      this.store.project.value,
+      this.perspective?.id.value ?? null,
+      this.page?.id.value,
+    ),
+  );
+
+  /** The quick review while the real look is on (`ui.quickPeek`); `null` otherwise. */
+  private peekView(): QuickReviewView | null {
+    const view = this.quick?.current.value ?? null;
+    return view !== null && this.ui.quickPeek.value ? view : null;
+  }
+
+  /**
+   * The project that picking reads (click, hover, drop): the live one in every quick-review mode,
+   * so nothing that exists only in the proposal is ever picked; the drawn one otherwise (the
+   * review's Proposed view keeps picking what it draws).
+   */
+  private readonly hitProject = computed(() =>
+    this.peekView() !== null ? this.liveProject.value : this.drawnProject.value,
+  );
+
+  /**
+   * The quick review's ghost data: only from the quick review, the committed project and the
+   * drawings of the preview, so pan and zoom (the viewport and the size) never recompute it.
+   */
+  private readonly quickFrame = computed((): QuickFrame | null => {
+    const view = this.quick?.current.value ?? null;
+    const committed = this.store.committed.value;
+    if (!view || !committed) return null;
+    const ghost = quickGhost(view, committed, this.derived.drawingsOf(view.preview));
+    return {
+      ghost,
+      preview: view.preview,
+      mode: this.ui.quickPeek.value ? 'peek' : 'ghost',
+    };
+  });
+
+  /**
+   * Markings whose drawing shows. In peek, the markings that exist only in the proposal are not in
+   * the derived set (it reads the committed project): the created ones that have a drawing join it.
+   */
+  private readonly drawnSet = computed((): ReadonlySet<string> => {
+    const base = this.derived.drawnMarkings.value;
+    const peek = this.peekView();
+    if (!peek) return base;
+    const drawings = this.drawings.value;
+    const extra = peek.created.filter((id) => drawings.has(id) && !base.has(id));
+    return extra.length === 0 ? base : new Set([...base, ...extra]);
   });
 
   /** The review is in the Proposed view and the proposal has a "how it would look" to draw. */
@@ -486,7 +566,7 @@ export class CanvasController {
       incomplete: this.derived.incompleteMarkings.value,
       visibility: this.derived.canvasVisibility.value,
       drawings: this.drawings.value,
-      drawn: this.derived.drawnMarkings.value,
+      drawn: this.drawnSet.value,
       floating: this.derived.floatingMarkings.value,
       review: over.review,
       arrows: this.arrowShapes.value,
@@ -497,6 +577,7 @@ export class CanvasController {
       pinSelected: over.pinSelected,
       draftPin: over.draftPin,
       arrivals: over.arrivals,
+      quickGhost: this.quickFrame.value,
     };
   });
   /** Last drawn frame: what has not changed since it is not redrawn. */
@@ -526,6 +607,7 @@ export class CanvasController {
     this.derived = options.derived;
     this.viewState = options.view;
     this.review = options.review ?? null;
+    this.quick = options.quick ?? null;
     this.perspective = options.perspective ?? null;
     this.page = options.page ?? null;
     this.remoteImages = options.remoteImages ?? sharedRemoteImageSource();
@@ -605,6 +687,13 @@ export class CanvasController {
     };
     overlayLayer.add(this.dragRoot);
     this.dragRoot.moveToBottom();
+    // The quick-review ghost is the lowest group of the layer (stage #1932, decision 9).
+    const quickGroup = new Konva.Group({ listening: false, name: 'quick-ghost' });
+    overlayLayer.add(quickGroup);
+    quickGroup.moveToBottom();
+    this.quickRenderer = new QuickGhostRenderer(quickGroup, (parent, onLoaded) =>
+      this.newComponentLayer(parent, onLoaded),
+    );
 
     this.view = new ViewportController(container, () => this.drawnProject.peek());
     const space = watchSpaceKey(() => this.pointer.updateCursor(null));
@@ -617,7 +706,7 @@ export class CanvasController {
       viewport: this.view,
       state: this.state,
       spaceDown: space.down,
-      project: () => this.drawnProject.peek(),
+      project: () => this.hitProject.peek(),
       reviewing: () => this.review?.proposalId.peek() != null,
       perspectiveOpen: () => this.perspective?.openId() != null,
       pinAt: (c) => {
@@ -792,7 +881,7 @@ export class CanvasController {
 
   /** Id of the image under a page screen coordinate, or `null` in an empty area. */
   imageIdAt(clientX: number, clientY: number): string | null {
-    const images = this.drawnProject.peek()?.containers ?? [];
+    const images = this.hitProject.peek()?.containers ?? [];
     return imageAt(images, this.canvasPointAt(clientX, clientY))?.id ?? null;
   }
 
@@ -817,17 +906,23 @@ export class CanvasController {
     for (const cleanup of this.cleanups.splice(0)) cleanup();
     this.componentLayer.destroy();
     this.floatingLayer.destroy();
+    this.quickRenderer.destroy();
+    this.viewState.quickReviewBox.value = null;
     this.arrivalLayer.destroy();
     this.arrows.destroy();
     this.markings.destroy();
     this.stage.destroy();
   }
 
-  private newComponentLayer(parent: Konva.Group | Konva.Layer): ComponentLayerRenderer {
+  private newComponentLayer(
+    parent: Konva.Group | Konva.Layer,
+    onLoaded?: () => void,
+  ): ComponentLayerRenderer {
     return new ComponentLayerRenderer(parent, {
       placeholder: this.componentPalette,
       // An embedded image finished loading: asks for a frame (the node is already updated).
       onImageLoaded: () => {
+        onLoaded?.();
         if (!this.destroyed) this.requestRender();
       },
       remoteImage: (url) => this.remoteImages.resolve(url),
@@ -881,7 +976,7 @@ export class CanvasController {
       if (!sameCursor(this.viewState.cursor.peek(), next)) {
         this.viewState.cursor.value = next;
       }
-      this.updateHover(project, canvas);
+      this.updateHover(this.hitProject.peek(), canvas);
     });
   }
 
@@ -1027,8 +1122,10 @@ export class CanvasController {
     // The component drawings that move also stay in the drag group.
     this.mark(this.layers.overlay, this.componentLayer.takeDragChanged());
     this.mark(this.layers.overlay, this.floatingLayer.takeDragChanged());
-    if (this.drag !== EMPTY_DRAG && this.dragRoot.zIndex() !== 0) this.dragRoot.zIndex(0);
+    // The ghost group stays the lowest (index 0), the drag group right above it.
+    if (this.drag !== EMPTY_DRAG && this.dragRoot.zIndex() !== 1) this.dragRoot.zIndex(1);
     this.renderOverlayMarks(frame, last, moved || placementsChanged);
+    this.renderQuickGhost(frame, last, placementsChanged, scaleChanged);
     // The name label anchors to the visible part: follows pan and screen size;
     // and shifts away from the parent's label, which changes with the semantic zoom and the visible layers.
     const viewMoved =
@@ -1044,6 +1141,7 @@ export class CanvasController {
     this.drawDirtyLayers(moved);
     this.refreshContainerBoxes(frame, placementsChanged);
     this.publishHostAttributes(frame, v);
+    this.publishQuickBox(frame);
   }
 
   /**
@@ -1100,6 +1198,7 @@ export class CanvasController {
       ['componentImages', String(componentImages)],
       ['pins', String(pins)],
       ['pinStates', pinStates],
+      ['quickReview', quickReviewText(frame)],
     ];
     for (const [key, text] of texts) {
       if (this.published.get(key) === text) continue;
@@ -1183,6 +1282,35 @@ export class CanvasController {
     }
   }
 
+  /**
+   * The quick-review ghost (overlays layer): only redone when its data, the theme, the image
+   * positions or the zoom scale change; pan and unrelated edits never reach the cache.
+   */
+  private renderQuickGhost(
+    frame: Frame,
+    last: Frame | null,
+    placementsChanged: boolean,
+    scaleChanged: boolean,
+  ): void {
+    const redo =
+      placementsChanged ||
+      scaleChanged ||
+      this.quickRenderer.isStale ||
+      !sameFrame(last, frame, QUICK_KEYS);
+    if (!redo) return;
+    if (this.quickRenderer.render(frame, this.placements, placementsChanged)) {
+      this.dirty.add(this.layers.overlay);
+    }
+  }
+
+  /** The ghost's box in CSS px for the bar; written only when it changes, `null` without a quick review. */
+  private publishQuickBox(frame: Frame): void {
+    const box = quickBoxCss(frame.quickGhost?.ghost.box ?? null, frame.viewport);
+    if (!sameRect(this.viewState.quickReviewBox.peek(), box)) {
+      this.viewState.quickReviewBox.value = box;
+    }
+  }
+
   /** Draws the frame: the whole stage if it moved, otherwise only the dirty layers. */
   private drawDirtyLayers(all: boolean): void {
     if (all) this.stage.batchDraw();
@@ -1197,6 +1325,7 @@ export class CanvasController {
     this.changedPackageKeys.clear();
     this.mark(this.layers.components, this.componentLayer.refreshPackageImages(keys));
     this.mark(this.layers.floating, this.floatingLayer.refreshPackageImages(keys));
+    this.quickRenderer.refreshPackageImages(keys);
   }
 
   /** Redoes the markings whose remote images changed since the last frame. */
@@ -1207,6 +1336,7 @@ export class CanvasController {
     this.changedImageUrls.clear();
     this.mark(this.layers.components, this.componentLayer.refreshImages(urls));
     this.mark(this.layers.floating, this.floatingLayer.refreshImages(urls));
+    this.quickRenderer.refreshImages(urls);
   }
 
   /** How many canvas markings (without a container) the frame has; recounted only when the project changes. */

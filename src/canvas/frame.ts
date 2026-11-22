@@ -14,6 +14,7 @@ import type { EditorMode, Selection, SelectionItem } from '../store/ui';
 import type { ArrowShape } from './arrowGeometry';
 import type { ArrivalMarks } from './arrivals';
 import type { PinPlace } from './commentPins';
+import type { QuickGhost } from './quickGhost';
 import type { ReviewCanvas } from './reviewMarks';
 import type { CanvasTokens } from './theme';
 import type { Point, Size, Viewport } from './viewport';
@@ -110,6 +111,15 @@ export interface ViewFrame {
   readonly arrows: boolean;
 }
 
+/** The quick review on the canvas (stage #1932): the ghost, the project as it would be and how it shows. */
+export interface QuickFrame {
+  readonly ghost: QuickGhost;
+  /** The project as it would be (`QuickReviewView.preview`): where the review marks read their markings. */
+  readonly preview: Project;
+  /** `ghost`: translucent grey over the live canvas; `peek`: the canvas itself draws the proposed result. */
+  readonly mode: 'ghost' | 'peek';
+}
+
 /** Everything a frame draws. Changing any item schedules a new frame. */
 export interface Frame {
   readonly project: Project | null;
@@ -181,6 +191,11 @@ export interface Frame {
    * The same object while the project does not change: pan and zoom do not recompute it.
    */
   readonly arrivals?: ArrivalMarks | null;
+  /**
+   * Quick review (stage #1932, QR2); `null` or absent without one. Derived only from the quick
+   * review and the committed project, so pan and zoom do not change it.
+   */
+  readonly quickGhost?: QuickFrame | null;
 }
 
 /** `true` if `a` and `b` have the same values (by reference) on the given keys. */
@@ -214,6 +229,8 @@ export const ARROW_KEYS = [
   'review',
   'view',
 ] as const;
+/** What changes the quick-review ghost (besides the zoom scale, compared separately). */
+export const QUICK_KEYS = ['quickGhost', 'tokens', 'locale'] as const;
 /** What changes the overlays (selection, handles, draft, drop target). */
 export const OVERLAY_KEYS = [
   'project',

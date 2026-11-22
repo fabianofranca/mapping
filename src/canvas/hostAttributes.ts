@@ -60,3 +60,12 @@ export function formatContainerBoxes(
   }
   return entries.length > 0 ? entries.join(';') : null;
 }
+
+/** `"<proposalId>:<ghost|peek>:<items>"`: the quick review on the canvas (`data-quick-review`). */
+export function formatQuickReview(
+  proposalId: string,
+  mode: 'ghost' | 'peek',
+  items: number,
+): string {
+  return `${proposalId}:${mode}:${items}`;
+}

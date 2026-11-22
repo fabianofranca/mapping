@@ -333,6 +333,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'opacity-mark-fill-selected': '0.28',
   'opacity-disabled': '0.45',
   'opacity-dimmed': '0.35',
+  /** Ghost of the quick review (a proposal drawn over the canvas, stage #1932). */
+  'opacity-ghost': '0.38',
   'opacity-ancestor': '0.75',
   'opacity-inherited': '0.7',
   /** Outline of the `slot` (reserved space) of the component drawing. */
