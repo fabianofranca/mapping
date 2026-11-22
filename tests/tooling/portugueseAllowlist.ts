@@ -2529,11 +2529,6 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     source: '.claude/skills/via-rapida/SKILL.md',
     group: 'issue-markers',
   },
-  {
-    term: 'nenhuma (só processo)',
-    source: '.claude/skills/via-rapida/SKILL.md',
-    group: 'issue-markers',
-  },
   { term: 'Exceção ao Button:', source: 'docs/DESIGN-SYSTEM.md', group: 'issue-markers' },
   {
     term: 'Madrugadão',
