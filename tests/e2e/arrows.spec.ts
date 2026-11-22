@@ -288,3 +288,49 @@ test('Link to… in Details creates the curved arrow without dragging (the teste
   expect(arrows).toHaveLength(1);
   expect(arrows[0]).toMatchObject({ from: a?.id, to: b?.id, style: 'curve', points: [] });
 });
+
+test("the arrow that leaves a Note is selected from the Tree and from the Note's Details (R1.20c)", async ({
+  page,
+}) => {
+  // A guard of existing behavior: the routes the R1.20c undo names (stage #2594).
+  await createProject(page, 'Arrows');
+  const host = page.locator('.canvas-host');
+  await page.keyboard.press('Control+Shift+9');
+  await page.getByRole('tab', { name: 'Palette' }).click();
+  const add = page.getByRole('button', { name: 'Add to canvas: Note', exact: true });
+  await add.click();
+  await expect(host).toHaveAttribute('data-components', '1');
+  await add.click();
+  await expect(host).toHaveAttribute('data-components', '2');
+
+  // The second Note is selected: link it to the first one through Details.
+  await page.getByRole('button', { name: 'Link to…', exact: true }).click();
+  const picker = page.getByRole('dialog', { name: /^Link .* to…$/ });
+  await picker.getByRole('option').first().click();
+  await expect(host).toHaveAttribute('data-arrows', '1');
+
+  // The Tree, opened from the strip when it is closed.
+  const tree = page.getByRole('region', { name: 'Marking tree' });
+  if (!(await tree.isVisible()))
+    await page.getByRole('button', { name: 'Marking tree', exact: true }).click();
+  await expect(tree).toBeVisible();
+  const arrowRow = tree.getByRole('button', { name: /^Arrow to / });
+  await expect(arrowRow).toHaveCount(1);
+
+  // Route 1: the `→ Name` row under the origin Note.
+  await arrowRow.click();
+  await expect(host).toHaveAttribute('data-selection', /^arrow /);
+
+  // Route 2: select a Note in the Tree, then "Select the arrow" in "Linked by arrow".
+  const notes = tree.getByRole('button', { name: 'Note', exact: true });
+  await expect(notes).toHaveCount(2);
+  await notes.first().click();
+  await expect(host).toHaveAttribute('data-selection', /^marking /);
+  await page.getByRole('button', { name: 'Select the arrow' }).click();
+  await expect(host).toHaveAttribute('data-selection', /^arrow /);
+
+  // Delete removes only the arrow.
+  await page.keyboard.press('Delete');
+  await expect(host).toHaveAttribute('data-arrows', '0');
+  await expect(notes).toHaveCount(2);
+});
