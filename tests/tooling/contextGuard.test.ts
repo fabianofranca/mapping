@@ -1000,6 +1000,47 @@ describe('CG1 — opensPullRequest (decision 2)', () => {
     expect(opensPr('Bash', { command })).toBe(true);
   });
 
+  it.each([
+    'if git push; then gh pr create; fi',
+    'for b in x; do gh pr create; done',
+    '{ gh pr create; }',
+    'env GH_TOKEN=x gh pr create',
+    'sudo gh pr create',
+    'timeout 60 gh pr create',
+    'command gh pr create',
+    'time gh pr create',
+    'cd /x && nohup gh pr create',
+  ])('review: a shell keyword or wrapper before gh still opens a PR: %s', (command) => {
+    expect(opensPr('Bash', { command })).toBe(true);
+  });
+
+  it.each([
+    'gh api repos/o/r/pulls -f title=t && curl -X GET http://x',
+    'gh api repos/o/r/pulls -f title=t; curl --method GET http://x',
+    'gh api repos/o/r/pulls -f title=t\ngh api -X GET repos/o/r/pulls/1',
+    'gh api repos/o/r/pulls -f title=t | jq .number',
+    'gh api "repos/o/r/pulls?a=1&b=2" -f title=t',
+  ])(
+    'review: the method of another command does not override the body flag of gh api: %s',
+    (command) => {
+      expect(opensPr('Bash', { command })).toBe(true);
+    },
+  );
+
+  it.each([
+    'curl -X POST http://x && gh api repos/o/r/pulls',
+    'curl -X POST http://x; gh api repos/o/r/pulls --jq .[].number',
+    'echo -f && gh api repos/o/r/pulls',
+    'gh api user -f a=b && echo repos/o/r/pulls',
+    'gh pr create-foo',
+    'gh pr create_x',
+  ])(
+    'review: a flag or path from another command, or a longer word, is not a PR open: %s',
+    (command) => {
+      expect(opensPr('Bash', { command })).toBe(false);
+    },
+  );
+
   it('every other tool passes, and malformed input is not a PR', () => {
     for (const name of [
       'mcp__github__merge_pull_request',

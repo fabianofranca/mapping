@@ -29,6 +29,8 @@
 //     tester and any other session. The gate reads the state for the role and writes it only to record a
 //     role it had to decide, or the `erro`: it never touches `contexto`, `ferramenta`, `ultimoAviso` or
 //     `saltos`, so the jumps of the notice stay right.
+//   Known limit: the call is recognized by its text (best effort): `gh` inside a quoted string (`bash -c '...'`)
+//     or a raw `curl` to the pulls endpoint is not seen.
 //   Known limit: the gate measures the `transcript_path` it receives; if that is a subagent's own
 //     transcript the measure is lower and the call goes through.
 //   Always exit code 0: the hook never blocks or delays a call except by the gate's deny, and any failure
@@ -144,10 +146,16 @@ export function sessionRole(texts) {
 }
 
 // `gh` must be in command position (start, or after `;`, `&`, `|`, `(`, a backtick or a line break, with
-// optional `NAME=value` prefixes): a commit message, an `echo` or a `grep` that only mentions it is not a call.
-const GH_START = /(?:^|[;&|(`\n])\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*gh\s+/;
+// optional shell keywords (`then`, `do`, `else`, `{`, ...), wrappers (`env`, `sudo`, `timeout <n>`, ...) and
+// `NAME=value` prefixes): a commit message, an `echo` or a `grep` that only mentions it is not a call.
+// Best effort: a command inside a quoted string (`bash -c '...'`) or a raw HTTP call (`curl`) is not seen.
+const WRAPPERS =
+  '(?:(?:then|do|else|elif|time|command|exec|sudo|nohup|env|!|\\{)\\s+|timeout\\s+\\S+\\s+)*';
+const GH_START = new RegExp(
+  `(?:^|[;&|(\`\\n])\\s*${WRAPPERS}(?:[A-Za-z_][A-Za-z0-9_]*=\\S*\\s+)*gh\\s+`,
+);
 const GH_API = new RegExp(`${GH_START.source}api\\b`);
-const PR_CREATE = new RegExp(`${GH_START.source}pr\\s+create\\b`);
+const PR_CREATE = new RegExp(`${GH_START.source}pr\\s+create(?![\\w-])`);
 const PULLS_PATH = /repos\/[^\s/'"]+\/[^\s/'"]+\/pulls(?=[\s'"?]|$)/;
 const BODY_FLAG = /(?:^|\s)(?:-[fF]|--field|--raw-field|--input)(?=[\s=]|$)/;
 const METHOD_FLAG = /(?:^|\s)(?:-X\s*|--method[\s=]+)([A-Za-z]+)/i;
@@ -158,6 +166,22 @@ function postsBody(command) {
   return method ? method[1].toUpperCase() === 'POST' : BODY_FLAG.test(command);
 }
 
+/** The text of the `gh api` call alone: from its match to the next command separator outside quotes. */
+function apiSegment(command) {
+  const found = GH_API.exec(command);
+  if (found === null) return null;
+  const rest = command.slice(found.index + found[0].length);
+  let quote = null;
+  for (let i = 0; i < rest.length; i += 1) {
+    const char = rest[i];
+    if (quote !== null) {
+      if (char === quote) quote = null;
+    } else if (char === '"' || char === "'") quote = char;
+    else if (';&|\n)`'.includes(char)) return rest.slice(0, i);
+  }
+  return rest;
+}
+
 /** Whether a tool call opens a pull request: the create tool, `gh pr create` or a POST `gh api …/pulls`. */
 export function opensPullRequest(toolName, toolInput) {
   if (toolName === 'mcp__github__create_pull_request') return true;
@@ -165,7 +189,8 @@ export function opensPullRequest(toolName, toolInput) {
   const command = toolInput?.command;
   if (typeof command !== 'string') return false;
   if (PR_CREATE.test(command)) return true;
-  return GH_API.test(command) && PULLS_PATH.test(command) && postsBody(command);
+  const segment = apiSegment(command);
+  return segment !== null && PULLS_PATH.test(segment) && postsBody(segment);
 }
 
 /** Call label to attribute the jumps: `Bash: <40 characters>`, `Read: <file>`, … */
