@@ -90,10 +90,11 @@ describe('model growth (n = 1,250, 4n = 5,000 markings)', () => {
 });
 
 describe('perspective growth (n = 2,500, 4n = 10,000 markings)', () => {
-  // `perspectiveView` runs in ~0.3-0.5 ms at 1,250 markings: at that size the cache advantage of n over 4n weighs the most and
-  // a loaded runner pushed the ratio over 6× (6.2-6.3× in the CI run of PR #1967, with the code untouched; stage #1968). At 2,500
-  // and 10,000 both sizes are larger than the cache and the run at n takes ~1 ms, so the ratio measures 4 to 5× (idle) with the same
-  // limit. The other cases keep 1,250 and 5,000: they measure from 1.5 ms (accessibilityAudit) to tens of ms at 1,250.
+  // `perspectiveView` is a memory-bound linear pass: it reads the roots by position from the index (stage #2674) instead of hashing each
+  // id and reading each annotation, and takes ~0.3 ms at 2,500 markings and ~1.6 ms at 10,000. At 1,250 the cache advantage of n weighs the
+  // most and a loaded runner pushed the ratio over 6× (6.2-6.3× in the CI run of PR #1967, with the code untouched; stage #1968), so the case measures at 2,500 and 10,000,
+  // where both sizes are larger than the cache. Its center is ~5× (4.8-5.3× idle, pairwise third quartile ~5.3×), the memory effect that `projectIndex` itself shows, not an
+  // algorithm. The other cases keep 1,250 and 5,000: they measure from 1.5 ms (accessibilityAudit) to tens of ms at 1,250.
   it.each([0, 1])('builds the perspective %i', GROWTH_OPTIONS, (which) => {
     expectLinearGrowth(`perspectiveView #${which + 1}`, {
       build,
