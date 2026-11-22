@@ -1,4 +1,4 @@
-# Coordinator chat title shows the lineage level — [Não lançado] (épico `epic/coordinator-title-lineage`, PR #2554, MCP unchanged, schema v23 unchanged)
+# Coordinator chat title shows the lineage level — [Não lançado] (épico `epic/coordinator-title-lineage`, PR #2557, MCP unchanged, schema v23 unchanged)
 
 ## Alterado
 
