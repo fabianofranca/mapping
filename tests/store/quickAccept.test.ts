@@ -117,6 +117,25 @@ describe('quickAccept', () => {
     expect(hasMarking(h, 'M9')).toBe(false);
   });
 
+  it('refuses a version that is no longer a quick review (a decision exists), keeping it', async () => {
+    const proposal = creation();
+    const h = await openHarness({ proposals: [proposal] });
+    const first = proposal.changes[0];
+    if (!first) throw new Error('no change');
+    // Someone rejected a change outside (the full review): accepting all would flip it.
+    writeOutside(h.root, {
+      ...proposal,
+      decisions: { [first.id]: { state: 'rejected', at: '2026-12-01T00:00:00.000Z' } },
+      revision: proposal.revision + 1,
+    });
+    const result = await h.session.proposalActions.quickAccept('P1');
+    expect(result).toMatchObject({ ok: false, error: 'stale' });
+    const disk = await diskProposal(h.root);
+    expect(disk.decisions[first.id]?.state).toBe('rejected');
+    expect(disk.applied).toEqual({});
+    expect(hasMarking(h, 'M9')).toBe(false);
+  });
+
   it('refuses with "revised" when the agent revised it after what the person sees, writing nothing', async () => {
     const original = propose(base, renameMarking(base, 'M1', 'Porta dianteira'), {
       id: 'P1',

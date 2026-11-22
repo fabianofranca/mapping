@@ -7,6 +7,7 @@ import {
   isTextPackageFile,
   packageWithinLimits,
   proposalIndex,
+  quickReviewOf,
   removeNote as removeProposalNote,
   reviewKey,
   reviewTree,
@@ -459,10 +460,13 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
   const acceptWhole = (
     p: Proposal,
     seen: Proposal,
-  ): Proposal | 'no-project' | 'not-open' | 'revised' => {
+  ): Proposal | 'no-project' | 'not-open' | 'stale' | 'revised' => {
     const project = store.committed.peek();
     if (!project) return 'no-project';
-    if (p.status !== 'open') return 'not-open';
+    // The version re-read from disk may no longer be a quick review (a decision made outside, a
+    // revision with removals): accepting it all would overwrite what was decided.
+    const eligible = quickReviewOf(p, project);
+    if (!eligible.ok) return eligible.reason === 'not-open' ? 'not-open' : 'stale';
     const whole: ReviewTarget = { level: 'proposal', id: null };
     const decided = decide(p, reviewTree(p, project), whole, 'accepted', now());
     if (!decided.ok) return decided.reason === 'not-open' ? 'not-open' : 'no-project';
@@ -711,10 +715,12 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
 
   const applyAcceptedChanges: ProposalActions['applyAccepted'] = async (id) => {
     const result = await runApply(id, false);
+    if (result.ok) return result;
+    const { error, ...rest } = result;
     // Without `acceptAll` the two quick-accept errors cannot happen.
-    return result.ok || (result.error !== 'not-open' && result.error !== 'revised')
-      ? (result as ApplyResult)
-      : { ok: false, error: 'failed' };
+    if (error === 'not-open' || error === 'revised')
+      return { ok: false, error: 'failed' };
+    return { ...rest, ok: false, error };
   };
 
   return {

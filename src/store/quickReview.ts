@@ -198,7 +198,8 @@ export function createQuickReview(deps: QuickReviewDeps): QuickReviewState {
     accepting,
     async accept() {
       const view = current.peek();
-      if (!view) return null;
+      // Blocked by a conflict or a lock: only Review… is offered (decision 4).
+      if (!view || view.blocked === 'conflict' || view.blocked === 'locked') return null;
       accepting.value = true;
       try {
         const result = await session.proposalActions.quickAccept(view.proposal.id);

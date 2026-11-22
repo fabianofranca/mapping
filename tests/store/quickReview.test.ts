@@ -240,6 +240,17 @@ describe('QuickReviewState.current: what blocks Accept (decision 4)', () => {
     expect(h.quick.current.value?.blocked).toBe('conflict');
   });
 
+  it('Accept does nothing while a conflict or a lock blocks it', async () => {
+    const h = await open({ proposals: [renameProposal()] });
+    h.session.actions.renameMarking('M1', 'Another name');
+    expect(h.quick.current.value?.blocked).toBe('conflict');
+    expect(await h.quick.accept()).toBeNull();
+    expect(
+      h.session.store.committed.peek()?.markings.find((m) => m.id === 'M1')?.name,
+    ).toBe('Another name');
+    expect((await diskProposal(h.root)).applied).toEqual({});
+  });
+
   it('a change on a locked item leaves only Review', async () => {
     const h = await open({ proposals: [moveProposal()] });
     expect(h.quick.current.value?.blocked).toBeNull();
