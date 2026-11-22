@@ -652,6 +652,9 @@ export const enUS = {
   'identity.missing':
     'Without an identity you can only read conversations: writing, resolving, reopening and deleting need a name and email.',
   'comments.title': 'Comments',
+  'conversation.title': 'Conversation',
+  'conversation.empty':
+    'No conversation open. Choose one in Details, in Comments or on a pin.',
   'comments.delete.title': 'Delete the conversation?',
   'comments.delete.confirm': 'Delete',
   'comments.delete.goes': '{count} messages will be gone: {authors}.',

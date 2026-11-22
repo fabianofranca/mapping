@@ -652,6 +652,9 @@ export const ptBR: Dictionary = {
   'identity.missing':
     'Sem identidade você só lê as conversas: escrever, resolver, reabrir e apagar pedem nome e e-mail.',
   'comments.title': 'Comentários',
+  'conversation.title': 'Conversa',
+  'conversation.empty':
+    'Nenhuma conversa aberta. Escolha uma em Detalhes, em Comentários ou em um pino.',
   'comments.delete.title': 'Apagar a conversa?',
   'comments.delete.confirm': 'Apagar',
   'comments.delete.goes': 'Vão embora {count} mensagens: {authors}.',
