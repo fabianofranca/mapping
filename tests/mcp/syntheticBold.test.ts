@@ -277,3 +277,70 @@ describe('a variable face declared with a narrow weight (#2652)', () => {
     expect(book.synthesis('v', 700, false).bold).toBe(false);
   });
 });
+
+// Stage #2574 (VA2, decision 4): no synthetic slant on a file that already slants. Chromium skews an italic text on a
+// face declared `normal` only when the file is upright.
+describe('a file that already slants (#2574)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mapping-slanted-'));
+  const built: Record<string, ArrayBuffer> = {};
+  beforeAll(async () => {
+    await initShaper();
+    const make = (name: string, ...options: string[]) => {
+      execFileSync('node', [
+        'scripts/testing/variable-font.mjs',
+        join(dir, `${name}.ttf`),
+        ...options,
+      ]);
+      built[name] = bytes(join(dir, `${name}.ttf`));
+    };
+    make('fsital', '--fs-italic');
+    make('slntd', '--slnt=-20,-10,0');
+    make('slnt0', '--slnt=-20,0,20');
+    make('ital1', '--ital=1');
+    make('ital0', '--ital=0');
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('a file flagged italic, declared normal, gets no slant', () => {
+    const book = createFontBook([entry('lib', '400', 'normal', built.fsital)]);
+    expect(book.synthesis('lib', 400, true).slant).toBe(0);
+  });
+
+  it('a variable font with a slnt default of -10, or an ital default of 1, gets no slant', () => {
+    expect(
+      createFontBook([entry('lib', '400', 'normal', built.slntd)]).synthesis(
+        'lib',
+        400,
+        true,
+      ).slant,
+    ).toBe(0);
+    expect(
+      createFontBook([entry('lib', '400', 'normal', built.ital1)]).synthesis(
+        'lib',
+        400,
+        true,
+      ).slant,
+    ).toBe(0);
+  });
+
+  it('an upright file still leans 0.25, whatever its axes', () => {
+    expect(createFontBook([entry('lib', '400')]).synthesis('lib', 400, true).slant).toBe(
+      0.25,
+    );
+    for (const name of ['slnt0', 'ital0']) {
+      const book = createFontBook([entry('lib', '400', 'normal', built[name])]);
+      expect(book.synthesis('lib', 400, true).slant).toBe(0.25);
+    }
+  });
+
+  it('the embedded fonts still lean 0.2', () => {
+    const book = createFontBook([entry('lib', '400')]);
+    expect(book.synthesis('sans-serif', 400, true).slant).toBe(0.2);
+    expect(book.synthesis('monospace', 400, true).slant).toBe(0.2);
+  });
+
+  it('upright text never slants', () => {
+    const book = createFontBook([entry('lib', '400', 'normal', built.fsital)]);
+    expect(book.synthesis('lib', 400, false).slant).toBe(0);
+  });
+});

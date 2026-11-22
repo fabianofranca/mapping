@@ -20,12 +20,18 @@ export const PARITY_FONTS = ['sans', 'calt', 'roboto'] as const;
  * `normal` and `italic`, and only `normal`), and `vital` the `--ital=0` bytes (declared `normal` and `italic`).
  */
 export const VARIABLE_FONTS = ['vwght1', 'vwght', 'vslnt', 'vslntn', 'vital'] as const;
+/**
+ * The faces of stage #2574 (VA2, decision 6) whose file already slants, each declared only `normal`: `vslntd` is the
+ * `--slnt=-20,-10,0` font (a default that is not 0), `vitald` the `--ital=1` font and `fsital` the `--fs-italic` one.
+ */
+export const SLANTED_FONTS = ['vslntd', 'vitald', 'fsital'] as const;
 /** Every font the cases use: the base ones, `rtl` (the extra cases of stage #2448), the variable ones (#2574); `pair` is Mapping Sans at 400 and Mapping Mono at 900. */
 export const PARITY_ALL_FONTS = [
   ...PARITY_FONTS,
   'rtl',
   'pair',
   ...VARIABLE_FONTS,
+  ...SLANTED_FONTS,
 ] as const;
 export type ParityFont = (typeof PARITY_ALL_FONTS)[number];
 
@@ -100,6 +106,16 @@ export const VARIABLE_CASES: readonly ExtraCase[] = [
   { font: 'vital', text: 'Hamburgefonstiv', letterSpacing: 0, italic: true },
 ];
 
+/**
+ * The cases of stage #2574 (VA2, decision 6), after the variable ones: a file that already slants, declared `normal`.
+ * The upright text of `vslntd` measures at `slnt` 0, not at the default −10; the italic text of each font has no skew
+ * (the ink reference of the spec is the upright text of the same font).
+ */
+export const SLANTED_CASES: readonly ExtraCase[] = SLANTED_FONTS.flatMap((font) => [
+  { font, text: 'Hamburgefonstiv', letterSpacing: 0 },
+  { font, text: 'Hamburgefonstiv', letterSpacing: 0, italic: true },
+]);
+
 /** The ink of the weight cases is compared within this many px, as a difference to the upright 400 reference. */
 export const INK_TOLERANCE = 1;
 
@@ -111,6 +127,8 @@ export interface ParityFace {
   readonly ext: 'ttf' | 'woff2';
   readonly bytes: Uint8Array;
 }
+
+const SLANTED_SOURCE = { vslntd: 'slntd', vitald: 'itald', fsital: 'fsital' } as const;
 
 export function parityFaces(): ParityFace[] {
   const bytes = parityFontBytes();
@@ -144,6 +162,13 @@ export function parityFaces(): ParityFace[] {
     variable('vslntn', '400', 'normal', 'slnt'),
     variable('vital', '400', 'normal', 'ital'),
     variable('vital', '400', 'italic', 'ital'),
+    ...SLANTED_FONTS.map((family) => ({
+      family,
+      weight: '400',
+      style: 'normal' as const,
+      ext: 'ttf' as const,
+      bytes: bytes[SLANTED_SOURCE[family]],
+    })),
   ];
 }
 
@@ -151,10 +176,20 @@ export function parityFaces(): ParityFace[] {
  * The bytes of each font: Mapping Sans, the test font of `scripts/testing/gsub-font.mjs --calt`, the Material 3
  * library's Roboto Regular `.woff2` (#2126: the server decodes it, Chromium loads the same bytes natively) and the
  * `--rtl` test font, with the Hebrew letters mapped to the glyphs of `A` to `J` (stage #2448), and the variable test fonts
- * of `scripts/testing/variable-font.mjs` (stage #2574): `wght`, `slnt` (−20, 0, 20) and `ital` (default 0).
+ * of `scripts/testing/variable-font.mjs` (stage #2574): `wght`, `slnt` (−20, 0, 20) and `ital` (default 0), and the ones
+ * whose file already slants (VA2): `slnt` (−20, −10, 0), `ital` (default 1) and `--fs-italic`.
  */
 export function parityFontBytes(): Record<
-  'sans' | 'calt' | 'roboto' | 'rtl' | 'wght' | 'slnt' | 'ital',
+  | 'sans'
+  | 'calt'
+  | 'roboto'
+  | 'rtl'
+  | 'wght'
+  | 'slnt'
+  | 'ital'
+  | 'slntd'
+  | 'itald'
+  | 'fsital',
   Uint8Array
 > {
   const dir = mkdtempSync(join(tmpdir(), 'mapping-parity-'));
@@ -173,6 +208,9 @@ export function parityFontBytes(): Record<
       ['wght', ['--wght']],
       ['slnt', ['--slnt=-20,0,20']],
       ['ital', ['--ital=0']],
+      ['slntd', ['--slnt=-20,-10,0']],
+      ['itald', ['--ital=1']],
+      ['fsital', ['--fs-italic']],
     ];
     for (const [name, options] of variable)
       execFileSync('node', [
@@ -184,6 +222,9 @@ export function parityFontBytes(): Record<
       wght: new Uint8Array(readFileSync(join(dir, 'wght.ttf'))),
       slnt: new Uint8Array(readFileSync(join(dir, 'slnt.ttf'))),
       ital: new Uint8Array(readFileSync(join(dir, 'ital.ttf'))),
+      slntd: new Uint8Array(readFileSync(join(dir, 'slntd.ttf'))),
+      itald: new Uint8Array(readFileSync(join(dir, 'itald.ttf'))),
+      fsital: new Uint8Array(readFileSync(join(dir, 'fsital.ttf'))),
       sans: new Uint8Array(readFileSync('mcp/fonts/MappingSans-Regular.ttf')),
       calt: new Uint8Array(readFileSync(join(dir, 'calt.ttf'))),
       roboto: new Uint8Array(
