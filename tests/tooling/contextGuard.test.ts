@@ -1320,3 +1320,55 @@ describe('CG1 — the tester role (decision 7)', () => {
     silent(hook(f));
   });
 });
+
+// Stage #2474, phase CG2 (decision 8 and the CG2 part of 11): the FLOW sub-item says what the hook and the gate do.
+describe('CG2 — docs/FLOW.md: the PR gate in the phase session (decision 8)', () => {
+  const flow = readFileSync('docs/FLOW.md', 'utf8');
+  const phase = section(flow, '## For the phase session');
+  const ceiling = between(
+    phase,
+    '   - **Phase context ceiling:**',
+    '4. Every briefing for a behavior change',
+  );
+  const hook = between(ceiling, '**Hook:**', '**Transition:**');
+  const checks = between(ceiling, 'Check at two points', 'Once the phase PR');
+
+  it('the Hook sentence describes the PreToolUse gate and its exemption', () => {
+    expect(hook).toContain('`PreToolUse`');
+    expect(hook).toContain('refuses to open the PR');
+    expect(hook).toContain(`above the trigger of ${TRIGGER / 1000} thousand`);
+    expect(hook).toContain('except in the `5 de 5` session');
+    expect(hook).toContain('the successor opens the PR');
+    expect(hook).not.toContain('it does not block');
+  });
+
+  it('the Hook sentence says the tester gets its own notice from 250 thousand, and the supervision and the fast track get none', () => {
+    expect(hook).toContain(`its own notice from ${TESTER_TRIGGER / 1000} thousand`);
+    expect(hook).toContain('docs/TESTING-NUVEM.md');
+    expect(hook).toContain('`/supervisionar-fila` and `/via-rapida` get none');
+    expect(hook).not.toContain('the tester, `/supervisionar-fila`');
+  });
+
+  it('check (c) comes before the /code-review of item 10, with --teto equal to the trigger', () => {
+    expect(checks).toContain('(c) before the `/code-review` of item 10');
+    expect(checks.indexOf('(c)')).toBeGreaterThan(checks.indexOf('(b)'));
+    expect(checks).toContain('only in a phase that has item 10');
+    expect(checks).toContain(`--teto ${TRIGGER}`);
+    expect(checks).toContain('hands over before the review');
+    expect(checks).toContain('the successor runs the review and opens the PR');
+  });
+
+  it('the /code-review and the fixes of its findings never count as the PR open', () => {
+    expect(ceiling).toMatch(
+      /Once the phase PR is open[^.]*there is no switch[^.]*\.[^.]*the `\/code-review` and the fixes of its findings come before the PR and never count as the PR open/,
+    );
+  });
+
+  it('the 300 thousand ceiling, the 4 switches, the resume line and checks (a) and (b) stay', () => {
+    expect(ceiling).toContain('300,000');
+    expect(ceiling).toContain('At most 4 switches per phase (5 sessions)');
+    expect(ceiling).toContain('Retomada por contexto (<k> de 5)');
+    expect(checks).toContain('(a) before sending a new task to a subagent');
+    expect(checks).toContain('(b) before running the gates of item 5');
+  });
+});

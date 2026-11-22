@@ -375,6 +375,22 @@ describe('CM1 — flow texts that use the measure (decisions 5 to 10)', () => {
     expect(context).toContain('or calling the owner');
   });
 
+  it('CG2: TESTING-NUVEM paragraph describes the hook notice from 250 thousand and what it asks (decision 8 of #2474)', () => {
+    expect(context).toContain('250 thousand');
+    expect(context).toContain('`scripts/ci/contextGuard.mjs`');
+    expect(context).toContain('every remaining batch runs in a subagent');
+    expect(context).toContain('reads only its summary line');
+    expect(context).toContain('the guide, the captures, the `runs` or the reports');
+    expect(context).toContain('assembles the report from the files of `apoio/`');
+    expect(context).toContain('no step marked "not executed" for context');
+    // It keeps what the other tests read: the ceiling, the measure, no call to the owner, no moved scripts.
+    expect(context).toContain('300 thousand');
+    expect(context).toContain('`node scripts/ci/contextUsage.mjs`');
+    expect(context).toContain('before handing over each batch');
+    expect(context).not.toMatch(/\bcalls? the owner/);
+    expect(context).not.toMatch(/move (test )?scripts/);
+  });
+
   it('TESTING-NUVEM: the notice ends with "; contexto <mil> mil" in the three formats', () => {
     expect(notice).toContain('`; contexto <n> mil`');
     expect(notice).toContain('`; contexto sem medida (<reason>)`');
