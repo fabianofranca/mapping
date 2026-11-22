@@ -35,8 +35,13 @@
 //     - `curl` to `…/repos/<owner>/<repo>/pulls` with an explicit POST or, with no method, a data flag (`-d`,
 //       `--data*`, `--json`, `-F`, `--form`; `-G` makes it a GET);
 //     - the GraphQL `createPullRequest` mutation in `gh api graphql` or in a `curl` to `…/graphql`;
-//     - any of them inside `bash`/`sh`/`zsh`/`dash` with an option group ending in `c` (`-c`, `-lc`) or `eval`,
-//       unquoted one level and checked again, up to depth 3.
+//     - any of them inside `bash`/`sh`/`zsh`/`dash` (by name or path; options, `-o <name>` and a `--` allowed)
+//       with an option group ending in `c` (`-c`, `-lc`) or `eval`, unquoted one level (`'…'`, `"…"`, `$'…'`)
+//       and checked again, up to depth 3; `sudo`, `env` (with their options), `xargs` and `find -exec` count as
+//       wrappers before the command word;
+//     - the method and data flags are read from the masked segment (a quoted body that mentions `-G` or
+//       `-X GET` changes nothing), case-sensitive (`-x` is curl's proxy), and curl's grouped short options
+//       (`-sd`, `-sSX POST`) count; a backslash line continuation does not end the command.
 //     Inert text is not a command position: the position is looked for on a masked copy of the command, of the
 //     same length (`maskInert`), where heredoc bodies and the content of `'…'`, `$'…'` and `"…"` are blank
 //     (the code of `$( … )` and of backticks inside `"…"` stays), and comments. A heredoc fed to a shell
@@ -165,8 +170,13 @@ export function sessionRole(texts) {
 // `sudo`, `timeout <n>`, ...) and `NAME=value` prefixes): a commit message, an `echo` or a `grep` that only
 // mentions it is not a call. The position is looked for on a masked copy of the command (`maskInert`), where
 // the inert text is blank; the segment checks (path, flags, mutation name) read the original text.
+// `sudo`, `env` and `xargs` take options (a lone `-x` or `-u bot`, one word of argument without `=`, so a
+// `NAME=value` stays a prefix) and `find` hands the command to `-exec`.
+const WRAPPER_OPTIONS = '(?:-\\S+(?:\\s+[^-\\s;&|][^\\s=]*)?\\s+)*';
 const WRAPPERS =
-  '(?:(?:then|do|else|elif|time|command|exec|sudo|nohup|env|!|\\{)\\s+|timeout\\s+\\S+\\s+)*';
+  `(?:(?:then|do|else|elif|time|command|exec|nohup|!|\\{)\\s+|timeout\\s+\\S+\\s+|` +
+  `(?:[\\w.+~-]*/)*(?:sudo|env|xargs)\\s+${WRAPPER_OPTIONS}(?:[A-Za-z_][A-Za-z0-9_]*=\\S*\\s+)*|` +
+  `find\\s+[^;&|()\\n]*?-exec(?:dir)?\\s+)*`;
 const commandStart = (word, flags = '') =>
   new RegExp(
     `(?:^|[;&|(\`\\n])\\s*${WRAPPERS}(?:[A-Za-z_][A-Za-z0-9_]*=\\S*\\s+)*${word}`,
@@ -175,8 +185,9 @@ const commandStart = (word, flags = '') =>
 const GH_API = commandStart('gh\\s+api\\b', 'g');
 const PR_CREATE = commandStart('gh\\s+pr\\s+create(?![\\w-])');
 const CURL = commandStart('curl\\s+', 'g');
+// A shell by name or by path, options (`-o <name>` too) up to the `-c` group, and an optional `--` after it.
 const SHELL_C = commandStart(
-  '(?:bash|sh|zsh|dash)\\s+(?:-[A-Za-z-]+\\s+)*-[A-Za-z]*c\\s+',
+  '(?:[\\w.+~-]*/)*(?:bash|sh|zsh|dash)\\s+(?:(?:-[oO]\\s+\\w+|-[A-Za-z-]+)\\s+)*-[A-Za-z]*c\\s+(?:--\\s+)?',
   'g',
 );
 const EVAL = commandStart('eval\\s+', 'g');
@@ -187,11 +198,13 @@ const CURL_GRAPHQL = /(?:https?:\/\/)?api\.github\.com\/graphql(?=[\s'"?]|$)/;
 const GH_GRAPHQL = /(?:^|\s)graphql(?=[\s'"]|$)/;
 const PR_MUTATION = /\bcreatePullRequest\b/;
 const BODY_FLAG = /(?:^|\s)(?:-[fF]|--field|--raw-field|--input)(?=[\s=]|$)/;
-const METHOD_FLAG = /(?:^|\s)(?:-X\s*|--method[\s=]+)([A-Za-z]+)/i;
-const CURL_METHOD_FLAG = /(?:^|\s)(?:-X\s*|--request[\s=]+)([A-Za-z]+)/i;
+// Flags are case-sensitive (curl's `-x` is the proxy) and read from the masked segment; a short option may be
+// grouped in curl (`-sd`, `-sSX POST`, `-sG`).
+const METHOD_FLAG = /(?:^|\s)(?:-X\s*|--method[\s=]+)([A-Za-z]+)/;
+const CURL_METHOD_FLAG = /(?:^|\s)(?:-[A-Za-z]*X\s*|--request[\s=]+)([A-Za-z]+)/;
 const CURL_DATA_FLAG =
-  /(?:^|\s)(?:-[dF]|--data(?:-raw|-binary|-urlencode|-ascii)?|--json|--form(?:-string)?)(?=[\s='"@{[]|$)/;
-const CURL_GET_FLAG = /(?:^|\s)(?:-G|--get)(?=\s|$)/;
+  /(?:^|\s)(?:-[A-Za-z]*[dF]|--data(?:-raw|-binary|-urlencode|-ascii)?|--json|--form(?:-string)?)(?=[\s='"@{[]|$)/;
+const CURL_GET_FLAG = /(?:^|\s)(?:-[A-Za-z]*G|--get)(?=\s|$)/;
 /** A line that feeds a heredoc to a shell (`bash <<EOF`, `cat <<EOF | sh`): its body is a script, so it is code. */
 const SHELL_LINE =
   /(?:^|[;&|(]|\b(?:sudo|env|xargs|exec|command|nohup|time)\s)\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*(?:bash|sh|zsh|dash)(?=\s|$)/;
@@ -199,17 +212,17 @@ const HEREDOC_OPEN = /^<<(-?)[ \t]*(?:'([^']*)'|"([^"]*)"|\\?([A-Za-z0-9_]+))/;
 /** Shell wrappers (`bash -c`, `eval`) are unquoted and checked again up to this depth. */
 const MAX_WRAPPER_DEPTH = 3;
 
-/** An explicit method decides; with none, a body flag makes `gh api` a POST. */
-function postsBody(command) {
-  const method = METHOD_FLAG.exec(command);
-  return method ? method[1].toUpperCase() === 'POST' : BODY_FLAG.test(command);
+/** On the masked segment: an explicit method decides; with none, a body flag makes `gh api` a POST. */
+function postsBody(masked) {
+  const method = METHOD_FLAG.exec(masked);
+  return method ? method[1].toUpperCase() === 'POST' : BODY_FLAG.test(masked);
 }
 
-/** An explicit method decides; with none, `-G` makes it a GET and a data flag a POST. */
-function curlPosts(command) {
-  const method = CURL_METHOD_FLAG.exec(command);
+/** On the masked segment: an explicit method decides; with none, `-G` makes it a GET and a data flag a POST. */
+function curlPosts(masked) {
+  const method = CURL_METHOD_FLAG.exec(masked);
   if (method) return method[1].toUpperCase() === 'POST';
-  return !CURL_GET_FLAG.test(command) && CURL_DATA_FLAG.test(command);
+  return !CURL_GET_FLAG.test(masked) && CURL_DATA_FLAG.test(masked);
 }
 
 function blank(ctx, from, to) {
@@ -360,7 +373,8 @@ function segmentEnd(rest) {
   let quote = null;
   for (let i = 0; i < rest.length; i += 1) {
     const char = rest[i];
-    if (quote !== null) {
+    if (char === '\\' && quote !== "'") i += 1;
+    else if (quote !== null) {
       if (char === quote) quote = null;
     } else if (char === '"' || char === "'") quote = char;
     else if (';&|\n)`'.includes(char)) return i;
@@ -368,28 +382,62 @@ function segmentEnd(rest) {
   return rest.length;
 }
 
-/** The text after every match of `start` (found on the masked copy), up to the end of that command, from the original. */
+/**
+ * The text after every match of `start` (found on the masked copy), up to the end of that command: the original
+ * (for the path and the mutation name) and the masked copy of the same range (for the flags).
+ */
 function segmentsAfter(command, masked, start) {
   return [...masked.matchAll(start)].map((found) => {
-    const rest = command.slice(found.index + found[0].length);
-    return rest.slice(0, segmentEnd(rest));
+    const from = found.index + found[0].length;
+    const rest = command.slice(from);
+    const end = segmentEnd(rest);
+    return { raw: rest.slice(0, end), masked: masked.slice(from, from + end) };
   });
 }
 
 /** The `gh api` call: a POST to `…/pulls` or the `createPullRequest` mutation of `graphql`. */
-function apiOpensPullRequest(segment) {
-  if (PULLS_PATH.test(segment) && postsBody(segment)) return true;
-  return GH_GRAPHQL.test(segment) && PR_MUTATION.test(segment);
+function apiOpensPullRequest({ raw, masked }) {
+  if (PULLS_PATH.test(raw) && postsBody(masked)) return true;
+  return GH_GRAPHQL.test(raw) && PR_MUTATION.test(raw);
 }
 
 /** The `curl` call: a POST to the pulls endpoint, or the `createPullRequest` mutation sent to `/graphql`. */
-function curlOpensPullRequest(segment) {
-  if (CURL_PULLS.test(segment) && curlPosts(segment)) return true;
-  return CURL_GRAPHQL.test(segment) && PR_MUTATION.test(segment);
+function curlOpensPullRequest({ raw, masked }) {
+  if (CURL_PULLS.test(raw) && curlPosts(masked)) return true;
+  return CURL_GRAPHQL.test(raw) && PR_MUTATION.test(raw);
 }
 
-/** One level of unquoting of the word that starts at `from`: `'…'`, `"…"` (with its escapes) or a bare word. */
+const ANSI_C_ESCAPES = {
+  n: '\n',
+  t: '\t',
+  r: '\r',
+  a: '\x07',
+  b: '\b',
+  f: '\f',
+  v: '\v',
+  e: '\x1b',
+};
+
+/** The value of one `\…` escape inside `$'…'`: a control letter, `\xHH`, `\uHHHH`, an octal code or the character itself. */
+function ansiCEscape(_all, code) {
+  if (code.length > 1 && /^[xu]/.test(code))
+    return String.fromCodePoint(parseInt(code.slice(1), 16));
+  if (/^[0-7]+$/.test(code)) return String.fromCodePoint(parseInt(code, 8));
+  return ANSI_C_ESCAPES[code] ?? code;
+}
+
+/** `$'…'` at `from`: the content with its escapes decoded (the bash `$'…'` quoting). */
+function ansiCWord(command, from) {
+  let i = from + 2;
+  while (i < command.length && command[i] !== "'") i += command[i] === '\\' ? 2 : 1;
+  return command
+    .slice(from + 2, i)
+    .replace(/\\(x[0-9a-fA-F]{1,2}|u[0-9a-fA-F]{1,4}|[0-7]{1,3}|[\s\S])/g, ansiCEscape);
+}
+
+/** One level of unquoting of the word that starts at `from`: `'…'`, `$'…'`, `"…"` (with its escapes) or a bare word. */
 function unquotedWord(command, from) {
+  if (command.startsWith("$'", from)) return ansiCWord(command, from);
   const quote = command[from];
   if (quote === "'") {
     const close = command.indexOf("'", from + 1);

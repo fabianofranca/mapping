@@ -1223,6 +1223,111 @@ describe('CT1 — opensPullRequest: inert text, wrappers, curl and GraphQL (deci
     ).toBe(true);
   });
 
+  it.each([
+    'sudo -u bot bash -c "cd r && gh pr create --fill"',
+    '/bin/bash -c "git push && gh pr create"',
+    'env -i bash -c "x; gh pr create"',
+    'env -u HOME FOO=1 sh -c "gh pr create"',
+    'sudo -E -u bot /usr/bin/env bash -lc "gh pr create"',
+    'ls | xargs -I{} sh -c "echo {}; gh pr create"',
+    'ls | xargs -n 1 -I {} sh -c "gh pr create"',
+    'find . -name x -exec sh -c "gh pr create" \\;',
+    'bash -o pipefail -c "cd r && gh pr create"',
+    'bash -c -- "gh pr create"',
+    "bash -c $'cd r\\ngh pr create'",
+    "bash -c $'gh pr create --title \\'t\\''",
+    'sudo -u bot gh pr create',
+    `sudo -u bot curl -d '{}' ${API}/repos/o/r/pulls`,
+  ])(
+    'review: a shell behind a path, sudo/env, xargs/find -exec or -o/-- opens a PR: %s',
+    (command) => {
+      expect(opensPr('Bash', { command })).toBe(true);
+    },
+  );
+
+  it.each([
+    'sudo -u bot bash -c "echo gh pr create"',
+    'echo sudo -u bot bash -c "gh pr create"',
+    'env -i bash -c "echo hi"',
+    'ls | xargs -I{} sh -c "echo {}"',
+    'xargs -I{} echo "gh pr create"',
+    'bash -o pipefail script.sh',
+  ])('review: a wrapped shell that runs something else stays allowed: %s', (command) => {
+    expect(opensPr('Bash', { command })).toBe(false);
+  });
+
+  it('review: curl -x is the proxy, not the method', () => {
+    expect(
+      opensPr('Bash', {
+        command: `curl -x http://p:3128 -d '{"t":1}' ${API}/repos/o/r/pulls`,
+      }),
+    ).toBe(true);
+    expect(
+      opensPr('Bash', { command: `curl -x http://p:3128 ${API}/repos/o/r/pulls` }),
+    ).toBe(false);
+    expect(
+      opensPr('Bash', {
+        command: `curl -X POST ${API}/repos/o/r/pulls`,
+      }),
+    ).toBe(true);
+    expect(
+      opensPr('Bash', { command: `curl -X get -d t=1 ${API}/repos/o/r/pulls` }),
+    ).toBe(false);
+  });
+
+  it.each([
+    `curl -X POST \\\n ${API}/repos/o/r/pulls \\\n -d x`,
+    `curl \\\n  -d x \\\n  ${API}/repos/o/r/pulls`,
+    'gh api repos/o/r/pulls \\\n -f title=x',
+    'gh api \\\n repos/o/r/pulls \\\n --method POST',
+  ])('review: a backslash line continuation does not end the command: %s', (command) => {
+    expect(opensPr('Bash', { command })).toBe(true);
+  });
+
+  it('review: a continuation does not glue a real second command to the first', () => {
+    expect(
+      opensPr('Bash', { command: `curl ${API}/repos/o/r/pulls \\\n -H x\ngh pr create` }),
+    ).toBe(true);
+    expect(opensPr('Bash', { command: `curl ${API}/repos/o/r/pulls \\\n -H x` })).toBe(
+      false,
+    );
+  });
+
+  it.each([
+    `curl -d '{"body":"use -G here"}' ${API}/repos/o/r/pulls`,
+    `curl -d "use -G or --get here" ${API}/repos/o/r/pulls`,
+    `curl -d x ${API}/repos/o/r/pulls -H 'X: -G'`,
+    "gh api repos/o/r/pulls -f title=x -f body='try -X GET'",
+    'gh api repos/o/r/pulls -f title=x -f body="--method GET"',
+  ])('review: a flag inside a quoted body does not change the method: %s', (command) => {
+    expect(opensPr('Bash', { command })).toBe(true);
+  });
+
+  it.each([
+    `curl ${API}/repos/o/r/pulls -H 'X: -d'`,
+    `curl ${API}/repos/o/r/pulls -H "Note: -X POST -d"`,
+    "gh api repos/o/r/pulls --jq '.[] | -f'",
+  ])('review: a flag only inside a quoted value is not a flag: %s', (command) => {
+    expect(opensPr('Bash', { command })).toBe(false);
+  });
+
+  it.each([
+    `curl -sd x ${API}/repos/o/r/pulls`,
+    `curl -sSX POST ${API}/repos/o/r/pulls`,
+    `curl -sF title=t ${API}/repos/o/r/pulls`,
+  ])('review: grouped short options carry the data and method flags: %s', (command) => {
+    expect(opensPr('Bash', { command })).toBe(true);
+  });
+
+  it('review: grouped -G still makes the data a query', () => {
+    expect(opensPr('Bash', { command: `curl -sG -d x ${API}/repos/o/r/pulls` })).toBe(
+      false,
+    );
+    expect(
+      opensPr('Bash', { command: `curl -sSX GET -d x ${API}/repos/o/r/pulls` }),
+    ).toBe(false);
+  });
+
   it('review: every curl segment is checked, not only the first', () => {
     expect(
       opensPr('Bash', {
