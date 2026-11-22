@@ -1,6 +1,6 @@
-# Cloud tester guide and helpers — [Não lançado] (épico `epic/tester-guide-gaps`, #2450)
+# Cloud tester guide and helpers — [Não lançado] (épico `epic/tester-guide-gaps`, PR #2450, MCP unchanged, schema v23)
 
-MCP sem mudança. Schema unchanged.
+Schema unchanged.
 
 ## Alterado
 

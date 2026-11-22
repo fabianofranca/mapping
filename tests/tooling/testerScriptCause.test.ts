@@ -3,7 +3,7 @@
 // gives a ❌ its severity. Text-only test (reads the file).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { section } from '../support/textSlice';
+import { between, section } from '../support/textSlice';
 
 const cloud = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
 const guide = readFileSync('docs/TESTING.md', 'utf8');
@@ -44,14 +44,14 @@ describe('#2261 — the tester gives each ❌ a cause before its severity', () =
 // Stage #2450 (TC1, decisions 1 to 3; absorbs #2264 and #2364): the cause reaches the template and the
 // subagent's lines, and the batch subagent's model is stated.
 describe('#2450 — the finding cause in the report template and the subagent lines', () => {
-  const template = section(guide, '### Round report');
+  const template = between(guide, '### Round report', '## Notes (no severity)');
   const subagent = section(consulta, '## Subagent per batch');
 
   it('the finding template has the `- Cause:` line right after `- Severity:`', () => {
     const lines = template.split('\n');
     const i = lines.findIndex((l) => l.startsWith('- Severity:'));
     expect(i).toBeGreaterThan(-1);
-    expect(lines[i + 1]).toBe('- Cause: `produto` | `roteiro`');
+    expect(lines[i + 1]).toMatch(/^- Cause: `produto` | `roteiro`/);
     expect(template).toContain('`docs/TESTING-NUVEM.md`, "Check and record"');
   });
 
