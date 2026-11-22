@@ -7,3 +7,9 @@
 ## Corrigido
 
 - **R12.54 to R12.56 run in a shallow clone, R12.18 and R1.20c (for whoever runs the tester, #2625, RH2):** R12.54 fetches commit `338892d912761e564d2308b92e78c5c98588686f` by its full SHA before the `git show` (the same pattern as R3.19), so R12.55 and R12.56, which depend on it, no longer stop in the cloud tester's `--depth=1` clone. R12.18 says where to right-click the stroke: at the `center` of `arrowHandlesOf(page)` with the arrow selected. R1.20c reads `aria-pressed` of **View** before clicking it after reopening `principal`, and checks the starting state in a new empty project `vista-nova` instead of clearing the site data; `principal` is reopened from **Recent projects** so R1.21 finds it as it was.
+
+- **R17.4, R17.30, R17.55 and R17.59, and the button of `cadastro.png` (for whoever runs the tester, #2625, RH3):** R17.4 names the `propose_changes` arguments (`project`, `title`, `operations` or `operationsFile`). R17.30 reads `s` as `W` / 300 from the `data-selection-box` at any window size, with 1.76 at 1280 × 720 as the example. R17.55 separates the two lists: the three `component-overflow` are in `issues.new`, among the `required-empty` and `accessible-label-missing` items, and `notices.new` only brings the library's `diverges`, `pending` and `removed` notices. R17.59 describes the empty **Notices** window as it is (the filter checkbox and "No accessibility warnings.", no **Accessibility** heading). The HTML that `cloud.mjs` embeds for `cadastro.png` is now the one in R0: the button says "Register", not "Sign up" (a test compares the two).
+
+## Adicionado
+
+- **`cloud.mjs cadastro <file>` (for whoever runs the tester, #2625, RH3):** generates the sign-up screen image (`cadastro.png`, 484 px wide) with the headless Chromium, listed in `cloud.mjs help`; the R0 introduction tells the cloud agent to run it.

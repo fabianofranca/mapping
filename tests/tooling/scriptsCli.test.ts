@@ -45,6 +45,17 @@ describe('CLI on a path with an accent and a space (items 51 and 52)', () => {
     expect(r.stdout + r.stderr).toMatch(/saveFile/);
   });
 
+  it('cloud.mjs help lists the cadastro command (RH3)', () => {
+    const r = run([path.join(copy, 'scripts/testing/cloud.mjs'), 'help']);
+    expect(r.stdout).toMatch(/cloud\.mjs cadastro <file>/);
+  });
+
+  it('cloud.mjs cadastro without the file is a usage error (RH3)', () => {
+    const r = run([path.join(copy, 'scripts/testing/cloud.mjs'), 'cadastro']);
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toMatch(/Usage: node cloud\.mjs cadastro <file>/);
+  });
+
   it('cloud.mjs passo reads the guide generated in the copy (#1232)', () => {
     const guide = path.join(tmp, 'apoio with accént', 'guia.md');
     const gen = run([
