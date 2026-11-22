@@ -65,7 +65,7 @@ function stage(n: number, specs: Spec[], o: StageOptions = {}): void {
       `kind=${kind}`,
       ...(label ? [`label=${label}`] : []),
     );
-    run('cost', dir, id, `usd=${usd}`, `ctx=${ctx ?? 1000}`);
+    run('cost', dir, id, `usd=${usd}`, `ctx=${ctx ?? 150000}`);
   });
 }
 
@@ -98,7 +98,7 @@ describe('painel.py outliers: base and ceiling (decisions 4, 5, 7 and 9)', () =>
     stage(20, [['fase', 20]]);
     const out = run('outliers', dir);
     expect(out.split('\n')[0]).toBe(
-      'outliers (since all): 5 stages in the base, without ficha: 0',
+      'outliers (since all): 5 stages in the base, without ficha: 0, partial: 0',
     );
     expect(out).toContain(
       'product: 5 stages, median US$ 2.00 per phase, ceiling US$ 4.00',
@@ -220,7 +220,7 @@ describe('painel.py outliers: groups, small base and without ficha (decisions 4,
     writeFileSync(metaFile, JSON.stringify(meta));
     const out = run('outliers', dir);
     expect(out.split('\n')[0]).toBe(
-      'outliers (since all): 4 stages in the base, without ficha: 3',
+      'outliers (since all): 4 stages in the base, without ficha: 3, partial: 0',
     );
     expect(out).toContain('product: base too small (4 stages)');
   });
@@ -234,7 +234,7 @@ describe('painel.py outliers: a toca= with only ignored citations is without fic
     stage(20, [['fase', 400]], { toca: IGNORED_TOCA });
     const out = run('outliers', dir);
     expect(out.split('\n')[0]).toBe(
-      'outliers (since all): 4 stages in the base, without ficha: 1',
+      'outliers (since all): 4 stages in the base, without ficha: 1, partial: 0',
     );
     expect(out).not.toContain('#20 ');
   });
@@ -283,7 +283,7 @@ describe('painel.py outliers: --desde and read-only (decisions 3 and 4)', () => 
     expect(all).toContain('6 stages in the base');
     const since = run('outliers', '--desde', '2026-11-11T00:00:00Z', dir);
     expect(since.split('\n')[0]).toBe(
-      'outliers (since 2026-11-11T00:00:00Z): 4 stages in the base, without ficha: 0',
+      'outliers (since 2026-11-11T00:00:00Z): 4 stages in the base, without ficha: 0, partial: 0',
     );
   });
 
@@ -297,7 +297,7 @@ describe('painel.py outliers: --desde and read-only (decisions 3 and 4)', () => 
     writeFileSync(metaFile, JSON.stringify(meta));
     const since = run('outliers', '--desde', '2026-11-11T00:00:00Z', dir);
     expect(since.split('\n')[0]).toBe(
-      'outliers (since 2026-11-11T00:00:00Z): 4 stages in the base, without ficha: 0',
+      'outliers (since 2026-11-11T00:00:00Z): 4 stages in the base, without ficha: 0, partial: 0',
     );
   });
 

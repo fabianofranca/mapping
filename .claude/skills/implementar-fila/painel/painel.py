@@ -64,14 +64,18 @@ carries (without `publishing`, from an old panel, it prints "nada em voo" and st
 of #1595). `touch DIR` marks the three files again.
 Cost (decisions 5 and 26 of #1532): `session DIR '#n' <id> kind=<type> [label=<code>]` adds `{id, issue, kind, label,
 created}` to `meta.sessions` (without `kind`, only the row's `sessions`, as before); `cost DIR <id> usd= ctx= [model= effort=
-served=] [issue= kind=]` writes the session's cost (`kind` required with a new id); `costs [--desde <ISO>] DIR` reads only the `meta`
+served=] [issue= kind=]` writes the session's cost (`kind` required with a new id); `ctx` is the token count
+(`context_usage.used_tokens`), never thousands, so `cost` refuses a `ctx` from 1 to 1000 (code 2, `erro: ctx= is the token count
+(context_usage.used_tokens), not thousands: <v>`, nothing written; inside `apply` an `Erro` with the line number) and still takes `ctx=0`
+(no measure; decision 14 of #2293); `costs [--desde <ISO>] DIR` reads only the `meta`
 and prints the total, one line per kind (sessions, US$, median) and one per stage (with `--desde`, only those with `created` from
-the date on); `show` brings the `custo:` line.
+the date on; the line of a stage in `meta.partialCost` ends in ` (partial: imported)`, decisions 12 and 13 of #2293); `show` brings the `custo:` line.
 `outliers [--desde <ISO>] DIR` (decisions 3 to 9 of #1937, read-only, outside `apply`) reads the queue and the meta: for the `concluída` stages
 with a valid `fases=` and a `toca=` other than `?` (with `--desde`, `started` from the date on) it divides the stage cost by the planned
 phases and lists, per group (`process` by `is_process_stage`, else `product`), those strictly above `OUTLIER_FACTOR` times the group
 median, with the cause: the session kind that went furthest above the group's median in that kind. A group under `OUTLIER_MIN_BASE` stages
-flags nothing; a stage without a usable ficha (and one only in `meta.merged`) enters `without ficha`.
+flags nothing; a stage without a usable ficha (and one only in `meta.merged`) enters `without ficha`. A stage in `meta.partialCost` (below) is
+out of the base and counted in the header's `, partial: <k>` (decision 13 of #2293).
 Tester ceiling (decision 9 of #1639): a `cost` of a `testador` or `reteste` session with `ctx` above TESTER_CONTEXT_LIMIT
 is written as always, exits with 0 and prints `acima do teto do testador (300 mil): <id> <ctx>`; `show` brings `testador acima do teto: <stage> <label> <ctx in thousands>k; …` (or `nenhum`), only for the stages not `concluída` or `recusada` and outside `meta.merged`.
 Current session of each role (decision 7 of #1532): `role DIR <coordenador|supervisor> <id> [link=<url>]` writes
@@ -110,7 +114,9 @@ log. The holds use the `upgrade` conversion; the `pausada pelo dono` (the transi
 records what came over. `import` does not go into `apply`. The canaries (`meta.canarios`) come over with their baseline frozen (stage #2260): the old panel's own
 "before" becomes the canary's `base` (`fonte: import`) when it has sessions, otherwise an old `base` stays; and the canary's sessions come with them, the ones whose id
 is in the `sessoes` of a carried canary whole (`cost`, `sinais`, `canario`) and, of the same stages, the others without `cost`, so `k/n`, the canary side and the rework
-ruler survive the switch and `custo:` counts only the canary's own; the `log` line then ends in `sessões de canário <k>`.
+ruler survive the switch and `custo:` counts only the canary's own; the `log` line then ends in `sessões de canário <k>`. The cost the import does not
+bring leaves those stages partial (decision 12 of #2293): `meta.partialCost` is a sorted list, without repeats and absent when empty, of the union of the
+imported rows with `started`, the stages of the carried canary sessions and the old panel's own `partialCost`.
 Plan phases (stage #1705): `phases` keeps `<code>:<state>` separated by `|`, with the states `todo` (to do: only comes
 from the ficha), `open` (open, with the session created) and `ok` (merged into the epic). Every write (`Sessao.flush`) completes the rows
 from the ficha (`fases=`): its phases come first, in its order, with the state they already had (or `todo`), and then the `open`
@@ -137,7 +143,7 @@ the `slots_plan` reason first; with no blocker the `slots_plan` reason stays (`v
 arrow to the node, each pair once; the single `holder` arrow of the reason stays only for the other nodes. `estado` and `rank` do not change.
 Usage and quality (stage #1889, decisions 2 to 7): every write refreshes `meta.uso`, one entry per key (`papel`, `modelo`, `esforco`) of
 the sessions with a `cost`: the model is the family of the id in `cost.model` (`Haiku`, `Sonnet`, `Opus`, `Fable`; another id as it came),
-the effort as written; with `sessoes`, `usd`, `pct`, `medianaSessao`, `medianaEtapa` (only merged stages), `ctxMediano`, `acimaTeto`
+the effort as written; with `sessoes`, `usd`, `pct`, `medianaSessao`, `medianaEtapa` (only merged stages, without those in `meta.partialCost`), `ctxMediano`, `acimaTeto`
 (`ctx` > 300000 in `fase`, `correção`, `testador` and `reteste`), `intervencoes` (`dono` plus the context switches), `sinais` (the signals added
 up) and, for the roles with a rework ruler (`fase`, `correção`, `testador`, `reteste`): `decididas`, `comRetrabalho`, `sequencia` (decided sessions in
 a row without rework, from the most recent back) and `candidato` (the step below, from CLEAN_STREAK = 10 in a row). `uso [--desde <ISO>] DIR`
@@ -174,7 +180,7 @@ The canary counts `n` in sessions, and in `fase` and `correção` in distinct ph
 `encerrado` (every stage of the canary decided), `revertido` as soon as the rework reaches `volta` (at any time, with one `log` line written
 once: `canário <id> revertido: <k> retrabalhos (<ids>)`) and `terminado pelo dono`. Rework of a canary: `reteste`, each `falso` `high`/`medium` in
 its sessions; `fase`, a `correção` in the stage of one of its sessions (once per stage) and each `ciclo`; another role, the ruler of decision 6.
-`resumo` = `{antes, canario, medida, veredito}`: each side has `sessoes` (with a cost), `medianaSessao`, `medianaEtapa`, `decididas` and `comRetrabalho`
+`resumo` = `{antes, canario, medida, veredito}`: each side has `sessoes` (with a cost), `medianaSessao`, `medianaEtapa` (without the partial stages of the panel it reads), `decididas` and `comRetrabalho`
 (decision 6) and, for `testador` and `reteste`, `passos` (`ok` + `falha` over the sessions that have either written), `usdPorPasso` (their US$ ÷
 `passos`, 3 decimals), `xFalso`, `naoExec`, `xFalsoPct` (100 × `xFalso` ÷ `falha`) and `naoExecPct` (100 × `naoExec` ÷ (`ok` + `falha` + `naoExec`)), the
 last four over the sessions that have `naoExec` written (`xFalso` absent counts 0; None without such a session or with a 0 denominator); the other roles have
@@ -835,6 +841,15 @@ def to_number(k, v, conv):
     return x
 
 
+CTX_THOUSANDS_MAX = 1000  # a real session never ends at or below 1,000 tokens; in thousands, 1,000 is already the 1M context
+
+
+def check_ctx_tokens(raw, ctx):
+    """Decision 14 of #2293: `ctx` is `context_usage.used_tokens`; 1 to 1000 is a value in thousands (0 is "no measure")."""
+    if 1 <= ctx <= CTX_THOUSANDS_MAX:
+        raise Erro(f"ctx= is the token count (context_usage.used_tokens), not thousands: {raw}")
+
+
 def cmd_cost(a):
     s = open_session(a.dir)
     pairs = parse_pairs(a.pairs)
@@ -846,6 +861,7 @@ def cmd_cost(a):
             raise Erro(f"falta {k}=")
     usd = to_number("usd", pairs["usd"], float)
     ctx = to_number("ctx", pairs["ctx"], lambda v: int(float(v)))
+    check_ctx_tokens(pairs["ctx"], ctx)
     if "kind" in pairs:
         validate_choice("kind", pairs["kind"], SESSION_KINDS)
     if "issue" in pairs:
@@ -916,10 +932,15 @@ def cost_summary(meta):
     return f"{money(sum(usd_of(e) for e in es))} em {len(es)} sessões"
 
 
+PARTIAL_MARK = " (partial: imported)"
+
+
 def cmd_costs(a):
     since = check_iso(a.desde) if a.desde else None
     m = load(a.dir, "meta")
-    es = costed(m[0] if m else {}, since)
+    meta = m[0] if m else {}
+    partial = partial_stages(meta)
+    es = costed(meta, since)
     if not es:
         print("custo total: —")
         return
@@ -934,9 +955,9 @@ def cmd_costs(a):
             v = by_kind[k]
             print(f"  {k}: {len(v)} sessões, {money(sum(v))}, mediana {money(statistics.median(v))}")
     print("por etapa:")
-    for k in sorted(by_issue, key=lambda i: (not i.startswith("#"), int(i[1:]) if i[1:].isdigit() else 0, i)):
+    for k in sorted(by_issue, key=issue_order):
         v = by_issue[k]
-        print(f"  {k}: {len(v)} sessões, {money(sum(v))}")
+        print(f"  {k}: {len(v)} sessões, {money(sum(v))}{PARTIAL_MARK if k in partial else ''}")
 
 
 # --- usage and quality per role x model x effort (stage #1889, phase QM1) ---
@@ -1011,6 +1032,12 @@ def severe_escaped(meta):
     return {x.get("etapa") for x in meta.get("escapados") or [] if x.get("sev") in ("high", "medium")}
 
 
+def partial_stages(meta):
+    """`meta.partialCost` (decision 12 of #2293) as a set: the stages whose cost the import did not bring whole; missing or invalid, none."""
+    v = meta.get("partialCost")
+    return {i for i in v if isinstance(i, str)} if isinstance(v, list) else set()
+
+
 class Ruler:
     """The rework ruler (decision 6), over every session of `meta.sessions`, with a cost or not: a stage counts only
     when decided (`concluída` in the queue or in `meta.merged`)."""
@@ -1019,6 +1046,7 @@ class Ruler:
         self.okey = chronology(meta)
         self.escaped = severe_escaped(meta)
         self.decided = set(meta.get("merged") or []) | {r["issue"] for r in q if r["status"] == "concluída"}
+        self.measured = self.decided - partial_stages(meta)  # the stages whose per-stage cost is whole (decision 13 of #2293)
         self.stages = {}
         for e in meta.get("sessions") or []:
             if e.get("issue"):
@@ -1085,7 +1113,7 @@ def switch_successors(meta):
 
 
 def stage_median(es, decided):
-    """Median, among the decided stages, of what the key spent in each one; None with no decided stage."""
+    """Median, among the decided stages (`Ruler.measured`: without the partial ones), of what the key spent in each one; None with none."""
     sums = {}
     for e in es:
         if e.get("issue") in decided:
@@ -1130,7 +1158,7 @@ def usage_row(key, es, total, ruler, switches):
         "papel": papel, "modelo": modelo, "esforco": esforco, "sessoes": len(es),
         "usd": round(usd, 2), "pct": round(100 * usd / total, 1) if total else 0.0,
         "medianaSessao": round(statistics.median([usd_of(e) for e in es]), 2),
-        "medianaEtapa": stage_median(es, ruler.decided),
+        "medianaEtapa": stage_median(es, ruler.measured),
         "ctxMediano": int(round(statistics.median(ctx))) if ctx else None,
         "acimaTeto": over_ceiling(papel, es),
         "intervencoes": sums.get("dono", 0) + trocas,
@@ -1487,16 +1515,21 @@ def canary_base(a):
 
 
 def outlier_base(q, meta, since):
-    """The `concluída` rows with a valid `fases=` and a `toca=` other than `?` (and `started` from `since` on), and the
-    count of the stages that stay out for lack of a ficha (rows without one, and those only in `meta.merged`)."""
+    """The `concluída` rows with a valid `fases=` and a `toca=` other than `?` (and `started` from `since` on), the
+    count of the stages that stay out for lack of a ficha (rows without one, and those only in `meta.merged`) and the
+    count of those out because their cost is partial (`meta.partialCost`, decision 13 of #2293)."""
+    partial = partial_stages(meta)
     rows = [r for r in q if r.get("status") == "concluída" and not (since and (r.get("started") or "") < since)]
+    partial_rows = [r for r in rows if r.get("issue") in partial]
+    rows = [r for r in rows if r.get("issue") not in partial]
     base = [r for r in rows if plan_phase_codes(r.get("plan") or "") and has_toca(r.get("plan") or "")]
     queued = {r.get("issue") for r in q}
     merged_only = {i for i in meta.get("merged") or [] if i not in queued}
     if since:  # a merged-only stage has no row: it counts only with a session created from `since` on
         recent = {e.get("issue") for e in meta.get("sessions") or [] if (e.get("created") or "") >= since}
         merged_only &= recent
-    return base, len(rows) - len(base) + len(merged_only)
+    partial_only = merged_only & partial
+    return base, len(rows) - len(base) + len(merged_only - partial_only), len(partial_rows) + len(partial_only)
 
 
 def stage_kind_costs(meta, issues):
@@ -1562,9 +1595,9 @@ def cmd_outliers(a):
     since = check_iso(a.desde) if a.desde else None
     q, m = load(a.dir, "queue"), load(a.dir, "meta")
     meta = m[0] if m else {}
-    base, without = outlier_base(q, meta, since)
+    base, without, partial = outlier_base(q, meta, since)
     costs = stage_kind_costs(meta, [r["issue"] for r in base])
-    print(f"outliers (since {since or 'all'}): {len(base)} stages in the base, without ficha: {without}")
+    print(f"outliers (since {since or 'all'}): {len(base)} stages in the base, without ficha: {without}, partial: {partial}")
     for name, rows in (("product", [r for r in base if not is_process_stage(r)]),
                        ("process", [r for r in base if is_process_stage(r)])):
         print("\n".join(outlier_group(name, rows, meta, costs)))
@@ -1751,7 +1784,7 @@ def side_summary(es, ruler, papel):
     flags = [v for v in (ruler.verdict(e) for e in es) if v is not None]
     usd = [usd_of(e) for e in es]
     out = {"sessoes": len(es), "medianaSessao": round(statistics.median(usd), 2) if usd else None,
-           "medianaEtapa": stage_median(es, ruler.decided), "decididas": len(flags), "comRetrabalho": sum(flags)}
+           "medianaEtapa": stage_median(es, ruler.measured), "decididas": len(flags), "comRetrabalho": sum(flags)}
     out.update({**step_figures(es), **noise_figures(es)} if papel in STEP_KINDS else NO_FIGURES)
     return out
 
@@ -2302,6 +2335,21 @@ def carry_canary_sessions(old_meta, meta):
     return sum(1 for e in sessions if e.get("id") in ids)
 
 
+def issue_order(issue):
+    """Sort key of `#<n>` ids: numbers in order, anything else after."""
+    return not issue.startswith("#"), int(issue[1:]) if issue[1:].isdigit() else 0, issue
+
+
+def carry_partial_cost(old_meta, meta, rows):
+    """Decision 12 of #2293: `meta.partialCost`, the stages whose old cost the import does not bring: the rows with `started`, the
+    stages of the carried canary sessions and the old panel's own list (a sorted list without repeats; no key when empty)."""
+    ids = {sid for c in meta.get("canarios") or [] for sid in c.get("sessoes") or []}
+    partial = partial_stages(old_meta) | {r["issue"] for r in rows if r.get("started")}
+    partial |= {e["issue"] for e in meta.get("sessions") or [] if e.get("id") in ids and e.get("issue")}
+    if partial:
+        meta["partialCost"] = sorted(partial, key=issue_order)
+
+
 def carry_questions(old_meta, meta, rows):
     """Brings the open owner questions of the rows `import` kept; those of the others are dropped."""
     issues = {r["issue"] for r in rows}
@@ -2346,6 +2394,7 @@ def cmd_import(a):
     carry_quality(old_m, meta)
     freeze_bases(old_q, old_m, meta)
     kept = carry_canary_sessions(old_m, meta)
+    carry_partial_cost(old_m, meta, rows)
     carry_questions(old_m, meta, rows)
     running = sum(1 for r in rows if carries_session(r))
     tail = f"; sessões de canário {kept}" if meta.get("canarios") else ""
