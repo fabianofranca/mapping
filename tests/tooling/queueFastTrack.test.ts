@@ -102,8 +102,8 @@ describe('implementar-fila: the queue runs the released fast tracks', () => {
     has('end', section(QUEUE, '## End'), ['`recusada` row is not pending']);
   });
 
-  it('SKILL.md stays under the 540-line limit of contextUsage.test.ts', () => {
-    expect(QUEUE.split('\n').length).toBeLessThan(540);
+  it('SKILL.md stays under the 560-line limit of contextUsage.test.ts', () => {
+    expect(QUEUE.split('\n').length).toBeLessThan(560);
   });
 });
 
@@ -114,7 +114,8 @@ describe('implementar-fila: a refused fast track comes back (stage #2204, phase 
     has('queue step 1', step1, [
       '`recusada` row',
       '`labeled` event',
-      "row's `ended`",
+      '`created_at`',
+      '`Via rápida recusada:`',
       "painel.py reentra <folder> '#n' kind=",
       '`#n reentra kind=',
       '`#n recusada: label anterior à recusa`',

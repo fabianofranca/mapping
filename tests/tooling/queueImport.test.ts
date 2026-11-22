@@ -217,7 +217,7 @@ describe('painel.py — hot switch on a panel without the new fields (FM7, decis
         oldDir,
         'session_new',
         'usd=1.5',
-        'ctx=100',
+        'ctx=100000',
         'model=claude-sonnet-5-5',
         'effort=high',
         'issue=#905',
@@ -446,6 +446,8 @@ describe('painel.py import (FM7, decision 17)', () => {
       expect(row(newDir, '#911').status).toBe('falhou');
       expect(row(newDir, '#910').status).toBe('esperando dono');
       expect(row(newDir, '#920').status).toBe('aguardando');
+      // decision 12 of #2293: the started rows come with a partial cost, the waiting ones do not
+      expect(json(newDir, 'meta')[0]!.partialCost).toEqual(['#905', '#910', '#911']);
     },
     SUBPROCESS_TIMEOUT,
   );
