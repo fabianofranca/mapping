@@ -8,7 +8,7 @@
 
 ## Sincronização
 
-Gravado no artefato **Mapping** em 2026-11-22: versão 104. Token `cv-component-image-failed` (`#d9480f`, the same in both themes) added to the Tokens page (`tokens.json`) and to `Contraste.md` (3.47:1 light, 4.52:1 dark over `color-canvas-bg`, both at least 3). The `ComponentDrawing` guide and `Canvas.md` now describe the remote image failure look (gray fill, X and 1px dashed 4/3 outline in the new token, for `failed`, `too-large` and `opaque`) next to the neutral placeholder, which stays for loading, no consent and a refused URL. The `ComponentDrawing` preview was left as it was (a static rendition).
+Gravado no artefato **Mapping** on 2026-11-22: version 104. Token `cv-component-image-failed` (`#d9480f`, the same in both themes) added to the Tokens page (`tokens.json`) and to `Contraste.md` (3.47:1 light, 4.52:1 dark over `color-canvas-bg`, both at least 3). The `ComponentDrawing` guide and `Canvas.md` now describe the remote image failure look (gray fill, X and 1px dashed 4/3 outline in the new token, for `failed`, `too-large` and `opaque`) next to the neutral placeholder, which stays for loading, no consent and a refused URL. The `ComponentDrawing` preview was left as it was (a static rendition).
 
 ## Ficou sem gravar
 
