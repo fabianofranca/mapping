@@ -29,12 +29,42 @@ window.measureParity = async (fonts, cases, size) => {
     const face = new FontFace('Parity' + family, bytes.buffer, { weight });
     document.fonts.add(await face.load());
   }
-  // The ink of a case (stage #2448, BD2): the canvas' bounding box, from the origin and the baseline.
+  // The ink of a case (stage #2448, BD2): from the origin and the baseline.
+  // The ink is read from the pixels: the text is drawn at 8 times the size and the box of the lit pixels divided by 8
+  // (the bounds of measureText are rounded and conservative; the fake bold, with a constant ratio from 36 px, and the
+  // slant are linear, so the scale keeps the shape and brings the rounding to 1/8 px).
+  const SCALE = 8;
   const ink = (c) => {
-    const ctx = document.createElement('canvas').getContext('2d');
-    ctx.font = (c.italic ? 'italic ' : '') + (c.weight ?? 400) + ' ' + size + 'px Parity' + c.font;
-    const m = ctx.measureText(c.text);
-    return { left: -m.actualBoundingBoxLeft, right: m.actualBoundingBoxRight, top: -m.actualBoundingBoxAscent };
+    const pad = 20 * SCALE;
+    const font = (c.italic ? 'italic ' : '') + (c.weight ?? 400) + ' ' + size * SCALE + 'px Parity' + c.font;
+    const probe = document.createElement('canvas').getContext('2d');
+    probe.font = font;
+    const width = Math.ceil(probe.measureText(c.text).width) + 2 * pad;
+    const height = Math.ceil(size * SCALE * 1.6);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.font = font;
+    ctx.textBaseline = 'alphabetic';
+    const baseline = Math.ceil(size * SCALE * 1.1);
+    ctx.fillText(c.text, pad, baseline);
+    const data = ctx.getImageData(0, 0, width, height).data;
+    let left = width, right = -1, top = height;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (data[(y * width + x) * 4 + 3] > 127) {
+          if (x < left) left = x;
+          if (x > right) right = x;
+          if (y < top) top = y;
+        }
+      }
+    }
+    return {
+      left: (left - pad) / SCALE,
+      right: (right + 1 - pad) / SCALE,
+      top: (top - baseline) / SCALE,
+    };
   };
   const dom = (c) => {
     const span = document.body.appendChild(document.createElement('span'));
