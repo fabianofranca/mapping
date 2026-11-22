@@ -1,4 +1,4 @@
-# Child notices follow the coordinator through every switch — [Não lançado] (épico `epic/queue-child-notice-target`, MCP unchanged, schema v23)
+# Child notices follow the coordinator through every switch — [Não lançado] (épico `epic/queue-child-notice-target`, PR #0, MCP unchanged, schema v23)
 
 ## Corrigido
 
