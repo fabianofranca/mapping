@@ -28,6 +28,7 @@ interface Op {
 interface Call {
   name: string;
   args: Record<string, unknown> & { operations?: Op[] };
+  save?: string;
 }
 
 const dir = mkdtempSync(join(tmpdir(), 'slots-test-'));
@@ -243,6 +244,29 @@ describe('scripts/testing/slots.mjs render and a11y', () => {
     expect(calls[0]?.args.ref).toBe(refOf('bottom-app-bar', 'bare'));
     expect(calls[2]?.args.ref).toBe(refOf('bottom-app-bar', 'full'));
     expect(calls[23]?.args.ref).toBe(refOf('bottom-sheet', 'full'));
+  });
+
+  it('render writes a `save` per call equal to the `names 57` line of the same position (RH4)', () => {
+    const calls = JSON.parse(run('render', list).stdout) as Call[];
+    const names = run('names', '57').stdout.trim().split('\n');
+    expect(calls.map((c) => c.save)).toEqual(names);
+  });
+
+  it('a11y writes a `save` equal to `names 58a` (default) or `names 58b` (RH4)', () => {
+    for (const [step, args] of [
+      ['58a', ['a11y', list]],
+      ['58a', ['a11y', list, '58a']],
+      ['58b', ['a11y', list, '58b']],
+    ] as const) {
+      const calls = JSON.parse(run(...args).stdout) as Call[];
+      expect(calls.map((c) => c.save)).toEqual(
+        run('names', step).stdout.trim().split('\n'),
+      );
+    }
+  });
+
+  it('a11y with an unknown variant fails', () => {
+    expect(run('a11y', list, '58c').status).not.toBe(0);
   });
 
   it('a11y gives the 4 calls of R17.58 for the bare Top and Bottom app bars', () => {
