@@ -17,7 +17,7 @@ In any mode, the message may carry the **visual pass** list (`Passada visual: De
 - **Report sub-issue:** the report goes as a comment on the sub-issue in the message; where it falls back to without one is in "Delivery".
 - **Notice to the coordinator:** the message ends with `Coordenador: session_…`; with the report posted, notify that session (item 5 of "Delivery"). Without the line, nobody finds out.
 
-The round is **always non-interactive**: the owner is not there, so do not ask anything. Whatever is missing and blocks the round goes into the report; a step that only a person could do is marked "not executed (needs the owner)" and the round goes on. The on-demand scripts (**RP**, **RF**, **RA**, **RB**, **RT**) are manual, done by the owner, and never run in the cloud nor appear in the report.
+The round is **always non-interactive**: the owner is not there, so do not ask anything. Whatever is missing and blocks the round goes into the report; a step that only a person could do is marked "not executed (needs the owner)" and the round goes on. The on-demand scripts (**RP**, **RF**, **RA**, **RB**, **RT**, **RQ**) are manual, done by the owner, and never run in the cloud nor appear in the report.
 
 ## Role and limits
 
@@ -93,7 +93,7 @@ Rules of this session:
 
 ## What to run
 
-**Full round (default).** All the scripts, **R0 to R43** (without RP, RF, RA, RB and RT), in the order of the guide's "Start here" table and with the dependencies at the beginning of section 8: R0, R1, R2, section 6 (test repository and MCP), R3, R4, R6, R7, R5, R8 and R9 to R43. Section 9 of the guide does not come in. With `bloco k de n` in the message, you run only block k (see "Full round in blocks").
+**Full round (default).** All the scripts, **R0 to R43** (without RP, RF, RA, RB, RT and RQ), in the order of the guide's "Start here" table and with the dependencies at the beginning of section 8: R0, R1, R2, section 6 (test repository and MCP), R3, R4, R6, R7, R5, R8 and R9 to R43. Section 9 of the guide does not come in. With `bloco k de n` in the message, you run only block k (see "Full round in blocks").
 
 **R21 and the release tag; a step that requires the owner.** Before R21, or before a step that only a person could do: `node scripts/testing/cloud.mjs secao consulta.regras`. R21 tests the real release and uses the tag in the message (`sem R21` takes it out of the round).
 
@@ -125,7 +125,7 @@ The full round (R0 to R43) runs in **simultaneous sessions, one per block of the
 
 | Block | Scripts, in the order of the guide                                                      | Steps |
 | ----- | --------------------------------------------------------------------------------------- | ----- |
-| 1     | R0, R1, section 6, R3, R6.3 to R6.7, R6.12 to R6.14, R7, R5, R8, R14, R26 and R28       | 169   |
+| 1     | R0, R1, section 6, R3, R6.3 to R6.7, R6.12 to R6.14, R7, R5, R8, R14, R26 and R28       | 168   |
 | 2     | R0, section 6, R2 and R25                                                               | 148   |
 | 3     | R0, section 6, R12, R15, R19 and R40                                                    | 153   |
 | 4     | R0, section 6, R4, R6.8a to R6.11, R9, R10, R13, R16, R18, R22, R24 and the visual pass | 172   |
@@ -192,7 +192,7 @@ You do not create a branch, do not commit nor open a PR, and do not edit anythin
 - `pkill -f chrome` (it kills the shell itself and makes Chrome restore tabs); close through CDP.
 - Save over an existing file (GTK overwrites without asking): check with `test -e` first.
 - Use the **preview** or the Deploy.
-- Edit anything in the repository, open a PR, commit or push: the report goes only as an issue comment (except the commit and push of the captures to the `evidencias` branch).
+- Edit anything in the repository, open a PR, commit or push (a `git fetch` that a step asks for is allowed: it only adds objects to `.git`): the report goes only as an issue comment (except the commit and push of the captures to the `evidencias` branch).
 - Use folders outside `~/mapping-testes/`, besides the clone.
 - Delete projects or site data in the browser, or clear the site data; open an incognito window.
 - Treat as tested what you did not observe: a step that cannot be run stays "not executed (reason)".
