@@ -1,4 +1,4 @@
-# Format plugins in the app — [Não lançado] (épico `epic/format-plugins-app`, PR #2607, MCP 0.58.0 provisional, schema v23 unchanged, specialization `formatVersion` 22 expected)
+# Format plugins in the app — 2026-11-22 (épico `epic/format-plugins-app`, PR #2607, MCP 0.58.0, schema v23 unchanged, specialization `formatVersion` 22)
 
 ## Alterado
 
