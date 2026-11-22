@@ -18,7 +18,7 @@ import {
 } from '../../src/ui/comments/ConversationWindow';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { sampleProject } from '../model/fixtures';
-import { AGENT, HUMAN, message, sampleThread } from '../model/threadFixtures';
+import { AGENT, message, sampleThread } from '../model/threadFixtures';
 import { typeIn } from './composerHelpers';
 import { createHarness, type Harness } from './harness';
 
