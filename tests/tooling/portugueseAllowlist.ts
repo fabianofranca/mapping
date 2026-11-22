@@ -3434,7 +3434,7 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
   },
   {
     path: 'tests/tooling/queueGraphWaves.test.ts',
-    pattern: /\bde: '[^']*'(, para: |\s*\})|\bpara: |para: string/,
+    pattern: /\{ de: '#\d+', para: '#\d+', tipo: '[a-z]+' \}|para: string/,
     reason:
       '`para` is a key of the graph arrows that painel.py emits (`de`, `para`, `tipo`), frozen vocabulary of decision 16',
   },

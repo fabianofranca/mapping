@@ -3161,36 +3161,35 @@ def file_blockers(mine, earlier):
 
     `files` is `[(#N, "arquivo <citation> com #N")]`, the citation being the one `first_conflict` returns; `schemas` is
     `[(#N, "schema com #N")]` of the nodes that share only the schema (a pair with a file in common is listed once, as in `schema_block`,
-    which runs only without a file conflict). `earlier` is `[(row, wave)]` by wave, then `order`. A wave 0 node always counts (the slots
-    read the started ones whatever their ficha); a later one counts only when plannable (decision 2 of #2293)."""
+    which runs only without a file conflict). `earlier` is `[(#N, wave_key, wave)]` by wave, then `order`. A wave 0 node always counts (the
+    slots read the started ones whatever their ficha); a later one counts only when plannable (decision 2 of #2293)."""
     files, schemas = [], []
-    for o, w in earlier:
-        skip, toca, schema = wave_key(o)
+    for issue, (skip, toca, schema), w in earlier:
         if skip and w:
             continue
         cite = first_conflict(mine[1], toca)
         if cite:
-            files.append((o["issue"], f"arquivo {cite} com {o['issue']}"))
+            files.append((issue, f"arquivo {cite} com {issue}"))
         elif mine[2] and schema:
-            schemas.append((o["issue"], f"schema com {o['issue']}"))
+            schemas.append((issue, f"schema com {issue}"))
     return files, schemas
 
 
-def node_blockers(r, nodes, wave, ctx):
+def node_blockers(r, placed, wave, ctx):
     """`(reason parts, holders)` of a node of decision 4 of #2293, from the waves already assigned: the `dep` part (`dep_reason`), then the
-    `arquivo` items, then the `schema` ones. `holders` are the file and schema blockers (the `arquivo` arrows). `ctx` is `(merged, done, refused)`."""
+    `arquivo` items, then the `schema` ones. `holders` are the file and schema blockers (the `arquivo` arrows). `placed` is
+    `[(#N, wave_key, wave)]` of every node by wave, then `order` (computed once); `ctx` is `(merged, done, refused)`."""
     w = wave[r["issue"]]
-    earlier = sorted(((o, wave[k]) for k, o in nodes.items() if wave[k] < w), key=lambda t: (t[1], t[0]["order"]))
-    files, schemas = file_blockers(wave_key(r), earlier)
+    files, schemas = file_blockers(wave_key(r), [t for t in placed if t[2] < w])
     held = files + schemas
     parts = [dep_reason(r, *ctx)] + [text for _, text in held]
     return [p for p in parts if p], [h for h, _ in held]
 
 
-def blocker_graph(r, why, nodes, wave, ctx):
+def blocker_graph(r, why, placed, wave, ctx):
     """`(motivo, holders)` of a node of decision 4: the blockers joined by `; `; the `exclusiva` state keeps the `slots_plan` reason
     first (`dep` parts that it already carries are not repeated); with no blocker the `slots_plan` reason stays (`vagas cheias`)."""
-    parts, holders = node_blockers(r, nodes, wave, ctx)
+    parts, holders = node_blockers(r, placed, wave, ctx)
     if candidate_state(r, why) == "exclusiva":
         parts = [why] + [p for p in parts if not (why.startswith("dep ") and p.startswith("dep "))]
     return ("; ".join(parts) if parts else why), holders
@@ -3199,7 +3198,8 @@ def blocker_graph(r, why, nodes, wave, ctx):
 def graph_blockers(nodes, state, wave, q, meta):
     """`{issue: (motivo, holders)}` of every node of decision 4 of #2293: not started, outside wave 0, not `segurada` or `ficha`."""
     ctx = (set(meta.get("merged", [])), {r["issue"] for r in q if r["status"] == "concluída"}, refused_issues(q))
-    return {k: blocker_graph(r, state[k][1], nodes, wave, ctx) for k, r in nodes.items()
+    placed = [(k, wave_key(nodes[k]), wave[k]) for k in sorted(nodes, key=lambda k: (wave[k], nodes[k]["order"]))]
+    return {k: blocker_graph(r, state[k][1], placed, wave, ctx) for k, r in nodes.items()
             if not is_started(r) and wave[k] and state[k][0] not in ("segurada", "ficha")}
 
 
