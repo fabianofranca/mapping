@@ -159,13 +159,14 @@ describe('"from the thread" in the proposal row', () => {
     const thread = proposalThread('tp1', 'P1', 'Review the checkout');
     const h = await mount([thread]);
     hideToolWindow('details');
+    hideToolWindow('conversation');
     const row = screen.getByRole('listitem');
     expect(within(row).getByText(t('proposals.fromThread'))).toBeTruthy();
     const chip = within(row).getByRole('button', { name: /, citation$/ });
     expect(chip.textContent).toContain('Review the checkout');
     await userEvent.click(chip);
     expect(selectedThreadId(h.ui)).toBe('tp1');
-    expect(isToolWindowOpen('details')).toBe(true);
+    expect(isToolWindowOpen('conversation')).toBe(true);
   });
 
   it('proposal without a thread does not show the link', async () => {

@@ -159,7 +159,7 @@ Each DS component and its origin in the code. A DS name can cover several files,
 | `ThreadMessage` | `src/ui/comments/ThreadMessage.tsx`, `ThreadView.tsx` | Guide only, no preview. |
 | `ThreadsSection` | `src/ui/comments/ThreadsSection.tsx` | Conversations section of Details; guide only, no preview. |
 | `Composer` | `src/ui/comments/Composer.tsx` | Guide only, no preview. |
-| `CommentsWindow` | `src/ui/comments/CommentsWindow.tsx`, `StandaloneThreadPanel.tsx` | Content of the Comments window (the tab is in "Janela Comentários", above); guide only, no preview. |
+| `CommentsWindow` | `src/ui/comments/CommentsWindow.tsx` | Content of the Comments window (the tab is in "Janela Comentários", above); guide only, no preview. |
 | `ProposalCard` | `src/ui/comments/ProposalCard.tsx` | Guide only, no preview. |
 | `DeleteThreadDialogs` | `src/ui/comments/useDeleteThread.tsx`, `BulkDeleteDialog.tsx`, `deleteText.ts` | Guide only, no preview. |
 | `ReferencedByRow` | `src/ui/ReferencedBy.tsx` | "Referenciada por" row of the `AnnotationEditor`; guide only, no preview. |
@@ -216,7 +216,7 @@ Surveyed on 2026-11-02. These files appear on screen and no DS guide covers them
 - Review: `src/ui/review/ReviewLevels.tsx` (the progress bar; the collapsed filters and the open panel are in the `ReviewRow` guide and preview), `src/ui/review/ProposalList.tsx` (the search and the empty state), `src/ui/review/ReviewCanvasControls.tsx` (the Atual/Proposto toggle and the legend of the marks), `src/ui/review/RevisedBefore.tsx` (the "Before the revision" block).
 - Details and fields: `src/ui/FieldEditors.tsx`, `src/ui/CommitInput.tsx`, `src/ui/AnnotationEditor.tsx`, `src/ui/AnnotationSummary.tsx`, `src/ui/DetailsSection.tsx`, `src/ui/DetailsIdentity.tsx`, `src/ui/MarkingColorField.tsx`, `src/ui/OwnerRoleField.tsx`, `src/ui/LinkedAnnotations.tsx`, `src/ui/IdentitySettings.tsx`.
 - Settings: `src/ui/PrivacySettings.tsx`, `src/ui/PlatformRepos.tsx`.
-- Others: `src/ui/Popover.tsx`, `src/ui/LibraryPalette.tsx`, `src/ui/DiagnosticsView.tsx`, `src/ui/IncompleteView.tsx`, `src/ui/LayersWindow.tsx`, `src/ui/TreeWindow.tsx`, `src/ui/comments/CitePicker.tsx`, `src/ui/comments/StandaloneThreadPanel.tsx`, `src/ui/comments/CitedIn.tsx`.
+- Others: `src/ui/Popover.tsx`, `src/ui/LibraryPalette.tsx`, `src/ui/DiagnosticsView.tsx`, `src/ui/IncompleteView.tsx`, `src/ui/LayersWindow.tsx`, `src/ui/TreeWindow.tsx`, `src/ui/comments/CitePicker.tsx`, `src/ui/comments/ConversationWindow.tsx`, `src/ui/comments/CitedIn.tsx`.
 
 Compositions and logic with no shape of their own (they do not need a component): `src/ui/SelectionPanel.tsx`, `src/ui/review/ReviewPanel.tsx`, `ReviewDetails.tsx`, `ProposalsWindow.tsx`, `reviewExtension.tsx`, `changeText.ts`, `levelRows.ts`, `src/canvas/reviewMarks.ts`, `src/store/proposedCatalog.ts`, `src/canvas/frame.ts`, `containment.ts`, `gestureMachine.ts`, `input/`, `viewportController.ts`.
 

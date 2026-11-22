@@ -1,11 +1,4 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/preact';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditorPanel } from '../../src/app/EditorPanel';
@@ -15,8 +8,17 @@ import type { Thread } from '../../src/model';
 import { clearIdentity, setIdentity } from '../../src/store/identity';
 import { locale } from '../../src/store/settings';
 import { lastReadAt } from '../../src/store/threadReads';
-import { composingAnchor, selectThread, startComposing } from '../../src/store/threadUi';
+import {
+  composingAnchor,
+  selectedThreadId,
+  selectThread,
+  startComposing,
+} from '../../src/store/threadUi';
 import { ArrowPanel } from '../../src/ui/ArrowPanel';
+import {
+  ConversationStateBadge,
+  ConversationWindow,
+} from '../../src/ui/comments/ConversationWindow';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { MarkingPanel } from '../../src/ui/MarkingPanel';
 import { SelectionPanel } from '../../src/ui/SelectionPanel';
@@ -25,14 +27,14 @@ import { AGENT, HUMAN, message, sampleThread } from '../model/threadFixtures';
 import { keyDown, typeIn } from './composerHelpers';
 import { createHarness, type Harness } from './harness';
 
-// Threads section of the Details (Comments stage, phase CM3, decision 18).
+// Conversations section of the Details (stage #1881, CV2, decision 9): only a list, with New.
+// The conversation itself (thread, composer, Resolve, Delete, Settings notice, read state) lives
+// in the Conversation window.
 // pt-BR kept: shared fixture data (Amassado, Lataria, tipo, marina@exemplo.com) asserted by tests/model
 
-// The harness clock (the session's `now`) is 2026-10-02: the sample messages come before it,
-// so that the person's reply is the last in the `at` order.
+// The harness clock (the session's `now`) is 2026-10-02: the sample messages come before it.
 const T0 = '2026-09-01T10:00:00.000Z';
 const T1 = '2026-09-01T11:00:00.000Z';
-import { relativeTime } from '../../src/ui/comments/relativeTime';
 
 beforeEach(() => {
   localStorage.clear();
@@ -67,7 +69,7 @@ async function setup(threads: readonly Thread[] = [], readOnly = false) {
   return harness;
 }
 
-function renderMarking(harness: Harness, onOpenSettings = vi.fn()) {
+function renderMarking(harness: Harness) {
   const project = harness.project();
   const marking = project.markings.find((m) => m.id === 'M1')!;
   const image = project.containers.find((c) => c.id === 'I1')!;
@@ -80,246 +82,127 @@ function renderMarking(harness: Harness, onOpenSettings = vi.fn()) {
         readOnly={false}
         onDelete={vi.fn()}
         onGoToAnnotation={vi.fn()}
-        onOpenSettings={onOpenSettings}
+        onOpenSettings={vi.fn()}
       />
+    </EditorContext.Provider>,
+  );
+}
+
+function renderWindow(harness: Harness, onOpenSettings = vi.fn()) {
+  render(
+    <EditorContext.Provider value={harness.context}>
+      <ConversationStateBadge />
+      <ConversationWindow onOpenSettings={onOpenSettings} />
     </EditorContext.Provider>,
   );
   return onOpenSettings;
 }
 
 const sectionEl = () => screen.getByRole('region', { name: t('thread.section') });
-const composer = () => screen.getByLabelText(/Comment as|Reply as/);
+const listEl = () => within(sectionEl()).getByRole('list', { name: t('thread.list') });
+const newButton = () =>
+  within(sectionEl()).queryByRole('button', { name: t('thread.new') });
 
-describe('Threads › state A (no thread)', () => {
-  it('shows the "Comment as <name>" composer with Send disabled until there is text', async () => {
+describe('Conversations section › list', () => {
+  it('shows the empty text and New when the item has no conversation', async () => {
     const harness = await setup();
-    renderMarking(harness);
-    const field = screen.getByLabelText(t('thread.composeAs', { name: 'Marina Alves' }));
-    const send = within(sectionEl()).getByRole<HTMLButtonElement>('button', {
-      name: t('thread.send'),
-    });
-    expect(send.disabled).toBe(true);
-    typeIn(field, '   ');
-    expect(send.disabled).toBe(true);
-    typeIn(field, 'hi');
-    expect(send.disabled).toBe(false);
-  });
-
-  it('Ctrl+Enter sends, opens the thread and shows it; Enter only breaks the line', async () => {
-    const harness = await setup();
-    renderMarking(harness);
-    const field = composer();
-    typeIn(field, 'line 1');
-    keyDown(field, 'Enter');
-    typeIn(field, 'line 2');
-    expect(harness.ui.threadDrafts.value.size).toBe(1);
-    expect([...harness.ui.threadDrafts.value.values()]).toEqual(['line 1\nline 2']);
-    expect(harness.context.session.threads.list.value).toHaveLength(0);
-    keyDown(field, 'Enter', { ctrlKey: true });
-    await waitFor(() =>
-      expect(harness.context.session.threads.list.value).toHaveLength(1),
-    );
-    const thread = harness.context.session.threads.list.value[0]!;
-    expect(thread.messages[0]!.text).toBe('line 1\nline 2');
-    expect(thread.anchor).toEqual({ kind: 'marking', id: 'M1' });
-    // The new thread shows up, selected, with the reply composer and the message in <br/>.
-    await screen.findByLabelText(t('thread.replyAs', { name: 'Marina Alves' }));
-    expect(sectionEl().querySelectorAll('.markdown br')).toHaveLength(1);
-  });
-
-  it('the Send button also sends; a server error stays visible and keeps the text', async () => {
-    const harness = await setup();
-    renderMarking(harness);
-    const field = composer();
-    typeIn(field, 'note');
-    vi.spyOn(harness.context.session.threadActions, 'open').mockResolvedValue({
-      ok: false,
-      error: 'read-only',
-    });
-    await userEvent.click(screen.getByRole('button', { name: t('thread.send') }));
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toBe(t('thread.error.read-only'));
-    expect(field.textContent).toBe('note');
-  });
-});
-
-describe('Threads › state B (awaiting human, opened by the agent)', () => {
-  it('shows the thread directly, with badge, name, agent badge and the reply', async () => {
-    const harness = await setup([agentThread('t1')]);
     renderMarking(harness);
     const section = within(sectionEl());
-    expect(section.getByText(t('thread.state.awaitingHuman'))).toBeTruthy();
-    expect(section.getByText('Claude Code')).toBeTruthy();
-    expect(section.getByText(t('thread.agent'))).toBeTruthy();
-    expect(section.getByText('agent question t1')).toBeTruthy();
-    expect(section.getByRole('button', { name: t('thread.resolve') })).toBeTruthy();
-    expect(section.getByRole('button', { name: t('thread.new') })).toBeTruthy();
+    expect(section.getByText(t('thread.sectionEmpty'))).toBeTruthy();
     expect(section.queryByRole('list', { name: t('thread.list') })).toBeNull();
-    const reply = screen.getByLabelText(t('thread.replyAs', { name: 'Marina Alves' }));
-    typeIn(reply, 'replying');
-    keyDown(reply, 'Enter', { ctrlKey: true });
+    expect(newButton()).toBeTruthy();
+  });
+
+  it('lists the open conversations as rows, never a thread or a composer', async () => {
+    const harness = await setup([agentThread('t1'), humanThread('t2')]);
+    renderMarking(harness);
+    const list = listEl();
+    expect(within(list).getAllByRole('button')).toHaveLength(2);
+    expect(within(list).getByText('agent question t1')).toBeTruthy();
+    expect(within(list).getByText('my note t2')).toBeTruthy();
+    expect(within(list).getAllByText(t('thread.messagesOne'))).toHaveLength(2);
+    expect(sectionEl().querySelector('.thread-view')).toBeNull();
+    expect(within(sectionEl()).queryByLabelText(/Reply as|Comment as/)).toBeNull();
+    expect(
+      within(sectionEl()).queryByRole('button', { name: t('thread.resolve') }),
+    ).toBeNull();
+  });
+
+  it('a row opens the conversation in the window and marks the row as current', async () => {
+    const harness = await setup([agentThread('t1'), humanThread('t2')]);
+    renderMarking(harness);
+    const rows = within(listEl()).getAllByRole('button');
+    expect(rows.every((row) => row.getAttribute('aria-current') === 'false')).toBe(true);
+    await userEvent.click(within(listEl()).getByText('my note t2'));
+    expect(harness.ui.conversation.value).toEqual({ kind: 'thread', id: 't2' });
+    expect(selectedThreadId(harness.ui)).toBe('t2');
     await waitFor(() =>
-      expect(harness.context.session.threads.get('t1')?.messages).toHaveLength(2),
+      expect(
+        within(listEl())
+          .getByText('my note t2')
+          .closest('button')
+          ?.getAttribute('aria-current'),
+      ).toBe('true'),
     );
-    // After the reply it is the agent's turn.
-    await screen.findByText(t('thread.state.awaitingAgent'));
+    expect(
+      within(listEl()).getByText('agent question t1').closest('button')?.ariaCurrent,
+    ).toBe('false');
+    // Still only the list: the thread is not rendered in the section.
+    expect(sectionEl().querySelector('.thread-view')).toBeNull();
   });
 
-  it('the texts come in English (en-US)', async () => {
-    locale.value = 'en-US';
-    const harness = await setup([agentThread('t1')]);
-    renderMarking(harness);
-    expect(screen.getByText('Awaiting human')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Resolve' })).toBeTruthy();
-    expect(screen.getByLabelText('Reply as Marina Alves')).toBeTruthy();
-  });
-});
-
-describe('Threads › resolve and reopen (state C)', () => {
-  it('Resolve keeps the thread in view as resolved; Reopen gives it back', async () => {
-    const harness = await setup([humanThread('t1')]);
-    renderMarking(harness);
-    await userEvent.click(screen.getByRole('button', { name: t('thread.resolve') }));
-    await screen.findByText(t('thread.state.resolved'));
-    expect(harness.context.session.threads.get('t1')?.resolved).not.toBeNull();
-    // Resolved: no reply composer, with "Resolved by".
-    expect(screen.queryByLabelText(/Reply as/)).toBeNull();
-    expect(sectionEl().textContent).toContain('Marina Alves');
-    await userEvent.click(screen.getByRole('button', { name: t('thread.reopen') }));
-    await screen.findByText(t('thread.state.awaitingAgent'));
-    expect(harness.context.session.threads.get('t1')?.resolved).toBeNull();
-  });
-
-  it('the resolved one only shows when it is the selected one', async () => {
+  it('a resolved conversation only shows in the list when it is the window one', async () => {
     const resolved = humanThread('r1', {
       resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T1 },
     });
     const harness = await setup([resolved]);
     renderMarking(harness);
-    // Nothing open: the state A composer, without the resolved thread.
     expect(screen.queryByText('my note r1')).toBeNull();
-    composer();
+    expect(screen.getByText(t('thread.sectionEmpty'))).toBeTruthy();
     selectThread(harness.ui, harness.project(), resolved);
-    await screen.findByText('my note r1');
-    expect(screen.getByText(t('thread.state.resolved'))).toBeTruthy();
-    expect(
-      screen.getByText(
-        t('thread.resolvedBy', { name: 'Marina Alves', date: relativeTime(T1) }),
-      ),
-    ).toBeTruthy();
+    const row = await screen.findByText('my note r1');
+    expect(row.closest('button')?.getAttribute('aria-current')).toBe('true');
+  });
+
+  it('the unread row is bold', async () => {
+    const harness = await setup([agentThread('u1'), agentThread('u2')]);
+    renderMarking(harness);
+    expect(sectionEl().querySelectorAll('.thread-row')).toHaveLength(2);
+    expect(sectionEl().querySelectorAll('.thread-row-unread')).toHaveLength(2);
   });
 });
 
-describe('Threads › state D (no identity)', () => {
-  it('swaps the composer for the notice and leads to Settings', async () => {
-    clearIdentity();
-    const harness = await setup([agentThread('t1')]);
-    const onOpenSettings = renderMarking(harness);
-    const section = within(sectionEl());
-    expect(section.getByText('agent question t1')).toBeTruthy();
-    expect(section.getByText(t('thread.noIdentity'))).toBeTruthy();
-    expect(section.queryByLabelText(/Reply as/)).toBeNull();
-    expect(section.queryByRole('button', { name: t('thread.resolve') })).toBeNull();
-    expect(section.queryByRole('button', { name: t('thread.new') })).toBeNull();
-    await userEvent.click(
-      section.getByRole('button', { name: t('thread.openSettings') }),
-    );
-    expect(onOpenSettings).toHaveBeenCalledTimes(1);
-  });
-
-  const openButton = () =>
-    within(sectionEl()).getByRole('button', { name: t('thread.openSettings') });
-
-  it('requesting a thread focuses the notice button, described by the notice', async () => {
-    clearIdentity();
-    const harness = await setup();
-    startComposing(harness.ui, harness.project(), { kind: 'marking', id: 'M1' });
-    renderMarking(harness);
-    const button = openButton();
-    expect(document.activeElement).toBe(button);
-    const notice = document.getElementById(button.getAttribute('aria-describedby')!);
-    expect(notice?.textContent).toBe(t('thread.noIdentity'));
-  });
-
-  it('only selecting the marking, with no request, does not move the focus', async () => {
-    clearIdentity();
-    const harness = await setup();
-    renderMarking(harness);
-    expect(document.activeElement).not.toBe(openButton());
-  });
-
-  it('a second request on the same anchor focuses the button again', async () => {
-    clearIdentity();
-    const harness = await setup();
-    const anchor = { kind: 'marking', id: 'M1' } as const;
-    startComposing(harness.ui, harness.project(), anchor);
-    renderMarking(harness);
-    expect(document.activeElement).toBe(openButton());
-    (document.activeElement as HTMLElement).blur();
-    expect(document.activeElement).not.toBe(openButton());
-    startComposing(harness.ui, harness.project(), anchor);
-    await waitFor(() => expect(document.activeElement).toBe(openButton()));
-  });
-});
-
-describe('Threads › list and New', () => {
-  it('the list only shows with more than one open; choosing a row shows the thread', async () => {
-    const harness = await setup([agentThread('t1'), humanThread('t2')]);
-    renderMarking(harness);
-    const list = within(sectionEl()).getByRole('list', { name: t('thread.list') });
-    expect(within(list).getAllByRole('button')).toHaveLength(2);
-    expect(within(list).getByText('agent question t1')).toBeTruthy();
-    expect(within(list).getAllByText(t('thread.messagesOne'))).toHaveLength(2);
-    // None chosen: only the list.
-    expect(sectionEl().querySelector('.thread-view')).toBeNull();
-    await userEvent.click(within(list).getByText('my note t2'));
-    await waitFor(() => expect(sectionEl().querySelector('.thread-view')).not.toBeNull());
-    expect(within(sectionEl()).getAllByText('my note t2').length).toBeGreaterThan(1);
-  });
-
-  it('New opens a composer for a new thread and sending selects it', async () => {
+describe('Conversations section › New', () => {
+  it('New asks the window for a new conversation anchored at the item', async () => {
     const harness = await setup([humanThread('t1')]);
     renderMarking(harness);
     await userEvent.click(screen.getByRole('button', { name: t('thread.new') }));
-    const field = await screen.findByLabelText(
-      t('thread.composeAs', { name: 'Marina Alves' }),
-    );
-    expect(document.activeElement).toBe(field);
-    typeIn(field, 'another subject');
-    keyDown(field, 'Enter', { ctrlKey: true });
-    await waitFor(() =>
-      expect(harness.context.session.threads.list.value).toHaveLength(2),
-    );
-    const list = await screen.findByRole('list', { name: t('thread.list') });
-    expect(within(list).getAllByRole('button')).toHaveLength(2);
-    expect(composingAnchor(harness.ui)).toBeNull();
+    expect(harness.ui.conversation.value).toEqual({
+      kind: 'new',
+      anchor: { kind: 'marking', id: 'M1' },
+    });
+    expect(composingAnchor(harness.ui)).toEqual({ kind: 'marking', id: 'M1' });
+    // The section itself shows no composer.
+    expect(within(sectionEl()).queryByLabelText(/Comment as/)).toBeNull();
   });
 
-  it('a second request on the same anchor focuses the field again', async () => {
-    const harness = await setup([humanThread('t1')]);
-    renderMarking(harness);
-    await userEvent.click(screen.getByRole('button', { name: t('thread.new') }));
-    const field = await screen.findByLabelText(
-      t('thread.composeAs', { name: 'Marina Alves' }),
-    );
-    expect(document.activeElement).toBe(field);
-    (document.activeElement as HTMLElement).blur();
-    startComposing(harness.ui, harness.project(), { kind: 'marking', id: 'M1' });
-    await waitFor(() => expect(document.activeElement).toBe(field));
-  });
-
-  it('the draft survives the selection change and comes back', async () => {
+  it('the draft survives the selection change', async () => {
     const harness = await setup();
-    renderMarking(harness);
-    typeIn(composer(), 'draft');
-    cleanup();
-    renderMarking(harness);
-    expect(composer().textContent).toBe('draft');
+    startComposing(harness.ui, harness.project(), { kind: 'marking', id: 'M1' });
+    renderWindow(harness);
+    typeIn(screen.getByLabelText(/Comment as/), 'draft');
+    harness.ui.selection.value = { kind: 'marking', id: 'M2' };
+    expect(harness.ui.conversation.value).toEqual({
+      kind: 'new',
+      anchor: { kind: 'marking', id: 'M1' },
+    });
+    expect([...harness.ui.threadDrafts.value.values()]).toEqual(['draft']);
+    expect(screen.getByLabelText(/Comment as/).textContent).toBe('draft');
   });
 });
 
-describe('Threads › anchored to parts of the item', () => {
-  it('the thread of an annotation shows in the marking section with "on <where>"', async () => {
+describe('Conversations section › anchored to parts of the item', () => {
+  it('the conversation of an annotation shows in the marking section with "on <where>"', async () => {
     const thread = humanThread('p1', { anchor: { kind: 'annotation', id: 'A1' } });
     const harness = await setup([thread]);
     renderMarking(harness);
@@ -328,7 +211,7 @@ describe('Threads › anchored to parts of the item', () => {
     ).toBeTruthy();
   });
 
-  it('the thread of a pair shows with "on Annotation › key" in the list', async () => {
+  it('the conversation of a pair shows with "on Annotation › key" in the list', async () => {
     const entry = humanThread('p2', {
       anchor: { kind: 'entry', annotationId: 'A1', entryId: 'E1' },
     });
@@ -340,23 +223,7 @@ describe('Threads › anchored to parts of the item', () => {
   });
 });
 
-describe('Threads › read and unread', () => {
-  it('opening the thread writes lastReadAt; the unread row is bold', async () => {
-    const harness = await setup([agentThread('u1'), agentThread('u2')]);
-    renderMarking(harness);
-    const rows = () => sectionEl().querySelectorAll('.thread-row');
-    expect(rows()).toHaveLength(2);
-    expect(sectionEl().querySelectorAll('.thread-row-unread')).toHaveLength(2);
-    await userEvent.click(within(sectionEl()).getByText('agent question u1'));
-    await waitFor(() => expect(lastReadAt('harness', 'u1')).toBe(T0));
-    expect(lastReadAt('harness', 'u2')).toBeNull();
-    await waitFor(() =>
-      expect(sectionEl().querySelectorAll('.thread-row-unread')).toHaveLength(1),
-    );
-  });
-});
-
-describe('Threads › review and read-only', () => {
+describe('Conversations section › review and read-only', () => {
   it('in proposal review the section disappears', async () => {
     const harness = await setup([humanThread('t1')]);
     harness.store.setReviewing('R');
@@ -364,33 +231,15 @@ describe('Threads › review and read-only', () => {
     expect(screen.queryByRole('region', { name: t('thread.section') })).toBeNull();
   });
 
-  it('read-only: reads the thread, without composer, Resolve, New or Delete', async () => {
+  it('read-only: lists the conversations without New', async () => {
     const harness = await setup([humanThread('t1')], true);
     renderMarking(harness);
-    const section = within(sectionEl());
-    expect(section.getByText('my note t1')).toBeTruthy();
-    expect(section.queryByLabelText(/Reply as/)).toBeNull();
-    expect(section.queryByRole('button', { name: t('thread.resolve') })).toBeNull();
-    expect(section.queryByRole('button', { name: t('thread.new') })).toBeNull();
-    expect(section.queryByRole('button', { name: t('thread.menu') })).toBeNull();
+    expect(within(sectionEl()).getByText('my note t1')).toBeTruthy();
+    expect(newButton()).toBeNull();
   });
 });
 
-describe('Threads › Delete menu', () => {
-  it('deletes directly the thread that only belongs to the person', async () => {
-    const harness = await setup([humanThread('t1')]);
-    renderMarking(harness);
-    await userEvent.click(screen.getByRole('button', { name: t('thread.menu') }));
-    await userEvent.click(
-      await screen.findByRole('menuitem', { name: t('thread.delete') }),
-    );
-    await waitFor(() =>
-      expect(harness.context.session.threads.list.value).toHaveLength(0),
-    );
-  });
-});
-
-describe('Threads › other panels', () => {
+describe('Conversations section › other panels', () => {
   it('the arrow and the container also have the section', async () => {
     const harness = await setup();
     const project = harness.project();
@@ -420,35 +269,38 @@ describe('Threads › other panels', () => {
   });
 });
 
-describe('Threads › no item (EditorPanel)', () => {
+describe('Details (EditorPanel) › conversations without an item', () => {
   const dialogs = () => ({ show: vi.fn() }) as unknown as EditorDialogs;
-  const renderPanel = (harness: Harness, d = dialogs()) =>
+  const renderPanel = (harness: Harness) =>
     render(
       <EditorContext.Provider value={harness.context}>
         <EditorPanel
           busy={false}
-          dialogs={d}
+          dialogs={dialogs()}
           onReplace={vi.fn()}
           onGoToAnnotation={vi.fn()}
         />
       </EditorContext.Provider>,
     );
 
-  it('the layer thread opens by itself, in place of the selection panel', async () => {
+  it('a layer conversation does not take over Details: it shows only in the window', async () => {
     const thread = humanThread('c1', { anchor: { kind: 'layer', id: 'L1' } });
     const harness = await setup([thread]);
     selectThread(harness.ui, harness.project(), thread);
     renderPanel(harness);
+    expect(screen.queryByText('my note c1')).toBeNull();
     expect(
-      screen.getByRole('heading', {
+      screen.queryByRole('heading', {
         name: t('thread.anchor.layer', { name: 'Lataria' }),
       }),
-    ).toBeTruthy();
+    ).toBeNull();
+    expect(screen.getByText(t('panel.nothingSelected'))).toBeTruthy();
+    cleanup();
+    renderWindow(harness);
     expect(screen.getByText('my note c1')).toBeTruthy();
-    expect(screen.queryByText(t('panel.nothingSelected'))).toBeNull();
   });
 
-  it('the loose point writes the draft and opens the new thread', async () => {
+  it('a loose-point draft does not render a composer in Details', async () => {
     const harness = await setup();
     startComposing(harness.ui, harness.project(), {
       kind: 'point',
@@ -457,45 +309,133 @@ describe('Threads › no item (EditorPanel)', () => {
       y: 20,
     });
     renderPanel(harness);
-    expect(
-      screen.getByRole('heading', {
-        name: t('thread.anchor.point', { where: t('canvas.name') }),
-      }),
-    ).toBeTruthy();
-    typeIn(composer(), 'here');
-    fireEvent.keyDown(composer(), { key: 'Enter', ctrlKey: true });
-    await waitFor(() =>
-      expect(harness.context.session.threads.list.value).toHaveLength(1),
+    expect(screen.queryByLabelText(/Comment as/)).toBeNull();
+    expect(screen.getByText(t('panel.nothingSelected'))).toBeTruthy();
+  });
+});
+
+describe('Conversation window › state transitions kept from the old section', () => {
+  it('Resolve keeps the conversation in view as resolved; Reopen gives it back', async () => {
+    const harness = await setup([humanThread('t1')]);
+    selectThread(
+      harness.ui,
+      harness.project(),
+      harness.context.session.threads.get('t1')!,
     );
-    await screen.findByText('here');
+    renderWindow(harness);
+    await userEvent.click(screen.getByRole('button', { name: t('thread.resolve') }));
+    await screen.findAllByText(t('thread.state.resolved'));
+    expect(harness.context.session.threads.get('t1')?.resolved).not.toBeNull();
+    expect(screen.getByText('my note t1')).toBeTruthy();
+    expect(screen.queryByLabelText(/Reply as/)).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: t('thread.reopen') }));
+    await screen.findByText(t('thread.state.awaitingAgent'));
+    expect(harness.context.session.threads.get('t1')?.resolved).toBeNull();
   });
 
-  it('the loose point with no identity focuses the notice button', async () => {
+  it('the Delete menu deletes directly a conversation that only belongs to the person', async () => {
+    const harness = await setup([humanThread('t1')]);
+    selectThread(
+      harness.ui,
+      harness.project(),
+      harness.context.session.threads.get('t1')!,
+    );
+    renderWindow(harness);
+    await userEvent.click(screen.getByRole('button', { name: t('thread.menu') }));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: t('thread.delete') }),
+    );
+    await waitFor(() =>
+      expect(harness.context.session.threads.list.value).toHaveLength(0),
+    );
+  });
+
+  it('opening the conversation in the window writes lastReadAt', async () => {
+    const harness = await setup([agentThread('u1'), agentThread('u2')]);
+    selectThread(
+      harness.ui,
+      harness.project(),
+      harness.context.session.threads.get('u1')!,
+    );
+    renderWindow(harness);
+    await waitFor(() => expect(lastReadAt('harness', 'u1')).toBe(T0));
+    expect(lastReadAt('harness', 'u2')).toBeNull();
+  });
+
+  it('read-only: reads the conversation without composer, Resolve or menu', async () => {
+    const harness = await setup([humanThread('t1')], true);
+    selectThread(
+      harness.ui,
+      harness.project(),
+      harness.context.session.threads.get('t1')!,
+    );
+    renderWindow(harness);
+    expect(screen.getByText('my note t1')).toBeTruthy();
+    expect(screen.queryByLabelText(/Reply as|Comment as/)).toBeNull();
+    expect(screen.queryByRole('button', { name: t('thread.resolve') })).toBeNull();
+    expect(screen.queryByRole('button', { name: t('thread.menu') })).toBeNull();
+  });
+
+  it('with no identity, shows the notice and leads to Settings', async () => {
+    clearIdentity();
+    const harness = await setup([agentThread('t1')]);
+    selectThread(
+      harness.ui,
+      harness.project(),
+      harness.context.session.threads.get('t1')!,
+    );
+    const onOpenSettings = renderWindow(harness);
+    expect(screen.getByText(t('thread.noIdentity'))).toBeTruthy();
+    expect(screen.queryByLabelText(/Reply as/)).toBeNull();
+    expect(screen.queryByRole('button', { name: t('thread.resolve') })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: t('thread.openSettings') }));
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it('with no identity, a second request on the same anchor focuses the notice button again', async () => {
     clearIdentity();
     const harness = await setup();
-    startComposing(harness.ui, harness.project(), {
-      kind: 'point',
-      containerId: null,
-      x: 10,
-      y: 20,
-    });
-    renderPanel(harness);
-    expect(document.activeElement).toBe(
+    const anchor = { kind: 'marking', id: 'M1' } as const;
+    startComposing(harness.ui, harness.project(), anchor);
+    renderWindow(harness);
+    const button = screen.getByRole('button', { name: t('thread.openSettings') });
+    await waitFor(() => expect(document.activeElement).toBe(button));
+    const notice = document.getElementById(button.getAttribute('aria-describedby')!);
+    expect(notice?.textContent).toBe(t('thread.noIdentity'));
+    (document.activeElement as HTMLElement).blur();
+    startComposing(harness.ui, harness.project(), anchor);
+    await waitFor(() => expect(document.activeElement).toBe(button));
+  });
+
+  it('with no identity, only showing a conversation, with no request, does not move the focus', async () => {
+    clearIdentity();
+    const harness = await setup([agentThread('t1')]);
+    selectThread(
+      harness.ui,
+      harness.project(),
+      harness.context.session.threads.get('t1')!,
+    );
+    renderWindow(harness);
+    expect(document.activeElement).not.toBe(
       screen.getByRole('button', { name: t('thread.openSettings') }),
     );
   });
 
-  it('the orphan shows what was deleted and the notice button opens Settings', async () => {
-    clearIdentity();
-    const orphan = humanThread('o1', { anchor: { kind: 'marking', id: 'GONE' } });
-    const harness = await setup([orphan]);
-    selectThread(harness.ui, harness.project(), orphan);
-    const d = dialogs();
-    renderPanel(harness, d);
-    expect(
-      screen.getByRole('heading', { name: t('thread.anchor.missing.marking') }),
-    ).toBeTruthy();
-    expect(screen.getByText('my note o1')).toBeTruthy();
-    expect(screen.queryByLabelText(/Reply as/)).toBeNull();
+  it('Ctrl+Enter in a new draft sends and shows the conversation', async () => {
+    const harness = await setup();
+    startComposing(harness.ui, harness.project(), { kind: 'marking', id: 'M1' });
+    renderWindow(harness);
+    const field = screen.getByLabelText(/Comment as/);
+    typeIn(field, 'line 1');
+    keyDown(field, 'Enter');
+    typeIn(field, 'line 2');
+    keyDown(field, 'Enter', { ctrlKey: true });
+    await waitFor(() =>
+      expect(harness.context.session.threads.list.value).toHaveLength(1),
+    );
+    expect(harness.context.session.threads.list.value[0]!.messages[0]!.text).toBe(
+      'line 1\nline 2',
+    );
+    await screen.findByLabelText(/Reply as/);
   });
 });
