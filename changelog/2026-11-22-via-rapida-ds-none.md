@@ -1,4 +1,4 @@
-# Step 6 of the fast-track skill writes `None.` in the DS record — [Não lançado] (épico `epic/via-rapida-ds-none`, MCP unchanged, schema v23)
+# Step 6 of the fast-track skill writes `None.` in the DS record — 2026-11-22 (épico `epic/via-rapida-ds-none`, PR #2584, MCP unchanged, schema v23)
 
 ## Corrigido
 
