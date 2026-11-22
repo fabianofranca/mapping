@@ -15,7 +15,7 @@ import type { Thread } from '../../src/model';
 import { clearIdentity, setIdentity } from '../../src/store/identity';
 import { locale } from '../../src/store/settings';
 import { lastReadAt } from '../../src/store/threadReads';
-import { selectThread, startComposing } from '../../src/store/threadUi';
+import { composingAnchor, selectThread, startComposing } from '../../src/store/threadUi';
 import { ArrowPanel } from '../../src/ui/ArrowPanel';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { MarkingPanel } from '../../src/ui/MarkingPanel';
@@ -292,7 +292,7 @@ describe('Threads › list and New', () => {
     );
     const list = await screen.findByRole('list', { name: t('thread.list') });
     expect(within(list).getAllByRole('button')).toHaveLength(2);
-    expect(harness.ui.composing.value).toBeNull();
+    expect(composingAnchor(harness.ui)).toBeNull();
   });
 
   it('a second request on the same anchor focuses the field again', async () => {

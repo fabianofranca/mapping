@@ -14,13 +14,13 @@ import {
 } from '../../model';
 import { identity } from '../../store/identity';
 import type { ThreadEntry } from '../../store/threadDerived';
+import { showAndFocusToolWindow } from '../toolWindowLayout';
 import { selectedThreadId, selectThread, startComposing } from '../../store/threadUi';
 import { resolveSelection, type Selection } from '../../store/ui';
 import { ActionMenu } from '../ActionMenu';
 import { Button, Choice, Select, TextField } from '../controls';
 import { useEditor } from '../EditorContext';
 import { navigateTo } from '../pageNavigation';
-import { openToolWindow } from '../toolWindowLayout';
 import { anchorLabel } from './anchorLabel';
 import { Icon } from '../icons';
 import { BulkDeleteDialog } from './BulkDeleteDialog';
@@ -94,7 +94,6 @@ export function CommentsHeaderActions() {
         onClick={() => {
           if (anchor === null) return;
           startComposing(ui, project, anchor);
-          openToolWindow('details');
         }}
       >
         {t('comments.new')}
@@ -371,8 +370,8 @@ export function CommentsWindow() {
     navigateTo(editor, thread.anchor, () => {
       const shown = review.derived.shownProject.peek();
       if (shown) selectThread(ui, shown, thread);
+      showAndFocusToolWindow('conversation');
     });
-    openToolWindow('details');
   };
   return (
     <div class="list-view comments-view">

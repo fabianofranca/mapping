@@ -16,7 +16,10 @@ import {
   useCopyErrors,
 } from '../ui/DiagnosticsView';
 import { CommentsHeaderActions, CommentsWindow } from '../ui/comments/CommentsWindow';
-import { ConversationWindow } from '../ui/comments/ConversationWindow';
+import {
+  ConversationStateBadge,
+  ConversationWindow,
+} from '../ui/comments/ConversationWindow';
 import { IncompleteView } from '../ui/IncompleteView';
 import { NoticesView } from '../ui/NoticesView';
 import { ListView } from '../ui/ListView';
@@ -79,8 +82,10 @@ function Window({
       );
     case 'conversation':
       return (
-        <ToolWindow id={id} stacked={stacked}>
-          <ConversationWindow />
+        <ToolWindow id={id} stacked={stacked} actions={<ConversationStateBadge />}>
+          <ConversationWindow
+            onOpenSettings={() => panel.dialogs.show({ kind: 'settings' })}
+          />
         </ToolWindow>
       );
     case 'list':
