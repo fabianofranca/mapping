@@ -23,12 +23,16 @@ const subjectOf = (thread: Thread): string => threadSubject(thread);
 
 /**
  * The citations context of the project in view (`review.derived.shownProject`, which follows the
- * Current/Proposed view), or `null` without a project. It reads the signals at render time, so
+ * Current/Proposed view; with `base` and a review open, the committed project), or `null` without a project. It reads the signals at render time, so
  * whoever uses it re-renders when the project, the threads or the proposals change.
  */
-export function useCitationContext(): CitationUiContext | null {
-  const { session, review } = useEditor();
-  const project = review.derived.shownProject.value;
+export function useCitationContext(
+  options: { readonly base?: boolean } = {},
+): CitationUiContext | null {
+  const { session, review, store } = useEditor();
+  // `base`: while a review is open, the committed project (what exists outside the proposal).
+  const reviewing = options.base === true && store.reviewing.value;
+  const project = reviewing ? store.committed.value : review.derived.shownProject.value;
   const threads = session.threads.list.value;
   const proposalList = session.proposals.list.value;
   const folderName = session.storage.folderName;

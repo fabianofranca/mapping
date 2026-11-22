@@ -548,14 +548,14 @@ describe('delete threads in bulk', () => {
   });
 });
 
-describe('proposal review (decision 26)', () => {
-  it('the window is read-only, with the notice, without New thread or Delete', async () => {
-    const { harness, user } = await mount([WAITING_HUMAN]);
+describe('proposal review (decisions 14 and 26)', () => {
+  it('no notice, no New conversation, no Delete conversations, no row menu', async () => {
+    const { harness } = await mount([WAITING_HUMAN]);
     act(() => {
       harness.store.setReviewing('R');
       harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     });
-    expect(screen.getByText(t('comments.reviewNotice'))).toBeTruthy();
+    expect(screen.queryByRole('note')).toBeNull();
     expect(screen.queryByRole('button', { name: t('comments.new') })).toBeNull();
     expect(screen.queryByRole('button', { name: t('comments.windowMore') })).toBeNull();
     expect(
@@ -564,8 +564,19 @@ describe('proposal review (decision 26)', () => {
       }),
     ).toBeNull();
     expect(ids()).toEqual(['ta']);
-    // Choosing the row in review does not change the selection.
+  });
+
+  it('a row opens the conversation in the window without changing the selection', async () => {
+    const { harness, user } = await mount([WAITING_HUMAN]);
+    act(() => {
+      harness.store.setReviewing('R');
+      harness.ui.selection.value = { kind: 'marking', id: 'M2' };
+    });
+    const anchorButton = rowOf('ta').querySelector('button.comments-anchor-button');
+    expect(anchorButton).not.toBeNull();
     await user.click(rowOf('ta'));
-    expect(selectedThreadId(harness.ui)).toBeNull();
+    expect(selectedThreadId(harness.ui)).toBe('ta');
+    expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
+    expect(isToolWindowOpen('conversation')).toBe(true);
   });
 });

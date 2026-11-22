@@ -409,12 +409,14 @@ export function CitationEditor({
 }: CitationEditorProps) {
   const root = useRef<HTMLDivElement | null>(null);
   const ctx = useCitationContext();
+  // The `@` list only offers what exists outside the proposal (decision 15).
+  const pickerCtx = useCitationContext({ base: true });
   const listId = useId();
   const hintId = `${listId}-hint`;
 
   const emit = useDocSync(root, ctx, value, onInput);
   const afterEditRef = useRef(() => {});
-  const picker = usePicker(root, ctx, anchor, excludeThreadId, () =>
+  const picker = usePicker(root, pickerCtx, anchor, excludeThreadId, () =>
     afterEditRef.current(),
   );
   const afterEdit = () => {

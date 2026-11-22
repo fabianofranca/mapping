@@ -53,6 +53,7 @@ function useMarkRead(thread: Thread): void {
 
 function ThreadActions({ thread }: { readonly thread: Thread }) {
   const { session } = useEditor();
+  const { canStart } = useThreadAccess();
   const del = useDeleteThread();
   const citeItems = useCiteMenuItems();
   const [error, setError] = useState<string | null>(null);
@@ -73,11 +74,15 @@ function ThreadActions({ thread }: { readonly thread: Thread }) {
         label={t('thread.menu')}
         items={[
           ...citeItems({ kind: 'thread', id: thread.id }, null),
-          {
-            label: t('thread.delete'),
-            danger: true,
-            onSelect: () => del.request(thread),
-          },
+          ...(canStart
+            ? [
+                {
+                  label: t('thread.delete'),
+                  danger: true,
+                  onSelect: () => del.request(thread),
+                },
+              ]
+            : []),
         ]}
       />
       {del.dialog}

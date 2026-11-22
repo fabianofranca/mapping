@@ -699,7 +699,6 @@ export const enUS = {
   'comments.statusBar.tip': 'Open the Comments window',
   'comments.new': 'New conversation',
   'comments.newNoSelection': 'Select an item or use Comment here on the canvas',
-  'comments.reviewNotice': 'Leave the review to chat',
   'comments.empty': 'No conversations yet.',
   'comments.emptyFiltered': 'No conversations match these filters.',
   'comments.row.open': 'Open the conversation on {anchor}',
@@ -804,6 +803,7 @@ export const enUS = {
   // CM5-C: cite and copy reference in menus
   'cite.insert': 'Cite in the conversation',
   'cite.needComposer': 'Open a conversation to cite',
+  'cite.onlyInProposal': 'Only exists in the proposal',
   'cite.fieldActions': 'Actions for field {name}',
   'privacy.title': 'Privacy',
   'privacy.intro':

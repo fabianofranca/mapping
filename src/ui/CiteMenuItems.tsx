@@ -1,5 +1,11 @@
 import { t } from '../i18n';
-import type { CitationTarget, ThreadAnchor } from '../model';
+import {
+  liveLabel,
+  type CitationTarget,
+  type Project,
+  type Thread,
+  type ThreadAnchor,
+} from '../model';
 import {
   canCopyItems,
   citationTargetOf,
@@ -36,20 +42,42 @@ interface CiteActions {
   copy(target: CopyTarget): MenuAction;
 }
 
+/** Whether `target` exists in `project` (the citation resolves to a live name). */
+function existsIn(
+  project: Project,
+  threads: readonly Thread[],
+  target: CitationTarget,
+): boolean {
+  const ctx = { project, threads, proposals: [] };
+  return !liveLabel(ctx, { found: true, target }, '').broken;
+}
+
 /** The menu actions, read from the current state (re-renders when the composer opens or closes). */
 export function useCiteActions(): CiteActions {
   const editor = useEditor();
-  const { ui, store, review } = editor;
+  const { ui, store, review, session } = editor;
   const composer = composerOpen.value;
   const locked = store.locked.value;
+  const reviewing = store.reviewing.value;
+  const committed = store.committed.value;
+  const threads = session.threads.list.value;
   return {
     copyable: canCopyItems(editor),
-    cite: (target) => ({
-      label: t('cite.insert'),
-      disabled: !composer,
-      title: composer ? undefined : t('cite.needComposer'),
-      run: () => void insertCitation(target),
-    }),
+    cite: (target) => {
+      // In a review, only what exists outside the proposal can be cited (decision 15).
+      const onlyInProposal =
+        reviewing && committed !== null && !existsIn(committed, threads, target);
+      return {
+        label: t('cite.insert'),
+        disabled: !composer || onlyInProposal,
+        title: onlyInProposal
+          ? t('cite.onlyInProposal')
+          : composer
+            ? undefined
+            : t('cite.needComposer'),
+        run: () => void insertCitation(target),
+      };
+    },
     comment: (anchor) => ({
       label: t('comments.comment'),
       disabled: locked,

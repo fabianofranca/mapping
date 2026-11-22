@@ -108,7 +108,7 @@ function SectionBody({ visible, selectedId, project, itemId }: BodyProps) {
  */
 export function ThreadsSection(props: ThreadsSectionProps) {
   const { ui, derived, store, review } = useEditor();
-  const { can } = useThreadAccess();
+  const { canStart } = useThreadAccess();
   const project = review.derived.shownProject.value;
   if (!project || store.reviewing.value || review.proposalId.value !== null) return null;
 
@@ -125,7 +125,7 @@ export function ThreadsSection(props: ThreadsSectionProps) {
       title={t('thread.section')}
       count={openCount}
       actions={
-        can ? (
+        canStart ? (
           <Button
             size="sm"
             title={t('thread.newHint')}
