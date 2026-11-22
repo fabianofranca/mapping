@@ -9,12 +9,12 @@
 
 ## Sincronização
 
-Gravado no artefato **Mapping** em 2026-11-22: versão 105 (id `1795347226-6b90`). PV1 wrote the two previews and the index (`lastChange`); the CSS needed nothing new (`bundle.css` already had every class used):
+Gravado no artefato **Mapping** on 2026-11-22: version 105 (id `1795347226-6b90`). PV1 wrote the two previews and the index (`lastChange`); the CSS needed nothing new (`bundle.css` already had every class used):
 
-- **Written (PV1, version 105)** `ReviewBar/preview.html`: new state "Revisão decidida, nada a aplicar" with the **Concluir revisão** primary button and the hint `review.concludeTip`; `@dsCard` `height=540`.
-- **Written (PV1, version 105)** `ProposalRow/preview.html`: open row with ⋯ menu open on **Concluir revisão**, and two **Rejeitada** rows (plural and singular count) with **Ver** and ⋯; `@dsCard` `height=1445`. Checked in Chrome in the light and dark themes.
+- **Written (PV1, version 105)** `ReviewBar/preview.html`: new "decided review, nothing to apply" state with the **Conclude review** primary button and the hint `review.concludeTip`; `@dsCard` `height=540`.
+- **Written (PV1, version 105)** `ProposalRow/preview.html`: open row with ⋯ menu open on **Conclude review**, and two **Rejected** rows (plural and singular count) with **Ver** and ⋯; `@dsCard` `height=1445`. Checked in Chrome in the light and dark themes.
 
-PV2 writes the other two (`CatalogPage` and `NoticesView`). The previews use the pt-BR text of the app, so the menu item reads **Apagar proposta…** (`proposals.remove`), not "Excluir".
+PV2 writes the other two (`CatalogPage` and `NoticesView`). The previews use the pt-BR text of the app, so the menu item comes from `proposals.remove`.
 
 ## Ficou sem gravar
 

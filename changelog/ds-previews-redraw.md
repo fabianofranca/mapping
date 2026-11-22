@@ -1,4 +1,4 @@
-# Redraw the DS previews of review and notices — [Não lançado] (épico `epic/ds-previews-redraw`, PR #0, MCP sem mudança, schema v23)
+# Redraw the DS previews of review and notices — [Não lançado] (épico `epic/ds-previews-redraw`, PR #0, MCP unchanged, schema v23)
 
 ## Alterado
 
