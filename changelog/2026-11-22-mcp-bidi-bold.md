@@ -1,4 +1,4 @@
-# The MCP server lays mixed-direction text out like the browser — 2026-11-22 (épico `epic/mcp-bidi-bold`, PR #0, MCP 0.57.6, schema v23 unchanged)
+# The MCP server lays mixed-direction text out like the browser — 2026-11-22 (épico `epic/mcp-bidi-bold`, PR #2650, MCP 0.57.6, schema v23 unchanged)
 
 ## Alterado
 
