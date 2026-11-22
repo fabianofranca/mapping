@@ -132,7 +132,7 @@ function cost(
     dir,
     id,
     `usd=${usd}`,
-    'ctx=1000',
+    'ctx=150000',
     `model=${model}`,
     `effort=${effort}`,
   );
@@ -170,7 +170,7 @@ function seedRetests(count: number): void {
     sinais: { ok: 1 },
     cost: {
       usd: 1,
-      ctx: 1000,
+      ctx: 150000,
       model: 'claude-sonnet-5-5',
       effort: 'medium',
       at: `2026-11-11T${String(i).padStart(2, '0')}:40:00Z`,

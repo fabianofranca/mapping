@@ -105,7 +105,7 @@ function seed(d: string, s: Seed): void {
       d,
       s.id,
       `usd=${s.usd}`,
-      'ctx=1000',
+      'ctx=150000',
       `model=${s.model ?? 'claude-sonnet-5-5'}`,
       `effort=${s.effort ?? 'medium'}`,
     );

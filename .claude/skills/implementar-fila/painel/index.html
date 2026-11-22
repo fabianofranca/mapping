@@ -840,6 +840,14 @@
           return null;
         }
       };
+      // Imported stages carry only part of their cost (decision 12 of #2293): `meta.partialCost` (list or text; missing
+      // or invalid = none) marks them with ` (partial)` after the US$ on the graph card, in "Completed" and in the bar of
+      // the most expensive stages. The set is refreshed at the start of every read.
+      let partialStages = new Set();
+      const partialOf = (m) =>
+        new Set((asList(m.partialCost) || []).filter((v) => typeof v === 'string'));
+      const partialMark = (issue) =>
+        partialStages.has(String(issue)) ? ' (partial)' : '';
       // End of the run (stage #1791, decision 6): `meta.runEnd`; without it, the latest valid `ended` once
       // every row is final (`concluída`, `falhou` or `recusada`); otherwise the run is still going
       // (`finished` false). A missing or invalid `ended` is ignored; with no valid one `end` is null.
@@ -1223,14 +1231,15 @@
         if (!Number.isFinite(e)) d.dataset.s = String(s);
         return d;
       }
-      function buildFoot(p, r, usd) {
+      function buildFoot(p, r, usd, issue) {
         const foot = el('div', 'rodape');
         if (p) {
           foot.append(el('span', 'fases-n', p.done + ' of ' + p.total + ' phases'));
         }
         const dur = liveDur(r);
         if (dur) foot.append(dur);
-        if (usd > 0) foot.append(el('span', 'custo', 'US$ ' + brl(usd)));
+        if (usd > 0)
+          foot.append(el('span', 'custo', 'US$ ' + brl(usd) + partialMark(issue)));
         return foot.children.length ? foot : null;
       }
       function buildEtapa(n, r, usd) {
@@ -1241,7 +1250,7 @@
         const parts = [buildTop(n), buildButton(n), buildTags(r, n), buildFases(r)];
         a.append(
           ...parts
-            .concat([p ? buildBar(p) : null, buildWhy(n), buildFoot(p, r, usd)])
+            .concat([p ? buildBar(p) : null, buildWhy(n), buildFoot(p, r, usd, n.issue)])
             .filter(Boolean),
         );
         return a;
@@ -1443,7 +1452,11 @@
         if (!refused && Number.isFinite(s) && Number.isFinite(e) && e >= s) {
           resto.append(el('span', 'dur', minutesText(e - s)));
         }
-        if (usd > 0) resto.append(el('span', 'custo', 'US$ ' + brl(usd)));
+        if (usd > 0) {
+          resto.append(
+            el('span', 'custo', 'US$ ' + brl(usd) + partialMark(asText(r.issue))),
+          );
+        }
         row.append(numLink(r.issue), tit, resto);
         return row;
       }
@@ -1612,7 +1625,7 @@
           )
           .slice(0, 8)
           .map((r) => {
-            const valor = money(finite(r.usd));
+            const valor = money(finite(r.usd)) + partialMark(asText(r.name));
             return {
               nome: asText(r.name),
               usd: finite(r.usd),
@@ -1879,6 +1892,7 @@
       }
       dash.onData(() => {
         const m = q('meta')[0] || {};
+        partialStages = partialOf(m);
         // vagasItens comes ready from painel.py; the split only serves an old panel (without the field).
         const vagas =
           asList(m.vagasItens) || (m.vagas || '').split(' · ').filter(Boolean);
