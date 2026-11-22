@@ -1,4 +1,4 @@
-# R1.20c undo selects the arrow — 2026-11-22 (épico `epic/r1-arrow-undo`, PR #2611, MCP unchanged, schema v23 unchanged)
+# R1.20c undo selects the arrow — 2026-11-22 (épico `epic/r1-arrow-undo`, PR #2614, MCP unchanged, schema v23 unchanged)
 
 ## Corrigido
 
