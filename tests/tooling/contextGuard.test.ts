@@ -254,6 +254,24 @@ describe('CH1 — contextGuard.mjs: the coordinator prompt and the role (decisio
     }
   });
 
+  it('a prompt that only quotes the command tag is not a coordinator (anchored to the start of the block)', () => {
+    for (const text of [
+      'Fix the hook: it matches <command-name>/implementar-fila</command-name> anywhere',
+      'Note\n<command-name>/implementar-fila</command-name>',
+    ]) {
+      expect(COORD_MARK.test(text.trimStart()), text).toBe(false);
+      expect(roleOf([text]), text).toBeNull();
+    }
+  });
+
+  it('the typed form counts with or without the leading command-message block', () => {
+    const bare = '<command-name>/implementar-fila</command-name>';
+    expect(roleOf([bare])).toBe('coordenador');
+    expect(
+      roleOf([`  <command-message>implementar-fila</command-message>\n${bare}`]),
+    ).toBe('coordenador');
+  });
+
   it('the form recorded for a typed slash command counts', () => {
     const text =
       '<command-message>implementar-fila</command-message>\n<command-name>/implementar-fila</command-name>\n<command-args>#1856</command-args>';
@@ -492,8 +510,10 @@ describe('CH1 — contextGuard.mjs: the coordinator notice (decision 5)', () => 
   it('covers no room in the lineage, the session that already handed over, the jumps and the subagent line', () => {
     const text = notice();
     expect(text).toContain('no room in the lineage');
-    expect(text).toContain('once');
-    expect(text).toContain('later notices do not repeat');
+    expect(text).toContain('repeats this notice every 10 thousand');
+    expect(text).toContain('aguardando o dono abrir a sessão nova da fila');
+    expect(text).toContain('do not send it again');
+    expect(text).not.toContain('later notices do not repeat');
     expect(text).toContain('no longer the registered coordinator');
     expect(text).toContain('Largest jumps (approximate): Read: a.md +');
     expect(text).toContain('Subagent: ignore this notice.');
@@ -740,10 +760,16 @@ describe('CH1 — the "Session switch" section of the implementar-fila skill (de
     expect(first).toContain('painel.py context <folder> --medir --max <max_tokens>');
   });
 
-  it('"New skill on main" skips the check with the context above 35% or the hook notice', () => {
+  it('"New skill on main" keeps the cheap check with the context above 35% or the hook notice, and reads only the touched switch rules', () => {
     expect(newSkill).toContain('above 35%');
     expect(newSkill).toContain("hook's notice");
-    expect(newSkill).toContain('skip this check entirely');
+    expect(newSkill).not.toContain('skip this check entirely');
+    expect(newSkill).toContain(
+      'run only `git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/`',
+    );
+    expect(newSkill).toContain('no pull and no reread');
+    expect(newSkill).toContain('"Session switch" or "Rules of this queue"');
+    expect(newSkill).toContain('read only those sections');
     expect(newSkill).toContain('the successor reads the new skill');
     // With no room in the lineage there is no successor to read it: the check stays.
     expect(newSkill).toContain('with room in the lineage');
@@ -1253,7 +1279,7 @@ describe('CG1 — the phase notice (decision 6)', () => {
         `This counts as "above 35%" of "Session switch" in .claude/skills/implementar-fila/SKILL.md: ` +
         `hand the coordination over now, in this turn, after the lineage check ("Lineage limit"), ` +
         `without rereading a changed SKILL.md. ` +
-        `With no room in the lineage, the owner's path of "Lineage limit" applies once, and the later notices do not repeat it. ` +
+        `With no room in the lineage, follow the owner's path of "Lineage limit" and keep working. This hook cannot see the lineage and repeats this notice every 10 thousand: if the \`current\` of the panel already says "aguardando o dono abrir a sessão nova da fila", the owner was notified, so do not send it again. ` +
         `A session that already handed over (no longer the registered coordinator) ignores this notice. ` +
         `Largest jumps (approximate): none recorded. Subagent: ignore this notice.`,
     );
