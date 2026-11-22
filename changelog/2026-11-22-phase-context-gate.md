@@ -1,4 +1,4 @@
-# Phases cannot open their PR above the context trigger — [Não lançado] (épico `epic/phase-context-gate`, PR #0, MCP unchanged, schema v23)
+# Phases cannot open their PR above the context trigger — 2026-11-22 (épico `epic/phase-context-gate`, PR #0, MCP unchanged, schema v23)
 
 ## Alterado
 
