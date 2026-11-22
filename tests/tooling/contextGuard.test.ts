@@ -1089,6 +1089,149 @@ describe('CG1 — opensPullRequest (decision 2)', () => {
   });
 });
 
+describe('CT1 — opensPullRequest: inert text, wrappers, curl and GraphQL (decisions 6 to 10 of #2635)', () => {
+  const API = 'https://api.github.com';
+
+  it.each([
+    "bash -c 'gh pr create --base b'",
+    'sh -lc "gh pr create --base b"',
+    'zsh -ec "cd /x && gh pr create"',
+    'dash -c "gh pr create"',
+    'eval "gh pr create --base b"',
+    "eval 'gh pr create'",
+    "cd /x && bash -c 'gh pr create'",
+    'bash -c "bash -c \'gh pr create\'"',
+    `curl -X POST ${API}/repos/o/r/pulls -d '{"title":"t"}'`,
+    `curl --request POST ${API}/repos/o/r/pulls`,
+    `curl --json '{"title":"t"}' ${API}/repos/o/r/pulls`,
+    `curl -d @body.json ${API}/repos/o/r/pulls`,
+    `curl -H "Authorization: token x" --data-raw '{}' "${API}/repos/o/r/pulls"`,
+    `curl -F title=t ${API}/repos/o/r/pulls`,
+    `GH_TOKEN=x curl -d '{}' ${API}/repos/o/r/pulls`,
+    `cd /x && curl --data-binary @b ${API}/repos/o/r/pulls?x=1`,
+    "gh api graphql -f query='mutation { createPullRequest(input: {}) { pullRequest { id } } }'",
+    `curl -d '{"query":"mutation { createPullRequest(input: {}) { clientMutationId } }"}' ${API}/graphql`,
+    `curl -X POST ${API}/graphql --data-raw 'createPullRequest'`,
+    'echo "$(gh pr create)"',
+    'echo "x `gh pr create`"',
+  ])(
+    'review: a Bash call that opens a PR by a wrapper, curl or GraphQL: %s',
+    (command) => {
+      expect(opensPr('Bash', { command })).toBe(true);
+    },
+  );
+
+  it.each([
+    'cat <<EOF\ngh pr create --base b\nEOF',
+    "cat <<'EOF'\ngh pr create\nEOF",
+    'cat <<"EOF" > notes.md\nline\ngh pr create\nmore\nEOF',
+    'cat <<-EOF\n\tgh pr create\n\tEOF',
+    'git commit -m "feat: x\ngh pr create --base b\nmore"',
+    "git commit -m 'feat: x\ngh pr create'",
+    'echo "gh pr create"',
+    'echo "gh api repos/o/r/pulls -f title=t"',
+    "echo $'a\\ngh pr create'",
+    `curl ${API}/repos/o/r/pulls`,
+    `curl -X GET ${API}/repos/o/r/pulls -d state=open`,
+    `curl ${API}/repos/o/r/pulls/12`,
+    `curl -X POST ${API}/repos/o/r/issues -d '{}'`,
+    `curl -X POST ${API}/repos/o/r/pulls/12/comments -d '{}'`,
+    `curl -s ${API}/graphql -d '{"query":"query { viewer { login } }"}'`,
+    "gh api graphql -f query='query { viewer { login } }'",
+    'echo createPullRequest',
+    "bash -c 'echo hi'",
+    'bash script.sh',
+    'sh -x run.sh',
+    'eval "$(ssh-agent)"',
+    'echo "bash -c \'gh pr create\'"',
+  ])('review: inert text, a GET or a query does not open a PR: %s', (command) => {
+    expect(opensPr('Bash', { command })).toBe(false);
+  });
+
+  it('a heredoc does not hide a real call that comes after its body', () => {
+    expect(opensPr('Bash', { command: 'cat <<EOF\ntext\nEOF\ngh pr create' })).toBe(true);
+    expect(
+      opensPr('Bash', { command: "cat <<'EOF' | cat\ngh pr create\nEOF\ngh pr create" }),
+    ).toBe(true);
+  });
+
+  it('a command after a quoted string on the same line is still seen', () => {
+    expect(opensPr('Bash', { command: 'echo "a" && gh pr create' })).toBe(true);
+    expect(opensPr('Bash', { command: "echo 'a'; gh pr create" })).toBe(true);
+  });
+
+  it('review: the usual heredoc inside $( ) keeps the real call and drops the quoted text', () => {
+    const body = 'summary\ngh pr create --base b\nEOF-not-yet';
+    expect(
+      opensPr('Bash', {
+        command: `git commit -m "$(cat <<'EOF'\n${body}\nEOF\n)"`,
+      }),
+    ).toBe(false);
+    expect(
+      opensPr('Bash', {
+        command: `gh pr create --title t --body "$(cat <<'EOF'\n## Summary\nx\nEOF\n)"`,
+      }),
+    ).toBe(true);
+  });
+
+  it.each([
+    "# Open the PR, don't wait\ngh pr create --title x",
+    "echo a # it's here\ngh pr create",
+    'echo $((1<<3))\ngh pr create --title x',
+    'x=$((1 << 3)); gh pr create',
+    'cat <<EOF\nnever closed\ngh pr create',
+    "bash <<'EOF'\ngh pr create\nEOF",
+    'sh <<EOF\ncd /x\ngh pr create\nEOF',
+    'cat <<EOF | bash\ngh pr create\nEOF',
+    'cd /x && zsh <<-EOF\n\tgh pr create\n\tEOF',
+  ])(
+    'review: masking never hides a real call (comment, arithmetic, shell stdin): %s',
+    (command) => {
+      expect(opensPr('Bash', { command })).toBe(true);
+    },
+  );
+
+  it.each([
+    "# don't: gh pr create\necho ok",
+    'echo ${#x} $# # gh pr create\necho ok',
+    'cat <<EOF > run.sh\ngh pr create\nEOF',
+    'git commit -F - <<EOF\ngh pr create\nEOF',
+  ])(
+    'review: a comment, a $# word or a heredoc that is not a shell script stays inert: %s',
+    (command) => {
+      expect(opensPr('Bash', { command })).toBe(false);
+    },
+  );
+
+  it('the wrapper recursion stops at depth 3', () => {
+    const wrap = (inner: string): string =>
+      `bash -c "${inner.replace(/(["\\$`])/g, '\\$1')}"`;
+    const one = wrap('gh pr create');
+    const three = wrap(wrap(one));
+    const four = wrap(three);
+    expect(opensPr('Bash', { command: one })).toBe(true);
+    expect(opensPr('Bash', { command: three })).toBe(true);
+    expect(opensPr('Bash', { command: four })).toBe(false);
+  });
+
+  it('review: curl -G turns the data into a query, so it is a GET', () => {
+    expect(
+      opensPr('Bash', { command: `curl -G -d state=open ${API}/repos/o/r/pulls` }),
+    ).toBe(false);
+    expect(
+      opensPr('Bash', { command: `curl -G -X POST -d t=1 ${API}/repos/o/r/pulls` }),
+    ).toBe(true);
+  });
+
+  it('review: every curl segment is checked, not only the first', () => {
+    expect(
+      opensPr('Bash', {
+        command: `curl ${API}/repos/o/r/pulls && curl -X POST -d '{}' ${API}/repos/o/r/pulls`,
+      }),
+    ).toBe(true);
+  });
+});
+
 describe('CG1 — the PR gate (decisions 1, 3, 4 and 5)', () => {
   it('create_pull_request above 270,000 in a phase is refused, with the JSON and the text of decision 4', () => {
     const box = sandbox([userLine(phasePrompt), measure(TRIGGER + 1)]);

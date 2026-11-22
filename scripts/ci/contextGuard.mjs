@@ -22,17 +22,31 @@
 //     3 largest) and `erro`. An old state without `papel` is a phase when `fase` is true, and otherwise
 //     decided again once.
 //   PR gate (`PreToolUse`, with or without `agent_id`): a `fase` session above `GATILHO` (strictly more)
-//     that opens a PR (`opensPullRequest`: `create_pull_request`, `gh pr create` or a POST `gh api
-//     …/pulls`, with `gh` in command position and an explicit method deciding over a body flag) gets `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny",
-//     "permissionDecisionReason":"<text>"}}`, on every attempt. Exempt: the last session of its phase
-//     (`Retomada por contexto (<k> de <N>)` with k equal to N, `MARCADOR_RETOMADA`), the coordinator, the
-//     tester and any other session. The gate reads the state for the role and writes it only to record a
-//     role it had to decide, or the `erro`: it never touches `contexto`, `ferramenta`, `ultimoAviso` or
-//     `saltos`, so the jumps of the notice stay right.
-//   Known limit: the call is recognized by its text (best effort): `gh` inside a quoted string (`bash -c '...'`)
-//     or a raw `curl` to the pulls endpoint is not seen.
-//   Known limit: the gate measures the `transcript_path` it receives; if that is a subagent's own
-//     transcript the measure is lower and the call goes through.
+//     that opens a PR (`opensPullRequest`) gets `{"hookSpecificOutput":{"hookEventName":"PreToolUse",
+//     "permissionDecision":"deny","permissionDecisionReason":"<text>"}}`, on every attempt. Exempt: the last
+//     session of its phase (`Retomada por contexto (<k> de <N>)` with k equal to N, `MARCADOR_RETOMADA`), the
+//     coordinator, the tester and any other session. The gate reads the state for the role and writes it only
+//     to record a role it had to decide, or the `erro`: it never touches `contexto`, `ferramenta`,
+//     `ultimoAviso` or `saltos`, so the jumps of the notice stay right.
+//   The forms the gate recognizes (stage #2635, phase CT1; decisions 6 to 10), each with the tool or command in
+//     command position (`gh`, `curl`, `bash`, ... after the usual wrappers and `NAME=value` prefixes):
+//     - the `create_pull_request` tool, `gh pr create` and a POST `gh api …/pulls` (an explicit method decides
+//       over a body flag);
+//     - `curl` to `…/repos/<owner>/<repo>/pulls` with an explicit POST or, with no method, a data flag (`-d`,
+//       `--data*`, `--json`, `-F`, `--form`; `-G` makes it a GET);
+//     - the GraphQL `createPullRequest` mutation in `gh api graphql` or in a `curl` to `…/graphql`;
+//     - any of them inside `bash`/`sh`/`zsh`/`dash` with an option group ending in `c` (`-c`, `-lc`) or `eval`,
+//       unquoted one level and checked again, up to depth 3.
+//     Inert text is not a command position: the position is looked for on a masked copy of the command, of the
+//     same length (`maskInert`), where heredoc bodies and the content of `'…'`, `$'…'` and `"…"` are blank
+//     (the code of `$( … )` and of backticks inside `"…"` stays), and comments. A heredoc fed to a shell
+//     (`bash <<EOF`, `cat <<EOF | sh`) is a script and stays code; a heredoc that is never closed is not
+//     blanked. The segment checks read the original text.
+//   Best effort that stays (the gate fails open on these): a script file or interpreter (`python x.py`,
+//     `node -e`); a command built in a variable; another HTTP client (`wget`,
+//     `httpie`); a GraphQL query read from a file or from stdin (`-f query=@file`, `-F query=@-`); and the gate measures the
+//     `transcript_path` it receives, so if that is a subagent's own transcript the measure is lower and the
+//     call goes through.
 //   Always exit code 0: the hook never blocks or delays a call except by the gate's deny, and any failure
 //   (an error, an undecided role, no measure, outside the cloud) only silences it.
 import {
@@ -146,20 +160,44 @@ export function sessionRole(texts) {
   return texts.some((raw) => MARCADOR_TESTADOR.test(raw.trimStart())) ? 'testador' : null;
 }
 
-// `gh` must be in command position (start, or after `;`, `&`, `|`, `(`, a backtick or a line break, with
-// optional shell keywords (`then`, `do`, `else`, `{`, ...), wrappers (`env`, `sudo`, `timeout <n>`, ...) and
-// `NAME=value` prefixes): a commit message, an `echo` or a `grep` that only mentions it is not a call.
-// Best effort: a command inside a quoted string (`bash -c '...'`) or a raw HTTP call (`curl`) is not seen.
+// A command word (`gh`, `curl`, ...) must be in command position (start, or after `;`, `&`, `|`, `(`, a
+// backtick or a line break, with optional shell keywords (`then`, `do`, `else`, `{`, ...), wrappers (`env`,
+// `sudo`, `timeout <n>`, ...) and `NAME=value` prefixes): a commit message, an `echo` or a `grep` that only
+// mentions it is not a call. The position is looked for on a masked copy of the command (`maskInert`), where
+// the inert text is blank; the segment checks (path, flags, mutation name) read the original text.
 const WRAPPERS =
   '(?:(?:then|do|else|elif|time|command|exec|sudo|nohup|env|!|\\{)\\s+|timeout\\s+\\S+\\s+)*';
-const GH_START = new RegExp(
-  `(?:^|[;&|(\`\\n])\\s*${WRAPPERS}(?:[A-Za-z_][A-Za-z0-9_]*=\\S*\\s+)*gh\\s+`,
+const commandStart = (word, flags = '') =>
+  new RegExp(
+    `(?:^|[;&|(\`\\n])\\s*${WRAPPERS}(?:[A-Za-z_][A-Za-z0-9_]*=\\S*\\s+)*${word}`,
+    flags,
+  );
+const GH_API = commandStart('gh\\s+api\\b', 'g');
+const PR_CREATE = commandStart('gh\\s+pr\\s+create(?![\\w-])');
+const CURL = commandStart('curl\\s+', 'g');
+const SHELL_C = commandStart(
+  '(?:bash|sh|zsh|dash)\\s+(?:-[A-Za-z-]+\\s+)*-[A-Za-z]*c\\s+',
+  'g',
 );
-const GH_API = new RegExp(`${GH_START.source}api\\b`);
-const PR_CREATE = new RegExp(`${GH_START.source}pr\\s+create(?![\\w-])`);
+const EVAL = commandStart('eval\\s+', 'g');
 const PULLS_PATH = /repos\/[^\s/'"]+\/[^\s/'"]+\/pulls(?=[\s'"?]|$)/;
+const CURL_PULLS =
+  /(?:https?:\/\/)?api\.github\.com\/repos\/[^\s/'"]+\/[^\s/'"]+\/pulls(?=[\s'"?]|$)/;
+const CURL_GRAPHQL = /(?:https?:\/\/)?api\.github\.com\/graphql(?=[\s'"?]|$)/;
+const GH_GRAPHQL = /(?:^|\s)graphql(?=[\s'"]|$)/;
+const PR_MUTATION = /\bcreatePullRequest\b/;
 const BODY_FLAG = /(?:^|\s)(?:-[fF]|--field|--raw-field|--input)(?=[\s=]|$)/;
 const METHOD_FLAG = /(?:^|\s)(?:-X\s*|--method[\s=]+)([A-Za-z]+)/i;
+const CURL_METHOD_FLAG = /(?:^|\s)(?:-X\s*|--request[\s=]+)([A-Za-z]+)/i;
+const CURL_DATA_FLAG =
+  /(?:^|\s)(?:-[dF]|--data(?:-raw|-binary|-urlencode|-ascii)?|--json|--form(?:-string)?)(?=[\s='"@{[]|$)/;
+const CURL_GET_FLAG = /(?:^|\s)(?:-G|--get)(?=\s|$)/;
+/** A line that feeds a heredoc to a shell (`bash <<EOF`, `cat <<EOF | sh`): its body is a script, so it is code. */
+const SHELL_LINE =
+  /(?:^|[;&|(]|\b(?:sudo|env|xargs|exec|command|nohup|time)\s)\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*(?:bash|sh|zsh|dash)(?=\s|$)/;
+const HEREDOC_OPEN = /^<<(-?)[ \t]*(?:'([^']*)'|"([^"]*)"|\\?([A-Za-z0-9_]+))/;
+/** Shell wrappers (`bash -c`, `eval`) are unquoted and checked again up to this depth. */
+const MAX_WRAPPER_DEPTH = 3;
 
 /** An explicit method decides; with none, a body flag makes `gh api` a POST. */
 function postsBody(command) {
@@ -167,31 +205,242 @@ function postsBody(command) {
   return method ? method[1].toUpperCase() === 'POST' : BODY_FLAG.test(command);
 }
 
-/** The text of the `gh api` call alone: from its match to the next command separator outside quotes. */
-function apiSegment(command) {
-  const found = GH_API.exec(command);
-  if (found === null) return null;
-  const rest = command.slice(found.index + found[0].length);
+/** An explicit method decides; with none, `-G` makes it a GET and a data flag a POST. */
+function curlPosts(command) {
+  const method = CURL_METHOD_FLAG.exec(command);
+  if (method) return method[1].toUpperCase() === 'POST';
+  return !CURL_GET_FLAG.test(command) && CURL_DATA_FLAG.test(command);
+}
+
+function blank(ctx, from, to) {
+  for (let k = from; k < Math.min(to, ctx.out.length); k += 1) ctx.out[k] = ' ';
+}
+
+/** After the opening `'` at `open`: blanks the content and returns the index after the closing quote. */
+function skipSingle(ctx, open) {
+  const close = ctx.text.indexOf("'", open + 1);
+  const end = close < 0 ? ctx.text.length : close;
+  blank(ctx, open + 1, end);
+  return close < 0 ? end : end + 1;
+}
+
+/** `$'…'` (backslash escapes the next character): the same, for the quote at `open`. */
+function skipAnsiC(ctx, open) {
+  let i = open + 1;
+  while (i < ctx.text.length && ctx.text[i] !== "'") i += ctx.text[i] === '\\' ? 2 : 1;
+  const end = Math.min(i, ctx.text.length);
+  blank(ctx, open + 1, end);
+  return end + 1;
+}
+
+/** `"…"` at `open`: blanks the content, but keeps the code of `$( … )` and of backticks. */
+function skipDouble(ctx, open) {
+  const { text } = ctx;
+  let i = open + 1;
+  let run = i;
+  while (i < text.length && text[i] !== '"') {
+    if (text[i] === '\\') i += 2;
+    else if (text[i] === '$' && text[i + 1] === '(') {
+      blank(ctx, run, i + 1);
+      i = scanCode(ctx, i + 2, ')');
+      run = i;
+      i += 1;
+    } else if (text[i] === '`') {
+      blank(ctx, run, i);
+      i = scanCode(ctx, i + 1, '`');
+      run = i;
+      i += 1;
+    } else i += 1;
+  }
+  blank(ctx, run, Math.min(i, text.length));
+  return i + 1;
+}
+
+/**
+ * Blanks the body of the oldest pending heredoc, which starts after the line break at `nl`, and returns where
+ * it ends. A body that feeds a shell is kept (code), and one that is never closed is not blanked: the mask
+ * only hides text it is sure about.
+ */
+function consumeHeredoc(ctx, nl) {
+  const { word, strip, shell } = ctx.pending.shift();
+  const { text } = ctx;
+  let lineStart = nl + 1;
+  while (lineStart <= text.length) {
+    const found = text.indexOf('\n', lineStart);
+    const lineEnd = found < 0 ? text.length : found;
+    const line = text.slice(lineStart, lineEnd);
+    if ((strip ? line.replace(/^\t+/, '') : line) === word) {
+      if (!shell) blank(ctx, nl + 1, lineEnd);
+      return lineEnd;
+    }
+    if (found < 0) break;
+    lineStart = found + 1;
+  }
+  return nl;
+}
+
+/** The heredoc opened at `i` (`<<`, `<<-`, not `<<<`): queues it and returns the index after its word. */
+function openHeredoc(ctx, i) {
+  if (ctx.text[i + 2] === '<') return i + 3;
+  const found = HEREDOC_OPEN.exec(ctx.text.slice(i, i + 200));
+  if (found === null) return i + 2;
+  const lineStart = ctx.text.lastIndexOf('\n', i - 1) + 1;
+  const lineEnd = ctx.text.indexOf('\n', i);
+  const line = ctx.text.slice(lineStart, lineEnd < 0 ? ctx.text.length : lineEnd);
+  ctx.pending.push({
+    word: found[2] ?? found[3] ?? found[4],
+    strip: found[1] === '-',
+    shell: SHELL_LINE.test(line),
+  });
+  return i + found[0].length;
+}
+
+/** `$(( … ))` at `i` (a shift such as `1<<3` is not a heredoc): returns the index after the closing `))`. */
+function skipArithmetic(ctx, i) {
+  let depth = 2;
+  let j = i + 3;
+  while (j < ctx.text.length && depth > 0) {
+    if (ctx.text[j] === '(') depth += 1;
+    else if (ctx.text[j] === ')') depth -= 1;
+    j += 1;
+  }
+  return j;
+}
+
+/** A `#` that starts a word is a comment to the end of the line (its quotes do not open a string). */
+function isComment(text, i) {
+  return text[i] === '#' && (i === 0 || /[\s;&|(]/.test(text[i - 1]));
+}
+
+/** Blanks the comment at `i` and returns the index of its line break. */
+function skipComment(ctx, i) {
+  const found = ctx.text.indexOf('\n', i);
+  const end = found < 0 ? ctx.text.length : found;
+  blank(ctx, i, end);
+  return end;
+}
+
+/** Code starting at `i` up to `end` (not nested in parentheses) or the end of the text; returns the index of `end`. */
+function scanCode(ctx, i, end) {
+  const { text } = ctx;
+  let depth = 0;
+  while (i < text.length) {
+    const char = text[i];
+    if (char === end && depth === 0) return i;
+    if (char === '\\') i += 2;
+    else if (char === "'") i = skipSingle(ctx, i);
+    else if (char === '"') i = skipDouble(ctx, i);
+    else if (char === '$' && text[i + 1] === "'") i = skipAnsiC(ctx, i + 1);
+    else if (isComment(text, i)) i = skipComment(ctx, i);
+    else if (char === '$' && text.startsWith('((', i + 1)) i = skipArithmetic(ctx, i);
+    else if (char === '<' && text[i + 1] === '<') i = openHeredoc(ctx, i);
+    else if (char === '\n' && ctx.pending.length > 0) i = consumeHeredoc(ctx, i);
+    else {
+      if (char === '(') depth += 1;
+      else if (char === ')') depth = Math.max(0, depth - 1);
+      i += 1;
+    }
+  }
+  return text.length;
+}
+
+/**
+ * A copy of the command, of the same length, where the inert text is blank: heredoc bodies and the content
+ * of `'…'`, `$'…'` and `"…"` (the code of `$( … )` and of backticks inside `"…"` stays). The quotes
+ * themselves stay.
+ */
+export function maskInert(command) {
+  const ctx = { text: command, out: command.split(''), pending: [] };
+  scanCode(ctx, 0, null);
+  return ctx.out.join('');
+}
+
+/** The end of the first command in `rest`: the next separator outside quotes. */
+function segmentEnd(rest) {
   let quote = null;
   for (let i = 0; i < rest.length; i += 1) {
     const char = rest[i];
     if (quote !== null) {
       if (char === quote) quote = null;
     } else if (char === '"' || char === "'") quote = char;
-    else if (';&|\n)`'.includes(char)) return rest.slice(0, i);
+    else if (';&|\n)`'.includes(char)) return i;
   }
-  return rest;
+  return rest.length;
 }
 
-/** Whether a tool call opens a pull request: the create tool, `gh pr create` or a POST `gh api …/pulls`. */
+/** The text after every match of `start` (found on the masked copy), up to the end of that command, from the original. */
+function segmentsAfter(command, masked, start) {
+  return [...masked.matchAll(start)].map((found) => {
+    const rest = command.slice(found.index + found[0].length);
+    return rest.slice(0, segmentEnd(rest));
+  });
+}
+
+/** The `gh api` call: a POST to `…/pulls` or the `createPullRequest` mutation of `graphql`. */
+function apiOpensPullRequest(segment) {
+  if (PULLS_PATH.test(segment) && postsBody(segment)) return true;
+  return GH_GRAPHQL.test(segment) && PR_MUTATION.test(segment);
+}
+
+/** The `curl` call: a POST to the pulls endpoint, or the `createPullRequest` mutation sent to `/graphql`. */
+function curlOpensPullRequest(segment) {
+  if (CURL_PULLS.test(segment) && curlPosts(segment)) return true;
+  return CURL_GRAPHQL.test(segment) && PR_MUTATION.test(segment);
+}
+
+/** One level of unquoting of the word that starts at `from`: `'…'`, `"…"` (with its escapes) or a bare word. */
+function unquotedWord(command, from) {
+  const quote = command[from];
+  if (quote === "'") {
+    const close = command.indexOf("'", from + 1);
+    return command.slice(from + 1, close < 0 ? command.length : close);
+  }
+  if (quote !== '"') return command.slice(from).split(/\s/)[0];
+  let i = from + 1;
+  while (i < command.length && command[i] !== '"') i += command[i] === '\\' ? 2 : 1;
+  return command.slice(from + 1, i).replace(/\\(["\\$`])/g, '$1');
+}
+
+/** The commands that `bash -c '…'` (and `sh`, `zsh`, `dash`) and `eval …` run, unquoted one level. */
+function wrappedCommands(command, masked) {
+  const inner = [];
+  for (const found of masked.matchAll(SHELL_C))
+    inner.push(unquotedWord(command, found.index + found[0].length));
+  for (const found of masked.matchAll(EVAL)) {
+    const from = found.index + found[0].length;
+    const quoted = command[from] === '"' || command[from] === "'";
+    inner.push(
+      quoted
+        ? unquotedWord(command, from)
+        : command.slice(from).slice(0, segmentEnd(command.slice(from))),
+    );
+  }
+  return inner;
+}
+
+function commandOpensPullRequest(command, depth) {
+  const masked = maskInert(command);
+  if (PR_CREATE.test(masked)) return true;
+  if (segmentsAfter(command, masked, GH_API).some(apiOpensPullRequest)) return true;
+  if (segmentsAfter(command, masked, CURL).some(curlOpensPullRequest)) return true;
+  return (
+    depth < MAX_WRAPPER_DEPTH &&
+    wrappedCommands(command, masked).some((inner) =>
+      commandOpensPullRequest(inner, depth + 1),
+    )
+  );
+}
+
+/**
+ * Whether a tool call opens a pull request: the create tool, `gh pr create`, a POST `gh api …/pulls`, a
+ * `curl` POST to the pulls endpoint, the GraphQL `createPullRequest` mutation, or any of them inside
+ * `bash -c '…'` or `eval`.
+ */
 export function opensPullRequest(toolName, toolInput) {
   if (toolName === 'mcp__github__create_pull_request') return true;
   if (toolName !== 'Bash') return false;
   const command = toolInput?.command;
-  if (typeof command !== 'string') return false;
-  if (PR_CREATE.test(command)) return true;
-  const segment = apiSegment(command);
-  return segment !== null && PULLS_PATH.test(segment) && postsBody(segment);
+  return typeof command === 'string' && commandOpensPullRequest(command, 0);
 }
 
 /** Call label to attribute the jumps: `Bash: <40 characters>`, `Read: <file>`, … */
