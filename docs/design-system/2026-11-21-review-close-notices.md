@@ -20,4 +20,4 @@ Gravado no artefato **Mapping** on 2026-11-21: version 101 (id `1795230178-478c`
 
 ## Ficou sem gravar
 
-- The `preview.html` of `ReviewBar`, `ProposalRow`, `CatalogPage` and `NoticesView`: not redrawn. They are large hand-drawn pages (`ReviewBar` 30 kB, `ProposalRow` 34 kB, `CatalogPage` 23 kB, `NoticesView` 19 kB) and still show the earlier states (**Aplicar aceitas · 0** only, no `Rejeitada` row, the notice groups and kind filter in the Notices window, no notice lines on the Catalog page). The READMEs, now current, are what the guides promise; the previews need a redraw by the owner or a follow-up (issue opened at the closing).
+- Passou para o registro do épico `epic/ds-previews-redraw`: the preview.html of ReviewBar, ProposalRow, CatalogPage and NoticesView.
