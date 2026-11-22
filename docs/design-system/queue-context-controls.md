@@ -1,4 +1,4 @@
-# Queue context and cost controls (épico `epic/queue-context-controls`)
+# Queue context and cost controls — [Não lançado] (épico `epic/queue-context-controls`)
 
 ## Pendências
 
