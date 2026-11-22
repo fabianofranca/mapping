@@ -1,4 +1,4 @@
-# Text measurer fallbacks and measure_component accuracy — [Não lançado] (épico `epic/measure-fallbacks`)
+# Text measurer fallbacks and measure_component accuracy — 2026-11-22 (épico `epic/measure-fallbacks`)
 
 ## Pendências
 
@@ -6,7 +6,7 @@ None. Phase F1 only touches the MCP server's text measurement (`mcp/image/`) and
 
 ## Sincronização
 
-Nothing to write to the **Mapping** artifact: the epic does not change a component, token or icon of the app.
+Sem impacto: the epic does not change a component, token or icon of the app. Nothing was written to the artifact.
 
 ## Ficou sem gravar
 

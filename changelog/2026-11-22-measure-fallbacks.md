@@ -1,4 +1,4 @@
-# Text measurer fallbacks and measure_component accuracy — [Não lançado] (épico `epic/measure-fallbacks`, PR #2267, MCP 0.56.2, schema v23 unchanged)
+# Text measurer fallbacks and measure_component accuracy — 2026-11-22 (épico `epic/measure-fallbacks`, PR #2514, MCP 0.56.2, schema v23 unchanged)
 
 ## Corrigido
 
