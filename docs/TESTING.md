@@ -3429,7 +3429,7 @@ One template only, for the full round, the directed one and the advanced test. W
 ## Summary
 
 - Steps: total, ✅, ❌, not executed (counted per step, not per table row).
-- Findings by severity: blocks N, high N, medium N, low N.
+- Findings by severity: blocks N, high N, medium N, low N; `roteiro` N (counted apart, not in low).
 - Does it prevent use with people? yes | no, and why.
 
 ## Steps
@@ -3446,6 +3446,7 @@ One template only, for the full round, the directed one and the advanced test. W
 ### 1. Short title (in block mode, `### k.1`, `### k.2`…)
 
 - Severity: blocks | high | medium | low (scale in section 7 of the guide)
+- Cause: `produto` | `roteiro` (`docs/TESTING-NUVEM.md`, "Check and record"; a `roteiro` finding is always low)
 - Build id and date:
 - Steps to reproduce: (exact, numbered)
 - Expected:

@@ -4,7 +4,7 @@ Excerpts of the tester prompt ([`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md)) that
 
 ## Subagent per batch
 
-The tester's main session does not run steps: it hands each **batch** to a **subagent** (the `Agent` tool, the same model as the session, Sonnet) on the same machine, with the same Chrome, the same disk and the same `cloud.mjs run` server (with the `ctx`), and **one batch at a time, never two at once**, in the order of the round list (stage [#1639](https://github.com/fabianofranca/mapping/issues/1639)). The chains (`principal`, `loja`, `telas`) stay intact, because the folder and the `ctx` are the same.
+The tester's main session does not run steps: it hands each **batch** to a **subagent** (the `Agent` tool with `model: "sonnet"` and medium effort, whatever the session's model: the tester runs on Haiku medium, and this is the arrangement canary C measured) on the same machine, with the same Chrome, the same disk and the same `cloud.mjs run` server (with the `ctx`), and **one batch at a time, never two at once**, in the order of the round list (stage [#1639](https://github.com/fabianofranca/mapping/issues/1639)). The notice's `subagentes <n> <modelo> <esforço>` reports what was really used. The chains (`principal`, `loja`, `telas`) stay intact, because the folder and the `ctx` are the same.
 
 **The batches.** **R0** (whole, or only R0.1 by the mode's rule) and **section 6** (test repository and MCP) are batches of their own; the **visual pass** is the `visual` batch; the scripts of the list come from `node scripts/testing/round-guide.mjs --faixas <list without R0>`, which prints one line per batch, in the order of the guide: a script of up to 20 steps is one batch (`R13`), and above that come consecutive ranges of up to 20 steps (`R25.1-R25.20`, `R25.21-R25.40`…); a requested range (`R6.3-R6.7`) is respected and is only split above 20; the step that `passo` joins to the previous one (R22.6a with R22.6) is not separated. Small scripts are not joined.
 
@@ -14,10 +14,10 @@ The tester's main session does not run steps: it hands each **batch** to a **sub
 You run batch <batch> of the Mapping app's test round, as a subagent of the tester's main session. There is no owner to ask: whatever blocks the batch goes into the report.
 
 Batch data
-- Batch: <R25.21-R25.40 | R13 | R0 | R0.1 | secao6 | visual>
+- Batch: <R25.21-R25.40 | R13 | R0 | R0.1 | secao6 | visual> (batch k of n, from `--faixas`)
 - Working folder: ~/mapping-testes/<YYYY-MM-DD>-<target>/ (`apoio/` is <folder>/apoio; captures go to <folder>/anexos/)
 - Script project folder: <folder>/<name> (the `run` one)
-- Mode: <modo dirigido | modo completo, bloco k de n | modo dirigido, grupo k de n | retest>
+- Mode: <modo dirigido | modo completo, bloco k de n | modo dirigido, grupo k de n | retest>, copied verbatim from the message: the same line in every batch, never derived from the batch number
 - Next free finding number: <k.n | n>
 
 What to read, in this order
@@ -29,7 +29,7 @@ How to act
 The rules of "How to act", "Check and record" and "Never" of `docs/TESTING-NUVEM.md` apply to you as they do to the main session: one `run` per group of up to 8 steps, one `check` per expected result on Screen, the `state()` at the end for the Disk, the Reproduction of each ❌ run twice.
 
 What to write
-- In `apoio/relato-<batch>.md`, in the template of section 10 of the guide: the batch's rows of the steps table (consecutive ✅ without a note as a one-line range; ❌, "not executed (reason)" and steps with a note on their own line) and the findings, **already with the final code** (<k.n | n>, in order from the free number), the severity of the guide's scale and the Reproduction of each ❌.
+- In `apoio/relato-<batch>.md`, in the template of section 10 of the guide: the batch's rows of the steps table (consecutive ✅ without a note as a one-line range; ❌, "not executed (reason)" and steps with a note on their own line) and the findings, **already with the final code** (<k.n | n>, in order from the free number), the severity of the guide's scale, the cause (`produto` or `roteiro`) next to the severity, and the Reproduction of each ❌.
 - The captures and attachments in `anexos/`.
 - At the end of the file, a line "Calls: passo <n>, secao <n>; guia.md read through Read: yes|no", plus what got in the way (ambiguous step, workaround, own `.mjs`).
 
@@ -37,10 +37,10 @@ What not to do
 Do not post anything on GitHub, do not notify anyone, do not use `mark` (the script's `start` and `end` belong to the main session), do not edit `relato.md` nor anything in the repository.
 
 What to return (one line only)
-<batch>: N ✅, N ❌, N not executed; findings: <code severity short title…> or none; <full path of the file>
+<batch>: N ✅, N ❌, N not executed; findings: <code severity cause short title…> or none (e.g. `findings: 3.2 low roteiro R17.48 issues.new not empty`); <full path of the file>
 ```
 
-**Assembly.** The main session appends each `apoio/relato-<batch>.md` to `relato.md` with `cat >>`, **without opening the file**: the totals and the findings come from the return line, and the codes already arrive right. `mark(apoioDir, '<script>', 'start' | 'end')` is the main session's: before the script's first batch and after the last. For the ❌ attachments (the evidence on the `evidencias` branch and the `mapping.json` in a code block), it reads only the finding, through the excerpt of the file that `relato-<batch>.md` points to.
+**Assembly.** The main session appends each `apoio/relato-<batch>.md` to `relato.md` with `cat >>`, **without opening the file**: the totals and the findings come from the return line, and the codes already arrive right; the main session counts `roteiro` apart without opening the file, from the cause in each finding. `mark(apoioDir, '<script>', 'start' | 'end')` is the main session's: before the script's first batch and after the last. For the ❌ attachments (the evidence on the `evidencias` branch and the `mapping.json` in a code block), it reads only the finding, through the excerpt of the file that `relato-<batch>.md` points to.
 
 **The subagent that fails.** A subagent that returns without finishing the batch (error, tool, limit) is replaced **once** by a new one, with the same briefing and the request to start at the step after the last one saved in `relato-<batch>.md`. If the second one also fails, the rest of the batch stays "not executed (subagent failed: <reason>)", and the fact goes to "What got in the way".
 
@@ -64,7 +64,7 @@ The other scripts use folders of their own and can go to any group. `tests/tooli
 
 1. Generate the round guide only with the group's scripts: `node scripts/testing/round-guide.mjs <scripts of the group> --out …/apoio/guia.md`; read `guia-base.md` whole and ask for the scripts through `passo` and the on-demand sections through `secao` (item 3). The environment, the working folders, the Chrome profile and MCP are yours and nobody else's: groups share no folder, profile nor port (like the blocks).
 2. **R0:** **group 1** runs the **whole R0** first; groups 2 onward run only **R0.1** (build id of the commit) and, from the rest of R0, the steps that the group's scripts depend on (the retest rule), never the whole R0. Then, the group's scripts, in the order of the guide.
-3. Report in the template of section 10: `Modo: dirigido, grupo k de n (<scripts>)`; the first line of the comment is "Directed round — group k of n"; the findings are numbered `k.1`, `k.2`… (the code carries the group, so the retest finds where it came from).
+3. Report in the template of section 10: `Modo: dirigido, grupo k de n (<scripts>)`; the first line of the comment is "Directed round — group k of n"; the findings are numbered `k.1`, `k.2`… (the code carries the group, so the retest finds where it came from). In this mode the `k` of `grupo k de n` comes only from the message; the `batch k of n` of `--faixas` numbers the batches inside the session and never changes it.
 4. The notice to the coordinator (item 5 of "Delivery") cites the group: `Grupo k de n: relato em` <link>: …
 
 "Group" does not collide with the "Part i of n" of comments above 65 thousand characters: a long report becomes "Directed round — group k of n · Part i of n".
