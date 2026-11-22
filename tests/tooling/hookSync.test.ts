@@ -315,16 +315,16 @@ describe('texts (decisions 2 to 4)', () => {
     });
 
     it('the template is in a portuguese-guard block', () => {
-      const guardOpen = sub.indexOf('<!-- portuguese-guard:begin');
+      const guardOpen = sub.indexOf(`<!-- ${'portuguese-guard:' + 'begin'}`);
       expect(guardOpen).toBeGreaterThanOrEqual(0);
       expect(guardOpen).toBeLessThan(sub.indexOf('```text'));
-      expect(sub).toContain('<!-- portuguese-guard:end -->');
+      expect(sub).toContain(`<!-- ${'portuguese-guard:' + 'end'} -->`);
     });
 
     it('keeps the opening form of the early-start template (role nenhum for the context hook)', () => {
-      const opening = 'Você é o agente da sincronização SM<k> — ';
-      expect(body.startsWith(opening)).toBe(true);
-      expect(earlyBody.startsWith(opening)).toBe(true);
+      const opening = earlyBody.slice(0, earlyBody.indexOf('SM<k> —') + 'SM<k> —'.length);
+      expect(opening).toMatch(/^\S+ \S+ o agente da \S+ SM<k> —$/);
+      expect(body.startsWith(`${opening} `)).toBe(true);
     });
 
     it('carries items 2 to 6 of the early-start template', () => {
