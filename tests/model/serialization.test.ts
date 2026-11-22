@@ -4,6 +4,7 @@ import {
   deserialize,
   migrate,
   serialize,
+  settleHierarchy,
   type Migration,
 } from '../../src/model';
 import { emptyProject, sampleProject } from './fixtures';
@@ -149,6 +150,56 @@ describe('serialization', () => {
       ok: false,
       error: { code: 'unsupported-version', version: 99 },
     });
+  });
+});
+
+// Decision 6 of #1971: reading settles the project (a hand-edited `parentId` is corrected in
+// memory; nothing is written until an edit).
+describe('reading settles the project', () => {
+  /** The sample project with `M2`'s `parentId` (inside `M1` by geometry) edited to null. */
+  function handEdited(mutate?: (json: Record<string, unknown>) => void): string {
+    const json = JSON.parse(serialize(sampleProject())) as {
+      markings: { id: string; parentId: string | null }[];
+    };
+    const m2 = json.markings.find((m) => m.id === 'M2');
+    if (!m2) throw new Error('fixture');
+    m2.parentId = null;
+    mutate?.(json as unknown as Record<string, unknown>);
+    return JSON.stringify(json);
+  }
+
+  it('a hand-edited parentId comes out settled by geometry', () => {
+    const read = ok(handEdited()).project;
+    expect(read.markings.find((m) => m.id === 'M2')?.parentId).toBe('M1');
+    expect(read).toEqual(sampleProject());
+  });
+
+  it('an already settled project comes out as the same object (no extra copy)', () => {
+    const { project } = ok(serialize(sampleProject()));
+    expect(settleHierarchy(project)).toBe(project);
+  });
+
+  it('a read-only project (newer schema) is settled too', () => {
+    const text = handEdited((json) => {
+      json.schemaVersion = SCHEMA_VERSION + 1;
+    });
+    const result = ok(text);
+    expect(result.readOnly).toBe(true);
+    expect(result.project.markings.find((m) => m.id === 'M2')?.parentId).toBe('M1');
+  });
+
+  it('the repaired project is settled when nothing is left unrepaired', () => {
+    const text = handEdited((json) => {
+      delete json.pages;
+    });
+    const result = deserialize(text);
+    if (result.ok || result.error.code !== 'invariant-violation') {
+      throw new Error('expected an invariant violation');
+    }
+    expect(result.repair?.unrepaired).toEqual([]);
+    expect(result.repair?.project.markings.find((m) => m.id === 'M2')?.parentId).toBe(
+      'M1',
+    );
   });
 });
 
