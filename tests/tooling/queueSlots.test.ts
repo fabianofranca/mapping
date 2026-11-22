@@ -178,19 +178,24 @@ describe('painel.py — vagas (VG1, #1440)', () => {
       expect(reason('docs/TESTING.md', 'docs/TESTING.md#R12')).toBe(
         '#2 arquivo docs/TESTING.md#R12 com #1',
       );
+      // Only ignored citations count as `?` (GW3, #2562, decision 8): the candidate's ficha is incomplete.
       expect(reason('docs/TESTING-NUVEM.md#blocos', 'docs/TESTING-NUVEM.md#blocos')).toBe(
-        '#2 começa',
+        '#2 ficha incompleta (toca)',
       );
       expect(
         reason(
           'docs/TESTING-NUVEM.md#full-round-in-blocks',
           'docs/TESTING-NUVEM.md#full-round-in-blocks',
         ),
-      ).toBe('#2 começa');
-      expect(reason('mcp/version.ts', 'mcp/version.ts')).toBe('#2 começa');
-      expect(reason('changelog/a.md', 'changelog/a.md')).toBe('#2 começa');
+      ).toBe('#2 ficha incompleta (toca)');
+      expect(reason('mcp/version.ts', 'mcp/version.ts')).toBe(
+        '#2 ficha incompleta (toca)',
+      );
+      expect(reason('changelog/a.md', 'changelog/a.md')).toBe(
+        '#2 ficha incompleta (toca)',
+      );
       expect(reason('docs/design-system/a.md', 'docs/design-system/a.md')).toBe(
-        '#2 começa',
+        '#2 ficha incompleta (toca)',
       );
       expect(reason('docs/TESTING-NUVEM.md', 'docs/TESTING-NUVEM.md#environment')).toBe(
         '#2 arquivo docs/TESTING-NUVEM.md#environment com #1',
@@ -622,12 +627,14 @@ describe('painel.py — append-only citations in the toca comparison (AO1, #2314
   );
 
   it(
-    'a started toca=? still holds a candidate that cites only append-only or only ignored citations',
+    'a started toca=? still holds a candidate that cites only append-only citations; one with only ignored citations is incomplete',
     () => {
       expect(reason('?', 'src/i18n/en-US.ts, docs/MCP.md#tools')).toBe(
         '#2 arquivo ? com #1',
       );
-      expect(reason('?', 'changelog/a.md, mcp/version.ts')).toBe('#2 arquivo ? com #1');
+      expect(reason('?', 'changelog/a.md, mcp/version.ts')).toBe(
+        '#2 ficha incompleta (toca)',
+      );
       expect(reason('?', 'src/a.ts')).toBe('#2 arquivo ? com #1');
     },
     SUBPROCESS_TIMEOUT,

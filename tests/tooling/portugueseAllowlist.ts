@@ -1586,6 +1586,12 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
     group: 'owner-chat',
   },
   {
+    // A command the coordinator matches in the owner's own chat message after the End (stage #2293, decision 11).
+    term: 'retomar fila',
+    source: '.claude/skills/implementar-fila/SKILL.md',
+    group: 'owner-chat',
+  },
+  {
     term: 'ainda não #<n>',
     source: '.claude/skills/implementar-fila/SKILL.md',
     group: 'owner-chat',
@@ -3397,6 +3403,12 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
       'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
   },
   {
+    path: 'tests/tooling/queueGraphWaves.test.ts',
+    pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|, 'não'\)/,
+    reason:
+      'fixture ficha of the panel: `nenhuma` and the `não` value that the engine matches (decision 2 of #741)',
+  },
+  {
     path: 'tests/tooling/queueImport.test.ts',
     pattern: /dep=nenhuma|mcp=não|schema=não|schema = 'não'|ficha\('nenhuma'/,
     reason:
@@ -3423,6 +3435,12 @@ export const PORTUGUESE_LINES: readonly LineException[] = [
   {
     path: 'tests/tooling/queueGraph.test.ts',
     pattern: /\bde: '[^']*'(, para: |\s*\})|\bpara: |para: string/,
+    reason:
+      '`para` is a key of the graph arrows that painel.py emits (`de`, `para`, `tipo`), frozen vocabulary of decision 16',
+  },
+  {
+    path: 'tests/tooling/queueGraphWaves.test.ts',
+    pattern: /\{ de: '#\d+', para: '#\d+', tipo: '[a-z]+' \}|para: string/,
     reason:
       '`para` is a key of the graph arrows that painel.py emits (`de`, `para`, `tipo`), frozen vocabulary of decision 16',
   },
