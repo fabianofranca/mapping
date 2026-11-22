@@ -11,6 +11,7 @@ import { modelToolError } from './modelErrors';
 import { findTypeEntry, openPackage, type ComponentArgs } from './componentTools';
 import { resolveItem } from './items';
 import { builtinFontBook, measurerFor, type FontBook } from './image/textMeasurer';
+import { anyApproximate, recordingMeasurer } from './approximateText';
 import type { LoadedProject } from './projects';
 import type { Roots } from './paths';
 
@@ -26,6 +27,9 @@ export interface MeasureComponentToolArgs extends ComponentArgs {
   container?: string | undefined;
   size?: { width?: number | undefined; height?: number | undefined } | undefined;
 }
+
+const EMPTY_SLOT_HINT =
+  "this is the size with the slots empty: a new instance is born at the component's `size`; add the children and fit with Arrange or `fit_marking`";
 
 const NOT_FOLLOWING_HINT =
   "the component's sizing does not follow the content: this is its size (`fit_marking` would give `not-fittable`)";
@@ -52,6 +56,12 @@ function sizeOf(size: MeasureComponentToolArgs['size']): {
   };
 }
 
+interface Measured {
+  readonly result: ComponentMeasure;
+  /** Some text the fit measured fell to the embedded font in place of its family. */
+  readonly approximate: boolean;
+}
+
 /** `measureComponentSize` over the loaded project; a model rule error becomes a tool error. */
 function measured(
   loaded: LoadedProject,
@@ -59,9 +69,10 @@ function measured(
   args: MeasureComponentToolArgs,
   fonts: FontBook,
   type: SpecAnnotationType,
-): ComponentMeasure {
+): Measured {
+  const recorder = recordingMeasurer(measurerFor(fonts));
   try {
-    return measureComponentSize(
+    const result = measureComponentSize(
       loaded.project,
       loaded.catalog,
       {
@@ -77,8 +88,9 @@ function measured(
             }),
         size: sizeOf(args.size),
       },
-      measurerFor(fonts),
+      recorder.measure,
     );
+    return { result, approximate: anyApproximate(fonts, recorder.families) };
   } catch (error) {
     throw error instanceof ModelError ? modelToolError(error) : error;
   }
@@ -106,7 +118,7 @@ export async function measureComponent(
   const containerId = await containerIdOf(roots, args.project, args.container);
   const fonts = loaded!.fonts ?? builtinFontBook();
   const ids = { specId: source.spec.id, typeId: type.id, containerId };
-  const result = measured(loaded!, ids, args, fonts, type);
+  const { result, approximate } = measured(loaded!, ids, args, fonts, type);
   const follows = result.follows.width || result.follows.height;
   return {
     type: { specId: source.spec.id, id: type.id, name: type.name },
@@ -114,10 +126,11 @@ export async function measureComponent(
     pixels: result.pixels,
     density: result.density,
     follows: result.follows,
-    approximate: !fonts.hasLibraryFonts,
+    approximate,
     ...(result.messages.length === 0
       ? {}
       : { messages: result.messages.map((m) => m.text) }),
     ...(follows ? {} : { hint: NOT_FOLLOWING_HINT }),
+    ...(result.emptySlot ? { hint: EMPTY_SLOT_HINT } : {}),
   };
 }
