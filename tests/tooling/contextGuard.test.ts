@@ -507,6 +507,14 @@ describe('CH1 — contextGuard.mjs: the coordinator notice (decision 5)', () => 
     expect(text).toContain('without rereading a changed SKILL.md');
   });
 
+  it('names the `current` phrase that the skill\'s "Lineage limit" writes', () => {
+    const phrase = 'aguardando o dono abrir a sessão nova da fila';
+    expect(notice()).toContain(phrase);
+    expect(readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8')).toContain(
+      `"${phrase}"`,
+    );
+  });
+
   it('covers no room in the lineage, the session that already handed over, the jumps and the subagent line', () => {
     const text = notice();
     expect(text).toContain('no room in the lineage');
