@@ -1,6 +1,5 @@
 import type { Spec, SpecCode, SpecCodeCase } from './spec';
 import {
-  callName,
   paramsOutsideSignature,
   slotsOutsideSignature,
   parseSignatureText,
