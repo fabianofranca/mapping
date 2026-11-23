@@ -1,4 +1,4 @@
-# Replace an image from the clipboard and export marking images — [Não lançado] (épico `epic/clipboard-image`, PR #0, MCP 0.58.3, schema v23)
+# Replace an image from the clipboard and export marking images — [Não lançado] (épico `epic/clipboard-image`, PR #2768, MCP 0.58.3, schema v23)
 
 ## Adicionado
 
