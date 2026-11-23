@@ -1,4 +1,4 @@
-# External image reload — [Não lançado] (épico `epic/external-image-reload`, PR #0, MCP unchanged, schema v23)
+# External image reload — [Não lançado] (épico `epic/external-image-reload`, PR #2771, MCP unchanged, schema v23)
 
 ## Corrigido
 
