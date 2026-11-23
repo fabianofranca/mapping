@@ -1735,6 +1735,8 @@ del.identity-name {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  /* Its own width, never the room left to its right: the position clamps it inside the area. */
+  width: max-content;
   max-width: 100%;
   padding: var(--space-2) var(--space-3);
   background: var(--color-card);
@@ -1743,11 +1745,20 @@ del.identity-name {
   box-shadow: var(--shadow-popup);
 }
 
+.quick-bar-head b {
+  white-space: nowrap;
+}
+
 .quick-bar-head {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+/* The counts wrap inside their own box: the title never ends up alone on a line (CL1.5). */
+.quick-bar-head > .muted {
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .quick-bar-actions {

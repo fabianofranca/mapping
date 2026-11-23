@@ -76,6 +76,7 @@ export function Minimap() {
     <button
       type="button"
       class="minimap"
+      data-canvas-obstacle=""
       style={{ width: `${layout.size.width}px`, height: `${layout.size.height}px` }}
       aria-label={t('minimap.label')}
       title={t('minimap.goTo')}

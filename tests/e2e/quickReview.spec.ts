@@ -23,13 +23,15 @@ const PROPOSAL_ID = 'quick-button';
 const THREAD_ID = 'qr3-thread';
 const NOW = '2026-11-18T09:00:00.000Z';
 
-function quickFiles(): Map<string, string | Buffer> {
+function quickFiles(
+  rect = { x: 24, y: 620, width: 120, height: 48 },
+): Map<string, string | Buffer> {
   const project = fixtureProject();
   let after = createMarking(project, {
     id: 'M20',
     containerId: 'I1',
     name: 'Help button',
-    rect: { x: 24, y: 620, width: 120, height: 48 },
+    rect,
   });
   after = addAnnotation(after, {
     id: 'A20',
@@ -68,8 +70,11 @@ function quickFiles(): Map<string, string | Buffer> {
   return files;
 }
 
-async function openFolder(page: Page): Promise<void> {
-  const files = [...quickFiles()].map(([path, data]) => ({
+async function openFolder(
+  page: Page,
+  rect?: { x: number; y: number; width: number; height: number },
+): Promise<void> {
+  const files = [...quickFiles(rect)].map(([path, data]) => ({
     path,
     data: [...(typeof data === 'string' ? Buffer.from(data) : data)],
   }));
@@ -150,6 +155,10 @@ test('ghost, peek on hover and focus, Esc rejects, Accept and undo/redo', async 
     .getByRole('button', { name: /^Show on the canvas/ })
     .click();
   await expect(host(page)).toHaveAttribute('data-quick-review', mode('ghost'));
+  // The button that was clicked is gone: the focus does not fall to the body (CL1.6).
+  await expect
+    .poll(() => page.evaluate(() => document.activeElement === document.body))
+    .toBe(false);
 
   // Accept applies, with the toast; Ctrl+Z brings the ghost back and Ctrl+Y applies again.
   await bar(page).getByRole('button', { name: 'Accept' }).click();
@@ -158,8 +167,119 @@ test('ghost, peek on hover and focus, Esc rejects, Accept and undo/redo', async 
     page.getByText('Proposal applied: “Add a help button”. Undo with Ctrl+Z.'),
   ).toBeVisible();
   await page.locator('[data-canvas-area]').focus();
+  // The pointer is not over where the bar comes back (it would show the real look).
+  await page.mouse.move(5, 5);
   await page.keyboard.press('Control+z');
   await expect(host(page)).toHaveAttribute('data-quick-review', mode('ghost'));
   await page.keyboard.press('Control+y');
   await expect(host(page)).not.toHaveAttribute('data-quick-review', /.+/);
 });
+
+// Findings CL1.2 to CL1.5 of the tester's round (sub-issue #2743): at the smallest window the bar
+// must stay whole (nothing over its buttons or header, one line for the title) and the rejected card
+// must keep its text readable and its button inside it.
+for (const size of [
+  { width: 1280, height: 720 },
+  { width: 900, height: 720 },
+]) {
+  test.describe(`bar and card at ${size.width}×${size.height}`, () => {
+    test.use({ viewport: size });
+
+    test('nothing covers the bar and its header stays on one line', async ({ page }) => {
+      await openFolder(page);
+      await openConversation(page);
+      await expect(bar(page)).toBeVisible();
+      const report = await page.evaluate(() => {
+        const el = document.querySelector<HTMLElement>('.quick-bar');
+        if (!el) return null;
+        const covered = [...el.querySelectorAll<HTMLElement>('button, b')]
+          .filter((c) => {
+            const r = c.getBoundingClientRect();
+            const hit = document.elementFromPoint(
+              r.left + r.width / 2,
+              r.top + r.height / 2,
+            );
+            return !hit || !(c === hit || c.contains(hit) || hit.contains(c));
+          })
+          .map((c) => c.textContent || c.getAttribute('aria-label'));
+        const title = el.querySelector<HTMLElement>('.quick-bar-head b');
+        return {
+          covered,
+          width: el.getBoundingClientRect().width,
+          title: title?.getBoundingClientRect().toJSON(),
+          counts: el
+            .querySelector('.quick-bar-head > .muted')
+            ?.getBoundingClientRect()
+            .toJSON(),
+        };
+      });
+      expect(report?.covered).toEqual([]);
+      // The title shares its line with the counts (they overlap vertically), never alone above them.
+      const { title, counts } = report ?? {};
+      expect(
+        title && counts && title.top < counts.bottom && counts.top < title.bottom,
+      ).toBe(true);
+      expect(report?.width).toBeGreaterThan(320);
+    });
+
+    test('the minimap never covers Accept when the ghost is at the lower right', async ({
+      page,
+    }) => {
+      await openFolder(page, { x: 250, y: 780, width: 120, height: 48 });
+      await openConversation(page);
+      await expect(bar(page)).toBeVisible();
+      const hit = await page.evaluate(() => {
+        const accept = [
+          ...document.querySelectorAll<HTMLElement>('.quick-bar button'),
+        ].find((b) => b.textContent === 'Accept');
+        if (!accept) return 'no accept';
+        const r = accept.getBoundingClientRect();
+        const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return el === accept || accept.contains(el)
+          ? 'accept'
+          : (el?.className ?? 'none');
+      });
+      expect(hit).toBe('accept');
+      await bar(page).getByRole('button', { name: 'Accept' }).click();
+      await expect(host(page)).not.toHaveAttribute('data-quick-review', /.+/);
+    });
+
+    test('the rejected card keeps its text and its button inside', async ({ page }) => {
+      await openFolder(page);
+      await openConversation(page);
+      await bar(page).getByRole('button', { name: 'Accept' }).focus();
+      await page.keyboard.press('Escape');
+      const card = page.locator('[data-proposal-card]');
+      await expect(card.getByText(/Rejected on the canvas/)).toBeVisible();
+      const report = await page.evaluate(() => {
+        const c = document.querySelector<HTMLElement>('[data-proposal-card]');
+        if (!c) return null;
+        const box = c.getBoundingClientRect();
+        const text = [
+          ...c.querySelectorAll<HTMLElement>('.proposal-card-text span'),
+        ].find((s) => s.textContent?.includes('Rejected'));
+        const btn = [...c.querySelectorAll<HTMLElement>('button')].find((b) =>
+          b.getAttribute('aria-label')?.startsWith('Show on the canvas'),
+        );
+        const tr = text?.getBoundingClientRect();
+        const br = btn?.getBoundingClientRect();
+        return {
+          textWidth: tr?.width ?? 0,
+          textLines:
+            tr && text
+              ? Math.round(tr.height / parseFloat(getComputedStyle(text).lineHeight))
+              : 0,
+          inside:
+            !!br &&
+            br.top >= box.top &&
+            br.bottom <= box.bottom &&
+            !!tr &&
+            tr.top >= box.top,
+        };
+      });
+      expect(report?.inside).toBe(true);
+      expect(report?.textWidth).toBeGreaterThan(120);
+      expect(report?.textLines).toBeLessThanOrEqual(3);
+    });
+  });
+}
