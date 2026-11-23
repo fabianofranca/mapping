@@ -17,7 +17,11 @@ export interface DisplayImages<T> {
    * project). If one of them comes back (undo), `ensure` loads it again.
    */
   retain(paths: ReadonlySet<string>): void;
-  /** Discards the bitmap to load it again (e.g. file re-pointed). */
+  /**
+   * Loads the file again in place (content changed on disk); a path not in the map is left
+   * alone. The entry stays as it is while the new load runs, so a `ready` image keeps showing
+   * the old bitmap (no flash of the placeholder) until the new one arrives.
+   */
   invalidate(path: string): void;
   dispose(): void;
 }
@@ -37,7 +41,9 @@ function closeAfterFrame(bitmap: { close(): void }): void {
 /**
  * Display bitmaps by file path, loaded on demand and
  * released (`close()`) when leaving the project. The map never holds a closed bitmap: the
- * path leaves the map first and the bitmap closes after the next frame.
+ * path leaves the map first (or the new bitmap replaces the old one) and the bitmap closes
+ * after the next frame. `invalidate` loads a path of the map again in place, so every reader
+ * of the shared map (canvas, previews, review) redraws a file replaced on disk.
  */
 export function createDisplayImages<T extends { close(): void }>(
   load: (path: string) => Promise<T | null>,
@@ -60,28 +66,39 @@ export function createDisplayImages<T extends { close(): void }>(
     return current?.status === 'ready' ? current.bitmap : undefined;
   };
 
+  /**
+   * Starts a load with a new generation token. The entry of `path` stays as it is until the
+   * load arrives; a result that a later load, `retain` or `dispose` made stale closes its bitmap.
+   */
+  const startLoad = (path: string) => {
+    const token = ++generation;
+    loadingGeneration.set(path, token);
+    const current = () => !disposed && loadingGeneration.get(path) === token;
+    load(path).then(
+      (bitmap) => {
+        if (!current()) {
+          bitmap?.close();
+          return;
+        }
+        const old = bitmapOf(path);
+        set(path, bitmap ? { status: 'ready', bitmap } : { status: 'missing' });
+        if (old) closeAfterFrame(old);
+      },
+      () => {
+        if (!current()) return;
+        const old = bitmapOf(path);
+        set(path, { status: 'error' });
+        if (old) closeAfterFrame(old);
+      },
+    );
+  };
+
   return {
     images,
     ensure(path) {
       if (disposed || images.value.has(path)) return;
-      const token = ++generation;
-      loadingGeneration.set(path, token);
       set(path, { status: 'loading' });
-      load(path).then(
-        (bitmap) => {
-          const stale = disposed || loadingGeneration.get(path) !== token;
-          if (stale) {
-            bitmap?.close();
-            return;
-          }
-          set(path, bitmap ? { status: 'ready', bitmap } : { status: 'missing' });
-        },
-        () => {
-          if (!disposed && loadingGeneration.get(path) === token) {
-            set(path, { status: 'error' });
-          }
-        },
-      );
+      startLoad(path);
     },
     retain(paths) {
       if (disposed) return;
@@ -100,10 +117,8 @@ export function createDisplayImages<T extends { close(): void }>(
       for (const bitmap of bitmaps) closeAfterFrame(bitmap);
     },
     invalidate(path) {
-      const bitmap = bitmapOf(path);
-      loadingGeneration.delete(path);
-      set(path, null);
-      if (bitmap) closeAfterFrame(bitmap);
+      if (disposed || !images.value.has(path)) return;
+      startLoad(path);
     },
     dispose() {
       disposed = true;
