@@ -2,6 +2,7 @@ import {
   colorOverWhite,
   createTokenTables,
   tokenKind,
+  type SpecTokens,
   type TokenSelection,
   type TokenTables,
 } from './components/tokens';
@@ -25,35 +26,33 @@ export function isBackgroundToken(
 }
 
 interface Cache {
-  /** One lazy per-selection table per applied specialization, in order (`undefined` = no tokens). */
-  readonly tables: readonly (TokenTables | undefined)[];
-  readonly colorNames: readonly string[];
+  /** Color token names, computed on first use (`undefined` until then). */
+  names: readonly string[] | undefined;
   readonly resolved: Map<string, string | null>;
 }
 
 const caches = new WeakMap<Project, Cache>();
+/** Token tables by the `spec.tokens` object, so they survive the new `Project` objects of a gesture. */
+const tablesByTokens = new WeakMap<object, TokenTables>();
 
 function isColor(value: unknown): value is string {
   return typeof value === 'string' && tokenKind(value) === 'color';
 }
 
-function buildCache(p: Project): Cache {
-  const tables = p.specializations.map((s) =>
-    s.spec?.tokens === undefined ? undefined : createTokenTables(s.spec.tokens, {}),
-  );
-  const names: string[] = [];
-  for (const t of tables) {
-    for (const [name, value] of Object.entries(t?.get(undefined) ?? {})) {
-      if (isColor(value) && !names.includes(name)) names.push(name);
-    }
+function tablesOf(tokens: SpecTokens | undefined): TokenTables | undefined {
+  if (tokens === undefined) return undefined;
+  let tables = tablesByTokens.get(tokens);
+  if (tables === undefined) {
+    tables = createTokenTables(tokens, {});
+    tablesByTokens.set(tokens, tables);
   }
-  return { tables, colorNames: names, resolved: new Map() };
+  return tables;
 }
 
 function cacheOf(p: Project): Cache {
   let cache = caches.get(p);
   if (cache === undefined) {
-    cache = buildCache(p);
+    cache = { names: undefined, resolved: new Map() };
     caches.set(p, cache);
   }
   return cache;
@@ -61,7 +60,19 @@ function cacheOf(p: Project): Cache {
 
 /** Names of the color tokens the applied specializations declare, in specialization order, no repeats. */
 export function colorTokenNames(p: Project): readonly string[] {
-  return cacheOf(p).colorNames;
+  const cache = cacheOf(p);
+  if (cache.names === undefined) {
+    const names: string[] = [];
+    for (const s of p.specializations) {
+      for (const [name, value] of Object.entries(
+        tablesOf(s.spec?.tokens)?.get(undefined) ?? {},
+      )) {
+        if (isColor(value) && !names.includes(name)) names.push(name);
+      }
+    }
+    cache.names = names;
+  }
+  return cache.names;
 }
 
 /** `#RRGGBB` (uppercase) of a background in `selection` (undefined = axis defaults); an undeclared token is white. */
@@ -71,8 +82,8 @@ export function resolveBackground(
   selection?: TokenSelection,
 ): string {
   if (!isBackgroundToken(background)) return background.toUpperCase();
-  for (const t of cacheOf(p).tables) {
-    const value = t?.get(selection)[background.$token];
+  for (const s of p.specializations) {
+    const value = tablesOf(s.spec?.tokens)?.get(selection)[background.$token];
     if (isColor(value)) return colorOverWhite(value) ?? FALLBACK;
   }
   return FALLBACK;

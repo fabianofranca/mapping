@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ImageRenderer } from '../../../src/canvas/renderers/images';
 import { HALO_WIDTH } from '../../../src/canvas/renderers/metrics';
 import { t } from '../../../src/i18n';
+import { containerBackgroundColor } from '../../../src/model/containerBackground';
 import {
   addBackgroundContainer,
   removeContainer,
@@ -12,6 +13,11 @@ import {
   type ProjectSpecialization,
 } from '../../../src/model';
 import { canvasProject, editorFor, frameOf, installFakeCanvas, TOKENS } from '../harness';
+
+vi.mock('../../../src/model/containerBackground', async (original) => {
+  const actual = await original<typeof import('../../../src/model/containerBackground')>();
+  return { ...actual, containerBackgroundColor: vi.fn(actual.containerBackgroundColor) };
+});
 
 beforeAll(installFakeCanvas);
 afterAll(() => vi.restoreAllMocks());
@@ -271,6 +277,15 @@ describe('ImageRenderer', () => {
         frameOf(editor, { project: { ...project, specializations: [other] } }),
       );
       expect(renderer.node('B1')?.placeholder.fill()).toBe('#123456');
+    });
+
+    it('resolves the background only for a container without a file', () => {
+      const { renderer, editor } = setup();
+      const resolve = vi.mocked(containerBackgroundColor);
+      resolve.mockClear();
+      renderer.render(frameOf(editor, { project: tokenProject('surface', [THEMED]) }));
+      const asked = resolve.mock.calls.map(([, id]) => id);
+      expect(asked).toEqual(['B1']);
     });
 
     it('an undeclared token draws white', () => {

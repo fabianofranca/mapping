@@ -195,7 +195,9 @@ function refreshNode(
   // The resolved background is an input: a token follows the drawing mode and the specializations, which
   // change without the container object changing.
   const background =
-    frame.project === null ? null : containerBackgroundColor(frame.project, image.id);
+    frame.project === null || image.file !== null
+      ? null
+      : containerBackgroundColor(frame.project, image.id);
   const inputs = [
     image,
     placement,

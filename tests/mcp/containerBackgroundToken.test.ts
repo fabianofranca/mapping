@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { decodeImage } from '../../mcp/image/codecs';
 import { acceptAllAndApply, ok, propose, readProposal } from './proposalSupport';
+import { encodePng, quadrants } from './images';
 import { connect, type Connection } from './workspace';
 
 // Phase NV4 (stage #1900, decisions 26 and 31): the background of a container without a file by token.
@@ -44,6 +45,7 @@ beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), 'mapping-bg-token-'));
   mkdirSync(join(root, 'fontes'), { recursive: true });
   writeFileSync(join(root, 'fontes', 'theme.json'), JSON.stringify(SPEC));
+  writeFileSync(join(root, 'fontes', 'foto.png'), await encodePng(quadrants(300, 200)));
   mcp = await connect([root]);
 });
 
@@ -179,6 +181,21 @@ describe('add_container and update_container with a token', () => {
     }
   });
 
+  it('a container with a file refuses a token with container-has-file, declared or not', async () => {
+    const { name, dir } = await newProject();
+    const created = await propose(mcp, name, [
+      { op: 'add_container', file: 'fontes/foto.png' },
+    ]);
+    acceptAllAndApply(dir, created.proposal.id);
+    const ref = created.created[0]!.ref!;
+    for (const token of ['nope', 'surface']) {
+      const planned = await plan(name, [
+        { op: 'update_container', container: ref, background: { $token: token } },
+      ]);
+      expect(planned.errors.map((e) => e.code)).toEqual(['container-has-file']);
+    }
+  });
+
   it('add_blank_image (old) keeps only #RRGGBB', async () => {
     const { name } = await newProject();
     // The old operation's schema takes only a string: the server refuses the object before the batch.
@@ -298,6 +315,21 @@ describe('renders paint the resolved color', () => {
       mode: 'context',
     });
     expect(px).toEqual([0x10, 0x20, 0x30]);
+    const result = await mcp.client.callTool({
+      name: 'get_marking_image',
+      arguments: {
+        project: name,
+        ref: `mapping://${name}/m/${marking.id.slice(0, 8)}`,
+        mode: 'context',
+      },
+    });
+    const text = (result.content as { type: string; text?: string }[]).find(
+      (c) => c.type === 'text',
+    )!.text!;
+    expect(JSON.parse(text).container).toMatchObject({
+      background: { $token: 'surface' },
+      resolvedBackground: '#102030',
+    });
   });
 });
 

@@ -73,6 +73,7 @@ import {
   type ComponentType,
   type TextMeasurer,
   reorderMarking,
+  isBackgroundContainer,
   setBackgroundContainer,
   siblingPosition,
   extensionForMime,
@@ -1562,7 +1563,9 @@ class Batch {
       op.height !== undefined
     ) {
       // Only a container without a file: with a file the model refuses with `container-has-file`.
-      checkBackgroundInput(project, op.background);
+      if (isBackgroundContainer(projectIndex(project).containers.get(id)!)) {
+        checkBackgroundInput(project, op.background);
+      }
       project = setBackgroundContainer(project, id, {
         ...(op.background !== undefined ? { background: op.background } : {}),
         ...(op.width !== undefined ? { width: op.width } : {}),

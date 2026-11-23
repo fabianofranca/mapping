@@ -344,6 +344,7 @@ export async function markingImage(
         ref: refs.ref('i', image.id),
         file: image.file,
         background: image.background,
+        resolvedBackground: containerBackgroundColor(refs.project, image.id),
       },
       ...(bgContainer
         ? {

@@ -238,4 +238,11 @@ describe('screenFromSource resolves the background token in the selection', () =
     expect(bgOf({ ...mapped, path: 'nothing' }).screen?.background).toBe('#7F7F7F');
     expect(bgOf('#ABCDEF').screen?.background).toBe('#ABCDEF');
   });
+
+  it('a token object READ FROM THE DOCUMENT is not a token: white', () => {
+    const doc = { ...DOC, bg: { $token: 'veil' } };
+    const lib = library({ path: 'bg' }, TOKENS);
+    const screen = screenFromSource(lib, doc, { measure: approximateMeasurer });
+    expect(screen.screen?.background).toBe('#FFFFFF');
+  });
 });
