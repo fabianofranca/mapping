@@ -16,6 +16,8 @@ import {
   PARITY_STRINGS,
   parityFaces,
   WEIGHT_CASES,
+  VARIABLE_CASES,
+  SLANTED_CASES,
   INK_TOLERANCE,
   parityKey,
   type ExtraCase,
@@ -33,8 +35,8 @@ function measured(): ParityCase[] {
   const fonts = parityFaces().map((f) => ({
     family: f.family,
     weight: f.weight,
-    style: 'normal' as const,
-    path: `fonts/${f.family}-${f.weight}.${f.ext}`,
+    style: f.style,
+    path: `fonts/${f.family}-${f.weight}-${f.style}.${f.ext}`,
     bytes: buffer(f.bytes),
   }));
   const measure = createMeasurer(fonts);
@@ -68,7 +70,17 @@ function measured(): ParityCase[] {
     width: measure(c.text, fontOf(c)).width,
     ink: inkOf(book, c, fontOf(c)),
   }));
-  return [...base, ...extra, ...weights];
+  const variable: ParityCase[] = VARIABLE_CASES.map((c) => ({
+    ...c,
+    width: measure(c.text, fontOf(c)).width,
+    ink: inkOf(book, c, fontOf(c)),
+  }));
+  const slanted: ParityCase[] = SLANTED_CASES.map((c) => ({
+    ...c,
+    width: measure(c.text, fontOf(c)).width,
+    ink: inkOf(book, c, fontOf(c)),
+  }));
+  return [...base, ...extra, ...weights, ...variable, ...slanted];
 }
 
 const monoBuffer = (): ArrayBuffer => {
@@ -133,9 +145,12 @@ describe('shaping parity fixture (server side)', () => {
     expect(moved.map((c) => `${parityKey(c)} = ${JSON.stringify(c.starts)}`)).toEqual([]);
   });
 
-  it('the weight cases come last: the 400 width with a wider ink, and the pair at 550 as Mono', () => {
+  it('the weight cases come after the bidi ones: the 400 width with a wider ink, and the pair at 550 as Mono', () => {
     const fixture = JSON.parse(readFileSync(FIXTURE, 'utf8')) as ParityCase[];
-    const tail = fixture.slice(-WEIGHT_CASES.length);
+    const from =
+      PARITY_FONTS.length * PARITY_STRINGS.length * PARITY_SPACINGS.length +
+      BIDI_CASES.length;
+    const tail = fixture.slice(from, from + WEIGHT_CASES.length);
     expect(tail.map(parityKey)).toEqual(WEIGHT_CASES.map(parityKey));
     const get = (text: string, weight?: number, italic?: boolean) =>
       tail.find(
@@ -166,6 +181,62 @@ describe('shaping parity fixture (server side)', () => {
     const pair = tail.find((c) => c.font === 'pair')!;
     expect(Math.abs(pair.width - mono)).toBeLessThan(0.1);
     expect(INK_TOLERANCE).toBe(1);
+  });
+
+  it('the variable cases come last: #2652 at the 400 width, the axes read from the declared style', () => {
+    const fixture = JSON.parse(readFileSync(FIXTURE, 'utf8')) as ParityCase[];
+    const tail = fixture.slice(
+      -(VARIABLE_CASES.length + SLANTED_CASES.length),
+      -SLANTED_CASES.length,
+    );
+    expect(tail.map(parityKey)).toEqual(VARIABLE_CASES.map(parityKey));
+    const get = (font: string, weight?: number, italic?: boolean) =>
+      tail.find((c) => c.font === font && c.weight === weight && c.italic === italic)!;
+    const upright = (font: string) => get(font);
+    // #2652: declared "400", asked for 700: the 400 width and the fake bold; declared "100 900": the axis, no fake bold.
+    expect(Math.abs(get('vwght1', 700).width - upright('vwght1').width)).toBeLessThan(
+      0.1,
+    );
+    expect(get('vwght1', 700).ink!.right).toBeGreaterThan(upright('vwght1').ink!.right);
+    expect(get('vwght', 700).width).toBeLessThan(upright('vwght').width - 1);
+    expect(upright('vwght').width).toBeCloseTo(upright('vwght1').width, 6);
+    // `slnt` follows the declared style: −14 in the italic face (the width changes, no skew), 0 in the face declared
+    // only `normal` (the width of the upright text, and the 0.25 skew).
+    const italic = get('vslnt', undefined, true);
+    expect(italic.width).not.toBeCloseTo(upright('vslnt').width, 1);
+    expect(get('vslntn', undefined, true).width).toBeCloseTo(upright('vslntn').width, 6);
+    expect(get('vslntn', undefined, true).ink!.right).toBeGreaterThan(
+      upright('vslntn').ink!.right + 5,
+    );
+    // The italic face is not skewed: its ink stays within the advance (no extra lean).
+    expect(italic.ink!.right - italic.width).toBeLessThan(
+      get('vslntn', undefined, true).ink!.right - upright('vslntn').width,
+    );
+    // `ital` stays at its default: the italic text has the upright width, with no skew.
+    expect(get('vital', undefined, true).width).toBeCloseTo(upright('vital').width, 6);
+    expect(get('vital', undefined, true).ink).toEqual(upright('vital').ink);
+  });
+
+  it('the slanted cases come last: no skew on a file that already slants, the axis read at 0', () => {
+    const fixture = JSON.parse(readFileSync(FIXTURE, 'utf8')) as ParityCase[];
+    const tail = fixture.slice(-SLANTED_CASES.length);
+    expect(tail.map(parityKey)).toEqual(SLANTED_CASES.map(parityKey));
+    const get = (font: string, italic?: boolean) =>
+      tail.find((c) => c.font === font && c.italic === italic)!;
+    for (const font of ['vslntd', 'vitald', 'fsital']) {
+      // Declared `normal`, so the italic text uses the same face: the same width and, with no skew, the same ink.
+      expect(get(font, true).width).toBeCloseTo(get(font).width, 6);
+      expect(get(font, true).ink).toEqual(get(font).ink);
+    }
+    // `vslntd` upright: `slnt` 0 is the axis maximum, so the 15 letters are 256 units (12.5 px) narrower each than the
+    // plain font; the default −10 would be halfway toward the minimum, 15 × 12.5 px wider.
+    const plain = fixture.find(
+      (c) => c.font === 'sans' && c.text === 'Hamburgefonstiv' && c.letterSpacing === 0,
+    )!;
+    expect(get('vslntd').width).toBeCloseTo(plain.width - 187.5, 4);
+    expect(get('fsital').width).toBeCloseTo(plain.width, 6);
+    // No skew: the italic ink is the upright ink, not the 0.25 lean of an upright file (`vslntn` leans over 5 px).
+    expect(get('fsital', true).ink!.right - get('fsital').ink!.right).toBe(0);
   });
 
   it('the bidi cases come after the base cases, which keep their place', () => {

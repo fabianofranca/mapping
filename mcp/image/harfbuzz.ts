@@ -59,21 +59,47 @@ export interface AxisRange {
   readonly max: number;
 }
 
+/** What a library entry declares for a face: the weight range and whether it is the italic one (stage #2574). */
+export interface DeclaredFace {
+  readonly low: number;
+  readonly high: number;
+  readonly italic: boolean;
+}
+
+/** Blink sets `slnt` to this angle for a face declared `italic` (and to 0 for one declared `normal`). */
+const DECLARED_ITALIC_SLNT = -14;
+
+const clampTo = (axis: AxisRange, value: number): number =>
+  Math.min(axis.max, Math.max(axis.min, value));
+
 /**
- * The variation settings a text asks for (decision 11): `wght` is the weight and `opsz` the size in px (Chromium's
- * `font-optical-sizing: auto`), each clamped to the axis. Other axes stay at their defaults, so they are left out.
+ * The variation settings a text asks for (decision 11 of #2121, decision 2 of #2574). Like Chromium:
+ * - `wght` is the weight clamped to the declared range of the face (when it has one), then to the axis;
+ * - `opsz` is the size in px (`font-optical-sizing: auto`), clamped to the axis;
+ * - `slnt`, only for a face with a declaration, comes from the declared style whatever the text asks for: −14 for
+ *   `italic` and 0 for `normal`, clamped to the axis (even when the axis default is not 0);
+ * - `ital` and every other axis stay at their defaults, so they are left out.
  */
 export function variationsFor(
   axes: Readonly<Record<string, AxisRange>>,
   weight: number,
   size: number,
+  declared?: DeclaredFace,
 ): { tag: string; value: number }[] {
-  const wanted: Record<string, number> = { wght: weight, opsz: size };
+  const declaredWeight =
+    declared === undefined
+      ? weight
+      : Math.min(declared.high, Math.max(declared.low, weight));
+  const wanted: Record<string, number | undefined> = {
+    wght: declaredWeight,
+    opsz: size,
+    slnt: declared === undefined ? undefined : declared.italic ? DECLARED_ITALIC_SLNT : 0,
+  };
   return Object.entries(wanted).flatMap(([tag, value]) => {
     const axis = axes[tag];
-    return axis === undefined
+    return axis === undefined || value === undefined
       ? []
-      : [{ tag, value: Math.min(axis.max, Math.max(axis.min, value)) }];
+      : [{ tag, value: clampTo(axis, value) }];
   });
 }
 
@@ -87,6 +113,11 @@ export interface Face {
   capHeight(size: number): number;
   /** The variation axes of the font (empty for a static font). */
   readonly axes: Readonly<Record<string, AxisRange>>;
+  /**
+   * Whether the file itself slants (decision 3 of #2574): bit 0 (italic) or bit 9 (oblique) of `OS/2.fsSelection`, or a
+   * `slnt` or `ital` axis whose default is not 0. Chromium does not skew such a file again.
+   */
+  readonly slanted: boolean;
   /**
    * Width of the one-line text shaped as a whole (kerning included, no letter spacing), at `size` (px) and CSS
    * `weight`. `spaced` shapes it as letter-spaced text is: without `liga`, `clig` and `calt`. `direction` is the
@@ -224,6 +255,7 @@ class HarfBuzzFace implements Face {
   readonly ascender: number;
   readonly descender: number;
   readonly axes: Readonly<Record<string, AxisRange>>;
+  readonly slanted: boolean;
   private readonly font: Font;
   private readonly buffer = new ShapeBuffer();
   /** Widths in font units, by text, variation settings and feature set. */
@@ -231,9 +263,16 @@ class HarfBuzzFace implements Face {
   /** The variation key set on the font now. */
   private applied = '';
 
-  constructor(face: HbFace) {
+  constructor(
+    face: HbFace,
+    slantedFile: boolean,
+    private readonly declared?: DeclaredFace,
+  ) {
     this.unitsPerEm = face.upem;
     this.axes = face.getAxisInfos();
+    this.slanted =
+      slantedFile ||
+      (['slnt', 'ital'] as const).some((tag) => (this.axes[tag]?.default ?? 0) !== 0);
     this.font = new Font(face);
     this.font.setScale(face.upem * SCALE_SUBDIVISIONS, face.upem * SCALE_SUBDIVISIONS);
     const extents = this.font.hExtents();
@@ -332,7 +371,7 @@ class HarfBuzzFace implements Face {
 
   /** The variation settings of (`weight`, `size`) as a key; `''` for a font without the axes. */
   private variationKey(weight: number, size: number): string {
-    return variationsFor(this.axes, weight, size)
+    return variationsFor(this.axes, weight, size, this.declared)
       .map((v) => `${v.tag}=${v.value}`)
       .join(',');
   }
@@ -342,7 +381,9 @@ class HarfBuzzFace implements Face {
     const key = this.variationKey(weight, size);
     if (key === this.applied) return;
     this.font.setVariations(
-      variationsFor(this.axes, weight, size).map((v) => new Variation(v.tag, v.value)),
+      variationsFor(this.axes, weight, size, this.declared).map(
+        (v) => new Variation(v.tag, v.value),
+      ),
     );
     this.applied = key;
   }
@@ -401,6 +442,25 @@ function hasTables(sfnt: Uint8Array, tags: readonly string[]): boolean {
   return tags.every((tag) => present.has(tag));
 }
 
+const FS_SELECTION_ITALIC = 1 << 0;
+const FS_SELECTION_OBLIQUE = 1 << 9;
+
+/** Whether `OS/2.fsSelection` flags the file as italic or oblique (false without an `OS/2` table). Read from the bytes, like `hasTables`. */
+function flaggedSlanted(sfnt: Uint8Array): boolean {
+  const view = new DataView(sfnt.buffer, sfnt.byteOffset, sfnt.byteLength);
+  const count = Math.min(view.getUint16(4), Math.floor((sfnt.length - 12) / 16));
+  for (let i = 0; i < count; i++) {
+    const at = 12 + i * 16;
+    if (String.fromCharCode(...sfnt.subarray(at, at + 4)) !== 'OS/2') continue;
+    const offset = view.getUint32(at + 8);
+    if (offset + 64 > sfnt.length) return false;
+    return (
+      (view.getUint16(offset + 62) & (FS_SELECTION_ITALIC | FS_SELECTION_OBLIQUE)) !== 0
+    );
+  }
+  return false;
+}
+
 /** A face is usable with `head` and `hhea` tables and at least one code point in its cmap. */
 function usable(face: HbFace, sfnt: Uint8Array): boolean {
   return hasTables(sfnt, ['head', 'hhea']) && face.collectUnicodes().length > 0;
@@ -408,12 +468,16 @@ function usable(face: HbFace, sfnt: Uint8Array): boolean {
 
 /**
  * The face of a font file (`.ttf`, `.otf`, `.woff` or `.woff2`), or `null` when the bytes are not a usable font.
- * Throws before `initShaper()` resolves: that is a programming error, never a tool result.
+ * Throws before `initShaper()` resolves: that is a programming error, never a tool result. `declared` is what the
+ * library entry says about the face (its weight range and style); without it the face sets only `wght` (clamped to the
+ * axis) and `opsz`.
  */
-export function loadFace(bytes: Uint8Array): Face | null {
+export function loadFace(bytes: Uint8Array, declared?: DeclaredFace): Face | null {
   requireInitialized();
   const sfnt = fontSfnt(bytes);
   if (sfnt === null || sfnt.length < 12) return null;
   const face = new HbFace(new Blob(sfnt), 0);
-  return usable(face, sfnt) ? new HarfBuzzFace(face) : null;
+  return usable(face, sfnt)
+    ? new HarfBuzzFace(face, flaggedSlanted(sfnt), declared)
+    : null;
 }
