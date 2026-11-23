@@ -90,6 +90,7 @@ const library = await loadLibraryFromUrl('/libraries/sdui-backend/'); // also fe
 const result = await screenFromFormat(library, fileText, {
   format: 'sdui-backend/sdui', // <specId>/<formatId>
   measure: konvaMeasurer, // the one that draws, so the boxes match the drawing
+  // fonts: the same `fonts` you give createViewer (default: the viewer's own, which is also createViewer's default)
 });
 if (result.error) showError(result.error.code, result.error.message);
 else createViewer(el, { library, screen: result.screen }); // one `Screen` per container with components: `result.screens`

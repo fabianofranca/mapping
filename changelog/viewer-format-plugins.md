@@ -16,3 +16,7 @@
 - A loaded library keeps the file formats of its specialization (`fileFormats`, with each plugin's text) and the specialization's JSON. `loadLibraryFromUrl` of the viewer also fetches each format's plugin as text; a plugin that does not arrive is left out and reported in `problems`. Nothing else in the library changes, and `source`, `screenFromSource` and `origins` behave as before.
 - The MCP server version is 0.59.1 (a patch: no tool, operation or message changed).
 - The `mapping-viewer/formats` entry turns zod's `jitless` mode on (as the app does), so a host page whose CSP has no `unsafe-eval` sees no `securitypolicyviolation` from zod's `new Function` probe when the entry loads.
+
+## Corrigido
+
+- `screenFromFormat` sizes the markings with the same fonts the viewer draws with (the new optional `fonts` option, defaulting to the viewer's own), so a button that hugs its text no longer shows "content larger than the box" in the viewer demo's "File format (SDUI)" dataset.

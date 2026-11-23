@@ -53,6 +53,7 @@ import {
   type TokenSelection,
 } from '../src/model/components/tokens';
 import { tokenValue } from '../src/theme/tokens';
+import { viewerHostFonts } from './hostFonts';
 import type { TextMeasurer } from '../src/model/components/instantiate';
 import type { Box, Screen } from '../src/model/components/screen';
 import { type SourceResult, screenFromSource } from '../src/model/components/origin';
@@ -291,10 +292,7 @@ export function createViewer(
   stage.add(content, overlay);
 
   const measure = options.measure ?? konvaMeasurer;
-  const fonts: HostFonts = options.fonts ?? {
-    sans: tokenValue('font-sans', 'light'),
-    mono: tokenValue('font-mono', 'light'),
-  };
+  const fonts: HostFonts = options.fonts ?? viewerHostFonts();
   /** The received library, with the mode's tokens and the host's font in the components. */
   const baked = new WeakMap<Library, Map<string, Library>>();
   let drawingMode: string | TokenSelection | undefined = options.drawingMode;
