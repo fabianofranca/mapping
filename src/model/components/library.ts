@@ -37,7 +37,7 @@ export { IMAGE_EXTENSIONS, isImagePath } from './imagePath';
 export interface TextFile {
   /** Path relative to the chosen root, with `/`. */
   readonly path: string;
-  /** Content of the `.json` files (absent in binary files). */
+  /** Content of the `.json` files and of the `.js` plugins (absent in binary files). */
   readonly text?: string;
   /**
    * Bytes of the font files (`.ttf`, `.otf`, `.woff`, `.woff2`) and of the image files (`.png`,
@@ -95,6 +95,21 @@ export interface TypeDef {
   readonly sources: readonly TypeSource[];
 }
 
+/** A file format the specialization declares (`fileFormats`), read without validating (stage #2059, VF1). */
+export interface LibraryFileFormat {
+  readonly id: string;
+  readonly name: string;
+  readonly extension: string;
+  readonly scope: 'project' | 'container';
+  /** Path of the plugin resolved in the package (relative to the root). */
+  readonly plugin: string;
+  /**
+   * The plugin's `.js` text, or `null` when the file did not come with the library: only a loader that passes the
+   * `.js` files (`loadLibraryFromUrl`) fills it.
+   */
+  readonly pluginText: string | null;
+}
+
 export interface Library {
   readonly specId: string;
   readonly specName: string;
@@ -106,6 +121,10 @@ export interface Library {
   readonly images?: ReadonlyMap<string, Uint8Array>;
   /** Declared executable origins (`origins`): how to read an external JSON as a screen. */
   readonly origins: readonly Origin[];
+  /** The file formats of the specialization (`fileFormats`) with the plugin text, read without validating. */
+  readonly fileFormats: readonly LibraryFileFormat[];
+  /** The specialization's JSON as read (the model validates it with `parseSpec` when it needs the `Spec`). */
+  readonly specJson: unknown;
   /** `tokens` of the specialization (read without validating; the library validator checks them). */
   readonly tokens?: SpecTokens;
   /** The specialization's icon set (`icons`), when the file exists and is valid. */
@@ -381,12 +400,68 @@ export function loadLibrary(
       fonts,
       images: readImages(files),
       origins,
+      fileFormats: readFileFormats(spec.fileFormats, specPath, files, problems, resolve),
+      specJson,
       tokens: readTokens(spec.tokens),
       icons: readIcons(spec.icons, specPath, parsed, problems, resolve),
       problems,
     },
     {},
   );
+}
+
+/** The text of the file at `path`, or `null` when it did not come. */
+function textOf(files: readonly TextFile[], path: string): string | null {
+  return files.find((file) => file.path === path)?.text ?? null;
+}
+
+/** One `fileFormats` entry read without validating; `undefined` when it lacks what the model needs. */
+function readFileFormat(
+  raw: unknown,
+  at: string,
+  specPath: string,
+  files: readonly TextFile[],
+  problems: string[],
+  resolve: PathResolver,
+): LibraryFileFormat | undefined {
+  if (!isRecord(raw)) return undefined;
+  const { id, name, extension, plugin, scope } = raw;
+  if (typeof id !== 'string' || typeof plugin !== 'string') return undefined;
+  const path = resolve(specPath, plugin);
+  if (path === undefined) {
+    problems.push(`${at}.plugin: ${outsideLibrary(plugin)}`);
+    return undefined;
+  }
+  return {
+    id,
+    name: typeof name === 'string' ? name : id,
+    extension: typeof extension === 'string' ? extension : '',
+    scope: scope === 'container' ? 'container' : 'project',
+    plugin: path,
+    pluginText: textOf(files, path),
+  };
+}
+
+/** The `fileFormats` of the specialization with their plugin texts (decision 8 of #2059). */
+function readFileFormats(
+  raw: unknown,
+  specPath: string,
+  files: readonly TextFile[],
+  problems: string[],
+  resolve: PathResolver,
+): LibraryFileFormat[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((entry, index) => {
+    const format = readFileFormat(
+      entry,
+      `fileFormats[${index}]`,
+      specPath,
+      files,
+      problems,
+      resolve,
+    );
+    return format === undefined ? [] : [format];
+  });
 }
 
 /** The set of icons pointed to by `icons` (a missing or invalid file becomes a problem). */

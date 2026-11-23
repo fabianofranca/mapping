@@ -1,0 +1,22 @@
+# The viewer reads a file through the format plugin — 2026-11-23 (épico `epic/viewer-format-plugins`, PR #2788, MCP 0.59.2, schema v24)
+
+## Adicionado
+
+- The model turns a file's text, read by a file format's `parse` plugin (`formatVersion` 22), into the screens the embeddable viewer draws: one screen per container with component markings, sized by the container's density, with stable instance ids (the marking's `source.id` when it is unique, otherwise `m<n>`) and every failure as a code and a message (`format-not-found`, `spec-invalid`, `nothing-to-draw`, `sandbox-unavailable` and the plugin's own codes).
+
+- `mapping-viewer/formats`, a third entry of the viewer package (`mapping-viewer` 0.10.0): `screenFromFormat(library, text, { format, measure })` reads a file through the specialization's format plugin and gives the screens the viewer draws, `disposeFormatSandbox()` removes the page's iframe and `FORMAT_SANDBOX_CSP` has the exact values a host's CSP needs (the bootstrap hash in `script-src`, `blob:` in `worker-src`, `mapping-viewer` and `default` in `trusted-types`). The plugin runs in the app's sandbox iframe and `blob:` Worker, with the `srcdoc` set through a Trusted Types policy named `mapping-viewer`; a host page that refuses any of the three gets `sandbox-unavailable` in the result (nothing in the console) and the rest of the viewer keeps working. `viewer/PACKAGE-README.md` gains "Screen from a file format" and "Content Security Policy of the host". The core bundle does not change (it only exports the type `LibraryFileFormat`).
+
+- The viewer demo (`viewer/demo/`) has a fourth dataset, "File format (SDUI)": the `sdui-backend` package comes in through Vite imports, `home.sdui.json` sits in an editable text area and each edit calls `screenFromFormat` (the last call wins), so the tree, the selection and the properties work as in the other datasets; the plugin's warnings and its error (code, message and `line:column`) go in the status panel, and an error keeps the last screen. It is a copyable example of a host that reads a file through a format plugin, with the CSP it needs. A new CSP profile, `viewer` (`pwa/csp.ts`), is `static` plus `worker-src 'self' blob:` and the bootstrap hash in `script-src`, with no Trusted Types; `verifyCsp` accepts it, and `static` (the guide) and `app` do not change. The demo build uses it and also works over `file://`.
+- The new test script R47 (the viewer runs a format plugin, 10 steps, in block 7 of the full round) builds the demo, serves it, and covers the CSP of the page, the drawing, an edit that keeps the selection, a plugin error and a plugin warning, the two missing CSP pieces (`sandbox-unavailable` within about 6 s, with "Examples" still drawing), `file://` and the absence of network.
+
+## Alterado
+
+- The sandbox document of a format plugin (`SANDBOX_SRCDOC`) carries a CSP of its own in a `<meta>` (`default-src 'none'; script-src <hash> blob:; worker-src blob:; connect-src 'none'`), enforced together with the host's: in a page whose CSP allows the network the plugin still has none (`WebTransport` and a dynamic `import()` included). The app does not change behavior. `SANDBOX_BOOTSTRAP_HASH` is a constant checked against the build's hash by a test, and a failure of the sandbox itself (a refused frame or Worker, a frame that never says it is ready) is tagged `phase: 'sandbox'`; the app words it as before.
+
+- A loaded library keeps the file formats of its specialization (`fileFormats`, with each plugin's text) and the specialization's JSON. `loadLibraryFromUrl` of the viewer also fetches each format's plugin as text; a plugin that does not arrive is left out and reported in `problems`. Nothing else in the library changes, and `source`, `screenFromSource` and `origins` behave as before.
+- The MCP server version is 0.59.2 (a patch: no tool, operation or message changed).
+- The `mapping-viewer/formats` entry turns zod's `jitless` mode on (as the app does), so a host page whose CSP has no `unsafe-eval` sees no `securitypolicyviolation` from zod's `new Function` probe when the entry loads.
+
+## Corrigido
+
+- `screenFromFormat` sizes the markings with the same fonts the viewer draws with (the new optional `fonts` option, defaulting to the viewer's own), so a button that hugs its text no longer shows "content larger than the box" in the viewer demo's "File format (SDUI)" dataset.

@@ -54,6 +54,7 @@ Mapping is a web app to mark rectangular areas on images, organize them into lay
 | 42 | R44 — Format plugins in the app | the `examples/libraries/data-model/`, `sdui-backend/` and `measured/` packages (the shell copies them and breaks copies), the shell, the MCP over stdio (section 6) and the app (also over `file://`) | 50 min |
 | 43 | R45 — Quick review on the canvas | a folder `revisao-rapida` (the `examples/full-example.zip` unzipped into `design/mapeamentos/`), the shell, the MCP over stdio (section 6), Playwright over CDP and the app; with its own visual pass | 45 min |
 | 44 | R46 — Replace from the clipboard and export the image | a folder `recorte` (`cadastro.png` added twice), the shell, Playwright over CDP with the clipboard permissions and the app; with its own visual pass | 45 min |
+| 45 | R47 — The viewer runs a format plugin | the viewer demo (the shell builds it with `npx vite build --config vite.viewer.config.ts` and makes two copies of the page), `python3 -m http.server`, the shell and Playwright over CDP; no MCP, no section 6, no project; also over `file://` | 15 min |
 | on demand | RP — Installed app (PWA), in the **on-demand scripts (manual)** | main version or preview (`https:`) and the installable app; only when the owner asks | 15 min |
 | on demand | RF — `index.html` over `file://` (formerly R0.5), in the **on-demand scripts (manual)** | shell with access to GitHub Pages and the computer's Chrome; only when the owner asks | 10 min |
 | on demand | RA — Close the tab in the middle of a save (formerly R6.2), in the **on-demand scripts (manual)** | the `principal` folder and a `tela2.png`; only when the owner asks | 10 min |
@@ -61,7 +62,7 @@ Mapping is a web app to mark rectangular areas on images, organize them into lay
 | on demand | RT — Folder on an Android tablet, in the **on-demand scripts (manual)** | an Android tablet with Chrome and a real project folder; only when the owner asks | 15 min |
 | on demand | RQ — Concept question in a clean Claude Code session (formerly R3.6a), in the **on-demand scripts (manual)** | section 6, the `principal` from R1 moved into the test repository and a new Claude Code session; only when the owner asks | 5 min |
 
-The times are approximate (by number of steps); record the real time in the report. Without the MCP, do only step 2 of section 6 from row 4 (the test repository and the folders, without the `mapping-mcp.js`), run R3.1 to R3.5 and skip R3.6, R3.21, R3.23 and R5, marking them "not executed (no MCP)". The main scripts (R0 to R46) are made for the cloud agent to run **alone**. The **on-demand scripts (manual)**, today RP, RF, RA, RB, RT and RQ, are not part of the full round or the directed one: they run apart, in an on-demand session, only when the owner asks (end of section 8). The dependencies between the scripts are at the start of section 8. Section 9 (advanced manual testing) is a script of its own, after a full round without high or medium findings.
+The times are approximate (by number of steps); record the real time in the report. Without the MCP, do only step 2 of section 6 from row 4 (the test repository and the folders, without the `mapping-mcp.js`), run R3.1 to R3.5 and skip R3.6, R3.21, R3.23 and R5, marking them "not executed (no MCP)". The main scripts (R0 to R47) are made for the cloud agent to run **alone**. The **on-demand scripts (manual)**, today RP, RF, RA, RB, RT and RQ, are not part of the full round or the directed one: they run apart, in an on-demand session, only when the owner asks (end of section 8). The dependencies between the scripts are at the start of section 8. Section 9 (advanced manual testing) is a script of its own, after a full round without high or medium findings.
 
 What this guide **does not** test: whether a panel is easy to find or whether a text is clear to someone who has not read the documentation. That is left to people, in real use.
 
@@ -260,7 +261,7 @@ Also counted as a finding: noticeable slowness (more than a second to respond), 
 - _Italics at the end of the Expected_ mark a **known regression**: something that already broke in a previous round and is checked again, not the goal of the step.
 - **[person]** marks the steps the cloud agent does not do alone (appendix A); whoever tests by hand can ignore the mark. The "or `action`" names the recipe that replaces the person in native dialogs (`select_folder`, `save_file`, `open_file`, `accept_permission_prompt`, `cancel_dialog`; each name is a recipe in appendix A, "Native dialogs in the cloud (Xvfb)") and the MCP client over stdio in the requests to Claude Code. In the main scripts no step is left without a substitute (a test checks).
 - **Who changes the guide: marked passages.** `round-guide.mjs` generates the guide with only the requested scripts (also by step range, `R6.3-R6.7`). A passage of this introduction or of appendix A that only certain scripts use goes between `<!-- roteiros: R12 R22 -->` and `<!-- /roteiros -->`, on their own lines; it only enters the guide if one of them is requested. Without a mark, it goes in all of them (when in doubt, do not mark).
-- **Rule for whoever changes the scripts (agents and people).** The main scripts (R0 to R46) are made for the cloud agent to run **alone**: every new or changed step needs a way for the cloud agent to do it (cloud recipe from appendix A, Playwright over CDP, shell or MCP client over stdio) and must say so in the Action.
+- **Rule for whoever changes the scripts (agents and people).** The main scripts (R0 to R47) are made for the cloud agent to run **alone**: every new or changed step needs a way for the cloud agent to do it (cloud recipe from appendix A, Playwright over CDP, shell or MCP client over stdio) and must say so in the Action.
 - **A test that needs the owner.** If a test needs interaction from the owner (no cloud recipe does it) and **is not very relevant**, it goes to the **on-demand scripts (manual)** (end of this section), which the owner does by hand.
 - **A test that needs the owner and is very relevant.** If it needs interaction from the owner and **is very relevant** (risk of data loss, integrity of the `mapping.json`, security), the agent **does not decide alone**: it warns the owner, in the conversation and in the PR description, so they decide together; until they decide, the step stays where it is, marked as **pending decision**.
 
@@ -468,6 +469,11 @@ Also counted as a finding: noticeable slowness (more than a second to respond), 
 <!-- roteiros: R46 -->
 
 - R46 uses a folder of its own (`recorte`, with `cadastro.png` added twice, a container without a file and a canvas marking), the shell, Playwright over CDP (clipboard permissions, the "Save as" spy and the clipboard images made in the page) and the app; the steps follow in sequence and do not depend on any other script. Section 6 and the MCP are not needed. Without the app, mark everything "not executed (no app)".
+
+<!-- /roteiros -->
+<!-- roteiros: R47 -->
+
+- R47 uses a folder of its own (`$W47`, with the bodies of the steps, the two copies of the page and the crops) and builds the viewer demo into `dist-viewer-demo/` of the checkout; it uses no project, no MCP and no section 6, only Playwright over CDP in the app's Chrome (one tab of its own per step, closed at the end) and `python3`; the steps follow in sequence and do not depend on any other script.
 
 <!-- /roteiros -->
 <!-- roteiros: R24 -->
@@ -3178,7 +3184,7 @@ Where a step reads "the `text`", save the `text` field of the printed JSON respo
 | --- | --- | --- |
 | R32.1 | **The two packages are valid.** In the stdio client: `validate_library` with `path` `data-model`, and again with `path` `sdui-backend`. | **`data-model`:** `valid` `true`, `summary.level` `3`, `errors` and `warnings` empty, `spec.fileFormats` `2` and `spec.formatVersion` `20`. **`sdui-backend`:** `valid` `true`, level `3`, `errors` and `warnings` empty, `spec.fileFormats` `1`, `spec.formatVersion` `22`, `spec.origins` `0` (the library declares no origins) and 6 types, 5 components and 6 documents in the summary. **Disk:** both folders unchanged. |
 | R32.2 | **Four broken copies.** In the shell build the copies of `data-model` that the next steps validate: `cp -r $ROOT/data-model $ROOT/dm-loop && echo 'function generate(input) { while (true) {} } function parse(text, input) { return { operations: [], warnings: [] }; }' > $ROOT/dm-loop/plugins/openapi.js`; `cp -r $ROOT/data-model $ROOT/dm-throw && echo 'function generate(input) { throw new Error("boom"); } function parse(text, input) { throw new Error("boom"); }' > $ROOT/dm-throw/plugins/openapi.js`; `cp -r $ROOT/data-model $ROOT/dm-delete && echo 'function parse(text, input) { return { operations: [{ op: "delete_marking", marking: "x" }] }; }' > $ROOT/dm-delete/plugins/openapi.js`; `cp -r $ROOT/data-model $ROOT/dm-roundtrip && sed -i '3a\\' $ROOT/dm-roundtrip/examples/shop.attributes.csv` (a blank line in the middle of the CSV example). Run `sed -n 1,5p $ROOT/dm-roundtrip/examples/shop.attributes.csv`. | **Shell:** the four folders exist. The last command prints the CSV header, `Customer,id,Long,yes,1001`, `Customer,name,String,yes,"Doe, Jane"`, an **empty line** and `Customer,email,String,no,`. |
-| R32.3 | **A plugin with an infinite loop.** `validate_library` with `path` `dm-loop`. | **Response:** it comes back (the server does not hang) with `valid` `false` and one error at `path` `fileFormats[0].examples[0]` whose message contains `plugin-timeout` and `went past the time limit of 5000 ms`. The call takes a few seconds. **Disk:** `dm-loop` unchanged. |
+| R32.3 | **A plugin with an infinite loop.** `validate_library` with `path` `dm-loop`. | **Response:** it comes back (the server does not hang) with `valid` `false` and one error at `path` `fileFormats[0]` (the format, not its example: a `generate` that times out is reported at the format and `parse` is not run) whose message contains `plugin-timeout` and `went past the time limit of 5000 ms`. The call takes a few seconds. **Disk:** `dm-loop` unchanged. |
 | R32.4 | **A plugin that throws.** `validate_library` with `path` `dm-throw`. | **Response:** `valid` `false` and one error at `fileFormats[0].examples[0]` whose message contains `plugin-failed`, `Error: boom` and the plugin path as the specialization declares it, with a line and column (`plugins/openapi.js:1:100`: the path is relative to the package folder, as in `fileFormats[].plugin` and in R44.6). The server stays up (the next call answers). |
 | R32.5 | **A result with a forbidden operation.** `validate_library` with `path` `dm-delete`. | **Response:** `valid` `false` and one error at `fileFormats[0].examples[0]` whose message contains `plugin-output-invalid` and the path inside the result: `operations[0].op: not allowed in a plugin result: delete_marking`. |
 | R32.6 | **An example that does not round-trip.** `validate_library` with `path` `dm-roundtrip`. | **Response:** `valid` `false` and one error at `fileFormats[1].examples[0]` whose message contains `it does not round-trip` and cites the first differing line (`line 4: the file has "" and generate gives "Customer,email,String,no,"`). The OpenAPI example (`fileFormats[0]`) has no error. |
@@ -3483,11 +3489,11 @@ The projects are created by the MCP with `create_project` (`root` `ROOT`, `notes
 | R44.1 | **The copies.** In the shell: `ls $F`; `sed -n 1,3p $F/fpa-roundtrip/examples/shop.openapi.yaml`; `node -e "console.log(JSON.parse(require('fs').readFileSync('$F/measured/measured.spec.json')).formatVersion)"`. | **Shell:** the eight folders exist; `measured` is `formatVersion` `22` and has no `origins` key. |
 | R44.2 | **Catalog: a valid package with formats.** On the home screen, **Open library** `$F/sdui-backend` **[person]** (or `select_folder`). Open **File formats** (after the Interface layer); crop the page to `$W44/formats.png`. | **Screen:** the problems line says "Valid package, no errors or warnings."; the page lists **SDUI screen** (`.json`, one container, defines `generate` and `parse`) and its example `home` **drawn as the screen Home** (a column with buttons, the bottom bar and the FAB), with the example text in a collapsible block. The Button's Gallery has no "From the external system" example. |
 | R44.3 | **Catalog: an example that does not round-trip.** **Open library** `$F/fpa-roundtrip`. | **Screen:** the problems line counts one error whose text is at `fileFormats[0].examples[0]`, says "it does not round-trip" and cites the added line (`x-owner: shop-team`, a key the OpenAPI plugin does not write back; a changed value such as `x-timeout-ms: 15001` still round-trips, so it is not a valid change). The package still opens. |
-| R44.4 | **Catalog: an infinite loop.** Start a clock and **Open library** `$F/fpa-loop`; while it runs, click another item of the list. | **Screen:** the page keeps answering (the click works); within about 6 s the problems line shows an error at `fileFormats[0].examples[0]` containing `plugin-timeout` and `time limit of 5 s`. |
-| R44.5 | **A project with a package and the notice.** In the stdio client: `create_project` `formatos-app` (name `Formats`), `telas-sdui-app` (name `Screens`) and `medido-app` (name `Measured`), and `sonda-app` (name `Probe`). In the app, **Open folder** `ROOT/formatos-app`, **Specializations** › **Apply folder…** `$F/data-model`, confirm; wait for **Saved**. | **Screen:** the apply goes through with no error. In **Specializations**, under `data-model`, the line "Brings 2 file format(s); their code runs isolated, without network, disk or access to your projects." **Disk:** `ROOT/formatos-app/specs/data-model/` has the package; no `proposals/` folder. |
-| R44.6 | **A plugin that throws is refused.** In `formatos-app`, **Specializations** › **Apply folder…** `$F/fpa-throws`. | **Screen:** the apply is refused with an error containing `plugin-failed`, `Error: boom` and the plugin path with `line:column` (`plugins/openapi.js:1:`). **Disk:** `specs/` has no `fpa-throws`. |
-| R44.7 | **`origins` is refused in version 22.** **Apply folder…** `$F/fpa-origins`. | **Screen:** refused with an error at `origins` saying `only allowed up to formatVersion 21`. **Disk:** `specs/` has no `fpa-origins`. |
-| R44.8 | **Import from a format: OpenAPI.** **Project menu** (the project name ▾) › **Import from a format…**; choose **data-model › OpenAPI**; first choose `$F/data-model/data-model.spec.json` as the file. Then choose `$F/data-model/examples/shop.openapi.yaml` and click **Preview**; click **Import**; wait for **Saved**. Then `Ctrl+Z` once and `Ctrl+Y` once. | **First file:** refused at once ("Choose a .yaml file"), nothing read. **Preview:** Created 1 container, 6 markings, 6 annotations; Changed 0; no warnings. **After Import:** the container **Shop** (the `info.title`) with 6 markings is selected and in view. **Disk:** `mapping.json` has 1 container `Shop`, 6 markings, 6 annotations (`class` ×3, `endpoint` ×3). **`Ctrl+Z`:** the whole import disappears in one step; **`Ctrl+Y`:** it all comes back. |
+| R44.4 | **Catalog: an infinite loop.** Start a clock and **Open library** `$F/fpa-loop`; while it runs, click another item of the list. | **Screen:** the page keeps answering (the click works); within about 6 s the problems line shows an error at `fileFormats[0]` (the format, not its example: a `generate` that times out is reported at the format and `parse` is not run) containing `plugin-timeout` and `time limit of 5 s`. |
+| R44.5 | **A project with a package and the notice.** In the stdio client: `create_project` `formatos-app` (name `Formats`), `telas-sdui-app` (name `Screens`) and `medido-app` (name `Measured`), and `sonda-app` (name `Probe`). In the app, **Open folder** `ROOT/formatos-app`, **Specializations** › **Apply folder…** `$F/data-model`, click **Apply** in the confirmation that follows; wait for **Saved**. | **Screen:** the apply goes through with no error. In **Specializations**, under `data-model`, the line "Brings 2 file format(s); their code runs isolated, without network, disk or access to your projects." **Disk:** `ROOT/formatos-app/specs/data-model/` has the package; no `proposals/` folder. |
+| R44.6 | **A plugin that throws is refused.** In `formatos-app`, **Specializations** › **Apply folder…** `$F/fpa-throws`. | **Screen:** the apply is refused with an error containing `plugin-failed`, `Error: boom` and the plugin path with `line:column` (`plugins/openapi.js:1:`); a cascade error `unknown-type` may accompany the `plugin-failed` one and is allowed. **Disk:** `specs/` has no `fpa-throws`. |
+| R44.7 | **`origins` is refused in version 22.** **Apply folder…** `$F/fpa-origins`. | **Screen:** refused with an error at `origins` saying `only allowed up to formatVersion 21`; the side message "The package has no readable specialization" may also show and is allowed. **Disk:** `specs/` has no `fpa-origins`. |
+| R44.8 | **Import from a format: OpenAPI.** **Project menu** (the project name ▾) › **Import from a format…**; choose **data-model › OpenAPI**; first choose `$F/data-model/data-model.spec.json` as the file. Then choose `$F/data-model/examples/shop.openapi.yaml` and click **Preview**; click **Import**; wait for **Saved**. Then `Ctrl+Z` once and `Ctrl+Y` once. | **First file:** after choosing it nothing is shown (the app checks the extension only at **Preview**). At **Preview** the refusal "Choose a .yaml file: that is the format's extension." appears and nothing is read. **Preview:** Created 1 container, 6 markings, 6 annotations; Changed 0; no warnings. **After Import:** the 6 created markings are selected (an import selects what it created and falls back to the containers only when it created no marking); the container **Shop** (the `info.title`) holds them and is in view. **Disk:** `mapping.json` has 1 container `Shop`, 6 markings, 6 annotations (`class` ×3, `endpoint` ×3). **`Ctrl+Z`:** the whole import disappears in one step; **`Ctrl+Y`:** it all comes back. |
 | R44.9 | **Export in a format: OpenAPI.** **Project menu** › **Export in a format…**, **data-model › OpenAPI (.yaml)**, **Export**, then download; save the download as `$W44/out.yaml`; `diff $W44/out.yaml $F/data-model/examples/shop.openapi.yaml`. | **Dialog:** the notice line about isolation; file name `Formats.yaml`. **Shell:** `diff` prints nothing. **Disk:** `mapping.json` unchanged (the export does not change the project). |
 | R44.10 | **CSV: only the edited line changes.** Export **Attributes CSV**, save as `$W44/a.csv`; `sed -i 's/"Doe, Jane"/"Roe, Jane"/' $W44/a.csv`. **Import from a format…** **Attributes CSV** with `$W44/a.csv`, **Preview**. | **Preview:** Created 0 in every kind; Changed 1 annotation; no warnings. Do not click Import (**Cancel**). |
 | R44.11 | **SDUI without a target.** Open `telas-sdui-app`; **Apply folder…** `$F/sdui-backend`; **Import from a format…** **sdui-backend › SDUI screen**, Target **None (the plugin creates it)**, file `$F/sdui-backend/examples/home.sdui.json`, **Preview**, **Import**; crop the canvas to `$W44/home.png`. | **Preview:** 1 container, 6 markings. **Screen:** the container **Home** (412 × 917) with the column and its buttons **inside the column's slot**, the bottom bar at the bottom edge and the FAB; no "could not be drawn". |
@@ -3497,7 +3503,7 @@ The projects are created by the MCP with `create_project` (`root` `ROOT`, `notes
 | R44.15 | **Isolation.** Open `sonda-app`; **Apply folder…** `$F/fpa-probe`. With Playwright over CDP, `page.on('request')` collecting every URL; **Export in a format…** **fpa-probe › Probe**, **Export**, download and read the text. | **Text:** `{"found":[],"fetch":"threw","indexedDB":"threw"}` (no `fetch`, `XMLHttpRequest`, `WebSocket`, `importScripts`, `indexedDB`, `caches` or timers inside the plugin). **Requests:** none to a host outside the app (`example.invalid` never requested); the project is still open and intact. |
 | R44.16 | **Over `file://`.** Open `file://<REPO>/dist/index.html` in Chrome (recipe 1 builds it); **Open folder** `ROOT/formatos-app`; repeat R44.9. | `diff` prints nothing: the export over `file://` equals `shop.openapi.yaml`. |
 | R44.17 | **Clean reopening.** Reopen the three projects from **Recent projects**; for each open **Diagnostics** (`Ctrl+Shift+6`). In the shell: `ls $ROOT/formatos-app $ROOT/telas-sdui-app $ROOT/medido-app`. | **Screen:** no error and no warning from the formats (a project never runs a plugin when it opens). **Shell:** no `proposals/` folder in any of them. |
-| R44.18 | **Help.** **Help** › **Specializations**. | The current format version is 23 and the text says `origins` is "only allowed up to formatVersion 21", with the file format plugin as the replacement. |
+| R44.18 | **Help.** **Help** › **Specializations**. | The current **specialization** `formatVersion` is 23 (`SPEC_FORMAT_VERSION`; it is not the project's "Format version" that About shows, 24) and the text says `origins` is "only allowed up to formatVersion 21", with the file format plugin as the replacement. |
 
 ### R45 — Quick review on the canvas
 
@@ -3608,9 +3614,210 @@ ls_img() { ls "$PROJ/images"; }
 
 R46 changes its own folder (`recorte`); no other script uses it.
 
+### R47 — The viewer runs a format plugin
+
+**What it covers:** the stage "The embeddable viewer reads a file through the specialization's format plugin" (#2059, VF1 to VF3): the viewer demo (`viewer/demo/`, built by `npx vite build --config vite.viewer.config.ts` into `dist-viewer-demo/`) has a "File format (SDUI)" dataset that reads `home.sdui.json` of the `sdui-backend` package through `screenFromFormat` of `mapping-viewer/formats`; the plugin runs in a sandbox iframe and `blob:` Worker of the page, so the page's CSP (the `viewer` profile: `worker-src 'self' blob:` and the sandbox bootstrap hash in `script-src`, `connect-src 'none'`) is what lets it start. It checks the page's CSP, the drawing and the tree, an edit that redraws and keeps the selection, a plugin error (`plugin-failed`, with `line:column`) and a plugin warning, the two missing CSP pieces (each gives `sandbox-unavailable` while "Examples" still draws), the page opened over `file://` and that no request leaves the page.
+
+**Setup.** Section 6 is not needed: R47 has no project and uses no MCP. It needs the repository checkout with its `node_modules` (the one the local build of recipe 1 uses), Playwright over CDP in the app's Chrome (appendix A, recipes 1 to 4: R0 already brought it up; each step opens its own tab and closes it, so the app's tab stays the only one `connect()` sees) and `python3`. The steps follow in sequence and depend on no other script. `REPO` is the checkout. Without the browser, mark R47.2 to R47.10 "not executed (no browser)".
+
+```bash
+export W47=<work folder>/r46 && mkdir -p "$W47"
+# The demo, built with the `viewer` CSP profile, served on a port of its own (8146; the app is on 8080)
+(cd "$REPO" && npx vite build --config vite.viewer.config.ts 2>&1 | tail -3)
+(python3 -m http.server 8146 --bind 127.0.0.1 --directory "$REPO/dist-viewer-demo" >"$W47/http.log" 2>&1 & echo $! >"$W47/http.pid")
+# The hash that PACKAGE-README.md quotes for script-src (the sandbox bootstrap), and two copies of the page with one CSP piece missing each
+export HASH=$(grep -o "'sha256-[A-Za-z0-9+/=]*'" "$REPO/viewer/PACKAGE-README.md" | head -1)
+node -e "
+const fs=require('fs');const [dir,hash]=process.argv.slice(1);
+const h=fs.readFileSync(dir+'/index.html','utf8');
+if(!h.includes(' '+hash))throw new Error('the hash is not in the CSP');
+fs.writeFileSync(dir+'/sem-hash.html',h.replace(' '+hash,''));
+const w=\"worker-src 'self' blob:\";
+if(!h.includes(w))throw new Error('worker-src is not as expected');
+fs.writeFileSync(dir+'/sem-blob.html',h.replace(w,\"worker-src 'self'\"));
+" "$REPO/dist-viewer-demo" "$HASH"
+# The bodies of the steps, for `node scripts/testing/cloud.mjs run < "$W47/sN.js"` (each opens its own tab and closes it)
+cat > "$W47/s2.js" <<'JS'
+const demo = await browser.contexts()[0].newPage();
+demo.setDefaultTimeout(8000);
+await demo.goto('http://127.0.0.1:8146/index.html');
+const csp = await demo.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
+console.log(csp);
+const hash = require('fs').readFileSync(process.env.REPO + '/viewer/PACKAGE-README.md', 'utf8').match(/'sha256-[A-Za-z0-9+/=]+'/)[0];
+const dir = (name) => csp.split('; ').find((d) => d.startsWith(name + ' ')) ?? '';
+await check('worker-src has self and blob:', dir('worker-src') === "worker-src 'self' blob:");
+await check('script-src has the README hash', dir('script-src').split(' ').includes(hash));
+await check("connect-src is 'none'", dir('connect-src') === "connect-src 'none'");
+await check('no Trusted Types and no unsafe-*', !/trusted-types|unsafe-/.test(csp));
+await demo.close();
+JS
+cat > "$W47/s3.js" <<'JS'
+const demo = await browser.contexts()[0].newPage();
+demo.setDefaultTimeout(8000);
+await demo.goto('http://127.0.0.1:8146/index.html');
+await demo.getByRole('button', { name: 'File format (SDUI)' }).click();
+await demo.locator('.react-lab-tree li').first().waitFor();
+await demo.waitForTimeout(500);
+const rows = await demo.locator('.react-lab-tree li').allInnerTexts();
+console.log(rows.join(' | ').replace(/\n/g, ' '));
+await check('six instances in the tree', rows.length === 6);
+const pad = await demo.locator('.react-lab-tree li button').evaluateAll((bs) => bs.map((b) => parseFloat(getComputedStyle(b).paddingLeft)));
+console.log('depth padding', pad.join(' '));
+await check('the column children are nested', pad[1] > pad[0] && pad[2] === pad[1] && pad[5] > pad[4]);
+const status = await demo.locator('.react-lab-status').innerText();
+await check('screen Home 412 × 917', /Screen: Home \(412 × 917\), 6 instances/.test(status));
+await check('no format warning', /Format warnings: none/.test(status));
+await check('no error line', (await demo.locator('.react-lab-error').count()) === 0);
+await demo.locator('.react-lab-viewer').screenshot({ path: process.env.W47 + '/format.png' });
+await demo.close();
+JS
+cat > "$W47/s4.js" <<'JS'
+const demo = await browser.contexts()[0].newPage();
+demo.setDefaultTimeout(8000);
+await demo.goto('http://127.0.0.1:8146/index.html');
+await demo.getByRole('button', { name: 'File format (SDUI)' }).click();
+const tree = demo.locator('.react-lab-tree');
+await tree.getByRole('button', { name: /Continue/ }).click();
+await check('Continue is selected', /Selection: m2/.test(await demo.locator('.react-lab-status').innerText()));
+const area = demo.locator('textarea');
+await area.fill((await area.inputValue()).replace('"Continue"', '"Proceed"'));
+await tree.getByRole('button', { name: /Proceed/ }).waitFor();
+await check('the tree shows Proceed and no Continue', (await tree.getByRole('button', { name: /Continue/ }).count()) === 0);
+await check('the selection stayed on the same instance', (await tree.getByRole('button', { name: /Proceed/ }).getAttribute('aria-current')) === 'true' && /Selection: m2/.test(await demo.locator('.react-lab-status').innerText()));
+await check('the properties show Proceed', /Proceed/.test(await demo.locator('.react-lab-props').innerText()));
+await check('no error line', (await demo.locator('.react-lab-error').count()) === 0);
+await demo.locator('.react-lab-viewer').screenshot({ path: process.env.W47 + '/proceed.png' });
+await demo.close();
+JS
+cat > "$W47/s5.js" <<'JS'
+const demo = await browser.contexts()[0].newPage();
+demo.setDefaultTimeout(8000);
+await demo.goto('http://127.0.0.1:8146/index.html');
+await demo.getByRole('button', { name: 'File format (SDUI)' }).click();
+await demo.locator('.react-lab-tree li').first().waitFor();
+await demo.locator('textarea').fill('{ broken');
+const error = demo.locator('.react-lab-error');
+await error.waitFor();
+const text = await error.innerText();
+console.log(text);
+await check('the error has plugin-failed', /plugin-failed/.test(text));
+await check('the error has a line:column', /\d+:\d+/.test(text));
+await check('the last screen stays (six rows)', (await demo.locator('.react-lab-tree li').count()) === 6);
+await demo.getByRole('button', { name: 'Examples', exact: true }).click();
+await demo.locator('.react-lab-tree li').first().waitFor();
+await check('Examples still draws, with no error', (await demo.locator('.react-lab-tree li').count()) > 0 && (await demo.locator('.react-lab-error').count()) === 0);
+await demo.close();
+JS
+cat > "$W47/s6.js" <<'JS'
+const demo = await browser.contexts()[0].newPage();
+demo.setDefaultTimeout(8000);
+await demo.goto('http://127.0.0.1:8146/index.html');
+await demo.getByRole('button', { name: 'File format (SDUI)' }).click();
+await demo.locator('.react-lab-tree li').first().waitFor();
+const area = demo.locator('textarea');
+await area.fill((await area.inputValue()).replace('"type": "FAB"', '"type": "Nope"'));
+await demo.getByText(/Format warnings: .*Nope/).waitFor();
+const status = await demo.locator('.react-lab-status').innerText();
+console.log(status.split('\n').find((l) => l.startsWith('Format warnings')));
+await check('the plugin warns that the type "Nope" is not known', /the type "Nope" is not known/.test(status));
+await check('no error line', (await demo.locator('.react-lab-error').count()) === 0);
+await check('the FAB is out of the tree (five rows)', (await demo.locator('.react-lab-tree li').count()) === 5);
+await demo.close();
+JS
+cat > "$W47/s7.js" <<'JS'
+const demo = await browser.contexts()[0].newPage();
+demo.setDefaultTimeout(8000);
+await demo.goto('http://127.0.0.1:8146/sem-hash.html');
+const t0 = Date.now();
+await demo.getByRole('button', { name: 'File format (SDUI)' }).click();
+const error = demo.locator('.react-lab-error');
+await error.waitFor({ timeout: 10000 });
+const seconds = (Date.now() - t0) / 1000;
+const text = await error.innerText();
+console.log(seconds.toFixed(1) + ' s', text);
+await check('sandbox-unavailable', /sandbox-unavailable/.test(text));
+await check('the message names script-src, worker-src and trusted-types', /script-src/.test(text) && /worker-src/.test(text) && /trusted-types/.test(text));
+await check('within about 6 s', seconds <= 7);
+await demo.getByRole('button', { name: 'Examples', exact: true }).click();
+await demo.locator('.react-lab-tree li').first().waitFor();
+await check('Examples still draws, with no error', (await demo.locator('.react-lab-tree li').count()) > 0 && (await demo.locator('.react-lab-error').count()) === 0);
+await demo.close();
+JS
+cat > "$W47/s8.js" <<'JS'
+const demo = await browser.contexts()[0].newPage();
+demo.setDefaultTimeout(8000);
+await demo.goto('http://127.0.0.1:8146/sem-blob.html');
+const t0 = Date.now();
+await demo.getByRole('button', { name: 'File format (SDUI)' }).click();
+const error = demo.locator('.react-lab-error');
+await error.waitFor({ timeout: 10000 });
+const seconds = (Date.now() - t0) / 1000;
+const text = await error.innerText();
+console.log(seconds.toFixed(1) + ' s', text);
+await check('sandbox-unavailable', /sandbox-unavailable/.test(text));
+await check('the message names script-src, worker-src and trusted-types', /script-src/.test(text) && /worker-src/.test(text) && /trusted-types/.test(text));
+await check('within about 6 s', seconds <= 7);
+await demo.getByRole('button', { name: 'Examples', exact: true }).click();
+await demo.locator('.react-lab-tree li').first().waitFor();
+await check('Examples still draws, with no error', (await demo.locator('.react-lab-tree li').count()) > 0 && (await demo.locator('.react-lab-error').count()) === 0);
+await demo.close();
+JS
+cat > "$W47/s9.js" <<'JS'
+const demo = await browser.contexts()[0].newPage();
+demo.setDefaultTimeout(8000);
+await demo.goto('file://' + process.env.REPO + '/dist-viewer-demo/index.html');
+await demo.getByRole('button', { name: 'File format (SDUI)' }).click();
+await demo.locator('.react-lab-tree li').first().waitFor();
+await demo.waitForTimeout(500);
+await check('six instances in the tree', (await demo.locator('.react-lab-tree li').count()) === 6);
+const status = await demo.locator('.react-lab-status').innerText();
+await check('screen Home 412 × 917, no format warning', /Screen: Home \(412 × 917\)/.test(status) && /Format warnings: none/.test(status));
+await check('no error line', (await demo.locator('.react-lab-error').count()) === 0);
+await demo.close();
+JS
+cat > "$W47/s10.js" <<'JS'
+const demo = await browser.contexts()[0].newPage();
+demo.setDefaultTimeout(8000);
+const urls = [];
+demo.on('request', (r) => urls.push(r.url()));
+await demo.addInitScript(() => document.addEventListener('securitypolicyviolation', (e) => (window.__violations = (window.__violations || []).concat(e.violatedDirective + ' ' + e.blockedURI))));
+await demo.goto('http://127.0.0.1:8146/index.html');
+await demo.getByRole('button', { name: 'File format (SDUI)' }).click();
+await demo.locator('.react-lab-tree li').first().waitFor();
+const area = demo.locator('textarea');
+const original = await area.inputValue();
+await area.fill('{ broken');
+await demo.locator('.react-lab-error').waitFor();
+await area.fill(original);
+await demo.locator('.react-lab-error').waitFor({ state: 'detached' });
+await demo.getByRole('button', { name: 'Examples', exact: true }).click();
+await demo.waitForTimeout(500);
+console.log(urls.join('\n'));
+const outside = urls.filter((u) => !u.startsWith('blob:'));
+await check('only the page URL was requested (the blob: ones are the sandbox Worker)', outside.length === 1 && outside[0] === 'http://127.0.0.1:8146/index.html', outside.length + ' request(s)');
+await check('no securitypolicyviolation', (await demo.evaluate(() => window.__violations || [])).length === 0);
+await demo.close();
+JS
+```
+
+| Step | Action | Expected |
+| --- | --- | --- |
+| R47.1 | **The demo and the two copies.** Run the setup block above, then: `for f in index sem-hash sem-blob; do curl -s -o /dev/null -w '%{http_code} ' http://127.0.0.1:8146/$f.html; done; echo`; `for f in index sem-hash; do grep -o "script-src[^;]*" "$REPO/dist-viewer-demo/$f.html" | grep -cF -- "$HASH"; done`; `grep -c "worker-src 'self';" "$REPO"/dist-viewer-demo/sem-blob.html`. | **Screen:** the build prints `built in`; the first command prints `200 200 200`; the second prints `1` and `0` (the hash is in the `script-src` of `index.html` and not in that of `sem-hash.html`); the third prints `1`. **Disk:** only `dist-viewer-demo/` and `$W47` change. |
+| R47.2 | **The page's CSP.** `node scripts/testing/cloud.mjs run < "$W47/s2.js"`. | **Screen:** the four checks pass: the `<meta>` CSP of the demo has `worker-src 'self' blob:`, has in `script-src` the hash that `viewer/PACKAGE-README.md` quotes, has `connect-src 'none'` and has neither `trusted-types` nor `unsafe-`. |
+| R47.3 | **Drawing the format.** `node scripts/testing/cloud.mjs run < "$W47/s3.js"`, then open the crop `$W47/format.png`. | **Screen:** the checks pass: **File format (SDUI)** shows six rows in the tree (Column, Continue, Skip, FAB, Column, Sign in), the buttons nested under their columns, "Screen: Home (412 × 917), 6 instances", "Format warnings: none" and no error line (the `Warnings:` line above it is the viewer's own and is not evaluated here). The crop shows a phone-shaped screen with a filled **Continue** button and a **Skip** link at the top, a **+** button at the bottom right and a tonal **Sign in** button on the bottom edge. |
+| R47.4 | **Editing the text.** `node scripts/testing/cloud.mjs run < "$W47/s4.js"`. | **Screen:** the checks pass: with **Continue** selected in the tree, changing its label to `Proceed` in the text area redraws it (the tree shows **Proceed**, the properties show **Proceed**) and the same instance stays selected (`Selection: m2`); no error line. The crop `$W47/proceed.png` shows the new label. |
+| R47.5 | **A plugin error.** `node scripts/testing/cloud.mjs run < "$W47/s5.js"`. | **Screen:** the checks pass: broken JSON (`{ broken`) gives an error line with `plugin-failed` and a `line:column`; the tree keeps its six rows (the last screen stays); the **Examples** dataset still draws with no error. |
+| R47.6 | **A plugin warning.** `node scripts/testing/cloud.mjs run < "$W47/s6.js"`. | **Screen:** the checks pass: changing the FAB's `type` to `Nope` gives "Format warnings: floating[0]: the type "Nope" is not known and was left out", no error line, and five rows in the tree. |
+| R47.7 | **No bootstrap hash.** `node scripts/testing/cloud.mjs run < "$W47/s7.js"` (the page `sem-hash.html`). | **Screen:** the checks pass: within about 6 s (the frame never says it is ready) the error line is `sandbox-unavailable` with the message of the decision: the three requirements (`script-src` with the hash, `worker-src` with `blob:`, `trusted-types` with `mapping-viewer` and `default`); **Examples** still draws with no error. |
+| R47.8 | **No `blob:` in `worker-src`.** `node scripts/testing/cloud.mjs run < "$W47/s8.js"` (the page `sem-blob.html`). | **Screen:** the checks pass: the error line is `sandbox-unavailable` with the same message (at once: the page refuses the Worker); **Examples** still draws with no error. |
+| R47.9 | **Over `file://`.** `node scripts/testing/cloud.mjs run < "$W47/s9.js"` (the page `$REPO/dist-viewer-demo/index.html`, opened directly). | **Screen:** the checks pass: the format draws as in R47.3 (six rows, "Screen: Home (412 × 917)", "Format warnings: none") and there is no error line. |
+| R47.10 | **No network.** `node scripts/testing/cloud.mjs run < "$W47/s10.js"`, then stop the server: `kill $(cat "$W47/http.pid")`. | **Screen:** the checks pass: through the format, a broken text and back, and **Examples**, the page asked for no URL other than its own (the `blob:` URLs are the sandbox Worker's), and no `securitypolicyviolation` fired. |
+
+R47 changes nothing in a project; no other script uses its files.
+
 ### On-demand scripts (manual)
 
-**Entry criterion.** The main test scripts (R0 to R46) are made for the cloud agent to run on its own. A test goes here when it needs the owner's interaction and is **not very relevant** (the rule is in the conventions at the start of this section). These test scripts **only run when the owner asks**, in an on-demand session: they never enter the full round or the directed one, and outside the requested session they do not even appear in the report. The codes and the content do not change. R0.5, R6.2 and R3.6a have already moved here (RF, RA and RQ), by the owner's decision, after not working on their own in a round without interaction.
+**Entry criterion.** The main test scripts (R0 to R47) are made for the cloud agent to run on its own. A test goes here when it needs the owner's interaction and is **not very relevant** (the rule is in the conventions at the start of this section). These test scripts **only run when the owner asks**, in an on-demand session: they never enter the full round or the directed one, and outside the requested session they do not even appear in the report. The codes and the content do not change. R0.5, R6.2 and R3.6a have already moved here (RF, RA and RQ), by the owner's decision, after not working on their own in a round without interaction.
 
 #### RP — Installed app (PWA)
 

@@ -1,6 +1,6 @@
 // @vitest-environment node
-// Closure of the `mapping-viewer` package declarations: every package that the `.d.ts` of the two
-// entries import must be in `dependencies` or `peerDependencies` of the manifest, otherwise the
+// Closure of the `mapping-viewer` package declarations: every package that the `.d.ts` of the three
+// entries (`.`, `./react` and `./formats`) import must be in `dependencies` or `peerDependencies` of the manifest, otherwise the
 // host with `skipLibCheck: false` gets TS2307 (and with `true` the types silently become `any`).
 import { posix } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -13,7 +13,7 @@ const manifest = packageJson as {
   peerDependencies?: Record<string, string>;
 };
 
-/** Emits the declarations of the two entries in memory (nothing goes to disk). */
+/** Emits the declarations of the three entries in memory (nothing goes to disk). */
 function emitDeclarations(): Map<string, string> {
   const configPath = ts.findConfigFile('viewer', ts.sys.fileExists, 'tsconfig.json');
   if (!configPath) throw new Error('viewer/tsconfig.json not found');
@@ -72,12 +72,15 @@ function resolveRelative(from: string, specifier: string, all: Map<string, strin
 }
 
 describe('mapping-viewer declarations', () => {
-  it('every package reachable from the two entries is declared in the manifest', () => {
+  it('every package reachable from the three entries is declared in the manifest', () => {
     const all = emitDeclarations();
     const roots = [...all.keys()].filter(
-      (f) => f.endsWith('/viewer/index.d.ts') || f.endsWith('/viewer/react.d.ts'),
+      (f) =>
+        f.endsWith('/viewer/index.d.ts') ||
+        f.endsWith('/viewer/react.d.ts') ||
+        f.endsWith('/viewer/formats.d.ts'),
     );
-    expect(roots).toHaveLength(2);
+    expect(roots).toHaveLength(3);
     const declared = new Set([
       ...Object.keys(manifest.dependencies ?? {}),
       ...Object.keys(manifest.peerDependencies ?? {}),

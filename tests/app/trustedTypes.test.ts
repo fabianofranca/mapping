@@ -25,6 +25,17 @@ describe('rules of the default Trusted Types policy', () => {
     }
   });
 
+  it('createHTML takes the sandbox document with its own CSP and refuses the one without it', () => {
+    const withoutMeta = SANDBOX_SRCDOC.replace(
+      /<meta http-equiv="Content-Security-Policy"[^>]*>/,
+      '',
+    );
+    expect(withoutMeta).not.toBe(SANDBOX_SRCDOC);
+    expect(SANDBOX_SRCDOC).toContain('Content-Security-Policy');
+    expect(createHTML(SANDBOX_SRCDOC)).toBe(SANDBOX_SRCDOC);
+    expect(createHTML(withoutMeta)).toBeNull();
+  });
+
   it('createScriptURL accepts only the exact service worker URL', () => {
     expect(SERVICE_WORKER_URL).toBe('./sw.js');
     expect(createScriptURL('./sw.js')).toBe('./sw.js');
