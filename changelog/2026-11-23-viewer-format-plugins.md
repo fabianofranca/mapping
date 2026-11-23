@@ -1,4 +1,4 @@
-# The viewer reads a file through the format plugin — [Não lançado] (épico `epic/viewer-format-plugins`, PR #2788, MCP 0.59.1, schema v24)
+# The viewer reads a file through the format plugin — 2026-11-23 (épico `epic/viewer-format-plugins`, PR #2788, MCP 0.59.2, schema v24)
 
 ## Adicionado
 
@@ -14,7 +14,7 @@
 - The sandbox document of a format plugin (`SANDBOX_SRCDOC`) carries a CSP of its own in a `<meta>` (`default-src 'none'; script-src <hash> blob:; worker-src blob:; connect-src 'none'`), enforced together with the host's: in a page whose CSP allows the network the plugin still has none (`WebTransport` and a dynamic `import()` included). The app does not change behavior. `SANDBOX_BOOTSTRAP_HASH` is a constant checked against the build's hash by a test, and a failure of the sandbox itself (a refused frame or Worker, a frame that never says it is ready) is tagged `phase: 'sandbox'`; the app words it as before.
 
 - A loaded library keeps the file formats of its specialization (`fileFormats`, with each plugin's text) and the specialization's JSON. `loadLibraryFromUrl` of the viewer also fetches each format's plugin as text; a plugin that does not arrive is left out and reported in `problems`. Nothing else in the library changes, and `source`, `screenFromSource` and `origins` behave as before.
-- The MCP server version is 0.59.1 (a patch: no tool, operation or message changed).
+- The MCP server version is 0.59.2 (a patch: no tool, operation or message changed).
 - The `mapping-viewer/formats` entry turns zod's `jitless` mode on (as the app does), so a host page whose CSP has no `unsafe-eval` sees no `securitypolicyviolation` from zod's `new Function` probe when the entry loads.
 
 ## Corrigido
