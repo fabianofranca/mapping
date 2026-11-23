@@ -102,6 +102,25 @@ export const FONT_MONO_TOKEN = 'font-mono';
 export const BUILTIN_TOKENS: readonly string[] = [FONT_SANS_TOKEN, FONT_MONO_TOKEN];
 /** Pattern of a token name. */
 export const TOKEN_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+/** Pattern of a token reference in a component: a name, or `name.field` for one field of a composite. */
+export const TOKEN_REFERENCE_PATTERN = /^[a-z0-9][a-z0-9-]*(\.[a-z][a-zA-Z0-9]*)?$/;
+
+/** The objects of a component that take a whole composite (`"font": { "$token": "title" }`). */
+export type WholeObject = 'font' | 'shadow';
+
+/** The composite fields that each object takes, with the kind of value each must have. */
+export const WHOLE_FIELD_KINDS: Readonly<
+  Record<WholeObject, Readonly<Record<string, TokenKind>>>
+> = {
+  font: {
+    family: 'family',
+    size: 'number',
+    weight: 'number',
+    lineHeight: 'number',
+    letterSpacing: 'number',
+  },
+  shadow: { color: 'color', x: 'number', y: 'number', blur: 'number', spread: 'number' },
+};
 
 /** Family when the host provides none. */
 const DEFAULT_SANS = 'sans-serif';
@@ -319,6 +338,47 @@ export function substituteTokens(node: unknown, tokens: ResolvedTokens): unknown
   return isTokenRef(node) ? resolveRef(node, tokens) : substitute(node, tokens);
 }
 
+/**
+ * `{ "$token": "<composite>", …explicit keys }` as the object that `key` (`font` or `shadow`) holds:
+ * the composite's fields valid for it, with the explicit keys winning. None when the name is not a
+ * composite of the table (a scalar or a missing name keep the `$token` as it is).
+ */
+function spreadComposite(
+  key: WholeObject,
+  node: unknown,
+  tokens: ResolvedTokens,
+): Record<string, unknown> | undefined {
+  if (!isObj(node) || typeof node.$token !== 'string') return undefined;
+  const name = node.$token;
+  const prefix = `${name}.`;
+  if (
+    Object.hasOwn(tokens, name) ||
+    !Object.keys(tokens).some((k) => k.startsWith(prefix))
+  )
+    return undefined;
+  const fields: Record<string, unknown> = {};
+  for (const field of Object.keys(WHOLE_FIELD_KINDS[key])) {
+    const value = tokens[prefix + field];
+    if (value !== undefined) fields[field] = value;
+  }
+  const explicit = Object.fromEntries(
+    Object.entries(node).filter(([k]) => k !== '$token'),
+  );
+  return { ...fields, ...(substitute(explicit, tokens) as Record<string, unknown>) };
+}
+
+/** The value of `font` or `shadow` (an object or a list of shadows) when it reads a whole composite. */
+function wholeComposite(key: string, value: unknown, tokens: ResolvedTokens): unknown {
+  if (key === 'font') return spreadComposite('font', value, tokens);
+  if (key !== 'shadow') return undefined;
+  if (!Array.isArray(value)) return spreadComposite('shadow', value, tokens);
+  return value.map(
+    (item) =>
+      spreadComposite('shadow', item, tokens) ??
+      (isTokenRef(item) ? (resolveRef(item, tokens) ?? item) : substitute(item, tokens)),
+  );
+}
+
 function substitute(node: unknown, tokens: ResolvedTokens): unknown {
   if (Array.isArray(node)) {
     // A list item (`cornerRadius`, `dash`) does not vanish: a `$token` with no value stays as it is.
@@ -329,7 +389,10 @@ function substitute(node: unknown, tokens: ResolvedTokens): unknown {
   if (typeof node !== 'object' || node === null) return node;
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(node)) {
-    if (isTokenRef(value)) {
+    const whole = wholeComposite(key, value, tokens);
+    if (whole !== undefined) {
+      out[key] = whole;
+    } else if (isTokenRef(value)) {
       const resolved = resolveRef(value, tokens);
       if (resolved !== undefined) out[key] = resolved;
     } else {
@@ -342,7 +405,8 @@ function substitute(node: unknown, tokens: ResolvedTokens): unknown {
 function hasTokenRef(node: unknown): boolean {
   if (Array.isArray(node)) return node.some(hasTokenRef);
   if (typeof node !== 'object' || node === null) return false;
-  if (isTokenRef(node)) return true;
+  // Also a `font`/`shadow` that reads a whole composite next to its other keys.
+  if (isTokenRef(node) || '$token' in node) return true;
   return Object.values(node).some(hasTokenRef);
 }
 
@@ -376,6 +440,19 @@ export function applyTokens(
 export function defaultFontFamily(tokens: ResolvedTokens | undefined): string {
   const sans = tokens?.[FONT_SANS_TOKEN];
   return typeof sans === 'string' ? sans : DEFAULT_SANS;
+}
+
+/** The notices (`deprecated`, `removed`…) of the token `name`; empty when it has none or does not exist. */
+export function tokenNotices(
+  tokens: SpecTokens | undefined,
+  name: string,
+): readonly TokenNotice[] {
+  const entry: unknown =
+    tokens !== undefined && Object.hasOwn(tokens.values, name)
+      ? tokens.values[name]
+      : undefined;
+  if (!isObj(entry) || !('$value' in entry) || !Array.isArray(entry.$notices)) return [];
+  return entry.$notices as readonly TokenNotice[];
 }
 
 /** Name of the kind of value, for the messages. */

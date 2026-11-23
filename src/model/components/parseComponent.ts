@@ -39,7 +39,13 @@ import {
   NONE_JUSTIFIES,
   isIntrinsicSize,
 } from './layoutValues';
-import { TOKEN_NAME_PATTERN, isLiteralColor, type TokenKind } from './tokens';
+import {
+  TOKEN_NAME_PATTERN,
+  TOKEN_REFERENCE_PATTERN,
+  isLiteralColor,
+  type TokenKind,
+  type WholeObject,
+} from './tokens';
 import { isRecord } from '../isRecord';
 import { expandVariables, variableSyntaxPaths } from './variables';
 import type { ModelMessageTemplateCode } from '../messages';
@@ -78,6 +84,11 @@ export type TokenRef = {
   kind: TokenKind;
   /** The position accepts a token of any kind (a `component` node's `values`): only the name is checked. */
   anyKind?: true;
+  /**
+   * The reference is the whole composite that a `font` or a `shadow` reads (`"font": { "$token": "title" }`):
+   * `kind` is unused, and the library checks that the token is a composite with fields valid for that object.
+   */
+  whole?: WholeObject;
 };
 
 type Rec = Record<string, unknown>;
@@ -485,8 +496,8 @@ function checkTokenExpr(value: Rec, path: string, check: Check, out: Ctx): void 
       '$token is only valid where a color, a number or a font family is expected',
     );
   const name = value.$token;
-  if (typeof name !== 'string' || !TOKEN_NAME_PATTERN.test(name))
-    add(out, at, 'expected a token name ([a-z0-9][a-z0-9-]*)');
+  if (typeof name !== 'string' || !TOKEN_REFERENCE_PATTERN.test(name))
+    add(out, at, 'expected a token name ([a-z0-9][a-z0-9-]*) or name.field');
   else if (kind !== undefined)
     out.refs?.push(
       check.anyTokenKind === true
@@ -513,8 +524,12 @@ function checkTokenOver(
   const at = join(path, 'over');
   if (typeof over !== 'string') return add(out, at, 'expected a token name or a color');
   if (isLiteralColor(over)) return;
-  if (!TOKEN_NAME_PATTERN.test(over))
-    return add(out, at, 'expected a token name ([a-z0-9][a-z0-9-]*) or a color');
+  if (!TOKEN_REFERENCE_PATTERN.test(over))
+    return add(
+      out,
+      at,
+      'expected a token name ([a-z0-9][a-z0-9-]*), name.field or a color',
+    );
   out.refs?.push({ path: at, name: over, kind: 'color' });
 }
 
@@ -805,7 +820,19 @@ function checkGap(
     checkExpr(value.padding, join(path, 'padding'), checkNumber, out);
 }
 
-/** A shadow (object): `color`, `x`, `y`, `blur` and `spread`. */
+/**
+ * The `$token` of a `font` or of a shadow: the name of a composite whose fields give the keys the
+ * object leaves out. Collected as a whole-composite reference, for the library to check.
+ */
+function checkWholeToken(value: Rec, path: string, whole: WholeObject, out: Ctx): void {
+  const at = join(path, '$token');
+  const name = value.$token;
+  if (typeof name !== 'string' || !TOKEN_NAME_PATTERN.test(name))
+    return add(out, at, 'expected a token name ([a-z0-9][a-z0-9-]*) or name.field');
+  out.refs?.push({ path: at, name, kind: 'number', anyKind: true, whole });
+}
+
+/** A shadow (object): `color`, `x`, `y`, `blur` and `spread`; or `$token` (a composite) with the keys that win. */
 function checkShadowItem(
   value: unknown,
   path: string,
@@ -813,9 +840,10 @@ function checkShadowItem(
   nodeType?: string,
 ): void {
   if (!isRecord(value)) return add(out, path, 'expected an object');
-  checkKeys(value, ['color', 'x', 'y', 'blur', 'spread', 'inner'], path, out);
-  if (!('color' in value)) add(out, join(path, 'color'), 'required field');
-  else checkExpr(value.color, join(path, 'color'), checkColor, out);
+  checkKeys(value, ['$token', 'color', 'x', 'y', 'blur', 'spread', 'inner'], path, out);
+  if ('$token' in value) checkWholeToken(value, path, 'shadow', out);
+  else if (!('color' in value)) add(out, join(path, 'color'), 'required field');
+  if ('color' in value) checkExpr(value.color, join(path, 'color'), checkColor, out);
   if ('x' in value) checkLiteralOrToken(value.x, join(path, 'x'), checkNumber, out);
   if ('y' in value) checkLiteralOrToken(value.y, join(path, 'y'), checkNumber, out);
   if ('blur' in value)
@@ -879,7 +907,8 @@ function checkFont(value: unknown, path: string, out: Ctx): void {
     ellipsis: checkBoolean,
     maxLines: checkPositiveInteger,
   };
-  checkKeys(value, Object.keys(specs), path, out);
+  checkKeys(value, ['$token', ...Object.keys(specs)], path, out);
+  if ('$token' in value) checkWholeToken(value, path, 'font', out);
   for (const [key, check] of Object.entries(specs)) {
     if (!(key in value)) continue;
     if (key === 'italic' || key === 'ellipsis')

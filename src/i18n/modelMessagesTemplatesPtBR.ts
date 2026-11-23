@@ -85,6 +85,16 @@ export const templatePtBR: {
     'o token "{name}" é família de fonte, mas aqui se espera cor',
   'model.library.tokenWrongKind.family.number':
     'o token "{name}" é família de fonte, mas aqui se espera número',
+  'model.library.tokenIsComposite':
+    'o token "{name}" é composto; leia um campo ({name}.<campo>)',
+  'model.library.tokenNoField': 'o token "{name}" não tem o campo "{field}"',
+  'model.library.tokenNotComposite': 'o token "{name}" não é composto',
+  'model.library.tokenFieldNotKey.font':
+    'o campo "{field}" do token "{name}" não é uma chave de font',
+  'model.library.tokenFieldNotKey.shadow':
+    'o campo "{field}" do token "{name}" não é uma chave de shadow',
+  'model.library.tokenDeprecated': 'o token "{name}" está obsoleto: {note}',
+  'model.library.tokenRemoved': 'o token "{name}" foi removido: {note}',
   'model.library.versionOtherSpec':
     'a versão anterior é da especialização "{previous}", não "{id}"',
   'model.library.versionNotGrown':
@@ -548,7 +558,8 @@ export const templatePtBR: {
   'model.component.expectedWidthHeight': 'esperava "width" ou "height"',
   'model.component.tokenOnlyWhere':
     '$token só vale onde se espera cor, número ou família de fonte',
-  'model.component.expectedTokenName': 'esperava nome de token ([a-z0-9][a-z0-9-]*)',
+  'model.component.expectedTokenName':
+    'esperava nome de token ([a-z0-9][a-z0-9-]*) ou nome.campo',
   'model.component.alphaOnlyColor': 'alpha só vale em $token de cor',
   'model.component.exprManyOperators': 'expressão com mais de um operador: {ops}',
   'model.component.required': 'campo obrigatório',
@@ -601,7 +612,7 @@ export const templatePtBR: {
   'model.component.overOnlyColor': 'over só vale em $token de cor',
   'model.component.expectedTokenOrColor': 'esperava nome de token ou cor',
   'model.component.expectedTokenNameOrColor':
-    'esperava nome de token ([a-z0-9][a-z0-9-]*) ou cor',
+    'esperava nome de token ([a-z0-9][a-z0-9-]*), nome.campo ou cor',
   'model.component.emptyName': 'nome vazio',
   'model.component.providedOnlyColor': '$provided só vale onde se espera cor',
   'model.component.expectedProvidedName':
