@@ -68,6 +68,8 @@ export interface FormatScreenOptions {
    * (the theme's stacks), which is what it draws with when it gets none.
    */
   readonly fonts?: HostFonts;
+  /** The same `drawingMode` you pass to `createViewer` (a mode name or an axis -> entry map), so the boxes are sized with the tokens the viewer draws. Absent: the first entry of each axis. */
+  readonly drawingMode?: string | Readonly<Record<string, string>>;
 }
 
 /**

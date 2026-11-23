@@ -92,6 +92,19 @@ async function screensOf(operations: Operations, library = libraryOf()) {
   });
 }
 
+describe('formatScreens drawing mode', () => {
+  it('accepts the drawing mode the viewer draws with and still gives the screens', async () => {
+    const result = await formatScreens(libraryOf(), 'text', {
+      format: 'slots/screen',
+      measure: approximateMeasurer,
+      run: runnerOf({ SCREEN: parsed([container('$home'), bar('$a', '$home')]) }),
+      drawingMode: { density: 'compact' },
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.screens).toHaveLength(1);
+  });
+});
+
 describe('formatScreens', () => {
   it('gives one screen per container with component markings, in project order', async () => {
     const result = await screensOf([

@@ -7,7 +7,7 @@ import { effectiveDirection } from './direction';
 import { applyFormatExample, type FormatExampleInput } from './formatChecks';
 import type { FormatFailureCode, FormatRunner } from './formatPlugin';
 import { withHostTokens, type Library } from './components/library';
-import type { HostFonts } from './components/tokens';
+import type { HostFonts, TokenSelection } from './components/tokens';
 import type { TextMeasurer } from './components/instantiate';
 import type { Instance, Screen } from './components/screen';
 import { parseSpec, type Spec } from './spec';
@@ -49,6 +49,11 @@ export interface FormatScreenOptions {
    * box that hugs its text fits the drawing. Absent: the model's own defaults.
    */
   readonly fonts?: HostFonts;
+  /**
+   * The mode of the drawing tokens the boxes are sized with (a string or an axis -> entry map); pass the one the
+   * viewer draws with, so a box that hugs its text fits the drawing. Absent: the first entry of each axis.
+   */
+  readonly drawingMode?: string | TokenSelection;
 }
 
 export interface FormatScreenResult {
@@ -311,7 +316,9 @@ async function build(
     format: declared,
     pluginText: found.pluginText,
     components: componentsOf(
-      options.fonts === undefined ? library : withHostTokens(library, options.fonts),
+      options.fonts === undefined && options.drawingMode === undefined
+        ? library
+        : withHostTokens(library, options.fonts ?? {}, options.drawingMode),
       spec,
     ),
   };
