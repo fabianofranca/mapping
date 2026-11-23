@@ -1,13 +1,13 @@
-# Migração para o Preact 11 — [Não lançado] (épico `epic/preact-11`)
+# Migration to Preact 11 — [Não lançado] (épico `epic/preact-11`)
 
 ## Pendências
 
-Nenhuma.
+None.
 
 ## Sincronização
 
-Sem impacto: troca de versão do framework, sem mudar componente, token nem ícone; nada a gravar no artefato.
+No impact: a framework version swap that changes no component, token or icon; nothing to write to the artifact.
 
 ## Ficou sem gravar
 
-Nada.
+None.
