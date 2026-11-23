@@ -31,6 +31,23 @@ afterEach(cleanup);
 
 const noop = () => {};
 
+describe('Proposals window: folder unavailable (R12.20)', () => {
+  it('says the folder is unavailable, with the way out, instead of the empty state alone', async () => {
+    const h = await openReviewHarness();
+    renderInEditor(h, <ProposalList onHelp={noop} onScan={noop} />);
+    expect(screen.queryByText('Folder unavailable')).toBeNull();
+    await act(async () => {
+      const gone = (): never => {
+        throw new DOMException('moved', 'NotFoundError');
+      };
+      h.root.values = gone;
+      await h.session.proposals.scan({ full: true });
+    });
+    expect(screen.getByText('Folder unavailable')).toBeTruthy();
+    expect(screen.getByText(/Locate folder…/)).toBeTruthy();
+  });
+});
+
 describe('Proposals window: list', () => {
   it('empty state explains how proposals arrive', async () => {
     const h = await openReviewHarness();

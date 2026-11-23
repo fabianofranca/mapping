@@ -162,6 +162,64 @@ describe('ProposalStore: write with file check', () => {
   });
 });
 
+describe('ProposalStore: project folder moved or gone (R12.20)', () => {
+  /** The folder was moved with the project open: the stale root handle fails with `NotFoundError`. */
+  const strand = (root: Harness['root']) => {
+    const gone = () => {
+      throw new DOMException('folder not found', 'NotFoundError');
+    };
+    vi.spyOn(root, 'getDirectoryHandle').mockImplementation(gone);
+    vi.spyOn(root, 'getFileHandle').mockImplementation(gone);
+    vi.spyOn(root, 'values').mockImplementation(gone);
+    // The handles already open under the root go stale too.
+    const proposals = root.dirs.get('proposals');
+    if (proposals) vi.spyOn(proposals, 'values').mockImplementation(gone);
+  };
+
+  it('keeps the list and raises no "deleted" notice; says the folder is unavailable', async () => {
+    const { proposal } = richScenario();
+    const { session, root } = await openHarness({ proposals: [proposal] });
+    strand(root);
+    for (const full of [true, false]) {
+      expect(await session.proposals.scan({ full })).toEqual({
+        added: [],
+        changed: [],
+        removed: [],
+        unavailable: true,
+      });
+    }
+    expect(session.proposals.list.value.map((p) => p.id)).toEqual(['P1']);
+    expect(session.proposals.notices.value).toEqual([]);
+    expect(session.proposals.unavailable.value).toBe(true);
+  });
+
+  it('a folder that comes back is checked normally again', async () => {
+    const { proposal } = richScenario();
+    const { session, root } = await openHarness({ proposals: [proposal] });
+    strand(root);
+    await session.proposals.scan();
+    vi.restoreAllMocks();
+    const found = await session.proposals.scan();
+    expect(found).toEqual({ added: [], changed: [], removed: [] });
+    expect(session.proposals.unavailable.value).toBe(false);
+    expect(session.proposals.list.value).toHaveLength(1);
+  });
+
+  it('control: `proposals/` removed inside a reachable folder still drops the proposals', async () => {
+    const { proposal } = richScenario();
+    const { session, root } = await openHarness({ proposals: [proposal] });
+    root.dirs.delete('proposals');
+    expect(await session.proposals.scan()).toEqual({
+      added: [],
+      changed: [],
+      removed: ['P1'],
+    });
+    expect(session.proposals.list.value).toEqual([]);
+    expect(session.proposals.unavailable.value).toBe(false);
+    expect(session.proposals.notices.value.map((n) => n.kind)).toEqual(['removed']);
+  });
+});
+
 describe('ProposalStore: folder check', () => {
   it('notices the new, the changed and the deleted proposal; its own writes do not count', async () => {
     const { proposal, ids } = richScenario();

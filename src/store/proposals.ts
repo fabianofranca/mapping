@@ -119,6 +119,11 @@ export interface ProposalScan {
   readonly added: readonly string[];
   readonly changed: readonly string[];
   readonly removed: readonly string[];
+  /**
+   * Only present (`true`) when the project folder could not be reached (moved, renamed or
+   * deleted): nothing was checked and the list and the problems stay as they were.
+   */
+  readonly unavailable?: true;
 }
 
 export interface ProposalScanOptions {
@@ -143,6 +148,11 @@ interface Known {
 export interface ProposalStore {
   /** Readable proposals, the newest first. Each proposal keeps its object while it does not change. */
   readonly list: ReadonlySignal<readonly Proposal[]>;
+  /**
+   * The last scan could not reach the project folder (moved, renamed or deleted): the list is
+   * the last one read, not empty. Goes back to `false` when a scan reaches the folder again.
+   */
+  readonly unavailable: ReadonlySignal<boolean>;
   /** `proposal.json` files that could not be read (the proposal does not appear in the list). */
   readonly problems: ReadonlySignal<readonly ProposalProblem[]>;
   /** News from outside since opening or since `clearNotices` (the most recent last). */
@@ -508,8 +518,23 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
     }
   };
 
+  const unavailable = signal(false);
+
+  const rootReachable = async (): Promise<boolean> => {
+    if (!storage.rootAvailable) return true;
+    try {
+      return await storage.rootAvailable();
+    } catch {
+      return true;
+    }
+  };
+
   const scanNow = async (full: boolean): Promise<ProposalScan> => {
     const scan: MutableScan = { added: [], changed: [], removed: [] };
+    // An unreachable root is not "every proposal was deleted": keep everything as it is.
+    const reachable = await rootReachable();
+    if (unavailable.value === reachable) unavailable.value = !reachable;
+    if (!reachable) return { ...scan, unavailable: true };
     const found = await proposalStamps(full ? new Set() : settledIds());
     if (found === null) return scan;
     const problemsBefore = problemsKey();
@@ -525,6 +550,7 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
 
   return {
     list,
+    unavailable,
     problems,
     notices,
     get: (id) => known.get(id)?.proposal ?? null,

@@ -32,3 +32,4 @@
 
 - A library with `tokens.axes` and no other tokens was drawn and proved as if it had no tokens.
 - A component that read a whole composite token where a scalar goes validated with no error; `validate_library` now refuses it.
+- With the project open and its folder moved, renamed or deleted, "Check the folder now" no longer empties the proposals list or raises "Proposal deleted outside the app": the list stays as it was and the window says the folder is unavailable and how to locate it again (R12.20).

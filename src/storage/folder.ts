@@ -562,6 +562,14 @@ export function createFolderStorage(
       return listFiles(cache, proposalDir(id));
     },
     statProposal: (id) => stamp(proposalFilePath(id)),
+    async rootAvailable() {
+      try {
+        await cache.root.values()[Symbol.asyncIterator]().next();
+        return true;
+      } catch (e) {
+        return !isNotFound(e);
+      }
+    },
     async stampProposals(skip) {
       const pairs = await mapDirEntries<readonly [string, string | null]>(
         cache,
