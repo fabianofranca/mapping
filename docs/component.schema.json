@@ -2450,8 +2450,19 @@
     "shadow_item": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["color"],
+      "anyOf": [
+        {
+          "required": ["color"]
+        },
+        {
+          "required": ["$token"]
+        }
+      ],
       "properties": {
+        "$token": {
+          "$ref": "#/$defs/tokenName",
+          "description": "The whole composite shadow token (fields color, x, y, blur, spread); the explicit keys next to it win. Which token and that it is a shadow composite is validate_library's job."
+        },
         "color": {
           "$ref": "#/$defs/expr_color"
         },
@@ -2508,6 +2519,10 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "$token": {
+          "$ref": "#/$defs/tokenName",
+          "description": "The whole composite font token (fields family, size, weight, lineHeight, letterSpacing); the explicit keys next to it win. That it is a font composite is validate_library's job."
+        },
         "family": {
           "$ref": "#/$defs/expr_string"
         },
@@ -4810,9 +4825,9 @@
       }
     },
     "tokenName": {
-      "description": "Name of a token of the specialization (specialization formatVersion 15; component formatVersion 4).",
+      "description": "Name of a token of the specialization (specialization formatVersion 15; component formatVersion 4). A dotted name (title.size) reads one field of a composite token (specialization formatVersion 23); whether the token exists and has that field is validate_library's job.",
       "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9-]*$"
+      "pattern": "^[a-z0-9][a-z0-9-]*(\\.[a-z][a-zA-Z0-9]*)?$"
     },
     "operand": {
       "description": "Operand of an operation or comparison (formatVersion 4): number, $field, $token, another operation, $if or $switch.",
