@@ -13,7 +13,7 @@ import { parseComponentText, type ComponentIssue } from './components/parseCompo
 import { type FrameNode, baseNode, translate } from './components/scene';
 import { renderOrder } from './components/screen';
 import { fitComponentSize, followedAxes, resolveSizing } from './components/sizing';
-import { resolveTokens } from './components/tokens';
+import { createTokenTables } from './components/tokens';
 import type { Size } from './geometry';
 import { type LibraryFile, type LibraryReport, validateLibrary } from './library';
 import {
@@ -383,11 +383,13 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
 
   // Gallery and Playground draw with the tokens (default mode) and the specialization's icons,
   // like the canvas; without this the text comes out black on gray and every icon is unknown.
-  const resolvedTokens = resolveTokens(library?.tokens, {});
+  const tokenTables = createTokenTables(library?.tokens, {});
+  const resolvedTokens = tokenTables.get(undefined);
   const resolvedIcons = library?.icons;
   const themed = (parsed: ComponentFile): ComponentFile => ({
     ...parsed,
     resolvedTokens,
+    tokenTables,
     ...(resolvedIcons === undefined ? {} : { resolvedIcons }),
   });
 

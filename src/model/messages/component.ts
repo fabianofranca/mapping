@@ -40,7 +40,9 @@ export const componentMessages = {
   'component.expectedWidthHeight': 'expected "width" or "height"',
   'component.tokenOnlyWhere':
     '$token is only valid where a color, a number or a font family is expected',
-  'component.expectedTokenName': 'expected a token name ([a-z0-9][a-z0-9-]*)',
+  'component.expectedTokenName':
+    'expected a token name ([a-z0-9][a-z0-9-]*) or name.field',
+  'component.expectedPlainTokenName': 'expected a token name ([a-z0-9][a-z0-9-]*)',
   'component.alphaOnlyColor': 'alpha is only valid on a color $token',
   'component.exprManyOperators': 'expression with more than one operator: {ops}',
   'component.required': 'required field',
@@ -94,7 +96,7 @@ export const componentMessages = {
   'component.overOnlyColor': 'over is only valid in a color $token',
   'component.expectedTokenOrColor': 'expected a token name or a color',
   'component.expectedTokenNameOrColor':
-    'expected a token name ([a-z0-9][a-z0-9-]*) or a color',
+    'expected a token name ([a-z0-9][a-z0-9-]*), name.field or a color',
   'component.emptyName': 'empty name',
   'component.providedOnlyColor': '$provided is only valid where a color is expected',
   'component.expectedProvidedName':

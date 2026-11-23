@@ -958,8 +958,7 @@ function slotFacts(
 function draw(input: DrawInput): Drawn {
   const { mc, markingId, containerId, rect, valueWarnings, received } = input;
   const { measure, mode, provided, density, direction, anchor, container } = input;
-  const tokens =
-    mode === undefined ? undefined : mc.component.resolvedTokensByMode?.[mode];
+  const tokens = mode === undefined ? undefined : mc.component.tokenTables?.get(mode);
   const screen = mc.component.screen;
   // In screen pixels the drawing measures the component's `size`, at the origin (the canvas anchors
   // it) and does not scale with the density, just as it does not scale with the zoom.

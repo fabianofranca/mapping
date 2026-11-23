@@ -102,6 +102,25 @@ export const FONT_MONO_TOKEN = 'font-mono';
 export const BUILTIN_TOKENS: readonly string[] = [FONT_SANS_TOKEN, FONT_MONO_TOKEN];
 /** Pattern of a token name. */
 export const TOKEN_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+/** Pattern of a token reference in a component: a name, or `name.field` for one field of a composite. */
+export const TOKEN_REFERENCE_PATTERN = /^[a-z0-9][a-z0-9-]*(\.[a-z][a-zA-Z0-9]*)?$/;
+
+/** The objects of a component that take a whole composite (`"font": { "$token": "title" }`). */
+export type WholeObject = 'font' | 'shadow';
+
+/** The composite fields that each object takes, with the kind of value each must have. */
+export const WHOLE_FIELD_KINDS: Readonly<
+  Record<WholeObject, Readonly<Record<string, TokenKind>>>
+> = {
+  font: {
+    family: 'family',
+    size: 'number',
+    weight: 'number',
+    lineHeight: 'number',
+    letterSpacing: 'number',
+  },
+  shadow: { color: 'color', x: 'number', y: 'number', blur: 'number', spread: 'number' },
+};
 
 /** Family when the host provides none. */
 const DEFAULT_SANS = 'sans-serif';
@@ -319,6 +338,47 @@ export function substituteTokens(node: unknown, tokens: ResolvedTokens): unknown
   return isTokenRef(node) ? resolveRef(node, tokens) : substitute(node, tokens);
 }
 
+/**
+ * `{ "$token": "<composite>", …explicit keys }` as the object that `key` (`font` or `shadow`) holds:
+ * the composite's fields valid for it, with the explicit keys winning. None when the name is not a
+ * composite of the table (a scalar or a missing name keep the `$token` as it is).
+ */
+function spreadComposite(
+  key: WholeObject,
+  node: unknown,
+  tokens: ResolvedTokens,
+): Record<string, unknown> | undefined {
+  if (!isObj(node) || typeof node.$token !== 'string') return undefined;
+  const name = node.$token;
+  const prefix = `${name}.`;
+  if (
+    Object.hasOwn(tokens, name) ||
+    !Object.keys(tokens).some((k) => k.startsWith(prefix))
+  )
+    return undefined;
+  const fields: Record<string, unknown> = {};
+  for (const field of Object.keys(WHOLE_FIELD_KINDS[key])) {
+    const value = tokens[prefix + field];
+    if (value !== undefined) fields[field] = value;
+  }
+  const explicit = Object.fromEntries(
+    Object.entries(node).filter(([k]) => k !== '$token'),
+  );
+  return { ...fields, ...(substitute(explicit, tokens) as Record<string, unknown>) };
+}
+
+/** The value of `font` or `shadow` (an object or a list of shadows) when it reads a whole composite. */
+function wholeComposite(key: string, value: unknown, tokens: ResolvedTokens): unknown {
+  if (key === 'font') return spreadComposite('font', value, tokens);
+  if (key !== 'shadow') return undefined;
+  if (!Array.isArray(value)) return spreadComposite('shadow', value, tokens);
+  return value.map(
+    (item) =>
+      spreadComposite('shadow', item, tokens) ??
+      (isTokenRef(item) ? (resolveRef(item, tokens) ?? item) : substitute(item, tokens)),
+  );
+}
+
 function substitute(node: unknown, tokens: ResolvedTokens): unknown {
   if (Array.isArray(node)) {
     // A list item (`cornerRadius`, `dash`) does not vanish: a `$token` with no value stays as it is.
@@ -329,7 +389,10 @@ function substitute(node: unknown, tokens: ResolvedTokens): unknown {
   if (typeof node !== 'object' || node === null) return node;
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(node)) {
-    if (isTokenRef(value)) {
+    const whole = wholeComposite(key, value, tokens);
+    if (whole !== undefined) {
+      out[key] = whole;
+    } else if (isTokenRef(value)) {
       const resolved = resolveRef(value, tokens);
       if (resolved !== undefined) out[key] = resolved;
     } else {
@@ -342,7 +405,8 @@ function substitute(node: unknown, tokens: ResolvedTokens): unknown {
 function hasTokenRef(node: unknown): boolean {
   if (Array.isArray(node)) return node.some(hasTokenRef);
   if (typeof node !== 'object' || node === null) return false;
-  if (isTokenRef(node)) return true;
+  // Also a `font`/`shadow` that reads a whole composite next to its other keys.
+  if (isTokenRef(node) || '$token' in node) return true;
   return Object.values(node).some(hasTokenRef);
 }
 
@@ -376,6 +440,19 @@ export function applyTokens(
 export function defaultFontFamily(tokens: ResolvedTokens | undefined): string {
   const sans = tokens?.[FONT_SANS_TOKEN];
   return typeof sans === 'string' ? sans : DEFAULT_SANS;
+}
+
+/** The notices (`deprecated`, `removed`…) of the token `name`; empty when it has none or does not exist. */
+export function tokenNotices(
+  tokens: SpecTokens | undefined,
+  name: string,
+): readonly TokenNotice[] {
+  const entry: unknown =
+    tokens !== undefined && Object.hasOwn(tokens.values, name)
+      ? tokens.values[name]
+      : undefined;
+  if (!isObj(entry) || !('$value' in entry) || !Array.isArray(entry.$notices)) return [];
+  return entry.$notices as readonly TokenNotice[];
 }
 
 /** Name of the kind of value, for the messages. */
@@ -426,13 +503,12 @@ export function tokenAxes(
   return new Map();
 }
 
-/** The entry that `selection` asks for on `axis` (the legacy string is the axis `mode`'s entry). */
+/** The entry that `selection` asks for on `axis` (a string is the entry of every axis that declares it). */
 function wantedEntry(
   selection: string | TokenSelection | undefined,
   axis: string,
 ): string | undefined {
-  if (typeof selection === 'string') return axis === MODE_AXIS ? selection : undefined;
-  return selection?.[axis];
+  return typeof selection === 'string' ? selection : selection?.[axis];
 }
 
 /** The entry of each declared axis: the selected one when the axis declares it, otherwise the default. */
@@ -574,8 +650,8 @@ function evaluateTokens(
 /**
  * The flat table (name → value) of a selection: scalars by name, each composite field as `name.field`,
  * aliases resolved in the same selection. `selection` is a map axis → entry; an axis it leaves out, or an
- * entry the axis does not declare, uses the axis default, without a warning. The legacy string is the entry
- * of the axis `mode`. `font-sans` and `font-mono` are worth what the host gave; the specialization can
+ * entry the axis does not declare, uses the axis default, without a warning. A string sets that entry on
+ * every axis that declares it (the legacy drawing mode). `font-sans` and `font-mono` are worth what the host gave; the specialization can
  * redefine them.
  */
 export function resolveTokens(
@@ -585,4 +661,47 @@ export function resolveTokens(
 ): ResolvedTokens {
   if (tokens === undefined) return evaluateTokens({ values: {} }, host, undefined).table;
   return evaluateTokens(tokens, host, selection).table;
+}
+
+/**
+ * The canonical form of a selection: the effective entry of each declared axis, sorted, as `axis=entry`
+ * lines. Two selections that draw the same share a key (another key order, a default spelled out, a string
+ * that names the same entries); no tokens gives an empty key.
+ */
+export function selectionKey(
+  tokens: SpecTokens | undefined,
+  selection: string | TokenSelection | undefined,
+): string {
+  if (tokens === undefined) return '';
+  return Object.entries(chosenEntries(tokens, selection))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([axis, entry]) => `${axis}=${entry}`)
+    .join('\n');
+}
+
+/** The tables of a specialization's tokens, one per selection, built on first use and then shared. */
+export interface TokenTables {
+  readonly get: (selection: string | TokenSelection | undefined) => ResolvedTokens;
+}
+
+/**
+ * A lazy per-selection cache of `resolveTokens`: nothing is precomputed (the product of the axes is never
+ * walked); the same effective selection returns the same table object.
+ */
+export function createTokenTables(
+  tokens: SpecTokens | undefined,
+  host: HostFonts,
+): TokenTables {
+  const tables = new Map<string, ResolvedTokens>();
+  return {
+    get: (selection) => {
+      const key = selectionKey(tokens, selection);
+      let table = tables.get(key);
+      if (table === undefined) {
+        table = resolveTokens(tokens, host, selection);
+        tables.set(key, table);
+      }
+      return table;
+    },
+  };
 }

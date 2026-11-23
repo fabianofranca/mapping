@@ -22,7 +22,12 @@ import {
 } from './origin';
 import { parseIconsFile, type IconSet } from './icons';
 import { parseComponent } from './parseComponent';
-import { resolveTokens, type HostFonts, type SpecTokens } from './tokens';
+import {
+  createTokenTables,
+  type HostFonts,
+  type SpecTokens,
+  type TokenSelection,
+} from './tokens';
 import { isRecord } from '../isRecord';
 
 import { isImagePath } from './imagePath';
@@ -433,9 +438,10 @@ function readTokens(raw: unknown): SpecTokens | undefined {
 export function withHostTokens(
   library: Library,
   fonts: HostFonts,
-  mode?: string,
+  mode?: string | TokenSelection,
 ): Library {
-  const resolvedTokens = resolveTokens(library.tokens, fonts, mode);
+  const tokenTables = createTokenTables(library.tokens, fonts);
+  const resolvedTokens = tokenTables.get(mode);
   const resolvedIcons = library.icons;
   const themed = (type: TypeDef): TypeDef =>
     type.component === undefined
@@ -445,6 +451,7 @@ export function withHostTokens(
           component: {
             ...type.component,
             resolvedTokens,
+            tokenTables,
             ...(resolvedIcons === undefined ? {} : { resolvedIcons }),
           },
         };

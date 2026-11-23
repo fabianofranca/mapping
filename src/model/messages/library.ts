@@ -87,6 +87,17 @@ export const libraryMessages = {
     'the token "{name}" is a font family, but a color is expected here',
   'library.tokenWrongKind.family.number':
     'the token "{name}" is a font family, but a number is expected here',
+  // Named values read by a component (stage #1900): a field by dot, a whole composite, notices
+  'library.tokenIsComposite':
+    'the token "{name}" is a composite; read one field ({name}.<field>)',
+  'library.tokenNoField': 'the token "{name}" has no field "{field}"',
+  'library.tokenNotComposite': 'the token "{name}" is not a composite',
+  'library.tokenFieldNotKey.font':
+    'field "{field}" of the token "{name}" is not a key of font',
+  'library.tokenFieldNotKey.shadow':
+    'field "{field}" of the token "{name}" is not a key of shadow',
+  'library.tokenDeprecated': 'the token "{name}" is deprecated: {note}',
+  'library.tokenRemoved': 'the token "{name}" is removed: {note}',
   // Version contract
   'library.versionOtherSpec':
     'the previous version is of the specialization "{previous}", not "{id}"',

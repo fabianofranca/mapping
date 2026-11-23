@@ -87,8 +87,10 @@ describe('resolveTokens with a selection', () => {
     expect(resolveTokens(modes, {}, 'dark').q).toBe(1);
   });
 
-  it('the legacy string does not select an axis that is not called mode', () => {
-    expect(table('dark').surface).toBe('#ffffff');
+  it('a string selects that entry on every axis that declares it (decision 16)', () => {
+    expect(table('dark').surface).toBe('#000000');
+    expect(table('high').outline).toBe('#333333');
+    expect(table('nope').surface).toBe('#ffffff');
   });
 
   it('plain values, the metadata wrapper and the built-ins', () => {

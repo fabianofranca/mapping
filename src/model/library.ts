@@ -18,7 +18,15 @@ import {
   type IconNodeRef,
   type IconSet,
 } from './components/icons';
-import { knownTokenKinds, type TokenKind } from './components/tokens';
+import {
+  knownTokenKinds,
+  tokenNotices,
+  WHOLE_FIELD_KINDS,
+  type NamedTokenKind,
+  type SpecTokens,
+  type TokenKind,
+  type WholeObject,
+} from './components/tokens';
 import { iconLiteralIssues, iconOptionIssues } from './libraryIcons';
 import {
   parseSpecText,
@@ -724,19 +732,112 @@ function wrongKindCode(found: TokenKind, expected: TokenKind): ModelMessageTempl
   return `library.tokenWrongKind.${found}.${expected}` as ModelMessageTemplateCode;
 }
 
-/** Each `$token` of the component exists in the specialization's `tokens` (or is built in) and has the position's kind. */
+type KnownKinds = ReadonlyMap<string, NamedTokenKind>;
+
+/** The reference `x` or `x.y` split at the first dot (the token and the composite field read). */
+function splitReference(name: string): { base: string; field: string | undefined } {
+  const dot = name.indexOf('.');
+  return dot < 0
+    ? { base: name, field: undefined }
+    : { base: name.slice(0, dot), field: name.slice(dot + 1) };
+}
+
+/** The error of reading `x` or `x.y` where a scalar goes, if there is one (the code and its parameters). */
+function scalarReadProblem(
+  known: KnownKinds,
+  ref: TokenRef,
+): [ModelMessageTemplateCode, Record<string, string>] | undefined {
+  const { base, field } = splitReference(ref.name);
+  const baseKind = known.get(base);
+  if (baseKind === undefined) return ['library.tokenMissing', { name: base }];
+  if (field === undefined)
+    return baseKind === 'composite'
+      ? ['library.tokenIsComposite', { name: base }]
+      : undefined;
+  return baseKind === 'composite' && known.has(ref.name)
+    ? undefined
+    : ['library.tokenNoField', { name: base, field }];
+}
+
+/** A scalar position reads the token `x` (a scalar) or `x.y` (a field of a composite) of the kind it expects. */
+function scalarReadCheck(
+  known: KnownKinds,
+  ref: TokenRef,
+  path: string,
+  out: Collector,
+): void {
+  const problem = scalarReadProblem(known, ref);
+  if (problem !== undefined) return out.error(path, ref.path, problem[0], problem[1]);
+  const kind = known.get(ref.name);
+  if (ref.anyKind !== true && kind !== ref.kind && kind !== 'composite' && kind)
+    out.error(path, ref.path, wrongKindCode(kind, ref.kind), { name: ref.name });
+}
+
+/** The fields of the composite `name`, as `known` lists them (each `name.field` with its kind). */
+function compositeFields(
+  known: KnownKinds,
+  name: string,
+): [field: string, kind: NamedTokenKind][] {
+  const prefix = `${name}.`;
+  return [...known]
+    .filter(([key]) => key.startsWith(prefix))
+    .map(([key, kind]) => [key.slice(prefix.length), kind]);
+}
+
+/** A `font` or a shadow reads the composite `x`: each of its fields is a key of that object, with the key's kind. */
+function wholeReadCheck(
+  known: KnownKinds,
+  ref: TokenRef & { whole: WholeObject },
+  path: string,
+  out: Collector,
+): void {
+  const baseKind = known.get(ref.name);
+  if (baseKind === undefined)
+    return out.error(path, ref.path, 'library.tokenMissing', { name: ref.name });
+  if (baseKind !== 'composite')
+    return out.error(path, ref.path, 'library.tokenNotComposite', { name: ref.name });
+  const code = `library.tokenFieldNotKey.${ref.whole}` as const;
+  for (const [field, found] of compositeFields(known, ref.name)) {
+    const expected = WHOLE_FIELD_KINDS[ref.whole][field];
+    if (expected === undefined)
+      out.error(path, ref.path, code, { name: ref.name, field });
+    else if (found !== expected && found !== 'composite')
+      out.error(path, ref.path, wrongKindCode(found, expected), {
+        name: `${ref.name}.${field}`,
+      });
+  }
+}
+
+/** A `deprecated` or `removed` notice of a token that a component reads: a warning, at the node. */
+function noticeWarnings(
+  tokens: SpecTokens | undefined,
+  base: string,
+  at: string,
+  path: string,
+  out: Collector,
+): void {
+  for (const notice of tokenNotices(tokens, base)) {
+    if (notice.kind === 'deprecated')
+      out.warning(path, at, 'library.tokenDeprecated', {
+        name: base,
+        note: notice.message,
+      });
+    else if (notice.kind === 'removed')
+      out.warning(path, at, 'library.tokenRemoved', { name: base, note: notice.message });
+  }
+}
+
+/**
+ * Each `$token` of the component exists in the specialization's `tokens` (or is built in) and has the
+ * position's kind: a scalar, a field of a composite (`x.y`), or the whole composite of a `font` or a
+ * shadow. Reading a token with a `deprecated` or `removed` notice is a warning.
+ */
 function tokenChecks(pkg: Package, path: string, out: Collector): void {
   const known = knownTokenKinds(pkg.spec.tokens);
   for (const ref of pkg.tokenRefs.get(path) ?? []) {
-    const kind = known.get(ref.name);
-    if (kind === undefined) {
-      out.error(path, ref.path, 'library.tokenMissing', { name: ref.name });
-    } else if (kind === 'composite') {
-      // A composite read by a component is stage NV2 (the dotted names and the whole composite).
-      continue;
-    } else if (ref.anyKind !== true && kind !== ref.kind) {
-      out.error(path, ref.path, wrongKindCode(kind, ref.kind), { name: ref.name });
-    }
+    if (ref.whole === undefined) scalarReadCheck(known, ref, path, out);
+    else wholeReadCheck(known, { ...ref, whole: ref.whole }, path, out);
+    noticeWarnings(pkg.spec.tokens, splitReference(ref.name).base, ref.path, path, out);
   }
 }
 
