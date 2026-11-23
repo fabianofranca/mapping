@@ -82,20 +82,22 @@ describe('drawing mode in the drawing of markings', () => {
     const p = withText('T1');
     const light = JSON.stringify(fillOf(p, catalog, 'T1'));
     expect(light).toContain('#ffffff');
-    const dark = JSON.stringify(fillOf(setProjectDrawingMode(p, 'dark'), catalog, 'T1'));
+    const dark = JSON.stringify(
+      fillOf(setProjectDrawingMode(p, { mode: 'dark' }), catalog, 'T1'),
+    );
     expect(dark).toContain('#111111');
   });
 
   it("the container that sets the mode beats the project's", () => {
     const catalog = tokenCatalog();
-    let p = setProjectDrawingMode(withText('T1'), 'dark');
-    p = setContainerDrawingMode(p, 'I1', 'light');
+    let p = setProjectDrawingMode(withText('T1'), { mode: 'dark' });
+    p = setContainerDrawingMode(p, 'I1', { mode: 'light' });
     expect(JSON.stringify(fillOf(p, catalog, 'T1'))).toContain('#ffffff');
   });
 
   it('an undeclared mode falls back to the first mode', () => {
     const catalog = tokenCatalog();
-    const p = setProjectDrawingMode(withText('T1'), 'solar');
+    const p = setProjectDrawingMode(withText('T1'), { mode: 'solar' });
     expect(JSON.stringify(fillOf(p, catalog, 'T1'))).toContain('#ffffff');
   });
 
@@ -105,14 +107,14 @@ describe('drawing mode in the drawing of markings', () => {
     const p = withText('T1');
     const first = cache(p, catalog, approximateMeasurer, 0).get('T1');
     const dark = cache(
-      setProjectDrawingMode(p, 'dark'),
+      setProjectDrawingMode(p, { mode: 'dark' }),
       catalog,
       approximateMeasurer,
       0,
     ).get('T1');
     expect(dark).not.toBe(first);
     const again = cache(
-      setProjectDrawingMode(setProjectDrawingMode(p, 'dark'), 'dark'),
+      setProjectDrawingMode(setProjectDrawingMode(p, { mode: 'dark' }), { mode: 'dark' }),
       catalog,
       approximateMeasurer,
       0,

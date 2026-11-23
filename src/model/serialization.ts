@@ -16,11 +16,17 @@ import { projectSchema } from './schema';
 import { parseSpecText, type Spec } from './spec';
 import {
   SCHEMA_VERSION,
+  type DrawingModeMap,
   type MarkingAnchor,
   type Project,
   type ProjectFile,
   type ProjectSpecialization,
 } from './types';
+
+/** An absent, `null` or empty drawing mode writes no key (v24). */
+function isEmptyMode(mode: DrawingModeMap | null | undefined): mode is null | undefined {
+  return mode == null || Object.keys(mode).length === 0;
+}
 
 /** The marking's anchor with the keys always in the same order and only the present ones. */
 function canonicalAnchor(a: MarkingAnchor): MarkingAnchor {
@@ -68,7 +74,7 @@ export function serialize(p: Project): string {
         { localPath: entry.localPath },
       ]),
     ),
-    ...(p.drawingMode === undefined ? {} : { drawingMode: p.drawingMode }),
+    ...(isEmptyMode(p.drawingMode) ? {} : { drawingMode: { ...p.drawingMode } }),
     ...(p.direction === undefined ? {} : { direction: p.direction }),
     pages: p.pages.map((g) => ({ id: g.id, name: g.name })),
     layers: p.layers.map((l) => ({
@@ -89,8 +95,11 @@ export function serialize(p: Project): string {
       markingColor: i.markingColor,
       locked: i.locked,
       source: i.source && { system: i.source.system, id: i.source.id, url: i.source.url },
-      background: i.background,
-      ...(i.drawingMode == null ? {} : { drawingMode: i.drawingMode }),
+      background:
+        typeof i.background === 'object' && i.background !== null
+          ? { $token: i.background.$token }
+          : i.background,
+      ...(isEmptyMode(i.drawingMode) ? {} : { drawingMode: { ...i.drawingMode } }),
       ...(i.direction == null ? {} : { direction: i.direction }),
       ...(i.density == null ? {} : { density: i.density }),
       ...(i.classes == null || Object.keys(i.classes).length === 0
@@ -149,7 +158,29 @@ export function serialize(p: Project): string {
 
 /** Text of `specs/<id>.json`: the specialization with 2-space indentation. */
 export function serializeSpec(spec: Spec): string {
-  return `${JSON.stringify(spec, null, 2)}\n`;
+  return `${JSON.stringify(spec, writtenSuggestions, 2)}\n`;
+}
+
+/**
+ * `JSON.stringify` replacer: a field or column whose `suggestions` came from `{ "$tokens": … }` items is written
+ * with the list as it was written (`suggestionsSource`), not the expanded texts.
+ */
+function writtenSuggestions(_key: string, value: unknown): unknown {
+  if (typeof value !== 'object' || value === null || !('suggestionsSource' in value)) {
+    return value;
+  }
+  const record = value as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [name, item] of Object.entries(record)) {
+    if (name === 'suggestionsSource') continue;
+    out[name] = name === 'suggestions' ? record.suggestionsSource : item;
+  }
+  return out;
+}
+
+/** The specialization as it is written in its file (JSON value): `$tokens` items kept, no `suggestionsSource`. */
+export function writtenSpec(spec: Spec): unknown {
+  return JSON.parse(serializeSpec(spec));
 }
 
 /** The project's `specs/` files (path → text), to write or export. */

@@ -1,3 +1,4 @@
+import { declaredDrawingAxes, selectionFromString } from './drawingMode';
 import {
   addBatchTypedAnnotation,
   createBatchAnnotation,
@@ -414,11 +415,21 @@ class ResultApplier {
         ...containerPageArg(rc, this.p, page, beside),
       };
     });
-    const settings = applyContainerSettings(made.project, made.id, op);
+    const settings = applyContainerSettings(made.project, made.id, {
+      ...op,
+      drawingMode: this.drawingModeOf(op.drawingMode),
+    });
     this.p = settings.project;
     const item: AppliedItem = { kind: 'i', id: made.id };
     this.created.push(item);
     this.define([op.as], [item], []);
+  }
+
+  /** A text is the entry of every declared axis that has it, else of the axis `mode`; a map stays. */
+  private drawingModeOf(mode: unknown): Record<string, string> | null | undefined {
+    if (typeof mode !== 'string')
+      return mode as Record<string, string> | null | undefined;
+    return selectionFromString(declaredDrawingAxes(this.p), mode) ?? { mode };
   }
 
   private createMarking(op: CreateMarkingOp): void {

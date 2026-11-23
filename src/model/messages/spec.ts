@@ -12,6 +12,16 @@ export const specMessages = {
   'spec.mustBeObject': 'must be an object',
   'spec.notEmpty': 'cannot be empty',
   'spec.colorInvalid': 'invalid color; use the format #RRGGBB',
+  'spec.backgroundInvalid':
+    'invalid background; use #RRGGBB or { "$token": "name" } with a token name',
+  // A token read as a color (container preset and origin screen background, `formatVersion` 23)
+  'spec.tokenMissing': 'the token "{name}" does not exist in the specialization tokens',
+  'spec.tokenNumberNotColor':
+    'the token "{name}" is a number, but a color is expected here',
+  'spec.tokenFamilyNotColor':
+    'the token "{name}" is a font family, but a color is expected here',
+  'spec.tokenCompositeNotColor':
+    'the token "{name}" is a composite, but a color is expected here',
   'spec.tagInvalid': 'invalid tag; use [a-z0-9-]+',
   'spec.keyInvalid': 'invalid key; use only [A-Za-z0-9_], without spaces',
   'spec.keyReserved': 'a key cannot start with "_" (reserved)',
@@ -46,6 +56,9 @@ export const specMessages = {
   'spec.suggestionsBlank': 'suggestions cannot be empty',
   'spec.suggestionsTrim': 'suggestions cannot have spaces at the start or the end',
   'spec.suggestionsRepeated': 'repeated suggestions',
+  'spec.suggestionsGroupEmpty': 'no token in group "{group}"',
+  'spec.suggestionsTokenNotText':
+    'the token "{name}" of group "{group}" is not fixed text',
   // Fields and columns
   'spec.columnTypeNotAllowed':
     '"{type}" is not allowed inside a table; use "string", "number", "date", "enum" or "ref"',
@@ -266,6 +279,28 @@ export const specMessages = {
   'spec.tokenModeValueShape': 'each mode must have text or a number',
   'spec.tokenModesSameType':
     'the modes of a token must have the same type (text or number)',
+  'spec.tokenModesAndAxes': 'use modes or axes, not both',
+  'spec.tokenAxisUndeclared': 'the axis "{axis}" is not declared',
+  'spec.tokenAxisReused': 'the axis "{axis}" is already used by an enclosing value',
+  'spec.tokenBranchKinds': 'the branches of a value must have the same kind',
+  'spec.tokenBranchFields': 'the branches of a composite must have the same fields',
+  'spec.tokenAliasMissing':
+    'the token "{name}" does not exist in the specialization tokens',
+  'spec.tokenCycle': 'token cycle: {chain}',
+  'spec.tokenAliasComposite':
+    'the token "{name}" is a composite; read one field ({name}.<field>)',
+  'spec.tokenAliasNoField': 'the token "{name}" has no field "{field}"',
+  'spec.tokenAlphaOnlyColor': 'alpha is only valid on a color $token',
+  'spec.tokenOverOnlyColor': 'over is only valid in a color $token',
+  'spec.tokenAlphaInvalid': 'alpha must be a number from 0 to 1 or a number $token',
+  'spec.tokenOverInvalid': 'over must be a color or the name of a color token',
+  'spec.tokenFieldInvalid': 'invalid field name; use [a-z][a-zA-Z0-9]*',
+  'spec.tokenCompositeEmpty': 'a composite needs at least one field',
+  'spec.tokenCompositeNested': 'a composite cannot contain another composite',
+  'spec.tokenValueForm':
+    'must be text, a number, an alias, a composite or a per-axis value',
+  'spec.tokenGroupInvalid': 'invalid group; use [a-z0-9][a-z0-9-]*',
+  'spec.tokenWrapperNested': 'a $value wrapper is only allowed on a whole token',
   'spec.iconsPathShape': 'must be the path of a .json file in the package',
   // zod's default texts (translation; the `message` follows zod's, in English)
   'spec.zod.invalid_type': 'Invalid input: expected {expected}, received {received}',

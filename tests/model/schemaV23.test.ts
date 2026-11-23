@@ -31,7 +31,7 @@ function opened(raw: Raw): Project {
 
 describe('schema v23', () => {
   it('the current version is 23 and the registry has the v22 → v23 migration', () => {
-    expect(SCHEMA_VERSION).toBe(23);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(23);
     expect(migrations.get(22)).toBe(migrateFrom22To23);
   });
 

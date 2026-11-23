@@ -357,6 +357,58 @@ test.describe('external changes to mapping.json', () => {
       .toBeGreaterThan(before);
   });
 
+  test('an image file replaced from outside with the same name is redrawn with the new content', async ({
+    page,
+  }) => {
+    await openFolderProject(page);
+    await addImage(page);
+    await expect.poll(async () => (await readMapping(page)).revision).toBeGreaterThan(0);
+    const revision = (await readMapping(page)).revision;
+    const host = page.locator('.canvas-host');
+    // Color at the center of the image, read from the bottom layer's canvas.
+    const centerColor = () =>
+      page.evaluate(() => {
+        const canvas = document.querySelector<HTMLCanvasElement>('.canvas-host canvas');
+        const context = canvas?.getContext('2d');
+        if (!canvas || !context) return null;
+        const ratio = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        const data = context.getImageData(
+          Math.floor((rect.width / 2) * ratio),
+          Math.floor((rect.height / 2) * ratio),
+          1,
+          1,
+        ).data;
+        return [data[0] ?? 0, data[1] ?? 0, data[2] ?? 0];
+      });
+    const near = (actual: number[] | null, expected: number[]) =>
+      actual !== null && expected.every((v, i) => Math.abs((actual[i] ?? 0) - v) <= 8);
+    await expect.poll(async () => near(await centerColor(), [200, 220, 240])).toBe(true);
+
+    await page.evaluate(async (folder) => {
+      const root = await navigator.storage.getDirectory();
+      const dir = await root.getDirectoryHandle(folder);
+      const images = await dir.getDirectoryHandle('images');
+      const canvas = new OffscreenCanvas(400, 800);
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('no 2d context');
+      context.fillStyle = 'rgb(200, 40, 40)';
+      context.fillRect(0, 0, 400, 800);
+      const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 1 });
+      const writable = await (await images.getFileHandle('tela.webp')).createWritable();
+      await writable.write(blob);
+      await writable.close();
+    }, FOLDER);
+    // Focus back on the window runs the check with the images (`useExternalChanges`).
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+
+    await expect
+      .poll(async () => near(await centerColor(), [200, 40, 40]), { timeout: 10_000 })
+      .toBe(true);
+    await expect(host).toHaveAttribute('data-images', '1');
+    expect((await readMapping(page)).revision).toBe(revision);
+  });
+
   test('editing the file from outside reloads the app by itself, with a discreet notice', async ({
     page,
   }) => {

@@ -7,9 +7,11 @@ import {
 import { siblingPosition } from './markings';
 import { projectIndex } from './projectIndex';
 import { isRecord, parseRefValue } from './refs';
+import { writtenSpec } from './serialization';
 import type {
   Annotation,
   Arrow,
+  ContainerBackground,
   JsonValue,
   Layer,
   Marking,
@@ -23,6 +25,13 @@ import type {
 
 // Values of the changes (stage 4): the JSON form of each entity and of each field, used to
 // compute the changes, check conflicts and apply. Internal use of the model.
+
+/** A drawing mode that is not pinned: absent, `null` or an empty map (an empty map is never written). */
+function modeIsAbsent(
+  mode: Readonly<Record<string, string>> | null | undefined,
+): boolean {
+  return mode == null || Object.keys(mode).length === 0;
+}
 
 /** JSON copy (without `undefined`), with the keys in the order they are in. */
 export function toJson(value: unknown): JsonValue {
@@ -43,6 +52,13 @@ export function jsonEqual(a: JsonValue | undefined, b: JsonValue | undefined): b
   return ka.every((k) => Object.hasOwn(b, k) && jsonEqual(a[k], b[k]));
 }
 
+/** The stored background as a JSON value: `#RRGGBB`, or `{ $token }` (proposal formatVersion 12). */
+function backgroundValue(background: ContainerBackground | null): JsonValue {
+  return typeof background === 'object' && background !== null
+    ? { $token: background.$token }
+    : background;
+}
+
 /**
  * The container in a proposal. `withPage`: the value carries its `pageId` (formatVersion 10); without
  * it the value is that of before the pages, and a created one goes to the first page when applied.
@@ -52,7 +68,7 @@ export function imageValue(i: ProjectContainer, withPage = false): JsonValue {
     id: i.id,
     name: i.name,
     file: i.file,
-    background: i.background,
+    background: backgroundValue(i.background),
     width: i.width,
     height: i.height,
     placement: i.placement,
@@ -60,7 +76,7 @@ export function imageValue(i: ProjectContainer, withPage = false): JsonValue {
     locked: i.locked,
     source: i.source,
     // Only when pinned (formatVersion 6): without it the value is that of before the drawing mode.
-    ...(i.drawingMode == null ? {} : { drawingMode: i.drawingMode }),
+    ...(modeIsAbsent(i.drawingMode) ? {} : { drawingMode: toJson(i.drawingMode) }),
     // Only when declared (formatVersion 7).
     ...(i.density == null ? {} : { density: i.density }),
     // Only when pinned (formatVersion 8).
@@ -139,7 +155,12 @@ export function pageValue(g: Page): JsonValue {
 }
 
 export function specializationValue(s: ProjectSpecialization): JsonValue {
-  return toJson({ id: s.id, version: s.version, file: s.file, spec: s.spec });
+  return toJson({
+    id: s.id,
+    version: s.version,
+    file: s.file,
+    spec: s.spec ? writtenSpec(s.spec) : s.spec,
+  });
 }
 
 export function docRepoValue(r: DocRepo): JsonValue {
@@ -152,7 +173,7 @@ export function docRepoValue(r: DocRepo): JsonValue {
  */
 export function projectValue(p: Pick<Project, 'drawingMode' | 'direction'>): JsonValue {
   return {
-    drawingMode: p.drawingMode ?? null,
+    drawingMode: modeIsAbsent(p.drawingMode) ? null : toJson(p.drawingMode),
     ...(p.direction === undefined ? {} : { direction: p.direction }),
   };
 }
@@ -235,7 +256,7 @@ export function imageField(i: ProjectContainer, field: string): JsonValue | unde
         ? undefined
         : { file: i.file, width: i.width, height: i.height };
     case 'background':
-      return i.background ?? undefined;
+      return i.background === null ? undefined : backgroundValue(i.background);
     case 'size':
       return i.file === null ? { width: i.width, height: i.height } : undefined;
     case 'placement':
@@ -247,7 +268,7 @@ export function imageField(i: ProjectContainer, field: string): JsonValue | unde
     case 'source':
       return toJson(i.source);
     case 'drawingMode':
-      return i.drawingMode ?? null;
+      return modeIsAbsent(i.drawingMode) ? null : toJson(i.drawingMode);
     case 'density':
       return i.density ?? null;
     case 'direction':

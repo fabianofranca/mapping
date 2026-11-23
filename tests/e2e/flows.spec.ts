@@ -34,7 +34,7 @@ test('new project → image → marking → annotation → zip with the mapping.
   await page.getByLabel('Value').press('Enter');
 
   const { mapping, files } = await exportMapping(page);
-  expect(mapping.schemaVersion).toBe(23);
+  expect(mapping.schemaVersion).toBe(24);
   expect(files).toContain('images/tela.webp');
   expect(mapping.containers).toHaveLength(1);
   expect(mapping.containers[0]).toMatchObject({
@@ -143,7 +143,7 @@ test('desktop: tool windows open, resize and are remembered', async ({ page }) =
   await createProject(page, 'Windows');
 
   // Status bar and breadcrumbs with no selection.
-  await expect(page.getByText('schema v23')).toBeVisible();
+  await expect(page.getByText('schema v24')).toBeVisible();
   await expect(page.locator('.crumbs')).toContainText('Nothing selected');
 
   // Tree and Details open by default; the List opens from the strip.

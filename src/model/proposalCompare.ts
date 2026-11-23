@@ -30,6 +30,11 @@ function text(value: JsonValue | undefined): string {
   return typeof value === 'string' ? value : '';
 }
 
+/** The stable text of a container background: `#RRGGBB`, or `token <name>` for a token reference. */
+function backgroundText(value: JsonValue | undefined): string {
+  return isRecord(value) ? `token ${text(value.$token)}` : text(value);
+}
+
 /**
  * The creations of a proposal seen through the readable path, which does not depend on the
  * ids generated at each `propose_changes`: image by name (or file); marking by image (or
@@ -80,7 +85,7 @@ class Created {
       typeof value === 'string' && value !== '' ? this.path(e, value, seen) : '-';
     let path: string;
     if (kind === 'image') {
-      path = `image(${text(to.name) || text(to.file) || `${text(to.background)} ${String(to.width)}x${String(to.height)}`})`;
+      path = `image(${text(to.name) || text(to.file) || `${backgroundText(to.background)} ${String(to.width)}x${String(to.height)}`})`;
     } else if (kind === 'marking') {
       // Null container: the canvas marking ("Canvas › parent › name").
       const space = to.containerId === null ? 'Canvas' : ref('image', to.containerId);

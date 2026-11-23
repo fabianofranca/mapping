@@ -1,0 +1,31 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "badge",
+  "name": "Badge",
+  "description": "A pill that reads one field of a composite: the text size is `title.size`, so it follows the text style of the library.",
+  "size": { "width": 96, "height": 44 },
+  "sizing": { "width": "hug", "height": "hug" },
+  "preview": { "label": "NEW" },
+  "template": {
+    "type": "frame",
+    "name": "badge",
+    "layout": {
+      "type": "row",
+      "align": "center",
+      "justify": "center",
+      "padding": [4, 12]
+    },
+    "cornerRadius": 16,
+    "fill": { "$token": "primary" },
+    "children": [
+      {
+        "type": "text",
+        "name": "label",
+        "text": { "$field": "label", "default": "NEW" },
+        "color": { "$token": "on-primary" },
+        "font": { "size": { "$token": "title.size" }, "weight": 600 }
+      }
+    ]
+  }
+}

@@ -22,7 +22,12 @@ import {
 } from './origin';
 import { parseIconsFile, type IconSet } from './icons';
 import { parseComponent } from './parseComponent';
-import { resolveTokens, type HostFonts, type SpecTokens } from './tokens';
+import {
+  createTokenTables,
+  type HostFonts,
+  type SpecTokens,
+  type TokenSelection,
+} from './tokens';
 import { isRecord } from '../isRecord';
 
 import { isImagePath } from './imagePath';
@@ -410,14 +415,20 @@ function readIcons(
   return undefined;
 }
 
-/** `tokens` of the specialization JSON, in the minimal form (text modes and text, number or per-mode values). */
+/** `tokens` of the specialization JSON, in the minimal form (`modes` and/or `axes`, and the raw `values`). */
 function readTokens(raw: unknown): SpecTokens | undefined {
-  if (!isRecord(raw) || !Array.isArray(raw.modes) || !isRecord(raw.values))
-    return undefined;
-  const modes = raw.modes.filter((m): m is string => typeof m === 'string');
-  return modes.length === 0
-    ? undefined
-    : { modes, values: raw.values as SpecTokens['values'] };
+  if (!isRecord(raw) || !isRecord(raw.values)) return undefined;
+  const modes = Array.isArray(raw.modes)
+    ? raw.modes.filter((m): m is string => typeof m === 'string')
+    : undefined;
+  if (modes?.length === 0) return undefined;
+  const axes = isRecord(raw.axes) ? (raw.axes as SpecTokens['axes']) : undefined;
+  const values = raw.values as SpecTokens['values'];
+  return {
+    ...(modes === undefined ? {} : { modes }),
+    ...(axes === undefined ? {} : { axes }),
+    values,
+  };
 }
 
 /**
@@ -427,9 +438,10 @@ function readTokens(raw: unknown): SpecTokens | undefined {
 export function withHostTokens(
   library: Library,
   fonts: HostFonts,
-  mode?: string,
+  mode?: string | TokenSelection,
 ): Library {
-  const resolvedTokens = resolveTokens(library.tokens, fonts, mode);
+  const tokenTables = createTokenTables(library.tokens, fonts);
+  const resolvedTokens = tokenTables.get(mode);
   const resolvedIcons = library.icons;
   const themed = (type: TypeDef): TypeDef =>
     type.component === undefined
@@ -439,6 +451,7 @@ export function withHostTokens(
           component: {
             ...type.component,
             resolvedTokens,
+            tokenTables,
             ...(resolvedIcons === undefined ? {} : { resolvedIcons }),
           },
         };

@@ -8,7 +8,7 @@ import { DrawingModeSettings } from '../../src/ui/DrawingModeSettings';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { SelectionPanel } from '../../src/ui/SelectionPanel';
 import { sampleProject } from '../model/fixtures';
-import { projectWithModes } from './drawingModeFixtures';
+import { projectWithAxes, projectWithModes } from './drawingModeFixtures';
 import { createHarness, renderLive } from './harness';
 
 // CF6: the drawing mode in the Settings, in the container Details and in the Diagnostics.
@@ -39,12 +39,12 @@ describe('Settings: project drawing mode', () => {
     expect(options(select())).toEqual(['Light', 'Dark']);
     expect(select().value).toBe('light');
     await user.selectOptions(select(), 'dark');
-    expect(harness.project().drawingMode).toBe('dark');
+    expect(harness.project().drawingMode).toEqual({ mode: 'dark' });
     expect(select().value).toBe('dark');
   });
 
   it('a stored mode that no specialization declares appears marked', () => {
-    setup({ ...projectWithModes(), drawingMode: 'solar' });
+    setup({ ...projectWithModes(), drawingMode: { mode: 'solar' } });
     expect(options(select())).toEqual([
       'Light',
       'Dark',
@@ -114,7 +114,7 @@ describe('Container Details: drawing mode', () => {
     expect(options(select())).toEqual([t('drawingMode.followProject'), 'Light', 'Dark']);
     expect(select().value).toBe('');
     await user.selectOptions(select(), 'dark');
-    expect(harness.project().containers[0]?.drawingMode).toBe('dark');
+    expect(harness.project().containers[0]?.drawingMode).toEqual({ mode: 'dark' });
     await user.selectOptions(select(), '');
     expect(harness.project().containers[0]?.drawingMode).toBeNull();
   });
@@ -127,7 +127,10 @@ describe('Container Details: drawing mode', () => {
 
 describe('Diagnostics: drawing mode', () => {
   it('a stored, undeclared mode is warned about and stays stored', () => {
-    const harness = createHarness({ ...projectWithModes(), drawingMode: 'solar' });
+    const harness = createHarness({
+      ...projectWithModes(),
+      drawingMode: { mode: 'solar' },
+    });
     render(
       <EditorContext.Provider value={harness.context}>
         <DiagnosticsView />
@@ -138,7 +141,7 @@ describe('Diagnostics: drawing mode', () => {
       within(region).getByText(t('diagnostics.modeUndeclared', { mode: 'solar' })),
     ).toBeTruthy();
     expect(t('diagnostics.modeUndeclared', { mode: 'solar' })).toContain('solar');
-    expect(harness.project().drawingMode).toBe('solar');
+    expect(harness.project().drawingMode).toEqual({ mode: 'solar' });
   });
 
   it('with no undeclared mode the section does not appear', () => {
@@ -151,5 +154,103 @@ describe('Diagnostics: drawing mode', () => {
     expect(
       screen.queryByRole('region', { name: t('diagnostics.drawingMode') }),
     ).toBeNull();
+  });
+});
+
+// Stage #1900, NV5 (decision 14): one field per declared axis.
+const AXES = { theme: ['light', 'dark'], contrast: ['normal', 'high'] };
+
+describe('Settings: one list per axis', () => {
+  function setup(project = projectWithAxes(AXES)) {
+    const harness = createHarness(project);
+    renderLive(harness, (p) => <DrawingModeSettings project={p} readOnly={false} />);
+    return { harness, user: userEvent.setup() };
+  }
+  const axisSelect = (name: string) =>
+    screen.getByLabelText<HTMLSelectElement>(name, { selector: 'select' });
+
+  it('shows two lists labeled by the axis; choosing dark on theme keeps contrast (one undo entry)', async () => {
+    const { harness, user } = setup();
+    expect(options(axisSelect('theme'))).toEqual(['Light', 'Dark']);
+    expect(options(axisSelect('contrast'))).toEqual(['normal', 'high']);
+    await user.selectOptions(axisSelect('contrast'), 'high');
+    await user.selectOptions(axisSelect('theme'), 'dark');
+    expect(harness.project().drawingMode).toEqual({ contrast: 'high', theme: 'dark' });
+    await harness.store.undo();
+    expect(harness.project().drawingMode).toEqual({ contrast: 'high' });
+  });
+
+  it('a stored undeclared entry on an axis shows as the undeclared option', () => {
+    setup({ ...projectWithAxes(AXES), drawingMode: { theme: 'solar' } });
+    expect(options(axisSelect('theme'))).toEqual([
+      'Light',
+      'Dark',
+      t('drawingMode.undeclared', { mode: 'solar' }),
+    ]);
+    expect(axisSelect('theme').value).toBe('solar');
+  });
+
+  it('an undeclared stored axis can be removed through the default option', async () => {
+    const { harness, user } = setup({
+      ...projectWithAxes(AXES),
+      drawingMode: { theme: 'dark', legacy: 'solar' },
+    });
+    const select = axisSelect('legacy');
+    expect(options(select)).toEqual([
+      t('drawingMode.projectDefault'),
+      t('drawingMode.undeclared', { mode: 'solar' }),
+    ]);
+    await user.selectOptions(select, '');
+    expect(harness.project().drawingMode).toEqual({ theme: 'dark' });
+  });
+
+  it('a modes library keeps a single "Drawing mode" list', () => {
+    setup(projectWithModes());
+    expect(screen.getAllByRole('combobox')).toHaveLength(1);
+    expect(
+      screen.getByLabelText(t('drawingMode.label'), { selector: 'select' }),
+    ).toBeTruthy();
+  });
+});
+
+describe('Container Details: one field per axis', () => {
+  function setup(project = projectWithAxes(AXES)) {
+    const harness = createHarness(project);
+    renderLive(harness, (project) => {
+      const image = project.containers[0];
+      return image ? (
+        <EditorContext.Provider value={harness.context}>
+          <SelectionPanel
+            image={image}
+            display={undefined}
+            readOnly={false}
+            busy={false}
+            onReplace={() => undefined}
+            onDelete={() => undefined}
+          />
+        </EditorContext.Provider>
+      ) : null;
+    });
+    return { harness, user: userEvent.setup() };
+  }
+  const axisSelect = (name: string) =>
+    screen.getByLabelText<HTMLSelectElement>(name, { selector: 'select' });
+
+  it('"Follow the project" removes only that axis', async () => {
+    const { harness, user } = setup();
+    await user.selectOptions(axisSelect('theme'), 'dark');
+    await user.selectOptions(axisSelect('contrast'), 'high');
+    expect(harness.project().containers[0]?.drawingMode).toEqual({
+      theme: 'dark',
+      contrast: 'high',
+    });
+    await user.selectOptions(axisSelect('theme'), '');
+    expect(harness.project().containers[0]?.drawingMode).toEqual({ contrast: 'high' });
+  });
+
+  it('without axes and without a stored choice nothing shows', () => {
+    setup(sampleProject());
+    expect(screen.queryByLabelText('theme')).toBeNull();
+    expect(screen.queryByLabelText(t('drawingMode.label'))).toBeNull();
   });
 });

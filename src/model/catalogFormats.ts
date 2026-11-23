@@ -1,6 +1,7 @@
 import type { Catalog, CatalogFormat, CatalogFormatExample } from './catalog';
 import type { SpecComponents } from './componentCatalog';
 import { createDrawingCache, type ComponentDrawing } from './componentDrawings';
+import { containerBackgroundColor } from './containerBackground';
 import { baseNode, type FrameNode } from './components/scene';
 import type { TextMeasurer } from './components/instantiate';
 import type { ModelMessage } from './modelMessage';
@@ -76,7 +77,14 @@ function componentsOf(catalog: Catalog): SpecComponents | null {
   };
 }
 
+/** The solid fill of a container's resolved background (a token resolves in its selection); none with a file. */
+function backgroundFills(project: Project, containerId: string): FrameNode['fills'] {
+  const color = containerBackgroundColor(project, containerId);
+  return color === null ? [] : [{ type: 'solid', color }];
+}
+
 function frameOf(
+  project: Project,
   container: ProjectContainer,
   drawings: readonly ComponentDrawing[],
 ): FrameNode {
@@ -86,10 +94,7 @@ function frameOf(
       name: container.name ?? container.id,
       width: container.width,
       height: container.height,
-      fills:
-        container.background === null
-          ? []
-          : [{ type: 'solid', color: container.background }],
+      fills: backgroundFills(project, container.id),
     }),
     type: 'frame',
     clip: false,
@@ -125,7 +130,7 @@ function containersOf(
       id: container.id,
       name: container.name ?? container.id,
       drawing: {
-        root: frameOf(container, own),
+        root: frameOf(project, container, own),
         warnings: own.flatMap((drawing) => drawing.warnings),
       },
       instances: instancesOf(project, own),

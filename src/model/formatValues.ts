@@ -38,7 +38,12 @@ const addContainer = z.object({
   height: dimension.optional(),
   background: text.optional(),
   source: source.optional(),
-  drawingMode: text.nullable().optional(),
+  // A map axis → entry (schema v24), or a text (the way it was written before): `applyFormatResult` sets
+  // the entry on every axis of the applied specializations that declares it.
+  drawingMode: z
+    .union([text, z.record(text, text)])
+    .nullable()
+    .optional(),
   direction: z.enum(READING_DIRECTIONS).nullable().optional(),
   density: z.number().nullable().optional(),
   center: z.object({ x: z.number(), y: z.number() }).optional(),

@@ -116,6 +116,21 @@ describe.each([
       expect(refOf(harness) ?? null).toBeNull();
     });
 
+    it('(b) Enter on the single suggestion saves text and ref together in one entry, and Esc afterwards has nothing to discard', async () => {
+      const { harness, user } = setup(key);
+      await user.type(field(), 'cp');
+      await user.keyboard('{Enter}');
+      expect(textOf(harness)).toBe('cpf');
+      expect(refOf(harness)).toEqual(R1);
+      await user.keyboard('{Escape}');
+      expect(textOf(harness)).toBe('cpf');
+      expect(refOf(harness)).toEqual(R1);
+      expect(harness.store.undo()).toBe(true);
+      expect(textOf(harness) ?? null).toBeNull();
+      expect(refOf(harness) ?? null).toBeNull();
+      expect(harness.store.undo()).toBe(false);
+    });
+
     it('(b) leaving the field also saves both', async () => {
       const { harness, user } = setup(key);
       await user.type(field(), 'cp');
