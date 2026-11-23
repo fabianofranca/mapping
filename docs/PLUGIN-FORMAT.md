@@ -2,7 +2,7 @@
 
 The contract (`contract` 1) between Mapping and the **plugin** of a file format. A specialization declares its file formats in `fileFormats` (`formatVersion` 20, see [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "File formats (`formatVersion` 20)"); each format points to a plugin, a `.js` file of the package. The core knows no concrete format (not JSON, YAML or CSV): the specialization knows it, through the plugin.
 
-A plugin **generates** a file from the project (`generate`) and **reads** a file back into the project (`parse`). It only ever runs **isolated**: it sees only its input, has no disk, network or storage, and has a time limit. The MCP server runs it in QuickJS (WebAssembly); the app's executor comes later (#2035) and runs the same shape.
+A plugin **generates** a file from the project (`generate`) and **reads** a file back into the project (`parse`). It only ever runs **isolated**: it sees only its input, has no disk, network or storage, and has a time limit. It runs in the MCP server (QuickJS, WebAssembly), in the app and in the embeddable viewer (`mapping-viewer/formats`) in a sandbox iframe with a `blob:` Worker, always the same shape.
 
 The contract is fixed and versioned: the plugin declares `contract: 1`, and `FormatInput.contract` says the same. A future contract 2 would be a new number, never a change of 1.
 

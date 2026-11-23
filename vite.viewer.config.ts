@@ -2,8 +2,9 @@
 // Build of the embeddable viewer demo (`viewer/demo`): a self-contained page separate from the
 // app, for development only (`npm run dev:viewer`); it is not part of `npm run build` or the
 // deploy. It uses real React (without the `preact()` plugin, which aliases react to preact/compat):
-// it is the proof that the viewer runs in a React host. The CSP is the `static` profile's
-// (no network requests, nothing embedded without a hash, no Trusted Types). The page does not use
+// it is the proof that the viewer runs in a React host. The CSP is the `viewer` profile's
+// (`static` plus `worker-src 'self' blob:` and the sandbox bootstrap hash that the format plugin
+// needs: no network requests, nothing embedded without a hash, no Trusted Types). The page does not use
 // the app's tokens: it has its own variables (`--demo-*`) in `viewer/demo/react.css`.
 import { defineConfig, type Plugin } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
@@ -18,7 +19,7 @@ function contentSecurityPolicy(): Plugin {
       handler(_options, bundle) {
         const html = bundle['index.html'];
         if (html?.type !== 'asset') throw new Error('index.html not found in the bundle');
-        html.source = applyCsp(String(html.source), 'static');
+        html.source = applyCsp(String(html.source), 'viewer');
       },
     },
   };

@@ -252,6 +252,63 @@ describe('CSP of index.html (build)', () => {
     ]);
   });
 
+  it("viewer profile: static plus the sandbox's worker-src blob: and bootstrap hash, no Trusted Types (stage #2059, decision 14)", () => {
+    const policy = buildCsp(BUILT, 'viewer');
+    const directives = policy.split('; ');
+    expect(directives).toContain("worker-src 'self' blob:");
+    expect(directives).toContain("img-src 'self' data: blob:");
+    expect(directives).toContain("connect-src 'none'");
+    const scriptSrc = directives.find((d) => d.startsWith('script-src ')) ?? '';
+    expect(scriptSrc.split(' ')).toContain(SANDBOX_BOOTSTRAP_HASH);
+    expect(scriptSrc.split(' ')).toContain(cspHash('console.log("hi")'));
+    expect(policy).not.toMatch(/trusted-types|https:|http:/);
+    expect(verifyCsp(injectCsp(BUILT, 'viewer'), 'viewer')).toEqual([]);
+    expect(() => applyCsp(BUILT, 'viewer')).not.toThrow();
+  });
+
+  it('viewer profile: verifyCsp wants the bootstrap hash and the blob: worker, and rejects Trusted Types', () => {
+    const html = injectCsp(BUILT, 'viewer');
+    const without = html.replace(` ${cspHash(SANDBOX_BOOTSTRAP)}`, '');
+    expect(without).not.toBe(html);
+    expect(verifyCsp(without, 'viewer')).toEqual([
+      expect.stringContaining('sandbox bootstrap'),
+    ]);
+    const noBlob = html.replace("worker-src 'self' blob:", "worker-src 'self'");
+    expect(verifyCsp(noBlob, 'viewer')).toEqual([
+      expect.stringContaining('diretiva worker-src'),
+    ]);
+    const withTrusted = html.replace(
+      "base-uri 'none'",
+      "base-uri 'none'; require-trusted-types-for 'script'",
+    );
+    expect(verifyCsp(withTrusted, 'viewer')).toEqual([
+      expect.stringContaining('the viewer profile must not have the directive'),
+    ]);
+  });
+
+  it('viewer profile: the referrer meta is not required, and the other profiles do not accept its policy', () => {
+    const noReferrer = BUILT.replace(/\s*<meta name="referrer"[^>]*>/, '');
+    expect(verifyCsp(injectCsp(noReferrer, 'viewer'), 'viewer')).toEqual([]);
+    expect(verifyCsp(injectCsp(BUILT, 'viewer'), 'static')).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('diretiva worker-src'),
+        expect.stringContaining('script-src tem um hash sem bloco'),
+      ]),
+    );
+    expect(verifyCsp(injectCsp(BUILT, 'viewer'), 'app')).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('diretiva img-src'),
+        expect.stringContaining('diretiva require-trusted-types-for'),
+      ]),
+    );
+    expect(verifyCsp(injectCsp(BUILT, 'static'), 'viewer')).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('diretiva worker-src'),
+        expect.stringContaining('sandbox bootstrap'),
+      ]),
+    );
+  });
+
   it('the source index.html has the referrer meta before any resource', () => {
     const referrer = source.search(REFERRER);
     expect(referrer).toBeGreaterThanOrEqual(0);
