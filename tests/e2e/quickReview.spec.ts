@@ -403,9 +403,9 @@ for (const size of [
       });
       for (const g of gaps ?? []) expect(g.clip).toBeLessThanOrEqual(0);
       // The cause of the clip: the card stacked the icon, the text and each button on its own row
-      // (166 px at 900×720), leaving no room for it above the composer. It stays compact.
+      // (166 px here, more on the CI fonts; 110 and 138 after), leaving no room for it above the composer. It stays compact.
       const box = await card.boundingBox();
-      expect(box?.height).toBeLessThan(130);
+      expect(box?.height).toBeLessThan(150);
     });
   });
 }
