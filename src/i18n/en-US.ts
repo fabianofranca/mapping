@@ -182,6 +182,14 @@ export const enUS = {
   'image.aspectConfirm': 'Replace anyway',
   'image.replacing': 'Replacing image…',
   'image.replaceFailed': 'Could not replace the image.',
+  'image.pasteTitle': 'Paste image',
+  'image.pasteMessage':
+    'The clipboard has an image and "{name}" is selected. Replace the selected image or add the clipboard image as a new one?',
+  'image.pasteReplace': 'Replace the selected image',
+  'image.pasteAdd': 'Add as new',
+  'image.replaceFromClipboard': 'Replace with clipboard image',
+  'image.clipboardEmpty': 'The clipboard has no image.',
+  'image.clipboardDenied': 'Allow clipboard access for this page to paste the image.',
 
   'tree.locate': 'Locate the selection in the tree',
   'tree.collapseAll': 'Collapse all',
@@ -1192,6 +1200,15 @@ export const enUS = {
   'copy.failed': 'Could not copy.',
   'copy.cropFailed': 'Could not copy the crop.',
   'copy.itemActions': 'Actions for {name}',
+  'export.image.action': 'Export image…',
+  'export.image.differentImages':
+    'The selected markings are on different images. Select markings on the same image.',
+  'export.image.noImage': 'This marking has no image file to export.',
+  'export.image.notInProject':
+    'This marking is not in the project yet. Apply the proposal first.',
+  'export.image.selectionWord': 'selection',
+  'export.image.done': 'Image saved',
+  'export.image.failed': 'Could not export the image.',
   'copy.canvasMenu': 'Canvas item menu',
   'arrow.canvasMenu.straight': 'Straight',
   'arrow.canvasMenu.curve': 'Curve',

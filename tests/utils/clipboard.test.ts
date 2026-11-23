@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { writeClipboardPng, writeClipboardText } from '../../src/utils/clipboard';
+import {
+  canReadClipboard,
+  readClipboardImage,
+  writeClipboardPng,
+  writeClipboardText,
+} from '../../src/utils/clipboard';
 import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
 
 const MIME = 'application/x-test+json';
@@ -164,5 +169,58 @@ describe('writeClipboardPng', () => {
   it('returns false without ClipboardItem', async () => {
     mock();
     expect(await writeClipboardPng(Promise.resolve(new Blob()))).toBe(false);
+  });
+});
+
+function readable(read: () => Promise<unknown>) {
+  Object.defineProperty(navigator, 'clipboard', { value: { read }, configurable: true });
+}
+
+function item(types: Record<string, Blob>) {
+  return {
+    types: Object.keys(types),
+    getType: vi.fn(async (t: string) => types[t] as Blob),
+  };
+}
+
+describe('canReadClipboard', () => {
+  it('is true only with navigator.clipboard.read', () => {
+    expect(canReadClipboard()).toBe(false);
+    readable(async () => []);
+    expect(canReadClipboard()).toBe(true);
+  });
+});
+
+describe('readClipboardImage', () => {
+  it('returns the first image/* type of the first item that has one', async () => {
+    const png = new Blob(['png'], { type: 'image/png' });
+    readable(async () => [
+      item({ 'text/plain': new Blob(['t']) }),
+      item({ 'text/html': new Blob(['h']), 'image/png': png }),
+      item({ 'image/jpeg': new Blob(['j']) }),
+    ]);
+    expect(await readClipboardImage()).toEqual({ kind: 'image', blob: png });
+  });
+
+  it('is empty when no item has an image', async () => {
+    readable(async () => [item({ 'text/plain': new Blob(['t']) })]);
+    expect(await readClipboardImage()).toEqual({ kind: 'empty' });
+  });
+
+  it('NotAllowedError is denied and reports nothing', async () => {
+    readable(() => Promise.reject(new DOMException('no', 'NotAllowedError')));
+    expect(await readClipboardImage()).toEqual({ kind: 'denied' });
+    expect(reportedErrors.value).toHaveLength(0);
+  });
+
+  it('another error is failed and goes to the Diagnostics', async () => {
+    readable(() => Promise.reject(new Error('boom')));
+    expect(await readClipboardImage()).toEqual({ kind: 'failed' });
+    expect(reportedErrors.value[0]?.context).toBe('image.clipboardRead');
+  });
+
+  it('without the API it is failed', async () => {
+    Object.defineProperty(navigator, 'clipboard', { value: {}, configurable: true });
+    expect(await readClipboardImage()).toEqual({ kind: 'failed' });
   });
 });

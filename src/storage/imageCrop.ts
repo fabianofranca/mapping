@@ -5,12 +5,17 @@ export const CROP_MAX_SIDE = 2048;
 
 /**
  * Crops `rect` (pixels of the original image, with EXIF already applied) from a project
- * image and returns a PNG, reduced to `CROP_MAX_SIDE` on the longer side (never enlarges).
+ * image and returns a PNG, reduced to `maxSide` (default `CROP_MAX_SIDE`) on the longer side
+ * (never enlarges). `maxSide` `null` means no reduction: the PNG has the rect's own size.
  */
-export async function cropToPng(data: Blob, rect: Rect): Promise<Blob> {
+export async function cropToPng(
+  data: Blob,
+  rect: Rect,
+  maxSide: number | null = CROP_MAX_SIDE,
+): Promise<Blob> {
   const bitmap = await createImageBitmap(data, { imageOrientation: 'from-image' });
   try {
-    const out = planOutputSize(rect, CROP_MAX_SIDE);
+    const out = planOutputSize(rect, maxSide ?? Number.POSITIVE_INFINITY);
     const canvas = document.createElement('canvas');
     canvas.width = out.width;
     canvas.height = out.height;

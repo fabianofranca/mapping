@@ -13,6 +13,7 @@ import {
 import { arrangeMarking, canArrangeMarking } from './arrange';
 import { CiteItem } from './CiteMenuItems';
 import { CopyMenuItems } from './CopyActions';
+import { canReadClipboard } from '../utils/clipboard';
 import { Button } from './controls';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
@@ -163,7 +164,12 @@ function CommentMenuItems({
  * item under the cursor, which the right click selects; on an arrow, the style and Delete. Opened
  * by `ui.canvasMenu`; closes with Esc, a click outside, scrolling or on choosing an item.
  */
-export function CanvasContextMenu() {
+export function CanvasContextMenu({
+  onReplaceFromClipboard,
+}: {
+  /** "Replace with clipboard image" (`ImageIntake.replaceFromClipboard`); without it the item is absent. */
+  readonly onReplaceFromClipboard?: (containerId: string) => void;
+}) {
   const editor = useEditor();
   const { ui } = editor;
   const menu = ui.canvasMenu.value;
@@ -233,6 +239,16 @@ export function CanvasContextMenu() {
 
   const copyable = canCopyItems(editor);
   const target = menu?.target;
+  // An image with a file, in a browser that can read the clipboard: disabled while locked.
+  const replaceId =
+    onReplaceFromClipboard &&
+    target?.kind === 'i' &&
+    canReadClipboard() &&
+    editor.store.committed.value?.containers.some(
+      (c) => c.id === target.id && c.file !== null,
+    )
+      ? target.id
+      : null;
   const arrowId = target?.kind === 'arrow' ? target.id : null;
   const copyTarget: ItemCopyTarget | null =
     target && target.kind !== 'arrow' ? { kind: target.kind, id: target.id } : null;
@@ -299,6 +315,20 @@ export function CanvasContextMenu() {
           copyable={copyable}
           commentable={false}
         />
+      )}
+      {replaceId !== null && (
+        <div class="menu-items">
+          <Button
+            role="menuitem"
+            disabled={editor.store.locked.value}
+            onClick={() => {
+              close();
+              onReplaceFromClipboard?.(replaceId);
+            }}
+          >
+            {t('image.replaceFromClipboard')}
+          </Button>
+        </div>
       )}
       {arrowId !== null && <ArrowMenuItems arrowId={arrowId} close={close} />}
       {commentable && <CommentMenuItems comment={comment} here={here} close={close} />}

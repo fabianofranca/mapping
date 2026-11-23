@@ -1,5 +1,5 @@
 // Image intake by paste and drag-and-drop (docs/ARCHITECTURE.md, "Image intake and optimization").
-import { extensionForMime, pastedFileName } from '../model';
+import { extensionForMime, pastedFileName, type ItemRef, type Project } from '../model';
 import { isImageFileName } from '../storage/types';
 
 export interface SplitFiles {
@@ -38,4 +38,21 @@ export function dragHasFiles(dt: DataTransfer | null): boolean {
 /** Images of a `paste` event (Ctrl/Cmd+V). */
 export function imagesFromPaste(data: DataTransfer | null): File[] {
   return [...(data?.files ?? [])].filter(isImageFile).map((file) => nameForPasted(file));
+}
+
+/**
+ * The container that Ctrl+V would replace (decision 12 of #2721): the paste brings exactly one
+ * image, the selection is exactly one image container, and that container has a file. Otherwise
+ * `null`: the paste adds as a new container.
+ */
+export function pasteTarget(
+  selectedItems: readonly ItemRef[],
+  project: Project,
+  imageCount: number,
+): string | null {
+  const [only] = selectedItems;
+  if (imageCount !== 1 || selectedItems.length !== 1 || only?.kind !== 'image')
+    return null;
+  const container = project.containers.find((c) => c.id === only.id);
+  return container && container.file !== null ? container.id : null;
 }

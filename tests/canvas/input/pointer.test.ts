@@ -1598,6 +1598,44 @@ describe('PointerInput: multiple selection', () => {
       s.cleanup();
     });
 
+    it('over a member of a selection built by click + Shift+click keeps the selection', () => {
+      let project = canvasProject();
+      project = createMarking(project, {
+        id: 'F1',
+        containerId: 'I1',
+        rect: { x: 720, y: 100, width: 250, height: 200 },
+        name: 'Form',
+      });
+      project = createMarking(project, {
+        id: 'T1',
+        containerId: 'I1',
+        rect: { x: 720, y: 400, width: 200, height: 60 },
+        name: 'Title',
+      });
+      const s = setup(false, project);
+      s.click(800, 200); // Form alone
+      s.click(800, 430, { shift: true }); // + Title
+      expect(ids(s)).toEqual(['marking:F1', 'marking:T1']);
+      s.rightClick(800, 200); // a member
+      expect(ids(s)).toEqual(['marking:F1', 'marking:T1']);
+      expect(s.ui.canvasMenu.value?.target).toEqual({ kind: 'm', id: 'F1' });
+      s.cleanup();
+    });
+
+    it('a second click at the same point goes up to the image, so the right click on the marking is "another item"', () => {
+      // Finding 1.1 of stage #2721 (R46.4): `Form` was clicked at its center in the step before, and
+      // the "click" of the next step repeated that point: the click cycle selected the image under
+      // it, and the Shift+click made the selection [image, `Title`], with no `Form` in it.
+      const s = setup();
+      s.click(400, 400); // M1
+      s.click(400, 400); // same point: goes up to the image
+      s.click(1200, 100, { shift: true }); // + M3
+      expect(ids(s)).toEqual(['image:I1', 'marking:M3']);
+      s.rightClick(400, 400); // M1 is not in the selection: the usual behavior
+      expect(ids(s)).toEqual(['marking:M1']);
+      s.cleanup();
+    });
+
     it('over another item the behavior is the usual: selects only it', () => {
       const s = setup();
       selectItems(s.ui, [mk('M3'), mk('M2')]);

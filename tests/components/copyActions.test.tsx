@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseRef } from '../../src/model';
 import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
+import { selectItems } from '../../src/store/ui';
 import { showToolWindow } from '../../src/store/toolWindows';
 import { CanvasContextMenu } from '../../src/ui/CanvasContextMenu';
 import { EditorContext } from '../../src/ui/EditorContext';
@@ -273,10 +274,102 @@ describe('canvas context menu', () => {
     harness.ui.canvasMenu.value = { x: 5, y: 5, target: { kind: 'm', id: 'M1' } };
     const items = await screen.findAllByRole('menuitem');
     expect(items.map((i) => i.textContent)).toEqual([
+      // "Export image…" needs no folder (it saves a file, not a reference).
+      t('export.image.action'),
       t('cite.insert'),
       t('multi.selectWithContents'),
       // Wrap (EV1): the new menu entry, with the shortcut.
       `${t('multi.wrap')}Ctrl+G`,
     ]);
+  });
+});
+
+describe('"Export image…" in the canvas menu', () => {
+  function renderMenu(harness: Harness) {
+    return render(
+      <EditorContext.Provider value={harness.context}>
+        <CanvasContextMenu />
+      </EditorContext.Provider>,
+    );
+  }
+  const exportItem = (menu: HTMLElement) =>
+    within(menu).getByRole('menuitem', { name: t('export.image.action') });
+
+  async function openOn(harness: Harness, id: string, kind: 'm' | 'i' = 'm') {
+    harness.ui.canvasMenu.value = { x: 5, y: 5, target: { kind, id } };
+    return screen.findByRole('menu', { name: t('copy.canvasMenu') });
+  }
+
+  it('is enabled for a marking on an image with a file', async () => {
+    setupClipboard();
+    const harness = createHarness(sampleProject());
+    renderMenu(harness);
+    const item = exportItem(await openOn(harness, 'M2'));
+    expect((item as HTMLButtonElement).disabled).toBe(false);
+    expect(item.getAttribute('title')).toBeNull();
+  });
+
+  it('also shows outside a folder', async () => {
+    const harness = createHarness(sampleProject());
+    makeNotAFolder(harness);
+    renderMenu(harness);
+    const item = exportItem(await openOn(harness, 'M2'));
+    expect((item as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('is not offered for an image container', async () => {
+    const harness = createHarness(sampleProject());
+    renderMenu(harness);
+    const menu = await openOn(harness, 'I1', 'i');
+    expect(
+      within(menu).queryByRole('menuitem', { name: t('export.image.action') }),
+    ).toBeNull();
+  });
+
+  it('is disabled, with the reason, for markings of different images', async () => {
+    const harness = createHarness(sampleProject());
+    selectItems(harness.ui, [
+      { kind: 'marking', id: 'M1' },
+      { kind: 'marking', id: 'M4' },
+    ]);
+    renderMenu(harness);
+    const item = exportItem(await openOn(harness, 'M1'));
+    expect((item as HTMLButtonElement).disabled).toBe(true);
+    expect(item.getAttribute('title')).toBe(t('export.image.differentImages'));
+  });
+
+  it('stays enabled with a locked marking and in read-only', async () => {
+    const harness = createHarness(sampleProject(), true);
+    harness.actions.setMarkingLocked('M2', true);
+    renderMenu(harness);
+    const item = exportItem(await openOn(harness, 'M2'));
+    expect((item as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('is disabled with the "no image" reason for a canvas marking', async () => {
+    const harness = createHarness(sampleProject());
+    harness.actions.setMarkingLocked('M2', false);
+    // A marking on the canvas (no container): there is no image to export.
+    harness.store.apply((p) => ({
+      ...p,
+      markings: p.markings.map((m) => (m.id === 'M4' ? { ...m, containerId: null } : m)),
+    }));
+    renderMenu(harness);
+    const item = exportItem(await openOn(harness, 'M4'));
+    expect((item as HTMLButtonElement).disabled).toBe(true);
+    expect(item.getAttribute('title')).toBe(t('export.image.noImage'));
+  });
+
+  it('exports on click and closes the menu', async () => {
+    const harness = createHarness(sampleProject());
+    const readImage = vi
+      .spyOn(harness.context.session, 'readImage')
+      .mockResolvedValue(new Blob(['x']));
+    Reflect.deleteProperty(globalThis, 'showSaveFilePicker');
+    const user = userEvent.setup();
+    renderMenu(harness);
+    await user.click(exportItem(await openOn(harness, 'M2')));
+    expect(harness.ui.canvasMenu.value).toBeNull();
+    await waitFor(() => expect(readImage).toHaveBeenCalledWith('images/lateral.jpg'));
   });
 });
