@@ -4,6 +4,7 @@ import { Button } from '../controls';
 import { useEditor, type EditorContextValue } from '../EditorContext';
 import { Icon } from '../icons';
 import { showQuickAgain } from '../../store/quickReview';
+import { focusCanvasArea } from '../toolWindowLayout';
 import { openReviewIn } from '../review/useReviewCommands';
 
 // The proposal card in a thread (decision 36): the message with `proposal` shows the proposal's
@@ -122,9 +123,7 @@ export function ProposalCard({
           onClick={() => {
             showQuickAgain(editor.ui, proposalId);
             // The button goes away with the click: the focus moves to the canvas, not the body.
-            queueMicrotask(() =>
-              document.querySelector<HTMLElement>('[data-canvas-area]')?.focus(),
-            );
+            queueMicrotask(focusCanvasArea);
           }}
         >
           {t('thread.proposal.showAgain')}

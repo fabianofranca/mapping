@@ -216,8 +216,10 @@ function measureAvoid(el: HTMLElement): Rect[] {
   const parent = el.offsetParent;
   if (!parent) return [];
   const origin = parent.getBoundingClientRect();
-  const others = parent.querySelectorAll('.minimap, .canvas-corner > *');
-  return [...others].map((o) => {
+  const rects = [...parent.querySelectorAll('[data-canvas-obstacle]')].flatMap((o) =>
+    o.getAttribute('data-canvas-obstacle') === 'children' ? [...o.children] : [o],
+  );
+  return rects.map((o) => {
     const r = o.getBoundingClientRect();
     return {
       x: r.left - origin.left,
