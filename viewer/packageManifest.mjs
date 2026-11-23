@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { URL } from 'node:url';
 
 // Package version: it goes up with API changes (exports, signatures, behavior).
-export const VIEWER_VERSION = '0.9.0';
+export const VIEWER_VERSION = '0.10.0';
 
 // The Konva range comes from the root package.json, never written by hand.
 const rootPackage = JSON.parse(
@@ -29,6 +29,10 @@ export const packageJson = {
     './react': {
       types: './types/viewer/react.d.ts',
       import: './mapping-viewer-react.js',
+    },
+    './formats': {
+      types: './types/viewer/formats.d.ts',
+      import: './mapping-viewer-formats.js',
     },
   },
   types: './types/viewer/index.d.ts',

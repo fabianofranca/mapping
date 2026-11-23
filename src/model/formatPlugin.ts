@@ -64,8 +64,11 @@ export interface FormatFailure {
   /**
    * `load` when the plugin's text itself failed (it threw while loading, or went past a limit then), `call` when
    * its function failed. The format checks tell the two apart; an executor that cannot says nothing.
+   * `sandbox` when the sandbox that runs the plugin could not start (a page whose CSP or Trusted Types refuse its
+   * frame or its Worker, stage #2059): the plugin never ran. The app words it as any other failure; the viewer
+   * reports it as `sandbox-unavailable`.
    */
-  readonly phase?: 'load' | 'call';
+  readonly phase?: 'load' | 'call' | 'sandbox';
 }
 
 /** What a call gives back: the JSON value the function returned, or the typed failure. */

@@ -5,6 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { SANDBOX_BOOTSTRAP_HASH } from '../../src/app/formatSandbox';
 // @ts-expect-error build .mjs module, without declarations
 import { VIEWER_VERSION } from '../../viewer/packageManifest.mjs';
 
@@ -18,5 +19,14 @@ describe('PACKAGE-README.md', () => {
     );
     expect(versions.length).toBeGreaterThan(0);
     expect(new Set(versions)).toEqual(new Set([version]));
+  });
+
+  it("quotes the sandbox bootstrap's hash, the one the host puts in script-src (stage #2059)", () => {
+    expect(SANDBOX_BOOTSTRAP_HASH).toMatch(/^'sha256-[A-Za-z0-9+/]+={0,2}'$/);
+    const hashes = [...readme.matchAll(/'sha256-[A-Za-z0-9+/]+={0,2}'/g)].map(
+      (m) => m[0],
+    );
+    expect(hashes.length).toBeGreaterThan(0);
+    expect(new Set(hashes)).toEqual(new Set([SANDBOX_BOOTSTRAP_HASH]));
   });
 });

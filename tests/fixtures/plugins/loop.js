@@ -4,3 +4,10 @@ function generate() {
     // Never returns.
   }
 }
+
+// The viewer reads files with `parse`: the same call must end at the time limit too.
+function parse() {
+  for (;;) {
+    // Never returns.
+  }
+}

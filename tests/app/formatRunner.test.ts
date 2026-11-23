@@ -288,8 +288,57 @@ describe('the frame', () => {
     const run = createFormatRunner(h.deps);
     const result = run('x', 'generate', [{}]);
     await vi.advanceTimersByTimeAsync(FORMAT_PLUGIN_LIMITS.timeoutMs + 1);
-    expect(await result).toMatchObject({ ok: false, failure: { code: 'plugin-failed' } });
+    expect(await result).toMatchObject({
+      ok: false,
+      failure: {
+        code: 'plugin-failed',
+        phase: 'sandbox',
+        message: 'the sandbox that runs the plugin did not start',
+      },
+    });
     expect(h.last().removed).toBe(true);
+  });
+
+  it('whose creation is refused is a failure of the phase sandbox: silent for the viewer, reported by the app', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const h = harness();
+    const refuse = (): SandboxFrame => {
+      throw new TypeError('Policy "mapping-viewer" is not allowed');
+    };
+    const silent = createFormatRunner({ ...h.deps, createFrame: refuse, silent: true });
+    expect(await silent('x', 'generate', [{}])).toMatchObject({
+      ok: false,
+      failure: { code: 'plugin-failed', phase: 'sandbox' },
+    });
+    expect(spy).not.toHaveBeenCalled();
+    const loud = createFormatRunner({ ...h.deps, createFrame: refuse });
+    expect(await loud('x', 'generate', [{}])).toMatchObject({
+      failure: { phase: 'sandbox' },
+    });
+    expect(spy).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
+  });
+
+  it('answers with the phase sandbox (a refused Worker) keep it, and the other phases stay as they were', async () => {
+    const h = harness();
+    const run = createFormatRunner(h.deps);
+    const refused = run('x', 'generate', [{}]);
+    h.answer(await h.posted(1), {
+      status: 'error',
+      phase: 'sandbox',
+      message: 'Worker refused',
+    });
+    expect(await refused).toEqual({
+      ok: false,
+      failure: { code: 'plugin-failed', message: 'Worker refused', phase: 'sandbox' },
+    });
+    const loaded = run('x', 'generate', [{}]);
+    h.answer(await h.posted(2), { status: 'error', phase: 'load', message: 'boom' });
+    expect(await loaded).toMatchObject({ ok: false, failure: { phase: 'load' } });
+    const other = run('x', 'generate', [{}]);
+    h.answer(await h.posted(3), { status: 'error', phase: 'other', message: 'boom' });
+    const outcome = await other;
+    expect(outcome.ok === false && outcome.failure.phase).toBeUndefined();
   });
 
   it('an answer that carries a `ready` key is still the answer (the plugin can post anything)', async () => {

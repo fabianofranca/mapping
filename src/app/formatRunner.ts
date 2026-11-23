@@ -32,6 +32,12 @@ export interface FormatRunnerDeps {
   createFrame(): SandboxFrame;
   /** Listens to the page's `message` events; returns the function that stops it. */
   listen(handler: (event: { source: unknown; data: unknown }) => void): () => void;
+  /**
+   * A page that refuses the frame is told through the failure (`phase: 'sandbox'`); with `silent` nothing goes to
+   * the console or to Diagnostics either (the viewer, in a host page: the host learns it from the result). The
+   * app reports it, as a refused frame there is a bug of ours.
+   */
+  readonly silent?: boolean;
 }
 
 export interface DisposableFormatRunner extends FormatRunner {
@@ -53,6 +59,16 @@ const failure = (code: FormatFailureCode, message: string): FormatOutcome => ({
   ok: false,
   failure: { code, message },
 });
+
+/** The sandbox could not start (no frame, or it never said it was ready): the plugin never ran. */
+const SANDBOX_NOT_STARTED: FormatOutcome = {
+  ok: false,
+  failure: {
+    code: 'plugin-failed',
+    message: 'the sandbox that runs the plugin did not start',
+    phase: 'sandbox',
+  },
+};
 
 const byteLength = (text: string): number => new TextEncoder().encode(text).length;
 
@@ -123,7 +139,8 @@ function positionOf(answer: Answer): Pick<FormatFailure, 'line' | 'column'> {
 }
 
 function phaseOf(answer: Answer): Pick<FormatFailure, 'phase'> {
-  return answer['phase'] === 'load' ? { phase: 'load' } : {};
+  const phase = answer['phase'];
+  return phase === 'load' || phase === 'sandbox' ? { phase } : {};
 }
 
 function outputOf(output: unknown, fn: FormatFunction): FormatOutcome {
@@ -218,7 +235,14 @@ export function createFormatRunner(deps: FormatRunnerDeps): DisposableFormatRunn
   const readyFrame = async (): Promise<SandboxFrame | null> => {
     if (frame !== null) return frame;
     stopListening = deps.listen(onMessage);
-    const created = deps.createFrame();
+    let created: SandboxFrame;
+    try {
+      created = deps.createFrame();
+    } catch (error) {
+      if (deps.silent !== true) reportError('formatRunner.createFrame', error);
+      drop();
+      return null;
+    }
     frame = created;
     const isReady = await new Promise<boolean>((resolve) => {
       const timer = setTimeout(() => resolve(false), FRAME_READY_MS);
@@ -270,9 +294,7 @@ export function createFormatRunner(deps: FormatRunnerDeps): DisposableFormatRunn
   ): Promise<FormatOutcome> => {
     try {
       const live = await readyFrame();
-      if (live === null) {
-        return failure('plugin-failed', 'the sandbox that runs the plugin did not start');
-      }
+      if (live === null) return SANDBOX_NOT_STARTED;
       return await exchange(live, source, fn, payload);
     } catch (error) {
       drop();
@@ -312,14 +334,25 @@ export function createFormatRunner(deps: FormatRunnerDeps): DisposableFormatRunn
 
 // ---------------------------------------------------------------------------- the real frame
 
-/** The hidden iframe of the page. `srcdoc` is a Trusted Types sink: only `SANDBOX_SRCDOC` passes. */
-function browserFrame(): SandboxFrame {
+/** How a page gives the iframe its document: the app assigns the string (its `default` policy checks it). */
+export type SrcdocSetter = (iframe: HTMLIFrameElement) => void;
+
+const appSrcdoc: SrcdocSetter = (iframe) => {
+  iframe.srcdoc = SANDBOX_SRCDOC;
+};
+
+/**
+ * The hidden iframe of the page. `srcdoc` is a Trusted Types sink: only `SANDBOX_SRCDOC` passes. The viewer
+ * (`viewer/formatSandbox.ts`) passes its own setter, which goes through its own policy. A setter that throws
+ * leaves no iframe behind.
+ */
+export function browserFrame(setSrcdoc: SrcdocSetter = appSrcdoc): SandboxFrame {
   const iframe = document.createElement('iframe');
   iframe.setAttribute('sandbox', 'allow-scripts');
   iframe.setAttribute('aria-hidden', 'true');
   iframe.setAttribute('tabindex', '-1');
   iframe.hidden = true;
-  iframe.srcdoc = SANDBOX_SRCDOC;
+  setSrcdoc(iframe);
   document.body.append(iframe);
   const target = iframe.contentWindow;
   return {
@@ -329,14 +362,17 @@ function browserFrame(): SandboxFrame {
   };
 }
 
+/** The page's `message` events, as the runner reads them. */
+export const browserListen: FormatRunnerDeps['listen'] = (handler) => {
+  const listener = (event: MessageEvent): void =>
+    handler({ source: event.source, data: event.data });
+  window.addEventListener('message', listener);
+  return () => window.removeEventListener('message', listener);
+};
+
 const browserDeps: FormatRunnerDeps = {
-  createFrame: browserFrame,
-  listen: (handler) => {
-    const listener = (event: MessageEvent): void =>
-      handler({ source: event.source, data: event.data });
-    window.addEventListener('message', listener);
-    return () => window.removeEventListener('message', listener);
-  },
+  createFrame: () => browserFrame(),
+  listen: browserListen,
 };
 
 let shared: DisposableFormatRunner | null = null;
