@@ -1,4 +1,4 @@
-# Child notices follow the coordinator through every switch — [Não lançado] (épico `epic/queue-child-notice-target`)
+# Child notices follow the coordinator through every switch — 2026-11-23 (épico `epic/queue-child-notice-target`)
 
 ## Pendências
 
