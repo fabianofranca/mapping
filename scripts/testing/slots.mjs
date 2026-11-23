@@ -3,8 +3,11 @@
 //
 //   node slots.mjs propose                > calls-55.json   (R17.55: one `propose_changes` in `screen-m3`)
 //   node slots.mjs render <list.out>      > calls-57.json   (R17.57: 24 `render_marking`)
-//   node slots.mjs a11y <list.out>        > calls-58.json   (R17.58: the 4 `render_marking`, a- and b-)
+//   node slots.mjs a11y <list.out> [58a|58b] > calls-58.json (R17.58: the 4 `render_marking` of the a- run, or of the b- run)
 //   node slots.mjs names <57 | 58a | 58b>                   (the step's file names, one per line, in call order)
+//
+// Each `render_marking` call carries `save`, the name `names` gives at its position, so the client writes the
+// PNGs already named (no hand rename).
 //
 // `<list.out>` is the stdio client's output for `list_markings` of the **Slots** container.
 //
@@ -211,9 +214,10 @@ function readRows(file) {
   return rows;
 }
 
-const render = (ref, drawingMode) => ({
+const render = (ref, drawingMode, save) => ({
   name: 'render_marking',
   args: { project: PROJECT, ref, zoom: 1, padding: 16, background: 'none', drawingMode },
+  save,
 });
 
 function refOf(rows, name) {
@@ -235,7 +239,7 @@ function names(step) {
   return fail('names takes 57, 58a or 58b');
 }
 
-const [command, arg] = process.argv.slice(2);
+const [command, arg, variant = '58a'] = process.argv.slice(2);
 if (command === 'propose') {
   console.log(JSON.stringify(propose(), null, 2));
 } else if (command === 'render' || command === 'a11y') {
@@ -245,15 +249,18 @@ if (command === 'propose') {
     command === 'render'
       ? pairs57().map(({ t, v }) => `${t.name} ${v}`)
       : A11Y_TYPES.map((id) => `${TYPES.find((t) => t.id === id).name} bare`);
-  const calls = wanted.flatMap((name) => {
+  if (command === 'a11y' && variant !== '58a' && variant !== '58b')
+    fail('a11y takes 58a or 58b as its second argument');
+  const saves = names(command === 'render' ? '57' : variant);
+  const calls = wanted.flatMap((name, i) => {
     const ref = refOf(rows, name);
-    return MODES.map((mode) => render(ref, mode));
+    return MODES.map((mode, m) => render(ref, mode, saves[i * MODES.length + m]));
   });
   console.log(JSON.stringify(calls, null, 2));
 } else if (command === 'names') {
   console.log(names(arg).join('\n'));
 } else {
   fail(
-    'usage: node slots.mjs propose | render <list.out> | a11y <list.out> | names <57|58a|58b>',
+    'usage: node slots.mjs propose | render <list.out> | a11y <list.out> [58a|58b] | names <57|58a|58b>',
   );
 }

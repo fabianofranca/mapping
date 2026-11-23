@@ -5,8 +5,10 @@
 import { spawnSync } from 'node:child_process';
 import {
   cpSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -43,6 +45,17 @@ describe('CLI on a path with an accent and a space (items 51 and 52)', () => {
   it('cloud.mjs runs the command (help)', () => {
     const r = run([path.join(copy, 'scripts/testing/cloud.mjs'), 'help']);
     expect(r.stdout + r.stderr).toMatch(/saveFile/);
+  });
+
+  it('cloud.mjs help lists the cadastro command (RH3)', () => {
+    const r = run([path.join(copy, 'scripts/testing/cloud.mjs'), 'help']);
+    expect(r.stdout).toMatch(/cloud\.mjs cadastro <file>/);
+  });
+
+  it('cloud.mjs cadastro without the file is a usage error (RH3)', () => {
+    const r = run([path.join(copy, 'scripts/testing/cloud.mjs'), 'cadastro']);
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toMatch(/Usage: node cloud\.mjs cadastro <file>/);
   });
 
   it('cloud.mjs passo reads the guide generated in the copy (#1232)', () => {
@@ -131,5 +144,66 @@ rl.on('line', (line) => {
     expect(r.status).not.toBe(0);
     expect(r.stderr).toMatch(/could not start the server/i);
     expect(r.stderr).not.toMatch(/\n\s+at /);
+  });
+
+  describe('`save` names the image file (RH4)', () => {
+    const PNG = Buffer.from('fake-png').toString('base64');
+    const imageServer = (images: number) =>
+      fakeServer(
+        `images${images}.cjs`,
+        `if (m.method === 'tools/call') {
+          const content = Array.from({ length: ${images} }, () => ({ type: 'image', mimeType: 'image/png', data: '${PNG}' }));
+          process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id: m.id, result: { content } }) + '\\n');
+        }`,
+      );
+    const imgDir = () => mkdtempSync(path.join(tmp, 'img-'));
+    const names = (dir: string) => readdirSync(dir).sort();
+
+    it('a call with "save" writes IMGDIR/<save>', () => {
+      const dir = imgDir();
+      writeFileSync(calls, JSON.stringify([{ name: 'tool', args: {}, save: 'a.png' }]));
+      const r = run([client, calls, '--', imageServer(1)], {
+        env: { ...process.env, IMGDIR: dir },
+      });
+      expect(r.status).toBe(0);
+      expect(names(dir)).toEqual(['a.png']);
+    });
+
+    it('a response with two images writes a.png and a-2.png', () => {
+      const dir = imgDir();
+      writeFileSync(calls, JSON.stringify([{ name: 'tool', args: {}, save: 'a.png' }]));
+      const r = run([client, calls, '--', imageServer(2)], {
+        env: { ...process.env, IMGDIR: dir },
+      });
+      expect(r.status).toBe(0);
+      expect(names(dir)).toEqual(['a-2.png', 'a.png']);
+    });
+
+    it('without "save" the name stays <tool>-<n>.<ext>', () => {
+      const dir = imgDir();
+      writeFileSync(calls, JSON.stringify([{ name: 'tool', args: {} }]));
+      const r = run([client, calls, '--', imageServer(1)], {
+        env: { ...process.env, IMGDIR: dir },
+      });
+      expect(r.status).toBe(0);
+      expect(names(dir)).toEqual([expect.stringMatching(/^tool-\d+\.png$/)]);
+    });
+
+    it.each(['../a.png', 'x/a.png', 'x\\a.png', '..', 'a..png/..'])(
+      'a "save" of %j is refused with a short message, exit 1 and nothing written',
+      (save) => {
+        const dir = imgDir();
+        const outside = path.join(dir, '..', 'a.png');
+        writeFileSync(calls, JSON.stringify([{ name: 'tool', args: {}, save }]));
+        const r = run([client, calls, '--', imageServer(1)], {
+          env: { ...process.env, IMGDIR: dir },
+        });
+        expect(r.status).toBe(1);
+        expect(r.stderr).toMatch(/save/i);
+        expect(r.stderr).not.toMatch(/\n\s+at /);
+        expect(readdirSync(dir)).toEqual([]);
+        expect(existsSync(outside)).toBe(false);
+      },
+    );
   });
 });
