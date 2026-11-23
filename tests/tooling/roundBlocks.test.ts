@@ -26,7 +26,7 @@ const CLOUD = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
 
 const STEP_RE = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^|]*\|/;
 
-/** The steps of the main test scripts (R0 to R44), in the order of the guide, outside the on-demand test scripts. */
+/** The steps of the main test scripts (R0 to R45), in the order of the guide, outside the on-demand test scripts. */
 function guideSteps(): string[] {
   const lines = GUIDE.split('\n');
   const start = lines.findIndex((l) => /^## 8\. Test scripts/.test(l));
@@ -118,14 +118,14 @@ const blockOf = (step: string): number[] =>
   blocks.filter((b) => b.steps.includes(step)).map((b) => b.n);
 
 describe('split of the full round into blocks (stages #424, #841, #2024 and #2625)', () => {
-  it('the guide has the steps from R0 to R44 and the table has 7 blocks numbered 1 to 7', () => {
+  it('the guide has the steps from R0 to R45 and the table has 7 blocks numbered 1 to 7', () => {
     expect(steps.length).toBeGreaterThan(200);
     expect(steps.some((s) => s.startsWith('R17.'))).toBe(true);
     expect(steps.some((s) => s.startsWith('R26.'))).toBe(true);
     expect(blocks.map((b) => b.n)).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
-  it('every step from R0 to R44 is in exactly one block, and R0 in all of them', () => {
+  it('every step from R0 to R45 is in exactly one block, and R0 in all of them', () => {
     for (const s of steps) {
       const where = blockOf(s);
       if (scriptOf(s) === 'R0') expect(where, s).toEqual([1, 2, 3, 4, 5, 6, 7]);

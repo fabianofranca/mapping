@@ -23,6 +23,7 @@
 - The `dist/index.html` ceiling rose 32 KiB, from 2539520 to 2572288, by the budget rule; above the limits, `bug` #2747 for the owner to review
 - The `dist/index.html` ceiling rose 16 KiB, from 2572288 to 2588672, by the budget rule; above the limits, `bug` #2753 for the owner to review
 - The `dist/index.html` ceiling rose 16 KiB, from 2588672 to 2605056, by the budget rule; above the limits, `bug` #2761 for the owner to review
+- The `dist/index.html` ceiling rose 16 KiB, from 2605056 to 2621440, by the budget rule (SM1: `main` with #1932 brought into the epic); above the limits, `bug` #2765 for the owner to review
 - The stored `drawingMode` string of the project and of each container is now a map axis → entry. An earlier app reads a v24 file as a newer version (read-only), and an earlier MCP rejects a v24 project and a `formatVersion` 12 proposal.
 - NV4 added no migration: a `#RRGGBB` background stays valid in schema v24, and the token only appears when an agent writes it.
 - Decision outside the stage plan (NV4): `origins` only exist up to specialization `formatVersion` 21, so a `{ "$token" }` in an origin's `screen.background` is gated at `formatVersion` **15** (`only allowed with formatVersion 15` below it), not 23; the container preset's token needs 23. Version numbers follow the same mapping as above (specialization 23, schema v24, proposal 12).

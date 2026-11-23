@@ -10,6 +10,7 @@ import { createEditorDerived } from '../../src/store/derived';
 import { createDisplayImages } from '../../src/store/displayImages';
 import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
+import type { QuickReviewState } from '../../src/store/quickReview';
 import { createEditorUi } from '../../src/store/ui';
 import { material3Catalog, scenarioProject } from '../model/scenarioProject';
 import { componentSources, installFakeCanvas, layerDrawMeter, stageOf } from './harness';
@@ -52,6 +53,8 @@ export interface ScenarioOptions {
   readonly perImage?: number;
   /** Already assembled project (the growth test assembles once and opens several); ignores the other options. */
   readonly project?: Project;
+  /** Quick review (QR2): builds the state over the store; the canvas shows its ghost. */
+  readonly quick?: (store: ReturnType<typeof createProjectStore>) => QuickReviewState;
 }
 
 /** Large project with `size` markings and, by default, `size / 2` arrows between neighboring markings. */
@@ -113,6 +116,7 @@ export function openWholeProject(
     ui,
     derived,
     view: createCanvasViewState(),
+    ...(options.quick ? { quick: options.quick(store) } : {}),
   });
   projectIndex(project);
   projectIssues(project);

@@ -7,6 +7,7 @@ import {
   isTextPackageFile,
   packageWithinLimits,
   proposalIndex,
+  quickReviewOf,
   removeNote as removeProposalNote,
   reviewKey,
   reviewTree,
@@ -122,6 +123,23 @@ export type ApplyResult =
       readonly path?: string;
     };
 
+/** What "Accept" on the canvas refuses with: the errors of "Apply accepted" and its own two. */
+export type QuickAcceptError =
+  | ApplyError
+  /** The proposal is not open (decided, applied or closed meanwhile). */
+  | 'not-open'
+  /** The agent revised a change that the person has not seen yet (decision 6). */
+  | 'revised';
+
+export type QuickAcceptResult =
+  | Extract<ApplyResult, { readonly ok: true }>
+  | {
+      readonly ok: false;
+      readonly error: QuickAcceptError;
+      readonly issues?: readonly ProposalIssue[];
+      readonly path?: string;
+    };
+
 export type RemoveError =
   /** Read-only project: nothing in the storage changes. */
   | 'read-only'
@@ -178,6 +196,15 @@ export interface ProposalActions {
    * the images.
    */
   applyAccepted(proposalId: string): Promise<ApplyResult>;
+  /**
+   * "Accept" of the quick review on the canvas (stage #1932, decision 6): decides the whole
+   * proposal accepted and applies it, all in the same `proposals.mutate`: one `proposal.json` write
+   * (decisions and `applied`) and one undo entry of the project. It refuses with `revised`, like
+   * `decideMany`, when an agent revision is newer than the version the person sees. Undoing the
+   * entry also clears the decisions it wrote (while they are still those), so the proposal is open
+   * and undecided again; redoing it writes them again.
+   */
+  quickAccept(proposalId: string): Promise<QuickAcceptResult>;
   /**
    * "Conclude review" (stage #2085): closes an open proposal whose review is complete, as
    * `applied` (something was applied earlier) or `rejected`. It rereads the file and refuses with
@@ -426,208 +453,253 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
     );
   };
 
-  const applyAcceptedChanges: ProposalActions['applyAccepted'] = async (id) => {
+  /**
+   * Quick accept, first half: the proposal with every change accepted, or the error that stops it
+   * (the same `revised` guard as `decideMany`).
+   */
+  const acceptWhole = (
+    p: Proposal,
+    seen: Proposal,
+  ): Proposal | 'no-project' | 'not-open' | 'stale' | 'revised' => {
+    const project = store.committed.peek();
+    if (!project) return 'no-project';
+    // The version re-read from disk may no longer be a quick review (a decision made outside, a
+    // revision with removals): accepting it all would overwrite what was decided.
+    const eligible = quickReviewOf(p, project);
+    if (!eligible.ok) return eligible.reason === 'not-open' ? 'not-open' : 'stale';
+    const whole: ReviewTarget = { level: 'proposal', id: null };
+    const decided = decide(p, reviewTree(p, project), whole, 'accepted', now());
+    if (!decided.ok) return decided.reason === 'not-open' ? 'not-open' : 'no-project';
+    const changed = decided.changed;
+    if (touchesUnseen(unseenRevisedIds(seen, p), changed, decided.cascaded)) {
+      return 'revised';
+    }
+    return { ...p, decisions: decided.decisions };
+  };
+
+  const runApply = async (id: string, acceptAll: boolean): Promise<QuickAcceptResult> => {
     let issues: readonly ProposalIssue[] | undefined;
     let failedPath: string | undefined;
     const outcome = await measure('apply', () =>
-      proposals.mutate<{ applied: number; files: number }, ApplyError>(id, (p) => {
-        const base = store.project.peek();
-        if (!base) return { ok: false, error: 'no-project' };
-        if (store.readOnly.peek()) return { ok: false, error: 'read-only' };
-        const applying = applyAccepted(base, p, now());
-        if (!applying.ok) {
-          issues = applying.issues;
-          return { ok: false, error: 'blocked' };
-        }
-        const moved: MovedImage[] = [];
-        const appliedIds = applying.applied.map((c) => c.id);
-        const appliedAt = Object.fromEntries(
-          appliedIds.map((changeId) => [changeId, applying.proposal.applied[changeId]]),
-        );
-        const statusBefore: ProposalStatus = p.status;
-        const statusAfter: ProposalStatus = applying.proposal.status;
-        // Writing `mapping.json` failed and the entry was undone: the link does nothing.
-        let abandoned = false;
-        // The project after `store.apply` (to undo only if it is still the one).
-        let applied: Project | null = null;
+      proposals.mutate<{ applied: number; files: number }, QuickAcceptError>(
+        id,
+        (original, seen) => {
+          const base = store.project.peek();
+          if (!base) return { ok: false, error: 'no-project' };
+          if (store.readOnly.peek()) return { ok: false, error: 'read-only' };
+          let p = original;
+          if (acceptAll) {
+            const whole = acceptWhole(original, seen);
+            if (typeof whole === 'string') return { ok: false, error: whole };
+            p = whole;
+          }
+          const decisionsBefore = original.decisions;
+          const decisionsWritten = p.decisions;
+          const applying = applyAccepted(base, p, now());
+          if (!applying.ok) {
+            issues = applying.issues;
+            return { ok: false, error: 'blocked' };
+          }
+          const moved: MovedImage[] = [];
+          const appliedIds = applying.applied.map((c) => c.id);
+          const appliedAt = Object.fromEntries(
+            appliedIds.map((changeId) => [changeId, applying.proposal.applied[changeId]]),
+          );
+          const statusBefore: ProposalStatus = p.status;
+          const statusAfter: ProposalStatus = applying.proposal.status;
+          // Writing `mapping.json` failed and the entry was undone: the link does nothing.
+          let abandoned = false;
+          // The project after `store.apply` (to undo only if it is still the one).
+          let applied: Project | null = null;
 
-        // Undo the entry: the proposal goes back to having the changes as accepted but not applied
-        // and the images go back to `proposals/<id>/`. Redo: the opposite.
-        const link: HistoryLink = {
-          tag: id,
-          undo: () => {
-            if (abandoned) return undefined;
-            return proposals
-              .mutate<void, never>(id, (current) => {
-                const rest = { ...current.applied };
-                for (const changeId of appliedIds) delete rest[changeId];
-                return {
-                  ok: true,
-                  value: undefined,
-                  proposal: {
-                    ...current,
-                    applied: rest,
-                    status:
-                      current.status === statusAfter ? statusBefore : current.status,
-                  },
-                  before: async () => {
-                    for (const m of moved) await storage.writeImage(m.from, m.blob);
-                    return null;
-                  },
-                };
-              })
-              .then((r): LinkResult => {
-                if (!r.ok) reportError('proposals.undoApply', new Error(r.error));
-                return r.ok ? { ok: true } : { ok: false, error: r.error };
-              });
-          },
-          redo: () => {
-            if (abandoned) return undefined;
-            return proposals
-              .mutate<void, never>(id, (current) => {
-                const again = { ...current.applied };
-                for (const changeId of appliedIds) {
-                  const entry = appliedAt[changeId];
-                  if (entry && current.decisions[changeId]?.state === 'accepted') {
-                    again[changeId] = entry;
+          // Undo the entry: the proposal goes back to having the changes as accepted but not applied
+          // and the images go back to `proposals/<id>/`. Redo: the opposite.
+          const link: HistoryLink = {
+            tag: id,
+            undo: () => {
+              if (abandoned) return undefined;
+              return proposals
+                .mutate<void, never>(id, (current) => {
+                  const rest = { ...current.applied };
+                  for (const changeId of appliedIds) delete rest[changeId];
+                  // A quick accept also wrote the decisions: they go back only if still those.
+                  const keepsOurs =
+                    acceptAll && sameDecisions(current.decisions, decisionsWritten);
+                  return {
+                    ok: true,
+                    value: undefined,
+                    proposal: {
+                      ...current,
+                      decisions: keepsOurs ? decisionsBefore : current.decisions,
+                      applied: rest,
+                      status:
+                        current.status === statusAfter ? statusBefore : current.status,
+                    },
+                    before: async () => {
+                      for (const m of moved) await storage.writeImage(m.from, m.blob);
+                      return null;
+                    },
+                  };
+                })
+                .then((r): LinkResult => {
+                  if (!r.ok) reportError('proposals.undoApply', new Error(r.error));
+                  return r.ok ? { ok: true } : { ok: false, error: r.error };
+                });
+            },
+            redo: () => {
+              if (abandoned) return undefined;
+              return proposals
+                .mutate<void, never>(id, (current) => {
+                  const again = { ...current.applied };
+                  const writesOurs =
+                    acceptAll && sameDecisions(current.decisions, decisionsBefore);
+                  const decisions = writesOurs ? decisionsWritten : current.decisions;
+                  for (const changeId of appliedIds) {
+                    const entry = appliedAt[changeId];
+                    if (entry && decisions[changeId]?.state === 'accepted') {
+                      again[changeId] = entry;
+                    }
                   }
-                }
-                return {
-                  ok: true,
-                  value: undefined,
-                  proposal: {
-                    ...current,
-                    applied: again,
-                    status:
-                      current.status === statusBefore ? statusAfter : current.status,
-                  },
-                  after: async () => {
-                    for (const m of moved) await storage.removeImage(m.from);
-                  },
-                };
-              })
-              .then((r): LinkResult => {
-                if (!r.ok) reportError('proposals.redoApply', new Error(r.error));
-                return r.ok ? { ok: true } : { ok: false, error: r.error };
-              });
-          },
-        };
+                  return {
+                    ok: true,
+                    value: undefined,
+                    proposal: {
+                      ...current,
+                      decisions,
+                      applied: again,
+                      status:
+                        current.status === statusBefore ? statusAfter : current.status,
+                    },
+                    after: async () => {
+                      for (const m of moved) await storage.removeImage(m.from);
+                    },
+                  };
+                })
+                .then((r): LinkResult => {
+                  if (!r.ok) reportError('proposals.redoApply', new Error(r.error));
+                  return r.ok ? { ok: true } : { ok: false, error: r.error };
+                });
+            },
+          };
 
-        const rollback = async () => {
-          for (const m of moved) {
-            await deps
-              .dropProjectImage(m.to)
-              .catch((e: unknown) => reportError('proposals.rollback', e));
-          }
-        };
-
-        const prepare = async (): Promise<ApplyError | null> => {
-          // 0. The library packages are read, validated and handed to the session, which
-          // writes them to `specs/<folder>/` together with the project (copied: they stay in the proposal).
-          for (const pkg of applying.packages) {
-            const read = await readProposalPackage(storage, pkg, base, id);
-            if (typeof read === 'string') {
-              failedPath = pkg.from;
-              return read;
-            }
-            deps.stagePackage({ id: pkg.specId, version: pkg.version }, read);
-          }
-          // 1. The images go to their final place (copied; the source is removed only at the end).
-          const taken = new Set<string>();
-          for (const file of await deps.takenImageFiles()) taken.add(fileNameKey(file));
-          for (const image of base.containers) {
-            if (image.file !== null) taken.add(fileNameKey(image.file));
-          }
-          // The sources are all read at once (in parallel with a limit); the checks and the
-          // writes below follow in order, with the same errors.
-          const sources = await readImageSources(storage, applying.files);
-          for (const [i, move] of applying.files.entries()) {
-            if (taken.has(fileNameKey(move.to))) {
-              failedPath = move.to;
-              await rollback();
-              return 'image-exists';
-            }
-            const blob = sources[i];
-            if (!blob) {
-              failedPath = move.from;
-              await rollback();
-              return 'image-missing';
-            }
-            await deps.putProjectImage(move.to, blob);
-            moved.push({ from: move.from, to: move.to, blob });
-            taken.add(fileNameKey(move.to));
-          }
-          // 2. The project, in one undo entry. If it changed while we were copying, give up.
-          if (store.project.peek() !== base) {
-            await rollback();
-            return 'stale';
-          }
-          if (applying.applied.length > 0) {
-            const result = store.apply(() => applying.project, { link });
-            if (!result.ok) {
-              await rollback();
-              return result.error === 'read-only' ? 'read-only' : 'failed';
-            }
-            applied = store.project.peek();
-          }
-          // 3. `mapping.json` first: the proposal only says "applied" if it was written. Otherwise,
-          // undo the entry (no "redo"), return the copies and do not write the proposal.
-          const saved = await deps.flush();
-          if (!saved.ok) {
-            abandoned = true;
-            const undone = applied !== null && store.project.peek() === applied;
-            if (undone) store.undo();
-            store.discardRedoOf(id);
-            // Project already swapped (the undo was skipped): it may cite the copies, which stay.
-            if (undone) await rollback();
-            return 'save-failed';
-          }
-          return null;
-        };
-
-        const unchanged =
-          applying.applied.length === 0 && applying.proposal.status === p.status;
-        return {
-          ok: true,
-          proposal: unchanged ? p : applying.proposal,
-          value: { applied: applying.applied.length, files: applying.files.length },
-          before: async () => {
-            try {
-              return await prepare();
-            } catch (e) {
-              // Storage exception (reading the package or image, writing the copy):
-              // it becomes the typed write failure and the copies already made are removed.
-              reportError('proposals.apply', e);
-              await rollback();
-              return 'write-failed';
-            }
-          },
-          // 4. `mapping.json` was written, but `proposal.json` failed (phase 8.2, P7): the project
-          // cannot stay applied with the proposal lacking `applied`. Undo the entry (the session
-          // sees the confirmed state differ from the disk and schedules the rewrite), confirm the
-          // rewrite with `flush` and only then remove the copies from `images/`: the `mapping.json`
-          // on disk still cites them until the rewrite, and it never points to a deleted file. If
-          // the rewrite fails, the copies are left for the session's cleanup when it succeeds.
-          compensate: async () => {
-            abandoned = true;
-            const undone = applied !== null && store.project.peek() === applied;
-            if (undone) store.undo();
-            store.discardRedoOf(id);
-            // The project is no longer the applied one (reloaded from outside in the write window):
-            // there is nothing to rewrite, and the disk may cite the copies. They stay.
-            if (!undone) return;
-            const restored = await deps.flush();
-            if (restored.ok) await rollback();
-          },
-          after: async () => {
+          const rollback = async () => {
             for (const m of moved) {
-              await storage
-                .removeImage(m.from)
-                .catch((e: unknown) => reportError('proposals.removeSource', e));
+              await deps
+                .dropProjectImage(m.to)
+                .catch((e: unknown) => reportError('proposals.rollback', e));
             }
-          },
-        };
-      }),
+          };
+
+          const prepare = async (): Promise<ApplyError | null> => {
+            // 0. The library packages are read, validated and handed to the session, which
+            // writes them to `specs/<folder>/` together with the project (copied: they stay in the proposal).
+            for (const pkg of applying.packages) {
+              const read = await readProposalPackage(storage, pkg, base, id);
+              if (typeof read === 'string') {
+                failedPath = pkg.from;
+                return read;
+              }
+              deps.stagePackage({ id: pkg.specId, version: pkg.version }, read);
+            }
+            // 1. The images go to their final place (copied; the source is removed only at the end).
+            const taken = new Set<string>();
+            for (const file of await deps.takenImageFiles()) taken.add(fileNameKey(file));
+            for (const image of base.containers) {
+              if (image.file !== null) taken.add(fileNameKey(image.file));
+            }
+            // The sources are all read at once (in parallel with a limit); the checks and the
+            // writes below follow in order, with the same errors.
+            const sources = await readImageSources(storage, applying.files);
+            for (const [i, move] of applying.files.entries()) {
+              if (taken.has(fileNameKey(move.to))) {
+                failedPath = move.to;
+                await rollback();
+                return 'image-exists';
+              }
+              const blob = sources[i];
+              if (!blob) {
+                failedPath = move.from;
+                await rollback();
+                return 'image-missing';
+              }
+              await deps.putProjectImage(move.to, blob);
+              moved.push({ from: move.from, to: move.to, blob });
+              taken.add(fileNameKey(move.to));
+            }
+            // 2. The project, in one undo entry. If it changed while we were copying, give up.
+            if (store.project.peek() !== base) {
+              await rollback();
+              return 'stale';
+            }
+            if (applying.applied.length > 0) {
+              const result = store.apply(() => applying.project, { link });
+              if (!result.ok) {
+                await rollback();
+                return result.error === 'read-only' ? 'read-only' : 'failed';
+              }
+              applied = store.project.peek();
+            }
+            // 3. `mapping.json` first: the proposal only says "applied" if it was written. Otherwise,
+            // undo the entry (no "redo"), return the copies and do not write the proposal.
+            const saved = await deps.flush();
+            if (!saved.ok) {
+              abandoned = true;
+              const undone = applied !== null && store.project.peek() === applied;
+              if (undone) store.undo();
+              store.discardRedoOf(id);
+              // Project already swapped (the undo was skipped): it may cite the copies, which stay.
+              if (undone) await rollback();
+              return 'save-failed';
+            }
+            return null;
+          };
+
+          const unchanged =
+            !acceptAll &&
+            applying.applied.length === 0 &&
+            applying.proposal.status === p.status;
+          return {
+            ok: true,
+            proposal: unchanged ? original : applying.proposal,
+            value: { applied: applying.applied.length, files: applying.files.length },
+            before: async () => {
+              try {
+                return await prepare();
+              } catch (e) {
+                // Storage exception (reading the package or image, writing the copy):
+                // it becomes the typed write failure and the copies already made are removed.
+                reportError('proposals.apply', e);
+                await rollback();
+                return 'write-failed';
+              }
+            },
+            // 4. `mapping.json` was written, but `proposal.json` failed (phase 8.2, P7): the project
+            // cannot stay applied with the proposal lacking `applied`. Undo the entry (the session
+            // sees the confirmed state differ from the disk and schedules the rewrite), confirm the
+            // rewrite with `flush` and only then remove the copies from `images/`: the `mapping.json`
+            // on disk still cites them until the rewrite, and it never points to a deleted file. If
+            // the rewrite fails, the copies are left for the session's cleanup when it succeeds.
+            compensate: async () => {
+              abandoned = true;
+              const undone = applied !== null && store.project.peek() === applied;
+              if (undone) store.undo();
+              store.discardRedoOf(id);
+              // The project is no longer the applied one (reloaded from outside in the write window):
+              // there is nothing to rewrite, and the disk may cite the copies. They stay.
+              if (!undone) return;
+              const restored = await deps.flush();
+              if (restored.ok) await rollback();
+            },
+            after: async () => {
+              for (const m of moved) {
+                await storage
+                  .removeImage(m.from)
+                  .catch((e: unknown) => reportError('proposals.removeSource', e));
+              }
+            },
+          };
+        },
+      ),
     );
     if (!outcome.ok) {
       return {
@@ -639,6 +711,16 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
     }
     store.discardRedoOf(id);
     return { ok: true, proposal: outcome.proposal, ...outcome.value };
+  };
+
+  const applyAcceptedChanges: ProposalActions['applyAccepted'] = async (id) => {
+    const result = await runApply(id, false);
+    if (result.ok) return result;
+    const { error, ...rest } = result;
+    // Without `acceptAll` the two quick-accept errors cannot happen.
+    if (error === 'not-open' || error === 'revised')
+      return { ok: false, error: 'failed' };
+    return { ...rest, ok: false, error };
   };
 
   return {
@@ -695,6 +777,7 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
       ),
 
     applyAccepted: applyAcceptedChanges,
+    quickAccept: (id) => runApply(id, true),
 
     async concludeProposal(id) {
       const result = await proposals.mutate<'applied' | 'rejected', ConcludeError>(

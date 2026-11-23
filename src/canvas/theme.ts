@@ -64,6 +64,8 @@ export interface CanvasTokens {
   readonly opacity: {
     /** Marking with no annotation in the visible layers. */
     readonly dimmed: number;
+    /** Ghost of the quick review (the proposal drawn translucent over the canvas). */
+    readonly ghost: number;
     /** Parents' context border in Hide mode. */
     readonly ancestor: number;
     /** Faded elements (e.g. padlock of a locked marking). */
@@ -180,6 +182,7 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
     warningText: read('--color-warning'),
     opacity: {
       dimmed: number(read, '--opacity-dimmed'),
+      ghost: number(read, '--opacity-ghost'),
       ancestor: number(read, '--opacity-ancestor'),
       inherited: number(read, '--opacity-inherited'),
     },

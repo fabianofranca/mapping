@@ -20,6 +20,11 @@ export interface CanvasViewState {
   readonly bounds: Signal<Rect | null>;
   /** Image pixel under the mouse; `null` outside any image (or on touch). */
   readonly cursor: Signal<CanvasCursor | null>;
+  /**
+   * Box of the quick review ghost in CSS px relative to the canvas host (the anchor of the bar
+   * and the card); `null` without a ghost on screen.
+   */
+  readonly quickReviewBox: Signal<Rect | null>;
 }
 
 export function createCanvasViewState(): CanvasViewState {
@@ -28,6 +33,7 @@ export function createCanvasViewState(): CanvasViewState {
     size: signal<Size>({ width: 0, height: 0 }),
     bounds: signal<Rect | null>(null),
     cursor: signal<CanvasCursor | null>(null),
+    quickReviewBox: signal<Rect | null>(null),
   };
 }
 
@@ -35,4 +41,10 @@ export function createCanvasViewState(): CanvasViewState {
 export function sameCursor(a: CanvasCursor | null, b: CanvasCursor | null): boolean {
   if (a === null || b === null) return a === b;
   return a.containerId === b.containerId && a.x === b.x && a.y === b.y;
+}
+
+/** Same rectangle (avoids writing the signal when the box did not move). */
+export function sameRect(a: Rect | null, b: Rect | null): boolean {
+  if (a === null || b === null) return a === b;
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }

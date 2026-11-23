@@ -1727,3 +1727,60 @@ del.identity-name {
 .revised-before .diff-value-value {
   white-space: pre-line;
 }
+
+/* Quick review on the canvas (stage #1932, QR3): the bar under the ghost and its tag. */
+.quick-bar {
+  position: absolute;
+  z-index: var(--z-canvas-overlay);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  /* Its own width, never the room left to its right: the position clamps it inside the area. */
+  width: max-content;
+  max-width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-card);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-popup);
+}
+
+.quick-bar-head b {
+  white-space: nowrap;
+}
+
+.quick-bar-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The counts wrap inside their own box: the title never ends up alone on a line (CL1.5). */
+.quick-bar-head > .muted {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.quick-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.quick-bar-reason,
+.quick-bar-hint {
+  margin: 0;
+}
+
+.quick-tag {
+  position: absolute;
+  z-index: var(--z-canvas-overlay);
+  transform: translateY(-100%);
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-card);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  pointer-events: none;
+  white-space: nowrap;
+}
