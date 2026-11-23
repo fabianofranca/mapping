@@ -94,6 +94,31 @@ describe('review tree: virtual window', () => {
     expect(spacer).toBeTruthy();
   });
 
+  // Stage #294 (Preact 11), P11.2, decision 6: Preact 11 no longer appends `px` to a number in
+  // `style`, so the spacers of the virtual list must carry the unit in the text.
+  it('the spacers above and below carry `px` and add up to the full height of the list', async () => {
+    const { base, proposal } = manyMarkings(100);
+    const h = await openReviewHarness({ project: base, proposals: [proposal] });
+    expect(h.review.open('P1').ok).toBe(true);
+    const last = proposal.changes.at(-1);
+    if (!last) throw new Error('fixture');
+    act(() => h.review.select({ level: 'change', id: last.id }));
+    renderInEditor(h, <ReviewLevels />);
+    const tree = screen.getByRole('tree');
+    const top = tree.firstElementChild as HTMLElement | null;
+    const bottom = tree.lastElementChild as HTMLElement | null;
+    if (!top?.hasAttribute('aria-hidden') || !bottom?.hasAttribute('aria-hidden'))
+      throw new Error('spacers');
+    expect(top.style.height).toMatch(/^\d+(\.\d+)?px$/);
+    expect(bottom.style.height).toMatch(/^\d+(\.\d+)?px$/);
+    expect(parseFloat(top.style.height)).toBeGreaterThan(0);
+    const drawn = tree.querySelectorAll('[data-row]').length;
+    const total =
+      (parseFloat(top.style.height) + parseFloat(bottom.style.height)) / ROW + drawn;
+    expect(Number.isInteger(total)).toBe(true);
+    expect(total).toBeGreaterThanOrEqual(proposal.changes.length);
+  });
+
   it('60: the shortcuts footer is a named group', async () => {
     const { base, proposal } = manyMarkings(2);
     const h = await openReviewHarness({ project: base, proposals: [proposal] });

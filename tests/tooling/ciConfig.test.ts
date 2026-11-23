@@ -187,6 +187,16 @@ describe('Dependabot', () => {
     expect(config.match(/interval: weekly/g)).toHaveLength(2);
     expect(config.match(/update-types: \[minor, patch\]/g)).toHaveLength(2);
   });
+
+  // Stage #294 (Preact 11), decision 8: the migration is done, so Dependabot proposes the major
+  // versions of `preact` again; the `typescript` rule stays until #293.
+  it('proposes the major versions of preact again; the typescript major stays ignored', () => {
+    const config = read('.github/dependabot.yml');
+    expect(config).not.toMatch(/dependency-name: ['"]?preact['"]?\s*$/m);
+    expect(config).toMatch(
+      /dependency-name: typescript\n\s+update-types: \['version-update:semver-major'\]/,
+    );
+  });
 });
 
 describe('mcp-release.yml attaches mapping-mcp.js to the Release', () => {
