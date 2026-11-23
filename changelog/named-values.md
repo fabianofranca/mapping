@@ -1,4 +1,4 @@
-# Named values v2 in the specialization — [Não lançado] (épico `epic/named-values`, PR #0, MCP 0.59.0, schema v24, specialization formatVersion 23)
+# Named values v2 in the specialization — [Não lançado] (épico `epic/named-values`, PR #2748, MCP 0.59.0, schema v24, specialization formatVersion 23)
 
 ## Adicionado
 
