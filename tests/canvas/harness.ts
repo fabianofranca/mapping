@@ -61,7 +61,7 @@ export const TOKENS: CanvasTokens = {
   text: '#111111',
   textMuted: '#666666',
   warningText: '#b26a00',
-  opacity: { dimmed: 0.3, ancestor: 0.7, inherited: 0.65 },
+  opacity: { dimmed: 0.3, ghost: 0.38, ancestor: 0.7, inherited: 0.65 },
   fontFamily: 'TestSans, sans-serif',
   type: {
     name: { size: 11, line: 16, weight: 600 },

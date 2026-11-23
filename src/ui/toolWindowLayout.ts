@@ -175,6 +175,15 @@ export function reviewExitTarget(proposalId: string | null): HTMLElement | null 
   return document.querySelector<HTMLElement>(`[${CANVAS_AREA_ATTR}]`);
 }
 
+/**
+ * Where focus goes after Reject on the canvas (stage #1932, decision 18): the composer of the open
+ * conversation, or the Conversation window itself when the person cannot reply.
+ */
+export function conversationFocusTarget(): HTMLElement | null {
+  const win = document.querySelector<HTMLElement>('[data-window="conversation"]');
+  return win?.querySelector<HTMLElement>('[data-composer-field]') ?? win ?? null;
+}
+
 const EXIT_FOCUS_TRIES = 30;
 const EXIT_FOCUS_STEP_MS = 16;
 

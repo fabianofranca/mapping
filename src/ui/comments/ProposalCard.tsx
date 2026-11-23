@@ -1,8 +1,10 @@
 import { t } from '../../i18n';
 import type { ProposalRow } from '../../store/derived';
 import { Button } from '../controls';
-import { useEditor } from '../EditorContext';
+import { useEditor, type EditorContextValue } from '../EditorContext';
 import { Icon } from '../icons';
+import { showQuickAgain } from '../../store/quickReview';
+import { focusCanvasArea } from '../toolWindowLayout';
 import { openReviewIn } from '../review/useReviewCommands';
 
 // The proposal card in a thread (decision 36): the message with `proposal` shows the proposal's
@@ -39,6 +41,35 @@ function revisedText(row: ProposalRow): string | null {
     : t('thread.proposal.revisedMany', { count: row.revised });
 }
 
+/** The quick review line of the card: where the proposal is. */
+function QuickNote({
+  onCanvas,
+  rejected,
+}: {
+  readonly onCanvas: boolean;
+  readonly rejected: boolean;
+}) {
+  if (onCanvas) return <span class="muted">{t('thread.proposal.onCanvas')}</span>;
+  if (!rejected) return null;
+  return <span class="muted">{t('thread.proposal.rejectedOnCanvas')}</span>;
+}
+
+/** Where a quick review proposal is: on the canvas (ghost shown) or rejected there. */
+function quickCardState(
+  editor: EditorContextValue,
+  row: ProposalRow,
+  underReview: boolean,
+): { readonly onCanvas: boolean; readonly rejectedOnCanvas: boolean } {
+  const id = row.proposal.id;
+  return {
+    onCanvas: !underReview && editor.quick.current.value?.proposal.id === id,
+    rejectedOnCanvas:
+      !underReview &&
+      row.proposal.status === 'open' &&
+      editor.ui.quickDismissed.value.has(id),
+  };
+}
+
 export function ProposalCard({
   proposalId,
   threadId,
@@ -60,6 +91,7 @@ export function ProposalCard({
   const { title } = row.proposal;
   const underReview = editor.review.proposalId.value === proposalId;
   const revised = revisedText(row);
+  const { onCanvas, rejectedOnCanvas } = quickCardState(editor, row, underReview);
   const action = underReview ? null : cardAction(row);
   const label = action === null ? '' : t(`proposals.action.${action}`);
   return (
@@ -76,6 +108,7 @@ export function ProposalCard({
           {title}
         </b>
         <span class="muted proposal-card-state">{proposalStateText(row)}</span>
+        <QuickNote onCanvas={onCanvas} rejected={rejectedOnCanvas} />
         {underReview && (
           <span class="proposal-card-review">
             <b>{t('thread.proposal.inReview')}</b>
@@ -83,16 +116,31 @@ export function ProposalCard({
           </span>
         )}
       </div>
-      {action !== null && (
-        <Button
-          size="sm"
-          variant={action === 'review' ? 'primary' : 'default'}
-          aria-label={`${label}: ${title}`}
-          onClick={() => openReviewIn(editor, row.proposal.id, threadId)}
-        >
-          {label}
-        </Button>
-      )}
+      <div class="proposal-card-actions">
+        {rejectedOnCanvas && (
+          <Button
+            size="sm"
+            aria-label={`${t('thread.proposal.showAgain')}: ${title}`}
+            onClick={() => {
+              showQuickAgain(editor.ui, proposalId);
+              // The button goes away with the click: the focus moves to the canvas, not the body.
+              queueMicrotask(focusCanvasArea);
+            }}
+          >
+            {t('thread.proposal.showAgain')}
+          </Button>
+        )}
+        {action !== null && (
+          <Button
+            size="sm"
+            variant={action === 'review' ? 'primary' : 'default'}
+            aria-label={`${label}: ${title}`}
+            onClick={() => openReviewIn(editor, row.proposal.id, threadId)}
+          >
+            {label}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

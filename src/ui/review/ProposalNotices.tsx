@@ -42,7 +42,7 @@ export function ReviewUndoNotice() {
 
 export function ProposalNotices() {
   return (
-    <div class="canvas-corner">
+    <div class="canvas-corner" data-canvas-obstacle="children">
       <ReviewUndoNotice />
       <ProposalNotice />
       <ImageConsentBanner />

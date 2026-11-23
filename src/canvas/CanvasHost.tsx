@@ -7,7 +7,7 @@ import { CanvasController } from './CanvasController';
  * (commands such as "fit"). The only component that knows Konva.
  */
 export function CanvasHost() {
-  const { store, actions, display, ui, derived, canvas, view, review, session } =
+  const { store, actions, display, ui, derived, canvas, view, review, quick, session } =
     useEditor();
   const { perspective, page } = session;
   const ref = useRef<HTMLDivElement>(null);
@@ -25,6 +25,7 @@ export function CanvasHost() {
       derived,
       view,
       review,
+      quick,
       perspective,
       page,
       packageImages: session.components.images,
@@ -43,6 +44,7 @@ export function CanvasHost() {
     canvas,
     view,
     review,
+    quick,
     perspective,
     page,
     session,

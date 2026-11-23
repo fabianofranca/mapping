@@ -359,4 +359,4 @@ In `formatVersion` 5, additionally:
 
 ## In the app
 
-How the app stores and checks proposals (storage, `revision`, undoing the application, resuming the review) is in [`ARCHITECTURE.md`](ARCHITECTURE.md), under the item "Change proposals".
+How the app stores and checks proposals (storage, `revision`, undoing the application, resuming the review) is in [`ARCHITECTURE.md`](ARCHITECTURE.md), under the item "Change proposals". A small proposal linked to a conversation can be accepted or rejected in place on the canvas (the quick review, also in that item): nothing new is written for it (Accept writes the usual `applied` and `status`, and Reject is not stored), so the format does not change.
