@@ -1390,7 +1390,7 @@ class Batch {
       const mode = drawingModeMap(project, op.drawingMode);
       project = setProjectDrawingMode(project, mode);
       changes.push(
-        mode === null
+        mode === null || Object.keys(mode).length === 0
           ? 'drawing mode removed'
           : `drawing mode ${quoted(drawingModeText(mode))}`,
       );
@@ -1574,7 +1574,7 @@ class Batch {
       const mode = drawingModeMap(project, op.drawingMode);
       project = setContainerDrawingMode(project, id, mode);
       changes.push(
-        mode === null
+        mode === null || Object.keys(mode).length === 0
           ? 'project drawing mode'
           : `drawing mode ${quoted(drawingModeText(mode))}`,
       );

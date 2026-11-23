@@ -449,6 +449,41 @@ describe('applyFormatResult: the types of the values', () => {
   });
 });
 
+describe('applyFormatResult: a drawingMode text in add_container', () => {
+  const withAxes = (): Project =>
+    ({
+      ...formatProject(),
+      specializations: [{ spec: { tokens: { axes: { theme: ['light', 'dark'] } } } }],
+    }) as unknown as Project;
+
+  const pinned = (project: Project, drawingMode: unknown) => {
+    const done = success(
+      apply(project, [
+        op('add_container', {
+          width: 10,
+          height: 10,
+          background: '#FFFFFF',
+          drawingMode,
+        }),
+      ]),
+    );
+    const id = done.created.find((c) => c.kind === 'i')?.id;
+    return done.project.containers.find((c) => c.id === id)?.drawingMode;
+  };
+
+  it('sets the entry on every declared axis that has it, like the MCP does', () => {
+    expect(pinned(withAxes(), 'dark')).toEqual({ theme: 'dark' });
+  });
+
+  it('keeps { mode: s } when no declared axis has the entry', () => {
+    expect(pinned(withAxes(), 'sepia')).toEqual({ mode: 'sepia' });
+  });
+
+  it('a map is pinned as it is', () => {
+    expect(pinned(withAxes(), { theme: 'dark' })).toEqual({ theme: 'dark' });
+  });
+});
+
 describe('applyFormatResult: what comes back', () => {
   it('returns the plugin’s warnings as the result carried them', () => {
     const done = success(

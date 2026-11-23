@@ -1201,7 +1201,7 @@ export function applyContainerSettings(
 ): { readonly project: Project; readonly changes: string[] } {
   let project = p;
   const changes: string[] = [];
-  if (args.drawingMode != null) {
+  if (args.drawingMode != null && Object.keys(args.drawingMode).length > 0) {
     project = setContainerDrawingMode(project, id, args.drawingMode);
     changes.push(`drawing mode ${quotedLabel(drawingModeText(args.drawingMode))}`);
   }

@@ -380,20 +380,29 @@ export const migrateFrom22To23: Migration = (data) => data;
 
 /**
  * v23 → v24 (drawing mode as a map): a string `s` in the project's or a container's `drawingMode` becomes
- * `{ "mode": s }` (the axis `mode` of a specialization with `modes`); `null`, an absent key and everything else stay.
+ * `{ "mode": s }` (the axis `mode` of a specialization with `modes`); a string the name pattern refuses is dropped; `null`, an absent key and everything else stay.
  */
 export const migrateFrom23To24: Migration = (data) => {
   const out: Record<string, unknown> = { ...data };
-  if (typeof out.drawingMode === 'string') out.drawingMode = { mode: out.drawingMode };
+  if (typeof out.drawingMode === 'string') {
+    const mode = modeMap(out.drawingMode);
+    if (mode === undefined) delete out.drawingMode;
+    else out.drawingMode = mode;
+  }
   if ('containers' in out) {
     out.containers = mapItems(out.containers, (c) =>
       typeof c.drawingMode === 'string'
-        ? { ...c, drawingMode: { mode: c.drawingMode } }
+        ? { ...c, drawingMode: modeMap(c.drawingMode) ?? null }
         : c,
     );
   }
   return out;
 };
+
+/** `{ mode: s }`, or `undefined` for a text the entry-name pattern refuses (v23 only checked it was not empty): the file opens with the default. */
+function modeMap(text: string): { mode: string } | undefined {
+  return /^[a-z0-9][a-z0-9-]*$/.test(text) ? { mode: text } : undefined;
+}
 
 /** Migration registry: the key is the source version. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([

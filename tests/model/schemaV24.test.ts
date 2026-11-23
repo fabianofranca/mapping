@@ -69,6 +69,22 @@ describe('schema v24', () => {
     });
   });
 
+  it('a v23 string the new name pattern refuses is dropped, so the project still opens', () => {
+    const migrated = migrateFrom23To24({
+      drawingMode: 'Dark Mode',
+      containers: [
+        { id: 'a', drawingMode: '' },
+        { id: 'b', drawingMode: 'dark' },
+      ],
+    });
+    expect(migrated).toEqual({
+      containers: [
+        { id: 'a', drawingMode: null },
+        { id: 'b', drawingMode: { mode: 'dark' } },
+      ],
+    });
+  });
+
   it('a v23 mapping.json migrates with the modes as maps and nothing else changed', () => {
     const raw = v23WithStrings();
     const result = open(raw);
