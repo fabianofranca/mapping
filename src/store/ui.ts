@@ -117,6 +117,17 @@ export interface EditorUi {
    * opens or the notice is dismissed. UI state, never saved.
    */
   readonly reviewReturn: Signal<string | null>;
+  /**
+   * The quick review shows how the proposal really looks while the pointer or the focus is in its
+   * bar (stage #1932, decision 11). UI state, never saved.
+   */
+  readonly quickPeek: Signal<boolean>;
+  /**
+   * Quick reviews rejected on this device (decision 8): proposal id → `revisions.length` at the
+   * click. The ghost stays hidden while the proposal has that same number of revisions. In memory
+   * only: nothing is written to `proposal.json`.
+   */
+  readonly quickDismissed: Signal<ReadonlyMap<string, number>>;
   /** Message drafts by key (`threadDraftKey`), in memory: they survive a selection change. */
   readonly threadDrafts: Signal<ReadonlyMap<string, string>>;
   /** Comments window: status, user and search filters (decision 21). */
@@ -190,6 +201,8 @@ function buildEditorUi(): EditorUi {
     compareImage: signal<string | null>(null),
     conversation: signal<ConversationTarget | null>(null),
     reviewReturn: signal<string | null>(null),
+    quickPeek: signal<boolean>(false),
+    quickDismissed: signal<ReadonlyMap<string, number>>(new Map()),
     threadDrafts: signal<ReadonlyMap<string, string>>(new Map()),
     commentsStatus: signal<ThreadStatusFilter>('open'),
     commentsUser: signal<string>(''),

@@ -24,9 +24,9 @@ import {
 const ENTRY = `
 import { konvaMeasurer } from './src/canvas/components/konvaMeasurer';
 window.measureParity = async (fonts, cases, size) => {
-  for (const { family, weight, base64 } of fonts) {
+  for (const { family, weight, style, base64 } of fonts) {
     const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-    const face = new FontFace('Parity' + family, bytes.buffer, { weight });
+    const face = new FontFace('Parity' + family, bytes.buffer, { weight, style });
     document.fonts.add(await face.load());
   }
   // The ink of a case (stage #2448, BD2): from the origin and the baseline.
@@ -125,6 +125,7 @@ test('Chromium measures the parity cases within 0.1 px of the server', async ({
   const fonts = parityFaces().map((f) => ({
     family: f.family,
     weight: f.weight,
+    style: f.style,
     base64: Buffer.from(f.bytes).toString('base64'),
   }));
   const widths = await page.evaluate(

@@ -111,6 +111,7 @@ export * from './membership';
 export * from './proposalCompare';
 export * from './proposalView';
 export * from './proposalRevise';
+export * from './quickReview';
 export * from './proposalRevisions';
 // Anchored threads (mapping-thread 1 format): format and pure operations.
 export * from './thread';

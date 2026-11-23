@@ -6,7 +6,7 @@ import {
   textWidth,
   type Synthesis,
 } from './glyphs';
-import { loadFace, type Face } from './harfbuzz';
+import { loadFace, type DeclaredFace, type Face } from './harfbuzz';
 import monoBold from 'font:mono-bold';
 import mono from 'font:mono';
 import sansBold from 'font:sans-bold';
@@ -118,7 +118,7 @@ export interface FontBook {
   /**
    * What the drawing adds to the face `fontFor` returns (stage #2448, decisions 12 and 13): synthetic bold (a library
    * face whose top weight is below 600, asked for from 600) and the slant of a face that is not italic (0.25 for a
-   * library face, 0.2 for the embedded fonts). The advance does not change.
+   * library face, 0.2 for the embedded fonts), none when the file itself slants (`Face.slanted`, stage #2574). The advance does not change.
    */
   synthesis(family: string, weight: number, italic: boolean): Synthesis;
   /** The embedded font for `family` and `weight`: where a text goes when its library font cannot lay it out. */
@@ -137,20 +137,24 @@ export interface FontBook {
  * Reads a library font (`.ttf`, `.otf`, `.woff` or `.woff2`). `null` when the bytes are not a usable font (a corrupt
  * file, a font without `head`, `hhea` or code points): the embedded font applies to its family.
  */
-export function loadLibraryFont(bytes: ArrayBuffer): Face | null {
-  return loadFace(new Uint8Array(bytes));
+export function loadLibraryFont(
+  bytes: ArrayBuffer,
+  declared?: DeclaredFace,
+): Face | null {
+  return loadFace(new Uint8Array(bytes), declared);
 }
 
 function candidateOf(entry: LoadedFont): Candidate | null {
   if (entry.bytes === undefined) return null;
-  const font = loadLibraryFont(entry.bytes);
-  if (font === null) return null;
   const [low, high] = weightRange(entry.weight);
+  const italic = entry.style === 'italic';
+  const font = loadLibraryFont(entry.bytes, { low, high, italic });
+  if (font === null) return null;
   return {
     family: entry.family.toLowerCase(),
     low,
     high,
-    italic: entry.style === 'italic',
+    italic,
     font,
   };
 }
@@ -191,7 +195,7 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
           face: hit.font,
           synthesis: {
             bold: weight >= SYNTHETIC_BOLD_FROM && hit.high < SYNTHETIC_BOLD_FROM,
-            slant: italic && !hit.italic ? LIBRARY_SLANT : 0,
+            slant: italic && !hit.italic && !hit.font.slanted ? LIBRARY_SLANT : 0,
           },
         };
       if (MONO_FAMILY.test(name)) break;

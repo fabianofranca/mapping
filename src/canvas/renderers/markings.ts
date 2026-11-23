@@ -39,10 +39,12 @@ import {
 } from './semanticCard';
 
 /** Thickness of the marking border (screen px): normal and selected. */
-const MARKING_STROKE = 1;
+export const MARKING_STROKE = 1;
 const MARKING_SELECTED_STROKE = 2;
 /** Double line of a marking changed in review (screen px). */
-const REVIEW_DOUBLE_STROKE = 3;
+export const REVIEW_DOUBLE_STROKE = 3;
+/** Dash and gap of the created marking's line (screen px). */
+export const REVIEW_DASH: readonly [number, number] = [6, 4];
 /** Stroke of the canvas marking's border (screen px): long dash and gap, unlike "to review". */
 /** Mask of the parts hung when the node is created: only the border (index 1 in `partsOf`). */
 const BORDER_ONLY = 0b000010;
@@ -527,7 +529,7 @@ function updateMarkingNode(
     line === 'rejected'
       ? [1.5 / zoom, 2.5 / zoom]
       : marking.needsReview || line === 'created' || line === 'invalid'
-        ? [6 / zoom, 4 / zoom]
+        ? REVIEW_DASH.map((d) => d / zoom)
         : canvasMarking
           ? CANVAS_DASH.map((d) => d / zoom)
           : [];

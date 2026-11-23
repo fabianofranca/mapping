@@ -243,3 +243,59 @@ describe('shaping by directional run', () => {
     expect(clusters('Pay invoice.', { direction: 'rtl' })[0]).toBe(11);
   });
 });
+
+// Stage #2574 (VA1, decision 2): `wght` within the range the entry declares, `slnt` from the declared style, and no
+// `ital`. `declared` is absent for the faces loaded without a declaration (embedded fonts, `validate_library`).
+describe('variationsFor with a declaration', () => {
+  const axis = (min: number, def: number, max: number) => ({ min, default: def, max });
+  const upright = { low: 400, high: 400, italic: false };
+
+  it('wght is clamped to the declared range first, then to the axis', () => {
+    const axes = { wght: axis(100, 400, 900) };
+    expect(variationsFor(axes, 700, 14, upright)).toEqual([{ tag: 'wght', value: 400 }]);
+    expect(variationsFor(axes, 200, 14, upright)).toEqual([{ tag: 'wght', value: 400 }]);
+    const range = { low: 100, high: 900, italic: false };
+    expect(variationsFor(axes, 700, 14, range)).toEqual([{ tag: 'wght', value: 700 }]);
+    const wide = { low: 50, high: 1000, italic: false };
+    expect(variationsFor(axes, 950, 14, wide)).toEqual([{ tag: 'wght', value: 900 }]);
+    expect(variationsFor(axes, 20, 14, wide)).toEqual([{ tag: 'wght', value: 100 }]);
+  });
+
+  it('slnt is −14 for an italic face and 0 for a normal one, clamped to the axis', () => {
+    const axes = { slnt: axis(-20, 0, 20) };
+    expect(variationsFor(axes, 400, 14, { ...upright, italic: true })).toEqual([
+      { tag: 'slnt', value: -14 },
+    ]);
+    expect(variationsFor(axes, 400, 14, upright)).toEqual([{ tag: 'slnt', value: 0 }]);
+    expect(
+      variationsFor({ slnt: axis(-10, 0, 0) }, 400, 14, { ...upright, italic: true }),
+    ).toEqual([{ tag: 'slnt', value: -10 }]);
+    expect(variationsFor({ slnt: axis(-20, 0, -5) }, 400, 14, upright)).toEqual([
+      { tag: 'slnt', value: -5 },
+    ]);
+  });
+
+  it('slnt is set even when the axis default is not 0', () => {
+    const axes = { slnt: axis(-20, -10, 0) };
+    expect(variationsFor(axes, 400, 14, upright)).toEqual([{ tag: 'slnt', value: 0 }]);
+    expect(variationsFor(axes, 400, 14, { ...upright, italic: true })).toEqual([
+      { tag: 'slnt', value: -14 },
+    ]);
+  });
+
+  it('ital and the other axes are left out, so they stay at their defaults', () => {
+    const axes = { ital: axis(0, 0, 1), wdth: axis(75, 100, 125), GRAD: axis(0, 0, 1) };
+    expect(variationsFor(axes, 700, 14, { ...upright, italic: true })).toEqual([]);
+  });
+
+  it('opsz still follows the size', () => {
+    expect(variationsFor({ opsz: axis(14, 14, 32) }, 400, 20, upright)).toEqual([
+      { tag: 'opsz', value: 20 },
+    ]);
+  });
+
+  it('without a declaration slnt is left out and wght is clamped to the axis only', () => {
+    const axes = { wght: axis(100, 400, 900), slnt: axis(-20, 0, 20) };
+    expect(variationsFor(axes, 700, 14)).toEqual([{ tag: 'wght', value: 700 }]);
+  });
+});
