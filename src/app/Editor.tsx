@@ -141,10 +141,11 @@ export function EditorScreen() {
               }}
             >
               <CanvasHost />
-              <QuickReviewBar />
               <CanvasNotices notices={notices} />
               <CanvasContextMenu />
               <Minimap />
+              {/* After the notices and the minimap (same z-index): the bar is above them, so nothing ever covers its buttons (CL2.1). */}
+              <QuickReviewBar />
               {/* The open legend sits above the minimap by z-index (--z-popover above --z-canvas-overlay), not by DOM order. */}
               <ReviewLegend />
               {noImages.value && (

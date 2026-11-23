@@ -17,3 +17,5 @@ Not written yet: the closing writes the pending items to the **Mapping** artifac
 ## Ficou sem gravar
 
 None yet.
+
+- **Stacking and the card at the smallest window (CL2):** the bar sits after the corner notices and the minimap in the canvas area (same `--z-canvas-overlay`), so it is drawn above them; `barPosition` takes a free spot, else the one that covers the least. The proposal card keeps its icon beside the text and its buttons in one `.proposal-card-actions` row when they fit.

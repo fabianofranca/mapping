@@ -251,16 +251,24 @@
   align-items: center;
   gap: var(--space-2);
   margin-bottom: var(--space-1);
-  padding: var(--space-1-5) var(--space-2);
+  padding: var(--space-1-5);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font: var(--t-text-small);
 }
 
+/* The card's buttons share a row when they fit, so the card stays short in a short window (CL2.2). */
+.proposal-card-actions {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
 .proposal-card-text {
   display: flex;
-  /* The buttons drop to their own row before the text gets narrower than this. */
-  flex: 1 1 calc(8 * var(--space-6));
+  /* The buttons drop to their own row before the text gets narrower than this; the icon stays beside the text (CL2.2). */
+  flex: 1 1 calc(6 * var(--space-6));
   flex-direction: column;
   min-width: 0;
 }

@@ -116,29 +116,31 @@ export function ProposalCard({
           </span>
         )}
       </div>
-      {rejectedOnCanvas && (
-        <Button
-          size="sm"
-          aria-label={`${t('thread.proposal.showAgain')}: ${title}`}
-          onClick={() => {
-            showQuickAgain(editor.ui, proposalId);
-            // The button goes away with the click: the focus moves to the canvas, not the body.
-            queueMicrotask(focusCanvasArea);
-          }}
-        >
-          {t('thread.proposal.showAgain')}
-        </Button>
-      )}
-      {action !== null && (
-        <Button
-          size="sm"
-          variant={action === 'review' ? 'primary' : 'default'}
-          aria-label={`${label}: ${title}`}
-          onClick={() => openReviewIn(editor, row.proposal.id, threadId)}
-        >
-          {label}
-        </Button>
-      )}
+      <div class="proposal-card-actions">
+        {rejectedOnCanvas && (
+          <Button
+            size="sm"
+            aria-label={`${t('thread.proposal.showAgain')}: ${title}`}
+            onClick={() => {
+              showQuickAgain(editor.ui, proposalId);
+              // The button goes away with the click: the focus moves to the canvas, not the body.
+              queueMicrotask(focusCanvasArea);
+            }}
+          >
+            {t('thread.proposal.showAgain')}
+          </Button>
+        )}
+        {action !== null && (
+          <Button
+            size="sm"
+            variant={action === 'review' ? 'primary' : 'default'}
+            aria-label={`${label}: ${title}`}
+            onClick={() => openReviewIn(editor, row.proposal.id, threadId)}
+          >
+            {label}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

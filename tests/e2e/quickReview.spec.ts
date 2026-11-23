@@ -6,6 +6,7 @@ import {
   buildProposal,
   proposalFilePath,
   serializeProposal,
+  setMarkingRect,
   serializeThread,
   threadFilePath,
   type Thread,
@@ -25,20 +26,26 @@ const NOW = '2026-11-18T09:00:00.000Z';
 
 function quickFiles(
   rect = { x: 24, y: 620, width: 120, height: 48 },
+  changed = false,
 ): Map<string, string | Buffer> {
   const project = fixtureProject();
-  let after = createMarking(project, {
-    id: 'M20',
-    containerId: 'I1',
-    name: 'Help button',
-    rect,
-  });
-  after = addAnnotation(after, {
-    id: 'A20',
-    markingId: 'M20',
-    layerId: 'L1',
-    name: 'Button',
-  });
+  // `changed`: the proposal moves an existing marking instead of creating one (the taller bar).
+  let after = changed
+    ? setMarkingRect(project, 'M5', { x: 30, y: 420, width: 300, height: 56 })
+    : createMarking(project, {
+        id: 'M20',
+        containerId: 'I1',
+        name: 'Help button',
+        rect,
+      });
+  if (!changed) {
+    after = addAnnotation(after, {
+      id: 'A20',
+      markingId: 'M20',
+      layerId: 'L1',
+      name: 'Button',
+    });
+  }
   const proposal = buildProposal(project, after, {
     id: PROPOSAL_ID,
     title: 'Add a help button',
@@ -73,8 +80,9 @@ function quickFiles(
 async function openFolder(
   page: Page,
   rect?: { x: number; y: number; width: number; height: number },
+  changed = false,
 ): Promise<void> {
-  const files = [...quickFiles(rect)].map(([path, data]) => ({
+  const files = [...quickFiles(rect, changed)].map(([path, data]) => ({
     path,
     data: [...(typeof data === 'string' ? Buffer.from(data) : data)],
   }));
@@ -280,6 +288,124 @@ for (const size of [
       expect(report?.inside).toBe(true);
       expect(report?.textWidth).toBeGreaterThan(120);
       expect(report?.textLines).toBeLessThanOrEqual(3);
+    });
+  });
+}
+
+// Findings CL2.1 and CL2.2 (sub-issue #2746, retest of CL1): at 900×720 the corner notices covered the
+// whole bar, and the rejected card's first line was clipped at the end of the conversation's scroll.
+async function addProposals(page: Page, count: number): Promise<void> {
+  const project = fixtureProject();
+  const files = [];
+  for (let i = 0; i < count; i++) {
+    const id = `extra-${i}`;
+    const after = createMarking(project, {
+      id: `M3${i}`,
+      containerId: 'I1',
+      name: `Extra ${i}`,
+      rect: { x: 40 + i * 30, y: 40, width: 40, height: 40 },
+    });
+    const proposal = buildProposal(project, after, {
+      id,
+      title: `Extra proposal ${i}`,
+      createdAt: NOW,
+    });
+    files.push({ path: proposalFilePath(id), data: serializeProposal(proposal) });
+  }
+  await page.evaluate(
+    async ([name, list]) => {
+      const root = await navigator.storage.getDirectory();
+      const dir = await root.getDirectoryHandle(name);
+      for (const f of list) {
+        let d = dir;
+        const parts = f.path.split('/');
+        for (const part of parts.slice(0, -1))
+          d = await d.getDirectoryHandle(part, { create: true });
+        const h = await d.getFileHandle(parts[parts.length - 1]!, { create: true });
+        const w = await h.createWritable();
+        await w.write(f.data);
+        await w.close();
+      }
+      window.dispatchEvent(new Event('focus'));
+    },
+    [FOLDER, files] as const,
+  );
+}
+
+for (const size of [
+  { width: 1280, height: 720 },
+  { width: 900, height: 720 },
+]) {
+  test.describe(`CL2 at ${size.width}×${size.height}`, () => {
+    test.use({ viewport: size });
+
+    test('the corner notices never cover the bar, also when they appear later', async ({
+      page,
+    }) => {
+      await openFolder(page, undefined, true);
+      await openConversation(page);
+      await expect(bar(page)).toBeVisible();
+      await addProposals(page, 4);
+      await expect(
+        page.locator('[data-canvas-obstacle] .notice-box').first(),
+      ).toBeVisible();
+      await expect(page.getByText(/more proposal notice/)).toBeVisible();
+      await expect
+        .poll(async () =>
+          page.evaluate(() => {
+            const el = document.querySelector<HTMLElement>('.quick-bar');
+            if (!el) return ['no bar'];
+            return [...el.querySelectorAll<HTMLElement>('button, b')]
+              .filter((c) => {
+                const r = c.getBoundingClientRect();
+                const hit = document.elementFromPoint(
+                  r.left + r.width / 2,
+                  r.top + r.height / 2,
+                );
+                return !hit || !(c === hit || c.contains(hit) || hit.contains(c));
+              })
+              .map((c) => c.textContent || c.getAttribute('aria-label'));
+          }),
+        )
+        .toEqual([]);
+    });
+
+    test('the rejected card is never clipped at the end of the scroll', async ({
+      page,
+    }) => {
+      await openFolder(page, undefined, true);
+      // Details and Conversation share the right column: the conversation's scroll area is the short one.
+      await page.keyboard.press('Control+Shift+3');
+      await openConversation(page);
+      await bar(page).getByRole('button', { name: 'Accept' }).focus();
+      await page.keyboard.press('Escape');
+      const card = page.locator('[data-proposal-card]');
+      await expect(card.getByText(/Rejected on the canvas/)).toBeVisible();
+      const gaps = await page.evaluate(() => {
+        const body = document.querySelector<HTMLElement>(
+          '[data-window="conversation"] .tool-window-body',
+        );
+        const c = document.querySelector<HTMLElement>('[data-proposal-card]');
+        if (!body || !c) return null;
+        const out: { top: number; clip: number }[] = [];
+        for (const top of [body.scrollHeight, 0]) {
+          body.scrollTop = top;
+          const area = body.getBoundingClientRect().top;
+          const text = [
+            ...c.querySelectorAll<HTMLElement>('.proposal-card-text span'),
+          ].find((s) => s.textContent?.includes('Rejected'));
+          out.push({
+            top: body.scrollTop,
+            clip: Math.round(area - (text?.getBoundingClientRect().top ?? 0)),
+          });
+        }
+        return out;
+      });
+      for (const g of gaps ?? []) expect(g.clip).toBeLessThanOrEqual(0);
+      // The cause of the clip: the card stacked the icon, the text and each button on its own row
+      // (166 px here, more on the CI fonts; 110 and 138 after), leaving no room for it above the composer. It stays compact.
+      const box = await card.boundingBox();
+      expect(box?.height).toBeLessThan(150);
     });
   });
 }
