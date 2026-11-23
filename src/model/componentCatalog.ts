@@ -4,7 +4,7 @@ import { parseIconsText, type IconSet } from './components/icons';
 import { resolvePathChecked } from './components/library';
 import { attachResolvedComponents, resolvedFields } from './components/nesting';
 import { parseComponentText } from './components/parseComponent';
-import { resolveTokens, type HostFonts, type ResolvedTokens } from './components/tokens';
+import { createTokenTables, type HostFonts } from './components/tokens';
 import { effectiveDensity, unitsToPixels } from './density';
 import { MIN_STORED_MARKING_SIZE } from './geometry';
 import {
@@ -162,20 +162,6 @@ export interface LoadOptions {
   readonly mode?: string;
 }
 
-/** The token table of each declared mode (without `tokens`: none). */
-function tokensByMode(
-  spec: Spec,
-  fonts: HostFonts,
-): Readonly<Record<string, ResolvedTokens>> | undefined {
-  if (spec.tokens === undefined) return undefined;
-  return Object.fromEntries(
-    (spec.tokens.modes ?? []).map((mode) => [
-      mode,
-      resolveTokens(spec.tokens, fonts, mode),
-    ]),
-  );
-}
-
 /**
  * Reads and validates the specialization's components. `readText` returns the text of a path
  * from the project root, or `undefined` if the file does not exist. A bad component becomes a
@@ -192,8 +178,8 @@ export function loadSpecComponents(
   const byType = new Map<string, ComponentFile>();
   const problems: LoadProblems = { texts: [], messages: [] };
   const fonts = options.fonts ?? {};
-  const resolvedTokens = resolveTokens(spec.tokens, fonts, options.mode);
-  const resolvedTokensByMode = tokensByMode(spec, fonts);
+  const tokenTables = createTokenTables(spec.tokens, fonts);
+  const resolvedTokens = tokenTables.get(options.mode);
   if (spec.formatVersion >= 4) {
     const resolvedIcons = loadIcons(spec, specFile, readText, problems);
     for (const type of typesWithComponent(spec)) {
@@ -229,7 +215,7 @@ export function loadSpecComponents(
       byType.set(type.id, {
         ...parsed.component,
         resolvedTokens,
-        resolvedTokensByMode,
+        tokenTables,
         ...(resolvedIcons === undefined ? {} : { resolvedIcons }),
       });
     }

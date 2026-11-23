@@ -770,6 +770,111 @@ describe('drawingMode (token mode)', () => {
   });
 });
 
+describe('drawingMode as a map of axes (NV2)', () => {
+  const spec = {
+    format: 'mapping-spec',
+    formatVersion: 23,
+    id: 'ax',
+    name: 'Ax',
+    version: 1,
+    tokens: {
+      axes: { theme: ['light', 'dark'], density: ['compact', 'roomy'] },
+      values: {
+        primary: { $axis: 'theme', light: '#1a73e8', dark: '#8ab4f8' },
+        extra: { $axis: 'density', compact: '#111111', roomy: '#222222' },
+      },
+    },
+    layers: [
+      {
+        id: 'l',
+        name: 'L',
+        color: '#112233',
+        annotationTypes: [
+          { id: 't', name: 'T', component: 'components/ax.json', fields: [] },
+        ],
+      },
+    ],
+  };
+  const component = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'ax',
+    name: 'Ax',
+    size: { width: 100, height: 50 },
+    template: {
+      type: 'frame',
+      fill: { $token: 'primary' },
+      children: [{ type: 'rect', fill: { $token: 'extra' } }],
+    },
+  };
+  const axisLibrary = loadLibrary([
+    { path: 'ax.spec.json', text: JSON.stringify(spec) },
+    { path: 'components/ax.json', text: JSON.stringify(component) },
+  ]);
+  const axisScreen: Screen = {
+    id: 's',
+    name: 'S',
+    width: 100,
+    height: 50,
+    background: '#FFFFFF',
+    instances: [
+      { id: 'i1', typeId: 't', box: { x: 0, y: 0, width: 100, height: 50 }, values: {} },
+    ],
+  };
+  const fills = (el: HTMLElement): unknown[] =>
+    instanceNode(stageOf(el), 'i1')
+      .find<Konva.Rect>('Rect')
+      .map((r) => r.fill());
+
+  it('a map picks one entry per axis; the others stay at their default', () => {
+    const el = container();
+    make(el, {
+      library: axisLibrary,
+      screen: axisScreen,
+      drawingMode: { theme: 'dark', density: 'roomy' },
+    });
+    expect(fills(el)).toContain('#8ab4f8');
+    expect(fills(el)).toContain('#222222');
+  });
+
+  it('a string sets that entry on every axis that declares it', () => {
+    const el = container();
+    make(el, { library: axisLibrary, screen: axisScreen, drawingMode: 'dark' });
+    expect(fills(el)).toContain('#8ab4f8');
+    expect(fills(el)).toContain('#111111');
+  });
+
+  it('update with a map redraws without reloading the screen', () => {
+    const el = container();
+    const viewer = make(el, { library: axisLibrary, screen: axisScreen });
+    expect(fills(el)).toContain('#1a73e8');
+    viewer.update({ drawingMode: { theme: 'dark' } });
+    expect(fills(el)).toContain('#8ab4f8');
+    expect(viewer.screen()).toBe(axisScreen);
+    viewer.update({ drawingMode: { density: 'roomy' } });
+    expect(fills(el)).toContain('#1a73e8');
+    expect(fills(el)).toContain('#222222');
+  });
+
+  it('an equal map does not recompute; a map with another entry does', () => {
+    const onSource = vi.fn();
+    const source = { id: 's', name: 'S' };
+    const viewer = make(container(), {
+      library: axisLibrary,
+      source,
+      onSource,
+      drawingMode: { theme: 'dark' },
+    });
+    const calls = onSource.mock.calls.length;
+    viewer.update({ drawingMode: { theme: 'dark' } });
+    viewer.update({ drawingMode: { density: 'compact', theme: 'dark' } }); // default spelled out
+    viewer.update({ drawingMode: 'dark' }); // same canonical selection
+    expect(onSource.mock.calls.length).toBe(calls);
+    viewer.update({ drawingMode: { theme: 'light' } });
+    expect(onSource.mock.calls.length).toBe(calls + 1);
+  });
+});
+
 describe('rotation (EX3)', () => {
   const spinnerSpec = {
     format: 'mapping-spec',

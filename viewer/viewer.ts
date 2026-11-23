@@ -45,7 +45,11 @@ import {
   withHostTokens,
 } from '../src/model/components/library';
 import type { Direction } from '../src/model/components/componentFormat';
-import type { HostFonts } from '../src/model/components/tokens';
+import {
+  selectionKey,
+  type HostFonts,
+  type TokenSelection,
+} from '../src/model/components/tokens';
 import { tokenValue } from '../src/theme/tokens';
 import type { TextMeasurer } from '../src/model/components/instantiate';
 import type { Box, Screen } from '../src/model/components/screen';
@@ -68,11 +72,13 @@ export interface ViewerInput {
   /** Specialization origin used for `source` (absent = the first). */
   readonly sourceSystem: string | undefined;
   /**
-   * Mode of the drawing tokens (`light`, `dark`…, the specialization's `modes`). Absent, or a
-   * mode the specialization does not declare, means the first mode. Changing it redraws without
-   * reloading the library or the screen.
+   * Selection of the drawing tokens: a string (`light`, `dark`…) sets that entry on every axis of the
+   * specialization's `tokens` that declares it, a map (`{ theme: 'dark' }`) picks one entry per axis. An
+   * axis left out, or an entry it does not declare, uses its first entry. Changing it redraws without
+   * reloading the library or the screen; an equal selection (another key order, a default spelled out)
+   * does nothing.
    */
-  readonly drawingMode: string | undefined;
+  readonly drawingMode: DrawingModeInput | undefined;
   /**
    * Reading direction of the screen computed from `source` (`ltr`, the default, or `rtl`): it
    * goes to `layoutScreen` (mirrors the roots, the logical anchors and the slots) and to the
@@ -84,6 +90,9 @@ export interface ViewerInput {
   readonly direction: Direction | undefined;
 }
 
+/** A drawing mode: an entry name, or a map axis → entry. */
+export type DrawingModeInput = string | Readonly<Record<string, string>>;
+
 export interface ViewerOptions {
   readonly library?: Library;
   readonly screen?: Screen;
@@ -91,7 +100,7 @@ export interface ViewerOptions {
   readonly source?: unknown;
   readonly sourceSystem?: string;
   /** Initial mode of the drawing tokens (see `ViewerInput.drawingMode`); changed through `update`. */
-  readonly drawingMode?: string;
+  readonly drawingMode?: DrawingModeInput;
   /** Initial reading direction (see `ViewerInput.direction`); changed through `update`. */
   readonly direction?: Direction;
   /** Result of each computation of the screen from `source` (screen, warnings and `error`). */
@@ -276,12 +285,12 @@ export function createViewer(
   };
   /** The received library, with the mode's tokens and the host's font in the components. */
   const baked = new WeakMap<Library, Map<string, Library>>();
-  let drawingMode: string | undefined = options.drawingMode;
+  let drawingMode: string | TokenSelection | undefined = options.drawingMode;
   const withFonts = (lib: Library | undefined): Library | undefined => {
     if (lib === undefined) return undefined;
     const byMode = baked.get(lib) ?? new Map<string, Library>();
     baked.set(lib, byMode);
-    const key = drawingMode ?? '';
+    const key = selectionKey(lib.tokens, drawingMode);
     const hit = byMode.get(key) ?? withHostTokens(lib, fonts, drawingMode);
     byMode.set(key, hit);
     return hit;
@@ -544,9 +553,12 @@ export function createViewer(
         if (source !== undefined) recompute = true;
       }
       if ('drawingMode' in input && input.drawingMode !== drawingMode) {
+        const changed =
+          selectionKey(library?.tokens, input.drawingMode) !==
+          selectionKey(library?.tokens, drawingMode);
         drawingMode = input.drawingMode;
         // with `source`, the screen comes out of the library already with the mode's tokens
-        if (source !== undefined) recompute = true;
+        if (changed && source !== undefined) recompute = true;
       }
       if ('screen' in input && input.screen !== passedScreen) {
         passedScreen = input.screen;

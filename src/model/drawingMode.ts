@@ -73,13 +73,25 @@ export function effectiveDrawingMode(
   return p.drawingMode;
 }
 
-/** The union of the specializations' `modes` (in the order they appear, without repeats). */
+/**
+ * The union of the entries of the specializations' axes (`axes`, or `modes` as the axis `mode`), in the
+ * order they appear, without repeats: while the project stores a string, any entry can be the drawing mode.
+ */
 export function drawingModesOf(
-  tokens: ReadonlyArray<{ readonly modes?: readonly string[] | undefined } | undefined>,
+  tokens: ReadonlyArray<
+    | {
+        readonly modes?: readonly string[] | undefined;
+        readonly axes?: Readonly<Record<string, readonly string[]>> | undefined;
+      }
+    | undefined
+  >,
 ): string[] {
   const out: string[] = [];
   for (const entry of tokens) {
-    for (const mode of entry?.modes ?? []) if (!out.includes(mode)) out.push(mode);
+    // Like `tokenAxes`: `axes` wins over `modes`.
+    const axes =
+      entry?.axes === undefined ? [entry?.modes ?? []] : Object.values(entry.axes);
+    for (const mode of axes.flat()) if (!out.includes(mode)) out.push(mode);
   }
   return out;
 }
@@ -110,7 +122,7 @@ export function readContainerOf(
 
 /**
  * The component as the drawing uses it: with each `$token` replaced by the table of the space's
- * effective mode (`resolvedTokensByMode[mode]`; with no mode or no such table, the one in
+ * effective mode (`tokenTables.get(mode)`; with no mode or no tables, the one in
  * `resolvedTokens`). Arranging, positioning and measuring go through here before reading the slot,
  * so that a `gap` and `padding` in `$token` are worth the same as on screen. `tokens` goes in the
  * `tokens` option of `instantiate`; `direction` is the space's effective reading direction
@@ -128,7 +140,7 @@ export function componentForDrawing(
 } {
   const mode = effectiveDrawingMode(p, containerId);
   const tokens =
-    (mode === undefined ? undefined : component.resolvedTokensByMode?.[mode]) ??
+    (mode === undefined ? undefined : component.tokenTables?.get(mode)) ??
     component.resolvedTokens;
   return {
     component: tokens === undefined ? component : applyTokens(component, tokens),

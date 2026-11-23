@@ -503,13 +503,12 @@ export function tokenAxes(
   return new Map();
 }
 
-/** The entry that `selection` asks for on `axis` (the legacy string is the axis `mode`'s entry). */
+/** The entry that `selection` asks for on `axis` (a string is the entry of every axis that declares it). */
 function wantedEntry(
   selection: string | TokenSelection | undefined,
   axis: string,
 ): string | undefined {
-  if (typeof selection === 'string') return axis === MODE_AXIS ? selection : undefined;
-  return selection?.[axis];
+  return typeof selection === 'string' ? selection : selection?.[axis];
 }
 
 /** The entry of each declared axis: the selected one when the axis declares it, otherwise the default. */
@@ -651,8 +650,8 @@ function evaluateTokens(
 /**
  * The flat table (name → value) of a selection: scalars by name, each composite field as `name.field`,
  * aliases resolved in the same selection. `selection` is a map axis → entry; an axis it leaves out, or an
- * entry the axis does not declare, uses the axis default, without a warning. The legacy string is the entry
- * of the axis `mode`. `font-sans` and `font-mono` are worth what the host gave; the specialization can
+ * entry the axis does not declare, uses the axis default, without a warning. A string sets that entry on
+ * every axis that declares it (the legacy drawing mode). `font-sans` and `font-mono` are worth what the host gave; the specialization can
  * redefine them.
  */
 export function resolveTokens(
@@ -662,4 +661,47 @@ export function resolveTokens(
 ): ResolvedTokens {
   if (tokens === undefined) return evaluateTokens({ values: {} }, host, undefined).table;
   return evaluateTokens(tokens, host, selection).table;
+}
+
+/**
+ * The canonical form of a selection: the effective entry of each declared axis, sorted, as `axis=entry`
+ * lines. Two selections that draw the same share a key (another key order, a default spelled out, a string
+ * that names the same entries); no tokens gives an empty key.
+ */
+export function selectionKey(
+  tokens: SpecTokens | undefined,
+  selection: string | TokenSelection | undefined,
+): string {
+  if (tokens === undefined) return '';
+  return Object.entries(chosenEntries(tokens, selection))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([axis, entry]) => `${axis}=${entry}`)
+    .join('\n');
+}
+
+/** The tables of a specialization's tokens, one per selection, built on first use and then shared. */
+export interface TokenTables {
+  readonly get: (selection: string | TokenSelection | undefined) => ResolvedTokens;
+}
+
+/**
+ * A lazy per-selection cache of `resolveTokens`: nothing is precomputed (the product of the axes is never
+ * walked); the same effective selection returns the same table object.
+ */
+export function createTokenTables(
+  tokens: SpecTokens | undefined,
+  host: HostFonts,
+): TokenTables {
+  const tables = new Map<string, ResolvedTokens>();
+  return {
+    get: (selection) => {
+      const key = selectionKey(tokens, selection);
+      let table = tables.get(key);
+      if (table === undefined) {
+        table = resolveTokens(tokens, host, selection);
+        tables.set(key, table);
+      }
+      return table;
+    },
+  };
 }

@@ -14,6 +14,7 @@
  * the drawing adapts to the size of the rectangle.
  */
 import type { IconSet } from './icons';
+import type { TokenTables } from './tokens';
 import type { AnchorAlign, AnchorSide } from '../anchorSides';
 
 export const COMPONENT_FORMAT = 'mapping-component';
@@ -842,13 +843,11 @@ export interface ComponentFile {
    */
   readonly resolvedTokens?: Readonly<Record<string, string | number>>;
   /**
-   * The tokens of each declared mode (`tokens.modes`), set by the catalog: the drawing picks the
-   * table of the marking's effective mode without reloading the component. Absent = only
-   * `resolvedTokens`.
+   * The tables of the specialization's tokens per selection (axes), built on first use and shared by
+   * its components, set by the catalog: the drawing picks the table of the marking's effective selection
+   * without reloading the component. Absent = only `resolvedTokens`.
    */
-  readonly resolvedTokensByMode?: Readonly<
-    Record<string, Readonly<Record<string, string | number>>>
-  >;
+  readonly tokenTables?: TokenTables;
   /** Icon set of the specialization (`icons`), set by the catalog; never comes from the file. */
   readonly resolvedIcons?: IconSet;
   /**
