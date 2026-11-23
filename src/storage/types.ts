@@ -138,6 +138,14 @@ export interface ProjectStorage {
    */
   stampProposals?(skip?: ReadonlySet<string>): Promise<Map<string, string | null>>;
   /**
+   * Is the project folder itself still reachable? `false` when its handle went stale (the folder
+   * was moved, renamed or deleted: `NotFoundError`), as opposed to a `proposals/` folder that is
+   * merely missing or empty inside a reachable root. Any other failure (permission, a busy
+   * disk) counts as reachable. The proposals scan uses it to not take an unreadable folder for
+   * "every proposal was deleted". Only the folder implements it.
+   */
+  rootAvailable?(): Promise<boolean>;
+  /**
    * Ids of the threads (`comments/<id>.json`; with `resolved`, `comments/resolved/<id>.json`),
    * in alphabetical order. It only lists the file names (the ~3 s check depends on it being
    * cheap). `[]` if the folder does not exist; names outside the `THREAD_ID_RE` are left out.

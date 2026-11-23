@@ -69,6 +69,10 @@ export const reviewEnUS = {
   'proposals.scanNothing': 'No new or changed proposals.',
   'proposals.scanFound': '{count} proposal(s) new, changed or deleted.',
   'proposals.scanFailed': 'The proposals could not be checked.',
+  'proposals.scanUnavailable': 'Folder unavailable: the proposals were not checked.',
+  'proposals.folderUnavailableTitle': 'Folder unavailable',
+  'proposals.folderUnavailable':
+    'The project folder was not found: it may have been moved, renamed or deleted. The proposals shown are the last ones read and nothing was deleted. Close the project and use Locate folder… in Recent projects to open it again.',
   'proposals.filters': 'Proposal filters',
   'proposals.scope': 'Show',
   'proposals.scopeAll': 'All {count}',
@@ -624,6 +628,10 @@ export const reviewPtBR: Record<keyof typeof reviewEnUS, string> = {
   'proposals.scanNothing': 'Nenhuma proposta nova ou alterada.',
   'proposals.scanFound': '{count} proposta(s) nova(s), alterada(s) ou apagada(s).',
   'proposals.scanFailed': 'Não foi possível conferir as propostas.',
+  'proposals.scanUnavailable': 'Pasta indisponível: as propostas não foram conferidas.',
+  'proposals.folderUnavailableTitle': 'Pasta indisponível',
+  'proposals.folderUnavailable':
+    'A pasta do projeto não foi encontrada: ela pode ter sido movida, renomeada ou apagada. As propostas mostradas são as últimas lidas e nada foi apagado. Feche o projeto e use Localizar pasta… em Projetos recentes para abri-lo de novo.',
   'proposals.filters': 'Filtros das propostas',
   'proposals.scope': 'Mostrar',
   'proposals.scopeAll': 'Todas {count}',
