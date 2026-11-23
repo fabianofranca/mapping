@@ -75,7 +75,7 @@ export function effectiveDrawingMode(
 
 /** The union of the specializations' `modes` (in the order they appear, without repeats). */
 export function drawingModesOf(
-  tokens: ReadonlyArray<{ readonly modes: readonly string[] } | undefined>,
+  tokens: ReadonlyArray<{ readonly modes?: readonly string[] | undefined } | undefined>,
 ): string[] {
   const out: string[] = [];
   for (const entry of tokens) {

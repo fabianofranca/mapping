@@ -169,7 +169,10 @@ function tokensByMode(
 ): Readonly<Record<string, ResolvedTokens>> | undefined {
   if (spec.tokens === undefined) return undefined;
   return Object.fromEntries(
-    spec.tokens.modes.map((mode) => [mode, resolveTokens(spec.tokens, fonts, mode)]),
+    (spec.tokens.modes ?? []).map((mode) => [
+      mode,
+      resolveTokens(spec.tokens, fonts, mode),
+    ]),
   );
 }
 

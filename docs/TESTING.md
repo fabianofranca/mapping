@@ -3427,7 +3427,7 @@ The projects are created by the MCP with `create_project` (`root` `ROOT`, `notes
 | R44.15 | **Isolation.** Open `sonda-app`; **Apply folder…** `$F/fpa-probe`. With Playwright over CDP, `page.on('request')` collecting every URL; **Export in a format…** **fpa-probe › Probe**, **Export**, download and read the text. | **Text:** `{"found":[],"fetch":"threw","indexedDB":"threw"}` (no `fetch`, `XMLHttpRequest`, `WebSocket`, `importScripts`, `indexedDB`, `caches` or timers inside the plugin). **Requests:** none to a host outside the app (`example.invalid` never requested); the project is still open and intact. |
 | R44.16 | **Over `file://`.** Open `file://<REPO>/dist/index.html` in Chrome (recipe 1 builds it); **Open folder** `ROOT/formatos-app`; repeat R44.9. | `diff` prints nothing: the export over `file://` equals `shop.openapi.yaml`. |
 | R44.17 | **Clean reopening.** Reopen the three projects from **Recent projects**; for each open **Diagnostics** (`Ctrl+Shift+6`). In the shell: `ls $ROOT/formatos-app $ROOT/telas-sdui-app $ROOT/medido-app`. | **Screen:** no error and no warning from the formats (a project never runs a plugin when it opens). **Shell:** no `proposals/` folder in any of them. |
-| R44.18 | **Help.** **Help** › **Specializations**. | The current format version is 22 and the text says `origins` is "only allowed up to formatVersion 21", with the file format plugin as the replacement. |
+| R44.18 | **Help.** **Help** › **Specializations**. | The current format version is 23 and the text says `origins` is "only allowed up to formatVersion 21", with the file format plugin as the replacement. |
 
 ### On-demand scripts (manual)
 

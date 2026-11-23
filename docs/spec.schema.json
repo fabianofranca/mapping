@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/spec.schema.json",
-  "title": "Mapping — specialization (formatVersion 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, and 22)",
-  "description": "Validates the structure. Rules between elements (unique ids, allowedChildren in another layer (from formatVersion 13, also in the owner's own layer), requiresOwner, labelField, rowLabel, compatible default, rowLabel/tags, platforms declared in platforms, keys of params and values, platforms/code from formatVersion 2, sources only in formatVersion 3, values of sources only on enum fields and with targets in the options) and, in formatVersion 4, the new keys only with formatVersion 4, sources with path/slot only on a system declared in origins, ignore on one declared in origins or next to signature (from formatVersion 16) (with path required there and name required elsewhere), examples with a single mode and values compatible with the type's fields, system of the examples declared in origins, unique family+weight+style pair in fonts, weight range with the first value smaller, rules of origins (the detail is in origins, validated by parseOrigins) and the migrations checks (to greater than from and up to version, unique from, the field key of a step is a field or table.column, the new side exists and the old side no longer exists, targets of map-values in the options, compatible default of fill-field) are only checked by the app validator; in formatVersion 5, platforms[].repo (formatVersion 5 is 4 plus repo; in an earlier version it is an error) is also only checked by the app validator; in formatVersion 6, containers (6 is 5 plus containers; in an earlier version it is an error, and the repeated id is checked by the app validator); in formatVersion 7, floating and appliesTo on the type and ref as a table column type (7 is 6 plus floating, appliesTo, and the ref column; in an earlier version it is an error, checked by the app validator; appliesTo not empty, with no repetition, and an arrow-only type has neither component nor floating); in formatVersion 8, suggestions and linkedRef on a string field and column (8 is 7 plus suggestions and linkedRef; linkedRef points to a ref field of the type or a ref column of the table; in an earlier version or on another type it is an error, checked by the app validator; non-empty list, up to 200 unique texts, non-empty and with no whitespace at the ends; it does not restrict the value); in formatVersion 9, variants on the code entry (9 is 8 plus variants; in an earlier version it is an error; field is the key of an enum field of the type at the top level, each key of cases is one of its options, the case is not empty, and params and values of the cases follow the rules of those of the base, all checked by the app validator); in formatVersion 10, notices on the type, the field, and the table column (10 is 9 plus notices; in an earlier version it is an error, checked by the app validator; two notices with the same kind and the same message in the list are an error, which JSON Schema does not express; the notice only informs); in formatVersion 11, the { layer, groups } clause in allowedChildren, layers[].groups, annotationTypes[].groups, childRoles, childRolesLabel, docRepos at the root, and the doc as an object { repo, path } (11 is 10 plus these features; in an earlier version it is an error; the clause's layer exists and, before formatVersion 13, is not the owner's own, the groups exist in the clause's layer, requiresOwner is checked on the resolved set of children, unique group ids in the layer, type groups only from its own layer, childRoles only on a type with allowedChildren and childRolesLabel only with childRoles, unique role ids in the type, unique docRepos ids, the doc's repo exists in docRepos and urlTemplate with {path}, all checked by the app validator); in formatVersion 12, the role migration steps rename-role, remove-role, and set-role (12 is 11 plus these steps; in an earlier version it is an error; type is a type of this version, with childRoles in rename-role and set-role; to and role of set-role are roles of the type, from of rename-role and role of remove-role no longer are; childType of set-role only has its format checked; all checked by the app validator); in formatVersion 13, allowedChildren accepts the { layer } clause for the owner's own layer and the id of a type in the same layer, including the type itself (13 is 12 plus this; in an earlier version it is an error; checked by the app validator); in formatVersion 14, accepts.annotations on a ref field and column (14 is 13 plus this; in an earlier version it is an error; the items use the allowedChildren syntax and layer, group, and type must exist in the specialization, checked by the app validator); in formatVersion 15, structural on the type (in an earlier version it is an error; structural: true cannot have a component, checked by the app validator) and origins[].kind (tree or measured; in an earlier version it is an error; the measured source only has system, kind, name, and booleans, checked by the app validator); in formatVersion 16, fieldModels at the root and signature, ignore, calls, and formats on code (and in the variants case) and signature on the type's sources (in an earlier version it is an error; the path and the positional value in params are only valid in 16; the content of the sheet is checked by the package validator); in formatVersion 17, slots on the type and slots on code (and in the variants case) (17 is 16 plus the named slots; in an earlier version it is an error; id and accepts items checked by the app validator, the slot against the component and the parameter against the sheet by the package validator); in formatVersion 18, accessibility at the root (touchTarget) and on the type (role, label, touchTarget, parts) (18 is 17 plus this; in an earlier version it is an error; the role is on the list, touchTarget only with an interactive role, the label fields exist and are string or enum, each part has a unique id and a when that is a field, a table or <table>.<column>, and a part has no touchTarget, all checked by the app validator); in formatVersion 19, the copy-field migration step (19 is 18 plus this step; in an earlier version it is an error; type is a type of this version, to is a field or a column of it, from may no longer exist, both are fields or both are columns of the same table and never a table field, the keys of when are fields of the type and in an enum each value is an option; all checked by the app validator); in formatVersion 20, fileFormats at the root (20 is 19 plus the file formats handled by an isolated plugin; in an earlier version it is an error; unique format ids, unique example names in the format and the files of the package (plugin, examples, input; the plugin at most 1 MiB) are checked by the app validator); in formatVersion 21, containerClasses at the root, classes on a ready-made size of containers and appliesIn on the type (21 is 20 plus the container classes; in an earlier version it is an error; set ids unique and never width or height, a computed set (with by) has below on every class but the last, strictly increasing, and a chosen set has no below, class ids unique in the set, the choice on a ready-made size only names a chosen set of the specialization and one of its classes, appliesIn names sets of the specialization and non-empty lists of their classes, with no repeats, and only on a type that applies to markings and is not floating; all checked by the app validator); in formatVersion 21, variants on the type's accessibility (an enum field of the type chooses the role and/or the label per option, like code.variants; in an earlier version it is an error; field is an enum field of the type, each case key is one of its options, the case is not empty, role is on the list, label fields are string or enum fields of the type, and a case has no touchTarget or parts, all checked by the app validator), in formatVersion 21, documents at the root (the library's general documents; each one a package .md or an { repo, path } of docRepos; unique id, a non-empty list, the repo declared in docRepos, checked by the app validator); in formatVersion 22, sources are plain data (22 is 21 with the plugin of a file format in place of origins; origins at the root and system with file on a type example are an error, only allowed up to formatVersion 21; path on a field or column source, slot and ignore on a type source stand for any system, with no tie to origins; a field or column source needs name or path; all checked by the app validator); see SPEC-FORMAT.md.",
+  "title": "Mapping — specialization (formatVersion 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, and 23)",
+  "description": "Validates the structure. Rules between elements (unique ids, allowedChildren in another layer (from formatVersion 13, also in the owner's own layer), requiresOwner, labelField, rowLabel, compatible default, rowLabel/tags, platforms declared in platforms, keys of params and values, platforms/code from formatVersion 2, sources only in formatVersion 3, values of sources only on enum fields and with targets in the options) and, in formatVersion 4, the new keys only with formatVersion 4, sources with path/slot only on a system declared in origins, ignore on one declared in origins or next to signature (from formatVersion 16) (with path required there and name required elsewhere), examples with a single mode and values compatible with the type's fields, system of the examples declared in origins, unique family+weight+style pair in fonts, weight range with the first value smaller, rules of origins (the detail is in origins, validated by parseOrigins) and the migrations checks (to greater than from and up to version, unique from, the field key of a step is a field or table.column, the new side exists and the old side no longer exists, targets of map-values in the options, compatible default of fill-field) are only checked by the app validator; in formatVersion 5, platforms[].repo (formatVersion 5 is 4 plus repo; in an earlier version it is an error) is also only checked by the app validator; in formatVersion 6, containers (6 is 5 plus containers; in an earlier version it is an error, and the repeated id is checked by the app validator); in formatVersion 7, floating and appliesTo on the type and ref as a table column type (7 is 6 plus floating, appliesTo, and the ref column; in an earlier version it is an error, checked by the app validator; appliesTo not empty, with no repetition, and an arrow-only type has neither component nor floating); in formatVersion 8, suggestions and linkedRef on a string field and column (8 is 7 plus suggestions and linkedRef; linkedRef points to a ref field of the type or a ref column of the table; in an earlier version or on another type it is an error, checked by the app validator; non-empty list, up to 200 unique texts, non-empty and with no whitespace at the ends; it does not restrict the value); in formatVersion 9, variants on the code entry (9 is 8 plus variants; in an earlier version it is an error; field is the key of an enum field of the type at the top level, each key of cases is one of its options, the case is not empty, and params and values of the cases follow the rules of those of the base, all checked by the app validator); in formatVersion 10, notices on the type, the field, and the table column (10 is 9 plus notices; in an earlier version it is an error, checked by the app validator; two notices with the same kind and the same message in the list are an error, which JSON Schema does not express; the notice only informs); in formatVersion 11, the { layer, groups } clause in allowedChildren, layers[].groups, annotationTypes[].groups, childRoles, childRolesLabel, docRepos at the root, and the doc as an object { repo, path } (11 is 10 plus these features; in an earlier version it is an error; the clause's layer exists and, before formatVersion 13, is not the owner's own, the groups exist in the clause's layer, requiresOwner is checked on the resolved set of children, unique group ids in the layer, type groups only from its own layer, childRoles only on a type with allowedChildren and childRolesLabel only with childRoles, unique role ids in the type, unique docRepos ids, the doc's repo exists in docRepos and urlTemplate with {path}, all checked by the app validator); in formatVersion 12, the role migration steps rename-role, remove-role, and set-role (12 is 11 plus these steps; in an earlier version it is an error; type is a type of this version, with childRoles in rename-role and set-role; to and role of set-role are roles of the type, from of rename-role and role of remove-role no longer are; childType of set-role only has its format checked; all checked by the app validator); in formatVersion 13, allowedChildren accepts the { layer } clause for the owner's own layer and the id of a type in the same layer, including the type itself (13 is 12 plus this; in an earlier version it is an error; checked by the app validator); in formatVersion 14, accepts.annotations on a ref field and column (14 is 13 plus this; in an earlier version it is an error; the items use the allowedChildren syntax and layer, group, and type must exist in the specialization, checked by the app validator); in formatVersion 15, structural on the type (in an earlier version it is an error; structural: true cannot have a component, checked by the app validator) and origins[].kind (tree or measured; in an earlier version it is an error; the measured source only has system, kind, name, and booleans, checked by the app validator); in formatVersion 16, fieldModels at the root and signature, ignore, calls, and formats on code (and in the variants case) and signature on the type's sources (in an earlier version it is an error; the path and the positional value in params are only valid in 16; the content of the sheet is checked by the package validator); in formatVersion 17, slots on the type and slots on code (and in the variants case) (17 is 16 plus the named slots; in an earlier version it is an error; id and accepts items checked by the app validator, the slot against the component and the parameter against the sheet by the package validator); in formatVersion 18, accessibility at the root (touchTarget) and on the type (role, label, touchTarget, parts) (18 is 17 plus this; in an earlier version it is an error; the role is on the list, touchTarget only with an interactive role, the label fields exist and are string or enum, each part has a unique id and a when that is a field, a table or <table>.<column>, and a part has no touchTarget, all checked by the app validator); in formatVersion 19, the copy-field migration step (19 is 18 plus this step; in an earlier version it is an error; type is a type of this version, to is a field or a column of it, from may no longer exist, both are fields or both are columns of the same table and never a table field, the keys of when are fields of the type and in an enum each value is an option; all checked by the app validator); in formatVersion 20, fileFormats at the root (20 is 19 plus the file formats handled by an isolated plugin; in an earlier version it is an error; unique format ids, unique example names in the format and the files of the package (plugin, examples, input; the plugin at most 1 MiB) are checked by the app validator); in formatVersion 21, containerClasses at the root, classes on a ready-made size of containers and appliesIn on the type (21 is 20 plus the container classes; in an earlier version it is an error; set ids unique and never width or height, a computed set (with by) has below on every class but the last, strictly increasing, and a chosen set has no below, class ids unique in the set, the choice on a ready-made size only names a chosen set of the specialization and one of its classes, appliesIn names sets of the specialization and non-empty lists of their classes, with no repeats, and only on a type that applies to markings and is not floating; all checked by the app validator); in formatVersion 21, variants on the type's accessibility (an enum field of the type chooses the role and/or the label per option, like code.variants; in an earlier version it is an error; field is an enum field of the type, each case key is one of its options, the case is not empty, role is on the list, label fields are string or enum fields of the type, and a case has no touchTarget or parts, all checked by the app validator), in formatVersion 21, documents at the root (the library's general documents; each one a package .md or an { repo, path } of docRepos; unique id, a non-empty list, the repo declared in docRepos, checked by the app validator); in formatVersion 22, sources are plain data (22 is 21 with the plugin of a file format in place of origins; origins at the root and system with file on a type example are an error, only allowed up to formatVersion 21; path on a field or column source, slot and ignore on a type source stand for any system, with no tie to origins; a field or column source needs name or path; all checked by the app validator); in formatVersion 23, named values in tokens (axes, aliases, composites, the $value wrapper and per-axis values; modes or axes optional but not both; an unknown axis, a missing or extra entry, a repeated axis in one value, branches of different kinds, a missing alias target, an alias cycle, alpha or over on a non-color, a whole composite read as a scalar and a repeated notice are checked by the app validator) and the { \"$tokens\": \"<group>\" } item of suggestions (only from 23; no token in the group or a token that is not fixed text is checked by the app validator; the parsed specialization carries the expanded list); see SPEC-FORMAT.md.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "version", "layers"],
@@ -12,7 +12,7 @@
     },
     "formatVersion": {
       "enum": [
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
       ]
     },
     "id": {
@@ -127,10 +127,10 @@
   },
   "$defs": {
     "tokens": {
-      "description": "Design tokens (formatVersion 15): values named per mode, read by { \"$token\": \"name\" } in format 4 components. Each token is either a simple value (valid in all modes) or a value per mode, with every mode from modes and all of the same type (text or number). font-sans and font-mono are built in (they resolve to the host font) and can be redefined here.",
+      "description": "Design tokens (formatVersion 15): values named per mode, read by { \"$token\": \"name\" } in format 4 components. Each token is either a simple value (valid in all modes) or a value per mode, with every mode from modes and all of the same type (text or number). font-sans and font-mono are built in (they resolve to the host font) and can be redefined here. formatVersion 23 adds axes (several independent mode axes; modes is the axis mode, and modes and axes together are an error; in 23 neither is required), aliases, composite values, per-axis values and the $value metadata wrapper; modes is required up to formatVersion 22 (checked by the app validator).",
       "type": "object",
       "additionalProperties": false,
-      "required": ["modes", "values"],
+      "required": ["values"],
       "properties": {
         "modes": {
           "type": "array",
@@ -147,31 +147,31 @@
             "pattern": "^[a-z0-9][a-z0-9-]*$"
           },
           "additionalProperties": {
-            "oneOf": [
+            "anyOf": [
               {
-                "type": "string",
-                "minLength": 1
+                "$ref": "#/$defs/tokenValue"
               },
               {
-                "type": "number"
-              },
-              {
-                "type": "object",
-                "minProperties": 1,
-                "additionalProperties": {
-                  "oneOf": [
-                    {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    {
-                      "type": "number"
-                    }
-                  ]
-                }
+                "$ref": "#/$defs/tokenWrapper"
               }
             ]
           }
+        },
+        "axes": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]*$"
+            }
+          },
+          "description": "formatVersion 23: axis name -> non-empty list of distinct entry names; the first entry is the default of the axis. In an earlier version it is an error (checked by the app validator)."
         }
       }
     },
@@ -530,11 +530,26 @@
               "maxItems": 200,
               "uniqueItems": true,
               "items": {
-                "type": "string",
-                "minLength": 1,
-                "pattern": "^\\S(.*\\S)?$"
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\S(.*\\S)?$"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["$tokens"],
+                    "properties": {
+                      "$tokens": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9][a-z0-9-]*$"
+                      }
+                    }
+                  }
+                ]
               },
-              "description": "formatVersion 8: vocabulary suggested while typing, only on a string field or column; it does not restrict the value. In an earlier version or on another type it is an error."
+              "description": "formatVersion 8: vocabulary suggested while typing, only on a string field or column; it does not restrict the value. In an earlier version or on another type it is an error. From formatVersion 23 an item may be { \"$tokens\": \"<group>\" }: it expands, when the specialization is parsed, to the text values of the tokens of that group (in file order, without the deprecated and removed ones, repeated texts dropped); the 200 limit and the text rules apply after the expansion (checked by the app validator). In an earlier version it is an error."
             },
             "linkedRef": {
               "type": "string",
@@ -688,11 +703,26 @@
               "maxItems": 200,
               "uniqueItems": true,
               "items": {
-                "type": "string",
-                "minLength": 1,
-                "pattern": "^\\S(.*\\S)?$"
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\S(.*\\S)?$"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["$tokens"],
+                    "properties": {
+                      "$tokens": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9][a-z0-9-]*$"
+                      }
+                    }
+                  }
+                ]
               },
-              "description": "formatVersion 8: vocabulary suggested while typing, only on a string field or column; it does not restrict the value. In an earlier version or on another type it is an error."
+              "description": "formatVersion 8: vocabulary suggested while typing, only on a string field or column; it does not restrict the value. In an earlier version or on another type it is an error. From formatVersion 23 an item may be { \"$tokens\": \"<group>\" }: it expands, when the specialization is parsed, to the text values of the tokens of that group (in file order, without the deprecated and removed ones, repeated texts dropped); the 200 limit and the text rules apply after the expansion (checked by the app validator). In an earlier version it is an error."
             },
             "linkedRef": {
               "type": "string",
@@ -1662,8 +1692,12 @@
           "minLength": 1,
           "description": "Unique in the format."
         },
-        "file": { "$ref": "#/$defs/packageFile" },
-        "input": { "$ref": "#/$defs/jsonFile" }
+        "file": {
+          "$ref": "#/$defs/packageFile"
+        },
+        "input": {
+          "$ref": "#/$defs/jsonFile"
+        }
       }
     },
     "fileFormat": {
@@ -1676,22 +1710,35 @@
           "pattern": "^[a-z0-9][a-z0-9-]*$",
           "description": "Unique in the specialization."
         },
-        "name": { "type": "string", "minLength": 1 },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
         "extension": {
           "type": "string",
           "pattern": "^[a-z0-9]+$",
           "description": "Lowercase, without the dot (yaml, csv, json)."
         },
-        "plugin": { "$ref": "#/$defs/jsFile" },
-        "contract": { "const": 1, "description": "The plugin contract; only 1." },
+        "plugin": {
+          "$ref": "#/$defs/jsFile"
+        },
+        "contract": {
+          "const": 1,
+          "description": "The plugin contract; only 1."
+        },
         "scope": {
           "enum": ["project", "container"],
           "description": "What the plugin sees: the whole project (default) or one container."
         },
-        "description": { "type": "string", "minLength": 1 },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
         "examples": {
           "type": "array",
-          "items": { "$ref": "#/$defs/fileFormatExample" }
+          "items": {
+            "$ref": "#/$defs/fileFormatExample"
+          }
         }
       }
     },
@@ -2334,6 +2381,185 @@
           }
         }
       ]
+    },
+    "tokenAlias": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["$token"],
+      "description": "formatVersion 23: alias to another token ({ \"$token\": \"name\" }) or to one field of a composite (\"title.size\"), always resolved in the reader's selection of entries. alpha and over only on a color target; a cycle, a missing target and a whole composite read as a scalar are errors (checked by the app validator).",
+      "properties": {
+        "$token": {
+          "type": "string",
+          "minLength": 1
+        },
+        "alpha": {
+          "description": "A number from 0 to 1 or a { \"$token\": \"name\" } of a number token.",
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["$token"],
+              "properties": {
+                "$token": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          ]
+        },
+        "over": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A #RRGGBB color or the name of a color token."
+        }
+      }
+    },
+    "tokenFieldAxis": {
+      "type": "object",
+      "required": ["$axis"],
+      "properties": {
+        "$axis": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        }
+      },
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          {
+            "$ref": "#/$defs/tokenAlias"
+          }
+        ]
+      },
+      "description": "formatVersion 23: per-axis value of a composite field: $axis names an axis of tokens.axes and the other keys are all of its entries, each a literal or an alias."
+    },
+    "tokenComposite": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^[a-z][a-zA-Z0-9]*$"
+      },
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          {
+            "$ref": "#/$defs/tokenAlias"
+          },
+          {
+            "$ref": "#/$defs/tokenFieldAxis"
+          }
+        ]
+      },
+      "description": "formatVersion 23: composite value, an object of named fields (a literal, an alias to a scalar or a per-axis value of those); no nested composite. In a library with modes, a plain object whose keys are exactly the modes is the legacy per-mode value, not a composite (checked by the app validator)."
+    },
+    "tokenAxisValue": {
+      "type": "object",
+      "required": ["$axis"],
+      "properties": {
+        "$axis": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/tokenValue"
+      },
+      "description": "formatVersion 23: per-axis value: $axis names an axis of tokens.axes (or mode, with modes) and the other keys are all the entries of that axis and only them. A branch is any value form; the same axis cannot be nested again; all the branches have the same kind (checked by the app validator)."
+    },
+    "tokenValue": {
+      "anyOf": [
+        {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        {
+          "$ref": "#/$defs/tokenAlias"
+        },
+        {
+          "$ref": "#/$defs/tokenAxisValue"
+        },
+        {
+          "$ref": "#/$defs/tokenComposite"
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "number"
+              }
+            ]
+          }
+        }
+      ],
+      "description": "A token value: text or a number (a literal), an alias, a per-axis value, a composite or (formatVersion 15 to 22, and with modes) one literal per mode."
+    },
+    "tokenWrapper": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["$value"],
+      "description": "formatVersion 23: metadata wrapper of a whole token. Only at entry level (not inside a branch or a field).",
+      "properties": {
+        "$value": {
+          "$ref": "#/$defs/tokenValue"
+        },
+        "$description": {
+          "type": "string"
+        },
+        "$group": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "description": "Group of the token; { \"$tokens\": \"<group>\" } in suggestions expands to the text values of the group."
+        },
+        "$notices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/notice"
+          },
+          "description": "The notice list of formatVersion 10 (a repeated notice is checked by the app validator)."
+        }
+      }
     }
   }
 }

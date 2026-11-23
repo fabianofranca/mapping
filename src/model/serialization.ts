@@ -149,7 +149,29 @@ export function serialize(p: Project): string {
 
 /** Text of `specs/<id>.json`: the specialization with 2-space indentation. */
 export function serializeSpec(spec: Spec): string {
-  return `${JSON.stringify(spec, null, 2)}\n`;
+  return `${JSON.stringify(spec, writtenSuggestions, 2)}\n`;
+}
+
+/**
+ * `JSON.stringify` replacer: a field or column whose `suggestions` came from `{ "$tokens": … }` items is written
+ * with the list as it was written (`suggestionsSource`), not the expanded texts.
+ */
+function writtenSuggestions(_key: string, value: unknown): unknown {
+  if (typeof value !== 'object' || value === null || !('suggestionsSource' in value)) {
+    return value;
+  }
+  const record = value as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [name, item] of Object.entries(record)) {
+    if (name === 'suggestionsSource') continue;
+    out[name] = name === 'suggestions' ? record.suggestionsSource : item;
+  }
+  return out;
+}
+
+/** The specialization as it is written in its file (JSON value): `$tokens` items kept, no `suggestionsSource`. */
+export function writtenSpec(spec: Spec): unknown {
+  return JSON.parse(serializeSpec(spec));
 }
 
 /** The project's `specs/` files (path → text), to write or export. */
