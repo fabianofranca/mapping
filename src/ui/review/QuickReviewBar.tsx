@@ -20,19 +20,18 @@ interface BarSize {
   readonly height: number;
 }
 
-function overlaps(a: Rect, b: Rect): boolean {
-  return (
-    a.x < b.x + b.width &&
-    b.x < a.x + a.width &&
-    a.y < b.y + b.height &&
-    b.y < a.y + a.height
-  );
-}
+const intersection = (a: Rect, b: Rect) =>
+  Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x)) *
+  Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+
+const coveredArea = (r: Rect, others: readonly Rect[]) =>
+  others.reduce((sum, o) => sum + intersection(r, o), 0);
 
 /**
  * The bar's top-left: below the box, above it when it does not fit, clamped to the canvas area and,
  * when something else sits there (the minimap, the corner notices), moved beside or past it so
- * that nothing covers the bar and the bar covers nothing (finding CL1.2 and CL1.3 of #2743).
+ * that the bar covers nothing (findings CL1.2 and CL1.3 of #2743); with no free spot, the one that
+ * covers the least (finding CL2.1 of #2746).
  */
 export function barPosition(
   box: Rect,
@@ -60,10 +59,14 @@ export function barPosition(
       candidates.push(place(box.x, a.y + a.height + gap));
     }
   }
-  const free = candidates.find((c) =>
-    avoid.every((a) => !overlaps({ x: c.left, y: c.top, ...bar }, a)),
-  );
-  return free ?? candidates[0] ?? place(box.x, below);
+  // With no free spot (the smallest window: the notices and the minimap fill the area) the bar
+  // takes the one that covers the least; it is drawn above them, so its buttons stay reachable.
+  let best = { ...place(box.x, below), covered: Infinity };
+  for (const c of candidates) {
+    const covered = coveredArea({ x: c.left, y: c.top, ...bar }, avoid);
+    if (covered < best.covered) best = { ...c, covered };
+  }
+  return { left: best.left, top: best.top };
 }
 
 /** The ghost's name: the marking's, else its typed annotation's type, else "{count} items". */
