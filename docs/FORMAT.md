@@ -108,7 +108,7 @@ such as `M1` in the examples are valid too). Colors are `#RRGGBB`.
 | `platformRepos`    | object  | Local clone of each platform (v7; only `localPath` since v11, see below).                                                                   |
 | `docRepos`         | object  | Local clone of each documents repository (v14, see "Fields of v14").                                                                        |
 | `pages`            | array   | The project's pages (v21, at least one): `id` and `name` (see "Fields of v21"). Absent reads as `[]`, which the repair turns into one page. |
-| `drawingMode`      | object  | The project's drawing mode (v18; a map axis → entry since v24, optional, see "Fields of v24").                                                                          |
+| `drawingMode`      | object  | The project's drawing mode (v18; a map axis → entry since v24, optional, see "Fields of v24").                                              |
 | `direction`        | string  | The project's reading direction (v20, optional, see "Fields of v20").                                                                       |
 | `layers`           | array   | Layers, **global** (they apply to all containers), in display order.                                                                        |
 | `containers`       | array   | The project's containers (v12; formerly `images`).                                                                                          |
