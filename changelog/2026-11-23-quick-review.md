@@ -1,4 +1,4 @@
-# Quick review on the canvas — [Não lançado] (épico `epic/quick-review`, PR #0, MCP 0.57.9, schema v23)
+# Quick review on the canvas — 2026-11-23 (épico `epic/quick-review`, PR #2754, MCP 0.58.2, schema v23)
 
 ## Adicionado
 

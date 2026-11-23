@@ -1,4 +1,4 @@
-# Quick review on the canvas — [Não lançado] (épico `epic/quick-review`)
+# Quick review on the canvas — 2026-11-23 (épico `epic/quick-review`)
 
 ## Pendências
 
@@ -9,6 +9,8 @@
 - **Decision 16 — keyboard (QR3):** the bar is `role="group"` with a label; Tab order Show on the canvas, Reject, Review…, Accept; Enter and Space only activate the focused button; Esc in the bar is Reject; focus inside the bar shows the real look; a polite live region announces the ghost.
 - **Decision 17 — toast (QR3):** text-only toast after Accept: "Proposal applied: “<title>”. Undo with Ctrl+Z." with no button.
 - **Decision 20 — `ProposalCard` states (QR3):** "On the canvas: accept or reject it there" while the ghost shows, and "Rejected on the canvas · ask for a change here" with a Show on the canvas button after a Reject; Review stays in both.
+- **Stacking and the card at the smallest window (CL2):** the bar sits after the corner notices and the minimap in the canvas area (same `--z-canvas-overlay`), so it is drawn above them; `barPosition` takes a free spot, else the one that covers the least. The proposal card keeps its icon beside the text and its buttons in one `.proposal-card-actions` row when they fit.
+- **The card is not pinned to the end of the scroll (CL3):** the conversation scrolls as one body (messages, then the composer), so with replies after the card the end of the scroll shows them and the card sits above the scroll area; scrolling up shows it whole (110 px, same text). That is not a clip; a check of the card measures it scrolled into view, not at `scrollHeight`.
 
 ## Sincronização
 
@@ -17,6 +19,3 @@ Not written yet: the closing writes the pending items to the **Mapping** artifac
 ## Ficou sem gravar
 
 None yet.
-
-- **Stacking and the card at the smallest window (CL2):** the bar sits after the corner notices and the minimap in the canvas area (same `--z-canvas-overlay`), so it is drawn above them; `barPosition` takes a free spot, else the one that covers the least. The proposal card keeps its icon beside the text and its buttons in one `.proposal-card-actions` row when they fit.
-- **The card is not pinned to the end of the scroll (CL3):** the conversation scrolls as one body (messages, then the composer), so with replies after the card the end of the scroll shows them and the card sits above the scroll area; scrolling up shows it whole (110 px, same text). That is not a clip; a check of the card measures it scrolled into view, not at `scrollHeight`.
