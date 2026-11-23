@@ -24,6 +24,12 @@ const hexColor = z.string().regex(HEX_COLOR_RE);
 const finite = z.number().finite();
 const readingDirection = z.enum(READING_DIRECTIONS);
 const containerClassName = z.string().regex(CONTAINER_CLASS_ID_RE);
+
+/** Pattern of a drawing mode axis or entry name (the same as the names in the specialization's `tokens`). */
+export const DRAWING_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+const drawingName = z.string().regex(DRAWING_NAME_PATTERN);
+/** The drawing mode (v24): axis → entry. Whether an empty map is kept is up to each use (it reads as absent). */
+export const drawingModeMapSchema = z.record(drawingName, drawingName);
 export const anchorSchema = z.object({
   to: id,
   side: z.enum(ANCHOR_SIDES).optional(),
@@ -98,7 +104,12 @@ export const containerSchema = z.object({
   source: sourceSchema.nullable(),
   background: hexColor.nullable(),
   /** Drawing mode the container pins (v18); absent or `null` = follows the project. */
-  drawingMode: z.string().min(1).nullable().optional(),
+  drawingMode: drawingModeMapSchema
+    .nullable()
+    .optional()
+    .transform((mode) =>
+      mode == null || Object.keys(mode).length === 0 ? undefined : mode,
+    ),
   /** Reading direction the container pins (v20); absent or `null` = follows the project. */
   direction: readingDirection.nullable().optional(),
   /** Container density (v19); the 0.5 to 8 range is the `container-density` invariant. */
@@ -261,8 +272,12 @@ export const projectSchema: z.ZodType<ProjectFile> = z.object({
   specializations: z.array(specializationSchema),
   platformRepos: z.record(z.string().regex(PLATFORM_ID_RE), platformRepoSchema),
   docRepos: docReposSchema,
-  /** Project drawing mode (v18); absent = the first mode of each specialization. */
-  drawingMode: z.string().min(1).optional(),
+  /** Project drawing mode (v18; map axis → entry since v24); absent or empty = the first entry of each axis. */
+  drawingMode: drawingModeMapSchema
+    .optional()
+    .transform((mode) =>
+      mode === undefined || Object.keys(mode).length === 0 ? undefined : mode,
+    ),
   /** Project reading direction (v20); absent = `ltr`. */
   direction: readingDirection.optional(),
   /** Pages in display order (v21); absent or empty is the `pages-empty` invariant, repaired by "Repair and open". */

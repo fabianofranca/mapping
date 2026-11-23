@@ -298,7 +298,7 @@ describe('with children the fallback goes away (the default content is replaced,
 describe('the two new examples draw without warnings in light and dark (decision 15)', () => {
   const MODES = ['light', 'dark'] as const;
   const scene = (which: 'bar' | 'scaffold', mode: (typeof MODES)[number]): Project => {
-    let p = { ...base(), drawingMode: mode } as Project;
+    let p = { ...base(), drawingMode: { mode } } as Project;
     if (which === 'bar') {
       p = put(p, 'BAB', 'bottom-app-bar', r(0, 720, 360, 80));
       p = put(p, 'IB1', 'icon-button', r(4, 728, 48, 48), { parentId: 'BAB' });

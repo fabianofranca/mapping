@@ -156,12 +156,14 @@ const anchorShape = z
     "Anchor: the marking sits against another one in the same space (`to`). It only links the two (the component's drawing reads the target's side and position through `$anchor.*`); `snap_to_anchor` actually snaps it. Moving the target takes the anchored marking along; resizing the target does not.",
   );
 
-const drawingModeField = z
-  .string()
+/** The drawing mode argument: a map axis → entry, a string (the entry of every declared axis that has it) or `null`. */
+const drawingModeValue = z.union([z.string(), z.record(z.string(), z.string())]);
+
+const drawingModeField = drawingModeValue
   .nullable()
   .optional()
   .describe(
-    "Drawing mode (`[a-z0-9][a-z0-9-]*`, e.g. `dark`): picks the values of the specializations' `tokens`. `null` goes back to following the project's; absent does not change.",
+    'Drawing mode of the container: a map axis → entry (`{ "theme": "dark", "contrast": "high" }`, names `[a-z0-9][a-z0-9-]*`; it replaces the whole map, the axes it leaves out follow the project\'s), or a string (`dark`: that entry on every declared axis of the applied specializations that has it; `invalid-arguments` with the declared axes in `drawingAxes` when none has it), or `null` (goes back to following the project\'s). It picks the values of the specializations\' `tokens`; `get_project` lists the declared axes (`drawingAxes`). Absent does not change.',
   );
 
 /** `ltr`/`rtl`, `null` (removes) or absent (does not change): the field shared by the container and the project. */
@@ -251,12 +253,11 @@ export const operationSchema = z.discriminatedUnion('op', [
   // Project
   z.object({
     op: z.literal('update_project'),
-    drawingMode: z
-      .string()
+    drawingMode: drawingModeValue
       .nullable()
       .optional()
       .describe(
-        "Drawing mode of the project (`[a-z0-9][a-z0-9-]*`, e.g. `dark`): picks the values of the specializations' `tokens` (it is not the app's light/dark theme). `null` removes it (goes back to the first mode of each specialization); absent does not change.",
+        'Drawing mode of the project: a map axis → entry (`{ "theme": "dark", "contrast": "high" }`, names `[a-z0-9][a-z0-9-]*`; it replaces the whole map, an axis it leaves out uses the first entry of the axis), or a string (`dark`: that entry on every declared axis of the applied specializations that has it; `invalid-arguments` with the declared axes in `drawingAxes` when none has it), or `null` (removes it: the first entry of each axis). It picks the values of the specializations\' `tokens` (it is not the app\'s light/dark theme); `get_project` lists the declared axes (`drawingAxes`). Absent does not change.',
       ),
     direction: readingDirectionField.describe(
       "Reading direction of the project (`ltr`, `rtl`): in `rtl`, the components' rows, grids, `start`/`end` positions and `mirror` icons are mirrored, in the containers that do not pin their own. `null` removes it (goes back to `ltr`); absent does not change.",

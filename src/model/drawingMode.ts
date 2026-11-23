@@ -6,48 +6,84 @@ import {
 } from './components/container';
 import { componentAnchorDefaults, type InstanceAnchor } from './components/anchor';
 import type { AnchorSide, ComponentFile } from './components/componentFormat';
-import { applyTokens, type ResolvedTokens } from './components/tokens';
+import {
+  applyTokens,
+  tokenAxes,
+  type ResolvedTokens,
+  type SpecTokens,
+} from './components/tokens';
 import { effectiveDensity } from './density';
 import { effectiveDirection } from './direction';
 import { fail } from './errors';
 import { updateById } from './project';
 import { projectIndex } from './projectIndex';
-import type { Marking, Project, ReadingDirection, Rect } from './types';
+import { DRAWING_NAME_PATTERN } from './schema';
+import type { DrawingModeMap, Marking, Project, ReadingDirection, Rect } from './types';
 
-// Drawing mode (schema v18, "faithful components" stage): picks the mode of the specializations'
-// `tokens` (`light`, `dark`…). It belongs to the project; the container can pin its own. It does
-// not depend on the interface's light/dark theme. Pure functions, no DOM.
+// Drawing mode (schema v18; a map axis → entry from schema v24, stage #1900): picks the entry of each axis of
+// the specializations' `tokens` (`mode: dark`, or `theme: dark` and `contrast: high`). It belongs to the
+// project; the container can pin some axes and follows the project in the others. It does not depend on the
+// interface's light/dark theme. Pure functions, no DOM.
 
-/** Pattern of a mode name (the same as `tokens.modes` in the specialization). */
-const MODE_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+/** The drawing mode as stored: axis → entry. */
+export type DrawingModeSelection = DrawingModeMap;
 
-function checkMode(mode: string): string {
-  if (!MODE_PATTERN.test(mode)) fail('invalid-name');
-  return mode;
+/** Same axes and entries (key order is not part of the mode). */
+export function sameDrawingMode(
+  a: DrawingModeSelection | null | undefined,
+  b: DrawingModeSelection | null | undefined,
+): boolean {
+  if (a === b) return true;
+  const left = Object.entries(a ?? {});
+  if (left.length !== Object.keys(b ?? {}).length) return false;
+  return left.every(([axis, entry]) => b?.[axis] === entry);
 }
 
-/** Changes the project's mode; `null` removes it (back to the first mode of each specialization). */
-export function setProjectDrawingMode(p: Project, mode: string | null): Project {
-  if (mode === null) {
-    if (p.drawingMode === undefined) return p;
+/** The mode as text: `theme: dark, contrast: high` (the axes in the order stored). */
+export function drawingModeText(selection: DrawingModeSelection): string {
+  return Object.entries(selection)
+    .map(([axis, entry]) => `${axis}: ${entry}`)
+    .join(', ');
+}
+
+/** A checked copy of a selection: every axis and entry name matches the pattern; an empty map is `null`. */
+function checkedSelection(
+  selection: DrawingModeSelection | null,
+): DrawingModeSelection | null {
+  if (selection === null || Object.keys(selection).length === 0) return null;
+  for (const [axis, entry] of Object.entries(selection)) {
+    if (!DRAWING_NAME_PATTERN.test(axis) || !DRAWING_NAME_PATTERN.test(entry)) {
+      return fail('invalid-name');
+    }
+  }
+  return { ...selection };
+}
+
+/** Replaces the project's whole map; `null` (or an empty map) removes it (back to the default of each axis). */
+export function setProjectDrawingMode(
+  p: Project,
+  selection: DrawingModeSelection | null,
+): Project {
+  const next = checkedSelection(selection);
+  if (sameDrawingMode(p.drawingMode, next)) return p;
+  if (next === null) {
     return Object.fromEntries(
       Object.entries(p).filter(([key]) => key !== 'drawingMode'),
     ) as unknown as Project;
   }
-  checkMode(mode);
-  return p.drawingMode === mode ? p : { ...p, drawingMode: mode };
+  return { ...p, drawingMode: next };
 }
 
-/** Pins the container's mode; `null` goes back to following the project's. */
+/** Replaces the whole map the container pins; `null` (or an empty map) goes back to following the project. */
 export function setContainerDrawingMode(
   p: Project,
   containerId: string,
-  mode: string | null,
+  selection: DrawingModeSelection | null,
 ): Project {
   const container = p.containers.find((c) => c.id === containerId);
   if (container === undefined) return fail('not-found', containerId);
-  const next = mode === null ? null : checkMode(mode);
-  if ((container.drawingMode ?? null) === next) return p;
+  const next = checkedSelection(selection);
+  if (sameDrawingMode(container.drawingMode, next)) return p;
   return {
     ...p,
     containers: updateById(p.containers, containerId, (c) => ({
@@ -57,51 +93,125 @@ export function setContainerDrawingMode(
   };
 }
 
+/** `selection` with `axis` set to `entry`, or removed when `entry` is `null`; `null` when no axis is left. */
+function withAxis(
+  selection: DrawingModeSelection | null | undefined,
+  axis: string,
+  entry: string | null,
+): DrawingModeSelection | null {
+  const rest = Object.fromEntries(
+    Object.entries(selection ?? {}).filter(([a]) => a !== axis),
+  );
+  if (entry === null) return rest;
+  // The axis keeps its place when it is already there.
+  return axis in (selection ?? {})
+    ? { ...selection, [axis]: entry }
+    : { ...rest, [axis]: entry };
+}
+
+/** Changes one axis of the project's mode; `null` removes that axis (the last one removes the map). */
+export function setProjectDrawingAxis(
+  p: Project,
+  axis: string,
+  entry: string | null,
+): Project {
+  return setProjectDrawingMode(p, withAxis(p.drawingMode, axis, entry));
+}
+
+/** Changes one axis the container pins; `null` removes that axis (the last one goes back to following the project). */
+export function setContainerDrawingAxis(
+  p: Project,
+  containerId: string,
+  axis: string,
+  entry: string | null,
+): Project {
+  const container = p.containers.find((c) => c.id === containerId);
+  if (container === undefined) return fail('not-found', containerId);
+  return setContainerDrawingMode(
+    p,
+    containerId,
+    withAxis(container.drawingMode, axis, entry),
+  );
+}
+
 /**
- * Effective mode of a space: the one the container pins, otherwise the project's, otherwise
- * `undefined` (the first mode of each specialization). A null `containerId` = the canvas (follows
- * the project).
+ * Effective mode of a space: the axes the container pins over the project's, so each axis is the
+ * container's, else the project's, else absent (the first entry of the axis, applied by the token
+ * table). `undefined` when nothing is pinned. A null `containerId` = the canvas (follows the project).
+ * The project's own object is returned when the container adds nothing.
  */
 export function effectiveDrawingMode(
   p: Project,
   containerId: string | null,
-): string | undefined {
-  if (containerId !== null) {
-    const fixed = projectIndex(p).containers.get(containerId)?.drawingMode;
-    if (fixed != null) return fixed;
-  }
-  return p.drawingMode;
+): DrawingModeSelection | undefined {
+  const fixed =
+    containerId === null
+      ? undefined
+      : projectIndex(p).containers.get(containerId)?.drawingMode;
+  if (fixed == null || Object.keys(fixed).length === 0) return p.drawingMode;
+  if (p.drawingMode === undefined) return fixed;
+  return { ...p.drawingMode, ...fixed };
 }
 
 /**
- * The union of the entries of the specializations' axes (`axes`, or `modes` as the axis `mode`), in the
- * order they appear, without repeats: while the project stores a string, any entry can be the drawing mode.
+ * The axes the specializations' tokens declare (`axes`, or `modes` as the axis `mode`), merged by axis name
+ * across specializations, the entries of each in the order they appear and without repeats.
  */
-export function drawingModesOf(
-  tokens: ReadonlyArray<
-    | {
-        readonly modes?: readonly string[] | undefined;
-        readonly axes?: Readonly<Record<string, readonly string[]>> | undefined;
-      }
-    | undefined
-  >,
-): string[] {
-  const out: string[] = [];
+export function drawingAxesOf(
+  tokens: ReadonlyArray<SpecTokens | undefined>,
+): ReadonlyMap<string, readonly string[]> {
+  const out = new Map<string, string[]>();
   for (const entry of tokens) {
-    // Like `tokenAxes`: `axes` wins over `modes`.
-    const axes =
-      entry?.axes === undefined ? [entry?.modes ?? []] : Object.values(entry.axes);
-    for (const mode of axes.flat()) if (!out.includes(mode)) out.push(mode);
+    for (const [axis, entries] of tokenAxes(entry)) {
+      const merged = out.get(axis) ?? [];
+      for (const name of entries) if (!merged.includes(name)) merged.push(name);
+      out.set(axis, merged);
+    }
   }
   return out;
 }
 
-/** Stored modes (of the project and the containers) that no specialization declares. */
-export function undeclaredDrawingMode(p: Project, declared: readonly string[]): string[] {
-  const stored = [p.drawingMode, ...p.containers.map((c) => c.drawingMode)];
-  const out: string[] = [];
-  for (const mode of stored) {
-    if (mode != null && !declared.includes(mode) && !out.includes(mode)) out.push(mode);
+/** The axes the project's applied specializations declare (`drawingAxesOf` of their tokens). */
+export function declaredDrawingAxes(p: Project): ReadonlyMap<string, readonly string[]> {
+  return drawingAxesOf(p.specializations.map((s) => s.spec?.tokens));
+}
+
+/**
+ * The legacy string form of a drawing mode: `entry` set on every declared axis that has it, in the order
+ * the axes are declared. `null` when no axis declares the entry (the caller says so, with the axes).
+ */
+export function selectionFromString(
+  axes: ReadonlyMap<string, readonly string[]>,
+  entry: string,
+): DrawingModeSelection | null {
+  const picked = [...axes].filter(([, entries]) => entries.includes(entry));
+  return picked.length === 0
+    ? null
+    : Object.fromEntries(picked.map(([axis]) => [axis, entry]));
+}
+
+/** A stored axis or entry that no specialization declares. */
+export interface UndeclaredDrawingMode {
+  readonly axis: string;
+  readonly entry: string;
+}
+
+/**
+ * The (axis, entry) pairs stored on the project and the containers that no specialization declares: an axis
+ * that none has, or an entry its axis lacks. Without repeats, in order of appearance.
+ */
+export function undeclaredDrawingMode(
+  p: Project,
+  declared: ReadonlyMap<string, readonly string[]>,
+): UndeclaredDrawingMode[] {
+  const out: UndeclaredDrawingMode[] = [];
+  for (const mode of [p.drawingMode, ...p.containers.map((c) => c.drawingMode)]) {
+    for (const [axis, entry] of Object.entries(mode ?? {})) {
+      const known = declared.get(axis)?.includes(entry) === true;
+      if (!known && !out.some((u) => u.axis === axis && u.entry === entry)) {
+        out.push({ axis, entry });
+      }
+    }
   }
   return out;
 }
@@ -122,8 +232,8 @@ export function readContainerOf(
 
 /**
  * The component as the drawing uses it: with each `$token` replaced by the table of the space's
- * effective mode (`tokenTables.get(mode)`; with no mode or no tables, the one in
- * `resolvedTokens`). Arranging, positioning and measuring go through here before reading the slot,
+ * effective mode (`tokenTables.get(mode)`, the mode being a map axis → entry; with no mode or no
+ * tables, the one in `resolvedTokens`). Arranging, positioning and measuring go through here before reading the slot,
  * so that a `gap` and `padding` in `$token` are worth the same as on screen. `tokens` goes in the
  * `tokens` option of `instantiate`; `direction` is the space's effective reading direction
  * (`effectiveDirection`), which goes in the engine's `direction` option (`drawOptions`).

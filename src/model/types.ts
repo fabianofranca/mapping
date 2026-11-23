@@ -1,9 +1,12 @@
+import type { TokenSelection } from './components/tokens';
 import type { Spec } from './spec';
 
-// Types of the `mapping.json` (schema v23). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
+// Types of the `mapping.json` (schema v24). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
 // the operations always return a new project.
 
-export const SCHEMA_VERSION = 23;
+export const SCHEMA_VERSION = 24;
+/** Drawing mode (v24): axis → entry of the specializations' `tokens` (the same shape as a token selection). */
+export type DrawingModeMap = TokenSelection;
 /** The reading directions the file accepts (v20): single source of the type and the schemas (zod, MCP). */
 export const READING_DIRECTIONS = ['ltr', 'rtl'] as const;
 /** Reading direction (v20): left to right or right to left. */
@@ -92,10 +95,12 @@ export interface ProjectContainer {
   /** Background color (`#RRGGBB`) of the container with no file (v10); `null` on an image with a file. */
   readonly background: string | null;
   /**
-   * Drawing mode the container pins (v18); absent or `null` = follows the project's. The mode
-   * chooses the values of the specializations' `tokens`, it does not depend on the interface theme.
+   * Drawing mode the container pins (v18; a map axis → entry since v24, e.g. `{ theme: "dark" }`); absent
+   * or `null` = follows the project's. It pins only the axes it lists and follows the project in the
+   * others. The entries choose the values of the specializations' `tokens`, they do not depend on the
+   * interface theme. An empty map and `null` are read as absent and never written.
    */
-  readonly drawingMode?: string | null;
+  readonly drawingMode?: DrawingModeMap | null;
   /**
    * Density (v19): how many image pixels one component unit is worth (dp, pt, logical px at 1x),
    * from 0.5 to 8; absent or `null` = 1. The markings stay in image pixels.
@@ -408,10 +413,12 @@ export interface Project {
    */
   readonly docRepos: DocRepos;
   /**
-   * Drawing mode of the project (v18): chooses the mode of the specializations' `tokens`. Absent =
-   * the first mode of each specialization. A mode that none declares stays stored (Diagnostics).
+   * Drawing mode of the project (v18; a map axis → entry since v24, e.g. `{ theme: "dark", contrast:
+   * "high" }`): chooses the entry of each axis of the specializations' `tokens`. An absent axis (or an
+   * absent map) = the first entry of that axis. An axis or entry that none declares stays stored
+   * (Diagnostics). An empty map is not written.
    */
-  readonly drawingMode?: string;
+  readonly drawingMode?: DrawingModeMap;
   /** Reading direction of the project (v20): `ltr` or `rtl`; absent = `ltr`. */
   readonly direction?: ReadingDirection;
   /** Pages in display order (v21): at least one. */

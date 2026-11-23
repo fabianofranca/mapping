@@ -39,12 +39,12 @@ describe('Settings: project drawing mode', () => {
     expect(options(select())).toEqual(['Light', 'Dark']);
     expect(select().value).toBe('light');
     await user.selectOptions(select(), 'dark');
-    expect(harness.project().drawingMode).toBe('dark');
+    expect(harness.project().drawingMode).toEqual({ mode: 'dark' });
     expect(select().value).toBe('dark');
   });
 
   it('a stored mode that no specialization declares appears marked', () => {
-    setup({ ...projectWithModes(), drawingMode: 'solar' });
+    setup({ ...projectWithModes(), drawingMode: { mode: 'solar' } });
     expect(options(select())).toEqual([
       'Light',
       'Dark',
@@ -114,7 +114,7 @@ describe('Container Details: drawing mode', () => {
     expect(options(select())).toEqual([t('drawingMode.followProject'), 'Light', 'Dark']);
     expect(select().value).toBe('');
     await user.selectOptions(select(), 'dark');
-    expect(harness.project().containers[0]?.drawingMode).toBe('dark');
+    expect(harness.project().containers[0]?.drawingMode).toEqual({ mode: 'dark' });
     await user.selectOptions(select(), '');
     expect(harness.project().containers[0]?.drawingMode).toBeNull();
   });
@@ -127,7 +127,10 @@ describe('Container Details: drawing mode', () => {
 
 describe('Diagnostics: drawing mode', () => {
   it('a stored, undeclared mode is warned about and stays stored', () => {
-    const harness = createHarness({ ...projectWithModes(), drawingMode: 'solar' });
+    const harness = createHarness({
+      ...projectWithModes(),
+      drawingMode: { mode: 'solar' },
+    });
     render(
       <EditorContext.Provider value={harness.context}>
         <DiagnosticsView />
@@ -138,7 +141,7 @@ describe('Diagnostics: drawing mode', () => {
       within(region).getByText(t('diagnostics.modeUndeclared', { mode: 'solar' })),
     ).toBeTruthy();
     expect(t('diagnostics.modeUndeclared', { mode: 'solar' })).toContain('solar');
-    expect(harness.project().drawingMode).toBe('solar');
+    expect(harness.project().drawingMode).toEqual({ mode: 'solar' });
   });
 
   it('with no undeclared mode the section does not appear', () => {

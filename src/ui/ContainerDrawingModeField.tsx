@@ -3,7 +3,12 @@ import { t } from '../i18n';
 import type { ProjectContainer } from '../model';
 import { Select } from './controls';
 import { useEditor } from './EditorContext';
-import { declaredDrawingModes, drawingModeLabel } from './drawingModes';
+import {
+  MODE_AXIS,
+  declaredDrawingModes,
+  drawingModeLabel,
+  modeEntryOf,
+} from './drawingModes';
 import { Property } from './PropertyGrid';
 
 interface ContainerDrawingModeFieldProps {
@@ -24,7 +29,7 @@ export function ContainerDrawingModeField({
   const id = useId();
   const project = store.project.value;
   const declared = project ? declaredDrawingModes(project) : [];
-  const fixed = image.drawingMode ?? null;
+  const fixed = modeEntryOf(image.drawingMode) ?? null;
   if (declared.length === 0 && fixed === null) return null;
   const undeclared = fixed !== null && !declared.includes(fixed);
   return (
@@ -39,7 +44,11 @@ export function ContainerDrawingModeField({
         value={fixed ?? ''}
         disabled={disabled}
         onChange={(e) =>
-          actions.setContainerDrawingMode(image.id, e.currentTarget.value || null)
+          actions.setContainerDrawingAxis(
+            image.id,
+            MODE_AXIS,
+            e.currentTarget.value || null,
+          )
         }
       >
         <option value="">{t('drawingMode.followProject')}</option>

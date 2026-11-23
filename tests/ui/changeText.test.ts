@@ -242,8 +242,8 @@ describe('changeTitle and changeSummary: the reading direction (R2 of stage #109
 
   it('changing only the mode in an rtl project keeps the direction on both sides', () => {
     const rtl = setProjectDirection(base, 'rtl');
-    expect(summaryOf(rtl, setProjectDrawingMode(rtl, 'dark'), 'project')).toBe(
-      'Direction: right to left → dark · Direction: right to left',
+    expect(summaryOf(rtl, setProjectDrawingMode(rtl, { mode: 'dark' }), 'project')).toBe(
+      'Direction: right to left → mode: dark · Direction: right to left',
     );
   });
 

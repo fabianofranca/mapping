@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   componentForDrawing,
-  drawingModesOf,
+  drawingAxesOf,
   loadSpecComponents,
   setProjectDrawingMode,
 } from '../../src/model';
@@ -135,14 +135,19 @@ describe('a tokens.axes library draws with its tokens', () => {
     expect(component.resolvedTokens?.primary).toBe('#111111');
   });
 
-  it('componentForDrawing picks the table of the stored string', () => {
+  it('componentForDrawing picks the table of the stored selection', () => {
     const p = sampleProject();
     const light = componentForDrawing(p, component, null);
     expect(light.tokens?.primary).toBe('#111111');
-    const dark = componentForDrawing(setProjectDrawingMode(p, 'dark'), component, null);
+    const dark = componentForDrawing(
+      setProjectDrawingMode(p, { theme: 'dark' }),
+      component,
+      null,
+    );
     expect(dark.tokens?.primary).toBe('#222222');
     expect(
-      componentForDrawing(setProjectDrawingMode(p, 'dark'), component, null).tokens,
+      componentForDrawing(setProjectDrawingMode(p, { theme: 'dark' }), component, null)
+        .tokens,
     ).toBe(dark.tokens);
   });
 
@@ -187,19 +192,24 @@ describe('a tokens.axes library draws with its tokens', () => {
   });
 });
 
-describe('drawingModesOf with axes', () => {
-  it('lists the entries of every axis, deduped, in order', () => {
-    expect(
-      drawingModesOf([
-        { axes: { theme: ['light', 'dark'], density: ['compact', 'light'] } },
-        { modes: ['dark', 'sepia'] },
-        undefined,
-      ]),
-    ).toEqual(['light', 'dark', 'compact', 'sepia']);
+describe('drawingAxesOf with axes', () => {
+  it('lists the entries of every axis by axis name, deduped, in order', () => {
+    const axes = drawingAxesOf([
+      { axes: { theme: ['light', 'dark'], density: ['compact', 'light'] }, values: {} },
+      { modes: ['dark', 'sepia'], values: {} },
+      undefined,
+    ]);
+    expect(Object.fromEntries(axes)).toEqual({
+      theme: ['light', 'dark'],
+      density: ['compact', 'light'],
+      mode: ['dark', 'sepia'],
+    });
   });
 
-  it('still lists modes', () => {
-    expect(drawingModesOf([{ modes: ['a', 'b'] }])).toEqual(['a', 'b']);
+  it('still lists modes as the axis mode', () => {
+    expect([...drawingAxesOf([{ modes: ['a', 'b'], values: {} }])]).toEqual([
+      ['mode', ['a', 'b']],
+    ]);
   });
 });
 

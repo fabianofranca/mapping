@@ -5,6 +5,7 @@ import {
   arrowSchema,
   entrySchema,
   containerSchema,
+  drawingModeMapSchema,
   jsonValue,
   layerSchema,
   pageSchema,
@@ -29,7 +30,9 @@ import { READING_DIRECTIONS, type JsonValue } from './types';
 export const PROPOSAL_FORMAT = 'mapping-proposal';
 export const PROPOSAL_FORMAT_VERSION = 4;
 /**
- * Versions read, from 1 to 11: 11 adds the container classes (the container's `classes` field and the
+ * Versions read, from 1 to 12: 12 adds the drawing mode as a map axis → entry (the `project` entity's and the
+ * container's `drawingMode` hold the map, schema v24) and is only written when the proposal carries one (it
+ * includes what 11 and the earlier ones have; a 6 to 11 proposal with a string reads as `{ "mode": s }`); 11 adds the container classes (the container's `classes` field and the
  * `classes` in the value of a created container, schema v23) and is only written when the proposal
  * uses them (it includes what 10 and the earlier ones have); 10 adds the pages (the `page` entity, the `pageId` in the value of a
  * created or removed container and canvas marking, and the composite `page` change, schema v21)
@@ -50,7 +53,7 @@ export const PROPOSAL_FORMAT_VERSION = 4;
  * `add_container` to the `operations`; 1 is still valid. Creation writes 4 (6, with the drawing
  * mode).
  */
-export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const;
+export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 
 /**
  * Proposal version that carries the drawing mode (schema v18): the `project` entity (field
@@ -61,6 +64,13 @@ export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as c
  * accepts `revisions` (optional).
  */
 export const PROPOSAL_DRAWING_MODE_FORMAT_VERSION = 6;
+
+/**
+ * Proposal version that carries the drawing mode as a map axis → entry (schema v24). An earlier version would
+ * read the map as an invalid value (or drop a created container's `drawingMode`), so a proposal that
+ * carries one is written as 12 (one that does not keeps the version it had).
+ */
+export const PROPOSAL_DRAWING_MODE_MAP_FORMAT_VERSION = 12;
 
 /** Does the proposal use the drawing mode (so that only `formatVersion` 6 represents it)? */
 export function usesDrawingMode(changes: readonly Change[]): boolean {
@@ -214,9 +224,9 @@ function hasContainerClasses(value: JsonValue): boolean {
 }
 
 /**
- * The `formatVersion` that creation or revision writes: 11 with container classes, 10 with pages, 9 with an anchor, 8 with a direction, 7
+ * The `formatVersion` that creation or revision writes: 12 with a drawing mode map, 11 with container classes, 10 with pages, 9 with an anchor, 8 with a direction, 7
  * with a density, 6 with a drawing mode, otherwise `fallback` (4 on creation, 5 on revision).
- * `current` is the version of the proposal being rewritten: a 6, 7, 8, 9, 10 or 11 never goes down.
+ * `current` is the version of the proposal being rewritten: a 6, 7, 8, 9, 10, 11 or 12 never goes down.
  */
 export function proposalFormatVersionFor(
   changes: readonly Change[],
@@ -234,6 +244,7 @@ const VERSIONS_BY_FEATURE: readonly (readonly [
   (typeof PROPOSAL_FORMAT_VERSIONS)[number],
   (changes: readonly Change[]) => boolean,
 ])[] = [
+  [PROPOSAL_DRAWING_MODE_MAP_FORMAT_VERSION, usesDrawingModeMap],
   [PROPOSAL_CONTAINER_CLASSES_FORMAT_VERSION, usesContainerClasses],
   [PROPOSAL_PAGES_FORMAT_VERSION, usesPages],
   [PROPOSAL_ANCHOR_FORMAT_VERSION, proposalUsesAnchor],
@@ -247,8 +258,18 @@ function hasDrawingMode(value: JsonValue): boolean {
     typeof value === 'object' &&
     value !== null &&
     !Array.isArray(value) &&
-    typeof (value as { readonly drawingMode?: JsonValue }).drawingMode === 'string'
+    (value as { readonly drawingMode?: JsonValue }).drawingMode != null
   );
+}
+
+/** Does the proposal carry a drawing mode (a map on either side of the project, the container field or a container value)? */
+export function usesDrawingModeMap(changes: readonly Change[]): boolean {
+  return changes.some((c) => {
+    if (c.entity === 'project') return hasDrawingMode(c.to) || hasDrawingMode(c.from);
+    if (c.entity !== 'image') return false;
+    if (c.field === 'drawingMode') return c.to != null || c.from != null;
+    return hasDrawingMode(c.to) || hasDrawingMode(c.from);
+  });
 }
 
 /**
@@ -621,9 +642,9 @@ const annotationValueSchema = z.preprocess(
   annotationSchema,
 );
 
-const drawingModeName = z
-  .string()
-  .regex(/^[a-z0-9][a-z0-9-]*$/, 'use [a-z0-9][a-z0-9-]*');
+// The drawing mode in a value (schema v24): axis → entry, each `[a-z0-9][a-z0-9-]*`. A string of a 6 to 11
+// proposal is turned into `{ "mode": s }` before this schema runs (`withDrawingModeMaps`).
+const drawingModeValue = drawingModeMapSchema;
 
 const readingDirection = z.enum(READING_DIRECTIONS);
 const containerClassName = z.string().regex(CONTAINER_CLASS_ID_RE);
@@ -633,7 +654,7 @@ const containerClassName = z.string().regex(CONTAINER_CLASS_ID_RE);
  * in formatVersion 8, the reading direction (absent = no pinned direction).
  */
 const projectValueSchema = z.object({
-  drawingMode: drawingModeName.nullable(),
+  drawingMode: drawingModeValue.nullable(),
   direction: readingDirection.nullable().optional(),
 });
 
@@ -659,7 +680,7 @@ const imageFieldSchemas: Record<(typeof IMAGE_FIELDS)[number], z.ZodType> = {
   markingColor: hexColor.nullable(),
   locked: z.boolean(),
   source: sourceSchema.nullable(),
-  drawingMode: drawingModeName.nullable(),
+  drawingMode: drawingModeValue.nullable(),
   density: z.number().min(0.5).max(8).nullable(),
   direction: readingDirection.nullable(),
   classes: z.record(containerClassName, containerClassName).nullable(),
@@ -990,8 +1011,9 @@ export const proposalSchema = z
         z.literal(9),
         z.literal(10),
         z.literal(11),
+        z.literal(12),
       ],
-      { error: 'must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 or 11' },
+      { error: 'must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 or 12' },
     ),
     id: proposalId,
     title: z.string().trim().min(1, 'cannot be empty'),
@@ -1270,9 +1292,57 @@ function withoutInsertBefore(data: unknown): unknown {
   };
 }
 
+/** A 6 to 11 drawing mode string (`dark`) as the map the schema stores (`{ "mode": "dark" }`); anything else as it is. */
+function legacyModeValue(value: unknown): unknown {
+  return typeof value === 'string' ? { mode: value } : value;
+}
+
+/** A change of a 6 to 11 proposal with its drawing mode strings read as `{ "mode": s }` (schema v24). */
+function withModeMaps(c: unknown): unknown {
+  if (!isPlainRecord(c)) return c;
+  if (c.entity === 'image' && c.field === 'drawingMode') {
+    return { ...c, from: legacyModeValue(c.from), to: legacyModeValue(c.to) };
+  }
+  if (c.field !== null || (c.entity !== 'project' && c.entity !== 'image')) return c;
+  const inside = (value: unknown): unknown =>
+    isPlainRecord(value) && typeof value.drawingMode === 'string'
+      ? { ...value, drawingMode: legacyModeValue(value.drawingMode) }
+      : value;
+  return { ...c, from: inside(c.from), to: inside(c.to) };
+}
+
+/**
+ * A proposal of formatVersion 6 to 11 wrote the drawing mode as a string; it reads as `{ "mode": s }` (the
+ * axis of a specialization with `modes`), in the changes and in the changes the revisions dropped.
+ */
+function withDrawingModeMaps(data: unknown): unknown {
+  if (!isPlainRecord(data) || !Array.isArray(data.changes)) return data;
+  const version = data.formatVersion;
+  if (typeof version !== 'number' || version < 6 || version > 11) return data;
+  const revisions = Array.isArray(data.revisions)
+    ? data.revisions.map((r: unknown) =>
+        isPlainRecord(r) && Array.isArray(r.dropped)
+          ? {
+              ...r,
+              dropped: r.dropped.map((d: unknown) =>
+                isPlainRecord(d) ? { ...d, change: withModeMaps(d.change) } : d,
+              ),
+            }
+          : r,
+      )
+    : data.revisions;
+  return {
+    ...data,
+    changes: data.changes.map(withModeMaps),
+    ...(revisions === undefined ? {} : { revisions }),
+  };
+}
+
 /** Validates an already parsed JSON; errors in the format `path: message`. */
 export function parseProposal(data: unknown): ProposalParseResult {
-  const noInherit = withoutInherit(withContainerIdOnMarkings(withoutInsertBefore(data)));
+  const noInherit = withoutInherit(
+    withContainerIdOnMarkings(withoutInsertBefore(withDrawingModeMaps(data))),
+  );
   const noParent = withDerivedParent(noInherit.data);
   const noArrowUpdate = withoutArrowUpdates(noParent.data);
   const result = proposalSchema.safeParse(noArrowUpdate.data);

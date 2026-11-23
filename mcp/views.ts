@@ -1,8 +1,8 @@
+import { drawingAxesJson, effectiveModeMap } from './drawingModeInput';
+import { tokenIndex } from '../src/model/tokenIndex';
 import {
-  drawingModesOf,
   effectiveContainerClasses,
   effectiveDirection,
-  effectiveDrawingMode,
   arrowsOf,
   markingComponent,
   siblingPosition,
@@ -100,13 +100,14 @@ function componentInfo(refs: Refs, marking: Marking): Json {
 }
 
 /**
- * Drawing mode that applies in a space (`containerId` null = the canvas): the container's, else the
- * project's, else the first mode the applied specializations declare; `null` with no mode.
+ * Drawing mode that applies in a space (`containerId` null = the canvas), as a map with every axis the applied
+ * specializations declare: the container's entry, else the project's, else the first entry of the axis.
  */
-export function effectiveModeOf(p: Project, containerId: string | null): string | null {
-  const fixed = effectiveDrawingMode(p, containerId);
-  if (fixed !== undefined) return fixed;
-  return drawingModesOf(p.specializations.map((s) => s.spec?.tokens))[0] ?? null;
+export function effectiveModeOf(
+  p: Project,
+  containerId: string | null,
+): Record<string, string> {
+  return effectiveModeMap(p, containerId);
 }
 
 /**
@@ -739,8 +740,10 @@ export function projectDetail(refs: Refs, pageQuery?: string): Json {
   return {
     ...projectSummary(loaded),
     createdAt: p.project.createdAt,
-    // The project's drawing mode (`null` = the first mode of each specialization).
+    // The project's drawing mode, a map axis -> entry (`null` = the first entry of each axis), and the axes the
+    // applied specializations declare (axis -> entries, the first being the default).
     drawingMode: p.drawingMode ?? null,
+    drawingAxes: drawingAxesJson(p),
     // The project's reading direction: `ltr` when none is saved (it is what applies).
     direction: p.direction ?? 'ltr',
     ...(loaded.migratedFrom !== null ? { migratedFrom: loaded.migratedFrom } : {}),
@@ -829,6 +832,7 @@ export function specializationView(refs: Refs, specId: string): Json {
       .filter((l) => l.spec?.specId === specId)
       .map((l) => ({ id: l.id, name: l.name, specLayerId: l.spec?.layerId })),
     ...(spec.platforms && spec.platforms.length > 0 ? { codeHint: CODE_HINT } : {}),
+    ...(spec.tokens === undefined ? {} : { tokens: tokenIndex(spec.tokens) }),
     spec,
   };
 }

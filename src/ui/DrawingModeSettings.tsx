@@ -3,10 +3,15 @@ import { t } from '../i18n';
 import type { Project } from '../model';
 import { Select } from './controls';
 import { useEditor } from './EditorContext';
-import { declaredDrawingModes, drawingModeLabel } from './drawingModes';
+import {
+  MODE_AXIS,
+  declaredDrawingModes,
+  drawingModeLabel,
+  modeEntryOf,
+} from './drawingModes';
 
 // Drawing mode of the project (schema v18), in the editor Settings: chooses the mode of the
-// `tokens` of the applied specializations. It does not depend on the interface's light/dark theme.
+// `tokens` of the applied specializations. One list on the `mode` axis until the axes interface (NV5). It does not depend on the interface's light/dark theme.
 
 interface DrawingModeSettingsProps {
   readonly project: Project;
@@ -15,14 +20,17 @@ interface DrawingModeSettingsProps {
 
 /** `true` if there is something to show: some declared mode or a mode saved in the project. */
 export function hasDrawingModes(project: Project): boolean {
-  return declaredDrawingModes(project).length > 0 || project.drawingMode !== undefined;
+  return (
+    declaredDrawingModes(project).length > 0 ||
+    modeEntryOf(project.drawingMode) !== undefined
+  );
 }
 
 export function DrawingModeSettings({ project, readOnly }: DrawingModeSettingsProps) {
   const { actions } = useEditor();
   const titleId = useId();
   const declared = declaredDrawingModes(project);
-  const stored = project.drawingMode;
+  const stored = modeEntryOf(project.drawingMode);
   if (!hasDrawingModes(project)) return null;
   const undeclared = stored !== undefined && !declared.includes(stored);
   // Without a saved mode the first one applies (the specializations' default).
@@ -37,7 +45,7 @@ export function DrawingModeSettings({ project, readOnly }: DrawingModeSettingsPr
         label={t('drawingMode.label')}
         value={value}
         disabled={readOnly}
-        onChange={(e) => actions.setProjectDrawingMode(e.currentTarget.value)}
+        onChange={(e) => actions.setProjectDrawingAxis(MODE_AXIS, e.currentTarget.value)}
       >
         {declared.map((mode) => (
           <option key={mode} value={mode}>

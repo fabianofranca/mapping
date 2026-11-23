@@ -23,7 +23,7 @@ import {
 import { Button } from './controls';
 import { EditorContext, type EditorContextValue } from './EditorContext';
 import { DiagnosticsDirection } from './DiagnosticsDirection';
-import { declaredDrawingModes } from './drawingModes';
+import { declaredDrawingAxes, undeclaredModeText } from './drawingModes';
 import { imageLabel } from './labels';
 import { LibraryIssueList } from './LibraryIssueList';
 import { markingLabel } from './labels';
@@ -318,13 +318,13 @@ export function DiagnosticsComponents() {
 }
 
 /**
- * Drawing modes saved (in the project or in the containers) that no specialization declares:
- * the mode stays saved, the drawing uses the first mode of each specialization.
+ * Drawing modes saved (in the project or in the containers) that no specialization declares, per axis:
+ * the mode stays saved, the drawing uses the first entry of that axis.
  */
 export function DiagnosticsDrawingMode() {
   const project = useContext(EditorContext)?.store.project.value;
   if (!project) return null;
-  const modes = undeclaredDrawingMode(project, declaredDrawingModes(project));
+  const modes = undeclaredDrawingMode(project, declaredDrawingAxes(project));
   if (modes.length === 0) return null;
   return (
     <section class="diagnostics-modes" aria-label={t('diagnostics.drawingMode')}>
@@ -332,7 +332,9 @@ export function DiagnosticsDrawingMode() {
       <p class="muted">{t('diagnostics.drawingModeHint')}</p>
       <ul>
         {modes.map((mode) => (
-          <li key={mode}>{t('diagnostics.modeUndeclared', { mode })}</li>
+          <li key={`${mode.axis}=${mode.entry}`}>
+            {t('diagnostics.modeUndeclared', { mode: undeclaredModeText(mode) })}
+          </li>
         ))}
       </ul>
     </section>

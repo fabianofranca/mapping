@@ -102,28 +102,32 @@ describe('proposal with the reading direction', () => {
 
   it('changing only the drawing mode in an rtl project does not lose the direction', () => {
     const rtl = setProjectDirection(base, 'rtl');
-    const proposal = build(setProjectDrawingMode(rtl, 'dark'), rtl);
+    const proposal = build(setProjectDrawingMode(rtl, { mode: 'dark' }), rtl);
     expect(proposal.changes).toMatchObject([
       {
         entity: 'project',
         from: { drawingMode: null, direction: 'rtl' },
-        to: { drawingMode: 'dark', direction: 'rtl' },
+        to: { drawingMode: { mode: 'dark' }, direction: 'rtl' },
       },
     ]);
     const applied = accept(rtl, proposal);
-    expect(applied.drawingMode).toBe('dark');
+    expect(applied.drawingMode).toEqual({ mode: 'dark' });
     expect(applied.direction).toBe('rtl');
   });
 
   it('old project proposal (without direction in from or to) keeps the current direction', () => {
     const rtl = setProjectDirection(base, 'rtl');
-    const proposal = build(setProjectDrawingMode(base, 'dark'), base);
+    const proposal = build(setProjectDrawingMode(base, { mode: 'dark' }), base);
     expect(proposal.changes).toMatchObject([
-      { entity: 'project', from: { drawingMode: null }, to: { drawingMode: 'dark' } },
+      {
+        entity: 'project',
+        from: { drawingMode: null },
+        to: { drawingMode: { mode: 'dark' } },
+      },
     ]);
     expect(proposal.changes[0]?.to).not.toHaveProperty('direction');
     const applied = accept(rtl, proposal);
-    expect(applied.drawingMode).toBe('dark');
+    expect(applied.drawingMode).toEqual({ mode: 'dark' });
     expect(applied.direction).toBe('rtl');
   });
 

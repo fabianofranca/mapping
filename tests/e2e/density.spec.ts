@@ -85,7 +85,7 @@ test('3x capture: suggestion, Apply, undo in one entry and density saving', asyn
   await expect(custom).toHaveValue('2.625');
 
   const { mapping } = await exportMapping(page);
-  expect(mapping.schemaVersion).toBe(23);
+  expect(mapping.schemaVersion).toBe(24);
   expect(mapping.containers).toHaveLength(1);
   expect(mapping.containers[0]).toMatchObject({
     width: 1080,
