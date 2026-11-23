@@ -65,7 +65,7 @@ function viewerValue(name: string, value: string): string {
 
 /** The hashes of the sandbox's own documents: part of `script-src` in the `app` and `viewer` profiles, with no block in the HTML. */
 function sandboxHashes(profile: CspProfile): string[] {
-  return profile === 'static' ? [] : [cspHash(SANDBOX_BOOTSTRAP)];
+  return profile === 'app' || profile === 'viewer' ? [cspHash(SANDBOX_BOOTSTRAP)] : [];
 }
 
 /** The profile's fixed directives. */
@@ -177,10 +177,14 @@ export function verifyCsp(html: string, profile: CspProfile): string[] {
       problems.push(`diretiva ${name}: esperado "${expected}", encontrado "${actual}"`);
     }
   }
-  if (profile !== 'app') {
+  if (profile === 'static' || profile === 'viewer') {
     for (const name of ['require-trusted-types-for', 'trusted-types']) {
       if (directives.has(name)) {
-        problems.push(`o perfil ${profile} não pode ter a diretiva ${name}`);
+        problems.push(
+          profile === 'static'
+            ? `o perfil static não pode ter a diretiva ${name}`
+            : `the ${profile} profile must not have the directive ${name}`,
+        );
       }
     }
   } else if (!REFERRER_META.test(html)) {

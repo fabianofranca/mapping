@@ -107,7 +107,8 @@ function revealRow(el: HTMLElement | null): void {
 
 /** The error of `screenFromFormat` as one line: code, message and, when the plugin says, `line:column`. */
 function formatErrorText(error: FormatScreenError): string {
-  const place = `${error.line}:${error.column ?? 0}`;
+  const place =
+    error.column === undefined ? `${error.line}` : `${error.line}:${error.column}`;
   const where =
     error.line === undefined || error.message.includes(place) ? '' : ` (${place})`;
   return `${error.code}: ${error.message}${where}`;
@@ -241,18 +242,28 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
     void screenFromFormat(FORMAT_LIBRARY, text, {
       format: FORMAT_ID,
       measure: konvaMeasurer,
-    }).then((result) => {
-      if (call !== formatCall.current) return;
-      setFormatWarnings(result.warnings);
-      if (result.error || !result.screen) {
-        setError(
-          result.error ? formatErrorText(result.error) : 'The format produced no screen.',
-        );
-        return;
-      }
-      setScreen(result.screen);
-      setError(undefined);
-    });
+    })
+      .then((result) => {
+        if (call !== formatCall.current) return;
+        setFormatWarnings(result.warnings);
+        if (result.error || !result.screen) {
+          setError(
+            result.error
+              ? formatErrorText(result.error)
+              : 'The format produced no screen.',
+          );
+          // No new screen: the "Last update" effect will not run for this edit.
+          startedAt.current = undefined;
+          return;
+        }
+        setScreen(result.screen);
+        setError(undefined);
+      })
+      .catch((e: unknown) => {
+        if (call !== formatCall.current) return;
+        setError(e instanceof Error ? e.message : String(e));
+        startedAt.current = undefined;
+      });
   }, [dataset, text]);
 
   const edit = useCallback(
@@ -284,6 +295,8 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
   );
 
   const choose = (next: Dataset): void => {
+    // The format set is filled by the effect on its text: choosing it again would blank the screen with nothing to refill it.
+    if (next === 'format' && dataset === 'format') return;
     startedAt.current = performance.now();
     setDataset(next);
     setScreen(DATASETS[next].screen);

@@ -71,7 +71,7 @@ describe('CSP of index.html (build)', () => {
     expect(verifyCsp(injectCsp(BUILT, 'app'), 'static')).toEqual(
       expect.arrayContaining([
         expect.stringContaining('diretiva img-src'),
-        expect.stringContaining('não pode ter a diretiva'),
+        expect.stringContaining('o perfil static não pode ter a diretiva'),
       ]),
     );
   });
@@ -282,7 +282,7 @@ describe('CSP of index.html (build)', () => {
       "base-uri 'none'; require-trusted-types-for 'script'",
     );
     expect(verifyCsp(withTrusted, 'viewer')).toEqual([
-      expect.stringContaining('não pode ter a diretiva'),
+      expect.stringContaining('the viewer profile must not have the directive'),
     ]);
   });
 
