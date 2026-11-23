@@ -14,6 +14,8 @@
 - MCP 0.59.0: `add_container`, `update_container` (and the old `update_image`) take `background` as `"#RRGGBB"` or `{ "$token": "<name>" }`; a token no applied specialization declares as a color is `invalid-arguments` with `details.colorTokens`. `get_project`, `get_container` and `resolve` return `background` as stored and `resolvedBackground`; `render_container`, `render_marking` and `get_marking_image` paint the resolved color (with the pinned axes under `drawingMode`). `add_blank_image` stays `#RRGGBB` only.
 - The app never writes a token background; Details shows it read-only with **Use a fixed color**, and the **New container** dialog fills a preset's token with its resolved color.
 - App (NV5): Settings shows one list per declared drawing axis (the `mode` axis keeps "Drawing mode", another is labeled by its name) and the container Details one field per axis, with "Follow the project" removing only that axis. The Specializations window lists the axes and, per named value, its default-selection value, `→ target` for an alias, the composite fields, the description, the group and the notice badges.
+- Example package `examples/libraries/named-values` (NV6): a small design system with the `theme` and `contrast` axes, a base palette, aliases (one with `alpha`), the composites `title` and `raised`, a deprecated token, the types Card (whole composites in `font` and `shadow`) and Badge (`title.size`), and a `Screen` preset (360 × 640) whose background is `{ "$token": "surface" }`.
+- Test script R31 — Named values in `docs/TESTING.md` (block 3 of the full round), and the steps that read a stored or returned drawing mode swept to the map form and to schema v24.
 
 ## Alterado
 
