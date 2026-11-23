@@ -65,12 +65,14 @@ describe('right-click on a Tree row', () => {
   });
 });
 
+const handleName = sampleProject().markings.find((m) => m.id === 'M2')?.name ?? '';
+
 describe('Tree row ⋯ menu', () => {
   it('has "Export image…" on a marking row, enabled with an image file', async () => {
     const harness = setup();
     const user = userEvent.setup();
     await user.click(
-      screen.getByRole('button', { name: t('copy.itemActions', { name: 'Maçaneta' }) }),
+      screen.getByRole('button', { name: t('copy.itemActions', { name: handleName }) }),
     );
     const menu = screen.getByRole('menu');
     const item = within(menu).getByRole('menuitem', { name: t('export.image.action') });
