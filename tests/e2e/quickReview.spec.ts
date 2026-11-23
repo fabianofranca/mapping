@@ -167,6 +167,8 @@ test('ghost, peek on hover and focus, Esc rejects, Accept and undo/redo', async 
     page.getByText('Proposal applied: “Add a help button”. Undo with Ctrl+Z.'),
   ).toBeVisible();
   await page.locator('[data-canvas-area]').focus();
+  // The pointer is not over where the bar comes back (it would show the real look).
+  await page.mouse.move(5, 5);
   await page.keyboard.press('Control+z');
   await expect(host(page)).toHaveAttribute('data-quick-review', mode('ghost'));
   await page.keyboard.press('Control+y');
@@ -204,14 +206,17 @@ for (const size of [
         return {
           covered,
           width: el.getBoundingClientRect().width,
-          titleLines: title ? title.getClientRects().length : 0,
-          titleHeight: title?.getBoundingClientRect().height ?? 0,
-          headHeight: el.querySelector('.quick-bar-head')?.getBoundingClientRect().height,
+          titleTop: title?.getBoundingClientRect().top ?? -1,
+          countsTop:
+            el.querySelector('.quick-bar-head > .muted')?.getBoundingClientRect().top ??
+            -2,
         };
       });
       expect(report?.covered).toEqual([]);
-      // The title is alone on a line only when the header wrapped: it stays with the counts.
-      expect(report?.headHeight).toBeLessThan((report?.titleHeight ?? 0) * 2);
+      // The title keeps the line with the counts (it is not alone when the header is long).
+      expect(Math.abs((report?.titleTop ?? 0) - (report?.countsTop ?? 0))).toBeLessThan(
+        6,
+      );
       expect(report?.width).toBeGreaterThan(320);
     });
 
