@@ -89,15 +89,14 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 ### `examples/libraries/sdui-backend/`
 
-**What it is.** The example of the **executable origin**: a fictional external system (an SDUI backend) describes screens in JSON and the `origins` declaration translates them into components; since `formatVersion` 20 it also carries the same JSON as a **file format** (`fileFormats`), whose plugin creates the screen from the JSON and generates the JSON back from the screen. Six types: **Column** (with a slot), **Button**, **FAB** (floating), **Bottom sheet** (modal), **Scrim** and **Endpoint** (a marking-only annotation, with no component). Version 3, no fonts.
+**What it is.** The example of a **file format with components**: a fictional external system (an SDUI backend) describes screens in JSON and the `sdui` file format (`fileFormats`) has a plugin that creates the screen from the JSON and generates the JSON back from the screen. Six types: **Column** (with a slot), **Button**, **FAB** (floating), **Bottom sheet** (modal), **Scrim** and **Endpoint** (a marking-only annotation, with no component). Version 3, no fonts.
 
 **How to open.** **Specializations** › **Apply folder…** and pick the folder. Or **Open library** to only see the Catalog (no errors or warnings).
 
 **What you can see.**
 
-- The file format `sdui` (`fileFormats`, scope `container`): the plugin `plugins/sdui.js` reads an SDUI JSON into a container with the screen size and background, the components as markings, the children of a Column in its slot, a bottom bar anchored at the bottom and the FAB at its corner, and writes the container back as the same JSON. The example `examples/home.sdui.json` round-trips (`validate_library` checks it). A `modal` is left out with a warning (no sheet and no scrim). `origins` stays next to it, unchanged: two readers of the same JSON.
-- The origin (`origins`): `booleans`, `background.values`, screen roots with `anchor`, `margin` and `scrim` (the `sdui-scrim` type) and the example screen `examples/settings.sdui.json`.
-- The matches with the external system (`sources`): `slot` and `ignore` on the type, the `id` of a non-executable system (`figma`), `path` and `values` on the fields and on a table column, and the example of an external-system node (`examples/button.sdui.json`, in the Button gallery).
+- The file format `sdui` (`fileFormats`, scope `container`): the plugin `plugins/sdui.js` reads an SDUI JSON into a container with the screen size and background, the components as markings, the children of a Column in its slot, a bottom bar anchored at the bottom and the FAB at its corner, and writes the container back as the same JSON. The example `examples/home.sdui.json` round-trips (`validate_library` checks it). A `modal` is left out with a warning (no sheet and no scrim).
+- The matches with the external system (`sources`): `slot` and `ignore` on the type, the `id` of a non-executable system (`figma`), and `path` and `values` on the fields and on a table column, as plain data the plugin reads.
 - The version contract (`migrations`): a migration from version 1 to 2 with the six steps (`rename-type`, `rename-field`, `map-values`, `fill-field`, `remove-field`, `remove-type` in `convert` and in `delete`).
 - The **Endpoint** type: `appliesTo: marking`, `linkedRef` (the response type text saves the link together), and a table with `number`, `date`, `enum` with an origin and `ref` that accepts `free` columns.
 - A container with `background` (`containers[].background`).
@@ -157,15 +156,15 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 ### `examples/libraries/measured/`
 
-**What it is.** The example of the **measured** origin (`origins[].kind: "measured"`): the rectangle tree of a page (measured in a browser) becomes markings, matching each node to a type through the `sources`. Two types: **Card** and **Button** (fields `label` and `tone`). The example tree is `examples/page.measured.json`, next to the library folder.
+**What it is.** The example of the **`dom`** file format (plugin `plugins/dom.js`, parse only, scope `container`): the rectangle tree of a page (measured in a browser) becomes markings, matching each node to a type through the `sources` (system `dom`). The file is the bare measured tree or `{ tree, scale?, offset? }`. Two types: **Card** and **Button** (fields `label` and `tone`). The example file is `examples/page.measured.json`, inside the library folder.
 
-**How to open.** **Specializations** › **Apply folder…** and pick the folder. The import is only through the MCP: the `import_measured` op of the batch, with `file` pointing to `examples/page.measured.json`.
+**How to open.** **Specializations** › **Apply folder…** and pick the folder. In an open container, use **Import from a format** and pick `measured/dom` with `examples/page.measured.json`; through the MCP, the `import_format` op (`format` `measured/dom`, with `file` and `container`). `import_measured` only works for specializations up to `formatVersion` 21.
 
 **What you can see.**
 
-- The `measured` origin (`system`, `kind`, `name`): the type comes from the node's `id`, class or `type` against the `source`'s `name`.
+- The plugin matches nodes by `id`, then each class, then `type` against the `name` of the types' `sources` (system `dom`).
 - Fields read through the `props` `path`, with `values` on the enum (`danger` becomes `error`).
-- The root node and the `x-mysterious` node have no type: they become a warning and are ignored, and the children carry on.
+- The root node and the `x-mysterious` node have no type: they become a warning and are ignored, and the children carry on. A node smaller than its component's minimum size makes the whole import refuse (unlike `import_measured`, which skips it with a note).
 - Membership comes from geometry: the buttons end up inside the card because their rectangle fits inside it.
 
 **Scripts.** R25.58 and following.
@@ -320,7 +319,7 @@ To apply a loose file: **Specializations** › **Apply specialization…**. The 
 
 ## Where to see each feature
 
-When one exists, the example is from `libraries/`. The features of the executable origin, of `sources` and of migration are in `sdui-backend`; the ones that depend on a font file and on italics (`fonts[].style`) have no example, by the owner's decision (the font is fixed in the mobile client, outside SDUI; they are in `EXCEPTIONS` of the test `tests/examples/featureCoverage.test.ts`, which says which example covers each key and each value).
+When one exists, the example is from `libraries/`. The features of the file format plugin with components, of `sources` and of migration are in `sdui-backend`; the ones that depend on a font file and on italics (`fonts[].style`) have no example, by the owner's decision (the font is fixed in the mobile client, outside SDUI; they are in `EXCEPTIONS` of the test `tests/examples/featureCoverage.test.ts`, which says which example covers each key and each value).
 
 ### Specialization
 
@@ -350,8 +349,8 @@ When one exists, the example is from `libraries/`. The features of the executabl
 | Floating type (`floating`)                                                       | Note and Table (`notas`); Event (`analytics`)                                                                             |
 | `appliesTo`                                                                      | Transition, arrow only (`analytics`); Endpoint, marking only (`sdui-backend`)                                             |
 | `component`, `doc` and `examples` (library package)                              | All the folders in `libraries/` and `analytics`                                                                           |
-| `origins`, `sources` and a screen example of an external system                  | `sdui-backend`                                                                                                            |
-| `origins[].kind: "measured"` (measured layout)                                   | `measured`                                                                                                                |
+| `sources` (plain data for a plugin) and a file format with components            | `sdui-backend`                                                                                                            |
+| `dom` file format (measured layout)                                              | `measured`                                                                                                                |
 | `migrations`                                                                     | `sdui-backend`; `sdui.json` and `roles-migration.json` (role steps)                                                       |
 | `formatVersion` 1                                                                | `data-model.json`                                                                                                         |
 | `formatVersion` 4 and 5                                                          | `sdui-backend` (4); `sdui.json` (5)                                                                                       |

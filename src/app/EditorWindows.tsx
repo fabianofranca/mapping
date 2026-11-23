@@ -8,6 +8,7 @@ import {
   type ToolWindowId,
 } from '../store/toolWindows';
 import type { Selection } from '../store/ui';
+import { runFormat } from './formatRunner';
 import { Breadcrumbs } from '../ui/Breadcrumbs';
 import { CatalogWindow } from '../ui/CatalogWindow';
 import {
@@ -73,7 +74,12 @@ function Window({
     case 'layers':
       return <LayersWindow stacked={stacked} />;
     case 'catalog':
-      return <CatalogWindow onOpenSpecs={() => panel.dialogs.show({ kind: 'specs' })} />;
+      return (
+        <CatalogWindow
+          onOpenSpecs={() => panel.dialogs.show({ kind: 'specs' })}
+          formatRunner={runFormat}
+        />
+      );
     case 'details':
       return (
         <ToolWindow id={id}>

@@ -574,6 +574,10 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
       (type(s).sources = [{ system: 'figma', name: 'n', ignore: ['a'] }])
     ),
   ],
+  [
+    'spec.onlyUpToFormat',
+    (s) => ((s.formatVersion = 22), (s.origins = [{ system: 'sys' }])),
+  ],
   ['spec.sourcePathRequired', (s) => withOrigin(s, { system: 'sys' })],
   ['spec.sourceNameRequired', (s) => (field(s).sources = [{ system: 'figma' }])],
   ['spec.fieldPathEmptySegment', (s) => fieldPath(s, 'a.')],
@@ -591,6 +595,10 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
   [
     'spec.exampleSystemUndeclared',
     (s) => (type(s).examples = [{ name: 'x', system: 'zz', file: 'a.json' }]),
+  ],
+  [
+    'spec.sourceNeedsNameOrPath',
+    (s) => ((s.formatVersion = 22), (type(s).fields[0].sources = [{ system: 'zz' }])),
   ],
   [
     'spec.fontRepeated',

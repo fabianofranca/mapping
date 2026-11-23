@@ -155,6 +155,34 @@ export interface CatalogDocument {
   readonly docExternal: CatalogDocExternal | null;
 }
 
+/** An example of a file format: its text (`parse` reads it) and the projection that feeds `generate`. */
+export interface CatalogFormatExample {
+  readonly name: string;
+  /** Package path of the example's text. */
+  readonly file: string;
+  /** Text of the file; `null` when the package does not have it. */
+  readonly text: string | null;
+  /** Package path of the `.json` projection (an example of a plugin that only has `generate`). */
+  readonly input?: string;
+  readonly inputText?: string | null;
+}
+
+/**
+ * A file format the specialization declares (`fileFormats`, v20), with the plugin's text read
+ * from the package (`null` when the file is missing). Nothing here runs the plugin.
+ */
+export interface CatalogFormat {
+  readonly id: string;
+  readonly name: string;
+  readonly extension: string;
+  readonly scope: 'project' | 'container';
+  readonly description?: string;
+  /** Package path of the plugin. */
+  readonly plugin: string;
+  readonly pluginText: string | null;
+  readonly examples: readonly CatalogFormatExample[];
+}
+
 export interface CatalogLayer {
   readonly id: string;
   readonly name: string;
@@ -168,6 +196,8 @@ export interface Catalog {
   readonly layers: readonly CatalogLayer[];
   /** The library's general documents, in the order of the specialization (v21); empty without any. */
   readonly documents: readonly CatalogDocument[];
+  /** The file formats the specialization declares, each with its plugin's and examples' texts; empty without any (before v20). */
+  readonly formats: readonly CatalogFormat[];
   /** The engine's library (origins for external-system examples); `null` if it was not built. */
   readonly library: Library | null;
 }
@@ -325,7 +355,14 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
   const report = validateLibrary({ files });
   const spec = report.spec ?? null;
   if (spec === null)
-    return { spec: null, report, layers: [], documents: [], library: null };
+    return {
+      spec: null,
+      report,
+      layers: [],
+      documents: [],
+      formats: [],
+      library: null,
+    };
 
   const texts = new Map<string, string>();
   for (const file of files) if (file.text !== undefined) texts.set(file.path, file.text);
@@ -427,7 +464,43 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
         : null,
     docExternal: docExternalOf(spec, document.doc),
   }));
-  return { spec, report, layers: withResolvedComponents(built), documents, library };
+  const formats = formatsOf(spec, texts, resolve);
+  return {
+    spec,
+    report,
+    layers: withResolvedComponents(built),
+    documents,
+    formats,
+    library,
+  };
+}
+
+/** The declared file formats with the texts of their plugin and examples, read from the package files. */
+function formatsOf(
+  spec: Spec,
+  texts: ReadonlyMap<string, string>,
+  resolve: (ref: string) => string,
+): CatalogFormat[] {
+  return (spec.fileFormats ?? []).map((format): CatalogFormat => ({
+    id: format.id,
+    name: format.name,
+    extension: format.extension,
+    scope: format.scope ?? 'project',
+    ...(format.description === undefined ? {} : { description: format.description }),
+    plugin: resolve(format.plugin),
+    pluginText: texts.get(resolve(format.plugin)) ?? null,
+    examples: (format.examples ?? []).map((example): CatalogFormatExample => ({
+      name: example.name,
+      file: resolve(example.file),
+      text: texts.get(resolve(example.file)) ?? null,
+      ...(example.input === undefined
+        ? {}
+        : {
+            input: resolve(example.input),
+            inputText: texts.get(resolve(example.input)) ?? null,
+          }),
+    })),
+  }));
 }
 
 /**
