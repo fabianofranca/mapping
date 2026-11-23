@@ -651,7 +651,7 @@ const CADASTRO_HTML = `<!doctype html>
     <p>Name<br /><input style="width: 340px; font: inherit" /></p>
     <p>Age<br /><input style="width: 340px; font: inherit" /></p>
     <p>Email<br /><input style="width: 340px; font: inherit" /></p>
-    <p><button style="font: inherit; padding: 12px 32px">Sign up</button></p>
+    <p><button style="font: inherit; padding: 12px 32px">Register</button></p>
   </form>
 </body>`;
 
@@ -2798,6 +2798,10 @@ const CLI_HELP = [
     'secao [<key…>] [--guia=<file>]',
     'prints an on-demand section of the round guide (1, 2, 3, 5, 6, 7, A.seletores, B) or of docs/TESTING-NUVEM-CONSULTA.md (consulta.subagente, consulta.grupos, consulta.passada, consulta.regras, consulta.historico), without opening Chrome; without a key, lists the keys with the size and when to read; cuts at 25 thousand characters',
   ],
+  [
+    'cadastro <file>',
+    'generates the sign-up screen test image (cadastro.png, 484 px wide) in the file, with the headless Chromium; no connection to the app',
+  ],
   ['help', 'this list'],
 ];
 
@@ -3024,6 +3028,16 @@ async function runCli(argv) {
     console.log(formatHelp());
     return;
   }
+  if (command === 'cadastro') {
+    if (!rest[0]) {
+      console.error('Usage: node cloud.mjs cadastro <file>');
+      process.exitCode = 2;
+      return;
+    }
+    await makeCadastroPng(path.resolve(rest[0]));
+    console.log(`Generated ${path.resolve(rest[0])}`);
+    return;
+  }
   if (command === 'passo') {
     runPasso(rest);
     return;
@@ -3079,7 +3093,7 @@ async function runCli(argv) {
     return;
   }
   console.error(
-    `Unknown command: ${command}. Commands: mark, state, tempos, ponto, run, serve, find, passo, secao, help.`,
+    `Unknown command: ${command}. Commands: mark, state, tempos, ponto, run, serve, find, passo, secao, cadastro, help.`,
   );
   process.exitCode = 2;
 }

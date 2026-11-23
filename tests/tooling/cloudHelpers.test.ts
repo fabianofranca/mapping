@@ -3298,3 +3298,16 @@ describe('canvas view for the tester (stage #1076, VC2)', () => {
     });
   });
 });
+
+describe('cloud.mjs: the cadastro.png screen (RH3)', () => {
+  it('the HTML embedded in cloud.mjs is the one in the html fence of R0 in docs/TESTING.md', () => {
+    const source = read('scripts/testing/cloud.mjs');
+    const embedded = /const CADASTRO_HTML = `([^`]*)`;/.exec(source)?.[1];
+    const guide = read('docs/TESTING.md');
+    const r0 = guide.slice(guide.indexOf('### R0 '), guide.indexOf('### R1 '));
+    const fenced = /```html\n([\s\S]*?)\n```/.exec(r0)?.[1];
+    expect(embedded).toBeDefined();
+    expect(fenced).toBeDefined();
+    expect(embedded).toBe(fenced);
+  });
+});
