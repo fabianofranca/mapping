@@ -171,6 +171,25 @@ export function drawingAxesOf(
   return out;
 }
 
+/** The axes the project's applied specializations declare (`drawingAxesOf` of their tokens). */
+export function declaredDrawingAxes(p: Project): ReadonlyMap<string, readonly string[]> {
+  return drawingAxesOf(p.specializations.map((s) => s.spec?.tokens));
+}
+
+/**
+ * The legacy string form of a drawing mode: `entry` set on every declared axis that has it, in the order
+ * the axes are declared. `null` when no axis declares the entry (the caller says so, with the axes).
+ */
+export function selectionFromString(
+  axes: ReadonlyMap<string, readonly string[]>,
+  entry: string,
+): DrawingModeSelection | null {
+  const picked = [...axes].filter(([, entries]) => entries.includes(entry));
+  return picked.length === 0
+    ? null
+    : Object.fromEntries(picked.map(([axis]) => [axis, entry]));
+}
+
 /** A stored axis or entry that no specialization declares. */
 export interface UndeclaredDrawingMode {
   readonly axis: string;

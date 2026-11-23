@@ -8,10 +8,8 @@ import {
 import { ToolError } from './errors';
 import { encodeImage } from './image/codecs';
 import { hexToRgb } from './image/compose';
-import {
-  declaredModes,
-  paintContainerDrawingsWithImages,
-} from './image/containerDrawing';
+import { paintContainerDrawingsWithImages } from './image/containerDrawing';
+import { drawingModeToPin, type DrawingModeInput } from './drawingModeInput';
 import { MAX_PIXELS, MIME, type ImageFormat } from './image/formats';
 import { clampRect, createRaster, crop, resize, type PixelRect } from './image/raster';
 import { loadImage, rectJson, scaleRect, sizeWarning, urlFields } from './imageTools';
@@ -29,7 +27,8 @@ export const MAX_ZOOM = 8;
 
 export interface RenderOptions {
   readonly zoom?: number;
-  readonly drawingMode?: string;
+  /** A map axis -> entry (the listed axes are pinned) or one entry for every axis that declares it. */
+  readonly drawingMode?: DrawingModeInput;
   /** Pins the reading direction in the image (like `drawingMode`); absent = each container's effective one. */
   readonly direction?: ReadingDirection;
   /** `image` (default): the container's file (or the background color, without a file); `none`: transparent. */
@@ -49,18 +48,6 @@ function subtree(refs: Refs, marking: Marking): Set<string> {
   };
   visit(marking.id);
   return ids;
-}
-
-function checkMode(refs: Refs, mode: string | undefined): void {
-  if (mode === undefined) return;
-  const modes = declaredModes(refs.project);
-  if (!modes.includes(mode)) {
-    throw new ToolError(
-      'invalid-arguments',
-      `drawing mode not declared by any applied specialization: ${mode}`,
-      { drawingMode: mode, declared: modes },
-    );
-  }
 }
 
 /** The background of the region: the container's file cropped and scaled, the background color or nothing. */
@@ -123,6 +110,11 @@ function checkLimits(
   }
 }
 
+/** The map a `drawingMode` option pins (checked against the declared axes); absent without the option. */
+function pinnedMode(refs: Refs, mode: DrawingModeInput | undefined) {
+  return mode === undefined ? undefined : drawingModeToPin(refs.project, mode);
+}
+
 async function renderRegion(
   roots: Roots,
   refs: Refs,
@@ -133,7 +125,7 @@ async function renderRegion(
   images: ImageServer | null,
   source: ImageSource | undefined,
 ): Promise<{ json: Record<string, unknown>; image: ImageResult['image'] }> {
-  checkMode(refs, options.drawingMode);
+  const pinned = pinnedMode(refs, options.drawingMode);
   const zoom = options.zoom ?? 1;
   const width = Math.max(1, Math.round(region.width * zoom));
   const height = Math.max(1, Math.round(region.height * zoom));
@@ -169,7 +161,7 @@ async function renderRegion(
     },
     {
       ...(markingIds === undefined ? {} : { markingIds }),
-      ...(options.drawingMode === undefined ? {} : { drawingMode: options.drawingMode }),
+      ...(pinned === undefined ? {} : { drawingMode: pinned }),
       ...(options.direction === undefined ? {} : { direction: options.direction }),
     },
   );

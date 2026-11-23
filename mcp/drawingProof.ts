@@ -6,6 +6,7 @@ import {
   effectiveDensity,
   effectiveDirection,
   effectiveDrawingMode,
+  sameDrawingMode,
   projectIndex,
   projectIssues,
   SLOT_OVERFLOW,
@@ -60,8 +61,10 @@ const drawingCaches = new WeakMap<FontBook, DrawingCache>();
 /** The space changed what applies in it for the drawing: effective mode, density or reading direction. */
 function spaceChanged(before: Project, after: Project, containerId: string | null) {
   return (
-    effectiveDrawingMode(before, containerId) !==
-      effectiveDrawingMode(after, containerId) ||
+    !sameDrawingMode(
+      effectiveDrawingMode(before, containerId),
+      effectiveDrawingMode(after, containerId),
+    ) ||
     effectiveDensity(before, containerId) !== effectiveDensity(after, containerId) ||
     effectiveDirection(before, containerId) !== effectiveDirection(after, containerId)
   );

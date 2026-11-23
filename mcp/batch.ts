@@ -104,6 +104,7 @@ import {
   setImageLocked,
   setContainerDensity,
   setContainerDirection,
+  drawingModeText,
   setContainerDrawingMode,
   setContainerMarkingColor,
   setProjectDirection,
@@ -138,6 +139,7 @@ import {
 } from '../src/model';
 import type { LibraryIssue } from '../src/model/library';
 import { applyClassChoices } from './containerClassOps';
+import { drawingModeMap } from './drawingModeInput';
 import { ToolError, type ToolErrorCode } from './errors';
 import {
   checkUpdate,
@@ -1385,11 +1387,12 @@ class Batch {
     let project = p;
     const changes: string[] = [];
     if (op.drawingMode !== undefined) {
-      project = setProjectDrawingMode(project, op.drawingMode);
+      const mode = drawingModeMap(project, op.drawingMode);
+      project = setProjectDrawingMode(project, mode);
       changes.push(
-        op.drawingMode === null
+        mode === null
           ? 'drawing mode removed'
-          : `drawing mode ${quoted(op.drawingMode)}`,
+          : `drawing mode ${quoted(drawingModeText(mode))}`,
       );
     }
     if (op.direction !== undefined) {
@@ -1415,7 +1418,11 @@ class Batch {
         : this.addContainerWithBackground(op, p);
     const id = step.created?.find((c) => c.kind === 'i')?.id;
     if (id === undefined) return step;
-    const settings = applyContainerSettings(step.project, id, op);
+    const settings = applyContainerSettings(step.project, id, {
+      drawingMode: drawingModeMap(step.project, op.drawingMode ?? null),
+      direction: op.direction,
+      density: op.density,
+    });
     let result: Step = {
       ...step,
       project: settings.project,
@@ -1564,11 +1571,12 @@ class Batch {
       );
     }
     if (op.drawingMode !== undefined) {
-      project = setContainerDrawingMode(project, id, op.drawingMode);
+      const mode = drawingModeMap(project, op.drawingMode);
+      project = setContainerDrawingMode(project, id, mode);
       changes.push(
-        op.drawingMode === null
+        mode === null
           ? 'project drawing mode'
-          : `drawing mode ${quoted(op.drawingMode)}`,
+          : `drawing mode ${quoted(drawingModeText(mode))}`,
       );
     }
     if (op.direction !== undefined) {

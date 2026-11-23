@@ -481,7 +481,7 @@ describe('get_marking, get_annotation and get_project', () => {
 
   it('get_project carries the platforms and the local clone; a platform without a local path raises no warning', async () => {
     const data = ok(await mcp.call('get_project', { project: 'cadastro' }));
-    expect(data.schemaVersion).toBe(23);
+    expect(data.schemaVersion).toBe(24);
     expect(data.platforms).toEqual([
       expect.objectContaining({
         id: 'android',
@@ -510,7 +510,7 @@ describe('get_marking, get_annotation and get_project', () => {
 
   it('a v8 project with the code field removed opens migrated, without its values', async () => {
     const data = ok(await mcp.call('get_project', { project: 'antigo' }));
-    expect(data.schemaVersion).toBe(23);
+    expect(data.schemaVersion).toBe(24);
     expect(data.migratedFrom).toBe(8);
     const screen = ok(
       await mcp.call<Annotation>('get_annotation', { ref: refOf('antigo', 'a', 'AS') }),
@@ -787,7 +787,7 @@ describe('plan_changes: repositories per platform and nonexistent field', () => 
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     const saved = parsed.project;
-    expect(saved.schemaVersion).toBe(23);
+    expect(saved.schemaVersion).toBe(24);
     expect(saved.revision).toBe(1);
     expect(saved.platformRepos).toEqual({
       android: { localPath: '../../..' },
