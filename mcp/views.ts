@@ -1,6 +1,7 @@
 import { drawingAxesJson, effectiveModeMap } from './drawingModeInput';
 import { tokenIndex } from '../src/model/tokenIndex';
 import {
+  containerBackgroundColor,
   effectiveContainerClasses,
   effectiveDirection,
   arrowsOf,
@@ -576,6 +577,8 @@ function containerSummary(refs: Refs, image: ProjectContainer): Json {
     file: image.file,
     // Container with only a background: `file` is `null` and `background` carries the color.
     background: image.background,
+    // The color it resolves to in the container's effective drawing mode (`#RRGGBB`; `null` with a file).
+    resolvedBackground: containerBackgroundColor(refs.project, image.id),
     width: image.width,
     height: image.height,
     locked: image.locked,

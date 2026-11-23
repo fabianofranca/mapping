@@ -159,6 +159,9 @@ const anchorShape = z
 /** The drawing mode argument: a map axis → entry, a string (the entry of every declared axis that has it) or `null`. */
 const drawingModeValue = z.union([z.string(), z.record(z.string(), z.string())]);
 
+/** `#RRGGBB` or `{ "$token": "<name>" }` (stage #1900, NV4): the background of a container without a file. */
+const backgroundValue = z.union([z.string(), z.object({ $token: z.string() }).strict()]);
+
 const drawingModeField = drawingModeValue
   .nullable()
   .optional()
@@ -213,11 +216,10 @@ const updateContainerFields = {
     .boolean()
     .optional()
     .describe("Lock (or unlock) all the container's markings."),
-  background: z
-    .string()
+  background: backgroundValue
     .optional()
     .describe(
-      'Only on a container without a file (plain background): new background color `#RRGGBB`. On a container with a file it fails with `container-has-file`.',
+      'Only on a container without a file (plain background): new background, a color `#RRGGBB` or `{ "$token": "<name>" }` (a color token of the applied specializations, name `[a-z0-9][a-z0-9-]*`; resolved in the container\'s drawing mode; a token no applied specialization declares as a color is `invalid-arguments`, with the declared ones in `colorTokens`). On a container with a file it fails with `container-has-file`.',
     ),
   width: int
     .min(1)
@@ -438,11 +440,10 @@ export const operationSchema = z.discriminatedUnion('op', [
       .describe(
         'Background-only container: height in pixels (1 to 20000; e.g. 844 on a phone). With `file`/`base64` the height comes from the file and `height` does not apply.',
       ),
-    background: z
-      .string()
+    background: backgroundValue
       .optional()
       .describe(
-        'Background-only container: color `#RRGGBB`. With `file`/`base64` the container has the image as its content and `background` does not apply.',
+        'Background-only container: color `#RRGGBB` or `{ "$token": "<name>" }` (a color token of the applied specializations, resolved in the container\'s drawing mode; undeclared: `invalid-arguments` with `colorTokens`; a specialization preset\'s `containers[].background` is passed as written). With `file`/`base64` the container has the image as its content and `background` does not apply.',
       ),
     source: externalSource.optional(),
     center: z

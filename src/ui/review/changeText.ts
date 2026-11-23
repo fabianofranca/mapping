@@ -140,7 +140,9 @@ export function markingName(names: ReviewNames, id: string): string {
 function backgroundName(
   record: Record<string, JsonValue> | null | undefined,
 ): string | null {
-  return record && record.file === null && typeof record.background === 'string'
+  return record &&
+    record.file === null &&
+    (typeof record.background === 'string' || isRecord(record.background))
     ? t('image.containerUntitled')
     : null;
 }
@@ -725,6 +727,11 @@ export function valueParts(
   // Density (v19): absent (`null`) is 1, and the number follows the language (2.5 in pt-BR).
   if (field === 'density') {
     return [{ text: formatDensity(typeof value === 'number' ? value : 1) }];
+  }
+  if (field === 'background' && isRecord(value)) {
+    return [
+      { text: t('review.value.backgroundToken', { name: text(value.$token) ?? '' }) },
+    ];
   }
   if (field === 'drawingMode' && value !== null) return [{ text: modeText(value) ?? '' }];
   if (field === 'direction') return [{ text: directionText(c.entity, value) }];

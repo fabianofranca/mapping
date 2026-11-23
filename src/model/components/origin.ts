@@ -34,14 +34,13 @@ import type { FieldDef, Library, TypeDef } from './library';
 import type { Screen } from './screen';
 import {
   TOKEN_NAME_PATTERN,
-  knownTokenKinds,
   mapColor,
   resolveTokens,
   type SpecTokens,
   type TokenSelection,
 } from './tokens';
 import { packagePathError } from '../packagePaths';
-import { packagePathMsg, pathErrorMsg, specMsg, type SpecMsg } from '../specIssueCode';
+import { packagePathMsg, pathErrorMsg } from '../specIssueCode';
 import { originCodeForText, originSpecCodeForText } from '../messages/textLookup';
 import { isRecord } from '../isRecord';
 
@@ -557,19 +556,6 @@ function parseBackgroundSource(
     ...(values ? { values } : {}),
     ...(def !== undefined ? { default: def } : {}),
   };
-}
-
-/** What is wrong with `name` read as a color of `tokens` (`formatVersion` 23): missing, or another kind. */
-export function colorTokenIssue(
-  tokens: SpecTokens | undefined,
-  name: string,
-): SpecMsg | undefined {
-  const kind = knownTokenKinds(tokens).get(name);
-  if (kind === 'color') return undefined;
-  if (kind === undefined) return specMsg('spec.tokenMissing', { name });
-  if (kind === 'number') return specMsg('spec.tokenNumberNotColor', { name });
-  if (kind === 'family') return specMsg('spec.tokenFamilyNotColor', { name });
-  return specMsg('spec.tokenCompositeNotColor', { name });
 }
 
 /** The tokens that a raw `screen.background` names (whole, in `values`, in `default`) and the path of each. */

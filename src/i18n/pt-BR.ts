@@ -1279,6 +1279,8 @@ export const ptBR: Dictionary = {
   'container.height': 'Altura',
   'container.background': 'Cor de fundo',
   'container.backgroundHint': 'No formato #RRGGBB.',
+  'container.backgroundToken': 'token {name}',
+  'container.useFixedColor': 'Usar uma cor fixa',
   'container.preset': 'Tamanho predefinido',
   'container.preset.custom': 'Personalizado',
   'container.preset.selection': 'Tamanho da seleção',
@@ -1380,6 +1382,11 @@ export const ptBR: Dictionary = {
     'A escolha continua gravada; sem uma especialização que declare o conjunto e a classe, o container fica sem classe ali.',
   'diagnostics.containerClassUndeclared':
     '{container}: a classe {class} do conjunto {set} não está declarada',
+  'diagnostics.backgroundTokens': 'Tokens de fundo',
+  'diagnostics.backgroundTokensHint':
+    'O token continua salvo; sem uma especialização que o declare como cor, o fundo é desenhado em branco.',
+  'diagnostics.backgroundTokenUndeclared':
+    '{container}: o token de fundo {token} não está declarado',
   'direction.title': 'Direção de leitura',
   'direction.intro':
     'Escolhe para que lado a leitura corre no desenho dos componentes: da esquerda para a direita (o padrão) ou da direita para a esquerda. Nenhuma marcação muda de lugar.',

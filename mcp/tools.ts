@@ -1,6 +1,11 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { ModelError, projectIndex, READING_DIRECTIONS } from '../src/model';
+import {
+  ModelError,
+  containerBackgroundColor,
+  projectIndex,
+  READING_DIRECTIONS,
+} from '../src/model';
 import { planChanges } from './changes';
 import { LocalFileChecker } from './codeFiles';
 import { codeHintsView, type CodeContext } from './codeViews';
@@ -311,7 +316,7 @@ export function registerTools(
     'get_project',
     {
       description:
-        "Project summary: containers (with `file`, `background` and `parent`), layers, specializations (with the state of the copy), code platforms (`platforms`, each with the `repos` the specializations declare and the `localPath` of the local clone; with `codeHint`: the `code` of the types is the instantiation code, not the generated code), the local clone per platform (`platformRepos`), the specializations' document repositories (`docRepos`: `id`, the `repos` each specialization declares and the `localPath` of the project's clone, `null` without a clone), the project's drawing mode (`drawingMode`, a map axis → entry or `null` without a mode; `drawingAxes`: the axes the applied specializations declare, axis → entries, the first being the default; each container carries its own pinned `drawingMode`, a map or `null`, and the `effectiveDrawingMode`, a map with every declared axis), the project's reading direction (`direction`: `ltr` or `rtl`, `ltr` when none is saved; each container carries its own pinned `direction`, `null` = follows the project, and the `effectiveDirection`; each container also carries its chosen `classes`, `null` when none, and the `effectiveClasses`), counts (`counts`: containers, markings, `canvasMarkings`, `floatingMarkings`, `arrows`, annotations, layers), the pages (`pages`: `id`, `name` and how many `roots`, `containers`, `markings` and `arrows` each holds) and pending items (incomplete annotations); `fileFormats` (absent when none) lists the file formats of the applied specializations (`format` as `<specId>/<formatId>`, `name`, `extension`, `scope`): read one with export_format, write one with `import_format` in plan_changes. In a project with several pages `containers` comes empty, with a `hint`, unless you pass `page` (id or name, see `pages`): then only the containers of that page are listed and `page` echoes it. A project with one page lists all its containers.",
+        'Project summary: containers (with `file`, `background` (as stored: `#RRGGBB`, `{ "$token": "<name>" }` or `null`), `resolvedBackground` (`#RRGGBB` in the effective drawing mode, `null` with a file) and `parent`), layers, specializations (with the state of the copy), code platforms (`platforms`, each with the `repos` the specializations declare and the `localPath` of the local clone; with `codeHint`: the `code` of the types is the instantiation code, not the generated code), the local clone per platform (`platformRepos`), the specializations\' document repositories (`docRepos`: `id`, the `repos` each specialization declares and the `localPath` of the project\'s clone, `null` without a clone), the project\'s drawing mode (`drawingMode`, a map axis → entry or `null` without a mode; `drawingAxes`: the axes the applied specializations declare, axis → entries, the first being the default; each container carries its own pinned `drawingMode`, a map or `null`, and the `effectiveDrawingMode`, a map with every declared axis), the project\'s reading direction (`direction`: `ltr` or `rtl`, `ltr` when none is saved; each container carries its own pinned `direction`, `null` = follows the project, and the `effectiveDirection`; each container also carries its chosen `classes`, `null` when none, and the `effectiveClasses`), counts (`counts`: containers, markings, `canvasMarkings`, `floatingMarkings`, `arrows`, annotations, layers), the pages (`pages`: `id`, `name` and how many `roots`, `containers`, `markings` and `arrows` each holds) and pending items (incomplete annotations); `fileFormats` (absent when none) lists the file formats of the applied specializations (`format` as `<specId>/<formatId>`, `name`, `extension`, `scope`): read one with export_format, write one with `import_format` in plan_changes. In a project with several pages `containers` comes empty, with a `hint`, unless you pass `page` (id or name, see `pages`): then only the containers of that page are listed and `page` echoes it. A project with one page lists all its containers.',
       inputSchema: {
         project: projectArg,
         page: z
@@ -535,7 +540,7 @@ export function registerTools(
     'get_container',
     {
       description:
-        'A container of the project (the reference `mapping://<project>/i/<code>`: the letter `i` is the container): `file` (image file, or `null`) and `background` (color, when there is no file), absolute path of the file (if it exists), dimensions, position, lock, `drawingMode` (the drawing mode the container pins, a map axis → entry; `null` = follows the project), `effectiveDrawingMode` (the one that applies to it: a map with every declared axis), `direction` (the reading direction the container pins, `ltr` or `rtl`; `null` = follows the project), `effectiveDirection` (the one that applies to it), `classes` (the chosen container classes, a map `set id → class id`, `null` when none) and `effectiveClasses` (every class that applies: the chosen ones an applied specialization declares and the computed ones, from the size ÷ density; a stored choice nobody declares stays in `classes` only), `parent` (the canvas marking that contains the container, or `null`) and the first-level markings.',
+        'A container of the project (the reference `mapping://<project>/i/<code>`: the letter `i` is the container): `file` (image file, or `null`), `background` (when there is no file: the color `#RRGGBB` or `{ "$token": "<name>" }` as stored, `null` with a file) and `resolvedBackground` (the `#RRGGBB` it resolves to in the effective drawing mode of the container, `null` with a file), absolute path of the file (if it exists), dimensions, position, lock, `drawingMode` (the drawing mode the container pins, a map axis → entry; `null` = follows the project), `effectiveDrawingMode` (the one that applies to it: a map with every declared axis), `direction` (the reading direction the container pins, `ltr` or `rtl`; `null` = follows the project), `effectiveDirection` (the one that applies to it), `classes` (the chosen container classes, a map `set id → class id`, `null` when none) and `effectiveClasses` (every class that applies: the chosen ones an applied specialization declares and the computed ones, from the size ÷ density; a stored choice nobody declares stays in `classes` only), `parent` (the canvas marking that contains the container, or `null`) and the first-level markings.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -614,6 +619,7 @@ export function registerTools(
             name: container.name,
             file: container.file,
             background: container.background,
+            resolvedBackground: containerBackgroundColor(refs.project, container.id),
           };
         }
         const annotation = index.annotations.get(item.id)!;

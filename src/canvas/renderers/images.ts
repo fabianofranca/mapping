@@ -5,6 +5,7 @@ import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { t } from '../../i18n';
 import {
+  containerBackgroundColor,
   imageCanvasRect,
   isBackgroundContainer,
   type Placement,
@@ -191,10 +192,23 @@ function refreshNode(
 ): boolean {
   const zoom = frame.viewport.scale;
   const state = image.file === null ? undefined : frame.bitmaps.get(image.file);
-  const inputs = [image, placement, state, frame.tokens, zoom, frame.view, frame.locale];
+  // The resolved background is an input: a token follows the drawing mode and the specializations, which
+  // change without the container object changing.
+  const background =
+    frame.project === null ? null : containerBackgroundColor(frame.project, image.id);
+  const inputs = [
+    image,
+    placement,
+    state,
+    frame.tokens,
+    zoom,
+    frame.view,
+    frame.locale,
+    background,
+  ];
   if (sameInputs(node.drawn, inputs)) return false;
   node.drawn = inputs;
-  updateNode(node, image, placement, state, frame.tokens, zoom, frame.view);
+  updateNode(node, image, placement, state, frame.tokens, zoom, frame.view, background);
   return true;
 }
 
@@ -244,6 +258,7 @@ function updateNode(
   tokens: CanvasTokens,
   zoom: number,
   view: ViewFrame | null,
+  background: string | null,
 ): void {
   const rect = imageCanvasRect(image, placement);
   node.group.position({ x: rect.x, y: rect.y });
@@ -251,7 +266,7 @@ function updateNode(
   // View mode: Containers turns on the container name and outline; Images, the bitmap.
   const containers = view?.containers ?? true;
   if (isBackgroundContainer(image)) {
-    updateBackground(node, image, box, tokens, zoom, containers);
+    updateBackground(node, background, box, tokens, zoom, containers);
   } else {
     updatePhoto(node, image, box, state, tokens, zoom, view?.images ?? true);
   }
@@ -266,7 +281,7 @@ function updateNode(
  */
 function updateBackground(
   node: ImageNode,
-  image: ProjectContainer,
+  background: string | null,
   box: { readonly width: number; readonly height: number },
   tokens: CanvasTokens,
   zoom: number,
@@ -276,7 +291,7 @@ function updateBackground(
   node.placeholder.setAttrs({
     ...box,
     visible: true,
-    fill: image.background ?? tokens.surface,
+    fill: background ?? tokens.surface,
     stroke: tokens.border,
     strokeEnabled: outline,
     strokeWidth: 1 / zoom,

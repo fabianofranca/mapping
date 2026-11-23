@@ -1,10 +1,12 @@
 import {
+  containerBackgroundColor,
   isBackgroundContainer,
   projectIndex,
   type ReadingDirection,
   type Marking,
   type ProjectContainer,
 } from '../src/model';
+import type { TokenSelection } from '../src/model/components/tokens';
 import { ToolError } from './errors';
 import { encodeImage } from './image/codecs';
 import { hexToRgb } from './image/compose';
@@ -59,11 +61,14 @@ async function backdrop(
   size: { width: number; height: number },
   background: 'image' | 'none',
   imageSource: ImageSource | undefined,
+  pinned: TokenSelection | undefined,
 ) {
   const out = createRaster(size.width, size.height);
   if (background === 'none') return { raster: out, warning: undefined };
   if (isBackgroundContainer(container)) {
-    const [r, g, b] = hexToRgb(container.background ?? '#FFFFFF');
+    const [r, g, b] = hexToRgb(
+      containerBackgroundColor(refs.project, container.id, pinned) ?? '#FFFFFF',
+    );
     for (let i = 0; i < out.data.length; i += 4) {
       out.data[i] = r;
       out.data[i + 1] = g;
@@ -72,7 +77,7 @@ async function backdrop(
     }
     return { raster: out, warning: undefined };
   }
-  const loaded = await loadImage(roots, refs, container, imageSource);
+  const loaded = await loadImage(roots, refs, container, imageSource, pinned);
   const warning = sizeWarning(loaded, container).warning;
   const scaled = scaleRect(region, loaded);
   const source = clampRect(scaled, loaded.raster);
@@ -140,6 +145,7 @@ async function renderRegion(
     { width, height },
     background,
     source,
+    pinned,
   );
   const scaleX = width / region.width;
   const scaleY = height / region.height;

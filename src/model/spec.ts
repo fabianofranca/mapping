@@ -4,13 +4,16 @@ import { isValidCodePath, isValidUrlTemplate } from './codeLocations';
 import { MAX_CONTAINER_SIZE } from './containers';
 import {
   backgroundTokenRefs,
-  colorTokenIssue,
   parseOrigins,
   parsePath,
   toSpecOrigin,
   type SpecOrigin,
 } from './components/origin';
-import { TOKEN_NAME_PATTERN, type SpecTokens } from './components/tokens';
+import {
+  TOKEN_NAME_PATTERN,
+  knownTokenKinds,
+  type SpecTokens,
+} from './components/tokens';
 import {
   checkTokenSuggestions,
   expandTokenSuggestions,
@@ -1712,15 +1715,12 @@ const containerSide = z
 
 /** `{ "$token": "<name>" }` as a container background (`formatVersion` 23, checked by `checkContainerBackgrounds`). */
 const backgroundToken = z
-  .object({ $token: z.string().regex(TOKEN_NAME_PATTERN) })
+  .object({
+    $token: z.string().regex(TOKEN_NAME_PATTERN, specMsg('spec.backgroundInvalid').text),
+  })
   .strict();
 
-const containerBackground = z.union([color, backgroundToken], {
-  error: (issue) =>
-    typeof issue.input === 'object' && issue.input !== null
-      ? specMsg('spec.backgroundInvalid').text
-      : specMsg('spec.colorInvalid').text,
-});
+const containerBackground = z.union([color, backgroundToken]);
 
 const containerShape = z
   .object({
@@ -2604,6 +2604,19 @@ function originsOf(raw: unknown): OriginsParse {
 
 /** The first `formatVersion` with `tokens`, where an origin's `screen.background` can read one (origins end at 21). */
 const ORIGIN_BACKGROUND_TOKEN_VERSION = 15;
+
+/** What is wrong with `name` read as a color of `tokens` (`formatVersion` 23): missing, or another kind. */
+export function colorTokenIssue(
+  tokens: SpecTokens | undefined,
+  name: string,
+): SpecMsg | undefined {
+  const kind = knownTokenKinds(tokens).get(name);
+  if (kind === 'color') return undefined;
+  if (kind === undefined) return specMsg('spec.tokenMissing', { name });
+  if (kind === 'number') return specMsg('spec.tokenNumberNotColor', { name });
+  if (kind === 'family') return specMsg('spec.tokenFamilyNotColor', { name });
+  return specMsg('spec.tokenCompositeNotColor', { name });
+}
 
 /** `colorTokenIssue` over the raw `tokens`; malformed tokens are reported by `checkTokens`, so nothing here. */
 function colorIssueOf(tokens: unknown, name: string): SpecMsg | undefined {
