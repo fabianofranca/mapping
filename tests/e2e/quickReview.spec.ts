@@ -206,17 +206,19 @@ for (const size of [
         return {
           covered,
           width: el.getBoundingClientRect().width,
-          titleTop: title?.getBoundingClientRect().top ?? -1,
-          countsTop:
-            el.querySelector('.quick-bar-head > .muted')?.getBoundingClientRect().top ??
-            -2,
+          title: title?.getBoundingClientRect().toJSON(),
+          counts: el
+            .querySelector('.quick-bar-head > .muted')
+            ?.getBoundingClientRect()
+            .toJSON(),
         };
       });
       expect(report?.covered).toEqual([]);
-      // The title keeps the line with the counts (it is not alone when the header is long).
-      expect(Math.abs((report?.titleTop ?? 0) - (report?.countsTop ?? 0))).toBeLessThan(
-        6,
-      );
+      // The title shares its line with the counts (they overlap vertically), never alone above them.
+      const { title, counts } = report ?? {};
+      expect(
+        title && counts && title.top < counts.bottom && counts.top < title.bottom,
+      ).toBe(true);
       expect(report?.width).toBeGreaterThan(320);
     });
 
