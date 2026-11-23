@@ -865,6 +865,131 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
     'spec.tokenModesSameType',
     (s) => (s.tokens = { modes: ['a', 'b'], values: { x: { a: 'v', b: 1 } } }),
   ],
+  // Named values (formatVersion 23, `specTokens.ts`)
+  [
+    'spec.tokenModesAndAxes',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = { modes: ['a'], axes: { t: ['a'] }, values: {} })
+    ),
+  ],
+  [
+    'spec.tokenAxisUndeclared',
+    (s) => ((s.formatVersion = 23), (s.tokens = { values: { x: { $axis: 'q', a: 1 } } })),
+  ],
+  [
+    'spec.tokenAxisReused',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = {
+        axes: { t: ['a', 'b'] },
+        values: { x: { $axis: 't', a: { $axis: 't', a: 1, b: 2 }, b: 3 } },
+      })
+    ),
+  ],
+  [
+    'spec.tokenBranchKinds',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = {
+        axes: { t: ['a', 'b'] },
+        values: { x: { $axis: 't', a: 1, b: '#fff' } },
+      })
+    ),
+  ],
+  [
+    'spec.tokenBranchFields',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = {
+        axes: { t: ['a', 'b'] },
+        values: { x: { $axis: 't', a: { p: 1 }, b: { q: 1 } } },
+      })
+    ),
+  ],
+  [
+    'spec.tokenAliasMissing',
+    (s) => ((s.formatVersion = 23), (s.tokens = { values: { x: { $token: 'y' } } })),
+  ],
+  [
+    'spec.tokenCycle',
+    (s) => ((s.formatVersion = 23), (s.tokens = { values: { x: { $token: 'x' } } })),
+  ],
+  [
+    'spec.tokenAliasComposite',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = { values: { c: { size: 1 }, x: { $token: 'c' } } })
+    ),
+  ],
+  [
+    'spec.tokenAliasNoField',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = { values: { c: 1, x: { $token: 'c.size' } } })
+    ),
+  ],
+  [
+    'spec.tokenAlphaOnlyColor',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = { values: { c: 1, x: { $token: 'c', alpha: 0.5 } } })
+    ),
+  ],
+  [
+    'spec.tokenOverOnlyColor',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = { values: { c: 1, x: { $token: 'c', over: '#fff' } } })
+    ),
+  ],
+  [
+    'spec.tokenAlphaInvalid',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = { values: { c: '#fff', x: { $token: 'c', alpha: 2 } } })
+    ),
+  ],
+  [
+    'spec.tokenOverInvalid',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = { values: { c: '#fff', x: { $token: 'c', over: 'A b' } } })
+    ),
+  ],
+  [
+    'spec.tokenFieldInvalid',
+    (s) => ((s.formatVersion = 23), (s.tokens = { values: { x: { Size: 1 } } })),
+  ],
+  [
+    'spec.tokenCompositeEmpty',
+    (s) => ((s.formatVersion = 23), (s.tokens = { values: { x: {} } })),
+  ],
+  [
+    'spec.tokenCompositeNested',
+    (s) => ((s.formatVersion = 23), (s.tokens = { values: { x: { a: { b: 1 } } } })),
+  ],
+  [
+    'spec.tokenValueForm',
+    (s) => ((s.formatVersion = 23), (s.tokens = { values: { x: true } })),
+  ],
+  [
+    'spec.tokenGroupInvalid',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = { values: { x: { $value: 1, $group: 'A b' } } })
+    ),
+  ],
+  [
+    'spec.tokenWrapperNested',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = {
+        axes: { t: ['a'] },
+        values: { x: { $axis: 't', a: { $value: 1 } } },
+      })
+    ),
+  ],
   ['spec.iconsPathShape', (s) => (s.icons = 3)],
   // formatVersion 16 (`specSignature.ts`)
   ['spec.likeNotField', v16Models({ like: 'zz.k' })],

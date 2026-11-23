@@ -19,8 +19,8 @@ const clause = (c: unknown) => (s: Json) => (request(s).allowedChildren = [c]);
 const at = 'layers[1].annotationTypes[1].allowedChildren[0]';
 
 describe("formatVersion 13: the owner's own layer", () => {
-  it('the current version is 22 and 13 is in the list', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(22);
+  it('the current version is 23 and 13 is in the list', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(23);
     expect(SPEC_FORMAT_VERSIONS).toContain(13);
   });
 

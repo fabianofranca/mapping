@@ -731,6 +731,9 @@ function tokenChecks(pkg: Package, path: string, out: Collector): void {
     const kind = known.get(ref.name);
     if (kind === undefined) {
       out.error(path, ref.path, 'library.tokenMissing', { name: ref.name });
+    } else if (kind === 'composite') {
+      // A composite read by a component is stage NV2 (the dotted names and the whole composite).
+      continue;
     } else if (ref.anyKind !== true && kind !== ref.kind) {
       out.error(path, ref.path, wrongKindCode(kind, ref.kind), { name: ref.name });
     }

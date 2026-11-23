@@ -207,8 +207,9 @@ function drawCode(
  */
 function drawingModes(spec: Spec): DrawingMode[] {
   const tokens = spec.tokens;
-  if (tokens === undefined || tokens.modes.length === 0) return [{}];
-  return tokens.modes.map((mode) => ({ mode, tokens: resolveTokens(tokens, {}, mode) }));
+  const modes = tokens?.modes ?? [];
+  if (tokens === undefined || modes.length === 0) return [{}];
+  return modes.map((mode) => ({ mode, tokens: resolveTokens(tokens, {}, mode) }));
 }
 
 type DrawingMode = { mode?: string; tokens?: ResolvedTokens };

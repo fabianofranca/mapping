@@ -8,7 +8,8 @@ import {
   toSpecOrigin,
   type SpecOrigin,
 } from './components/origin';
-import { TOKEN_NAME_PATTERN, type SpecTokens } from './components/tokens';
+import type { SpecTokens } from './components/tokens';
+import { checkTokens } from './specTokens';
 import { isPackagePath, packagePathError } from './packagePaths';
 import { childSets } from './specChildren';
 import {
@@ -67,7 +68,7 @@ function onlyUpTo(version: number): SpecMsg {
 /** The first `formatVersion` where `sources` are plain data and `origins` is refused. */
 const PLAIN_SOURCES_VERSION = 22;
 
-// Specialization format (`formatVersion` 1 to 22), see docs/SPEC-FORMAT.md. Version 2 adds
+// Specialization format (`formatVersion` 1 to 23), see docs/SPEC-FORMAT.md. Version 2 adds
 // `platforms` and `code`; version 1 is 2 without platforms and without `code`; version 3 is 2 plus
 // `sources` (external origins on types and fields, including `table` columns); version 4 is 3
 // plus the library: the package (the specialization's folder) with `component`, `doc` and
@@ -114,7 +115,10 @@ const PLAIN_SOURCES_VERSION = 22;
 // like the type's `doc`), both outside the version contract too; version 22 is 21 with `sources` as
 // plain data (stage #2035: the plugin of a file format replaces `origins`): it refuses `origins` at
 // the root and `system` + `file` on a type example, and `path`, `slot` and `ignore` of `sources`
-// stand for any `system`, with no tie to `origins` (the plugins read them; the core checks the shape).
+// stand for any `system`, with no tie to `origins` (the plugins read them; the core checks the shape);
+// version 23 is 22 plus named values in `tokens` (stage #1900): `axes` (several mode axes), aliases
+// (`{ "$token": … }`), composite values, per-axis values (`{ "$axis": … }`) and the `{ "$value": … }`
+// metadata wrapper, outside the version contract too (see `specTokens.ts`).
 // The zod here is the source of truth; `docs/spec.schema.json` mirrors it for those who do not
 // use TypeScript. No browser APIs: reusable by the MCP server.
 //
@@ -127,10 +131,10 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Value used before the product rename: import still accepts it. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Current format version (the one that the documentation and new examples use). */
-export const SPEC_FORMAT_VERSION = 22;
+export const SPEC_FORMAT_VERSION = 23;
 /** Versions accepted on import. */
 export const SPEC_FORMAT_VERSIONS = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
 ] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
@@ -731,6 +735,7 @@ function checkNotices(
   notices: readonly { kind: string; message: string }[] | undefined,
   ctx: z.RefinementCtx,
   path: (string | number)[],
+  key = 'notices',
 ): void {
   const seen = new Set<string>();
   (notices ?? []).forEach((notice, i) => {
@@ -738,7 +743,7 @@ function checkNotices(
     if (seen.has(id)) {
       ctx.addIssue({
         code: 'custom',
-        path: [...path, 'notices', i],
+        path: [...path, key, i],
         message: 'repeated notice',
       });
     }
@@ -3012,98 +3017,17 @@ function checkRequiresOwner(
   });
 }
 
-const TOKEN_MODE_RE = /^[a-z0-9][a-z0-9-]*$/;
-
-/** `tokens.modes`: non-empty list of distinct names. Returns the valid modes (or `null`). */
-function tokenModes(
-  tokens: Record<string, unknown>,
-  add: IssueAdder,
-): readonly string[] | null {
-  const modes = tokens.modes;
-  if (!Array.isArray(modes) || modes.length === 0) {
-    add(['tokens', 'modes'], 'must be a list with at least one mode');
-    return null;
-  }
-  const seen = new Set<string>();
-  let ok = true;
-  modes.forEach((mode: unknown, i) => {
-    if (typeof mode !== 'string' || !TOKEN_MODE_RE.test(mode)) {
-      add(['tokens', 'modes', i], 'invalid mode; use [a-z0-9][a-z0-9-]*');
-      ok = false;
-    } else if (seen.has(mode)) {
-      add(['tokens', 'modes', i], specMsg('spec.tokenModeRepeated', { mode }));
-      ok = false;
-    }
-    if (typeof mode === 'string') seen.add(mode);
-  });
-  return ok ? (modes as string[]) : null;
-}
-
-const isTokenLiteral = (v: unknown): v is string | number =>
-  (typeof v === 'string' && v !== '') || (typeof v === 'number' && Number.isFinite(v));
-
-/** A token: a literal (applies in all modes) or one literal per mode, all of the same type. */
-function checkTokenValue(
-  name: string,
+/** The `$notices` of a token wrapper: the `formatVersion` 10 notice rules, at `[...path, '$notices']`. */
+function checkTokenNotices(
   value: unknown,
-  modes: readonly string[],
-  add: IssueAdder,
-): void {
-  const path = ['tokens', 'values', name];
-  if (isTokenLiteral(value)) return;
-  if (!isRecord(value)) {
-    add(path, 'must be text, a number or one value per mode');
-    return;
-  }
-  const given = Object.keys(value);
-  const missing = modes.filter((m) => !given.includes(m));
-  const extra = given.filter((m) => !modes.includes(m));
-  if (missing.length > 0) {
-    add(path, specMsg('spec.tokenModeMissing', { modes: missing.join(', ') }));
-  }
-  if (extra.length > 0) {
-    add(path, specMsg('spec.tokenModeExtra', { modes: extra.join(', ') }));
-  }
-  const literals = given.map((m) => value[m]);
-  if (!literals.every(isTokenLiteral)) {
-    add(path, 'each mode must have text or a number');
-  } else if (new Set(literals.map((l) => typeof l)).size > 1) {
-    add(path, 'the modes of a token must have the same type (text or number)');
-  }
-}
-
-/** Only `modes` and `values` are valid in `tokens`: the rest is an unknown key. */
-function checkTokenKeys(tokens: Record<string, unknown>, add: IssueAdder): void {
-  for (const key of Object.keys(tokens)) {
-    if (key !== 'modes' && key !== 'values') {
-      add(['tokens', key], specMsg('spec.tokenKeyUnknown', { key }));
-    }
-  }
-}
-
-/** `tokens` (`formatVersion` 15 only): `modes` and `values` by name `^[a-z0-9][a-z0-9-]*$`. */
-function checkTokens(
-  spec: { formatVersion: number; tokens?: unknown },
+  path: (string | number)[],
   ctx: z.RefinementCtx,
-): void {
-  if (spec.tokens === undefined) return;
-  const add = issueAdder(ctx);
-  if (spec.formatVersion < 15) {
-    add(['tokens'], onlyFormat(15));
-    return;
-  }
-  if (!isRecord(spec.tokens))
-    return add(['tokens'], 'must be an object with modes and values');
-  checkTokenKeys(spec.tokens, add);
-  const modes = tokenModes(spec.tokens, add);
-  const values = spec.tokens.values;
-  if (!isRecord(values)) return add(['tokens', 'values'], 'must be an object');
-  for (const [name, value] of Object.entries(values)) {
-    if (!TOKEN_NAME_PATTERN.test(name)) {
-      add(['tokens', 'values', name], 'invalid name; use [a-z0-9][a-z0-9-]*');
-    } else if (modes !== null) {
-      checkTokenValue(name, value, modes, add);
-    }
+) {
+  const at = [...path, '$notices'];
+  const parsed = noticesShape.safeParse(value, REPORT_INPUT);
+  if (parsed.success) return checkNotices(parsed.data, ctx, path, '$notices');
+  for (const issue of parsed.error.issues) {
+    forwardIssue(ctx, issue, at, true, KNOWN_SPEC_MSGS);
   }
 }
 
@@ -3357,7 +3281,7 @@ export const specSchema = z
     });
 
     checkRequiresOwner(spec, ctx);
-    checkTokens(spec, ctx);
+    checkTokens(spec, ctx, checkTokenNotices);
     checkIcons(spec, ctx);
     checkSignatureKeys(spec, ctx);
   });

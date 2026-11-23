@@ -96,8 +96,8 @@ const issuesOf = (raw: Json) => {
 };
 
 describe('formatVersion 17: version and shape', () => {
-  it('17 is accepted (and so is 16); the current version is 22', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(22);
+  it('17 is accepted (and so is 16); the current version is 23', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(23);
     expect(SPEC_FORMAT_VERSIONS).toContain(16);
     expect(SPEC_FORMAT_VERSIONS).toContain(17);
   });

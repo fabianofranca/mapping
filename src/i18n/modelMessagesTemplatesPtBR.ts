@@ -411,6 +411,29 @@ export const templatePtBR: {
   'model.spec.tokenModeValueShape': 'cada modo deve ter texto ou número',
   'model.spec.tokenModesSameType':
     'os modos de um token devem ter o mesmo tipo (texto ou número)',
+  'model.spec.tokenModesAndAxes': 'use modes ou axes, não os dois',
+  'model.spec.tokenAxisUndeclared': 'o eixo "{axis}" não está declarado',
+  'model.spec.tokenAxisReused': 'o eixo "{axis}" já é usado por um valor que o contém',
+  'model.spec.tokenBranchKinds': 'os ramos de um valor devem ter o mesmo tipo',
+  'model.spec.tokenBranchFields': 'os ramos de um composto devem ter os mesmos campos',
+  'model.spec.tokenAliasMissing':
+    'o token "{name}" não existe nos tokens da especialização',
+  'model.spec.tokenCycle': 'ciclo de tokens: {chain}',
+  'model.spec.tokenAliasComposite':
+    'o token "{name}" é um composto; leia um campo ({name}.<campo>)',
+  'model.spec.tokenAliasNoField': 'o token "{name}" não tem o campo "{field}"',
+  'model.spec.tokenAlphaOnlyColor': 'alpha só vale em $token de cor',
+  'model.spec.tokenOverOnlyColor': 'over só vale em $token de cor',
+  'model.spec.tokenAlphaInvalid':
+    'alpha deve ser um número de 0 a 1 ou um $token de número',
+  'model.spec.tokenOverInvalid': 'over deve ser uma cor ou o nome de um token de cor',
+  'model.spec.tokenFieldInvalid': 'nome de campo inválido; use [a-z][a-zA-Z0-9]*',
+  'model.spec.tokenCompositeEmpty': 'um composto precisa de ao menos um campo',
+  'model.spec.tokenCompositeNested': 'um composto não pode conter outro composto',
+  'model.spec.tokenValueForm':
+    'deve ser texto, número, um alias, um composto ou um valor por eixo',
+  'model.spec.tokenGroupInvalid': 'grupo inválido; use [a-z0-9][a-z0-9-]*',
+  'model.spec.tokenWrapperNested': 'o envelope $value só vale num token inteiro',
   'model.spec.iconsPathShape': 'deve ser o caminho de um arquivo .json do pacote',
   'model.spec.zod.invalid_type': 'tipo inválido: esperava {expected}, recebeu {received}',
   'model.spec.zod.unrecognized_keys': 'propriedade desconhecida: {keys}',
