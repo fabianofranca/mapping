@@ -211,11 +211,6 @@ export function focusReviewExitTarget(proposalId: string | null): void {
   setTimeout(retry, EXIT_FOCUS_STEP_MS);
 }
 
-/** Focus on the canvas area (a sensible target when the focused button goes away). */
-export function focusCanvasArea(): void {
-  canvasArea()?.focus();
-}
-
 function canvasArea(): HTMLElement | null {
   return document.querySelector<HTMLElement>(`[${CANVAS_AREA_ATTR}]`);
 }
