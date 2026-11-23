@@ -451,3 +451,90 @@ describe('library', () => {
     });
   });
 });
+
+describe('loadLibrary: file formats and the specialization JSON (stage #2059, VF1)', () => {
+  const cardFile = SAMPLE_FILES.find((f) => f.path.endsWith('card.json'))!;
+  const specText = (fileFormats: unknown): string =>
+    JSON.stringify({
+      format: 'mapping-spec',
+      formatVersion: 22,
+      id: 's',
+      name: 'S',
+      version: 1,
+      fileFormats,
+      layers: [
+        {
+          id: 'l',
+          name: 'L',
+          annotationTypes: [
+            { id: 'card', name: 'Card', component: 'components/card.json' },
+          ],
+        },
+      ],
+    });
+  const declared = [
+    {
+      id: 'sdui',
+      name: 'SDUI',
+      extension: 'json',
+      plugin: 'plugins/sdui.js',
+      contract: 1,
+      scope: 'container',
+    },
+    {
+      id: 'csv',
+      name: 'CSV',
+      extension: 'csv',
+      plugin: 'plugins/csv.js',
+      contract: 1,
+    },
+  ];
+
+  it('keeps each declared format with the plugin path resolved and its text', () => {
+    const lib = loadLibrary([
+      { path: 'pkg/s.spec.json', text: specText(declared) },
+      { path: 'pkg/components/card.json', text: cardFile.text },
+      { path: 'pkg/plugins/sdui.js', text: 'SDUI PLUGIN' },
+    ]);
+    expect(lib.fileFormats).toEqual([
+      {
+        id: 'sdui',
+        name: 'SDUI',
+        extension: 'json',
+        scope: 'container',
+        plugin: 'pkg/plugins/sdui.js',
+        pluginText: 'SDUI PLUGIN',
+      },
+      {
+        id: 'csv',
+        name: 'CSV',
+        extension: 'csv',
+        scope: 'project',
+        plugin: 'pkg/plugins/csv.js',
+        pluginText: null,
+      },
+    ]);
+  });
+
+  it('keeps the specialization JSON as it was read', () => {
+    const text = specText(declared);
+    const lib = loadLibrary([
+      { path: 's.spec.json', text },
+      { path: 'components/card.json', text: cardFile.text },
+    ]);
+    expect(lib.specJson).toEqual(JSON.parse(text));
+  });
+
+  it('a library without fileFormats has an empty list', () => {
+    const lib = loadLibrary(SAMPLE_FILES);
+    expect(lib.fileFormats).toEqual([]);
+  });
+
+  it('reads a malformed entry without validating: it is left out, the others stay', () => {
+    const lib = loadLibrary([
+      { path: 's.spec.json', text: specText([7, { id: 'x' }, ...declared]) },
+      { path: 'components/card.json', text: cardFile.text },
+    ]);
+    expect(lib.fileFormats.map((f) => f.id)).toEqual(['sdui', 'csv']);
+  });
+});

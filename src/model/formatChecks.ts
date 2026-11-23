@@ -290,15 +290,30 @@ export interface ExampleFailure {
   readonly code: string;
   readonly message: string;
   readonly text: string;
+  /** The executor's failure (with `line`, `column` and `phase`) when the plugin's call is what failed. */
+  readonly failure?: FormatFailure;
 }
 
-type ExampleApplied = { readonly ok: true; readonly project: Project } | ExampleFailure;
+type ExampleApplied =
+  | {
+      readonly ok: true;
+      readonly project: Project;
+      /** The warnings of the plugin's result, cut at the limits. */
+      readonly warnings: readonly string[];
+    }
+  | ExampleFailure;
 
-const failed = (code: string, message: string, text?: string): ExampleFailure => ({
+const failed = (
+  code: string,
+  message: string,
+  text?: string,
+  failure?: FormatFailure,
+): ExampleFailure => ({
   ok: false,
   code,
   message,
   text: text ?? codedText(code, message),
+  ...(failure === undefined ? {} : { failure }),
 });
 
 /** Applies the example text with `parse` on an empty project; the project, or why it failed. */
@@ -309,7 +324,10 @@ async function applyExample(
 ): Promise<ExampleApplied> {
   const input = emptyInput(memory, found);
   const run = await callPlugin(memory, found, 'parse', [text, input]);
-  if (!run.ok) return failed(run.failure.code, locatedMessage(found, run.failure));
+  if (!run.ok) {
+    const { failure } = run;
+    return failed(failure.code, locatedMessage(found, failure), undefined, failure);
+  }
   const checked = checkFormatResult(run.value, input);
   if (!checked.ok) {
     const first = checked.problems[0]!;
@@ -325,7 +343,7 @@ async function applyExample(
     const where = `operation ${index} (${op}) refused`;
     return failed(code, `${where}: ${message}`, `${where}: ${codedText(code, message)}`);
   }
-  return { ok: true, project: outcome.project };
+  return { ok: true, project: outcome.project, warnings: checked.result.warnings ?? [] };
 }
 
 /** The text `generate` gives for `project` (scope `container`: the first container). */
@@ -579,8 +597,16 @@ export type FormatExampleOutcome =
       readonly project: Project;
       /** The component catalog the project was built with (what draws its markings). */
       readonly catalog: ComponentCatalog;
+      /** The warnings of the plugin's result. */
+      readonly warnings: readonly string[];
     }
-  | { readonly ok: false; readonly code: string; readonly message: string };
+  | {
+      readonly ok: false;
+      readonly code: string;
+      readonly message: string;
+      /** The executor's failure (`line`, `column`, `phase`) when the plugin's call failed. */
+      readonly failure?: FormatFailure;
+    };
 
 /** The in-memory project and the format, as the checks have them. */
 function formatMemory(
@@ -610,8 +636,16 @@ export async function applyFormatExample(
 ): Promise<FormatExampleOutcome> {
   const { memory, found } = formatMemory(input, deps);
   const applied = await applyExample(memory, found, text);
-  if (!applied.ok) return { ok: false, code: applied.code, message: applied.message };
-  return { ok: true, project: applied.project, catalog: memory.catalog };
+  if (!applied.ok) {
+    const { code, message, failure } = applied;
+    return { ok: false, code, message, ...(failure === undefined ? {} : { failure }) };
+  }
+  return {
+    ok: true,
+    project: applied.project,
+    catalog: memory.catalog,
+    warnings: applied.warnings,
+  };
 }
 
 /** Which of `generate` and `parse` the plugin defines. */

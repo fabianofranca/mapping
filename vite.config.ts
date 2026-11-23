@@ -172,6 +172,8 @@ export default defineConfig({
         },
       },
       {
+        // `wasm:` ids resolve here too: `tests/viewer/formatScreenSdui.test.ts` runs the real plugin in QuickJS.
+        plugins: [wasmBytes()],
         test: {
           name: 'app',
           environment: 'jsdom',

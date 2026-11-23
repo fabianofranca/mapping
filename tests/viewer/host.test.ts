@@ -313,3 +313,66 @@ describe('loadLibraryFromUrl: requests', () => {
     expect(peak).toBeLessThanOrEqual(6);
   });
 });
+
+describe('loadLibraryFromUrl: file format plugins (stage #2059, VF1)', () => {
+  const PLUGIN_URL = `${BASE}plugins/sdui.js`;
+  const withFormat = (): Map<string, Body> => {
+    const bodies = sampleBodies();
+    const spec = JSON.parse(SAMPLE_FILES[0]!.text) as Record<string, unknown>;
+    spec.fileFormats = [
+      {
+        id: 'sdui',
+        name: 'SDUI',
+        extension: 'json',
+        plugin: 'plugins/sdui.js',
+        contract: 1,
+      },
+    ];
+    bodies.set(SPEC_URL, JSON.stringify(spec));
+    return bodies;
+  };
+
+  it('fetches the plugin as text and keeps it in fileFormats', async () => {
+    const bodies = withFormat();
+    bodies.set(PLUGIN_URL, 'PLUGIN TEXT');
+    const { fetch, calls } = fakeFetch(bodies);
+    const lib = await loadLibraryFromUrl(SPEC_URL, { fetch });
+    expect(calls).toContain(PLUGIN_URL);
+    expect(lib.fileFormats).toHaveLength(1);
+    expect(lib.fileFormats[0]).toMatchObject({
+      id: 'sdui',
+      plugin: 'plugins/sdui.js',
+      pluginText: 'PLUGIN TEXT',
+    });
+    expect(lib.specJson).toMatchObject({ id: expect.any(String) });
+  });
+
+  it('a plugin that does not come (404) is left out and reported in problems', async () => {
+    const { fetch } = fakeFetch(withFormat());
+    const lib = await loadLibraryFromUrl(SPEC_URL, { fetch });
+    expect(lib.fileFormats[0]!.pluginText).toBeNull();
+    expect(lib.problems.some((p) => p.includes('plugins/sdui.js'))).toBe(true);
+  });
+
+  it('a network error on the plugin also leaves it out', async () => {
+    const bodies = withFormat();
+    const { fetch: inner } = fakeFetch(bodies);
+    const failing = vi.fn(async (input: RequestInfo | URL): Promise<Response> => {
+      if (String(input) === PLUGIN_URL) throw new Error('offline');
+      return inner(input);
+    });
+    const lib = await loadLibraryFromUrl(SPEC_URL, {
+      fetch: failing as unknown as typeof fetch,
+    });
+    expect(lib.fileFormats[0]!.pluginText).toBeNull();
+    expect(lib.problems.some((p) => p.includes('plugins/sdui.js'))).toBe(true);
+  });
+
+  it('fetches the plugin even with fonts: false', async () => {
+    const bodies = withFormat();
+    bodies.set(PLUGIN_URL, 'P');
+    const { fetch, calls } = fakeFetch(bodies);
+    await loadLibraryFromUrl(SPEC_URL, { fetch, fonts: false });
+    expect(calls).toContain(PLUGIN_URL);
+  });
+});

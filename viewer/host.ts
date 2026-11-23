@@ -43,17 +43,26 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Relative references of the specialization: the types' `component`, the fonts' `file` and `icons`. */
+/** Relative references of the specialization: the types' `component`, the fonts' `file`, `icons` and the formats' `plugin`. */
 function collectRefs(spec: unknown): {
   components: string[];
   fonts: string[];
   icons: string[];
+  plugins: string[];
 } {
   const components: string[] = [];
   const fonts: string[] = [];
   const icons: string[] = [];
-  if (!isRecord(spec)) return { components, fonts, icons };
+  const plugins: string[] = [];
+  if (!isRecord(spec)) return { components, fonts, icons, plugins };
   if (typeof spec.icons === 'string') icons.push(spec.icons);
+  if (Array.isArray(spec.fileFormats)) {
+    for (const format of spec.fileFormats) {
+      if (isRecord(format) && typeof format.plugin === 'string') {
+        plugins.push(format.plugin);
+      }
+    }
+  }
   if (Array.isArray(spec.layers)) {
     for (const layer of spec.layers) {
       if (!isRecord(layer) || !Array.isArray(layer.annotationTypes)) continue;
@@ -74,6 +83,7 @@ function collectRefs(spec: unknown): {
     components: [...new Set(components)],
     fonts: [...new Set(fonts)],
     icons: [...new Set(icons)],
+    plugins: [...new Set(plugins)],
   };
 }
 
@@ -89,10 +99,11 @@ function decodeName(name: string): string {
 /**
  * Loads the library from the specialization's URL: fetches the JSON, the components it
  * points to (text), the icons file (`icons`, text; always, even with `fonts: false`) and,
- * unless `fonts: false`, the fonts (bytes), all relative to the specialization's URL, and hands the
+ * unless `fonts: false`, the fonts (bytes), and the plugins of `fileFormats` (text; always), all relative to the specialization's URL, and hands the
  * list of files to `loadLibrary`. A component, the icons file or a font that does not
  * come (non-ok response or network error) is left out, and `loadLibrary` reports it (in `problems`
- * or in the fonts' status). Throws if the specialization does not come or if there is no
+ * or in the fonts' status); a plugin that does not come is left out too and reported in `problems`
+ * (the format keeps `pluginText: null`). Throws if the specialization does not come or if there is no
  * `fetch`.
  */
 export async function loadLibraryFromUrl(
@@ -138,24 +149,23 @@ export async function loadLibraryFromUrl(
     }
   };
 
-  // A single set of requests (components, icons, fonts), with the limit on simultaneous ones.
+  // A single set of requests (components, icons, plugins, fonts), with the limit on simultaneous ones.
   const fontRefs = options.fonts === false ? [] : refs.fonts;
   const fetched = await runLimited<string | ArrayBuffer | undefined>(
     [
       ...refs.components.map((ref) => () => get(ref, (r) => r.text())),
       ...refs.icons.map((ref) => () => get(ref, (r) => r.text())),
+      ...refs.plugins.map((ref) => () => get(ref, (r) => r.text())),
       ...fontRefs.map((ref) => () => get(ref, (r) => r.arrayBuffer())),
     ],
     MAX_PARALLEL_REQUESTS,
   );
+  const textEnd = refs.components.length + refs.icons.length;
+  const pluginEnd = textEnd + refs.plugins.length;
   const components = fetched.slice(0, refs.components.length) as (string | undefined)[];
-  const icons = fetched.slice(
-    refs.components.length,
-    refs.components.length + refs.icons.length,
-  ) as (string | undefined)[];
-  const fonts = fetched.slice(refs.components.length + refs.icons.length) as (
-    ArrayBuffer | undefined
-  )[];
+  const icons = fetched.slice(refs.components.length, textEnd) as (string | undefined)[];
+  const plugins = fetched.slice(textEnd, pluginEnd) as (string | undefined)[];
+  const fonts = fetched.slice(pluginEnd) as (ArrayBuffer | undefined)[];
   refs.components.forEach((ref, index) => {
     const text = components[index];
     if (text !== undefined) files.push({ path: resolvePath(specName, ref), text });
@@ -164,11 +174,21 @@ export async function loadLibraryFromUrl(
     const text = icons[index];
     if (text !== undefined) files.push({ path: resolvePath(specName, ref), text });
   });
+  const missing: string[] = [];
+  refs.plugins.forEach((ref, index) => {
+    const text = plugins[index];
+    const path = resolvePath(specName, ref);
+    if (text !== undefined) files.push({ path, text });
+    else missing.push(`file format plugin not found: ${path}`);
+  });
   refs.fonts.forEach((ref, index) => {
     const bytes = fonts[index];
     if (bytes !== undefined) files.push({ path: resolvePath(specName, ref), bytes });
   });
-  return loadLibrary(files, { allowOutside: true });
+  const library = loadLibrary(files, { allowOutside: true });
+  return missing.length === 0
+    ? library
+    : { ...library, problems: [...library.problems, ...missing] };
 }
 
 /**
