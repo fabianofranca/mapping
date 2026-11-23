@@ -19,3 +19,4 @@ Not written yet: the closing writes the pending items to the **Mapping** artifac
 None yet.
 
 - **Stacking and the card at the smallest window (CL2):** the bar sits after the corner notices and the minimap in the canvas area (same `--z-canvas-overlay`), so it is drawn above them; `barPosition` takes a free spot, else the one that covers the least. The proposal card keeps its icon beside the text and its buttons in one `.proposal-card-actions` row when they fit.
+- **The card is not pinned to the end of the scroll (CL3):** the conversation scrolls as one body (messages, then the composer), so with replies after the card the end of the scroll shows them and the card sits above the scroll area; scrolling up shows it whole (110 px, same text). That is not a clip; a check of the card measures it scrolled into view, not at `scrollHeight`.
