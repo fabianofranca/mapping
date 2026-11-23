@@ -9,7 +9,8 @@
 //   page → frame   { id, source, fn, args, timeoutMs }   (`args` is one JSON text)
 //   frame → page   { ready: true }                       (once, when the bootstrap runs)
 //   frame → page   { id, status: 'ok', output }          (`output` is one JSON text)
-//                  { id, status: 'error', message, line?, column?, phase? }   (`phase: 'load'` when the text failed to load)
+//                  { id, status: 'error', message, line?, column?, phase? }   (`phase: 'load'` when the text failed to load,
+//                                                                              `phase: 'sandbox'` when the page refused the Worker)
 //                  { id, status: 'missing' }             (the plugin does not define `fn`)
 //                  { id, status: 'invalid', message }    (a Promise, or not JSON)
 //                  { id, status: 'timeout' }
@@ -140,7 +141,7 @@ export const SANDBOX_BOOTSTRAP = `(function () {
       url = URL.createObjectURL(new Blob([prefix + request.source + suffix], { type: 'text/javascript' }));
       worker = new Worker(url);
     } catch (error) {
-      return finish({ status: 'error', message: String(error && error.message) });
+      return finish({ status: 'error', phase: 'sandbox', message: String(error && error.message) });
     }
     worker.onmessage = function (answer) {
       var data = answer.data;
@@ -148,6 +149,10 @@ export const SANDBOX_BOOTSTRAP = `(function () {
     };
     worker.onerror = function (failure) {
       failure.preventDefault();
+      // A plain event with no message: the page refused the Worker's script (its CSP), so the plugin never loaded.
+      if (typeof failure.message !== 'string' || failure.message === '') {
+        return finish({ status: 'error', phase: 'sandbox', message: 'the page did not allow the sandbox to start its Worker' });
+      }
       var out = { status: 'error', phase: 'load', message: String(failure.message).replace(/^Uncaught /, '') };
       if (failure.lineno > 0) {
         out.line = failure.lineno;
@@ -161,5 +166,23 @@ export const SANDBOX_BOOTSTRAP = `(function () {
   reply({ ready: true });
 })();`;
 
-/** The iframe's document (`iframe.srcdoc`): the bootstrap inline, in a `<script>` that the CSP allows by hash. */
-export const SANDBOX_SRCDOC = `<!doctype html><html><head><meta charset="utf-8"><script>${SANDBOX_BOOTSTRAP}</script></head><body></body></html>`;
+/**
+ * The hash of `SANDBOX_BOOTSTRAP` in the form a CSP `script-src` takes (`'sha256-…'`): the host page allows
+ * the iframe's only script by it (the app's CSP, `pwa/csp.ts`, and the host of the viewer, `FORMAT_SANDBOX_CSP`).
+ * A constant, because this module stays pure (no `node:crypto` in the browser); `tests/app/cspBuild.test.ts`
+ * checks that it equals `cspHash(SANDBOX_BOOTSTRAP)`, so a change to the bootstrap fails there until this is
+ * updated (and the hash quoted in `viewer/PACKAGE-README.md` with it).
+ */
+export const SANDBOX_BOOTSTRAP_HASH =
+  "'sha256-0Fot2/lUbTdR3FiiVQdAaKvHyEBgTK6ZQgIXa8WcuKI='";
+
+/**
+ * The sandbox document's own CSP (stage #2059, decision 5). A `<meta>` policy is enforced together with the one
+ * the document inherits from the host, so it only narrows: the plugin has no network in any host (a host that
+ * allows `connect-src *` would otherwise leave `WebTransport` and a dynamic `import()` open). The only script
+ * is the bootstrap, by hash; the Worker is a `blob:` one, and it inherits this policy.
+ */
+export const SANDBOX_CSP = `default-src 'none'; script-src ${SANDBOX_BOOTSTRAP_HASH} blob:; worker-src blob:; connect-src 'none'`;
+
+/** The iframe's document (`iframe.srcdoc`): its CSP first, then the bootstrap inline, in a `<script>` that the CSP allows by hash. */
+export const SANDBOX_SRCDOC = `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${SANDBOX_CSP}"><script>${SANDBOX_BOOTSTRAP}</script></head><body></body></html>`;

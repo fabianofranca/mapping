@@ -1,6 +1,6 @@
 {
   // Type declarations of the embeddable viewer: `npm run build:viewer` generates
-  // dist-viewer/types/. tsc follows the imports from the two entries. `react.tsx` uses the
+  // dist-viewer/types/. tsc follows the imports from the three entries. `react.tsx` uses the
   // `@jsxImportSource react` pragma per file (the root tsconfig uses preact).
   "extends": "../tsconfig.json",
   "compilerOptions": {
@@ -10,5 +10,5 @@
     "outDir": "../dist-viewer/types",
     "rootDir": ".."
   },
-  "include": ["index.ts", "react.tsx"]
+  "include": ["index.ts", "react.tsx", "formats.ts"]
 }

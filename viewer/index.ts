@@ -29,6 +29,7 @@ export { instanceLabel, loadLibrary, resolvePath } from '../src/model/components
 export type {
   FieldDef,
   Library,
+  LibraryFileFormat,
   LoadedFont,
   TextFile,
   TypeDef,

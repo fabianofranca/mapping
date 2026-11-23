@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { applyCsp, buildCsp, cspHash, injectCsp, verifyCsp } from '../../pwa/csp';
-import { SANDBOX_BOOTSTRAP } from '../../src/app/formatSandbox';
+import {
+  SANDBOX_BOOTSTRAP,
+  SANDBOX_BOOTSTRAP_HASH,
+  SANDBOX_SRCDOC,
+} from '../../src/app/formatSandbox';
 import source from '../../index.html?raw';
 
 const REFERRER = /<meta\s+name="referrer"\s+content="no-referrer"\s*\/?>/i;
@@ -193,6 +197,28 @@ describe('CSP of index.html (build)', () => {
     const scriptSrc = directives.find((d) => d.startsWith('script-src ')) ?? '';
     expect(scriptSrc.split(' ')).toContain(cspHash(SANDBOX_BOOTSTRAP));
     expect(scriptSrc.split(' ')).toContain(cspHash('console.log("hi")'));
+  });
+
+  it("the constant hash of the sandbox's bootstrap is the one the build computes (stage #2059, decision 5)", () => {
+    expect(SANDBOX_BOOTSTRAP_HASH).toBe(cspHash(SANDBOX_BOOTSTRAP));
+    const scriptSrc =
+      buildCsp(BUILT, 'app')
+        .split('; ')
+        .find((d) => d.startsWith('script-src ')) ?? '';
+    expect(scriptSrc.split(' ')).toContain(SANDBOX_BOOTSTRAP_HASH);
+  });
+
+  it("the sandbox document carries its own CSP in a <meta> before the script, narrowing the host's", () => {
+    const meta = SANDBOX_SRCDOC.match(
+      /<meta http-equiv="Content-Security-Policy" content="([^"]*)">/,
+    );
+    expect(meta).not.toBeNull();
+    expect(meta![1]).toBe(
+      `default-src 'none'; script-src ${SANDBOX_BOOTSTRAP_HASH} blob:; worker-src blob:; connect-src 'none'`,
+    );
+    expect(SANDBOX_SRCDOC.indexOf('Content-Security-Policy')).toBeLessThan(
+      SANDBOX_SRCDOC.indexOf('<script>'),
+    );
   });
 
   it('app profile: verifyCsp accepts the bootstrap hash with no inline block, and wants it', () => {
