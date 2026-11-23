@@ -125,7 +125,7 @@ useEffect(() => {
 
 Only one plugin call runs at a time. The page is also a **secure context** (https or `localhost`): the plugin's result is applied with `crypto.randomUUID()`. `source`, `sourceSystem` and `onSource` of `createViewer` are unchanged and keep reading `origins` of specializations up to `formatVersion` 21.
 
-`disposeFormatSandbox()` removes the iframe the entry made (one per page, created at the first call and kept): call it when a single-page host unmounts; the next call makes another.
+`disposeFormatSandbox()` removes the iframe the entry made (one per page, created at the first call and kept): call it when a single-page host unmounts; the next call makes another. Load one copy of `mapping-viewer/formats` per page: a second copy asks for the `mapping-viewer` policy again, which a host without `'allow-duplicates'` in `trusted-types` refuses (the result is `sandbox-unavailable`).
 
 ## Content Security Policy of the host
 

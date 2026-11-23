@@ -403,4 +403,18 @@ describe('the frame', () => {
     expect(await result).toMatchObject({ ok: false, failure: { code: 'plugin-failed' } });
     expect(h.last().removed).toBe(true);
   });
+
+  it('dispose while the frame is not ready ends the call at once, without the sandbox phase', async () => {
+    const h = harness({ autoReady: false });
+    const run = createFormatRunner(h.deps);
+    const result = run('x', 'generate', [{}]);
+    await Promise.resolve();
+    run.dispose();
+    const outcome = await result;
+    expect(outcome).toEqual({
+      ok: false,
+      failure: { code: 'plugin-failed', message: 'the sandbox was closed' },
+    });
+    expect(h.last().removed).toBe(true);
+  });
 });

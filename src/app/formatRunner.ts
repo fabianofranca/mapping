@@ -206,6 +206,9 @@ export function createFormatRunner(deps: FormatRunnerDeps): DisposableFormatRunn
   let frame: SandboxFrame | null = null;
   let stopListening: (() => void) | null = null;
   let ready: (() => void) | null = null;
+  /** Ends the wait for a new frame's `ready` (`dispose` while the frame is still starting). */
+  let cancelReady: (() => void) | null = null;
+  let closedWhileStarting = false;
   let waiting: Waiting | null = null;
   let tail: Promise<unknown> = Promise.resolve();
   let nextId = 0;
@@ -250,8 +253,13 @@ export function createFormatRunner(deps: FormatRunnerDeps): DisposableFormatRunn
         clearTimeout(timer);
         resolve(true);
       };
+      cancelReady = () => {
+        clearTimeout(timer);
+        resolve(false);
+      };
     });
     ready = null;
+    cancelReady = null;
     if (isReady && frame === created) return created;
     drop();
     return null;
@@ -294,7 +302,11 @@ export function createFormatRunner(deps: FormatRunnerDeps): DisposableFormatRunn
   ): Promise<FormatOutcome> => {
     try {
       const live = await readyFrame();
-      if (live === null) return SANDBOX_NOT_STARTED;
+      if (live === null) {
+        if (!closedWhileStarting) return SANDBOX_NOT_STARTED;
+        closedWhileStarting = false;
+        return failure('plugin-failed', 'the sandbox was closed');
+      }
       return await exchange(live, source, fn, payload);
     } catch (error) {
       drop();
@@ -326,7 +338,12 @@ export function createFormatRunner(deps: FormatRunnerDeps): DisposableFormatRunn
   return Object.assign(run, {
     dispose: (): void => {
       const current = waiting;
+      const starting = cancelReady;
       drop();
+      if (starting !== null) {
+        closedWhileStarting = true;
+        starting();
+      }
       current?.settle(failure('plugin-failed', 'the sandbox was closed'));
     },
   });

@@ -26,7 +26,7 @@ npm run test:coverage # vitest with a coverage report (coverage/), no performanc
 npm run test:durations # regenerates tests/support/durations.json (per-file times that balance the 4 CI shards; runs the suite with coverage)
 npm run test:perf # only the performance budgets (no coverage; CI runs it separately)
 npm run test:scale # growth tests (n and 4n markings, ratio < 6×), outside npm test; runs in CI after test:perf
-npm run perf:canvas # measures the canvas in a real Chromium against dist/index.html (2,000 and 5,000 markings; frames of pan, zoom, edit, drag and open; table on stdout; options `--setas <n>`, `--sem-setas`, `--componentes` and `--vezes <k>` (median of k runs)); outside CI; locally as `test:e2e`
+npm run perf:canvas # measures the canvas in a real Chromium against dist/index.html (2,000 and 5,000 markings; frames of pan, zoom, edit, drag and open; table on stdout; options `--setas <n>`, `--sem-setas`, `--componentes` and `--vezes <k>` (median of k runs)); outside CI; locally like `test:e2e` below
 npm run test:e2e  # Playwright against dist/index.html; runs in CI (locally: npm run build and PLAYWRIGHT_CHROMIUM_EXECUTABLE=<chrome>)
 npm run build:mcp # generates dist-mcp/mapping-mcp.js (MCP server, stage 3a)
 npm run dev:viewer # demo of the embeddable viewer in a React host (viewer/demo)
