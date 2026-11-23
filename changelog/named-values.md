@@ -19,6 +19,7 @@
 - Version numbers: the stage plan (#1900) was written when `main` was at specialization `formatVersion` 18, schema v20 and proposal `formatVersion` 9; `main` moved on, so the stage takes the next free numbers: specialization **23** (plan: 19), project schema **v24** (plan: v22) and proposal `formatVersion` **12** (plan: 11). Map: 19→23, v22→v24, 11→12.
 - The `dist/index.html` ceiling rose 32 KiB, from 2539520 to 2572288, by the budget rule; above the limits, `bug` #2747 for the owner to review
 - The `dist/index.html` ceiling rose 16 KiB, from 2572288 to 2588672, by the budget rule; above the limits, `bug` #2753 for the owner to review
+- The `dist/index.html` ceiling rose 16 KiB, from 2588672 to 2605056, by the budget rule; above the limits, `bug` #2761 for the owner to review
 - The stored `drawingMode` string of the project and of each container is now a map axis → entry. An earlier app reads a v24 file as a newer version (read-only), and an earlier MCP rejects a v24 project and a `formatVersion` 12 proposal.
 - NV4 added no migration: a `#RRGGBB` background stays valid in schema v24, and the token only appears when an agent writes it.
 - Decision outside the stage plan (NV4): `origins` only exist up to specialization `formatVersion` 21, so a `{ "$token" }` in an origin's `screen.background` is gated at `formatVersion` **15** (`only allowed with formatVersion 15` below it), not 23; the container preset's token needs 23. Version numbers follow the same mapping as above (specialization 23, schema v24, proposal 12).

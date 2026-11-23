@@ -70,6 +70,10 @@ const PENDING_AFTER_REMOVAL: string[] = [];
  * ('Out' decision of #486); the feature is covered by tests/model/specV10.test.ts and by script R18.
  */
 const MISSING_TODAY: string[] = [
+  // A color `$token` in a container preset's `background` (formatVersion 23, stage #1900, NV4): the example
+  // package `examples/libraries/named-values` (NV6, decision 21) carries it; until then it is covered by
+  // tests/model/namedValuesBackground.test.ts and tests/mcp/containerBackgroundToken.test.ts.
+  'spec:containers[].background.$token',
   // `$tokens` in a table column's `suggestions` (formatVersion 23, stage #1900, NV1): `examples/libraries/analytics`
   // covers `$tokens` on fields (`event.name`, `transition.event`) only; the column case is covered by
   // tests/model/namedValuesSuggestions.test.ts.
