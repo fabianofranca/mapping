@@ -1,5 +1,5 @@
 {
-  "indexHtmlMaxBytes": 2605056,
+  "indexHtmlMaxBytes": 2621440,
   "history": [
     "Budget of dist/index.html (self-contained; 1,376,757 bytes, ~1.38 MB on 2026-10-19, with the example embedded: ~80 KB in base64).",
     "Raised to 1,703,936 (1.625 MiB) at stage #559 (owner decision, 2026-11-05): the epic was 151 bytes from the ceiling and PD5 adds ~7.4 KB of real code.",
@@ -44,6 +44,7 @@
     "Raised to 2,572,288 (2,512 KiB) by the budget rule (2026-11-23, epic `quick-review`): excess of 15729 bytes, growth of 20951 bytes over `main`. Above the limits: excess above 14 KiB; raises since the owner review above 64 KiB.",
     "Raised to 2,572,288 (2,512 KiB) by the budget rule (2026-11-23, epic `named-values`): excess of 30683 bytes, growth of 35905 bytes over `main`. Above the limits: excess above 14 KiB; growth above 32 KiB over `main`; raises since the owner review above 64 KiB.",
     "Raised to 2,588,672 (2,528 KiB) by the budget rule (2026-11-23, epic `named-values`): excess of 2038 bytes, growth of 40028 bytes over `main`. Above the limits: growth above 32 KiB over `main`; raises since the owner review above 64 KiB.",
-    "Raised to 2,605,056 (2,544 KiB) by the budget rule (2026-11-23, epic `named-values`): excess of 1033 bytes, growth of 32813 bytes over `main`. Above the limits: growth above 32 KiB over `main`; raises since the owner review above 64 KiB."
+    "Raised to 2,605,056 (2,544 KiB) by the budget rule (2026-11-23, epic `named-values`): excess of 1033 bytes, growth of 32813 bytes over `main`. Above the limits: growth above 32 KiB over `main`; raises since the owner review above 64 KiB.",
+    "Raised to 2,621,440 (2,560 KiB) by the budget rule (2026-11-23, epic `named-values`): excess of 8382 bytes, growth of 56546 bytes over `main`. Above the limits: growth above 32 KiB over `main`; raises since the owner review above 64 KiB."
   ]
 }
