@@ -1,6 +1,8 @@
 // Stage #1900, NV2: components read the named values (a composite field by dot, a whole composite in
 // `font` and in a shadow), and the level 2 library checks and notices that go with it.
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { checkSchema } from '../support/jsonSchema';
 import { COMPONENT_FORMAT } from '../../src/model/components/componentFormat';
 import type { ComponentFile } from '../../src/model/components/componentFormat';
 import {
@@ -434,5 +436,44 @@ describe('messages: every NV2 code has a pt-BR template', () => {
     const r = validate([{ type: 'rect', cornerRadius: { $token: 'title' } }]);
     const codes = r.errors.map((e: LibraryIssue) => e.code);
     expect(codes).toContain('library.tokenIsComposite');
+  });
+});
+
+describe('the whole-composite $token takes a plain token name', () => {
+  const schema: Record<string, unknown> = JSON.parse(
+    readFileSync(new URL('../../docs/component.schema.json', import.meta.url), 'utf8'),
+  );
+  const PLAIN = 'expected a token name ([a-z0-9][a-z0-9-]*)';
+
+  it.each([
+    ['font', { type: 'text', text: 'x', font: { $token: 'title.size' } }],
+    ['shadow', { type: 'rect', shadow: { $token: 'elevation-1.blur' } }],
+    ['shadow list', { type: 'rect', shadow: [{ $token: 'elevation-1.blur' }] }],
+  ])(
+    'the parser rejects a dotted name in %s without suggesting name.field',
+    (_n, node) => {
+      const issues = validateComponent(file(node));
+      expect(issues).toContain(
+        `template.${Object.keys(node).includes('font') ? 'font' : 'shadow'}${Array.isArray((node as Raw).shadow) ? '[0]' : ''}.$token: ${PLAIN}`,
+      );
+      expect(issues.join('\n')).not.toContain('name.field');
+    },
+  );
+
+  it.each([
+    ['font', { type: 'text', text: 'x', font: { $token: 'title.size' } }],
+    ['shadow', { type: 'rect', shadow: { $token: 'elevation-1.blur' } }],
+  ])('the schema rejects a dotted name in %s', (_n, node) => {
+    const root = { type: 'frame', children: [node] };
+    expect(checkSchema(schema, file(root)).length).toBeGreaterThan(0);
+  });
+
+  it('the schema still accepts a plain composite name in font and shadow', () => {
+    const node = {
+      type: 'frame',
+      shadow: { $token: 'elevation-1' },
+      children: [{ type: 'text', text: 'x', font: { $token: 'title', align: 'center' } }],
+    };
+    expect(checkSchema(schema, file(node))).toEqual([]);
   });
 });

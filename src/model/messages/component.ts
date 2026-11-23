@@ -42,6 +42,7 @@ export const componentMessages = {
     '$token is only valid where a color, a number or a font family is expected',
   'component.expectedTokenName':
     'expected a token name ([a-z0-9][a-z0-9-]*) or name.field',
+  'component.expectedPlainTokenName': 'expected a token name ([a-z0-9][a-z0-9-]*)',
   'component.alphaOnlyColor': 'alpha is only valid on a color $token',
   'component.exprManyOperators': 'expression with more than one operator: {ops}',
   'component.required': 'required field',

@@ -828,7 +828,7 @@ function checkWholeToken(value: Rec, path: string, whole: WholeObject, out: Ctx)
   const at = join(path, '$token');
   const name = value.$token;
   if (typeof name !== 'string' || !TOKEN_NAME_PATTERN.test(name))
-    return add(out, at, 'expected a token name ([a-z0-9][a-z0-9-]*) or name.field');
+    return add(out, at, 'expected a token name ([a-z0-9][a-z0-9-]*)');
   out.refs?.push({ path: at, name, kind: 'number', anyKind: true, whole });
 }
 

@@ -558,6 +558,7 @@ export const templatePtBR: {
   'model.component.expectedWidthHeight': 'esperava "width" ou "height"',
   'model.component.tokenOnlyWhere':
     '$token só vale onde se espera cor, número ou família de fonte',
+  'model.component.expectedPlainTokenName': 'esperava nome de token ([a-z0-9][a-z0-9-]*)',
   'model.component.expectedTokenName':
     'esperava nome de token ([a-z0-9][a-z0-9-]*) ou nome.campo',
   'model.component.alphaOnlyColor': 'alpha só vale em $token de cor',
