@@ -48,6 +48,10 @@ const ALLOWLIST = [
   'src/app/controller.ts',
   // `mapping://` references and crops point to the real project.
   'src/app/itemClipboard.ts',
+  // "Export image…" crops the real image of the committed project, like `copyCrop`; a marking only in the proposal gets the `notInProject` reason.
+  'src/app/imageExport.ts',
+  // `ExportImageItem` reads the committed project for the enabled state of "Export image…" (same rule as `exportMarkingsImage`).
+  'src/ui/CopyActions.tsx',
   // Requests to delete an image/marking: real project, disabled in the review.
   'src/app/useEditorDialogs.ts',
   // Export in a format (AF3): exports the saved project (flush first), not a proposal being reviewed.

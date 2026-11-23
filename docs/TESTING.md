@@ -53,7 +53,8 @@ Mapping is a web app to mark rectangular areas on images, organize them into lay
 | 41 | R43 — Conversation during review | a folder `conversa-revisao` (the `examples/full-example.zip` unzipped into `design/mapeamentos/`), the shell, the MCP over stdio (section 6) and the app | 40 min |
 | 42 | R44 — Format plugins in the app | the `examples/libraries/data-model/`, `sdui-backend/` and `measured/` packages (the shell copies them and breaks copies), the shell, the MCP over stdio (section 6) and the app (also over `file://`) | 50 min |
 | 43 | R45 — Quick review on the canvas | a folder `revisao-rapida` (the `examples/full-example.zip` unzipped into `design/mapeamentos/`), the shell, the MCP over stdio (section 6), Playwright over CDP and the app; with its own visual pass | 45 min |
-| 44 | R46 — The viewer runs a format plugin | the viewer demo (the shell builds it with `npx vite build --config vite.viewer.config.ts` and makes two copies of the page), `python3 -m http.server`, the shell and Playwright over CDP; no MCP, no section 6, no project; also over `file://` | 15 min |
+| 44 | R46 — Replace from the clipboard and export the image | a folder `recorte` (`cadastro.png` added twice), the shell, Playwright over CDP with the clipboard permissions and the app; with its own visual pass | 45 min |
+| 45 | R47 — The viewer runs a format plugin | the viewer demo (the shell builds it with `npx vite build --config vite.viewer.config.ts` and makes two copies of the page), `python3 -m http.server`, the shell and Playwright over CDP; no MCP, no section 6, no project; also over `file://` | 15 min |
 | on demand | RP — Installed app (PWA), in the **on-demand scripts (manual)** | main version or preview (`https:`) and the installable app; only when the owner asks | 15 min |
 | on demand | RF — `index.html` over `file://` (formerly R0.5), in the **on-demand scripts (manual)** | shell with access to GitHub Pages and the computer's Chrome; only when the owner asks | 10 min |
 | on demand | RA — Close the tab in the middle of a save (formerly R6.2), in the **on-demand scripts (manual)** | the `principal` folder and a `tela2.png`; only when the owner asks | 10 min |
@@ -61,7 +62,7 @@ Mapping is a web app to mark rectangular areas on images, organize them into lay
 | on demand | RT — Folder on an Android tablet, in the **on-demand scripts (manual)** | an Android tablet with Chrome and a real project folder; only when the owner asks | 15 min |
 | on demand | RQ — Concept question in a clean Claude Code session (formerly R3.6a), in the **on-demand scripts (manual)** | section 6, the `principal` from R1 moved into the test repository and a new Claude Code session; only when the owner asks | 5 min |
 
-The times are approximate (by number of steps); record the real time in the report. Without the MCP, do only step 2 of section 6 from row 4 (the test repository and the folders, without the `mapping-mcp.js`), run R3.1 to R3.5 and skip R3.6, R3.21, R3.23 and R5, marking them "not executed (no MCP)". The main scripts (R0 to R46) are made for the cloud agent to run **alone**. The **on-demand scripts (manual)**, today RP, RF, RA, RB, RT and RQ, are not part of the full round or the directed one: they run apart, in an on-demand session, only when the owner asks (end of section 8). The dependencies between the scripts are at the start of section 8. Section 9 (advanced manual testing) is a script of its own, after a full round without high or medium findings.
+The times are approximate (by number of steps); record the real time in the report. Without the MCP, do only step 2 of section 6 from row 4 (the test repository and the folders, without the `mapping-mcp.js`), run R3.1 to R3.5 and skip R3.6, R3.21, R3.23 and R5, marking them "not executed (no MCP)". The main scripts (R0 to R47) are made for the cloud agent to run **alone**. The **on-demand scripts (manual)**, today RP, RF, RA, RB, RT and RQ, are not part of the full round or the directed one: they run apart, in an on-demand session, only when the owner asks (end of section 8). The dependencies between the scripts are at the start of section 8. Section 9 (advanced manual testing) is a script of its own, after a full round without high or medium findings.
 
 What this guide **does not** test: whether a panel is easy to find or whether a text is clear to someone who has not read the documentation. That is left to people, in real use.
 
@@ -260,7 +261,7 @@ Also counted as a finding: noticeable slowness (more than a second to respond), 
 - _Italics at the end of the Expected_ mark a **known regression**: something that already broke in a previous round and is checked again, not the goal of the step.
 - **[person]** marks the steps the cloud agent does not do alone (appendix A); whoever tests by hand can ignore the mark. The "or `action`" names the recipe that replaces the person in native dialogs (`select_folder`, `save_file`, `open_file`, `accept_permission_prompt`, `cancel_dialog`; each name is a recipe in appendix A, "Native dialogs in the cloud (Xvfb)") and the MCP client over stdio in the requests to Claude Code. In the main scripts no step is left without a substitute (a test checks).
 - **Who changes the guide: marked passages.** `round-guide.mjs` generates the guide with only the requested scripts (also by step range, `R6.3-R6.7`). A passage of this introduction or of appendix A that only certain scripts use goes between `<!-- roteiros: R12 R22 -->` and `<!-- /roteiros -->`, on their own lines; it only enters the guide if one of them is requested. Without a mark, it goes in all of them (when in doubt, do not mark).
-- **Rule for whoever changes the scripts (agents and people).** The main scripts (R0 to R46) are made for the cloud agent to run **alone**: every new or changed step needs a way for the cloud agent to do it (cloud recipe from appendix A, Playwright over CDP, shell or MCP client over stdio) and must say so in the Action.
+- **Rule for whoever changes the scripts (agents and people).** The main scripts (R0 to R47) are made for the cloud agent to run **alone**: every new or changed step needs a way for the cloud agent to do it (cloud recipe from appendix A, Playwright over CDP, shell or MCP client over stdio) and must say so in the Action.
 - **A test that needs the owner.** If a test needs interaction from the owner (no cloud recipe does it) and **is not very relevant**, it goes to the **on-demand scripts (manual)** (end of this section), which the owner does by hand.
 - **A test that needs the owner and is very relevant.** If it needs interaction from the owner and **is very relevant** (risk of data loss, integrity of the `mapping.json`, security), the agent **does not decide alone**: it warns the owner, in the conversation and in the PR description, so they decide together; until they decide, the step stays where it is, marked as **pending decision**.
 
@@ -467,7 +468,12 @@ Also counted as a finding: noticeable slowness (more than a second to respond), 
 <!-- /roteiros -->
 <!-- roteiros: R46 -->
 
-- R46 uses a folder of its own (`$W46`, with the bodies of the steps, the two copies of the page and the crops) and builds the viewer demo into `dist-viewer-demo/` of the checkout; it uses no project, no MCP and no section 6, only Playwright over CDP in the app's Chrome (one tab of its own per step, closed at the end) and `python3`; the steps follow in sequence and do not depend on any other script.
+- R46 uses a folder of its own (`recorte`, with `cadastro.png` added twice, a container without a file and a canvas marking), the shell, Playwright over CDP (clipboard permissions, the "Save as" spy and the clipboard images made in the page) and the app; the steps follow in sequence and do not depend on any other script. Section 6 and the MCP are not needed. Without the app, mark everything "not executed (no app)".
+
+<!-- /roteiros -->
+<!-- roteiros: R47 -->
+
+- R47 uses a folder of its own (`$W47`, with the bodies of the steps, the two copies of the page and the crops) and builds the viewer demo into `dist-viewer-demo/` of the checkout; it uses no project, no MCP and no section 6, only Playwright over CDP in the app's Chrome (one tab of its own per step, closed at the end) and `python3`; the steps follow in sequence and do not depend on any other script.
 
 <!-- /roteiros -->
 <!-- roteiros: R24 -->
@@ -3545,17 +3551,80 @@ fixo() { (cd "$PROJ" && sha256sum mapping.json); }
 
 R45 changes its own copy (`revisao-rapida`); no other script uses it.
 
-### R46 — The viewer runs a format plugin
+### R46 — Replace from the clipboard and export the image
+
+**What it covers:** the stage "Replace an image from the clipboard and export marking images" (#2721, CE1 to CE4): **Export image…** (canvas menu and the ⋯ of a Tree row) saving the PNG of one marking, or of a selection of markings on the same image (their bounding box), at the full original size, through "Save as" and, without `showSaveFilePicker`, through a download; the suggested names (`<image>-<code>.png` and `<image>-selection-<n>.png`); the disabled states and their tooltips (markings of different images, a canvas marking, a container without a file); export with locked markings; **Ctrl+V** with one image container selected asking **Paste image** (**Cancel**, **Add as new** with its undo, **Replace the selected image**), and adding directly with nothing selected; **Replace with clipboard image** in the canvas menu of an image (same aspect ratio, a different one with the aspect dialog, a clipboard with text only, and absent from a container without a file); and that **Copy crop** keeps its 2048 px limit. Each step checks the screen and the disk (`mapping.json`, `images/` and the exported files).
+
+**Setup.** The shell, Playwright over CDP and the app; no MCP (section 6 not needed). R46 has a folder of its own, `recorte`, and depends on no other script. The Chrome context has `clipboard-read` and `clipboard-write` granted (as in R22.14) and the window stays focused (the clipboard and the pickers need it). The steps follow in sequence (each one starts from what the one before left). Without the app, mark everything "not executed (no app)".
+
+```bash
+export W46=<work folder>/r46 && mkdir -p "$W46/dl"
+export PROJ=<work folder>/recorte
+cat > "$W46/estado.py" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1] + '/mapping.json', encoding='utf-8'))
+print('revision', d['revision'])
+ids = {c['id']: c['id'][:8] for c in d['containers']}
+for c in d['containers']:
+    print('container', c['id'][:8], repr(c.get('name')), c['file'], c['width'], c['height'])
+for m in d['markings']:
+    r = m['rect']
+    print('marking', m['id'][:8], repr(m['name']), ids.get(m['containerId'], 'canvas'), r['x'], r['y'], r['width'], r['height'], 'locked' if m.get('locked') else '')
+PY
+cat > "$W46/png.py" <<'PY'
+import struct, sys
+for p in sys.argv[1:]:
+    b = open(p, 'rb').read(24)
+    ok = b[:8] == b'\x89PNG\r\n\x1a\n'
+    print(p.rsplit('/', 1)[-1], *(struct.unpack('>II', b[16:24]) if ok else ('not-a-png',)))
+PY
+estado() { python3 -I "$W46/estado.py" "$PROJ"; }
+png() { python3 -I "$W46/png.py" "$@"; }
+fixo() { (cd "$PROJ" && sha256sum mapping.json); }
+ls_img() { ls "$PROJ/images"; }
+# Playwright over CDP, in the app page (after the permissions are granted to the context):
+# setClip(w, h, color): a PNG of w x h drawn in the page and put on the system clipboard
+#   await page.evaluate(async ([w, h, color]) => { const c = document.createElement('canvas'); c.width = w; c.height = h;
+#     const g = c.getContext('2d'); g.fillStyle = color; g.fillRect(0, 0, w, h);
+#     const blob = await new Promise((ok) => c.toBlob(ok, 'image/png'));
+#     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); }, [w, h, color]);
+# spy: records the name each "Save as" suggests and still opens the real picker (install it again after every reload)
+#   await page.evaluate(() => { const real = window.showSaveFilePicker.bind(window); window.__saves = [];
+#     window.showSaveFilePicker = (o) => { window.__saves.push(o && o.suggestedName); return real(o); }; });
+# saves: await page.evaluate(() => window.__saves)
+# right click on the center of the selected item: page.mouse.click(x, y, { button: 'right' }), x and y from data-selection-box
+```
+
+| Step | Action | Expected |
+| --- | --- | --- |
+| R46.1 | Create an empty folder `recorte` in the working folder. **Open folder** `PROJ` **[person]** (or `select_folder`; permission as in R0.2) and **Create**. Add `cadastro.png` **twice** (**Add images** through the picker, `open_file`, once for each; wait for **Saved** between them). **New container**: **Name** `Fundo`, **Preset size** **Custom**, **Width** `300`, **Height** `200`, **Create container**. Click **Fit all**. Install the spy and run `estado` and `ls_img`. | **Screen:** the **Tree** lists three containers: the two images (the second one with a different name, the file name had a collision) and `Fundo`, a white rectangle with no image (its default background). **Disk:** `estado` lists 3 containers: two with `file` `images/…` and the size of `cadastro.png` (the same in both), and `Fundo` with `file` `None`, 300 × 200; `ls_img` lists two different files (the second image did not overwrite the first). Keep the two image names as `IMG1` and `IMG2`, exactly as the **Tree** labels them (the `name`, or the file path when it is `None`, for example `images/cadastro.png`), and their container codes. Also keep `IMG1FILE`, the name the exports use for the first image: its `name` or, with none, the file name without folder and extension (`cadastro` for `images/cadastro.png`); `IMG1` is only for the dialog text of R46.10, never for a file name. |
+| R46.2 | **Draw** mode: in the first image drag `Form` (a large rectangle over the form, covering most of the image) and `Title` (a smaller one over the title, **not** touching `Form`); in the second image drag `Button`; inside `Fundo` drag `Nota`; on the **canvas background**, outside every container, drag `Solta`. Name each one in Details (**Name**, Enter). Wait for **Saved**. Run `estado`, `fixo > "$W46/fixo1.txt"` and read the **Tree**. | **Screen:** five markings: `Form` and `Title` in the first image, `Button` in the second, `Nota` in `Fundo` and `Solta` at the **Canvas** root of the Tree. **Disk:** `estado` lists `Form` and `Title` in the first container, `Button` in the second, `Nota` in `Fundo` and `Solta` with `canvas` (its `containerId` is `null`); every `rect` is made of integers. Keep each rect (`FW` × `FH` for `Form`, `TW` × `TH` for `Title`) and the first 8 characters of each id (the marking's code, `FC` for `Form`, `TC` for `Title`). |
+| R46.3 | **Navigate** mode. Click `Form` on the canvas (it is the only selected item) and right-click its center. Click **Export image…** and, at once, do the "Save as" with `save_file` (recipe 7, appendix A) in `$W46/form.png` (check with `test -e` before). Read the toast, then run `png "$W46/form.png"`, `fixo` and `ls_img`, and read `await page.evaluate(() => window.__saves)`. | **Screen:** the menu has **Export image…** enabled, with no tooltip; after saving, the toast says "Image saved" and nothing else changes (the selection is still `Form`). **Disk:** `png` prints `form.png FW FH`, **exactly** the size of the `Form` rect; the last name in `__saves` is `IMG1FILE-FC.png` (the image name, a dash, the marking's code); `fixo` equals `fixo1.txt` (an export writes nothing to the project) and `ls_img` is the same as in R46.1. |
+| R46.4 | Press **Esc** and click `Form` at a point at least 20 px away from where it was last clicked (a second click on the same spot goes up to the image under it, the click cycle, and the selection would not include `Form`), then **Shift+click** `Title` (both selected; the status bar says "2 items selected"). Right-click `Form` and choose **Export image…**; do the "Save as" with `save_file` in `$W46/selection.png`. Read the toast; run `png "$W46/selection.png"` and read the last name in `__saves`. | **Screen:** the toast says "Image saved". **Disk:** `png` prints `selection.png` with the width and height of the **bounding box** of `Form` and `Title` (from the lowest `x` and `y` to the highest `x + width` and `y + height` of the two rects, computed from `estado`); the last name in `__saves` is `IMG1FILE-selection-2.png`; `fixo` still equals `fixo1.txt`. |
+| R46.5 | **The disabled states.** Select `Form` and **Shift+click** `Button` (two different images) and right-click `Form`; hover **Export image…** and read its tooltip. Press **Esc**. Then select only `Solta`, right-click it and read the item; then only `Nota` (in `Fundo`), the same. Click each disabled item. Read `__saves` before and after. | **Screen:** in the three cases **Export image…** shows disabled (it does not react to the click and opens no picker); the tooltips are "The selected markings are on different images. Select markings on the same image." for `Form` + `Button`, and "This marking has no image file to export." for `Solta` and for `Nota`. **Disk:** `__saves` has the same length before and after, and `fixo` equals `fixo1.txt`. |
+| R46.6 | **The Tree row.** Click only `Title` in the **Tree**, open the ⋯ of its row and read the items; click **Export image…** and do the "Save as" with `save_file` in `$W46/title.png`. Then, with `Form` and `Title` still selected from the canvas (R46.4) and the ⋯ of the `Form` row, read the item again. | **Screen:** the ⋯ menu of the row has **Export image…** enabled (the "Copy" items sit in the same menu) and, with a single marking, saves its PNG with the toast "Image saved"; the ⋯ of a row that belongs to a selection also offers the item. **Disk:** `png "$W46/title.png"` prints `title.png TW TH`, the size of the `Title` rect; the last name in `__saves` is `IMG1FILE-TC.png`; `fixo` equals `fixo1.txt`. |
+| R46.7 | **The download path.** With CDP, `Browser.setDownloadBehavior` with `behavior` `allow` and `downloadPath` `$W46/dl`, and `Page.addScriptToEvaluateOnNewDocument` with `delete window.showSaveFilePicker`; reload the page (F5), reopen `recorte` from **Recent projects** (**Open**; permission as in R0.4a), and in the page read `typeof window.showSaveFilePicker`. Click `Form`, right-click it and choose **Export image…**. Wait 2 s, then `ls "$W46/dl"` and `png "$W46/dl/"*.png`. Remove the script (`Page.removeScriptToEvaluateOnNewDocument`), reload, reopen the project and install the spy again. | **Screen:** `typeof` is `undefined`; the click opens **no** "Save as" dialog and the toast says "Image saved". **Disk:** `$W46/dl` has one file, `IMG1FILE-FC.png`, and `png` prints its size equal to `FW FH`; `fixo` equals `fixo1.txt`. After the last reload the picker is back (`typeof` is `function`). |
+| R46.8 | **With locks.** Select `Form` and lock it (`Alt+L`); select the first image through the **Tree** and lock it (`Alt+L`). Wait for **Saved** and run `estado` (note the `revision`) and `fixo > "$W46/fixo2.txt"`. Click `Form`, right-click it and **Export image…**; `save_file` in `$W46/form-locked.png`. Run `png "$W46/form-locked.png"`, `estado` and `fixo` (compare with `fixo2.txt` and the noted `revision`). Unlock both (`Alt+L` on each) and wait for **Saved**. | **Screen:** with `Form` and its image locked, **Export image…** stays enabled and saves, with the toast "Image saved". **Disk:** `png` prints `FW FH` again; the `revision` and `fixo` after the export equal `fixo2.txt` and the noted `revision` (the locks were the only writes: `locked` `true` in `Form` and in the container, back to `false` after the unlock). |
+| R46.9 | **Ctrl+V with nothing selected.** Press **Esc** and click the canvas background (outside every container) so that nothing is selected. `setClip(300, 200, '#cc3333')` and press **Ctrl+V** with the focus on the canvas. Wait for **Saved**; run `estado` and `ls_img`. | **Screen:** no dialog: a new container with the red image appears at the view center (or in the nearest free space) and is selected. **Disk:** `estado` lists a fourth container with `file` `images/img-…` and 300 × 200, and its `revision` is higher than the one read before the paste (run `estado` before it and compare); `ls_img` has a third file. Keep this container's code as `RED`. |
+| R46.10 | **Ctrl+V with an image selected.** Select the first image through the **Tree** (it has a file). `setClip(<the first image's width>, <its height>, '#3366cc')` (the same size, so the same aspect ratio) and press **Ctrl+V**. Read the dialog and the focused button. Click **Cancel**; run `fixo` and `ls_img`. Press **Ctrl+V** again, choose **Add as new**, wait for **Saved** and run `estado`; then **Ctrl+Z** and run `estado` and `ls_img`. | **Screen:** the **Paste image** dialog says "The clipboard has an image and "<IMG1>" is selected. Replace the selected image or add the clipboard image as a new one?" with three buttons, **Cancel**, **Add as new** and **Replace the selected image** (the primary one, with the focus); **Cancel** (or Esc, or the close button) closes it and pastes nothing. **Add as new** adds a container with the blue image (the **Tree** has one more) and **Ctrl+Z** removes it again. **Disk:** after **Cancel**, `fixo` equals the one read before and `ls_img` has no new file; after **Add as new**, `estado` has one more container; after **Ctrl+Z**, the containers are the same as before the paste (do not compare `images/` here). |
+| R46.11 | Select the first image again (**Tree**) and keep the blue image on the clipboard. Read `estado` (`revision`, the first container's `file` and the markings' `rect`) and **Ctrl+V** → **Replace the selected image** (**Enter** works, it is the focused one). Wait for **Saved** and run `estado` and `ls_img`; read the image on the canvas. Then **Ctrl+Z** and run `estado`; **Ctrl+Y**. | **Screen:** the image is now the blue one, with `Form` and `Title` still on it (same place, same names); no aspect dialog (same aspect ratio). **Disk:** the container keeps its `id`; its `file` is a **new** file in `images/` (`ls_img` has it and `estado` shows it); `Form` and `Title` keep their `rect` and the other markings and containers do not change; the `revision` is the previous one + 1 (one write). **Ctrl+Z** brings the old `file` back in one entry; **Ctrl+Y** the new one. |
+| R46.12 | **The context menu.** Right-click the first image (on a part without a marking) and read the items. `setClip(300, 300, '#33aa55')` (a different aspect ratio); choose **Replace with clipboard image**: read the dialog; click **Cancel** and run `fixo`; choose the item again and click **Replace anyway**; wait for **Saved** and run `estado`; **Ctrl+Z**. Then put **text only** on the clipboard (`navigator.clipboard.writeText('only text')`), choose the item again and read the toast. Finally right-click `Fundo` and read its menu. | **Screen:** the menu of an image with a file has **Replace with clipboard image**; with a different aspect ratio the dialog "Different aspect ratio" says what the current and the new ratio are, and **Cancel** replaces nothing; **Replace anyway** replaces (the markings are rescaled and flagged for review) and **Ctrl+Z** undoes it in one entry; with text only the toast says "The clipboard has no image." and nothing changes; the menu of `Fundo` (no file) has **no** such item. **Disk:** after **Cancel**, `fixo` is unchanged; after **Replace anyway**, the container's `file` is new and the `revision` +1; after the undo the old `file` is back; with text only, `fixo` is unchanged. |
+| R46.13 | **Copy crop keeps its limit, export does not.** `setClip(2560, 1200, '#888888')` and **Ctrl+V** with nothing selected (it is a new container). **Fit all**, **Draw** and drag a marking `Grande` from near the top-left corner to near the bottom-right corner of the new image; wait for **Saved** and read its `rect` in `estado`. Select `Grande` and press **Ctrl+Alt+C**; read the clipboard image in the page (`navigator.clipboard.read()`, `createImageBitmap` of the `image/png` blob: its `width` and `height`). Then right-click `Grande`, **Export image…** and `save_file` in `$W46/grande.png`; run `png "$W46/grande.png"`. | **Screen:** after **Ctrl+Alt+C** the toast says "Crop copied". **Disk and clipboard:** the `Grande` rect has a longer side above 2048 (the image has 2560 px on its longer side); the clipboard image has its longer side **exactly 2048** (reduced); `png` prints `grande.png` with the **full** width and height of the rect (above 2048 on the longer side); `fixo` is unchanged by the copy and by the export. |
+| R46.14 | **Visual pass, 1280×720.** `page.setViewportSize({ width: 1280, height: 720 })`. Capture each screen below, one report line each ("Visual: <name>"): the **Paste image** dialog (select the first image, `setClip` of its size, **Ctrl+V**; capture and **Cancel**); the canvas menu of `Form` with **Export image…** enabled; the canvas menu of `Solta` with the item disabled and its tooltip; the canvas menu of the first image with **Replace with clipboard image**; the ⋯ menu of the `Title` row in the **Tree**. Repeat in dark (**Theme** › **Dark**) and go back to light. Then repeat everything at 900×720 with the suffix "900" and return to 1280×720. | **Screen:** the dialog's three buttons fit, with **Replace the selected image** as the primary; the menus open inside the window with no clipping (at 900 px too), the disabled item reads as disabled in light and dark and its tooltip fits, the labels are not cut and nothing scrolls horizontally. **Disk:** `fixo` equals the one before the step. |
+
+R46 changes its own folder (`recorte`); no other script uses it.
+
+### R47 — The viewer runs a format plugin
 
 **What it covers:** the stage "The embeddable viewer reads a file through the specialization's format plugin" (#2059, VF1 to VF3): the viewer demo (`viewer/demo/`, built by `npx vite build --config vite.viewer.config.ts` into `dist-viewer-demo/`) has a "File format (SDUI)" dataset that reads `home.sdui.json` of the `sdui-backend` package through `screenFromFormat` of `mapping-viewer/formats`; the plugin runs in a sandbox iframe and `blob:` Worker of the page, so the page's CSP (the `viewer` profile: `worker-src 'self' blob:` and the sandbox bootstrap hash in `script-src`, `connect-src 'none'`) is what lets it start. It checks the page's CSP, the drawing and the tree, an edit that redraws and keeps the selection, a plugin error (`plugin-failed`, with `line:column`) and a plugin warning, the two missing CSP pieces (each gives `sandbox-unavailable` while "Examples" still draws), the page opened over `file://` and that no request leaves the page.
 
-**Setup.** Section 6 is not needed: R46 has no project and uses no MCP. It needs the repository checkout with its `node_modules` (the one the local build of recipe 1 uses), Playwright over CDP in the app's Chrome (appendix A, recipes 1 to 4: R0 already brought it up; each step opens its own tab and closes it, so the app's tab stays the only one `connect()` sees) and `python3`. The steps follow in sequence and depend on no other script. `REPO` is the checkout. Without the browser, mark R46.2 to R46.10 "not executed (no browser)".
+**Setup.** Section 6 is not needed: R47 has no project and uses no MCP. It needs the repository checkout with its `node_modules` (the one the local build of recipe 1 uses), Playwright over CDP in the app's Chrome (appendix A, recipes 1 to 4: R0 already brought it up; each step opens its own tab and closes it, so the app's tab stays the only one `connect()` sees) and `python3`. The steps follow in sequence and depend on no other script. `REPO` is the checkout. Without the browser, mark R47.2 to R47.10 "not executed (no browser)".
 
 ```bash
-export W46=<work folder>/r46 && mkdir -p "$W46"
+export W47=<work folder>/r46 && mkdir -p "$W47"
 # The demo, built with the `viewer` CSP profile, served on a port of its own (8146; the app is on 8080)
 (cd "$REPO" && npx vite build --config vite.viewer.config.ts 2>&1 | tail -3)
-(python3 -m http.server 8146 --bind 127.0.0.1 --directory "$REPO/dist-viewer-demo" >"$W46/http.log" 2>&1 & echo $! >"$W46/http.pid")
+(python3 -m http.server 8146 --bind 127.0.0.1 --directory "$REPO/dist-viewer-demo" >"$W47/http.log" 2>&1 & echo $! >"$W47/http.pid")
 # The hash that PACKAGE-README.md quotes for script-src (the sandbox bootstrap), and two copies of the page with one CSP piece missing each
 export HASH=$(grep -o "'sha256-[A-Za-z0-9+/=]*'" "$REPO/viewer/PACKAGE-README.md" | head -1)
 node -e "
@@ -3567,8 +3636,8 @@ const w=\"worker-src 'self' blob:\";
 if(!h.includes(w))throw new Error('worker-src is not as expected');
 fs.writeFileSync(dir+'/sem-blob.html',h.replace(w,\"worker-src 'self'\"));
 " "$REPO/dist-viewer-demo" "$HASH"
-# The bodies of the steps, for `node scripts/testing/cloud.mjs run < "$W46/sN.js"` (each opens its own tab and closes it)
-cat > "$W46/s2.js" <<'JS'
+# The bodies of the steps, for `node scripts/testing/cloud.mjs run < "$W47/sN.js"` (each opens its own tab and closes it)
+cat > "$W47/s2.js" <<'JS'
 const demo = await browser.contexts()[0].newPage();
 demo.setDefaultTimeout(8000);
 await demo.goto('http://127.0.0.1:8146/index.html');
@@ -3582,7 +3651,7 @@ await check("connect-src is 'none'", dir('connect-src') === "connect-src 'none'"
 await check('no Trusted Types and no unsafe-*', !/trusted-types|unsafe-/.test(csp));
 await demo.close();
 JS
-cat > "$W46/s3.js" <<'JS'
+cat > "$W47/s3.js" <<'JS'
 const demo = await browser.contexts()[0].newPage();
 demo.setDefaultTimeout(8000);
 await demo.goto('http://127.0.0.1:8146/index.html');
@@ -3599,10 +3668,10 @@ const status = await demo.locator('.react-lab-status').innerText();
 await check('screen Home 412 × 917', /Screen: Home \(412 × 917\), 6 instances/.test(status));
 await check('no format warning', /Format warnings: none/.test(status));
 await check('no error line', (await demo.locator('.react-lab-error').count()) === 0);
-await demo.locator('.react-lab-viewer').screenshot({ path: process.env.W46 + '/format.png' });
+await demo.locator('.react-lab-viewer').screenshot({ path: process.env.W47 + '/format.png' });
 await demo.close();
 JS
-cat > "$W46/s4.js" <<'JS'
+cat > "$W47/s4.js" <<'JS'
 const demo = await browser.contexts()[0].newPage();
 demo.setDefaultTimeout(8000);
 await demo.goto('http://127.0.0.1:8146/index.html');
@@ -3617,10 +3686,10 @@ await check('the tree shows Proceed and no Continue', (await tree.getByRole('but
 await check('the selection stayed on the same instance', (await tree.getByRole('button', { name: /Proceed/ }).getAttribute('aria-current')) === 'true' && /Selection: m2/.test(await demo.locator('.react-lab-status').innerText()));
 await check('the properties show Proceed', /Proceed/.test(await demo.locator('.react-lab-props').innerText()));
 await check('no error line', (await demo.locator('.react-lab-error').count()) === 0);
-await demo.locator('.react-lab-viewer').screenshot({ path: process.env.W46 + '/proceed.png' });
+await demo.locator('.react-lab-viewer').screenshot({ path: process.env.W47 + '/proceed.png' });
 await demo.close();
 JS
-cat > "$W46/s5.js" <<'JS'
+cat > "$W47/s5.js" <<'JS'
 const demo = await browser.contexts()[0].newPage();
 demo.setDefaultTimeout(8000);
 await demo.goto('http://127.0.0.1:8146/index.html');
@@ -3639,7 +3708,7 @@ await demo.locator('.react-lab-tree li').first().waitFor();
 await check('Examples still draws, with no error', (await demo.locator('.react-lab-tree li').count()) > 0 && (await demo.locator('.react-lab-error').count()) === 0);
 await demo.close();
 JS
-cat > "$W46/s6.js" <<'JS'
+cat > "$W47/s6.js" <<'JS'
 const demo = await browser.contexts()[0].newPage();
 demo.setDefaultTimeout(8000);
 await demo.goto('http://127.0.0.1:8146/index.html');
@@ -3655,7 +3724,7 @@ await check('no error line', (await demo.locator('.react-lab-error').count()) ==
 await check('the FAB is out of the tree (five rows)', (await demo.locator('.react-lab-tree li').count()) === 5);
 await demo.close();
 JS
-cat > "$W46/s7.js" <<'JS'
+cat > "$W47/s7.js" <<'JS'
 const demo = await browser.contexts()[0].newPage();
 demo.setDefaultTimeout(8000);
 await demo.goto('http://127.0.0.1:8146/sem-hash.html');
@@ -3674,7 +3743,7 @@ await demo.locator('.react-lab-tree li').first().waitFor();
 await check('Examples still draws, with no error', (await demo.locator('.react-lab-tree li').count()) > 0 && (await demo.locator('.react-lab-error').count()) === 0);
 await demo.close();
 JS
-cat > "$W46/s8.js" <<'JS'
+cat > "$W47/s8.js" <<'JS'
 const demo = await browser.contexts()[0].newPage();
 demo.setDefaultTimeout(8000);
 await demo.goto('http://127.0.0.1:8146/sem-blob.html');
@@ -3693,7 +3762,7 @@ await demo.locator('.react-lab-tree li').first().waitFor();
 await check('Examples still draws, with no error', (await demo.locator('.react-lab-tree li').count()) > 0 && (await demo.locator('.react-lab-error').count()) === 0);
 await demo.close();
 JS
-cat > "$W46/s9.js" <<'JS'
+cat > "$W47/s9.js" <<'JS'
 const demo = await browser.contexts()[0].newPage();
 demo.setDefaultTimeout(8000);
 await demo.goto('file://' + process.env.REPO + '/dist-viewer-demo/index.html');
@@ -3706,7 +3775,7 @@ await check('screen Home 412 × 917, no format warning', /Screen: Home \(412 × 
 await check('no error line', (await demo.locator('.react-lab-error').count()) === 0);
 await demo.close();
 JS
-cat > "$W46/s10.js" <<'JS'
+cat > "$W47/s10.js" <<'JS'
 const demo = await browser.contexts()[0].newPage();
 demo.setDefaultTimeout(8000);
 const urls = [];
@@ -3733,22 +3802,22 @@ JS
 
 | Step | Action | Expected |
 | --- | --- | --- |
-| R46.1 | **The demo and the two copies.** Run the setup block above, then: `for f in index sem-hash sem-blob; do curl -s -o /dev/null -w '%{http_code} ' http://127.0.0.1:8146/$f.html; done; echo`; `for f in index sem-hash; do grep -o "script-src[^;]*" "$REPO/dist-viewer-demo/$f.html" | grep -cF -- "$HASH"; done`; `grep -c "worker-src 'self';" "$REPO"/dist-viewer-demo/sem-blob.html`. | **Screen:** the build prints `built in`; the first command prints `200 200 200`; the second prints `1` and `0` (the hash is in the `script-src` of `index.html` and not in that of `sem-hash.html`); the third prints `1`. **Disk:** only `dist-viewer-demo/` and `$W46` change. |
-| R46.2 | **The page's CSP.** `node scripts/testing/cloud.mjs run < "$W46/s2.js"`. | **Screen:** the four checks pass: the `<meta>` CSP of the demo has `worker-src 'self' blob:`, has in `script-src` the hash that `viewer/PACKAGE-README.md` quotes, has `connect-src 'none'` and has neither `trusted-types` nor `unsafe-`. |
-| R46.3 | **Drawing the format.** `node scripts/testing/cloud.mjs run < "$W46/s3.js"`, then open the crop `$W46/format.png`. | **Screen:** the checks pass: **File format (SDUI)** shows six rows in the tree (Column, Continue, Skip, FAB, Column, Sign in), the buttons nested under their columns, "Screen: Home (412 × 917), 6 instances", "Format warnings: none" and no error line (the `Warnings:` line above it is the viewer's own and is not evaluated here). The crop shows a phone-shaped screen with a filled **Continue** button and a **Skip** link at the top, a **+** button at the bottom right and a tonal **Sign in** button on the bottom edge. |
-| R46.4 | **Editing the text.** `node scripts/testing/cloud.mjs run < "$W46/s4.js"`. | **Screen:** the checks pass: with **Continue** selected in the tree, changing its label to `Proceed` in the text area redraws it (the tree shows **Proceed**, the properties show **Proceed**) and the same instance stays selected (`Selection: m2`); no error line. The crop `$W46/proceed.png` shows the new label. |
-| R46.5 | **A plugin error.** `node scripts/testing/cloud.mjs run < "$W46/s5.js"`. | **Screen:** the checks pass: broken JSON (`{ broken`) gives an error line with `plugin-failed` and a `line:column`; the tree keeps its six rows (the last screen stays); the **Examples** dataset still draws with no error. |
-| R46.6 | **A plugin warning.** `node scripts/testing/cloud.mjs run < "$W46/s6.js"`. | **Screen:** the checks pass: changing the FAB's `type` to `Nope` gives "Format warnings: floating[0]: the type "Nope" is not known and was left out", no error line, and five rows in the tree. |
-| R46.7 | **No bootstrap hash.** `node scripts/testing/cloud.mjs run < "$W46/s7.js"` (the page `sem-hash.html`). | **Screen:** the checks pass: within about 6 s (the frame never says it is ready) the error line is `sandbox-unavailable` with the message of the decision: the three requirements (`script-src` with the hash, `worker-src` with `blob:`, `trusted-types` with `mapping-viewer` and `default`); **Examples** still draws with no error. |
-| R46.8 | **No `blob:` in `worker-src`.** `node scripts/testing/cloud.mjs run < "$W46/s8.js"` (the page `sem-blob.html`). | **Screen:** the checks pass: the error line is `sandbox-unavailable` with the same message (at once: the page refuses the Worker); **Examples** still draws with no error. |
-| R46.9 | **Over `file://`.** `node scripts/testing/cloud.mjs run < "$W46/s9.js"` (the page `$REPO/dist-viewer-demo/index.html`, opened directly). | **Screen:** the checks pass: the format draws as in R46.3 (six rows, "Screen: Home (412 × 917)", "Format warnings: none") and there is no error line. |
-| R46.10 | **No network.** `node scripts/testing/cloud.mjs run < "$W46/s10.js"`, then stop the server: `kill $(cat "$W46/http.pid")`. | **Screen:** the checks pass: through the format, a broken text and back, and **Examples**, the page asked for no URL other than its own (the `blob:` URLs are the sandbox Worker's), and no `securitypolicyviolation` fired. |
+| R47.1 | **The demo and the two copies.** Run the setup block above, then: `for f in index sem-hash sem-blob; do curl -s -o /dev/null -w '%{http_code} ' http://127.0.0.1:8146/$f.html; done; echo`; `for f in index sem-hash; do grep -o "script-src[^;]*" "$REPO/dist-viewer-demo/$f.html" | grep -cF -- "$HASH"; done`; `grep -c "worker-src 'self';" "$REPO"/dist-viewer-demo/sem-blob.html`. | **Screen:** the build prints `built in`; the first command prints `200 200 200`; the second prints `1` and `0` (the hash is in the `script-src` of `index.html` and not in that of `sem-hash.html`); the third prints `1`. **Disk:** only `dist-viewer-demo/` and `$W47` change. |
+| R47.2 | **The page's CSP.** `node scripts/testing/cloud.mjs run < "$W47/s2.js"`. | **Screen:** the four checks pass: the `<meta>` CSP of the demo has `worker-src 'self' blob:`, has in `script-src` the hash that `viewer/PACKAGE-README.md` quotes, has `connect-src 'none'` and has neither `trusted-types` nor `unsafe-`. |
+| R47.3 | **Drawing the format.** `node scripts/testing/cloud.mjs run < "$W47/s3.js"`, then open the crop `$W47/format.png`. | **Screen:** the checks pass: **File format (SDUI)** shows six rows in the tree (Column, Continue, Skip, FAB, Column, Sign in), the buttons nested under their columns, "Screen: Home (412 × 917), 6 instances", "Format warnings: none" and no error line (the `Warnings:` line above it is the viewer's own and is not evaluated here). The crop shows a phone-shaped screen with a filled **Continue** button and a **Skip** link at the top, a **+** button at the bottom right and a tonal **Sign in** button on the bottom edge. |
+| R47.4 | **Editing the text.** `node scripts/testing/cloud.mjs run < "$W47/s4.js"`. | **Screen:** the checks pass: with **Continue** selected in the tree, changing its label to `Proceed` in the text area redraws it (the tree shows **Proceed**, the properties show **Proceed**) and the same instance stays selected (`Selection: m2`); no error line. The crop `$W47/proceed.png` shows the new label. |
+| R47.5 | **A plugin error.** `node scripts/testing/cloud.mjs run < "$W47/s5.js"`. | **Screen:** the checks pass: broken JSON (`{ broken`) gives an error line with `plugin-failed` and a `line:column`; the tree keeps its six rows (the last screen stays); the **Examples** dataset still draws with no error. |
+| R47.6 | **A plugin warning.** `node scripts/testing/cloud.mjs run < "$W47/s6.js"`. | **Screen:** the checks pass: changing the FAB's `type` to `Nope` gives "Format warnings: floating[0]: the type "Nope" is not known and was left out", no error line, and five rows in the tree. |
+| R47.7 | **No bootstrap hash.** `node scripts/testing/cloud.mjs run < "$W47/s7.js"` (the page `sem-hash.html`). | **Screen:** the checks pass: within about 6 s (the frame never says it is ready) the error line is `sandbox-unavailable` with the message of the decision: the three requirements (`script-src` with the hash, `worker-src` with `blob:`, `trusted-types` with `mapping-viewer` and `default`); **Examples** still draws with no error. |
+| R47.8 | **No `blob:` in `worker-src`.** `node scripts/testing/cloud.mjs run < "$W47/s8.js"` (the page `sem-blob.html`). | **Screen:** the checks pass: the error line is `sandbox-unavailable` with the same message (at once: the page refuses the Worker); **Examples** still draws with no error. |
+| R47.9 | **Over `file://`.** `node scripts/testing/cloud.mjs run < "$W47/s9.js"` (the page `$REPO/dist-viewer-demo/index.html`, opened directly). | **Screen:** the checks pass: the format draws as in R47.3 (six rows, "Screen: Home (412 × 917)", "Format warnings: none") and there is no error line. |
+| R47.10 | **No network.** `node scripts/testing/cloud.mjs run < "$W47/s10.js"`, then stop the server: `kill $(cat "$W47/http.pid")`. | **Screen:** the checks pass: through the format, a broken text and back, and **Examples**, the page asked for no URL other than its own (the `blob:` URLs are the sandbox Worker's), and no `securitypolicyviolation` fired. |
 
-R46 changes nothing in a project; no other script uses its files.
+R47 changes nothing in a project; no other script uses its files.
 
 ### On-demand scripts (manual)
 
-**Entry criterion.** The main test scripts (R0 to R46) are made for the cloud agent to run on its own. A test goes here when it needs the owner's interaction and is **not very relevant** (the rule is in the conventions at the start of this section). These test scripts **only run when the owner asks**, in an on-demand session: they never enter the full round or the directed one, and outside the requested session they do not even appear in the report. The codes and the content do not change. R0.5, R6.2 and R3.6a have already moved here (RF, RA and RQ), by the owner's decision, after not working on their own in a round without interaction.
+**Entry criterion.** The main test scripts (R0 to R47) are made for the cloud agent to run on its own. A test goes here when it needs the owner's interaction and is **not very relevant** (the rule is in the conventions at the start of this section). These test scripts **only run when the owner asks**, in an on-demand session: they never enter the full round or the directed one, and outside the requested session they do not even appear in the report. The codes and the content do not change. R0.5, R6.2 and R3.6a have already moved here (RF, RA and RQ), by the owner's decision, after not working on their own in a round without interaction.
 
 #### RP — Installed app (PWA)
 

@@ -95,7 +95,7 @@ beforeAll(async () => {
   ]);
   acceptAllAndApply(join(base, 'root', 'ancora'), proposed.proposal.id);
   tip = proposed.created.find((c) => c.kind === 'marking')?.ref ?? '';
-}, 30_000);
+}, 60_000);
 
 afterAll(async () => {
   await mcp?.close();

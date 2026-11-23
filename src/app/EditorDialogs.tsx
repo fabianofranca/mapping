@@ -6,6 +6,7 @@ import {
   containerDeletionImpact,
   itemsDeletionImpact,
   markingDeletionImpact,
+  projectIndex,
 } from '../model';
 import { ContainerDialog } from '../ui/ContainerDialog';
 import { DeletePerspectiveDialog } from '../ui/DeletePerspectiveDialog';
@@ -259,6 +260,32 @@ function renderDialog(
             })}
           </p>
         </ConfirmDialog>
+      );
+    }
+    case 'pasteImage': {
+      const container = projectIndex(project).containers.get(dialog.containerId);
+      const answer = (choice: 'replace' | 'add' | null) => {
+        dialog.resolve(choice);
+        close();
+      };
+      return (
+        <Dialog
+          title={t('image.pasteTitle')}
+          onCancel={() => answer(null)}
+          actions={
+            <>
+              <Button onClick={() => answer(null)}>{t('common.cancel')}</Button>
+              <Button onClick={() => answer('add')}>{t('image.pasteAdd')}</Button>
+              <Button variant="primary" autofocus onClick={() => answer('replace')}>
+                {t('image.pasteReplace')}
+              </Button>
+            </>
+          }
+        >
+          <p>
+            {t('image.pasteMessage', { name: container ? imageLabel(container) : '' })}
+          </p>
+        </Dialog>
       );
     }
     case 'export':

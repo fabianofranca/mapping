@@ -180,6 +180,15 @@ export const ptBR: Dictionary = {
   'image.aspectConfirm': 'Trocar mesmo assim',
   'image.replacing': 'Trocando imagem…',
   'image.replaceFailed': 'Não foi possível trocar a imagem.',
+  'image.pasteTitle': 'Colar imagem',
+  'image.pasteMessage':
+    'A área de transferência tem uma imagem e "{name}" está selecionada. Trocar a imagem selecionada ou adicionar a imagem como uma nova?',
+  'image.pasteReplace': 'Trocar a imagem selecionada',
+  'image.pasteAdd': 'Adicionar como nova',
+  'image.replaceFromClipboard': 'Trocar pela imagem da área de transferência',
+  'image.clipboardEmpty': 'A área de transferência não tem imagem.',
+  'image.clipboardDenied':
+    'Permita o acesso à área de transferência para esta página para colar a imagem.',
 
   'tree.locate': 'Localizar a seleção na árvore',
   'tree.collapseAll': 'Recolher tudo',
@@ -1191,6 +1200,15 @@ export const ptBR: Dictionary = {
   'copy.failed': 'Não foi possível copiar.',
   'copy.cropFailed': 'Não foi possível copiar o recorte.',
   'copy.itemActions': 'Ações de {name}',
+  'export.image.action': 'Exportar imagem…',
+  'export.image.differentImages':
+    'As marcações selecionadas estão em imagens diferentes. Selecione marcações da mesma imagem.',
+  'export.image.noImage': 'Esta marcação não tem arquivo de imagem para exportar.',
+  'export.image.notInProject':
+    'Esta marcação ainda não está no projeto. Aplique a proposta antes.',
+  'export.image.selectionWord': 'seleção',
+  'export.image.done': 'Imagem salva',
+  'export.image.failed': 'Não foi possível exportar a imagem.',
   'copy.canvasMenu': 'Menu do item no canvas',
   'arrow.canvasMenu.straight': 'Reta',
   'arrow.canvasMenu.curve': 'Curva',

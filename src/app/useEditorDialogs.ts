@@ -38,6 +38,13 @@ export type EditorDialog =
       readonly change: AspectChange;
       readonly resolve: (confirmed: boolean) => void;
     }
+  /** Ctrl+V with one image container selected: replace it or add as new (`null`: cancel). */
+  | {
+      readonly kind: 'pasteImage';
+      readonly containerId: string;
+      readonly file: File;
+      readonly resolve: (answer: 'replace' | 'add' | null) => void;
+    }
   | {
       readonly kind: 'export';
       readonly file: File;
