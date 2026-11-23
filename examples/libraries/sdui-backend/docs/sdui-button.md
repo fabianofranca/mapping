@@ -23,7 +23,6 @@ Annotation type: `sdui-button` (Button).
 
 - **Default**: label=Label, variant=filled, mode=normal, disabled=no
 - **Link**: label=Label, variant=text, mode=link, disabled=no
-- **From the external system**: node of the system `sdui` (`examples/button.sdui.json`)
 
 ## External origin
 

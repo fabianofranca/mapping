@@ -124,6 +124,10 @@ describe('dictionaries', () => {
       'zoom.value',
       'status.empty',
       'view.containers',
+      // Export in a format (AF3): "Container" is the same word in both languages; the option is only {parameters}.
+      'format.export.container',
+      'format.import.containers',
+      'format.export.option',
       // CM5-B: "Container" is the same word in both languages.
       'citation.group.container',
       'status.schema',
@@ -186,6 +190,9 @@ describe('dictionaries', () => {
       'catalog.page.codeParamsArrow',
       // The text of the sheet problem comes from the sheet reader and enters whole as a parameter.
       'model.library.signatureInvalid',
+      // The names of the plugin functions (`generate`, `parse`) are the contract's, the same in both languages.
+      'catalog.formats.generate',
+      'catalog.formats.parse',
       // The product name is "Mapping" in both languages.
       'app.title',
       'editor.appName',

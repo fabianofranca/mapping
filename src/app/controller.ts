@@ -59,6 +59,7 @@ import {
 } from '../ui/specPackageImport';
 import { reportError } from '../utils/report';
 import { err, guarded, inconsistentResult, ok, type AppResult } from './appResult';
+import { runFormat } from './formatRunner';
 import { bindPageLifecycle } from './pageLifecycle';
 import * as recents from './recents';
 import { localLibrary, touchFolder } from './recents';
@@ -671,7 +672,7 @@ export async function openLibraryPackage(
   }
   if (!read.ok) return { kind: 'failed', reason: read.reason };
   try {
-    const preview = openLibraryPreview(read.files);
+    const preview = openLibraryPreview(read.files, { run: runFormat });
     openLibrary.value?.dispose();
     openLibrary.value = preview;
     return { kind: 'opened' };

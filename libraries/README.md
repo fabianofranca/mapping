@@ -67,6 +67,6 @@ Without `minSize`, because there is no official minimum on both axes: the contai
 
 The fonts (`fonts/`) come in the package: Roboto 400 and 500 in `.woff2` (Latin subset, Fontsource 5.3.0, OFL license in `fonts/LICENSE-Roboto.txt`; see `material3-compose/fonts/LEIA-ME.txt`), so the library validates **with no warning at all**. The test `tests/model/material3ComposeLibrary.test.ts` validates the package.
 
-## Runnable origin example
+## Runnable plugin example
 
-The example of `origins`, `sources` and `migrations` is not a ready-to-use library: it is `examples/libraries/sdui-backend/` (a fictional external system that describes screens in JSON, with six types). A real library does not describe anyone's backend, so `material3-compose` does not get an origin.
+The example of a file format plugin (`fileFormats`), `sources` and `migrations` is not a ready-to-use library: it is `examples/libraries/sdui-backend/` (a fictional external system that describes screens in JSON, with six types; its `sdui` plugin reads and writes the JSON) and `examples/libraries/measured/` (the `dom` plugin, which reads the measured rectangles of a web page). A real library does not describe anyone's backend, so `material3-compose` does not get a plugin like these.

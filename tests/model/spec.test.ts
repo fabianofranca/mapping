@@ -124,7 +124,7 @@ describe('specialization examples', () => {
 /** Each case: the mutation and the path (and excerpt) expected in the message. */
 const semantic: [string, (s: Json) => void, string][] = [
   ['wrong format', (s) => (s.format = 'x'), 'format:'],
-  ['wrong formatVersion', (s) => (s.formatVersion = 22), 'formatVersion:'],
+  ['wrong formatVersion', (s) => (s.formatVersion = 23), 'formatVersion:'],
   ['missing id', (s) => delete s.id, 'id:'],
   ['missing name', (s) => delete s.name, 'name:'],
   ['version zero', (s) => (s.version = 0), 'version:'],
@@ -331,7 +331,7 @@ describe('format validation (13.2)', () => {
 /** Purely structural errors: the JSON Schema must reject them too. */
 const structural: [string, (s: Json) => void][] = [
   ['wrong format', (s) => (s.format = 'x')],
-  ['wrong formatVersion', (s) => (s.formatVersion = 22)],
+  ['wrong formatVersion', (s) => (s.formatVersion = 23)],
   ['missing id', (s) => delete s.id],
   ['version zero', (s) => (s.version = 0)],
   ['key with a space', (s) => (s.layers[0].annotationTypes[0].fields[0].key = 'a b')],
@@ -434,14 +434,14 @@ describe('formatVersion 1 e 2', () => {
     expect(parseSpec(withoutPlatforms(base())).ok).toBe(true);
   });
 
-  it('formatVersion outside 1 to 21 is rejected, with the valid list in the message', () => {
-    for (const bad of [0, 22, '2', null]) {
+  it('formatVersion outside 1 to 22 is rejected, with the valid list in the message', () => {
+    for (const bad of [0, 23, '2', null]) {
       const spec = { ...base(), formatVersion: bad };
       const errors = errorsOf(parseSpec(spec));
       expect(
         errors.some((e) =>
           e.startsWith(
-            'formatVersion: must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 or 21',
+            'formatVersion: must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21 or 22',
           ),
         ),
       ).toBe(true);
@@ -713,7 +713,7 @@ describe('formatVersion 2 validation (platforms and code)', () => {
 
 /** Structural v2 errors that the JSON Schema must reject too. */
 const structuralV2: [string, (s: Json) => void][] = [
-  ['formatVersion 22', (s) => (s.formatVersion = 22)],
+  ['formatVersion 23', (s) => (s.formatVersion = 23)],
   ['platforms[].id outside the format', (s) => (s.platforms[0].id = 'Android')],
   ['platforms[].name missing', (s) => delete s.platforms[0].name],
   ['platforms[] with an unknown property', (s) => (s.platforms[0].extra = 1)],
@@ -763,7 +763,7 @@ describe('zod × JSON Schema consistency (formatVersion 2)', () => {
   it('the JSON Schema declares the same versions, field types and properties as zod', () => {
     const schema = jsonSchema as Json;
     expect(schema.properties.formatVersion.enum).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
     ]);
     expect(Object.keys(schema.$defs.annotationType.properties)).toContain('sources');
     expect(Object.keys(schema.$defs.tableField.properties)).toContain('sources');

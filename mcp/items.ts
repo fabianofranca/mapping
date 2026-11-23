@@ -37,19 +37,10 @@ export const KIND_NAMES: Record<ItemKind, string> = {
   a: 'annotation',
 };
 
-/** The kind with an indefinite article (`a marking`, `a container`), for messages. */
-export const KIND_WITH_ARTICLE: Record<ItemKind, string> = {
-  m: 'a marking',
-  i: 'a container',
-  a: 'an annotation',
-};
+// The messages' kind names live in the model (`batchRefs.ts`), which the batch and the plugin-result applier share.
+import { INVALID_REF_HINT, KIND_NOT_FOUND, KIND_WITH_ARTICLE } from '../src/model';
 
-/** `marking not found`, `container not found`: the message names the kind. */
-export const KIND_NOT_FOUND: Record<ItemKind, string> = {
-  m: 'marking not found',
-  i: 'container not found',
-  a: 'annotation not found',
-};
+export { INVALID_REF_HINT, KIND_NOT_FOUND, KIND_WITH_ARTICLE };
 
 const PATH_SEPARATOR = ' › ';
 
@@ -171,10 +162,6 @@ export interface ResolvedItem {
   /** The part of the annotation the reference designates (`/f/`, `/e/` or `/r/`); absent in an item reference. */
   readonly sub?: SubRef;
 }
-
-/** Hint of `invalid-ref`: the strict format and what to do with the old one. */
-export const INVALID_REF_HINT =
-  'use the reference mapping://<project>/<m|i|a|p>/<code>, the URL only, with the project encoded (e.g. mapping://My%20Project/m/3f2a9c1e); references with the path in parentheses are of the old format: copy again from the app';
 
 export const ACCEPTED_FORMATS = [
   'mapping://project/m/3f2a9c1e',

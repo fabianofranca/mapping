@@ -1,15 +1,25 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 15,
+  "formatVersion": 22,
   "id": "measured",
   "name": "Measured layout",
   "version": 1,
-  "description": "Example of the measured origin: the tree of rectangles of a page (measured in a browser) becomes markings through the sources of the Button and Card types. Containment comes from the geometry.",
-  "origins": [
+  "description": "Example of a measured page as a file format: the tree of rectangles of a page (measured in a browser) becomes markings through the plugin of the `dom` format, which matches each node to the Button and Card types by their `sources`. Containment comes from the geometry.",
+  "fileFormats": [
     {
-      "system": "dom",
+      "id": "dom",
       "name": "Measured page",
-      "kind": "measured"
+      "extension": "json",
+      "plugin": "plugins/dom.js",
+      "contract": 1,
+      "scope": "container",
+      "description": "The measured tree of a page, bare or { tree, scale?, offset? }: each node becomes a marking of the type its id, class or type matches in the sources (the geometry decides who contains whom). A node with no type or with an empty rectangle is left out with a warning.",
+      "examples": [
+        {
+          "name": "Page",
+          "file": "examples/page.measured.json"
+        }
+      ]
     }
   ],
   "layers": [

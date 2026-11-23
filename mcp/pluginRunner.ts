@@ -7,7 +7,11 @@ import {
   type QuickJSWASMModule,
 } from 'quickjs-emscripten-core';
 import wasmBytes from 'wasm:quickjs';
-import { FORMAT_PLUGIN_LIMITS } from '../src/model';
+import {
+  FORMAT_PLUGIN_LIMITS,
+  type FormatOutcome,
+  type FormatRunner,
+} from '../src/model';
 import { ToolError } from './errors';
 
 // The executor of the format plugins (`fileFormats`, stage #1923, decisions 11, 15, 16 and 18).
@@ -485,3 +489,26 @@ export async function runPlugin(
 export function pluginToolError(failure: PluginFailure): ToolError {
   return new ToolError(failure.code, failure.message, failure.details);
 }
+
+/**
+ * `runPlugin` as the model's `FormatRunner` (the shape the shared format checks and the app's executor
+ * have): the failure keeps its code and message and says whether the plugin failed while loading.
+ */
+export const quickJsRunner: FormatRunner = async (source, fn, args, context) => {
+  const run = await runPlugin(source, fn, args, {
+    ...(context === undefined
+      ? {}
+      : { format: context.format, pluginPath: context.pluginPath }),
+  });
+  if (run.ok) return run satisfies FormatOutcome;
+  const { code, message, details } = run.failure;
+  const phase = details['phase'];
+  return {
+    ok: false,
+    failure: {
+      code,
+      message,
+      ...(phase === 'load' || phase === 'call' ? { phase } : {}),
+    },
+  };
+};

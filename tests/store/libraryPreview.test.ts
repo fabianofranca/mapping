@@ -1,9 +1,16 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import type { LoadedFont } from '../../src/model/components/library';
 import type { FontRegistry } from '../../src/storage/fonts';
 import { openLibraryPreview } from '../../src/store/libraryPreview';
 import { material3Package } from '../storage/packageFixture';
 import { pngBytes } from '../support/imageBytes';
+import {
+  FORMAT_LIB_DIR,
+  FORMAT_LIB_SPEC_FILE,
+  behaviorsOf,
+  runnerOf,
+} from '../support/notesFormat';
 
 // B5: library opened without a project: catalog and fonts in memory.
 
@@ -81,5 +88,84 @@ describe('openLibraryPreview', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+});
+
+// Stage #2035, AF5 (decision 13): opening a library from the home screen runs the formats' checks, and the
+// Catalog counts their problems in its validation line; without a runner nothing runs.
+
+function notesPackage(plugin: string): Map<string, string | Blob> {
+  return new Map<string, string | Blob>([
+    [
+      FORMAT_LIB_SPEC_FILE,
+      readFileSync(`${FORMAT_LIB_DIR}/${FORMAT_LIB_SPEC_FILE}`, 'utf8'),
+    ],
+    ['plugins/notes.js', plugin],
+    [
+      'examples/notes.txt',
+      new Blob([readFileSync(`${FORMAT_LIB_DIR}/examples/notes.txt`)]),
+    ],
+  ]);
+}
+
+describe('openLibraryPreview: the file formats', () => {
+  const run = (plugin: string) => runnerOf(behaviorsOf({ 'plugins/notes.js': plugin }));
+
+  it('runs the format checks and publishes their problems at fileFormats[0]', async () => {
+    const { registry } = fakeRegistry();
+    const preview = openLibraryPreview(notesPackage('THROWS-ON-LOAD'), {
+      fonts: registry,
+      run: run('THROWS-ON-LOAD'),
+    });
+    expect(preview.formatIssues.value).toEqual([]);
+    await vi.waitFor(() => expect(preview.formatIssues.value).toHaveLength(1));
+    expect(preview.formatIssues.value[0]).toMatchObject({
+      path: 'fileFormats[0]',
+      severity: 'error',
+    });
+    preview.dispose();
+  });
+
+  it('a package whose formats work has no format problem', async () => {
+    const { registry } = fakeRegistry();
+    const checked = vi.fn(run('NOTES'));
+    const preview = openLibraryPreview(notesPackage('NOTES'), {
+      fonts: registry,
+      run: checked,
+    });
+    await vi.waitFor(() => expect(checked).toHaveBeenCalled());
+    expect(preview.formatIssues.value).toEqual([]);
+    preview.dispose();
+  });
+
+  it('without a runner no plugin runs', () => {
+    const { registry } = fakeRegistry();
+    const preview = openLibraryPreview(notesPackage('THROWS-ON-LOAD'), {
+      fonts: registry,
+    });
+    expect(preview.formatIssues.value).toEqual([]);
+    preview.dispose();
+  });
+
+  it('a library without formats runs nothing', () => {
+    const { registry } = fakeRegistry();
+    const checked = vi.fn(run('NOTES'));
+    const preview = openLibraryPreview(material3Package(), {
+      fonts: registry,
+      run: checked,
+    });
+    expect(checked).not.toHaveBeenCalled();
+    preview.dispose();
+  });
+
+  it('closing the preview while the checks run drops their result', async () => {
+    const { registry } = fakeRegistry();
+    const preview = openLibraryPreview(notesPackage('THROWS-ON-LOAD'), {
+      fonts: registry,
+      run: run('THROWS-ON-LOAD'),
+    });
+    preview.dispose();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(preview.formatIssues.value).toEqual([]);
   });
 });
