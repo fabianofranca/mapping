@@ -4,6 +4,7 @@
 // The rules are pure and tested; returning `null` makes the browser refuse the assignment with
 // `TypeError` and emit `securitypolicyviolation`. No `createScript`: script by string is refused.
 import { reportError } from '../utils/report';
+import { SANDBOX_SRCDOC } from './formatSandbox';
 
 /**
  * The service worker is registered with this URL (`src/app/pwa.ts`): the only one accepted in
@@ -12,12 +13,15 @@ import { reportError } from '../utils/report';
 export const SERVICE_WORKER_URL = './sw.js';
 
 /**
- * Only the empty string becomes HTML: Konva does `container.innerHTML = ''` when destroying the stage
- * (`node_modules/konva/lib/Stage.js`). Preact only uses `innerHTML` with `dangerouslySetInnerHTML`,
+ * Only the empty string and the sandbox's own document become HTML. The empty string: Konva does
+ * `container.innerHTML = ''` when destroying the stage (`node_modules/konva/lib/Stage.js`). The
+ * sandbox's document (`SANDBOX_SRCDOC`, a fixed constant): the hidden iframe that runs a format
+ * plugin takes it as its `srcdoc` (`src/app/formatRunner.ts`); any other text, even one that
+ * differs by a character, is refused. Preact only uses `innerHTML` with `dangerouslySetInnerHTML`,
  * which the code does not use.
  */
 export function createHTML(input: string): string | null {
-  return input === '' ? '' : null;
+  return input === '' || input === SANDBOX_SRCDOC ? input : null;
 }
 
 /**

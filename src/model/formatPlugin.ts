@@ -43,6 +43,57 @@ export type FormatPluginLimit = keyof typeof FORMAT_PLUGIN_LIMITS;
 /** A plugin file larger than this is refused (level 1 of the library validator). */
 export const MAX_PLUGIN_BYTES = FORMAT_PLUGIN_LIMITS.pluginBytes;
 
+// -------------------------------------------------------------------------------- the executor
+
+/** The two functions a plugin may define. */
+export type FormatFunction = 'generate' | 'parse';
+
+/** The codes of a failed call (the error codes of #1923, decision 9). */
+export type FormatFailureCode =
+  'plugin-failed' | 'plugin-timeout' | 'plugin-limit' | 'plugin-output-invalid';
+
+/**
+ * A failed call: the code, the plugin's own message and, for an error thrown by the plugin's
+ * code, the `line` and `column` in the plugin's text (1-based).
+ */
+export interface FormatFailure {
+  readonly code: FormatFailureCode;
+  readonly message: string;
+  readonly line?: number;
+  readonly column?: number;
+  /**
+   * `load` when the plugin's text itself failed (it threw while loading, or went past a limit then), `call` when
+   * its function failed. The format checks tell the two apart; an executor that cannot says nothing.
+   */
+  readonly phase?: 'load' | 'call';
+}
+
+/** What a call gives back: the JSON value the function returned, or the typed failure. */
+export type FormatOutcome =
+  | { readonly ok: true; readonly value: unknown }
+  | { readonly ok: false; readonly failure: FormatFailure };
+
+/**
+ * Runs `fn` of the plugin in `source` with `args` (`[projection]` for `generate`, `[text,
+ * projection]` for `parse`). The executor of the app (`src/app/formatRunner.ts`, a sandboxed
+ * iframe with a Worker) and the MCP's (`mcp/pluginRunner.ts`, QuickJS) are both of this shape.
+ * Never rejects: every failure is an outcome.
+ */
+export type FormatRunner = (
+  source: string,
+  fn: FormatFunction,
+  args: readonly unknown[],
+  context?: FormatCallContext,
+) => Promise<FormatOutcome>;
+
+/** Where a call comes from, so an executor can word its messages ("the plugin of data-model/csv …"); it may ignore it. */
+export interface FormatCallContext {
+  /** `<specId>/<formatId>`. */
+  readonly format: string;
+  /** The plugin's path in the package. */
+  readonly pluginPath: string;
+}
+
 // ---------------------------------------------------------------------------------- the input
 
 /** Top-level keys of the projection, in the order they are written (decision 13). */

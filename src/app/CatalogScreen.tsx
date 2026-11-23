@@ -4,6 +4,7 @@ import { Button } from '../ui/controls';
 import { Icon } from '../ui/icons';
 import type { LibraryPreview } from '../store/libraryPreview';
 import { closeLibrary } from './controller';
+import { runFormat } from './formatRunner';
 import { requestHomeFocus } from './homeFocus';
 import { NarrowWindowNotice, useNarrowWindow } from './NarrowWindow';
 
@@ -47,6 +48,8 @@ export function CatalogScreen({ library }: CatalogScreenProps) {
             images={{ source: library.images, epoch: library.imagesEpoch.value }}
             project={null}
             layout="split"
+            formatRunner={runFormat}
+            extraIssues={library.formatIssues.value}
           />
         </div>
       </main>

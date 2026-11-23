@@ -10,14 +10,14 @@ import { describe, expect, it } from 'vitest';
  * raised the ceiling by 500 (to 200,500): the additions of R23.12 and R23.13 (dark theme) took
  * block 5 to 200.2 thousand, and the five blocks of that time were already stuck to the ceiling. Stage #824 (ID8, English
  * translation plus the new steps R8.6 and R11.15) left it as it was: the largest block, 3, measures 200,463. CL1 of #1134
- * (#2012) raised it by another 500 (to 201,000): the text fixes of R3.19, R11.4, R17.32, R17.59 and R29.10 took block 5 to 200.7 thousand. TX1 of #2081 raised it by 6,000 (to 207,000): the `texto` type of the notes library (R12.45 to R12.53) took block 3 from 199.5 to 207.0 thousand. TX2 raised it by another 6,000 (to 213,000): the update steps R12.54 to R12.56 took block 3 to 210.6 thousand. Stage #2193 (BR1) rebalanced the blocks instead of raising the ceiling again: five scripts changed block and the largest block measures 207,328; the sync SM1 with #1881 (R43) moved R40 and R2 and left it at 211,398. Stage #2625 (RH1) went to seven blocks instead of raising it again: six scripts changed block and the largest block, R25's, measures 205,832.
+ * (#2012) raised it by another 500 (to 201,000): the text fixes of R3.19, R11.4, R17.32, R17.59 and R29.10 took block 5 to 200.7 thousand. TX1 of #2081 raised it by 6,000 (to 207,000): the `texto` type of the notes library (R12.45 to R12.53) took block 3 from 199.5 to 207.0 thousand. TX2 raised it by another 6,000 (to 213,000): the update steps R12.54 to R12.56 took block 3 to 210.6 thousand. Stage #2193 (BR1) rebalanced the blocks instead of raising the ceiling again: five scripts changed block and the largest block measures 207,328; the sync SM1 with #1881 (R43) moved R40 and R2 and left it at 211,398. AF7 of #2035 raised it by another 7,000 (to 220,000): script R44 (the `measured` library as a `dom` format, 18 steps) took block 4 from 211.0 to 219.2 thousand, and no other block had the room. Stage #2625 (RH1) went to seven blocks so that R25's block keeps room to grow: six scripts changed block and, with R44 in block 3, the largest block measures 206,061 (R25's).
  */
-const MAX_BLOCK_GUIDE_CHARS = 213_000;
+const MAX_BLOCK_GUIDE_CHARS = 220_000;
 
 /**
  * Stage #1533 (TE1, decisions 3 and 5): the limit above measures what the tester reads, the block's guide without the
  * on-demand sections (`mandatoryOnly`: the mandatory base plus the test scripts), and the base of each block
- * (without the test scripts, which come out through `passo`) has up to 45 thousand characters (the largest base, block 2, measures 43,051 after the seventh block of #2625).
+ * (without the test scripts, which come out through `passo`) has up to 45 thousand characters (the largest base, block 2, measures 42,922 after the seventh block of #2625).
  */
 const MAX_BLOCK_BASE_CHARS = 45_000;
 
@@ -26,7 +26,7 @@ const CLOUD = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
 
 const STEP_RE = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^|]*\|/;
 
-/** The steps of the main test scripts (R0 to R43), in the order of the guide, outside the on-demand test scripts. */
+/** The steps of the main test scripts (R0 to R44), in the order of the guide, outside the on-demand test scripts. */
 function guideSteps(): string[] {
   const lines = GUIDE.split('\n');
   const start = lines.findIndex((l) => /^## 8\. Test scripts/.test(l));
@@ -118,14 +118,14 @@ const blockOf = (step: string): number[] =>
   blocks.filter((b) => b.steps.includes(step)).map((b) => b.n);
 
 describe('split of the full round into blocks (stages #424, #841, #2024 and #2625)', () => {
-  it('the guide has the steps from R0 to R43 and the table has 7 blocks numbered 1 to 7', () => {
+  it('the guide has the steps from R0 to R44 and the table has 7 blocks numbered 1 to 7', () => {
     expect(steps.length).toBeGreaterThan(200);
     expect(steps.some((s) => s.startsWith('R17.'))).toBe(true);
     expect(steps.some((s) => s.startsWith('R26.'))).toBe(true);
     expect(blocks.map((b) => b.n)).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
-  it('every step from R0 to R43 is in exactly one block, and R0 in all of them', () => {
+  it('every step from R0 to R44 is in exactly one block, and R0 in all of them', () => {
     for (const s of steps) {
       const where = blockOf(s);
       if (scriptOf(s) === 'R0') expect(where, s).toEqual([1, 2, 3, 4, 5, 6, 7]);

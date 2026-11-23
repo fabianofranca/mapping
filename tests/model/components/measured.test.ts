@@ -143,9 +143,9 @@ describe('measured origin: parse → write → re-read cycle', () => {
     const again = parseSpec(JSON.parse(JSON.stringify(first.spec)));
     expect(again.ok).toBe(true);
     if (!again.ok) return;
-    expect(importMeasured([again.spec], { system: 'dom' } as never)).not.toMatchObject({
-      error: expect.stringContaining('not declared'),
-    });
+    // AF7: the example library declares the `dom` file format, no `origins`.
+    expect(again.spec.origins).toBeUndefined();
+    expect(again.spec.fileFormats?.map((f) => f.id)).toEqual(['dom']);
   });
 });
 

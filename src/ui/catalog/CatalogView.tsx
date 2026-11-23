@@ -4,15 +4,18 @@ import {
   type Catalog,
   type CatalogDocument,
   type CatalogEntry,
+  type FormatRunner,
   type Project,
   findEntry,
 } from '../../model';
+import type { AppLibraryIssue } from '../../storage/specPackage';
 import { Button, TextField } from '../controls';
 import { ContainerMark } from '../ContainerMark';
 import { TypeNoticeBadge } from '../NoticeBadge';
 import { Dialog } from '../Dialog';
 import { LibraryIssueList } from '../LibraryIssueList';
 import { CatalogPage } from './CatalogPage';
+import { FormatsPage } from './FormatsPage';
 import { LibraryDocumentPage } from './LibraryDocumentPage';
 import {
   type CatalogImages,
@@ -41,9 +44,19 @@ export interface CatalogViewProps {
   readonly initialTypeId?: string;
   /** Measurer, rasterizer and cache; the default uses Konva (tests inject a fake). */
   readonly renderer?: CatalogRenderer;
+  /**
+   * Runs the plugins of the library's formats (the sandbox's runner): the "File formats" page draws the
+   * examples with it; without it the examples are not drawn.
+   */
+  readonly formatRunner?: FormatRunner;
+  /** Problems found after the validation (the formats' checks, which run a plugin): counted in the validation line. */
+  readonly extraIssues?: readonly AppLibraryIssue[];
 }
 
 const ISSUES_COLLAPSE_AT = 6;
+const NO_ISSUES: readonly AppLibraryIssue[] = [];
+/** The `data-type-id` of the list item that opens the formats page (no type has this id: `:` is not allowed). */
+const FORMATS_ID = 'formats:';
 
 /** Resolves `mapping://<specId>/<typeId>` (or `mapping://<typeId>`); `null` if it does not match. */
 export function resolveCatalogLink(
@@ -90,6 +103,8 @@ export function CatalogView({
   addDisabledReason,
   initialTypeId,
   renderer,
+  formatRunner,
+  extraIssues = NO_ISSUES,
 }: CatalogViewProps) {
   const engine = renderer ?? defaultCatalogRenderer();
   const initial =
@@ -99,6 +114,7 @@ export function CatalogView({
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(initial);
   const [documentId, setDocumentId] = useState<string | null>(null);
+  const [formatsOpen, setFormatsOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(layout === 'list' && initial !== null);
   const [issuesOpen, setIssuesOpen] = useState<boolean | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -130,7 +146,27 @@ export function CatalogView({
     (selectedId === null ? undefined : findEntry(catalog, selectedId)) ??
     (layout === 'split' ? firstEntry : undefined);
 
-  const { errors, warnings } = catalog.report;
+  const issues = useMemo(
+    () =>
+      extraIssues.length === 0
+        ? catalog.report.issues
+        : [...catalog.report.issues, ...extraIssues],
+    [catalog, extraIssues],
+  );
+  const errors = useMemo(
+    () => [
+      ...catalog.report.errors,
+      ...extraIssues.filter((i) => i.severity === 'error'),
+    ],
+    [catalog, extraIssues],
+  );
+  const warnings = useMemo(
+    () => [
+      ...catalog.report.warnings,
+      ...extraIssues.filter((i) => i.severity !== 'error'),
+    ],
+    [catalog, extraIssues],
+  );
   const issueCount = errors.length + warnings.length;
   const issuesShown = issuesOpen ?? issueCount < ISSUES_COLLAPSE_AT;
 
@@ -144,13 +180,22 @@ export function CatalogView({
 
   const selectDocument = (id: string) => {
     setNotice(null);
+    setFormatsOpen(false);
     setDocumentId(id);
+    open();
+  };
+
+  const selectFormats = () => {
+    setNotice(null);
+    setDocumentId(null);
+    setFormatsOpen(true);
     open();
   };
 
   const select = (typeId: string) => {
     setNotice(null);
     setDocumentId(null);
+    setFormatsOpen(false);
     setSelectedId(typeId);
     open();
   };
@@ -193,26 +238,35 @@ export function CatalogView({
     next.focus();
   };
 
-  const page =
-    selectedDocument !== undefined ? (
-      <LibraryDocumentPage document={selectedDocument} onLink={onLink} />
-    ) : (
-      selected !== undefined && (
-        <CatalogPage
-          catalog={catalog}
-          entry={selected}
-          specId={specId}
-          version={version}
-          renderer={engine}
-          fontsEpoch={fontsEpoch}
-          {...(images === undefined ? {} : { images })}
-          project={project}
-          onLink={onLink}
-          {...(onAddToScreen === undefined ? {} : { onAddToScreen })}
-          {...(addDisabledReason === undefined ? {} : { addDisabledReason })}
-        />
-      )
-    );
+  const page = formatsOpen ? (
+    <FormatsPage
+      catalog={catalog}
+      specId={specId}
+      version={version}
+      renderer={engine}
+      fontsEpoch={fontsEpoch}
+      images={images}
+      run={formatRunner}
+    />
+  ) : selectedDocument !== undefined ? (
+    <LibraryDocumentPage document={selectedDocument} onLink={onLink} />
+  ) : (
+    selected !== undefined && (
+      <CatalogPage
+        catalog={catalog}
+        entry={selected}
+        specId={specId}
+        version={version}
+        renderer={engine}
+        fontsEpoch={fontsEpoch}
+        {...(images === undefined ? {} : { images })}
+        project={project}
+        onLink={onLink}
+        {...(onAddToScreen === undefined ? {} : { onAddToScreen })}
+        {...(addDisabledReason === undefined ? {} : { addDisabledReason })}
+      />
+    )
+  );
 
   return (
     <div class={layout === 'list' ? 'catalog catalog-list-layout' : 'catalog'}>
@@ -244,7 +298,7 @@ export function CatalogView({
           )}
         </p>
         {errors.length > 0 && <p class="muted">{t('catalog.view.hasErrors')}</p>}
-        {issuesShown && <LibraryIssueList issues={catalog.report.issues} />}
+        {issuesShown && <LibraryIssueList issues={issues} />}
       </section>
 
       <div class="catalog-body">
@@ -268,7 +322,9 @@ export function CatalogView({
                         type="button"
                         class="catalog-entry"
                         data-type-id={`doc:${document.id}`}
-                        aria-current={document.id === documentId ? 'true' : undefined}
+                        aria-current={
+                          !formatsOpen && document.id === documentId ? 'true' : undefined
+                        }
                         onClick={() => selectDocument(document.id)}
                       >
                         <span class="catalog-entry-name">{document.name}</span>
@@ -298,6 +354,7 @@ export function CatalogView({
                             class="catalog-entry"
                             data-type-id={entry.type.id}
                             aria-current={
+                              !formatsOpen &&
                               selectedDocument === undefined &&
                               selected?.type.id === entry.type.id
                                 ? 'true'
@@ -316,6 +373,24 @@ export function CatalogView({
                 </section>
               ))
             )}
+            {catalog.formats.length > 0 && needle === '' && (
+              <section class="catalog-layer" aria-label={t('catalog.formats')}>
+                <ul class="catalog-entries">
+                  <li>
+                    {/* Exception to Button: list option of the formats page (docs/DESIGN-SYSTEM.md, "Loose buttons") */}
+                    <button
+                      type="button"
+                      class="catalog-entry"
+                      data-type-id={FORMATS_ID}
+                      aria-current={formatsOpen ? 'true' : undefined}
+                      onClick={selectFormats}
+                    >
+                      <span class="catalog-entry-name">{t('catalog.formats')}</span>
+                    </button>
+                  </li>
+                </ul>
+              </section>
+            )}
           </div>
         </nav>
 
@@ -333,9 +408,13 @@ export function CatalogView({
 
       {layout === 'list' &&
         dialogOpen &&
-        (selectedDocument ?? selected) !== undefined && (
+        (formatsOpen || (selectedDocument ?? selected) !== undefined) && (
           <Dialog
-            title={selectedDocument?.name ?? selected?.type.name ?? ''}
+            title={
+              formatsOpen
+                ? t('catalog.formats')
+                : (selectedDocument?.name ?? selected?.type.name ?? '')
+            }
             size="lg"
             returnFocus={() => openerRef.current}
             onCancel={() => setDialogOpen(false)}
