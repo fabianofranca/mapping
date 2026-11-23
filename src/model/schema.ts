@@ -22,6 +22,11 @@ import {
 const id = z.string().min(1);
 const hexColor = z.string().regex(HEX_COLOR_RE);
 const finite = z.number().finite();
+/** The background of a container without a file: `#RRGGBB` or `{ "$token": "<name>" }` (v24). */
+export const containerBackgroundSchema = z.union([
+  hexColor,
+  z.object({ $token: z.string().regex(/^[a-z0-9][a-z0-9-]*$/) }).strict(),
+]);
 const readingDirection = z.enum(READING_DIRECTIONS);
 const containerClassName = z.string().regex(CONTAINER_CLASS_ID_RE);
 
@@ -102,7 +107,7 @@ export const containerSchema = z.object({
   markingColor: hexColor.nullable(),
   locked: z.boolean(),
   source: sourceSchema.nullable(),
-  background: hexColor.nullable(),
+  background: containerBackgroundSchema.nullable(),
   /** Drawing mode the container pins (v18); absent or `null` = follows the project. */
   drawingMode: drawingModeMapSchema
     .nullable()

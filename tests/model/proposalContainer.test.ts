@@ -223,3 +223,64 @@ describe('proposal: container', () => {
     expect(withTo('size', { width: 10, height: 10 }).ok).toBe(true);
   });
 });
+
+describe('proposal: container background token (NV4)', () => {
+  const withTokens = (p: Project): Project => ({
+    ...p,
+    specializations: [
+      {
+        id: 'ui',
+        spec: { layers: [], types: [], tokens: { values: { surface: '#F0F0F0' } } },
+      },
+    ] as never,
+  });
+
+  it('a creation with a token is written in formatVersion 12 and applies even if the token is gone', () => {
+    const base = withTokens(sampleProject());
+    const after = addBackgroundContainer(base, {
+      id: 'B2',
+      width: 100,
+      height: 100,
+      background: { $token: 'surface' },
+    });
+    const p = propose(base, after);
+    expect(p.formatVersion).toBe(12);
+    expect(changeOf(p, 'image', 'B2')).toMatchObject({
+      kind: 'create',
+      to: { background: { $token: 'surface' } },
+    });
+    const gone: Project = { ...base, specializations: [] };
+    const applied = applyAccepted(gone, accept(gone, p), AT);
+    if (!applied.ok) throw new Error('blocked');
+    expect(applied.project.containers.find((c) => c.id === 'B2')!.background).toEqual({
+      $token: 'surface',
+    });
+  });
+
+  it('a background change from #RRGGBB to a token and back; a #RRGGBB-only proposal is not 12', () => {
+    const base = withTokens(bgContainer(sampleProject()));
+    const token = setBackgroundContainer(base, 'B1', {
+      background: { $token: 'surface' },
+    });
+    const p = propose(base, token);
+    expect(p.formatVersion).toBe(12);
+    const back = setBackgroundContainer(token, 'B1', { background: '#000000' });
+    const q = propose(token, back);
+    expect(q.formatVersion).toBe(12);
+    const plain = setBackgroundContainer(base, 'B1', { background: '#000000' });
+    expect(propose(base, plain).formatVersion).toBeLessThan(12);
+  });
+
+  it('a proposal below 12 with a token is refused on reading', () => {
+    const base = withTokens(bgContainer(sampleProject()));
+    const token = setBackgroundContainer(base, 'B1', {
+      background: { $token: 'surface' },
+    });
+    const json = {
+      ...JSON.parse(serializeProposal(propose(base, token))),
+      formatVersion: 11,
+    };
+    const parsed = parseProposal(json);
+    expect(parsed.ok).toBe(false);
+  });
+});

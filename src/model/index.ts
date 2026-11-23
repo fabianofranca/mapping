@@ -31,6 +31,7 @@ export * from './freePlacement';
 export * from './density';
 export * from './direction';
 export * from './drawingMode';
+export * from './containerBackground';
 export * from './imageOptimization';
 export * from './exif';
 export { detectFormat, readSize, type ImageFormat } from './imageHeader';

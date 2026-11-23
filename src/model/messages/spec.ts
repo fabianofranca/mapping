@@ -12,6 +12,16 @@ export const specMessages = {
   'spec.mustBeObject': 'must be an object',
   'spec.notEmpty': 'cannot be empty',
   'spec.colorInvalid': 'invalid color; use the format #RRGGBB',
+  'spec.backgroundInvalid':
+    'invalid background; use #RRGGBB or { "$token": "name" } with a token name',
+  // A token read as a color (container preset and origin screen background, `formatVersion` 23)
+  'spec.tokenMissing': 'the token "{name}" does not exist in the specialization tokens',
+  'spec.tokenNumberNotColor':
+    'the token "{name}" is a number, but a color is expected here',
+  'spec.tokenFamilyNotColor':
+    'the token "{name}" is a font family, but a color is expected here',
+  'spec.tokenCompositeNotColor':
+    'the token "{name}" is a composite, but a color is expected here',
   'spec.tagInvalid': 'invalid tag; use [a-z0-9-]+',
   'spec.keyInvalid': 'invalid key; use only [A-Za-z0-9_], without spaces',
   'spec.keyReserved': 'a key cannot start with "_" (reserved)',

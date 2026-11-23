@@ -166,6 +166,14 @@ export const templatePtBR: {
   'model.spec.mustBeObject': 'deve ser um objeto',
   'model.spec.notEmpty': 'não pode ser vazio',
   'model.spec.colorInvalid': 'cor inválida; use o formato #RRGGBB',
+  'model.spec.backgroundInvalid':
+    'fundo inválido; use #RRGGBB ou { "$token": "nome" } com o nome de um token',
+  'model.spec.tokenMissing': 'o token "{name}" não existe nos tokens da especialização',
+  'model.spec.tokenNumberNotColor': 'o token "{name}" é número, mas aqui se espera cor',
+  'model.spec.tokenFamilyNotColor':
+    'o token "{name}" é família de fonte, mas aqui se espera cor',
+  'model.spec.tokenCompositeNotColor':
+    'o token "{name}" é composto, mas aqui se espera cor',
   'model.spec.tagInvalid': 'etiqueta inválida; use [a-z0-9-]+',
   'model.spec.keyInvalid': 'chave inválida; use apenas [A-Za-z0-9_], sem espaços',
   'model.spec.keyReserved': 'chave não pode começar com "_" (reservado)',

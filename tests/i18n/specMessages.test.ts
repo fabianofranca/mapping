@@ -551,6 +551,42 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
     'spec.documentIdInvalid',
     (s) => (s.documents = [{ id: 'A b', name: 'N', doc: 'docs/a.md' }]),
   ],
+  [
+    'spec.backgroundInvalid',
+    (s) => (s.containers = [container({ background: { $token: 'A b' } })]),
+  ],
+  [
+    'spec.tokenMissing',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = { values: {} }),
+      (s.containers = [container({ background: { $token: 'x' } })])
+    ),
+  ],
+  [
+    'spec.tokenNumberNotColor',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = { values: { x: 8 } }),
+      (s.containers = [container({ background: { $token: 'x' } })])
+    ),
+  ],
+  [
+    'spec.tokenFamilyNotColor',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = { values: { x: 'Inter' } }),
+      (s.containers = [container({ background: { $token: 'x' } })])
+    ),
+  ],
+  [
+    'spec.tokenCompositeNotColor',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = { values: { x: { a: '#ffffff', b: '#000000' } } }),
+      (s.containers = [container({ background: { $token: 'x' } })])
+    ),
+  ],
   ['spec.mustBeNumber', (s) => (s.containers = [container({ width: 'x' })])],
   ['spec.mustBeInteger', (s) => (s.containers = [container({ width: 1.5 })])],
   ['spec.minOne', (s) => (s.containers = [container({ width: 0 })])],

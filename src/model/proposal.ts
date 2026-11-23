@@ -16,6 +16,7 @@ import {
   docRepoSchema,
   platformRepoSchema,
   sourceSchema,
+  containerBackgroundSchema,
 } from './schema';
 import { PLATFORM_ID_RE, formatSpecPath, specSchema, type SpecIssue } from './spec';
 import { CONTAINER_CLASS_ID_RE } from './containerClasses';
@@ -71,6 +72,37 @@ export const PROPOSAL_DRAWING_MODE_FORMAT_VERSION = 6;
  * carries one is written as 12 (one that does not keeps the version it had).
  */
 export const PROPOSAL_DRAWING_MODE_MAP_FORMAT_VERSION = 12;
+
+/**
+ * A container background that is a token reference (`{ "$token": … }`, schema v24) is also written in
+ * proposal 12: an earlier version would read the object as an invalid color.
+ */
+function isTokenBackground(value: JsonValue | undefined): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    typeof (value as { readonly $token?: JsonValue }).$token === 'string'
+  );
+}
+
+/** Does the proposal carry a container background token (a created container or the `background` field)? */
+export function usesBackgroundToken(changes: readonly Change[]): boolean {
+  return changes.some(
+    (c) =>
+      c.entity === 'image' &&
+      (isTokenBackground(c.field === 'background' ? c.to : undefined) ||
+        isTokenBackground(c.field === 'background' ? c.from : undefined) ||
+        isTokenBackground(valueBackground(c.to)) ||
+        isTokenBackground(valueBackground(c.from))),
+  );
+}
+
+function valueBackground(value: JsonValue): JsonValue | undefined {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as { readonly background?: JsonValue }).background
+    : undefined;
+}
 
 /** Does the proposal use the drawing mode (so that only `formatVersion` 6 represents it)? */
 export function usesDrawingMode(changes: readonly Change[]): boolean {
@@ -244,7 +276,10 @@ const VERSIONS_BY_FEATURE: readonly (readonly [
   (typeof PROPOSAL_FORMAT_VERSIONS)[number],
   (changes: readonly Change[]) => boolean,
 ])[] = [
-  [PROPOSAL_DRAWING_MODE_MAP_FORMAT_VERSION, usesDrawingModeMap],
+  [
+    PROPOSAL_DRAWING_MODE_MAP_FORMAT_VERSION,
+    (changes) => usesDrawingModeMap(changes) || usesBackgroundToken(changes),
+  ],
   [PROPOSAL_CONTAINER_CLASSES_FORMAT_VERSION, usesContainerClasses],
   [PROPOSAL_PAGES_FORMAT_VERSION, usesPages],
   [PROPOSAL_ANCHOR_FORMAT_VERSION, proposalUsesAnchor],
@@ -674,7 +709,7 @@ const entitySchemas: Record<ChangeEntity, z.ZodType> = {
 const imageFieldSchemas: Record<(typeof IMAGE_FIELDS)[number], z.ZodType> = {
   name: z.string().nullable(),
   file: imageFileValue,
-  background: hexColor,
+  background: containerBackgroundSchema,
   size: imageSizeValue,
   placement: placementSchema,
   markingColor: hexColor.nullable(),
@@ -960,6 +995,25 @@ function checkPagesVersion(
 }
 
 /**
+ * A background token exists from formatVersion 12: an earlier file with one (in the `background` field or in
+ * a created or removed container) is refused, as a reader of an earlier version would read it as an invalid color.
+ */
+function checkBackgroundTokenVersion(
+  p: { readonly formatVersion: number; readonly changes: readonly Change[] },
+  add: AddIssue,
+): void {
+  if (p.formatVersion >= PROPOSAL_DRAWING_MODE_MAP_FORMAT_VERSION) return;
+  p.changes.forEach((c, i) => {
+    if (usesBackgroundToken([c])) {
+      add(
+        ['changes', i, 'to'],
+        'a background token only exists in formatVersion 12 or later',
+      );
+    }
+  });
+}
+
+/**
  * Rules of the revision history (formatVersion 5): `revisions` is required in 5 and does not
  * exist before; a withdrawn change is no longer in `changes`; a new change enters the history
  * only once. Ids cited in `changed`, `added` and `notes` that no longer exist are history.
@@ -1070,6 +1124,7 @@ export const proposalSchema = z
     }
     checkRevisions(p, changeIds, add);
     checkPagesVersion(p, add);
+    checkBackgroundTokenVersion(p, add);
     const noteIds = new Set<string>();
     p.notes.forEach((n, i) => {
       if (noteIds.has(n.id)) add(['notes', i, 'id'], `duplicate id "${n.id}"`);

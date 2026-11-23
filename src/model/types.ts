@@ -7,6 +7,14 @@ import type { Spec } from './spec';
 export const SCHEMA_VERSION = 24;
 /** Drawing mode (v24): axis → entry of the specializations' `tokens` (the same shape as a token selection). */
 export type DrawingModeMap = TokenSelection;
+
+/** A container background that names a color token (schema v24): the name only. */
+export interface ContainerBackgroundToken {
+  readonly $token: string;
+}
+
+/** The background of a container without a file: `#RRGGBB` or a token reference. */
+export type ContainerBackground = string | ContainerBackgroundToken;
 /** The reading directions the file accepts (v20): single source of the type and the schemas (zod, MCP). */
 export const READING_DIRECTIONS = ['ltr', 'rtl'] as const;
 /** Reading direction (v20): left to right or right to left. */
@@ -92,8 +100,12 @@ export interface ProjectContainer {
   readonly locked: boolean;
   /** Identity in the source system (v8); `null` = no source. */
   readonly source: ExternalSource | null;
-  /** Background color (`#RRGGBB`) of the container with no file (v10); `null` on an image with a file. */
-  readonly background: string | null;
+  /**
+   * Background of the container with no file (v10): `#RRGGBB` or, since v24, `{ "$token": "<name>" }`
+   * (a color token of the applied specializations, resolved in the container's effective selection);
+   * `null` on an image with a file.
+   */
+  readonly background: ContainerBackground | null;
   /**
    * Drawing mode the container pins (v18; a map axis → entry since v24, e.g. `{ theme: "dark" }`); absent
    * or `null` = follows the project's. It pins only the axes it lists and follows the project in the
