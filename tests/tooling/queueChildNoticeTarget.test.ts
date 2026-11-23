@@ -1,8 +1,6 @@
 // @vitest-environment node
-// Bug #2704: a child's notice must reach the current coordinator whatever the number of switches.
-// The old coordinator writes a pointer in its own title, the child follows it before every message
-// to the coordinator, and the new coordinator archives the predecessor only once it is not working.
-// Text-only test (reads the delivery flow files).
+// Bug #2704: a child's notice reaches the current coordinator through every switch (title pointer,
+// followed by the child; the predecessor is archived only when idle). Text-only test.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { between, section } from '../support/textSlice';
@@ -45,7 +43,6 @@ describe('bug #2704 — child notices follow the coordinator through every switc
 
   it('the new session archives the predecessor only when it is not working', () => {
     const step4 = newSession.slice(newSession.indexOf('4. Check in `painel.py roles'));
-    expect(step4.length).toBeGreaterThan(0);
     expect(step4).toContain('`status_bucket`');
     expect(step4).toMatch(/not `working`/);
     expect(step4).toContain('next cycle');
