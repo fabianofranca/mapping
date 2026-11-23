@@ -119,7 +119,13 @@ export function ProposalCard({
         <Button
           size="sm"
           aria-label={`${t('thread.proposal.showAgain')}: ${title}`}
-          onClick={() => showQuickAgain(editor.ui, proposalId)}
+          onClick={() => {
+            showQuickAgain(editor.ui, proposalId);
+            // The button goes away with the click: the focus moves to the canvas, not the body.
+            queueMicrotask(() =>
+              document.querySelector<HTMLElement>('[data-canvas-area]')?.focus(),
+            );
+          }}
         >
           {t('thread.proposal.showAgain')}
         </Button>

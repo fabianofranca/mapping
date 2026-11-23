@@ -247,6 +247,7 @@
 /* Proposal card in a thread message (decision 36) */
 .proposal-card {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
   margin-bottom: var(--space-1);
@@ -258,7 +259,8 @@
 
 .proposal-card-text {
   display: flex;
-  flex: 1;
+  /* The buttons drop to their own row before the text gets narrower than this. */
+  flex: 1 1 calc(8 * var(--space-6));
   flex-direction: column;
   min-width: 0;
 }
