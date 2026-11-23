@@ -1,0 +1,143 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 23,
+  "id": "named-values",
+  "name": "Named values",
+  "version": 1,
+  "description": "A small design system written with the named values of formatVersion 23: two mode axes (theme and contrast), a base palette, semantic aliases (one derived with alpha), two composite values (the text style `title` and the shadow `raised`) and one deprecated token. The Card reads the whole composites in `font` and `shadow` and the colors by alias; the Badge reads one field (`title.size`). The Screen preset has a token as its background, so its board follows the theme.",
+  "tokens": {
+    "axes": {
+      "theme": ["light", "dark"],
+      "contrast": ["standard", "high"]
+    },
+    "values": {
+      "blue-600": "#1A73E8",
+      "blue-200": "#AECBFA",
+      "blue-900": "#0B3D91",
+      "gray-50": "#FAFAFA",
+      "gray-900": "#1F1F1F",
+      "gray-100": "#F2F2F2",
+      "surface": {
+        "$value": {
+          "$axis": "theme",
+          "light": { "$token": "gray-50" },
+          "dark": "#121212"
+        },
+        "$description": "The page and card background.",
+        "$group": "colors"
+      },
+      "ink": {
+        "$value": {
+          "$axis": "theme",
+          "light": {
+            "$axis": "contrast",
+            "standard": { "$token": "gray-900" },
+            "high": "#000000"
+          },
+          "dark": {
+            "$axis": "contrast",
+            "standard": { "$token": "gray-100" },
+            "high": "#FFFFFF"
+          }
+        },
+        "$description": "Text color; the high contrast pushes it to black and white.",
+        "$group": "colors"
+      },
+      "primary": {
+        "$value": {
+          "$axis": "theme",
+          "light": {
+            "$axis": "contrast",
+            "standard": { "$token": "blue-600" },
+            "high": { "$token": "blue-900" }
+          },
+          "dark": { "$token": "blue-200" }
+        },
+        "$description": "The accent color.",
+        "$group": "colors"
+      },
+      "on-primary": {
+        "$axis": "theme",
+        "light": "#FFFFFF",
+        "dark": "#062E6F"
+      },
+      "card-container": { "$token": "surface" },
+      "ink-muted": { "$token": "ink", "alpha": 0.6 },
+      "outline": { "$token": "ink", "alpha": 0.2 },
+      "old-accent": {
+        "$value": { "$token": "primary" },
+        "$description": "The old name of primary, kept so that old markings still read.",
+        "$group": "colors",
+        "$notices": [{ "kind": "deprecated", "message": "use primary" }]
+      },
+      "title": {
+        "size": 22,
+        "lineHeight": 28,
+        "weight": { "$axis": "contrast", "standard": 500, "high": 700 },
+        "family": { "$token": "font-sans" }
+      },
+      "raised": {
+        "color": { "$axis": "theme", "light": "#00000040", "dark": "#000000B3" },
+        "x": 0,
+        "y": 2,
+        "blur": 6,
+        "spread": 1
+      }
+    }
+  },
+  "containers": [
+    {
+      "id": "screen",
+      "name": "Screen",
+      "width": 360,
+      "height": 640,
+      "background": { "$token": "surface" }
+    }
+  ],
+  "layers": [
+    {
+      "id": "ui",
+      "name": "Interface",
+      "color": "#1A73E8",
+      "annotationTypes": [
+        {
+          "id": "card",
+          "name": "Card",
+          "component": "components/card.json",
+          "doc": "docs/card.md",
+          "fields": [
+            {
+              "key": "title",
+              "label": "Title",
+              "type": "string",
+              "default": "Named values"
+            },
+            {
+              "key": "body",
+              "label": "Text",
+              "type": "string",
+              "default": "Colors, type and shadow come from tokens."
+            }
+          ],
+          "examples": [
+            { "name": "Default", "values": { "title": "Named values" } },
+            {
+              "name": "Short",
+              "values": { "title": "Hello", "body": "One line." }
+            }
+          ]
+        },
+        {
+          "id": "badge",
+          "name": "Badge",
+          "component": "components/badge.json",
+          "doc": "docs/badge.md",
+          "fields": [
+            { "key": "label", "label": "Label", "type": "string", "default": "NEW" }
+          ],
+          "examples": [{ "name": "New", "values": { "label": "NEW" } }]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "card",
+  "name": "Card",
+  "description": "A card that reads the named values: the whole `title` composite in `font`, the whole `raised` composite in `shadow`, and the colors by alias, so it follows both the theme and the contrast axes.",
+  "size": { "width": 300, "height": 140 },
+  "preview": {
+    "title": "Named values",
+    "body": "Colors, type and shadow come from tokens."
+  },
+  "template": {
+    "type": "frame",
+    "name": "card",
+    "layout": { "type": "column", "gap": 6, "padding": 16 },
+    "cornerRadius": 12,
+    "fill": { "$token": "card-container" },
+    "stroke": { "width": 1, "color": { "$token": "outline" } },
+    "shadow": { "$token": "raised" },
+    "children": [
+      {
+        "type": "text",
+        "name": "title",
+        "width": "fill",
+        "text": { "$field": "title", "default": "Title" },
+        "color": { "$token": "ink" },
+        "font": { "$token": "title" }
+      },
+      {
+        "type": "text",
+        "name": "body",
+        "width": "fill",
+        "text": { "$field": "body", "default": "" },
+        "color": { "$token": "ink-muted" },
+        "font": { "size": 14, "lineHeight": 20 }
+      }
+    ]
+  }
+}

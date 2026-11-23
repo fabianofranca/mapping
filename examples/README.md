@@ -141,6 +141,22 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 **Scripts.** R39 in `docs/TESTING.md` ("Icon fill rule, SVG import and drawing keys"): it copies the package and the SVGs, runs `import_icons` (`dryRun`, for real, `replace` and the refusals), applies the package in a folder project and checks the five components with pixel probes in the app and in the `render_marking` PNG.
 
+### `examples/libraries/named-values/`
+
+**What it is.** The example of the **named values** of specialization `formatVersion` 23, written as a small design system. Two mode axes (`theme` with `light` and `dark`, `contrast` with `standard` and `high`), a base palette, semantic aliases (one derived with `alpha`), two composite values (the text style `title` and the shadow `raised`) and one deprecated token (`old-accent`). Two types: **Card** (fields `title` and `body`) and **Badge** (field `label`). The `Screen` preset (360 × 640) has `{ "$token": "surface" }` as its background.
+
+**How to open.** **Specializations** › **Apply folder…** and pick the folder. Mark a Card and a Badge; in **Settings** change the **Theme** and the **Contrast**, and pin one axis in the container Details.
+
+**What you can see.**
+
+- The Card reads the whole `title` composite in `font` and the whole `raised` composite in `shadow`; the contrast axis changes the title weight (500 in `standard`, 700 in `high`) and the theme the shadow color.
+- The colors by alias: `card-container` is an alias of `surface`, `ink-muted` and `outline` derive from `ink` with `alpha`; each follows both axes by itself, in the four combinations.
+- The Badge reads one field of a composite: its text size is `{ "$token": "title.size" }`.
+- A container created from the `Screen` preset through the MCP stores `"background": { "$token": "surface" }`: its board is light or dark with the theme; in the app, **New container** fills the field with the resolved color, and the container Details offers **Use a fixed color**.
+- The Specializations window lists the axes, an alias, a composite and the deprecated badge of `old-accent`.
+
+**Scripts.** R31 in `docs/TESTING.md` ("Named values").
+
 ### `examples/libraries/data-model/`
 
 **What it is.** The example of the **file formats** (`fileFormats`, `formatVersion` 20) for a specialization **without components**: the data model of a service. Two types, **Class** (the `attributes` table: name, type, required, example) and **Endpoint** (method, path, request, response, timeout), and two formats, each one a plugin with `generate` and `parse`: **OpenAPI** (`yaml`, OpenAPI 3.0.3: the classes become `components.schemas`, the endpoints become `paths`) and **Attributes CSV** (`csv`, one line per attribute of each class).
