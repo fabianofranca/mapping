@@ -38,7 +38,12 @@ const addContainer = z.object({
   height: dimension.optional(),
   background: text.optional(),
   source: source.optional(),
-  drawingMode: text.nullable().optional(),
+  // A map axis → entry (schema v24); a text is the entry of the `mode` axis (the way it was written before).
+  drawingMode: z
+    .union([text, z.record(text, text)])
+    .transform((mode) => (typeof mode === 'string' ? { mode } : mode))
+    .nullable()
+    .optional(),
   direction: z.enum(READING_DIRECTIONS).nullable().optional(),
   density: z.number().nullable().optional(),
   center: z.object({ x: z.number(), y: z.number() }).optional(),

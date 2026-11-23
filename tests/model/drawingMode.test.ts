@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 import {
   drawingAxesOf,
   effectiveDrawingMode,
-  resolveTokens,
   setContainerDrawingAxis,
   setContainerDrawingMode,
   setProjectDrawingAxis,
@@ -12,6 +11,7 @@ import {
   undeclaredDrawingMode,
   type Project,
 } from '../../src/model';
+import { resolveTokens } from '../../src/model/specTokens';
 import { sampleProject } from './fixtures';
 
 const TWO_AXES = {
@@ -24,7 +24,6 @@ function projectWithContainer(): { p: Project; id: string } {
   const p = sampleProject();
   return { p, id: p.containers[0]!.id };
 }
-
 
 describe('drawing mode (single mode axis)', () => {
   it('setProjectDrawingMode sets, switches and removes (null)', () => {
@@ -162,7 +161,11 @@ describe('setting the map and one axis', () => {
 
   it('the per-axis setters change one axis; null removes it; the last one removes the map', () => {
     const { p, id } = projectWithContainer();
-    const a = setProjectDrawingAxis(setProjectDrawingAxis(p, 'theme', 'dark'), 'contrast', 'high');
+    const a = setProjectDrawingAxis(
+      setProjectDrawingAxis(p, 'theme', 'dark'),
+      'contrast',
+      'high',
+    );
     expect(a.drawingMode).toEqual({ theme: 'dark', contrast: 'high' });
     const b = setProjectDrawingAxis(a, 'theme', null);
     expect(b.drawingMode).toEqual({ contrast: 'high' });

@@ -306,7 +306,7 @@ describe('componentPlacement: inside a container', () => {
         tokens,
       ),
       'I1',
-      'dark',
+      { mode: 'dark' },
     );
     dark = add(dark, 'T1', 'text', { parentId: 'C' }, tokens);
     dark = add(dark, 'T2', 'text', { parentId: 'C' }, tokens);

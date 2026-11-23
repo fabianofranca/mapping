@@ -44,7 +44,9 @@ describe('proposal with the drawing mode', () => {
   });
 
   it('the project mode map becomes the project entity and the proposal writes 12; round trip', () => {
-    const proposal = build(setProjectDrawingMode(base, { theme: 'dark', contrast: 'high' }));
+    const proposal = build(
+      setProjectDrawingMode(base, { theme: 'dark', contrast: 'high' }),
+    );
     expect(PROPOSAL_DRAWING_MODE_MAP_FORMAT_VERSION).toBe(12);
     expect(proposal.formatVersion).toBe(12);
     expect(proposal.changes).toMatchObject([

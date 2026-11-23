@@ -23,7 +23,7 @@ import type { TextMeasurer } from './components/instantiate';
 import { addBackgroundContainer } from './containers';
 import { effectiveDensity, setContainerDensity } from './density';
 import { setContainerDirection } from './direction';
-import { setContainerDrawingMode } from './drawingMode';
+import { drawingModeText, setContainerDrawingMode } from './drawingMode';
 import { ModelError } from './errors';
 import { setMarkingLocked } from './locks';
 import {
@@ -1203,7 +1203,7 @@ export function applyContainerSettings(
   const changes: string[] = [];
   if (args.drawingMode != null) {
     project = setContainerDrawingMode(project, id, args.drawingMode);
-    changes.push(`drawing mode ${quotedLabel(args.drawingMode)}`);
+    changes.push(`drawing mode ${quotedLabel(drawingModeText(args.drawingMode))}`);
   }
   if (args.direction != null) {
     project = setContainerDirection(project, id, args.direction);

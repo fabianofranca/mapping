@@ -79,7 +79,7 @@ describe('migration v6 → v7 (code references)', () => {
     const p = cadastroProject();
     const first = load(v6Text(p), p);
     const saved = serialize(first.project);
-    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 23, platformRepos: {} });
+    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 24, platformRepos: {} });
     const again = load(saved, p);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);

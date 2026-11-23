@@ -378,6 +378,23 @@ export const migrateFrom21To22: Migration = (data) => data;
  */
 export const migrateFrom22To23: Migration = (data) => data;
 
+/**
+ * v23 → v24 (drawing mode as a map): a string `s` in the project's or a container's `drawingMode` becomes
+ * `{ "mode": s }` (the axis `mode` of a specialization with `modes`); `null`, an absent key and everything else stay.
+ */
+export const migrateFrom23To24: Migration = (data) => {
+  const out: Record<string, unknown> = { ...data };
+  if (typeof out.drawingMode === 'string') out.drawingMode = { mode: out.drawingMode };
+  if ('containers' in out) {
+    out.containers = mapItems(out.containers, (c) =>
+      typeof c.drawingMode === 'string'
+        ? { ...c, drawingMode: { mode: c.drawingMode } }
+        : c,
+    );
+  }
+  return out;
+};
+
 /** Migration registry: the key is the source version. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -402,6 +419,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [20, migrateFrom20To21],
   [21, migrateFrom21To22],
   [22, migrateFrom22To23],
+  [23, migrateFrom23To24],
 ]);
 
 export type MigrationResult =

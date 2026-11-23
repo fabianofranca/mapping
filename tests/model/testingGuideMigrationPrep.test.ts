@@ -25,7 +25,7 @@ function v15Text(): string {
 
 /** Swap as the preparation says: version, `containers` → `images` and `containerId` → `imageId`. */
 function prepared(text: string, version: number, renameKeys: boolean): string {
-  let out = text.replace('"schemaVersion": 23', `"schemaVersion": ${version}`);
+  let out = text.replace('"schemaVersion": 24', `"schemaVersion": ${version}`);
   if (renameKeys) {
     out = out
       .replaceAll('"containers"', '"images"')
@@ -37,7 +37,7 @@ function prepared(text: string, version: number, renameKeys: boolean): string {
 describe('guide preparation (R3.8 and R3.8b): the hand-edited file opens', () => {
   it('the saved v16 uses containers/containerId and swapping the version alone is rejected', () => {
     const text = v15Text();
-    expect(text).toContain('"schemaVersion": 23');
+    expect(text).toContain('"schemaVersion": 24');
     expect(text).toContain('"containers"');
     expect(text).toContain('"containerId"');
     const result = deserialize(prepared(text, 8, false), migrations, new Map());

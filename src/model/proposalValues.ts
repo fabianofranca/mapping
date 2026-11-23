@@ -25,6 +25,13 @@ import type {
 // Values of the changes (stage 4): the JSON form of each entity and of each field, used to
 // compute the changes, check conflicts and apply. Internal use of the model.
 
+/** A drawing mode that is not pinned: absent, `null` or an empty map (an empty map is never written). */
+function modeIsAbsent(
+  mode: Readonly<Record<string, string>> | null | undefined,
+): boolean {
+  return mode == null || Object.keys(mode).length === 0;
+}
+
 /** JSON copy (without `undefined`), with the keys in the order they are in. */
 export function toJson(value: unknown): JsonValue {
   return JSON.parse(JSON.stringify(value ?? null)) as JsonValue;
@@ -61,7 +68,7 @@ export function imageValue(i: ProjectContainer, withPage = false): JsonValue {
     locked: i.locked,
     source: i.source,
     // Only when pinned (formatVersion 6): without it the value is that of before the drawing mode.
-    ...(i.drawingMode == null ? {} : { drawingMode: i.drawingMode }),
+    ...(modeIsAbsent(i.drawingMode) ? {} : { drawingMode: toJson(i.drawingMode) }),
     // Only when declared (formatVersion 7).
     ...(i.density == null ? {} : { density: i.density }),
     // Only when pinned (formatVersion 8).
@@ -158,7 +165,7 @@ export function docRepoValue(r: DocRepo): JsonValue {
  */
 export function projectValue(p: Pick<Project, 'drawingMode' | 'direction'>): JsonValue {
   return {
-    drawingMode: p.drawingMode ?? null,
+    drawingMode: modeIsAbsent(p.drawingMode) ? null : toJson(p.drawingMode),
     ...(p.direction === undefined ? {} : { direction: p.direction }),
   };
 }
@@ -253,7 +260,7 @@ export function imageField(i: ProjectContainer, field: string): JsonValue | unde
     case 'source':
       return toJson(i.source);
     case 'drawingMode':
-      return i.drawingMode ?? null;
+      return modeIsAbsent(i.drawingMode) ? null : toJson(i.drawingMode);
     case 'density':
       return i.density ?? null;
     case 'direction':

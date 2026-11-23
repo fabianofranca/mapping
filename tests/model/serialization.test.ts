@@ -53,7 +53,7 @@ describe('serialization', () => {
   it('uses 2 spaces, a fixed key order and a trailing newline', () => {
     const text = serialize(emptyProject());
     expect(text.endsWith('}\n')).toBe(true);
-    expect(text.split('\n')[1]).toBe('  "schemaVersion": 23,');
+    expect(text.split('\n')[1]).toBe('  "schemaVersion": 24,');
     expect(Object.keys(JSON.parse(text))).toEqual([
       'schemaVersion',
       'revision',
@@ -230,7 +230,7 @@ describe('product name (app)', () => {
 describe('migrations', () => {
   it('the current registry has no pending migrations', () => {
     expect(SCHEMA_VERSION).toBe(24);
-    expect(migrate({ a: 1 }, 23)).toEqual({ ok: true, data: { a: 1 } });
+    expect(migrate({ a: 1 }, 24)).toEqual({ ok: true, data: { a: 1 } });
   });
 
   it('applies the registered migrations in sequence', () => {

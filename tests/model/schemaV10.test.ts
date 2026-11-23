@@ -101,7 +101,7 @@ describe('schema v10', () => {
   });
 
   it('the new project and the image with a file have `background: null`', () => {
-    expect(emptyProject().schemaVersion).toBe(23);
+    expect(emptyProject().schemaVersion).toBe(24);
     expect(sampleProject().containers.every((i) => i.background === null)).toBe(true);
   });
 

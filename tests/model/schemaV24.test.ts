@@ -35,7 +35,11 @@ function v23WithStrings(): Raw {
   const raw = rawOf(sampleProject());
   const [first, ...others] = containersOf(raw);
   return withVersion(
-    { ...raw, drawingMode: 'dark', containers: [{ ...first, drawingMode: 'light' }, ...others] },
+    {
+      ...raw,
+      drawingMode: 'dark',
+      containers: [{ ...first, drawingMode: 'light' }, ...others],
+    },
     23,
   );
 }
@@ -49,7 +53,11 @@ describe('schema v24', () => {
   it('a string becomes { mode: s } on the project and on every container; null and absent stay', () => {
     const migrated = migrateFrom23To24({
       drawingMode: 'dark',
-      containers: [{ id: 'a', drawingMode: 'light' }, { id: 'b', drawingMode: null }, { id: 'c' }],
+      containers: [
+        { id: 'a', drawingMode: 'light' },
+        { id: 'b', drawingMode: null },
+        { id: 'c' },
+      ],
     });
     expect(migrated).toEqual({
       drawingMode: { mode: 'dark' },
@@ -127,9 +135,9 @@ describe('schema v24', () => {
     const raw = rawOf(sampleProject());
     expect(open({ ...raw, drawingMode: mode }).ok).toBe(false);
     const [first, ...others] = containersOf(raw);
-    expect(open({ ...raw, containers: [{ ...first, drawingMode: mode }, ...others] }).ok).toBe(
-      false,
-    );
+    expect(
+      open({ ...raw, containers: [{ ...first, drawingMode: mode }, ...others] }).ok,
+    ).toBe(false);
   });
 
   it('an earlier app meets a newer version number and opens the file read-only', () => {

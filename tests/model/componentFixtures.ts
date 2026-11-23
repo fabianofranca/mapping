@@ -313,7 +313,10 @@ export function tokenSlotCatalog(): ComponentCatalog {
       ...component,
       template: { ...component.template, children } as typeof component.template,
       resolvedTokens: light,
-      tokenTables: { get: (selection) => (selection === 'dark' ? dark : light) },
+      tokenTables: {
+        get: (selection) =>
+          typeof selection === 'object' && selection.mode === 'dark' ? dark : light,
+      },
     });
   }
   return new Map([[SPEC_ID, { ...loaded, byType }]]);

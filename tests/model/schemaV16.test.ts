@@ -113,7 +113,7 @@ describe('schema v16', () => {
     const result = load(JSON.stringify(v15Raw(), null, 2));
     expect(result.migratedFrom).toBe(15);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(23);
+    expect(result.project.schemaVersion).toBe(24);
     expect(result.project.project.id).toMatch(UUID);
     expect(result.project.perspectives).toEqual([]);
     expect(result.project.arrivals).toEqual([]);
@@ -124,7 +124,7 @@ describe('schema v16', () => {
     };
     expect(serialize(sameId)).toBe(serialize(original));
     const saved = JSON.parse(serialize(result.project)) as Raw;
-    expect(saved.schemaVersion).toBe(23);
+    expect(saved.schemaVersion).toBe(24);
     expect(saved.project.id).toBe(result.project.project.id);
     expect(saved.perspectives).toEqual([]);
     expect(saved.arrivals).toEqual([]);
@@ -185,9 +185,12 @@ describe('schema v16', () => {
     expect(deserialize(JSON.stringify(raw), migrations).ok).toBe(false);
   });
 
-  it('the v24 opens read-only ("newer version")', () => {
+  it('a newer version opens read-only ("newer version")', () => {
     const p = withPerspectives();
-    const newer = JSON.stringify({ ...JSON.parse(serialize(p)), schemaVersion: 24 });
+    const newer = JSON.stringify({
+      ...JSON.parse(serialize(p)),
+      schemaVersion: SCHEMA_VERSION + 1,
+    });
     const loaded = load(newer);
     expect(loaded.readOnly).toBe(true);
     expect(loaded.project.perspectives).toHaveLength(2);

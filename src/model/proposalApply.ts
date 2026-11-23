@@ -70,7 +70,7 @@ export interface PatchProblem {
  * formatVersion 8, the reading direction (absent or `null` = no direction pinned).
  */
 interface ProjectModeEntity {
-  readonly drawingMode: string | null;
+  readonly drawingMode: Readonly<Record<string, string>> | null;
   readonly direction?: ReadingDirection | null;
 }
 

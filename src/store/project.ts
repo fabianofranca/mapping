@@ -389,12 +389,12 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     renameProject: (name: string) => store.apply((p) => model.renameProject(p, name)),
     setContainerMarkingColor: (containerId: string, color: string | null) =>
       store.apply((p) => model.setContainerMarkingColor(p, containerId, color)),
-    /** Project drawing mode (v18); `null` goes back to the first mode of each specialization. */
-    setProjectDrawingMode: (mode: string | null) =>
-      store.apply((p) => model.setProjectDrawingMode(p, mode)),
-    /** Drawing mode the container pins; `null` goes back to following the project's. */
-    setContainerDrawingMode: (containerId: string, mode: string | null) =>
-      store.apply((p) => model.setContainerDrawingMode(p, containerId, mode)),
+    /** One axis of the project's drawing mode (v24); `null` goes back to the first entry of that axis. One undo entry. */
+    setProjectDrawingAxis: (axis: string, entry: string | null) =>
+      store.apply((p) => model.setProjectDrawingAxis(p, axis, entry)),
+    /** One axis the container pins; `null` goes back to following the project's in that axis. One undo entry. */
+    setContainerDrawingAxis: (containerId: string, axis: string, entry: string | null) =>
+      store.apply((p) => model.setContainerDrawingAxis(p, containerId, axis, entry)),
     /** Container density (v19); `null` goes back to 1. One undo entry. */
     setContainerDensity: (containerId: string, density: number | null) =>
       store.apply((p) => model.setContainerDensity(p, containerId, density)),
