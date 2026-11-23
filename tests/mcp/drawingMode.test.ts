@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PROPOSAL_DRAWING_MODE_MAP_FORMAT_VERSION } from '../../src/model';
+import { parseSpec } from '../../src/model/spec';
 import {
   acceptAllAndApply,
   errorOf,
@@ -397,5 +398,52 @@ describe('get_specialization: the tokens index', () => {
     expect(
       errorOf(await mcp.call('get_specialization', { project: name, specId: 'x' })).code,
     ).toBe('not-found');
+  });
+});
+
+describe('get_specialization: the written form of `$tokens` suggestions', () => {
+  it('keeps the `$tokens` item, drops `suggestionsSource` and still validates', async () => {
+    const { name, dir } = await newProject();
+    const sizes = {
+      ...lib('sized', {
+        values: {
+          small: { $value: 'S', $group: 'sizes' },
+          large: { $value: 'L', $group: 'sizes' },
+        },
+      }),
+      formatVersion: 23,
+      layers: [
+        {
+          id: 'ui',
+          name: 'UI',
+          color: '#6750A4',
+          annotationTypes: [
+            {
+              id: 'btn',
+              name: 'Button',
+              fields: [
+                {
+                  key: 'size',
+                  type: 'string',
+                  suggestions: [{ $tokens: 'sizes' }, 'custom'],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    writeFileSync(join(root, 'fontes', 'sized.json'), JSON.stringify(sizes));
+    await apply(name, dir, [{ op: 'apply_specialization', file: 'fontes/sized.json' }]);
+    const view = ok(
+      await mcp.call<{ spec: unknown }>('get_specialization', {
+        project: name,
+        specId: 'sized',
+      }),
+    );
+    const field = JSON.stringify(view.spec);
+    expect(field).not.toContain('suggestionsSource');
+    expect(field).toContain('"suggestions":[{"$tokens":"sizes"},"custom"]');
+    expect(parseSpec(view.spec).ok).toBe(true);
   });
 });

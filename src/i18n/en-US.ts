@@ -1372,6 +1372,7 @@ export const enUS = {
   'drawingMode.light': 'Light',
   'drawingMode.dark': 'Dark',
   'drawingMode.followProject': 'Follow the project',
+  'drawingMode.projectDefault': 'Default (remove the choice)',
   'drawingMode.undeclared': '{mode} (not declared)',
   'drawingMode.containerHint':
     'Pins the mode of the components in this container; "Follow the project" uses the project mode.',

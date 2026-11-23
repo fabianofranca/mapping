@@ -1,5 +1,6 @@
 import { drawingAxesJson, effectiveModeMap } from './drawingModeInput';
 import { tokenIndex } from '../src/model/tokenIndex';
+import { writtenSpec } from '../src/model/serialization';
 import {
   containerBackgroundColor,
   effectiveContainerClasses,
@@ -836,6 +837,6 @@ export function specializationView(refs: Refs, specId: string): Json {
       .map((l) => ({ id: l.id, name: l.name, specLayerId: l.spec?.layerId })),
     ...(spec.platforms && spec.platforms.length > 0 ? { codeHint: CODE_HINT } : {}),
     ...(spec.tokens === undefined ? {} : { tokens: tokenIndex(spec.tokens) }),
-    spec,
+    spec: writtenSpec(spec),
   };
 }

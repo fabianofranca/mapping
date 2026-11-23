@@ -39,8 +39,13 @@ export function DrawingModeSettings({ project, readOnly }: DrawingModeSettingsPr
             label={axisLabel(axis)}
             value={stored ?? entries[0] ?? ''}
             disabled={readOnly}
-            onChange={(e) => actions.setProjectDrawingAxis(axis, e.currentTarget.value)}
+            onChange={(e) =>
+              actions.setProjectDrawingAxis(axis, e.currentTarget.value || null)
+            }
           >
+            {entries.length === 0 && (
+              <option value="">{t('drawingMode.projectDefault')}</option>
+            )}
             {entries.map((entry) => (
               <option key={entry} value={entry}>
                 {drawingModeLabel(entry)}

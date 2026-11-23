@@ -1368,6 +1368,7 @@ export const ptBR: Dictionary = {
   'drawingMode.light': 'Claro',
   'drawingMode.dark': 'Escuro',
   'drawingMode.followProject': 'Seguir o projeto',
+  'drawingMode.projectDefault': 'Padrão (remover a escolha)',
   'drawingMode.undeclared': '{mode} (não declarado)',
   'drawingMode.containerHint':
     'Fixa o modo dos componentes deste container; "Seguir o projeto" usa o modo do projeto.',

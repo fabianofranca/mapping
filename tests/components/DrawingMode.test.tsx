@@ -190,6 +190,20 @@ describe('Settings: one list per axis', () => {
     expect(axisSelect('theme').value).toBe('solar');
   });
 
+  it('an undeclared stored axis can be removed through the default option', async () => {
+    const { harness, user } = setup({
+      ...projectWithAxes(AXES),
+      drawingMode: { theme: 'dark', legacy: 'solar' },
+    });
+    const select = axisSelect('legacy');
+    expect(options(select)).toEqual([
+      t('drawingMode.projectDefault'),
+      t('drawingMode.undeclared', { mode: 'solar' }),
+    ]);
+    await user.selectOptions(select, '');
+    expect(harness.project().drawingMode).toEqual({ theme: 'dark' });
+  });
+
   it('a modes library keeps a single "Drawing mode" list', () => {
     setup(projectWithModes());
     expect(screen.getAllByRole('combobox')).toHaveLength(1);
