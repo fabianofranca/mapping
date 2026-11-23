@@ -76,7 +76,7 @@ function planExport(project: Project, markingIds: readonly string[]): ExportPlan
 /**
  * Exports the crop of `markingIds` (all on one image with a file; the menu disables the item
  * otherwise). "Save as" opens straight from the call, before any `await` (the picker needs the
- * click's user gesture); without the picker the file is downloaded. A cancelled picker is silent.
+ * click's user gesture); without the picker the file is downloaded. A canceled picker is silent.
  */
 export async function exportMarkingsImage(
   editor: EditorContextValue,
