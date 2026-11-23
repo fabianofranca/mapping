@@ -8,6 +8,7 @@ import {
   DEFAULT_CONTAINER_BACKGROUND,
   SELECTION_PRESET,
   containerExtras,
+  presetColor,
   presetGroups,
   readContainerForm,
   selectionSize,
@@ -32,7 +33,7 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
   const [width, setWidth] = useState(String(first?.width ?? 360));
   const [height, setHeight] = useState(String(first?.height ?? 800));
   const [background, setBackground] = useState(
-    first?.background ?? DEFAULT_CONTAINER_BACKGROUND,
+    first ? presetColor(project, first) : DEFAULT_CONTAINER_BACKGROUND,
   );
   // `null`: the number typed in "Custom" is not valid.
   const [density, setDensity] = useState<number | null>(1);
@@ -112,7 +113,7 @@ export function ContainerDialog({ onClose }: { readonly onClose: () => void }) {
             if (!chosen) return;
             setWidth(String(chosen.width));
             setHeight(String(chosen.height));
-            setBackground(chosen.background);
+            setBackground(presetColor(project, chosen));
           }}
         >
           <option value={CUSTOM_PRESET}>{t('container.preset.custom')}</option>

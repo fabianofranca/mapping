@@ -53,7 +53,13 @@ import type { ModelMessage } from './modelMessage';
 import { DEFAULT_LABEL_TEXTS } from './refs';
 import { effectiveDensity, unitSpaceOf, type UnitSpace } from './density';
 import { effectiveDirection } from './direction';
-import { effectiveDrawingMode, instanceAnchorOf, readContainerOf } from './drawingMode';
+import {
+  effectiveDrawingMode,
+  instanceAnchorOf,
+  readContainerOf,
+  sameDrawingMode,
+  type DrawingModeSelection,
+} from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
 import {
@@ -233,8 +239,8 @@ interface Entry {
   readonly valueWarnings: readonly ModelMessage[];
   readonly measure: TextMeasurer;
   readonly epoch: number;
-  /** Effective drawing mode of the marking (`undefined` = the first mode). */
-  readonly mode: string | undefined;
+  /** Effective drawing mode of the marking (axis → entry; `undefined` = the first entry of each axis). */
+  readonly mode: DrawingModeSelection | undefined;
   /** Density of the marking's container (1 on the canvas). */
   readonly density: number;
   /** Effective reading direction of the marking (`ltr` by default): `rtl` mirrors the drawing. */
@@ -874,7 +880,7 @@ interface DrawInput {
   readonly kids: readonly DrawKid[];
   readonly slotDefs: readonly TypeSlot[];
   readonly measure: TextMeasurer;
-  readonly mode: string | undefined;
+  readonly mode: DrawingModeSelection | undefined;
   readonly provided: ProvidedValues;
   readonly received: Received;
   readonly density: number;
@@ -958,8 +964,7 @@ function slotFacts(
 function draw(input: DrawInput): Drawn {
   const { mc, markingId, containerId, rect, valueWarnings, received } = input;
   const { measure, mode, provided, density, direction, anchor, container } = input;
-  const tokens =
-    mode === undefined ? undefined : mc.component.resolvedTokensByMode?.[mode];
+  const tokens = mode === undefined ? undefined : mc.component.tokenTables?.get(mode);
   const screen = mc.component.screen;
   // In screen pixels the drawing measures the component's `size`, at the origin (the canvas anchors
   // it) and does not scale with the density, just as it does not scale with the zoom.
@@ -1148,7 +1153,7 @@ export function createDrawingCache(): DrawingCache {
         before.component === mc.component &&
         before.measure === measure &&
         before.epoch === epoch &&
-        before.mode === mode &&
+        sameDrawingMode(before.mode, mode) &&
         before.density === density &&
         before.direction === direction &&
         sameContainer(before.container, container) &&

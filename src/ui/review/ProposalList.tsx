@@ -58,6 +58,17 @@ export function ProposalsEmpty({
   );
 }
 
+/** The project folder was not found (moved, renamed or deleted): the list is the last one read. */
+function FolderUnavailable() {
+  const { session } = useEditor();
+  if (!session.proposals.unavailable.value) return null;
+  return (
+    <Notice tone="warning" size="sm" title={t('proposals.folderUnavailableTitle')}>
+      {t('proposals.folderUnavailable')}
+    </Notice>
+  );
+}
+
 const isOpen = (row: ProposalRowData) => row.proposal.status === 'open';
 
 export function ProposalList({ onHelp, onScan }: ProposalListProps) {
@@ -165,6 +176,7 @@ export function ProposalList({ onHelp, onScan }: ProposalListProps) {
   if (rows.length === 0 && problems.length === 0) {
     return (
       <>
+        <FolderUnavailable />
         <ProposalsEmpty onHelp={onHelp} onScan={onScan} helpRef={emptyFocus} />
         {removalDialog}
       </>
@@ -196,6 +208,7 @@ export function ProposalList({ onHelp, onScan }: ProposalListProps) {
   return (
     <>
       <div class="proposal-list">
+        <FolderUnavailable />
         <div class="review-filters" role="group" aria-label={t('proposals.filters')}>
           <Segmented
             label={t('proposals.scope')}

@@ -59,6 +59,14 @@ function entityRecord(c: Change): Record<string, JsonValue> | null {
 const text = (v: JsonValue | undefined): string | null =>
   typeof v === 'string' && v !== '' ? v : null;
 
+/** The drawing mode (a map axis → entry) as `theme: dark, contrast: high`; `null` when there is none. */
+function modeText(v: JsonValue | undefined): string | null {
+  if (!isRecord(v) || Object.keys(v).length === 0) return text(v);
+  return Object.entries(v)
+    .map(([axis, entry]) => `${axis}: ${String(entry)}`)
+    .join(', ');
+}
+
 interface EntityLookup {
   /** The first change of each entity (by id). */
   readonly firstOf: ReadonlyMap<string, Change>;
@@ -132,7 +140,9 @@ export function markingName(names: ReviewNames, id: string): string {
 function backgroundName(
   record: Record<string, JsonValue> | null | undefined,
 ): string | null {
-  return record && record.file === null && typeof record.background === 'string'
+  return record &&
+    record.file === null &&
+    (typeof record.background === 'string' || isRecord(record.background))
     ? t('image.containerUntitled')
     : null;
 }
@@ -644,7 +654,7 @@ function classesText(names: ReviewNames, value: JsonValue): string {
 /** The `project` entity: the drawing mode and, when pinned, "Direction: …". */
 function projectSummary(value: Record<string, JsonValue>): string {
   const parts = [
-    text(value.drawingMode),
+    modeText(value.drawingMode),
     value.direction == null
       ? null
       : `${t('review.field.direction')}: ${directionText('project', value.direction)}`,
@@ -718,6 +728,12 @@ export function valueParts(
   if (field === 'density') {
     return [{ text: formatDensity(typeof value === 'number' ? value : 1) }];
   }
+  if (field === 'background' && isRecord(value)) {
+    return [
+      { text: t('review.value.backgroundToken', { name: text(value.$token) ?? '' }) },
+    ];
+  }
+  if (field === 'drawingMode' && value !== null) return [{ text: modeText(value) ?? '' }];
   if (field === 'direction') return [{ text: directionText(c.entity, value) }];
   if (field === 'classes') return [{ text: classesText(names, value) }];
   if (field === 'page' && isRecord(value))

@@ -27,7 +27,7 @@ describe('component layer: drawing mode', () => {
     expect(t1).toBeDefined();
     expect(layer.render(first, all, PLACEMENTS)).toBe(false);
 
-    expect(actions.setProjectDrawingMode('dark').ok).toBe(true);
+    expect(actions.setProjectDrawingAxis('mode', 'dark').ok).toBe(true);
     const dark = derived.componentScenes.value;
     expect(dark.get('T1')).not.toBe(first.get('T1'));
     expect(layer.render(dark, all, PLACEMENTS)).toBe(true);
@@ -35,7 +35,7 @@ describe('component layer: drawing mode', () => {
     // The project was not reloaded: it stays the same, only with the new mode.
     expect(store.project.value?.containers).toBe(loaded?.containers);
 
-    expect(actions.setContainerDrawingMode('B1', 'light').ok).toBe(true);
+    expect(actions.setContainerDrawingAxis('B1', 'mode', 'light').ok).toBe(true);
     const fixed = derived.componentScenes.value;
     expect(fixed.get('T1')).not.toBe(dark.get('T1'));
     expect(fixed.get('TP')).toBe(dark.get('TP'));

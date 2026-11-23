@@ -1,3 +1,4 @@
+import { containerBackgroundColor } from './containerBackground';
 import { fail } from './errors';
 import type { SpecFileFormat } from './fileFormats';
 import {
@@ -314,7 +315,7 @@ function containerOf(ctx: Context, container: ProjectContainer): FormatInputCont
     page: page?.name ?? null,
     width: container.width,
     height: container.height,
-    background: container.background,
+    background: containerBackgroundColor(ctx.project, container.id),
     source: container.source,
   };
 }

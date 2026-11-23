@@ -85,7 +85,7 @@ test('the Alt+L shortcut locks and unlocks the selection, and locked goes to the
 
   await page.keyboard.press('Alt+L');
   const locked = await exportMapping(page);
-  expect(locked.mapping.schemaVersion).toBe(23);
+  expect(locked.mapping.schemaVersion).toBe(24);
   expect(locked.mapping.markings.map((m) => m.locked)).toEqual([true]);
   expect(locked.mapping.containers.map((i) => i.locked)).toEqual([false]);
   // Download closes the export dialog; the selection stays on the marking.

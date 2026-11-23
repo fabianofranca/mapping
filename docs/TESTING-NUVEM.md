@@ -125,9 +125,9 @@ The full round (R0 to R46) runs in **simultaneous sessions, one per block of the
 
 | Block | Scripts, in the order of the guide                                                 | Steps |
 | ----- | ---------------------------------------------------------------------------------- | ----- |
-| 1     | R0, R1, section 6, R3, R6.3 to R6.7, R6.12 to R6.14, R7, R5, R8, R14 and R26       | 149   |
+| 1     | R0, R1, section 6, R3, R6.3 to R6.7, R6.12 to R6.14, R7, R5, R8, R14 and R26       | 150   |
 | 2     | R0, section 6 and R25                                                              | 141   |
-| 3     | R0, section 6, R12, R15, R40, R44 and R45                                          | 138   |
+| 3     | R0, section 6, R12, R15, R31, R40, R44 and R45                                     | 158   |
 | 4     | R0, section 6, R4, R6.8a to R6.11, R9, R10, R13, R16, R22, R24 and the visual pass | 158   |
 | 5     | R0, section 6, R17, R21, R23, R29 and R46                                          | 133   |
 | 6     | R0, section 6, R11, R27, R32, R37, R38, R39, R41, R42 and R43                      | 131   |

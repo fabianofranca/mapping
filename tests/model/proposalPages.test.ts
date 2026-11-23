@@ -568,14 +568,14 @@ describe('the reader and the version', () => {
     ) as Record<string, unknown>;
   };
 
-  it('refuses 12 with the usual version message', () => {
+  it('refuses 13 with the usual version message', () => {
     const json = written();
-    json.formatVersion = 12;
+    json.formatVersion = 13;
     const r = parseProposal(json);
     expect(r.ok).toBe(false);
     if (!r.ok) {
       expect(r.errors).toContain(
-        'formatVersion: must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 or 11',
+        'formatVersion: must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 or 12',
       );
     }
   });

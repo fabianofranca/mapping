@@ -34,8 +34,8 @@ export interface MappingViewerProps {
   /** External JSON, already parsed; when defined, it wins over `screen` (see `ViewerInput.source`). */
   readonly source?: unknown;
   readonly sourceSystem?: string;
-  /** Mode of the drawing tokens (`light`, `dark`…); changing it redraws without reloading. */
-  readonly drawingMode?: string;
+  /** Drawing tokens: an entry (`light`, `dark`…) or a map axis → entry; changing it redraws without reloading. */
+  readonly drawingMode?: ViewerOptions['drawingMode'];
   /** Reading direction (`ltr`, the default, or `rtl`); applies to the screen computed from `source`. */
   readonly direction?: ViewerOptions['direction'];
   readonly onSource?: ViewerOptions['onSource'];

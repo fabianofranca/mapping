@@ -73,6 +73,7 @@ import {
   type ComponentType,
   type TextMeasurer,
   reorderMarking,
+  isBackgroundContainer,
   setBackgroundContainer,
   siblingPosition,
   extensionForMime,
@@ -104,6 +105,7 @@ import {
   setImageLocked,
   setContainerDensity,
   setContainerDirection,
+  drawingModeText,
   setContainerDrawingMode,
   setContainerMarkingColor,
   setProjectDirection,
@@ -138,6 +140,8 @@ import {
 } from '../src/model';
 import type { LibraryIssue } from '../src/model/library';
 import { applyClassChoices } from './containerClassOps';
+import { backgroundText, checkBackgroundInput } from './backgroundInput';
+import { drawingModeMap } from './drawingModeInput';
 import { ToolError, type ToolErrorCode } from './errors';
 import {
   checkUpdate,
@@ -1385,11 +1389,12 @@ class Batch {
     let project = p;
     const changes: string[] = [];
     if (op.drawingMode !== undefined) {
-      project = setProjectDrawingMode(project, op.drawingMode);
+      const mode = drawingModeMap(project, op.drawingMode);
+      project = setProjectDrawingMode(project, mode);
       changes.push(
-        op.drawingMode === null
+        mode === null || Object.keys(mode).length === 0
           ? 'drawing mode removed'
-          : `drawing mode ${quoted(op.drawingMode)}`,
+          : `drawing mode ${quoted(drawingModeText(mode))}`,
       );
     }
     if (op.direction !== undefined) {
@@ -1415,7 +1420,11 @@ class Batch {
         : this.addContainerWithBackground(op, p);
     const id = step.created?.find((c) => c.kind === 'i')?.id;
     if (id === undefined) return step;
-    const settings = applyContainerSettings(step.project, id, op);
+    const settings = applyContainerSettings(step.project, id, {
+      drawingMode: drawingModeMap(step.project, op.drawingMode ?? null),
+      direction: op.direction,
+      density: op.density,
+    });
     let result: Step = {
       ...step,
       project: settings.project,
@@ -1486,6 +1495,7 @@ class Batch {
     op: Extract<Operation, { op: 'add_container' | 'add_blank_image' }>,
     p: Project,
   ): Step {
+    if (op.op === 'add_container') checkBackgroundInput(p, op.background);
     const { project, id, size } = this.rules(() =>
       addBatchBackgroundContainer(p, op, () => {
         const beside = this.besideId(op, p);
@@ -1497,7 +1507,7 @@ class Batch {
     );
     return {
       project,
-      description: `Add the container "${this.refs(project).imageLabel(id)}" (${size.width}×${size.height} px, background ${size.background.toUpperCase()}${
+      description: `Add the container "${this.refs(project).imageLabel(id)}" (${size.width}×${size.height} px, background ${backgroundText(size.background)}${
         op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
       })`,
       created: [{ kind: 'i', id }],
@@ -1553,6 +1563,9 @@ class Batch {
       op.height !== undefined
     ) {
       // Only a container without a file: with a file the model refuses with `container-has-file`.
+      if (isBackgroundContainer(projectIndex(project).containers.get(id)!)) {
+        checkBackgroundInput(project, op.background);
+      }
       project = setBackgroundContainer(project, id, {
         ...(op.background !== undefined ? { background: op.background } : {}),
         ...(op.width !== undefined ? { width: op.width } : {}),
@@ -1560,15 +1573,16 @@ class Batch {
       });
       const container = projectIndex(project).containers.get(id)!;
       changes.push(
-        `size ${container.width}×${container.height} px, background ${container.background}`,
+        `size ${container.width}×${container.height} px, background ${container.background === null ? 'none' : backgroundText(container.background)}`,
       );
     }
     if (op.drawingMode !== undefined) {
-      project = setContainerDrawingMode(project, id, op.drawingMode);
+      const mode = drawingModeMap(project, op.drawingMode);
+      project = setContainerDrawingMode(project, id, mode);
       changes.push(
-        op.drawingMode === null
+        mode === null || Object.keys(mode).length === 0
           ? 'project drawing mode'
-          : `drawing mode ${quoted(op.drawingMode)}`,
+          : `drawing mode ${quoted(drawingModeText(mode))}`,
       );
     }
     if (op.direction !== undefined) {

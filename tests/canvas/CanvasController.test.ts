@@ -250,6 +250,48 @@ describe('CanvasController', () => {
     controller.destroy();
   });
 
+  it('a file replaced from outside (display.invalidate) is drawn again with the new bitmap', async () => {
+    const editor = editorFor();
+    const created = new Map<string, ImageBitmap[]>();
+    const load = vi.fn(async (path: string) => {
+      const bitmap = {
+        width: 10,
+        height: 10,
+        close: () => undefined,
+      } as unknown as ImageBitmap;
+      created.set(path, [...(created.get(path) ?? []), bitmap]);
+      return bitmap;
+    });
+    const display = createDisplayImages<ImageBitmap>(load);
+    const container = document.createElement('div');
+    Object.defineProperty(container, 'clientWidth', { value: 380 });
+    Object.defineProperty(container, 'clientHeight', { value: 700 });
+    document.body.append(container);
+    const controller = new CanvasController({ container, display, ...editor });
+    const settle = async () => {
+      for (let i = 0; i < 4; i++) {
+        await Promise.resolve();
+        flush();
+      }
+    };
+    await settle();
+    expect(container.dataset.images).toBe('2');
+    expect(load).toHaveBeenCalledTimes(2);
+
+    display.invalidate('images/a.jpg');
+    await settle();
+
+    expect(load).toHaveBeenCalledTimes(3);
+    expect(container.dataset.images).toBe('2');
+    const inner = controller as unknown as {
+      images: { nodes: Map<string, { bitmap: Konva.Image }> };
+    };
+    const drawn = inner.images.nodes.get('I1')?.bitmap.image();
+    expect(drawn).toBe(created.get('images/a.jpg')?.[1]);
+    expect(drawn).not.toBe(created.get('images/a.jpg')?.[0]);
+    controller.destroy();
+  });
+
   // Achado 10: `InvalidStateError: drawImage … The image source is detached`. O `retain`
   // closed the bitmap right away, while the Konva node still referenced it and a pending
   // draw (the `batchDraw` of the previous frame) would still use it.

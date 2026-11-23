@@ -4,6 +4,7 @@ import {
   SCHEMA_VERSION,
   projectIndex,
   undeclaredContainerClasses,
+  undeclaredBackgroundTokens,
   undeclaredDrawingMode,
 } from '../model';
 import type { FontProblem } from '../storage/fonts';
@@ -23,7 +24,7 @@ import {
 import { Button } from './controls';
 import { EditorContext, type EditorContextValue } from './EditorContext';
 import { DiagnosticsDirection } from './DiagnosticsDirection';
-import { declaredDrawingModes } from './drawingModes';
+import { declaredDrawingAxes, undeclaredModeText } from './drawingModes';
 import { imageLabel } from './labels';
 import { LibraryIssueList } from './LibraryIssueList';
 import { markingLabel } from './labels';
@@ -318,13 +319,13 @@ export function DiagnosticsComponents() {
 }
 
 /**
- * Drawing modes saved (in the project or in the containers) that no specialization declares:
- * the mode stays saved, the drawing uses the first mode of each specialization.
+ * Drawing modes saved (in the project or in the containers) that no specialization declares, per axis:
+ * the mode stays saved, the drawing uses the first entry of that axis.
  */
 export function DiagnosticsDrawingMode() {
   const project = useContext(EditorContext)?.store.project.value;
   if (!project) return null;
-  const modes = undeclaredDrawingMode(project, declaredDrawingModes(project));
+  const modes = undeclaredDrawingMode(project, declaredDrawingAxes(project));
   if (modes.length === 0) return null;
   return (
     <section class="diagnostics-modes" aria-label={t('diagnostics.drawingMode')}>
@@ -332,8 +333,44 @@ export function DiagnosticsDrawingMode() {
       <p class="muted">{t('diagnostics.drawingModeHint')}</p>
       <ul>
         {modes.map((mode) => (
-          <li key={mode}>{t('diagnostics.modeUndeclared', { mode })}</li>
+          <li key={`${mode.axis}=${mode.entry}`}>
+            {t('diagnostics.modeUndeclared', { mode: undeclaredModeText(mode) })}
+          </li>
         ))}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * Container backgrounds by token that no applied specialization declares as a color (stage #1900, NV4,
+ * decision 26): the token stays saved and the background is drawn white; each one is listed with its container.
+ */
+export function DiagnosticsBackgroundTokens() {
+  const project = useContext(EditorContext)?.store.project.value;
+  if (!project) return null;
+  const undeclared = undeclaredBackgroundTokens(project);
+  if (undeclared.length === 0) return null;
+  const containers = projectIndex(project).containers;
+  return (
+    <section
+      class="diagnostics-background-tokens"
+      aria-label={t('diagnostics.backgroundTokens')}
+    >
+      <h3>{t('diagnostics.backgroundTokens')}</h3>
+      <p class="muted">{t('diagnostics.backgroundTokensHint')}</p>
+      <ul>
+        {undeclared.map((u) => {
+          const container = containers.get(u.containerId);
+          return (
+            <li key={u.containerId}>
+              {t('diagnostics.backgroundTokenUndeclared', {
+                container: container ? imageLabel(container) : u.containerId,
+                token: u.token,
+              })}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
@@ -413,6 +450,7 @@ export function DiagnosticsView() {
       <DiagnosticsLibrary />
       <DiagnosticsComponents />
       <DiagnosticsDrawingMode />
+      <DiagnosticsBackgroundTokens />
       <DiagnosticsContainerClasses />
       <DiagnosticsDirectionSection />
       <DiagnosticsRemoteImages />

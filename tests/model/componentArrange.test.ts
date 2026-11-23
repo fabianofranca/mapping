@@ -650,11 +650,15 @@ describe('arrangeMarking: slot gap and padding in $token (#948)', () => {
 
   it('the project mode and the container mode decide the table', () => {
     const base = tokenProject('column', box(100, 100, 300, 300));
-    const dark = arrange(setProjectDrawingMode(base, 'dark'), 'C', tokenCatalog).project;
+    const dark = arrange(
+      setProjectDrawingMode(base, { mode: 'dark' }),
+      'C',
+      tokenCatalog,
+    ).project;
     expect(rectOf(dark, 'T1')).toEqual(box(120, 120, 100, 40));
     expect(rectOf(dark, 'T2')).toEqual(box(120, 172, 100, 40));
     const fixed = arrange(
-      setContainerDrawingMode(base, 'I1', 'dark'),
+      setContainerDrawingMode(base, 'I1', { mode: 'dark' }),
       'C',
       tokenCatalog,
     ).project;

@@ -3,53 +3,62 @@ import { t } from '../i18n';
 import type { Project } from '../model';
 import { Select } from './controls';
 import { useEditor } from './EditorContext';
-import { declaredDrawingModes, drawingModeLabel } from './drawingModes';
+import { axisLabel, drawingModeLabel, listedAxes } from './drawingModes';
 
-// Drawing mode of the project (schema v18), in the editor Settings: chooses the mode of the
-// `tokens` of the applied specializations. It does not depend on the interface's light/dark theme.
+// Drawing mode of the project (schema v18, per axis since v24), in the editor Settings: one list per
+// axis of the `tokens` of the applied specializations. It does not depend on the interface's light/dark theme.
 
 interface DrawingModeSettingsProps {
   readonly project: Project;
   readonly readOnly: boolean;
 }
 
-/** `true` if there is something to show: some declared mode or a mode saved in the project. */
+/** `true` if there is something to show: some declared axis or a choice saved in the project. */
 export function hasDrawingModes(project: Project): boolean {
-  return declaredDrawingModes(project).length > 0 || project.drawingMode !== undefined;
+  return listedAxes(project, project.drawingMode).size > 0;
 }
 
 export function DrawingModeSettings({ project, readOnly }: DrawingModeSettingsProps) {
   const { actions } = useEditor();
   const titleId = useId();
-  const declared = declaredDrawingModes(project);
-  const stored = project.drawingMode;
-  if (!hasDrawingModes(project)) return null;
-  const undeclared = stored !== undefined && !declared.includes(stored);
-  // Without a saved mode the first one applies (the specializations' default).
-  const value = stored ?? declared[0] ?? '';
+  const axes = listedAxes(project, project.drawingMode);
+  if (axes.size === 0) return null;
   return (
     <section class="repos" aria-labelledby={titleId}>
       <h3 id={titleId} class="repos-title">
         {t('drawingMode.title')}
       </h3>
       <p class="muted">{t('drawingMode.intro')}</p>
-      <Select
-        label={t('drawingMode.label')}
-        value={value}
-        disabled={readOnly}
-        onChange={(e) => actions.setProjectDrawingMode(e.currentTarget.value)}
-      >
-        {declared.map((mode) => (
-          <option key={mode} value={mode}>
-            {drawingModeLabel(mode)}
-          </option>
-        ))}
-        {undeclared && (
-          <option value={stored}>
-            {t('drawingMode.undeclared', { mode: drawingModeLabel(stored) })}
-          </option>
-        )}
-      </Select>
+      {[...axes].map(([axis, entries]) => {
+        const stored = project.drawingMode?.[axis];
+        const undeclared = stored !== undefined && !entries.includes(stored);
+        // Without a saved entry the axis default (its first entry) applies.
+        return (
+          <Select
+            key={axis}
+            label={axisLabel(axis)}
+            value={stored ?? entries[0] ?? ''}
+            disabled={readOnly}
+            onChange={(e) =>
+              actions.setProjectDrawingAxis(axis, e.currentTarget.value || null)
+            }
+          >
+            {entries.length === 0 && (
+              <option value="">{t('drawingMode.projectDefault')}</option>
+            )}
+            {entries.map((entry) => (
+              <option key={entry} value={entry}>
+                {drawingModeLabel(entry)}
+              </option>
+            ))}
+            {undeclared && (
+              <option value={stored}>
+                {t('drawingMode.undeclared', { mode: drawingModeLabel(stored) })}
+              </option>
+            )}
+          </Select>
+        );
+      })}
     </section>
   );
 }
