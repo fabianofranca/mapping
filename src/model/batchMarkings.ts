@@ -44,6 +44,7 @@ import { findSpecType } from './specLookup';
 import { typeSlots } from './specSlots';
 import type {
   AnnotationTypeRef,
+  ContainerBackground,
   ExternalSource,
   JsonValue,
   Layer,
@@ -235,8 +236,8 @@ function defined<T extends object>(value: T): T {
 function backgroundSize(args: {
   readonly width?: number | undefined;
   readonly height?: number | undefined;
-  readonly background?: string | undefined;
-}): { width: number; height: number; background: string } {
+  readonly background?: ContainerBackground | undefined;
+}): { width: number; height: number; background: ContainerBackground } {
   const { width, height, background } = args;
   if (width !== undefined && height !== undefined && background !== undefined) {
     return { width, height, background };
@@ -258,7 +259,7 @@ export function addBatchBackgroundContainer(
     readonly name?: string | undefined;
     readonly width?: number | undefined;
     readonly height?: number | undefined;
-    readonly background?: string | undefined;
+    readonly background?: ContainerBackground | undefined;
     readonly center?: { readonly x: number; readonly y: number } | undefined;
     readonly source?: Parameters<typeof toExternalSource>[0] | undefined;
   },
@@ -270,7 +271,7 @@ export function addBatchBackgroundContainer(
 ): {
   readonly project: Project;
   readonly id: string;
-  readonly size: { width: number; height: number; background: string };
+  readonly size: { width: number; height: number; background: ContainerBackground };
 } {
   const size = backgroundSize(args);
   const where = place();

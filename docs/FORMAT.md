@@ -126,7 +126,7 @@ in the project; `null` in the container without a file, v10: see below); `width`
 `parentId` (v13: `null` or the canvas marking that wraps the container, computed by the app; see below);
 `pageId` (v21: the page the container lives on; see "Fields of v21 (pages)");
 `markingColor` (`null` or color); `locked` (boolean, v5: see below); `source` (`null` or source, v8:
-see below); `background` (`null` or `#RRGGBB` color, v10: the background color of the container without a file);
+see below); `background` (`null`, a `#RRGGBB` color or, since v24, `{ "$token": "<name>" }`; v10: the background of the container without a file; see "Fields of v24");
 `drawingMode` (v18, optional: the drawing mode that the container pins, a map axis → entry since v24; see "Fields of v18" and "Fields of v24"); `direction` (v20, optional: the reading direction that the container pins, `ltr` or `rtl`; see "Fields of v20"); `density` (v19, optional: image pixels per component unit; see "Fields of v19"). `classes` (v23, optional: the container classes the container is in, a map `set id → class id` of the chosen sets; see "Fields of v23").
 
 **`markings[]`**: `id`; `containerId` (v12; formerly `imageId`; `null` in the canvas marking, v13); `parentId` (parent marking or `null`,
@@ -154,7 +154,7 @@ lists the problems and repairs what has a mechanical repair (see "Inconsistent f
 file on read.
 
 - Unique ids in each collection; unique `file` among the images that have a file; unique `file` of the specializations.
-- Container (v12): `file` is `null` if, and only if, `background` is a color (`container-content`).
+- Container (v12): `file` is `null` if, and only if, `background` is a color or, since v24, a token (`{ "$token": "brand-surface" }`) (`container-content`). A container with a file keeps `background: null` (`container-has-file`).
 - Every marking has a null `containerId` (canvas marking, v13) or one of an existing container; `parentId`, if any, is an existing marking.
 - `rect`: integers, width and height **≥ 1 px** (on opening, any marking is valid from 1 px; below that it is `rect-too-small`; gestures and MCP require 8 px on a regular marking, see "Fields of v18"); in the container marking, **entirely inside** the image (`0 ≤ x`,
   `x + width ≤ image width`; same for `y`); in the canvas marking, no position limit.
@@ -658,8 +658,8 @@ with or without an image file). Only the vocabulary of `mapping.json` changes; t
 - The `images` collection becomes **`containers`**, and the marking swaps `imageId` for **`containerId`**. The fields of
   each container (`id`, `name`, `file`, `width`, `height`, `placement`, `markingColor`, `locked`, `source`,
   `background`) do not change.
-- `file`: `string` (path in `images/`) or `null` (container without a file). `background`: `#RRGGBB` color or
-  `null`.
+- `file`: `string` (path in `images/`) or `null` (container without a file). `background`: `#RRGGBB` color,
+  since v24 `{ "$token": "<name>" }`, or `null`.
 - **Invariant `container-content`** (formerly `blank-background`): `file === null` if, and only if,
   `background !== null`. Related errors: `container-without-file` (reading the file of a container without a
   file) and `container-has-file` (an operation only for the container without a file applied to one with a file).
@@ -1245,13 +1245,16 @@ v24 turns the **drawing mode** into a map **axis → entry**, because a speciali
 - **Shape of the names:** every axis and every entry must match `[a-z0-9][a-z0-9-]*`; outside that, reading the file fails with a schema error, and the model and the MCP refuse the write with `invalid-name`.
 - **The model does not check the choice against the specializations:** an axis, or an entry of a declared axis, that no applied specialization declares is **kept** (the specialization may be removed or updated later, and the choice comes back when it is declared again) and drawn with the default entry; `undeclaredDrawingMode` lists them and the Diagnostics view warns. The MCP is stricter when writing (`invalid-arguments` with the declared axes in `details`).
 - **Key order:** unchanged; the map's keys are written in the order the model holds them.
+- **Background token (`containers[].background`):** the `background` of a container **without a file** is either `"#RRGGBB"` (uppercase) or `{ "$token": "<name>" }`, the name of a **color** token of an applied specialization (`[a-z0-9][a-z0-9-]*`; the object is strict, any other key is a schema error). For example, `"background": "#FAFAFA"` stays valid as it is, and `"background": { "$token": "surface" }` follows the library. The token counts as a background in `container-content` (`file` is `null` if, and only if, `background` is not `null`); a container with a file still has `background: null`.
+- **How the token resolves:** in the container's **effective drawing mode** (the entry per axis above), the name is read in the **first applied specialization** (the order of the project's `specializations`) whose `tokens` declares it with a **color** value (a number of the same name in an earlier specialization is skipped). A color with alpha is composited over white, and `transparent`/`none` become white, so the board stays opaque, like a `#RRGGBB`. A token that no applied specialization declares as a color (the library was removed or updated) **stays stored**, draws `#FFFFFF` and the Diagnostics view lists the container and the token. Changing the project's or the container's drawing mode changes the color the same way it changes the components.
+- **Who writes it:** only an agent, through `add_container`/`update_container` (the MCP refuses a token no applied specialization declares as a color). The app never writes a token background: Details shows the token name and the resolved color, read-only, with a **Use a fixed color** button that replaces it with the resolved `#RRGGBB` (one undo entry).
 - **Proposal:** the map goes in the proposal's `formatVersion` 12 (see [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md)); a proposal of 6 to 11 with a string is read as `{ "mode": s }`.
 
 An earlier app rejects the v24 file as a "newer version" (read-only), instead of reading the map as a string and drawing wrong.
 
 ### Migration v23 → v24
 
-A string `s` in the project's or a container's `drawingMode` becomes `{ "mode": s }`; nothing else changes (no mode is created, an absent one stays absent). As in every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
+A string `s` in the project's or a container's `drawingMode` becomes `{ "mode": s }`; nothing else changes (no mode is created, an absent one stays absent). The background token adds **no migration**: every `#RRGGBB` background stays valid and unchanged; a v24 file only holds a `{ "$token": … }` background when an agent wrote one. As in every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
 
 ## Migration
 

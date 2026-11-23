@@ -17,7 +17,12 @@ import {
   presetGroups,
   selectionSize,
 } from '../../src/ui/containerForm';
-import { applySpecialization, type Project, type Spec } from '../../src/model';
+import {
+  applySpecialization,
+  setProjectDrawingMode,
+  type Project,
+  type Spec,
+} from '../../src/model';
 import { sampleProject } from '../model/fixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
@@ -441,5 +446,105 @@ describe('New container dialog: container classes of a ready-made size', () => {
     await user.type(field(t('container.width')), '1');
     await submit(user);
     expect(harness.project().containers.at(-1)?.classes).toBeUndefined();
+  });
+});
+
+// Stage #1900, NV4 (decision 27): the app never writes a token; it shows one and offers to fix it.
+const TOKEN_SPEC = {
+  format: 'mapping-spec',
+  formatVersion: 23,
+  id: 'ds',
+  name: 'Design System',
+  version: 1,
+  layers: [],
+  tokens: {
+    axes: { theme: ['light', 'dark'] },
+    values: { surface: { $axis: 'theme', light: '#FFFFFF', dark: '#202020' } },
+  },
+  containers: [
+    {
+      id: 'themed',
+      name: 'Themed',
+      width: 300,
+      height: 500,
+      background: { $token: 'surface' },
+    },
+  ],
+} as unknown as Spec;
+
+describe('Container Details: background by token', () => {
+  function renderTokened(mode?: string) {
+    let project: Project = applySpecialization(sampleProject(), TOKEN_SPEC);
+    if (mode) project = setProjectDrawingMode(project, { theme: mode });
+    const harness = createHarness(project);
+    const created = harness.actions.addBackgroundContainer({
+      name: 'Home',
+      width: 360,
+      height: 800,
+      background: '#FFFFFF',
+    });
+    if (!created.ok) throw new Error(created.error);
+    const set = harness.actions.setBackgroundContainer(created.value, {
+      background: { $token: 'surface' },
+    });
+    if (!set.ok) throw new Error(set.error);
+    renderLive(harness, (p) => {
+      const image = p.containers.find((i) => i.id === created.value);
+      return image ? (
+        <SelectionPanel
+          image={image}
+          display={undefined}
+          readOnly={false}
+          busy={false}
+          onReplace={() => undefined}
+          onDelete={() => undefined}
+        />
+      ) : null;
+    });
+    const image = () => {
+      const found = harness.project().containers.find((i) => i.id === created.value);
+      if (!found) throw new Error('no screen');
+      return found;
+    };
+    return { harness, image, user: userEvent.setup() };
+  }
+
+  it('shows the token name and the resolved color read-only, with Use a fixed color', () => {
+    renderTokened('dark');
+    expect(screen.queryByLabelText(t('container.background'))).toBeNull();
+    expect(screen.getByText(/surface/)).toBeTruthy();
+    expect(screen.getByText(/#202020/)).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: t('container.useFixedColor') }),
+    ).toBeTruthy();
+  });
+
+  it('Use a fixed color writes the resolved #RRGGBB in one undo entry and the usual field comes back', async () => {
+    const { harness, image, user } = renderTokened('dark');
+    await user.click(screen.getByRole('button', { name: t('container.useFixedColor') }));
+    expect(image().background).toBe('#202020');
+    expect(screen.getByLabelText<HTMLInputElement>(t('container.background')).value).toBe(
+      '#202020',
+    );
+    harness.store.undo();
+    expect(image().background).toEqual({ $token: 'surface' });
+  });
+});
+
+describe('New container dialog: preset with a token', () => {
+  it('fills Background color with the token color resolved in the project selection', () => {
+    const base = applySpecialization(sampleProject(), TOKEN_SPEC);
+    renderDialog(createHarness(setProjectDrawingMode(base, { theme: 'dark' })));
+    expect(field(t('container.background')).value).toBe('#202020');
+  });
+
+  it('with the default selection the token resolves to the axis default', () => {
+    renderDialog(createHarness(applySpecialization(sampleProject(), TOKEN_SPEC)));
+    expect(field(t('container.background')).value).toBe('#FFFFFF');
+  });
+
+  it('presetGroups keeps the token as written', () => {
+    const groups = presetGroups([{ id: 'ds', spec: TOKEN_SPEC }]);
+    expect(groups[0]?.presets[0]?.background).toEqual({ $token: 'surface' });
   });
 });

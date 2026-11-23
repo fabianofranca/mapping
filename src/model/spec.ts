@@ -3,18 +3,23 @@ import { z } from 'zod';
 import { isValidCodePath, isValidUrlTemplate } from './codeLocations';
 import { MAX_CONTAINER_SIZE } from './containers';
 import {
+  backgroundTokenRefs,
   parseOrigins,
   parsePath,
   toSpecOrigin,
   type SpecOrigin,
 } from './components/origin';
-import type { SpecTokens } from './components/tokens';
+import {
+  TOKEN_NAME_PATTERN,
+  knownTokenKinds,
+  type SpecTokens,
+} from './components/tokens';
 import {
   checkTokenSuggestions,
   expandTokenSuggestions,
   MAX_SUGGESTIONS,
 } from './specSuggestions';
-import { checkTokens } from './specTokens';
+import { checkTokens, NAMED_VALUES_VERSION } from './specTokens';
 import { isPackagePath, packagePathError } from './packagePaths';
 import { childSets } from './specChildren';
 import {
@@ -558,8 +563,8 @@ export interface SpecContainer {
   /** Pixels, integer from 1 to `MAX_CONTAINER_SIZE`. */
   width: number;
   height: number;
-  /** `#RRGGBB`; absent = white. */
-  background?: string;
+  /** `#RRGGBB` or (`formatVersion` 23) `{ "$token": "<name>" }`, a color token of this specialization; absent = white. */
+  background?: string | { $token: string };
   /** The choice the size carries, set id → class id, chosen sets only (`formatVersion` 21 only). */
   classes?: SpecContainerChoice;
 }
@@ -1708,13 +1713,24 @@ const containerSide = z
   .min(1, 'must be >= 1')
   .max(MAX_CONTAINER_SIZE, CONTAINER_SIDE_MAX.text);
 
+/** `{ "$token": "<name>" }` as a container background (`formatVersion` 23, checked by `checkContainerBackgrounds`). */
+const backgroundToken = z
+  .object({
+    $token: z.string().regex(TOKEN_NAME_PATTERN, specMsg('spec.backgroundInvalid').text),
+  })
+  .strict();
+
+const containerBackground = z.union([color, backgroundToken], {
+  error: specMsg('spec.backgroundInvalid').text,
+});
+
 const containerShape = z
   .object({
     id: z.string().regex(TAG_RE, 'invalid container id; use [a-z0-9-]+'),
     name: nonEmpty,
     width: containerSide,
     height: containerSide,
-    background: color.optional(),
+    background: containerBackground.optional(),
     // `formatVersion` 21 only: validated by `checkContainerClasses`, which knows the sets.
     classes: z.unknown().optional(),
   })
@@ -2588,11 +2604,86 @@ function originsOf(raw: unknown): OriginsParse {
   return hit;
 }
 
+/** The first `formatVersion` with `tokens`, where an origin's `screen.background` can read one (origins end at 21). */
+const ORIGIN_BACKGROUND_TOKEN_VERSION = 15;
+
+/** What is wrong with `name` read as a color of `tokens` (`formatVersion` 23): missing, or another kind. */
+export function colorTokenIssue(
+  tokens: SpecTokens | undefined,
+  name: string,
+): SpecMsg | undefined {
+  const kind = knownTokenKinds(tokens).get(name);
+  if (kind === 'color') return undefined;
+  if (kind === undefined) return specMsg('spec.tokenMissing', { name });
+  if (kind === 'number') return specMsg('spec.tokenNumberNotColor', { name });
+  if (kind === 'family') return specMsg('spec.tokenFamilyNotColor', { name });
+  return specMsg('spec.tokenCompositeNotColor', { name });
+}
+
+/** `colorTokenIssue` over the raw `tokens`; malformed tokens are reported by `checkTokens`, so nothing here. */
+function colorIssueOf(tokens: unknown, name: string): SpecMsg | undefined {
+  try {
+    return colorTokenIssue(tokens as SpecTokens | undefined, name);
+  } catch {
+    return undefined;
+  }
+}
+
+/** A token as a background: the version, then that the token exists in `tokens` with a color value. */
+function checkBackgroundToken(
+  at: (string | number)[],
+  name: string,
+  version: number,
+  env: { readonly formatVersion: number; readonly tokens?: unknown },
+  ctx: z.RefinementCtx,
+): void {
+  if (env.formatVersion < version) return addSpecIssue(ctx, at, onlyFormat(version));
+  const issue = colorIssueOf(env.tokens, name);
+  if (issue !== undefined) addSpecIssue(ctx, at, issue);
+}
+
+/** `containers[].background` as a token (`formatVersion` 23): a color token of the same specialization. */
+function checkContainerBackgrounds(
+  spec: {
+    readonly formatVersion: number;
+    readonly tokens?: unknown;
+    readonly containers?: readonly Pick<SpecContainer, 'background'>[];
+  },
+  ctx: z.RefinementCtx,
+): void {
+  (spec.containers ?? []).forEach((container, ci) => {
+    const background = container.background;
+    if (typeof background !== 'object') return;
+    const at = ['containers', ci, 'background'];
+    checkBackgroundToken(at, background.$token, NAMED_VALUES_VERSION, spec, ctx);
+  });
+}
+
+/** Each token of an origin's `screen.background` (`formatVersion` 15 and later; origins end at 21). */
+function checkOriginBackgrounds(
+  raw: unknown,
+  spec: { readonly formatVersion: number; readonly tokens?: unknown },
+  ctx: z.RefinementCtx,
+): void {
+  if (!Array.isArray(raw)) return;
+  raw.forEach((item, index) => {
+    const screen = isRecord(item) ? item.screen : undefined;
+    if (!isRecord(screen)) return;
+    const base = `origins[${index}].screen.background`;
+    for (const ref of backgroundTokenRefs(screen.background, base)) {
+      const at = parseSpecPath(ref.path);
+      checkBackgroundToken(at, ref.name, ORIGIN_BACKGROUND_TOKEN_VERSION, spec, ctx);
+    }
+  });
+}
+
 function addOriginIssues(
   raw: unknown,
   ctx: z.RefinementCtx,
-  formatVersion: number,
+  spec: { readonly formatVersion: number; readonly tokens?: unknown },
 ): void {
+  const formatVersion = spec.formatVersion;
+  checkOriginBackgrounds(raw, spec, ctx);
   // `kind` (`measured` origin) is from v15; before it, the key is an error at the exact path.
   if (formatVersion < 15 && Array.isArray(raw)) {
     raw.forEach((item, index) => {
@@ -3222,7 +3313,7 @@ export const specSchema = z
       checkNoLibraryKeys(spec.layers, ctx);
     } else if (spec.origins !== undefined) {
       if (plain) addSpecIssue(ctx, ['origins'], onlyUpTo(PLAIN_SOURCES_VERSION - 1));
-      else addOriginIssues(spec.origins, ctx, spec.formatVersion);
+      else addOriginIssues(spec.origins, ctx, spec);
     }
     if (spec.formatVersion >= 3) {
       checkSources(spec.layers, spec.formatVersion, executable, ctx);
@@ -3265,6 +3356,7 @@ export const specSchema = z
     checkAccessibilityKeys(spec, ctx);
     checkFileFormats(spec, ctx);
     checkContainerClasses(spec, ctx);
+    checkContainerBackgrounds(spec, ctx);
     checkDocuments(spec, ctx);
     if (spec.formatVersion >= 11) {
       checkLayerGroups(spec.layers, ctx);

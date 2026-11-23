@@ -7,6 +7,7 @@ import {
   createArrow,
   createMarking,
   setContainerClass,
+  setBackgroundContainer,
   setContainerDensity,
   setMarkingAnchor,
   snapToAnchor,
@@ -443,5 +444,48 @@ describe('changeTitle and changeSummary: the container classes (decision 13 of #
     locale.value = 'pt-BR';
     const after = setContainerClass(base, 'c1', 'platform', 'android');
     expect(summaryOf(base, after)).toMatch(/^Classes: .* → Platform: Android$/);
+  });
+});
+
+describe('changeTitle and changeSummary: the background token (stage #1900, NV4, decision 27)', () => {
+  beforeEach(() => {
+    locale.value = 'en-US';
+  });
+  const base = addBackgroundContainer(emptyProject(), {
+    id: 'c1',
+    width: 1080,
+    height: 2400,
+    background: '#FFFFFF',
+  });
+  const summaryOf = (before: typeof base, after: typeof base) => {
+    const proposal = propose(before, after);
+    const change = proposal.changes.find((c) => c.field === 'background');
+    if (!change) throw new Error('no background change');
+    const names = { current: before, preview: null, proposal };
+    return `${changeTitle(names, change)}: ${changeSummary(names, change)}`;
+  };
+
+  it('a change to a token shows "token <name>" and a change back shows the color', () => {
+    const tokened = setBackgroundContainer(base, 'c1', {
+      background: { $token: 'surface' },
+    });
+    expect(summaryOf(base, tokened)).toBe('Background color: #FFFFFF → token surface');
+    expect(summaryOf(tokened, base)).toBe('Background color: token surface → #FFFFFF');
+  });
+
+  it('the creation of a container with a token shows its default name and the token form', () => {
+    const created = addBackgroundContainer(emptyProject(), {
+      id: 'c2',
+      width: 100,
+      height: 100,
+      background: { $token: 'surface' },
+    });
+    const proposal = propose(emptyProject(), created);
+    const change = proposal.changes.find(
+      (c) => c.entity === 'image' && c.kind === 'create',
+    );
+    if (!change) throw new Error('no creation');
+    const names = { current: emptyProject(), preview: null, proposal };
+    expect(changeSummary(names, change)).toContain(t('image.containerUntitled'));
   });
 });

@@ -47,7 +47,9 @@ import {
 import type { Direction } from '../src/model/components/componentFormat';
 import {
   selectionKey,
+  tokenAxes,
   type HostFonts,
+  type SpecTokens,
   type TokenSelection,
 } from '../src/model/components/tokens';
 import { tokenValue } from '../src/theme/tokens';
@@ -219,6 +221,16 @@ function packageBytes(
   const bytes = library.images?.get(resolvePath(library.specPath, asset));
   if (bytes === undefined) return null;
   return bytes.slice().buffer;
+}
+
+/** The `drawingMode` as an axis -> entry map: a string sets that entry on every axis that declares it. */
+function selectionOf(
+  tokens: SpecTokens | undefined,
+  mode: string | TokenSelection,
+): TokenSelection {
+  if (typeof mode !== 'string') return mode;
+  const entries = [...tokenAxes(tokens)].filter(([, list]) => list.includes(mode));
+  return Object.fromEntries(entries.map(([axis]) => [axis, mode]));
 }
 
 export function createViewer(
@@ -428,6 +440,9 @@ export function createViewer(
       system: sourceSystem,
       ...(direction !== undefined ? { direction } : {}),
       measure,
+      ...(drawingMode !== undefined
+        ? { selection: selectionOf(library.tokens, drawingMode) }
+        : {}),
     });
     screen = result.screen;
     options.onSource?.(result);

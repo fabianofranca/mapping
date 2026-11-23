@@ -3,12 +3,22 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ImageRenderer } from '../../../src/canvas/renderers/images';
 import { HALO_WIDTH } from '../../../src/canvas/renderers/metrics';
 import { t } from '../../../src/i18n';
+import { containerBackgroundColor } from '../../../src/model/containerBackground';
 import {
   addBackgroundContainer,
   removeContainer,
   renameContainer,
+  setProjectDrawingMode,
+  type Project,
+  type ProjectSpecialization,
 } from '../../../src/model';
 import { canvasProject, editorFor, frameOf, installFakeCanvas, TOKENS } from '../harness';
+
+vi.mock('../../../src/model/containerBackground', async (original) => {
+  const actual =
+    await original<typeof import('../../../src/model/containerBackground')>();
+  return { ...actual, containerBackgroundColor: vi.fn(actual.containerBackgroundColor) };
+});
 
 beforeAll(installFakeCanvas);
 afterAll(() => vi.restoreAllMocks());
@@ -209,5 +219,80 @@ describe('ImageRenderer', () => {
     // The border thickness follows the zoom.
     renderer.render(frameOf(editor, { project, viewport: { x: 0, y: 0, scale: 4 } }));
     expect(node?.placeholder.strokeWidth()).toBe(0.25);
+  });
+
+  // Stage #1900, NV4 (decision 25): a background by token is drawn with the resolved color, and the node
+  // is redrawn when the resolved color changes with the same container object.
+  describe('background by token', () => {
+    const THEMED = {
+      id: 'ui',
+      spec: {
+        layers: [],
+        types: [],
+        tokens: {
+          axes: { theme: ['light', 'dark'] },
+          values: { surface: { $axis: 'theme', light: '#FFFFFF', dark: '#202020' } },
+        },
+      },
+    } as unknown as ProjectSpecialization;
+
+    function tokenProject(
+      token: string,
+      specs: readonly ProjectSpecialization[],
+    ): Project {
+      const base = { ...canvasProject(), specializations: specs };
+      return addBackgroundContainer(base, {
+        id: 'B1',
+        width: 400,
+        height: 600,
+        background: { $token: token },
+        center: { x: 3000, y: 300 },
+      });
+    }
+
+    it('fills with the color resolved in the selection and follows the drawing mode', () => {
+      const { renderer, editor } = setup();
+      const project = tokenProject('surface', [THEMED]);
+      renderer.render(frameOf(editor, { project }));
+      expect(renderer.node('B1')?.placeholder.fill()).toBe('#FFFFFF');
+      const dark = setProjectDrawingMode(project, { theme: 'dark' });
+      renderer.render(frameOf(editor, { project: dark }));
+      expect(renderer.node('B1')?.placeholder.fill()).toBe('#202020');
+      const light = setProjectDrawingMode(dark, { theme: 'light' });
+      renderer.render(frameOf(editor, { project: light }));
+      expect(renderer.node('B1')?.placeholder.fill()).toBe('#FFFFFF');
+    });
+
+    it('redraws when the specializations change the token color', () => {
+      const { renderer, editor } = setup();
+      const project = setProjectDrawingMode(tokenProject('surface', [THEMED]), {
+        theme: 'dark',
+      });
+      renderer.render(frameOf(editor, { project }));
+      expect(renderer.node('B1')?.placeholder.fill()).toBe('#202020');
+      const other = {
+        id: 'ui',
+        spec: { layers: [], types: [], tokens: { values: { surface: '#123456' } } },
+      } as unknown as ProjectSpecialization;
+      renderer.render(
+        frameOf(editor, { project: { ...project, specializations: [other] } }),
+      );
+      expect(renderer.node('B1')?.placeholder.fill()).toBe('#123456');
+    });
+
+    it('resolves the background only for a container without a file', () => {
+      const { renderer, editor } = setup();
+      const resolve = vi.mocked(containerBackgroundColor);
+      resolve.mockClear();
+      renderer.render(frameOf(editor, { project: tokenProject('surface', [THEMED]) }));
+      const asked = resolve.mock.calls.map(([, id]) => id);
+      expect(asked).toEqual(['B1']);
+    });
+
+    it('an undeclared token draws white', () => {
+      const { renderer, editor } = setup();
+      renderer.render(frameOf(editor, { project: tokenProject('missing', [THEMED]) }));
+      expect(renderer.node('B1')?.placeholder.fill()).toBe('#FFFFFF');
+    });
   });
 });

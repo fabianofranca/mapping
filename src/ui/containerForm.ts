@@ -1,5 +1,5 @@
-import { MAX_CONTAINER_SIZE } from '../model';
-import type { Project, Spec } from '../model';
+import { MAX_CONTAINER_SIZE, isBackgroundToken, resolveBackground } from '../model';
+import type { ContainerBackground, Project, Spec } from '../model';
 import { resolveSelection, type Selection } from '../store/ui';
 
 // Rules of the "New container" dialog (and of the container Details fields): size presets
@@ -11,7 +11,8 @@ export interface ContainerPreset {
   readonly name: string;
   readonly width: number;
   readonly height: number;
-  readonly background: string;
+  /** `#RRGGBB` or a token reference; the dialog turns a token into the color it resolves to (`presetColor`). */
+  readonly background: ContainerBackground;
   /** Chosen container classes the ready-made size carries (set id → class id), absent without any. */
   readonly classes?: Readonly<Record<string, string>>;
 }
@@ -54,6 +55,18 @@ export function presetGroups(
     });
   }
   return groups;
+}
+
+/**
+ * Fixed color a preset puts in the Background color field: the preset's `#RRGGBB`, or the color its token
+ * resolves to in the project's selection (white when the project has no such token). The app never stores a token.
+ */
+export function presetColor(project: Project | null, preset: ContainerPreset): string {
+  const { background } = preset;
+  if (!isBackgroundToken(background)) return background;
+  return project
+    ? resolveBackground(project, background, project.drawingMode)
+    : DEFAULT_CONTAINER_BACKGROUND;
 }
 
 /** Size of the selected marking's rectangle, or `null` with no marking selected. */

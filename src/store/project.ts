@@ -552,6 +552,16 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) =>
         model.setBackgroundContainer(p, containerId, patch, settleOptions(p)),
       ),
+    /** Replaces a token background with its resolved `#RRGGBB`, read from the real project (not the review's view). */
+    useFixedBackgroundColor: (containerId: string) =>
+      store.apply((p) =>
+        model.setBackgroundContainer(
+          p,
+          containerId,
+          { background: model.containerBackgroundColor(p, containerId) ?? '#FFFFFF' },
+          settleOptions(p),
+        ),
+      ),
 
     // Gestures: previews without history and a single entry at the end (see `ProjectStore`).
     // Previews run with `settle: false` (membership frozen while the pointer

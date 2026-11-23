@@ -8,6 +8,7 @@ import {
   applySpecialization,
   addContainer,
   setFieldValue,
+  setProjectDrawingMode,
   type NewComponentArgs,
   type Project,
   type Rect,
@@ -156,6 +157,45 @@ describe('container actions', () => {
     const photo = actions.setBackgroundContainer('I1', { background: '#000000' });
     expect(photo).toEqual({ ok: false, error: 'container-has-file' });
     expect(current(store)).toBe(before);
+  });
+});
+
+describe('useFixedBackgroundColor', () => {
+  it('freezes the REAL project color in one undo entry; a file container fails', () => {
+    const spec = {
+      id: 'ui',
+      spec: {
+        layers: [],
+        types: [],
+        tokens: {
+          axes: { theme: ['light', 'dark'] },
+          values: { surface: { $axis: 'theme', light: '#FFFFFF', dark: '#202020' } },
+        },
+      },
+    } as unknown as Project['specializations'][number];
+    const base = setProjectDrawingMode(
+      { ...componentProject(), specializations: [spec] },
+      { theme: 'dark' },
+    );
+    const { store, actions } = setup(base);
+    const created = actions.addBackgroundContainer({
+      name: null,
+      width: 100,
+      height: 100,
+      background: '#FFFFFF',
+    });
+    if (!created.ok) throw new Error('addBackgroundContainer');
+    actions.setBackgroundContainer(created.value, { background: { $token: 'surface' } });
+    const depth = undoDepth(store);
+    expect(actions.useFixedBackgroundColor(created.value).ok).toBe(true);
+    expect(
+      current(store).containers.find((i) => i.id === created.value)?.background,
+    ).toBe('#202020');
+    expect(undoDepth(store)).toBe(depth + 1);
+    expect(actions.useFixedBackgroundColor('I1')).toEqual({
+      ok: false,
+      error: 'container-has-file',
+    });
   });
 });
 

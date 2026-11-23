@@ -4,6 +4,7 @@ import {
   SCHEMA_VERSION,
   projectIndex,
   undeclaredContainerClasses,
+  undeclaredBackgroundTokens,
   undeclaredDrawingMode,
 } from '../model';
 import type { FontProblem } from '../storage/fonts';
@@ -342,6 +343,40 @@ export function DiagnosticsDrawingMode() {
 }
 
 /**
+ * Container backgrounds by token that no applied specialization declares as a color (stage #1900, NV4,
+ * decision 26): the token stays saved and the background is drawn white; each one is listed with its container.
+ */
+export function DiagnosticsBackgroundTokens() {
+  const project = useContext(EditorContext)?.store.project.value;
+  if (!project) return null;
+  const undeclared = undeclaredBackgroundTokens(project);
+  if (undeclared.length === 0) return null;
+  const containers = projectIndex(project).containers;
+  return (
+    <section
+      class="diagnostics-background-tokens"
+      aria-label={t('diagnostics.backgroundTokens')}
+    >
+      <h3>{t('diagnostics.backgroundTokens')}</h3>
+      <p class="muted">{t('diagnostics.backgroundTokensHint')}</p>
+      <ul>
+        {undeclared.map((u) => {
+          const container = containers.get(u.containerId);
+          return (
+            <li key={u.containerId}>
+              {t('diagnostics.backgroundTokenUndeclared', {
+                container: container ? imageLabel(container) : u.containerId,
+                token: u.token,
+              })}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/**
  * Container class choices saved that no applied specialization declares (stage #1901, decision 16): the
  * choice stays in the file, gives no class, and each one is listed with the container, the set and the class.
  */
@@ -415,6 +450,7 @@ export function DiagnosticsView() {
       <DiagnosticsLibrary />
       <DiagnosticsComponents />
       <DiagnosticsDrawingMode />
+      <DiagnosticsBackgroundTokens />
       <DiagnosticsContainerClasses />
       <DiagnosticsDirectionSection />
       <DiagnosticsRemoteImages />

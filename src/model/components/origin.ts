@@ -32,6 +32,13 @@ import {
 } from './layout';
 import type { FieldDef, Library, TypeDef } from './library';
 import type { Screen } from './screen';
+import {
+  TOKEN_NAME_PATTERN,
+  colorOverWhite,
+  resolveTokens,
+  type SpecTokens,
+  type TokenSelection,
+} from './tokens';
 import { packagePathError } from '../packagePaths';
 import { packagePathMsg, pathErrorMsg } from '../specIssueCode';
 import { originCodeForText, originSpecCodeForText } from '../messages/textLookup';
@@ -53,6 +60,24 @@ export type ValueSource =
       readonly default?: Literal;
     };
 
+/** A named value read as a color: `{ "$token": "<name>" }` (the name only, no `alpha` or `over`). */
+export interface BackgroundToken {
+  readonly $token: string;
+}
+
+/**
+ * `screen.background`: a literal, a path (the `values` entries and the `default` may be a token) or, as
+ * the whole value, a token. The token is resolved in the drawing's selection (`screenFromSource`).
+ */
+export type BackgroundSource =
+  | Literal
+  | BackgroundToken
+  | {
+      readonly path: string;
+      readonly values?: Readonly<Record<string, string | BackgroundToken>>;
+      readonly default?: Literal | BackgroundToken;
+    };
+
 export interface RootSource {
   /** Path of the root in the document; `[*]` = each element of the list becomes a root. */
   readonly path: string;
@@ -69,7 +94,7 @@ export interface ScreenSource {
   readonly name?: ValueSource;
   readonly width: ValueSource;
   readonly height: ValueSource;
-  readonly background?: ValueSource;
+  readonly background?: BackgroundSource;
   /** Reading direction of the screen (default `ltr`); passed on to `layoutScreen`. Literal only. */
   readonly direction?: Direction;
   readonly roots: readonly RootSource[];
@@ -177,6 +202,11 @@ export interface SourceOptions {
   readonly system?: string;
   /** Reading direction of the screen; beats the origin's `screen.direction` (absent = the origin's, otherwise `ltr`). */
   readonly direction?: Direction;
+  /**
+   * The selection (axis → entry) where a `screen.background` token resolves, against the library's
+   * `tokens`; absent = each axis at its default.
+   */
+  readonly selection?: TokenSelection;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -438,6 +468,114 @@ function parseValueSource(
   };
 }
 
+/** `{ "$token": "<name>" }` is the form of a token (any other key beside it is a problem). */
+const isTokenForm = (raw: unknown): boolean => isRecord(raw) && '$token' in raw;
+const asRecord = (raw: unknown): Record<string, unknown> =>
+  raw as Record<string, unknown>;
+
+function parseBackgroundToken(
+  raw: Record<string, unknown>,
+  path: string,
+  problems: OriginProblem[],
+): BackgroundToken | undefined {
+  const before = problems.length;
+  checkKeys(raw, ['$token'], path, problems);
+  const name = raw.$token;
+  if (typeof name !== 'string' || !TOKEN_NAME_PATTERN.test(name)) {
+    problem(problems, `${path}.$token`, 'expected a token name ([a-z0-9][a-z0-9-]*)');
+  }
+  return problems.length > before ? undefined : { $token: name as string };
+}
+
+/** A `values` entry of the background: text or a token. */
+function parseBackgroundEntry(
+  raw: unknown,
+  path: string,
+  problems: OriginProblem[],
+): string | BackgroundToken | undefined {
+  if (typeof raw === 'string') return raw;
+  if (isTokenForm(raw)) return parseBackgroundToken(asRecord(raw), path, problems);
+  problem(problems, path, 'expected text or a token');
+  return undefined;
+}
+
+function parseBackgroundValues(
+  raw: unknown,
+  path: string,
+  problems: OriginProblem[],
+): Record<string, string | BackgroundToken> | undefined {
+  if (!isRecord(raw)) {
+    problem(problems, path, 'expected an object (source → target)');
+    return undefined;
+  }
+  const out: Record<string, string | BackgroundToken> = {};
+  for (const [key, target] of Object.entries(raw)) {
+    const entry = parseBackgroundEntry(target, `${path}.${key}`, problems);
+    if (entry !== undefined) out[key] = entry;
+  }
+  return out;
+}
+
+function parseBackgroundDefault(
+  raw: unknown,
+  path: string,
+  problems: OriginProblem[],
+): Literal | BackgroundToken | undefined {
+  if (typeof raw === 'string' || typeof raw === 'number') return raw;
+  if (isTokenForm(raw)) return parseBackgroundToken(asRecord(raw), path, problems);
+  problem(problems, path, 'expected text or a number');
+  return undefined;
+}
+
+/**
+ * `screen.background`: what a `ValueSource` is, plus `{ "$token" }` as the whole value, as an entry of
+ * `values` and as the `default`. Whether the version allows it and the token exists are checked by the
+ * specialization (`addOriginIssues`).
+ */
+function parseBackgroundSource(
+  raw: unknown,
+  path: string,
+  problems: OriginProblem[],
+): BackgroundSource | undefined {
+  if (isTokenForm(raw)) return parseBackgroundToken(asRecord(raw), path, problems);
+  if (!isRecord(raw)) return parseValueSource(raw, path, problems);
+  const before = problems.length;
+  checkKeys(raw, ['path', 'values', 'default'], path, problems);
+  checkPath(raw.path, `${path}.path`, problems);
+  const values =
+    raw.values === undefined
+      ? undefined
+      : parseBackgroundValues(raw.values, `${path}.values`, problems);
+  const def =
+    raw.default === undefined
+      ? undefined
+      : parseBackgroundDefault(raw.default, `${path}.default`, problems);
+  if (problems.length > before) return undefined;
+  return {
+    path: raw.path as string,
+    ...(values ? { values } : {}),
+    ...(def !== undefined ? { default: def } : {}),
+  };
+}
+
+/** The tokens that a raw `screen.background` names (whole, in `values`, in `default`) and the path of each. */
+export function backgroundTokenRefs(
+  background: unknown,
+  path: string,
+): { readonly name: string; readonly path: string }[] {
+  const named = (value: unknown, at: string) =>
+    isTokenForm(value) && typeof asRecord(value).$token === 'string'
+      ? [{ name: asRecord(value).$token as string, path: at }]
+      : [];
+  if (!isRecord(background)) return [];
+  if (isTokenForm(background)) return named(background, path);
+  const values = isRecord(background.values) ? background.values : {};
+  return [
+    ...Object.entries(values).flatMap(([key, v]) => named(v, `${path}.values.${key}`)),
+    ...named(background.default, `${path}.default`),
+  ];
+}
+
 function parseRoot(
   raw: unknown,
   path: string,
@@ -485,6 +623,20 @@ function parseRoot(
   };
 }
 
+/** `screen.roots`: a list with at least one root; the invalid ones are reported and left out. */
+function parseRoots(raw: unknown, path: string, problems: OriginProblem[]): RootSource[] {
+  const roots: RootSource[] = [];
+  if (!Array.isArray(raw) || raw.length === 0) {
+    problem(problems, path, 'expected a list with at least one root');
+    return roots;
+  }
+  raw.forEach((item, index) => {
+    const root = parseRoot(item, `${path}[${index}]`, problems);
+    if (root) roots.push(root);
+  });
+  return roots;
+}
+
 function parseScreen(
   raw: unknown,
   path: string,
@@ -501,13 +653,16 @@ function parseScreen(
     path,
     problems,
   );
-  const optional = (key: 'id' | 'name' | 'background'): ValueSource | undefined =>
+  const optional = (key: 'id' | 'name'): ValueSource | undefined =>
     raw[key] === undefined
       ? undefined
       : parseValueSource(raw[key], `${path}.${key}`, problems);
   const id = optional('id');
   const name = optional('name');
-  const background = optional('background');
+  const background =
+    raw.background === undefined
+      ? undefined
+      : parseBackgroundSource(raw.background, `${path}.background`, problems);
   const required = (key: 'width' | 'height'): ValueSource | undefined => {
     if (raw[key] === undefined) {
       problem(problems, `${path}.${key}`, 'required');
@@ -518,15 +673,7 @@ function parseScreen(
   const width = required('width');
   const height = required('height');
   const direction = parseScreenDirection(raw.direction, `${path}.direction`, problems);
-  const roots: RootSource[] = [];
-  if (!Array.isArray(raw.roots) || raw.roots.length === 0) {
-    problem(problems, `${path}.roots`, 'expected a list with at least one root');
-  } else {
-    raw.roots.forEach((item, index) => {
-      const root = parseRoot(item, `${path}.roots[${index}]`, problems);
-      if (root) roots.push(root);
-    });
-  }
+  const roots = parseRoots(raw.roots, `${path}.roots`, problems);
   if (problems.length > before || width === undefined || height === undefined) {
     return undefined;
   }
@@ -867,6 +1014,35 @@ function readSource(source: ValueSource | undefined, doc: unknown): unknown {
   return value;
 }
 
+/** `readSource` for `screen.background`: also gives the token (whole, from `values` or the `default`). */
+function readBackground(source: BackgroundSource | undefined, doc: unknown): unknown {
+  if (source === undefined || typeof source !== 'object') return source;
+  if ('$token' in source) return source;
+  const read = readPath(doc, source.path);
+  if (!read.found) return source.default;
+  const value = read.value;
+  if (isScalar(value) && source.values && Object.hasOwn(source.values, String(value))) {
+    return source.values[String(value)];
+  }
+  // A value of the document is never a token: only the origin's own declaration is.
+  return isRecord(value) ? undefined : value;
+}
+
+/** The background that the source read gives: the token in the selection, or the value as text (else `#FFFFFF`). */
+function backgroundColor(
+  value: unknown,
+  tokens: SpecTokens | undefined,
+  selection: TokenSelection | undefined,
+): string {
+  if (isRecord(value) && typeof value.$token === 'string') {
+    const resolved = resolveTokens(tokens, {}, selection)[value.$token];
+    return typeof resolved === 'string'
+      ? (colorOverWhite(resolved) ?? '#FFFFFF')
+      : '#FFFFFF';
+  }
+  return isScalar(value) ? String(value) : '#FFFFFF';
+}
+
 function describeSource(source: ValueSource): string {
   return typeof source === 'object' ? source.path : String(source);
 }
@@ -1163,7 +1339,11 @@ function translate(
     name: text(origin.screen.name, 'Tela'),
     width,
     height,
-    background: text(origin.screen.background, '#FFFFFF'),
+    background: backgroundColor(
+      readBackground(origin.screen.background, json),
+      library.tokens,
+      options.selection,
+    ),
     ...((options.direction ?? origin.screen.direction) === 'rtl'
       ? { direction: 'rtl' as const }
       : {}),

@@ -305,6 +305,19 @@ function compositeOver(top: string, base: string): string {
   return `#${toByte(mix(above.r, below.r))}${toByte(mix(above.g, below.g))}${toByte(mix(above.b, below.b))}${toByte(alpha * 255)}`;
 }
 
+/**
+ * The color composited over opaque white as `#RRGGBB` (uppercase); `none` and `transparent` give white.
+ * Undefined when the text is not a color.
+ */
+export function colorOverWhite(text: string): string | undefined {
+  const color = text.trim();
+  if (/^(none|transparent)$/i.test(color)) return '#FFFFFF';
+  const rgba = parseColor(color);
+  if (rgba === undefined) return undefined;
+  const mix = (c: number): string => toByte(c * rgba.a + 255 * (1 - rgba.a));
+  return `#${mix(rgba.r)}${mix(rgba.g)}${mix(rgba.b)}`.toUpperCase();
+}
+
 /** The `over` underneath color: the color token (from the table) or the literal color; none if invalid. */
 function overColor(ref: TokenRef, lookup: Lookup): string | undefined {
   if (typeof ref.over !== 'string') return undefined;

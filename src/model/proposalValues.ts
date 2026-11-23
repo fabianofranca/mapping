@@ -11,6 +11,7 @@ import { writtenSpec } from './serialization';
 import type {
   Annotation,
   Arrow,
+  ContainerBackground,
   JsonValue,
   Layer,
   Marking,
@@ -51,6 +52,13 @@ export function jsonEqual(a: JsonValue | undefined, b: JsonValue | undefined): b
   return ka.every((k) => Object.hasOwn(b, k) && jsonEqual(a[k], b[k]));
 }
 
+/** The stored background as a JSON value: `#RRGGBB`, or `{ $token }` (proposal formatVersion 12). */
+function backgroundValue(background: ContainerBackground | null): JsonValue {
+  return typeof background === 'object' && background !== null
+    ? { $token: background.$token }
+    : background;
+}
+
 /**
  * The container in a proposal. `withPage`: the value carries its `pageId` (formatVersion 10); without
  * it the value is that of before the pages, and a created one goes to the first page when applied.
@@ -60,7 +68,7 @@ export function imageValue(i: ProjectContainer, withPage = false): JsonValue {
     id: i.id,
     name: i.name,
     file: i.file,
-    background: i.background,
+    background: backgroundValue(i.background),
     width: i.width,
     height: i.height,
     placement: i.placement,
@@ -248,7 +256,7 @@ export function imageField(i: ProjectContainer, field: string): JsonValue | unde
         ? undefined
         : { file: i.file, width: i.width, height: i.height };
     case 'background':
-      return i.background ?? undefined;
+      return i.background === null ? undefined : backgroundValue(i.background);
     case 'size':
       return i.file === null ? { width: i.width, height: i.height } : undefined;
     case 'placement':

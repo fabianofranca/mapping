@@ -193,6 +193,9 @@ describe('dictionaries', () => {
       // The names of the plugin functions (`generate`, `parse`) are the contract's, the same in both languages.
       'catalog.formats.generate',
       'catalog.formats.parse',
+      // "token {name}": the word and a parameter, the same in both languages (background token, NV4).
+      'container.backgroundToken',
+      'review.value.backgroundToken',
       // The product name is "Mapping" in both languages.
       'app.title',
       'editor.appName',

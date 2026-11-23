@@ -95,7 +95,10 @@ export function serialize(p: Project): string {
       markingColor: i.markingColor,
       locked: i.locked,
       source: i.source && { system: i.source.system, id: i.source.id, url: i.source.url },
-      background: i.background,
+      background:
+        typeof i.background === 'object' && i.background !== null
+          ? { $token: i.background.$token }
+          : i.background,
       ...(isEmptyMode(i.drawingMode) ? {} : { drawingMode: { ...i.drawingMode } }),
       ...(i.direction == null ? {} : { direction: i.direction }),
       ...(i.density == null ? {} : { density: i.density }),
