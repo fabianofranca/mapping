@@ -274,7 +274,7 @@ The retest of a stage is **a single session**, with the findings of **all** the 
 When the **Testador** section of the last phase's sub-issue asks for the full round, the orchestrator (the **coordinator**) creates one tester session per block at once, one per block of the table in [`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md) ("Full round in blocks"). Each one uses `list_environments` ("Mapping - testes"), `create_session` with the repository's `source_url`, `source_revision` = `epic/<name>`, the same commit in all the blocks and the title "Testador — <target>, bloco <k> de <n>". Message of block `<k>` (1 to `<n>`):
 
 ```text
-Read `docs/TESTING-NUVEM.md` and run the modo completo, bloco <k> de <n>. Passada visual: <list from the sub-issue, in block 4; "no bloco 4" in blocks 1, 2, 3, 5 and 6>. Branch `epic/<name>`, commit `<hash>`. Relato na sub-issue #<last phase>. Tag da release: <mcp-v…-rc.n, or "sem R21">. Coordenador: `<coordinator session id>`.
+Read `docs/TESTING-NUVEM.md` and run the modo completo, bloco <k> de <n>. Passada visual: <list from the sub-issue, in block 4; "no bloco 4" in blocks 1, 2, 3, 5, 6 and 7>. Branch `epic/<name>`, commit `<hash>`. Relato na sub-issue #<last phase>. Tag da release: <mcp-v…-rc.n, or "sem R21">. Coordenador: `<coordinator session id>`.
 ```
 
 - **Release tag:** only block 5 has R21; in blocks 1 to 4 and 6 the blank is `sem R21`, and in 5 it is the epic's rc (in a round on `main`, the latest stable).
