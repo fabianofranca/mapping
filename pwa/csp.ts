@@ -10,11 +10,13 @@ import { SANDBOX_BOOTSTRAP } from '../src/app/formatSandbox';
 /**
  * Policy profile. `app` is the app's `index.html`: it accepts remote images (`https:`/`http:`;
  * the `http:` switch belongs to the app, not to the CSP) and requires Trusted Types. `static` is the guide and the
- * viewer demo: the guide builds the panel with non-empty `innerHTML` and the demo does not
- * load the `default` policy; neither shows a remote image, so an outbound image
- * stays blocked by the CSP in them.
+ * guide: it builds the panel with non-empty `innerHTML` and does not load the `default` policy,
+ * and it shows no remote image, so an outbound image stays blocked by the CSP. `viewer` is the
+ * viewer demo: `static` plus what a host needs to run a format plugin in the viewer's sandbox
+ * (`worker-src 'self' blob:` and the bootstrap hash in `script-src`), with no Trusted Types and
+ * no remote image.
  */
-export type CspProfile = 'app' | 'static';
+export type CspProfile = 'app' | 'static' | 'viewer';
 
 type Directive = readonly [name: string, value: string];
 
@@ -36,11 +38,11 @@ const STATIC_DIRECTIVES: ReadonlyArray<Directive> = [
 /** Remote images (only in the `app` profile). */
 const APP_IMG_SRC = "'self' data: blob: https: http:";
 /**
- * The `app` profile runs a specialization's format plugin in a `blob:` Worker created by the
+ * The `app` and `viewer` profiles run a specialization's format plugin in a `blob:` Worker created by the
  * sandbox iframe (`src/app/formatRunner.ts`): `worker-src` gains `blob:`, and `script-src` gains the
  * hash of the iframe's only script (`SANDBOX_BOOTSTRAP`, in `src/app/formatSandbox.ts`), which is
  * not a block of the `index.html` but the content of the iframe's `srcdoc`. The `static` profile
- * has neither.
+ * has neither. The `viewer` profile has both and no Trusted Types.
  */
 const APP_WORKER_SRC = "'self' blob:";
 
@@ -57,14 +59,24 @@ function appValue(name: string, value: string): string {
   return name === 'worker-src' ? APP_WORKER_SRC : value;
 }
 
-/** The hashes of the sandbox's own documents: part of `script-src` in the `app` profile, with no block in the HTML. */
+function viewerValue(name: string, value: string): string {
+  return name === 'worker-src' ? APP_WORKER_SRC : value;
+}
+
+/** The hashes of the sandbox's own documents: part of `script-src` in the `app` and `viewer` profiles, with no block in the HTML. */
 function sandboxHashes(profile: CspProfile): string[] {
-  return profile === 'app' ? [cspHash(SANDBOX_BOOTSTRAP)] : [];
+  return profile === 'static' ? [] : [cspHash(SANDBOX_BOOTSTRAP)];
 }
 
 /** The profile's fixed directives. */
 function fixedDirectives(profile: CspProfile): Directive[] {
   if (profile === 'static') return [...STATIC_DIRECTIVES];
+  if (profile === 'viewer') {
+    return STATIC_DIRECTIVES.map(([name, value]): Directive => [
+      name,
+      viewerValue(name, value),
+    ]);
+  }
   return [
     ...STATIC_DIRECTIVES.map(([name, value]): Directive => [name, appValue(name, value)]),
     ...TRUSTED_TYPES_DIRECTIVES,
@@ -165,10 +177,10 @@ export function verifyCsp(html: string, profile: CspProfile): string[] {
       problems.push(`diretiva ${name}: esperado "${expected}", encontrado "${actual}"`);
     }
   }
-  if (profile === 'static') {
+  if (profile !== 'app') {
     for (const name of ['require-trusted-types-for', 'trusted-types']) {
       if (directives.has(name)) {
-        problems.push(`o perfil static não pode ter a diretiva ${name}`);
+        problems.push(`o perfil ${profile} não pode ter a diretiva ${name}`);
       }
     }
   } else if (!REFERRER_META.test(html)) {

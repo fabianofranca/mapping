@@ -10,6 +10,7 @@
  * (`FORMAT_SANDBOX_CSP`); without them `screenFromFormat` gives `error.code = 'sandbox-unavailable'` and the
  * rest of the viewer keeps working.
  */
+import '../src/utils/zodConfig';
 import { SANDBOX_BOOTSTRAP_HASH } from '../src/app/formatSandbox';
 import { formatScreens } from '../src/model/formatScreen';
 import type { Library } from '../src/model/components/library';

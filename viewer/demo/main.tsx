@@ -10,7 +10,12 @@
  * the viewer's `source`, the origin declared in the specialization translates it and the computed
  * screen comes back through `onSource` (it feeds the tree and the properties); the origin's
  * warnings go in the status panel, and an `error` in the result goes back to the last `source`
- * that worked. StrictMode is a toggle that recreates the root.
+ * that worked. In the "File format (SDUI)" set the text is a file of the `sdui-backend` package
+ * (`home.sdui.json`), read through the specialization's format plugin: each edit calls
+ * `screenFromFormat` of `mapping-viewer/formats` (the plugin runs in the sandbox of this page, which
+ * needs the `viewer` CSP profile: `worker-src 'self' blob:` and the bootstrap hash), the last call
+ * wins and its screen feeds the viewer; the plugin's warnings and error (code and message) go in
+ * the panel, and an error keeps the last screen. StrictMode is a toggle that recreates the root.
  *
  * Selection has two sources: a click on the canvas (when "Canvas selection" is on) and the
  * instance tree on the right, which also shows the selected one's (read-only) properties.
@@ -31,6 +36,7 @@ import './react.css';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from '../samples/samples';
 import { M3_FILES, M3_SCREEN } from '../samples/samplesMaterial3';
 import settingsSdui from '../samples/settings.sdui.json';
+import { screenFromFormat, type FormatScreenError } from '../formats';
 import {
   type FieldValue,
   type Instance,
@@ -42,19 +48,48 @@ import {
   type TypeDef,
   MappingViewer,
   flattenTree,
+  konvaMeasurer,
   loadLibrary,
   parseScreen,
   screenTree,
   serializeScreen,
 } from '../react';
 
-type Dataset = 'samples' | 'm3' | 'sdui';
+type Dataset = 'samples' | 'm3' | 'sdui' | 'format';
+
+/** The `sdui-backend` package (specialization, components, format plugin and example), read by Vite as text. */
+const PACKAGE_PREFIX = '../../examples/libraries/sdui-backend/';
+const PACKAGE_FILES = import.meta.glob<string>(
+  '../../examples/libraries/sdui-backend/**/*.{json,js}',
+  { query: '?raw', import: 'default', eager: true },
+);
+const FORMAT_LIBRARY = loadLibrary(
+  Object.entries(PACKAGE_FILES).map(([path, text]) => ({
+    path: path.slice(PACKAGE_PREFIX.length),
+    text,
+  })),
+);
+const FORMAT_ID = `${FORMAT_LIBRARY.specId}/sdui`;
+const FORMAT_TEXT = (
+  PACKAGE_FILES[`${PACKAGE_PREFIX}examples/home.sdui.json`] ?? ''
+).trimEnd();
+/** The screen before the plugin answers for the first time. */
+const FORMAT_START: Screen = {
+  id: 'format-start',
+  name: 'File format',
+  width: 412,
+  height: 917,
+  background: '#ffffff',
+  instances: [],
+};
 
 const DATASETS: Record<Dataset, { library: Library; screen: Screen }> = {
   samples: { library: loadLibrary(SAMPLE_FILES), screen: SAMPLE_SCREEN },
   m3: { library: loadLibrary(M3_FILES), screen: M3_SCREEN },
   // The SDUI screen is born from the `source` (it arrives through `onSource`); the `screen` is only the starting point.
   sdui: { library: loadLibrary(M3_FILES), screen: M3_SCREEN },
+  // The screen comes from the format plugin (`screenFromFormat`); this one is only the starting point.
+  format: { library: FORMAT_LIBRARY, screen: FORMAT_START },
 };
 const SDUI_TEXT = JSON.stringify(settingsSdui, null, 2);
 
@@ -68,6 +103,14 @@ interface Click {
 function revealRow(el: HTMLElement | null): void {
   if (el && typeof el.scrollIntoView === 'function')
     el.scrollIntoView({ block: 'nearest' });
+}
+
+/** The error of `screenFromFormat` as one line: code, message and, when the plugin says, `line:column`. */
+function formatErrorText(error: FormatScreenError): string {
+  const place = `${error.line}:${error.column ?? 0}`;
+  const where =
+    error.line === undefined || error.message.includes(place) ? '' : ` (${place})`;
+  return `${error.code}: ${error.message}${where}`;
 }
 
 function valueText(value: FieldValue): string {
@@ -173,6 +216,10 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
   /** Going back to the last good `source`: the result of that return does not clear the error that caused it. */
   const restoring = useRef(false);
   const [warnings, setWarnings] = useState<InstanceWarnings>(new Map());
+  /** The plugin's warnings for the last text read in the format set. */
+  const [formatWarnings, setFormatWarnings] = useState<readonly string[]>([]);
+  /** The most recent `screenFromFormat` call: an older one that returns late is ignored (the last call wins). */
+  const formatCall = useRef(0);
   const [updateMs, setUpdateMs] = useState<number | undefined>();
   /** Moment the edit came in (handler); read after the commit and the viewer's effect. */
   const startedAt = useRef<number | undefined>(undefined);
@@ -186,11 +233,38 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
     startedAt.current = undefined;
   }, [screen, library, source]);
 
+  // The format set: each text (and entering the set) is read through the plugin; the last call wins.
+  useEffect(() => {
+    formatCall.current += 1;
+    if (dataset !== 'format') return;
+    const call = formatCall.current;
+    void screenFromFormat(FORMAT_LIBRARY, text, {
+      format: FORMAT_ID,
+      measure: konvaMeasurer,
+    }).then((result) => {
+      if (call !== formatCall.current) return;
+      setFormatWarnings(result.warnings);
+      if (result.error || !result.screen) {
+        setError(
+          result.error ? formatErrorText(result.error) : 'The format produced no screen.',
+        );
+        return;
+      }
+      setScreen(result.screen);
+      setError(undefined);
+    });
+  }, [dataset, text]);
+
   const edit = useCallback(
     (event: ChangeEvent<HTMLTextAreaElement>) => {
       const started = performance.now();
       const value = event.target.value;
       setText(value);
+      if (dataset === 'format') {
+        // The plugin reads the text (whatever it is): the effect above calls it and shows its error.
+        startedAt.current = started;
+        return;
+      }
       try {
         const json: unknown = JSON.parse(value);
         startedAt.current = started;
@@ -213,8 +287,15 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
     startedAt.current = performance.now();
     setDataset(next);
     setScreen(DATASETS[next].screen);
-    setText(next === 'sdui' ? SDUI_TEXT : serializeScreen(DATASETS[next].screen));
+    setText(
+      next === 'sdui'
+        ? SDUI_TEXT
+        : next === 'format'
+          ? FORMAT_TEXT
+          : serializeScreen(DATASETS[next].screen),
+    );
     setError(undefined);
+    setFormatWarnings([]);
     if (next === 'sdui') {
       goodSource.current = undefined;
       restoring.current = false;
@@ -293,6 +374,13 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
           >
             Material 3 (SDUI)
           </button>
+          <button
+            type="button"
+            aria-pressed={dataset === 'format'}
+            onClick={() => choose('format')}
+          >
+            File format (SDUI)
+          </button>
           <button type="button" onClick={() => setMounted((m) => !m)}>
             {mounted ? 'Unmount' : 'Mount'}
           </button>
@@ -324,7 +412,13 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
           </label>
         </div>
         <textarea
-          aria-label={dataset === 'sdui' ? 'SDUI (JSON)' : 'Screen (JSON)'}
+          aria-label={
+            dataset === 'sdui'
+              ? 'SDUI (JSON)'
+              : dataset === 'format'
+                ? 'File (SDUI format)'
+                : 'Screen (JSON)'
+          }
           spellCheck={false}
           value={text}
           onChange={edit}
@@ -374,6 +468,12 @@ function App({ strict, onStrict }: { strict: boolean; onStrict: (on: boolean) =>
             <div>
               Source warnings:{' '}
               {sourceWarnings.length === 0 ? 'none' : sourceWarnings.join(' | ')}
+            </div>
+          ) : null}
+          {dataset === 'format' ? (
+            <div>
+              Format warnings:{' '}
+              {formatWarnings.length === 0 ? 'none' : formatWarnings.join(' | ')}
             </div>
           ) : null}
           <div>

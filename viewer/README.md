@@ -14,7 +14,7 @@ A Mapping tool for those who develop `mapping-viewer`: a **read-only viewer**, f
   - `host.ts`: `loadLibraryFromUrl` and `registerLibraryFonts`, host functions (network and fonts); the core does neither.
   - `remoteImages.ts`: remote images, off by default and always `pixelSafe`.
   - `build.mjs`, `packageManifest.mjs` and `tsconfig.json`: the package build, its manifest (version and dependencies; the declarations test reads it) and the type declarations.
-- `demo/`: demo page in real React 19 (no `preact/compat`), with its own CSS (`--demo-*`, without the app's tokens). It is a copyable example of a host.
+- `demo/`: demo page in real React 19 (no `preact/compat`), with its own CSS (`--demo-*`, without the app's tokens). It is a copyable example of a host. It has four datasets: "Examples" and "Material 3" (a screen as JSON), "Material 3 (SDUI)" (an SDUI JSON translated by the specialization's `origins`, through `source`) and "File format (SDUI)" (the `examples/libraries/sdui-backend/` package, loaded by Vite imports, whose `home.sdui.json` sits in an editable text area: each edit calls `screenFromFormat` of `mapping-viewer/formats`, the last call wins, the plugin's warnings and error (code, message and `line:column`) go in the panel and an error keeps the last screen).
 - `samples/`: bundled examples (`samples.ts`, `samplesMaterial3.ts`, `settings.sdui.json`), used by the demo and by the model and canvas tests.
 - The tests live in `tests/viewer/`. The drawing itself is the `ScreenRenderer` of `src/canvas/components/`.
 
@@ -57,4 +57,4 @@ The details of each option and each export are in `PACKAGE-README.md`.
 
 ## Folder rules
 
-TypeScript strict, no `any`, no network requests; React is a development dependency only and only of the demo; the demo uses the `static` profile CSP only in the demo build (`vite build --config vite.viewer.config.ts`, output in `dist-viewer-demo/`); in `npm run dev:viewer` the Vite server does not apply that CSP. Image by URL only through the loader of `src/canvas/components/` (the lint rule also applies in `viewer/**`).
+TypeScript strict, no `any`, no network requests; React is a development dependency only and only of the demo; the demo uses the `viewer` profile CSP (`static` plus `worker-src 'self' blob:` and the sandbox bootstrap hash that the format plugin needs, with no Trusted Types) only in the demo build (`vite build --config vite.viewer.config.ts`, output in `dist-viewer-demo/`, which also works over `file://`); in `npm run dev:viewer` the Vite server does not apply that CSP. Image by URL only through the loader of `src/canvas/components/` (the lint rule also applies in `viewer/**`).

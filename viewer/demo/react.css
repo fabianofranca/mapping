@@ -163,6 +163,7 @@ body {
 
 .react-lab-error {
   color: var(--demo-color-danger);
+  overflow-wrap: anywhere;
 }
 
 .react-lab-main {
