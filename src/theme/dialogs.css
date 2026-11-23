@@ -43,7 +43,8 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-.dialog-title {
+/* Two classes: a dialog opened inside a tool window must not take that window's `h2` margin and font. */
+.dialog-header .dialog-title {
   min-width: 0;
   margin: 0;
   font: var(--t-text-title);
@@ -652,4 +653,44 @@
 .spec-design-tokens dt,
 .spec-design-tokens dd {
   margin: 0;
+}
+
+/* Import from a format: the preview of what the file creates and changes */
+.import-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.import-preview-title {
+  margin: 0;
+  font: var(--t-text-heading);
+}
+
+.import-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--t-text-small);
+}
+
+.import-preview-table th,
+.import-preview-table td {
+  padding: var(--space-1) var(--space-2);
+  text-align: start;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.import-preview-table thead th {
+  color: var(--color-text-muted);
+  font: var(--t-micro);
+}
+
+.import-preview-table tbody th {
+  font-weight: normal;
+}
+
+.import-preview-list ul {
+  margin: 0;
+  padding-inline-start: var(--space-4);
+  font: var(--t-text-small);
 }

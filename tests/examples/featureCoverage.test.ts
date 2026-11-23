@@ -70,6 +70,43 @@ const PENDING_AFTER_REMOVAL: string[] = [];
  * ('Out' decision of #486); the feature is covered by tests/model/specV10.test.ts and by script R18.
  */
 const MISSING_TODAY: string[] = [
+  // `origins` and the type examples in `system` mode (stage #2035, AF7): the specialization `formatVersion` 22
+  // refuses them and `measured` and `sdui-backend` moved to file format plugins, so no example package carries
+  // them. Versions 1 to 21 keep them; covered by tests/model/components/origin.test.ts, measured.test.ts,
+  // sourceScreen.test.ts and by script R25.
+  'spec:layers[].annotationTypes[].examples[].file',
+  'spec:layers[].annotationTypes[].examples[].system',
+  'spec:origins',
+  'spec:origins[]',
+  'spec:origins[].booleans',
+  'spec:origins[].booleans.false',
+  'spec:origins[].booleans.true',
+  'spec:origins[].examples',
+  'spec:origins[].examples[].file',
+  'spec:origins[].examples[].name',
+  'spec:origins[].kind',
+  'spec:origins[].kind=measured',
+  'spec:origins[].name',
+  'spec:origins[].node',
+  'spec:origins[].node.children',
+  'spec:origins[].node.props',
+  'spec:origins[].node.type',
+  'spec:origins[].screen',
+  'spec:origins[].screen.background',
+  'spec:origins[].screen.height',
+  'spec:origins[].screen.id',
+  'spec:origins[].screen.name',
+  'spec:origins[].screen.roots',
+  'spec:origins[].screen.roots[].anchor',
+  'spec:origins[].screen.roots[].margin',
+  'spec:origins[].screen.roots[].path',
+  'spec:origins[].screen.roots[].scrim',
+  'spec:origins[].screen.width',
+  'spec:origins[].system',
+  'spec:origins[].valueSource.default',
+  'spec:origins[].valueSource.path',
+  'spec:origins[].valueSource.values',
+  'spec:origins[].valueSource=literal',
   // `sources[].signature` (formatVersion 16, stage #1079): Material 3 covers `fieldModels`, `signature`, `ignore`, `calls`,
   // `formats` and the importer notices (S5); `sources[].signature` is covered by tests/model/specV16.test.ts and
   // tests/model/librarySignature.test.ts.

@@ -147,11 +147,14 @@ export async function readPackageFromZip(zipFile: Blob): Promise<PackageReadResu
   return finish(collector);
 }
 
-// The (pure) validation lives in the store, which uses it when applying a proposal; here it is only
-// re-exported.
+// The validation lives in the store, which uses it when applying a proposal; here it is only
+// re-exported. `validatePackageWithFormats` adds the checks of the file formats (the plugins run
+// isolated, so it is asynchronous), for the apply and the update by the person (stage #2035).
 export {
   libraryInputFiles,
   packageImageBytes,
   readPackageSpec,
   validatePackage,
+  validatePackageWithFormats,
+  type PackageImageBytes,
 } from '../store/packageValidation';

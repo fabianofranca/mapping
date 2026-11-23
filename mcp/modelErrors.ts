@@ -1,4 +1,10 @@
-import type { ModelError, ModelErrorCode, ModelErrorData } from '../src/model';
+import {
+  RECT_TOO_SMALL_HINT,
+  rectTooSmallDetail,
+  type ModelError,
+  type ModelErrorCode,
+  type ModelErrorData,
+} from '../src/model';
 import { ToolError } from './errors';
 import type { Refs } from './items';
 
@@ -106,8 +112,7 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
 export const MODEL_ERROR_HINTS: Readonly<Partial<Record<ModelErrorCode, string>>> = {
   'type-not-applicable':
     'choose a type whose `appliesTo` includes this item (marking or arrow) or use a free-form annotation in a layer without a specialization',
-  'rect-too-small':
-    "increase the `rect`'s `width` and `height` to at least the minimum (each side, in container pixels; on the canvas, in canvas units)",
+  'rect-too-small': RECT_TOO_SMALL_HINT,
   'not-fittable':
     'only a component marking with `sizing` `hug` or by expression (see `get_component`) and with no markings in the slot fits its content; the others do not need `fit_marking`',
   'not-anchored':
@@ -136,21 +141,18 @@ export const MODEL_ERROR_HINTS: Readonly<Partial<Record<ModelErrorCode, string>>
     "change the container's `x`, `y` or `scale` (or its size) so it does not cover the other one, or move the other container first",
 };
 
-function isSize(value: unknown): value is { width: number; height: number } {
-  if (typeof value !== 'object' || value === null) return false;
-  const { width, height } = value as Record<string, unknown>;
-  return typeof width === 'number' && typeof height === 'number';
-}
-
-/** `received 5×3 px; minimum 8×8 px` from the `data` of a `rect-too-small`; `null` if it is missing. */
-export function rectTooSmallDetail(data: ModelErrorData | undefined): string | null {
-  if (!data || !isSize(data.received) || !isSize(data.min)) return null;
-  const { received, min } = data;
-  const origin = data.source === 'component' ? ' (from the component)' : '';
-  return `received ${received.width}×${received.height} px; minimum ${min.width}×${min.height} px${origin}`;
-}
-
 /** Text after the first `: ` of the message (`code: text`); the text may have `: ` inside it. */
+/**
+ * The text a model error shows as its `message`: the generic one of the code, or, for an error the
+ * operation explained itself (`data.explained`: `invalid-parent` of `inside`, whose cause the generic text
+ * does not name), the cause.
+ */
+export function modelErrorMessage(error: ModelError): string {
+  const cause = error.data?.explained === true ? messageDetail(error) : undefined;
+  const generic = MODEL_ERROR_MESSAGES[error.code];
+  return cause === undefined ? generic : `${generic.split(': ')[0]!}: ${cause}`;
+}
+
 function messageDetail(error: ModelError): string | undefined {
   const at = error.message.indexOf(': ');
   return at < 0 ? undefined : error.message.slice(at + 2);
@@ -285,7 +287,7 @@ export function describeModelError(
 
 /** Model rule error in a read tool → `ToolError` with the explanation and the detail. */
 export function modelToolError(error: ModelError, refs?: Refs): ToolError {
-  return new ToolError(error.code, MODEL_ERROR_MESSAGES[error.code], {
+  return new ToolError(error.code, modelErrorMessage(error), {
     ...describeModelError(error, refs),
   });
 }

@@ -1,4 +1,4 @@
-# The MCP server sets the variable axes of a library font like the browser — [Não lançado] (épico `epic/mcp-variable-axes`, PR #0, MCP 0.57.9, schema v23 unchanged)
+# The MCP server sets the variable axes of a library font like the browser — [Não lançado] (épico `epic/mcp-variable-axes`, PR #0, MCP 0.58.1, schema v23 unchanged)
 
 ## Alterado
 

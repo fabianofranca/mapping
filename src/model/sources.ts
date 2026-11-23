@@ -87,13 +87,15 @@ export interface TypeSourceMatch {
   /** Matched by `id` (stronger) or only by `name`. */
   readonly by: 'id' | 'name';
   /**
-   * The `system` is declared in the specialization's `origins`: the `sources` of its fields
-   * carry `path` (the path of the value in the external node's props) instead of just `name`.
+   * The `system` is declared in the specialization's `origins` (up to `formatVersion` 21): the
+   * `sources` of its fields carry `path` (the path of the value in the external node's props)
+   * instead of just `name`. Always `false` from 22, where `sources` are plain data and a field
+   * source may carry `name`, `path` or both for any system.
    */
   readonly executable: boolean;
 }
 
-/** `true` if `system` is an executable source of the specialization (it is in `origins`). */
+/** `true` if `system` is an executable source of the specialization (it is in `origins`; never from `formatVersion` 22, which refuses `origins`). */
 export function isExecutableSystem(spec: Spec | null, system: string): boolean {
   return spec?.origins?.some((o) => o.system === system) ?? false;
 }

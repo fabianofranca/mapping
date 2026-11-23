@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n';
+import type { FormatRunner } from '../model';
 import { CatalogView } from './catalog/CatalogView';
 import { Button, Select, Tabs, type TabItem } from './controls';
 import { useEditor } from './EditorContext';
@@ -16,9 +17,11 @@ type CatalogTab = 'components' | 'palette';
 interface CatalogWindowProps {
   /** Opens the Specializations dialog (shortcut from the empty state). */
   readonly onOpenSpecs: () => void;
+  /** The executor of the formats' plugins: the "File formats" page draws the examples with it. */
+  readonly formatRunner?: FormatRunner;
 }
 
-export function CatalogWindow({ onOpenSpecs }: CatalogWindowProps) {
+export function CatalogWindow({ onOpenSpecs, formatRunner }: CatalogWindowProps) {
   const [tab, setTab] = useState<CatalogTab>('components');
   const tabs: readonly TabItem<CatalogTab>[] = [
     { id: 'components', label: t('catalog.window.components') },
@@ -35,7 +38,10 @@ export function CatalogWindow({ onOpenSpecs }: CatalogWindowProps) {
         />
         <div role="tabpanel">
           {tab === 'components' ? (
-            <CatalogComponents onOpenSpecs={onOpenSpecs} />
+            <CatalogComponents
+              onOpenSpecs={onOpenSpecs}
+              {...(formatRunner === undefined ? {} : { formatRunner })}
+            />
           ) : (
             <LibraryPalette onOpenSpecs={onOpenSpecs} />
           )}
@@ -45,7 +51,7 @@ export function CatalogWindow({ onOpenSpecs }: CatalogWindowProps) {
   );
 }
 
-function CatalogComponents({ onOpenSpecs }: CatalogWindowProps) {
+function CatalogComponents({ onOpenSpecs, formatRunner }: CatalogWindowProps) {
   const { session, review } = useEditor();
   const { add, disabledReason, error } = useAddComponent();
   const [specId, setSpecId] = useState<string | null>(null);
@@ -72,19 +78,7 @@ function CatalogComponents({ onOpenSpecs }: CatalogWindowProps) {
   if (!current) return null;
   return (
     <>
-      {entries.length > 1 && (
-        <Select
-          label={t('catalog.window.spec')}
-          value={current.specId}
-          onChange={(e) => setSpecId(e.currentTarget.value)}
-        >
-          {entries.map((e) => (
-            <option key={e.specId} value={e.specId}>
-              {e.name}
-            </option>
-          ))}
-        </Select>
-      )}
+      <SpecChooser entries={entries} value={current.specId} onChange={setSpecId} />
       {error && (
         <p class="field-error" role="alert">
           {error}
@@ -102,9 +96,36 @@ function CatalogComponents({ onOpenSpecs }: CatalogWindowProps) {
         }}
         project={project}
         layout="list"
+        {...(formatRunner === undefined ? {} : { formatRunner })}
         onAddToScreen={(typeId) => add(current.specId, typeId)}
         {...(disabledReason === undefined ? {} : { addDisabledReason: disabledReason })}
       />
     </>
+  );
+}
+
+/** The specialization selector, only when the project has more than one. */
+function SpecChooser({
+  entries,
+  value,
+  onChange,
+}: {
+  entries: readonly { specId: string; name: string }[];
+  value: string;
+  onChange: (specId: string) => void;
+}) {
+  if (entries.length < 2) return null;
+  return (
+    <Select
+      label={t('catalog.window.spec')}
+      value={value}
+      onChange={(e) => onChange(e.currentTarget.value)}
+    >
+      {entries.map((e) => (
+        <option key={e.specId} value={e.specId}>
+          {e.name}
+        </option>
+      ))}
+    </Select>
   );
 }

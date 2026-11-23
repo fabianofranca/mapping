@@ -83,7 +83,7 @@ const fmt = (s: Json, i = 0): Json => s.fileFormats[i];
 
 describe('formatVersion 20: version and shape', () => {
   it('20 is no longer the current version, but still an accepted one', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(21);
+    expect(SPEC_FORMAT_VERSION).toBe(22);
     expect(SPEC_FORMAT_VERSIONS).toContain(20);
     expect(SPEC_FORMAT_VERSIONS).toContain(19);
     expect(FORMAT_PLUGIN_CONTRACT).toBe(1);

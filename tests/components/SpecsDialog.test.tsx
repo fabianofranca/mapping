@@ -26,9 +26,19 @@ import { EditorContext } from '../../src/ui/EditorContext';
 import { ToolStrip } from '../../src/ui/ToolStrip';
 import { ToolWindow } from '../../src/ui/ToolWindow';
 import { closeToolWindow } from '../../src/ui/toolWindowLayout';
-import { specializationUpdateImpact, type Spec } from '../../src/model';
+import {
+  specializationUpdateImpact,
+  type FormatRunner,
+  type Spec,
+} from '../../src/model';
 import { UpdateImpact } from '../../src/ui/UpdateImpact';
 import { MemoryDirectory } from '../storage/memoryFs';
+import {
+  FORMAT_LIB_DIR,
+  NOTES_EXAMPLE,
+  behaviorsOf,
+  runnerOf,
+} from '../support/notesFormat';
 import {
   badgeType,
   buttonType,
@@ -74,11 +84,20 @@ function onlySpecLayers(): Project {
   return removeLayer(applied, 'L1');
 }
 
-function setup(project: Project = freeProject(), readOnly = false) {
+function setup(
+  project: Project = freeProject(),
+  readOnly = false,
+  formatRunner?: FormatRunner,
+) {
   const harness: Harness = createHarness(project, readOnly);
   const onClose = vi.fn();
   const view = renderLive(harness, (p) => (
-    <SpecsDialog project={p} readOnly={readOnly} onClose={onClose} />
+    <SpecsDialog
+      project={p}
+      readOnly={readOnly}
+      onClose={onClose}
+      {...(formatRunner === undefined ? {} : { formatRunner })}
+    />
   ));
   const fileInput = () => {
     const input = document.querySelector<HTMLInputElement>('input[type="file"]');
@@ -126,6 +145,49 @@ describe('SpecsDialog', () => {
     expect(within(design).getByText('radius')).toBeTruthy();
     expect(within(design).getByText('8')).toBeTruthy();
     expect(within(design).getByText('icons/set.json')).toBeTruthy();
+  });
+
+  it('a specialization that declares file formats shows the isolation notice (#2035, AF3)', () => {
+    let n = 0;
+    const withFormats: Spec = {
+      ...libSpec(1, { c: [buttonType()] }, { formatVersion: 20 }),
+      fileFormats: [
+        {
+          id: 'notes',
+          name: 'Notes',
+          extension: 'txt',
+          plugin: 'plugins/notes.js',
+          contract: 1,
+        },
+        {
+          id: 'list',
+          name: 'List',
+          extension: 'csv',
+          plugin: 'plugins/list.js',
+          contract: 1,
+        },
+      ],
+    };
+    setup(applySpecialization(emptyProject(), withFormats, { newId: () => `LS${++n}` }));
+    const item = document.querySelector<HTMLElement>('.spec-item');
+    expect(item).not.toBeNull();
+    expect(
+      within(item!).getByText(
+        'Brings 2 file format(s); their code runs isolated, without network, disk or access to your projects.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('a specialization without file formats shows no isolation notice', () => {
+    let n = 0;
+    setup(
+      applySpecialization(emptyProject(), libSpec(1, { c: [buttonType()] }), {
+        newId: () => `LS${++n}`,
+      }),
+    );
+    const item = document.querySelector<HTMLElement>('.spec-item');
+    expect(item).not.toBeNull();
+    expect(within(item!).queryByText(/file format\(s\)/)).toBeNull();
   });
 
   it('a specialization with no layers shows its version without a dangling colon (CL2)', () => {
@@ -659,6 +721,78 @@ function renderImpact(project: Project, spec: Spec) {
   const impact = specializationUpdateImpact(project, spec);
   return render(<UpdateImpact project={project} impact={impact} current={1} next={2} />);
 }
+
+// Stage #2035, AF5 (decision 13): applying a package runs the checks of its file formats in the
+// app's runner; an error of a format blocks the apply, and nothing runs without a format.
+describe('SpecsDialog: file formats of a package', () => {
+  const notesFiles = (plugin: string): Map<string, string> =>
+    new Map([
+      [
+        'format-library.spec.json',
+        readFileSync(
+          join(process.cwd(), FORMAT_LIB_DIR, 'format-library.spec.json'),
+          'utf8',
+        ),
+      ],
+      ['plugins/notes.js', plugin],
+      ['examples/notes.txt', NOTES_EXAMPLE],
+    ]);
+  const choosePackage = async (files: Map<string, string>) => {
+    const input = document.querySelector<HTMLInputElement>('input[accept^=".zip"]');
+    if (!input) throw new Error('no zip input');
+    fireEvent.change(input, { target: { files: [await zipOf(files)] } });
+    return dialogTitled('Package "Format library"', 30_000);
+  };
+  const runnerFor = (files: Map<string, string>) =>
+    runnerOf(behaviorsOf(Object.fromEntries(files)));
+
+  it('a package whose formats work applies', async () => {
+    const files = notesFiles('NOTES');
+    const { harness } = setup(freeProject(), false, runnerFor(files));
+    const dialog = await choosePackage(files);
+    expect(within(dialog).getByText(/0 error\(s\)/)).toBeTruthy();
+    const apply = within(dialog).getByRole('button', { name: 'Apply' });
+    expect(apply).toHaveProperty('disabled', false);
+    fireEvent.click(apply);
+    await screen.findByText(/applied/);
+    expect(harness.project().specializations[0]?.id).toBe('format-lib');
+  }, 60_000);
+
+  it('a format error blocks the apply and the project does not change', async () => {
+    const files = notesFiles('THROWS-ON-LOAD');
+    const { harness, user } = setup(freeProject(), false, runnerFor(files));
+    const dialog = await choosePackage(files);
+    expect(within(dialog).getByText(/1 error\(s\)/)).toBeTruthy();
+    expect(within(dialog).getByText(/fileFormats\[0\]/)).toBeTruthy();
+    expect(within(dialog).getByText(/boom/)).toBeTruthy();
+    expect(within(dialog).getByRole('button', { name: 'Apply' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(harness.project().specializations).toHaveLength(0);
+  }, 60_000);
+
+  it('an executor that throws ends in an error message, not in a silent dialog', async () => {
+    const files = notesFiles('NOTES');
+    setup(freeProject(), false, () => {
+      throw new Error('runner exploded');
+    });
+    const input = document.querySelector<HTMLInputElement>('input[accept^=".zip"]');
+    if (!input) throw new Error('no zip input');
+    fireEvent.change(input, { target: { files: [await zipOf(files)] } });
+    expect(
+      await screen.findByText('Could not read the package.', {}, { timeout: 30_000 }),
+    ).toBeTruthy();
+  }, 60_000);
+
+  it('without an executor the formats are not run (the other levels still are)', async () => {
+    const files = notesFiles('THROWS-ON-LOAD');
+    setup(freeProject(), false);
+    const dialog = await choosePackage(files);
+    expect(within(dialog).getByText(/0 error\(s\)/)).toBeTruthy();
+  }, 60_000);
+});
 
 describe('UpdateImpact: library with migrations', () => {
   const base = () =>

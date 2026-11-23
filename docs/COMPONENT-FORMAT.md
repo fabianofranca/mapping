@@ -5,7 +5,7 @@ The format of the file that draws an annotation type: a **component**. It is for
 Supporting files:
 
 - `docs/component.schema.json`: JSON Schema (draft 2020-12) of the structure. It is documentation: the source of truth is the code (`src/model/components/parseComponent.ts`), and a test checks the schema against the Material 3 components and against the parser.
-- `libraries/material3-compose/components/*.json`: real components (50 Material 3 types); the examples in this document come from components like these, shortened. The executable source is in `examples/libraries/sdui-backend/`.
+- `libraries/material3-compose/components/*.json`: real components (50 Material 3 types); the examples in this document come from components like these, shortened. The file format plugin that turns an external system's JSON into components is in `examples/libraries/sdui-backend/`.
 - The engine that reads the format: `src/model/components/` (`componentFormat.ts`, `parseComponent.ts`, `expressions.ts`, `instantiate.ts`, `layout.ts`, `arrange.ts`, `origin.ts`). Pure, no DOM: it runs in the browser and in Node.
 
 ## What a component is
