@@ -7,7 +7,7 @@
 
 ## Sincronização
 
-Nothing to write to the **Mapping** artifact yet: phase CE1 has DS impact none.
+Nothing to write to the **Mapping** artifact yet. Phase CE4 has DS impact none: the pending items of CE2 and CE3 above are the whole of this stage, with no new ones.
 
 ## Ficou sem gravar
 
