@@ -8,4 +8,4 @@
 ## Alterado
 
 - Version numbers: the stage plan (#1900) was written when `main` was at specialization `formatVersion` 18, schema v20 and proposal `formatVersion` 9; `main` moved on, so the stage takes the next free numbers: specialization **23** (plan: 19), project schema **v24** (plan: v22) and proposal `formatVersion` **12** (plan: 11). Map: 19→23, v22→v24, 11→12.
-- Teto do `dist/index.html` subiu 32 KiB, de 2539520 para 2572288, pela regra do orçamento; acima dos limites, `bug` para o dono revisar
+- The `dist/index.html` ceiling rose 32 KiB, from 2539520 to 2572288, by the budget rule; above the limits, `bug` #2747 for the owner to review
