@@ -192,7 +192,7 @@ describe('Dependabot', () => {
   // versions of `preact` again; the `typescript` rule stays until #293.
   it('proposes the major versions of preact again; the typescript major stays ignored', () => {
     const config = read('.github/dependabot.yml');
-    expect(config).not.toMatch(/dependency-name: preact\b/);
+    expect(config).not.toMatch(/dependency-name: ['"]?preact['"]?\s*$/m);
     expect(config).toMatch(
       /dependency-name: typescript\n\s+update-types: \['version-update:semver-major'\]/,
     );

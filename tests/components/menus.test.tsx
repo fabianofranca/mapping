@@ -172,9 +172,10 @@ describe('Popover', () => {
 });
 
 // Stage #294 (Preact 11), P11.2, decision 6: a popover or menu removed from the tree while open
-// (the parent stops drawing it) leaves no listener on the document or on the window, and the
-// focus that was inside it is not left on a node that is gone.
+// (the parent stops drawing it) leaves no listener on the document or on the window.
 describe('Popover and MenuPopover unmounted while open', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   function listeners() {
     const doc = vi.spyOn(document, 'addEventListener');
     const docOff = vi.spyOn(document, 'removeEventListener');
@@ -212,7 +213,6 @@ describe('Popover and MenuPopover unmounted while open', () => {
     expect(left()).toBeGreaterThan(0);
     unmount();
     expect(left()).toBe(0);
-    vi.restoreAllMocks();
   });
 
   it('MenuPopover: the outside-click listener leaves with it', async () => {
@@ -227,7 +227,6 @@ describe('Popover and MenuPopover unmounted while open', () => {
     expect(left()).toBeGreaterThan(0);
     unmount();
     expect(left()).toBe(0);
-    vi.restoreAllMocks();
   });
 });
 

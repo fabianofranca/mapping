@@ -53,13 +53,11 @@ function context(): EditorContextValue {
 }
 
 function mount(value: EditorContextValue) {
-  const tree = (
+  return render(
     <EditorContext.Provider value={value}>
       <CanvasHost />
-    </EditorContext.Provider>
+    </EditorContext.Provider>,
   );
-  const view = render(tree);
-  return { ...view, tree };
 }
 
 describe('CanvasHost', () => {
@@ -74,11 +72,28 @@ describe('CanvasHost', () => {
   });
 
   it('a re-render with the same context does not recreate the controller', () => {
-    const { rerender, tree } = mount(context());
-    rerender(tree);
-    rerender(tree);
+    const value = context();
+    const { rerender } = mount(value);
+    rerender(
+      <EditorContext.Provider value={value}>
+        <CanvasHost />
+      </EditorContext.Provider>,
+    );
     expect(spies.ctor).toHaveBeenCalledTimes(1);
     expect(spies.destroy).not.toHaveBeenCalled();
+  });
+
+  it('a new project session destroys the old controller and creates another', async () => {
+    const value = context();
+    const { rerender } = mount(value);
+    const next = { ...value, session: { ...value.session } } as EditorContextValue;
+    rerender(
+      <EditorContext.Provider value={next}>
+        <CanvasHost />
+      </EditorContext.Provider>,
+    );
+    await waitFor(() => expect(spies.ctor).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(spies.destroy).toHaveBeenCalledTimes(1));
   });
 
   it('unmount destroys the controller once, clears `canvas.current` and leaves no window listener', async () => {

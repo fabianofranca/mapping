@@ -105,10 +105,10 @@ describe('review tree: virtual window', () => {
     act(() => h.review.select({ level: 'change', id: last.id }));
     renderInEditor(h, <ReviewLevels />);
     const tree = screen.getByRole('tree');
-    const [top, bottom] = [...tree.children].filter(
-      (c): c is HTMLElement => c instanceof HTMLElement && c.hasAttribute('aria-hidden'),
-    );
-    if (!top || !bottom) throw new Error('spacers');
+    const top = tree.firstElementChild as HTMLElement | null;
+    const bottom = tree.lastElementChild as HTMLElement | null;
+    if (!top?.hasAttribute('aria-hidden') || !bottom?.hasAttribute('aria-hidden'))
+      throw new Error('spacers');
     expect(top.style.height).toMatch(/^\d+(\.\d+)?px$/);
     expect(bottom.style.height).toMatch(/^\d+(\.\d+)?px$/);
     expect(parseFloat(top.style.height)).toBeGreaterThan(0);
