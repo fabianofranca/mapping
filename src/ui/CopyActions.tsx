@@ -15,6 +15,12 @@ import {
   copyReference,
   type ItemCopyTarget,
 } from '../app/itemClipboard';
+import {
+  exportMarkingIds,
+  exportMarkingsImage,
+  exportRefusalKey,
+  exportTargetIn,
+} from '../app/imageExport';
 import { CiteItem, CommentItem } from './CiteMenuItems';
 import { useEditor } from './EditorContext';
 import { Button, IconButton } from './controls';
@@ -110,6 +116,37 @@ export function WrapMenuItem({
   );
 }
 
+/**
+ * "Export image…": the PNG of the marking (or of the selection it belongs to) at the original
+ * size. A read, so it never hides on lock, read-only or review; when it cannot run (different
+ * images, no image file, a marking still only in the proposal) it is disabled and the reason goes
+ * in `title`, like `WrapMenuItem`.
+ */
+export function ExportImageItem({
+  markingId,
+  close,
+}: {
+  readonly markingId: string;
+  readonly close: () => void;
+}) {
+  const editor = useEditor();
+  const ids = exportMarkingIds(editor, markingId);
+  const target = exportTargetIn(editor.store.committed.value, ids);
+  return (
+    <Button
+      role="menuitem"
+      disabled={!target.ok}
+      title={target.ok ? undefined : t(exportRefusalKey(target.reason))}
+      onClick={() => {
+        close();
+        void exportMarkingsImage(editor, exportMarkingIds(editor, markingId));
+      }}
+    >
+      {t('export.image.action')}
+    </Button>
+  );
+}
+
 /** The thread anchor of an item (marking, container or annotation). */
 function anchorOf(target: ItemCopyTarget): ThreadAnchor {
   const kind =
@@ -163,6 +200,7 @@ export function CopyMenuItems({
             )}
         </>
       )}
+      {target.kind === 'm' && <ExportImageItem markingId={target.id} close={close} />}
       <CiteItem target={target} close={close} />
       {commentable && <CommentItem anchor={anchorOf(target)} close={close} />}
       {selectable && <SelectContentsItem markingId={target.id} close={close} />}
