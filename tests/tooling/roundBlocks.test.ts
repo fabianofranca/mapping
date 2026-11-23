@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Stage #424 (PL1, decision 2): the full round runs in parallel blocks (5, stage #841, RB4; 6 since stage #2024). The blocks table
+// Stage #424 (PL1, decision 2): the full round runs in parallel blocks (5, stage #841, RB4; 6 since stage #2024; 7 since stage #1932). The blocks table
 // of docs/TESTING-NUVEM.md is checked against the steps of docs/TESTING.md: a new test script (R26)
 // or a new step outside the table makes this test fail until it is put in a block.
 import { readFileSync } from 'node:fs';
@@ -26,7 +26,7 @@ const CLOUD = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
 
 const STEP_RE = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^|]*\|/;
 
-/** The steps of the main test scripts (R0 to R43), in the order of the guide, outside the on-demand test scripts. */
+/** The steps of the main test scripts (R0 to R45), in the order of the guide, outside the on-demand test scripts. */
 function guideSteps(): string[] {
   const lines = GUIDE.split('\n');
   const start = lines.findIndex((l) => /^## 8\. Test scripts/.test(l));
@@ -118,17 +118,17 @@ const blockOf = (step: string): number[] =>
   blocks.filter((b) => b.steps.includes(step)).map((b) => b.n);
 
 describe('split of the full round into blocks (stages #424, #841 and #2024)', () => {
-  it('the guide has the steps from R0 to R43 and the table has 6 blocks numbered 1 to 6', () => {
+  it('the guide has the steps from R0 to R45 and the table has 7 blocks numbered 1 to 7', () => {
     expect(steps.length).toBeGreaterThan(200);
     expect(steps.some((s) => s.startsWith('R17.'))).toBe(true);
     expect(steps.some((s) => s.startsWith('R26.'))).toBe(true);
-    expect(blocks.map((b) => b.n)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(blocks.map((b) => b.n)).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
-  it('every step from R0 to R43 is in exactly one block, and R0 in all of them', () => {
+  it('every step from R0 to R45 is in exactly one block, and R0 in all of them', () => {
     for (const s of steps) {
       const where = blockOf(s);
-      if (scriptOf(s) === 'R0') expect(where, s).toEqual([1, 2, 3, 4, 5, 6]);
+      if (scriptOf(s) === 'R0') expect(where, s).toEqual([1, 2, 3, 4, 5, 6, 7]);
       else expect(where, `${s} must be in a single block`).toHaveLength(1);
     }
   });
@@ -223,7 +223,7 @@ describe('split of the full round into blocks (stages #424, #841 and #2024)', ()
       ) => string;
       buildGuideBase: (md: string, scripts: string[], o?: { commit?: string }) => string;
     } = await import('../../scripts/testing/round-guide.mjs');
-    expect(blocks.length).toBe(6);
+    expect(blocks.length).toBe(7);
     for (const b of blocks) {
       // As in item 1 of "modo completo, bloco k de n": the test script that the table splits between blocks comes in only
       // through the block's step range (`R6.3-R6.7`), without the rest of the test script.
