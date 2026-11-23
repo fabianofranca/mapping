@@ -6,7 +6,8 @@ import { effectiveDensity } from './density';
 import { effectiveDirection } from './direction';
 import { applyFormatExample, type FormatExampleInput } from './formatChecks';
 import type { FormatFailureCode, FormatRunner } from './formatPlugin';
-import type { Library } from './components/library';
+import { withHostTokens, type Library } from './components/library';
+import type { HostFonts } from './components/tokens';
 import type { TextMeasurer } from './components/instantiate';
 import type { Instance, Screen } from './components/screen';
 import { parseSpec, type Spec } from './spec';
@@ -43,6 +44,11 @@ export interface FormatScreenOptions {
   readonly measure: TextMeasurer;
   /** Runs the plugin (the sandbox's in the viewer, QuickJS in Node). */
   readonly run: FormatRunner;
+  /**
+   * The host's fonts (`font-sans`, `font-mono`) the markings are sized with; pass the ones the viewer draws with, so a
+   * box that hugs its text fits the drawing. Absent: the model's own defaults.
+   */
+  readonly fonts?: HostFonts;
 }
 
 export interface FormatScreenResult {
@@ -304,7 +310,10 @@ async function build(
     specPath: library.specPath,
     format: declared,
     pluginText: found.pluginText,
-    components: componentsOf(library, spec),
+    components: componentsOf(
+      options.fonts === undefined ? library : withHostTokens(library, options.fonts),
+      spec,
+    ),
   };
   const applied = await applyFormatExample(input, text, options);
   if (!applied.ok) {

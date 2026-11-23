@@ -14,8 +14,10 @@ import '../src/utils/zodConfig';
 import { SANDBOX_BOOTSTRAP_HASH } from '../src/app/formatSandbox';
 import { formatScreens } from '../src/model/formatScreen';
 import type { Library } from '../src/model/components/library';
+import type { HostFonts } from '../src/model/components/tokens';
 import type { TextMeasurer } from '../src/model/components/instantiate';
 import type { Screen } from '../src/model/components/screen';
+import { viewerHostFonts } from './hostFonts';
 import {
   VIEWER_POLICY_NAME,
   disposeFormatSandbox as disposeViewerSandbox,
@@ -61,6 +63,11 @@ export interface FormatScreenOptions {
   readonly format: string;
   /** Sizes the component markings without a `rect`; pass the one that draws (`konvaMeasurer`), so the boxes match the drawing. */
   readonly measure: TextMeasurer;
+  /**
+   * The fonts the boxes are sized with: the same you pass to `createViewer`. Absent: the viewer's own default
+   * (the theme's stacks), which is what it draws with when it gets none.
+   */
+  readonly fonts?: HostFonts;
 }
 
 /**
@@ -106,6 +113,7 @@ export async function screenFromFormat(
 ): Promise<FormatScreenResult> {
   const result = await formatScreens(library, text, {
     ...options,
+    fonts: options.fonts ?? viewerHostFonts(),
     run: viewerFormatRunner,
   });
   const { error } = result;
