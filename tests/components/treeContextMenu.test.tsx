@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/preact';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
@@ -61,5 +62,33 @@ describe('right-click on a Tree row', () => {
     await Promise.resolve();
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(row);
+  });
+});
+
+describe('Tree row ⋯ menu', () => {
+  it('has "Export image…" on a marking row, enabled with an image file', async () => {
+    const harness = setup();
+    const user = userEvent.setup();
+    await user.click(
+      screen.getByRole('button', { name: t('copy.itemActions', { name: 'Maçaneta' }) }),
+    );
+    const menu = screen.getByRole('menu');
+    const item = within(menu).getByRole('menuitem', { name: t('export.image.action') });
+    expect((item as HTMLButtonElement).disabled).toBe(false);
+    expect(harness.ui.canvasMenu.value).toBeNull();
+  });
+
+  it('has no "Export image…" on the container row', async () => {
+    setup();
+    const user = userEvent.setup();
+    await user.click(
+      screen.getByRole('button', {
+        name: t('copy.itemActions', { name: 'images/lateral.jpg' }),
+      }),
+    );
+    const menu = screen.getByRole('menu');
+    expect(
+      within(menu).queryByRole('menuitem', { name: t('export.image.action') }),
+    ).toBeNull();
   });
 });

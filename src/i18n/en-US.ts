@@ -1192,6 +1192,15 @@ export const enUS = {
   'copy.failed': 'Could not copy.',
   'copy.cropFailed': 'Could not copy the crop.',
   'copy.itemActions': 'Actions for {name}',
+  'export.image.action': 'Export image…',
+  'export.image.differentImages':
+    'The selected markings are on different images. Select markings on the same image.',
+  'export.image.noImage': 'This marking has no image file to export.',
+  'export.image.notInProject':
+    'This marking is not in the project yet. Apply the proposal first.',
+  'export.image.selectionWord': 'selection',
+  'export.image.done': 'Image saved',
+  'export.image.failed': 'Could not export the image.',
   'copy.canvasMenu': 'Canvas item menu',
   'arrow.canvasMenu.straight': 'Straight',
   'arrow.canvasMenu.curve': 'Curve',

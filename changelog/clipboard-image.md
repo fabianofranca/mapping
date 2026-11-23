@@ -3,4 +3,5 @@
 ## Adicionado
 
 - MCP: patch version with no change in behavior. The model gains the pure rules of the image export (`src/model/imageExport.ts`: which markings can be exported together, their bounding box and the suggested file name) and they enter the server bundle; no tool, parameter or format changes.
+- **Export image…** in the canvas menu of a marking and in the ⋯ menu of its Tree row: saves the PNG of the marking, or of the selected markings on the same image (their bounding box), at the full original size, through "Save as" (or a download where the browser has no picker). It stays available with locked markings, in read-only and in review; it is disabled, with the reason as a tooltip, for markings of different images or without an image file.
 - Behind the scenes (no change on screen yet): the crop can keep the full size of the area (no 2048 px limit), "Save as" can open before the PNG is ready, and the app can read an image from the clipboard. The next parts of this stage use them: replace an image with the clipboard image, and "Export image…" for a marking or a selection of markings.

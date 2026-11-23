@@ -1191,6 +1191,15 @@ export const ptBR: Dictionary = {
   'copy.failed': 'Não foi possível copiar.',
   'copy.cropFailed': 'Não foi possível copiar o recorte.',
   'copy.itemActions': 'Ações de {name}',
+  'export.image.action': 'Exportar imagem…',
+  'export.image.differentImages':
+    'As marcações selecionadas estão em imagens diferentes. Selecione marcações da mesma imagem.',
+  'export.image.noImage': 'Esta marcação não tem arquivo de imagem para exportar.',
+  'export.image.notInProject':
+    'Esta marcação ainda não está no projeto. Aplique a proposta antes.',
+  'export.image.selectionWord': 'seleção',
+  'export.image.done': 'Imagem salva',
+  'export.image.failed': 'Não foi possível exportar a imagem.',
   'copy.canvasMenu': 'Menu do item no canvas',
   'arrow.canvasMenu.straight': 'Reta',
   'arrow.canvasMenu.curve': 'Curva',
