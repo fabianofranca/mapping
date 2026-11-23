@@ -70,6 +70,10 @@ const PENDING_AFTER_REMOVAL: string[] = [];
  * ('Out' decision of #486); the feature is covered by tests/model/specV10.test.ts and by script R18.
  */
 const MISSING_TODAY: string[] = [
+  // `$tokens` in a table column's `suggestions` (formatVersion 23, stage #1900, NV1): `examples/libraries/analytics`
+  // covers `$tokens` on fields (`event.name`, `transition.event`) only; the column case is covered by
+  // tests/model/namedValuesSuggestions.test.ts.
+  'spec:layers[].annotationTypes[].fields[].columns[].suggestions[].$tokens',
   // `origins` and the type examples in `system` mode (stage #2035, AF7): the specialization `formatVersion` 22
   // refuses them and `measured` and `sdui-backend` moved to file format plugins, so no example package carries
   // them. Versions 1 to 21 keep them; covered by tests/model/components/origin.test.ts, measured.test.ts,

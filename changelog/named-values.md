@@ -3,7 +3,7 @@
 ## Adicionado
 
 - Specialization `formatVersion` 23: `tokens` become a real value system. Aliases (`{ "$token": "<name>" }`, with `alpha`/`over` on a color), composite values (a plain object of named fields, read as `name.field`), mode axes (`tokens.axes` and the `{ "$axis": … }` per-axis value; `modes` stays valid), metadata (the `$value` wrapper with `$description`, `$group` and `$notices`) and the `{ "$tokens": "<group>" }` item in `suggestions`, which expands to the text values of a group when the specialization is parsed. Versions 1 to 22 stay accepted unchanged.
-- `examples/libraries/analytics` (version 3, `formatVersion` 23): the event names as tokens in the `events` group, one deprecated name, and the `event.name` and `transition.event` fields suggesting them.
+- `examples/libraries/analytics` (version 4, `formatVersion` 23): the event names as tokens in the `events` group, one deprecated name, and the `event.name` and `transition.event` fields suggesting them.
 
 ## Alterado
 
