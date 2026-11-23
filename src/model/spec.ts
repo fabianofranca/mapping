@@ -9,6 +9,11 @@ import {
   type SpecOrigin,
 } from './components/origin';
 import type { SpecTokens } from './components/tokens';
+import {
+  checkTokenSuggestions,
+  expandTokenSuggestions,
+  MAX_SUGGESTIONS,
+} from './specSuggestions';
 import { checkTokens } from './specTokens';
 import { isPackagePath, packagePathError } from './packagePaths';
 import { childSets } from './specChildren';
@@ -384,6 +389,11 @@ export type SpecSimpleColumn =
       default?: string;
       /** Vocabulary suggested while typing (`formatVersion` 8 only); does not restrict the value. */
       suggestions?: string[];
+      /**
+       * The list as written when it has `{ "$tokens": "<group>" }` items (`formatVersion` 23): `suggestions` holds
+       * the expanded texts, and `serializeSpec` writes this list back, so the file keeps the items.
+       */
+      suggestionsSource?: readonly (string | { readonly $tokens: string })[];
       /** Key of a sibling `ref` field/column whose targets also join the list (`formatVersion` 8). */
       linkedRef?: string;
     })
@@ -760,7 +770,10 @@ const fieldShape = z
     required: z.boolean().optional(),
     default: z.unknown().optional(),
     options: z.array(z.string()).optional(),
-    suggestions: z.array(z.string()).optional(),
+    // A text, or (`formatVersion` 23; the version is checked by `checkTokenSuggestions`) a group of tokens.
+    suggestions: z
+      .array(z.union([z.string(), z.object({ $tokens: z.string() }).strict()]))
+      .optional(),
     linkedRef: z.string().optional(),
     columns: z.array(z.unknown()).optional(),
     tags: tags.optional(),
@@ -809,17 +822,19 @@ function valueProblem(
   }
 }
 
-const MAX_SUGGESTIONS = 200;
-
-/** `suggestions` (v8): non-empty list, up to 200 unique, non-empty texts without edge spaces. */
+/**
+ * `suggestions` (v8): non-empty list, up to 200 unique, non-empty texts without edge spaces. The
+ * `{ "$tokens": … }` items (v23) are checked by `checkTokenSuggestions`; here only the texts are.
+ */
 function checkSuggestions(
-  suggestions: readonly string[],
+  list: readonly (string | object)[],
   add: (sub: string, message: string | SpecMsg) => void,
 ): void {
-  if (suggestions.length === 0) {
+  if (list.length === 0) {
     add('suggestions', 'cannot be empty; remove the key or list at least one suggestion');
     return;
   }
+  const suggestions = list.filter((x): x is string => typeof x === 'string');
   if (suggestions.length > MAX_SUGGESTIONS) {
     add('suggestions', specMsg('spec.suggestionsMax', { max: MAX_SUGGESTIONS }));
   }
@@ -3282,6 +3297,7 @@ export const specSchema = z
 
     checkRequiresOwner(spec, ctx);
     checkTokens(spec, ctx, checkTokenNotices);
+    checkTokenSuggestions(spec, ctx);
     checkIcons(spec, ctx);
     checkSignatureKeys(spec, ctx);
   });
@@ -3438,7 +3454,9 @@ function toSpecIssue(issue: z.core.$ZodIssue): SpecIssue {
 /** Validates an already-read JSON; errors in the format `path: message`. */
 export function parseSpec(data: unknown): SpecParseResult {
   const result = specSchema.safeParse(data, REPORT_INPUT);
-  if (result.success) return { ok: true, ...dropRemovedFields(result.data) };
+  if (result.success) {
+    return { ok: true, ...dropRemovedFields(expandTokenSuggestions(result.data)) };
+  }
   const issues = result.error.issues.map(toSpecIssue);
   return {
     ok: false,

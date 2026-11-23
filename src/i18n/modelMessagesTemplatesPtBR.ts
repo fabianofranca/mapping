@@ -189,6 +189,9 @@ export const templatePtBR: {
   'model.spec.suggestionsBlank': 'sugestões não podem ser vazias',
   'model.spec.suggestionsTrim': 'sugestões não podem ter espaço no começo nem no fim',
   'model.spec.suggestionsRepeated': 'sugestões repetidas',
+  'model.spec.suggestionsGroupEmpty': 'nenhum token no grupo "{group}"',
+  'model.spec.suggestionsTokenNotText':
+    'o token "{name}" do grupo "{group}" não é texto fixo',
   'model.spec.columnTypeNotAllowed':
     '"{type}" não é permitido dentro de table; use "string", "number", "date", "enum" ou "ref"',
   'model.spec.optionsRequired': 'obrigatório e não vazio em enum',

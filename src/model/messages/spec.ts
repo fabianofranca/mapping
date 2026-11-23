@@ -46,6 +46,9 @@ export const specMessages = {
   'spec.suggestionsBlank': 'suggestions cannot be empty',
   'spec.suggestionsTrim': 'suggestions cannot have spaces at the start or the end',
   'spec.suggestionsRepeated': 'repeated suggestions',
+  'spec.suggestionsGroupEmpty': 'no token in group "{group}"',
+  'spec.suggestionsTokenNotText':
+    'the token "{name}" of group "{group}" is not fixed text',
   // Fields and columns
   'spec.columnTypeNotAllowed':
     '"{type}" is not allowed inside a table; use "string", "number", "date", "enum" or "ref"',

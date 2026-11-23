@@ -242,6 +242,22 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
   ['spec.suggestionsTrim', (s) => (field(s).suggestions = [' a'])],
   ['spec.suggestionsRepeated', (s) => (field(s).suggestions = ['a', 'a'])],
   [
+    'spec.suggestionsGroupEmpty',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = { values: {} }),
+      (field(s).suggestions = [{ $tokens: 'icon' }])
+    ),
+  ],
+  [
+    'spec.suggestionsTokenNotText',
+    (s) => (
+      (s.formatVersion = 23),
+      (s.tokens = { values: { x: { $value: 1, $group: 'icon' } } }),
+      (field(s).suggestions = [{ $tokens: 'icon' }])
+    ),
+  ],
+  [
     'spec.columnTypeNotAllowed',
     (s) =>
       (type(s).fields = [
