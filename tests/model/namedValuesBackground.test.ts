@@ -54,6 +54,16 @@ describe('preset containers[].background: token (decision 28)', () => {
     expect(issuesOf(preset({ $token: 'surface', alpha: 0.5 })).length).toBeGreaterThan(0);
   });
 
+  it('a number, null or array background has the specific message', () => {
+    const message =
+      'invalid background; use #RRGGBB or { "$token": "name" } with a token name';
+    for (const bad of [12, null, ['#ffffff']]) {
+      expect(issuesOf(preset(bad))).toEqual([
+        { path: 'containers[0].background', message },
+      ]);
+    }
+  });
+
   it('formatVersion 22 refuses the token with the version message only', () => {
     const tokens = { modes: ['light'], values: { surface: '#ffffff' } };
     expect(issuesOf(preset({ $token: 'surface' }, 22, tokens))).toEqual([

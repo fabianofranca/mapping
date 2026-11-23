@@ -20,7 +20,7 @@ interface Props {
  */
 export function ContainerBackgroundToken({ image, token, disabled, onError }: Props) {
   const { actions, review } = useEditor();
-  // The color shown is the one on screen (the Proposed view in a review); the button acts on the real project.
+  // The swatch is the color on screen (the Proposed view in a review); the button freezes the real project's.
   const project = review.derived.shownProject.value;
   const color = project
     ? (containerBackgroundColor(project, image.id) ?? '#FFFFFF')
@@ -33,7 +33,7 @@ export function ContainerBackgroundToken({ image, token, disabled, onError }: Pr
         size="sm"
         disabled={disabled}
         onClick={() => {
-          const result = actions.setBackgroundContainer(image.id, { background: color });
+          const result = actions.useFixedBackgroundColor(image.id);
           onError(result.ok ? null : result.error);
         }}
       >

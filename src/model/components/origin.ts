@@ -34,7 +34,7 @@ import type { FieldDef, Library, TypeDef } from './library';
 import type { Screen } from './screen';
 import {
   TOKEN_NAME_PATTERN,
-  mapColor,
+  colorOverWhite,
   resolveTokens,
   type SpecTokens,
   type TokenSelection,
@@ -1024,18 +1024,8 @@ function readBackground(source: BackgroundSource | undefined, doc: unknown): unk
   if (isScalar(value) && source.values && Object.hasOwn(source.values, String(value))) {
     return source.values[String(value)];
   }
-  return value;
-}
-
-/** `color` composited over white, as `#RRGGBB`; `none`, `transparent` and what is not a color become white. */
-function opaqueOverWhite(color: string): string {
-  const out = mapColor(color, ({ r, g, b, a }) => ({
-    r: r * a + 255 * (1 - a),
-    g: g * a + 255 * (1 - a),
-    b: b * a + 255 * (1 - a),
-    a: 1,
-  }));
-  return /^#[0-9a-f]{6}$/i.test(out) ? out.toUpperCase() : '#FFFFFF';
+  // A value of the document is never a token: only the origin's own declaration is.
+  return isRecord(value) ? undefined : value;
 }
 
 /** The background that the source read gives: the token in the selection, or the value as text (else `#FFFFFF`). */
@@ -1046,7 +1036,9 @@ function backgroundColor(
 ): string {
   if (isRecord(value) && typeof value.$token === 'string') {
     const resolved = resolveTokens(tokens, {}, selection)[value.$token];
-    return typeof resolved === 'string' ? opaqueOverWhite(resolved) : '#FFFFFF';
+    return typeof resolved === 'string'
+      ? (colorOverWhite(resolved) ?? '#FFFFFF')
+      : '#FFFFFF';
   }
   return isScalar(value) ? String(value) : '#FFFFFF';
 }

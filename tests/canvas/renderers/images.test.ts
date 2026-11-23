@@ -15,7 +15,8 @@ import {
 import { canvasProject, editorFor, frameOf, installFakeCanvas, TOKENS } from '../harness';
 
 vi.mock('../../../src/model/containerBackground', async (original) => {
-  const actual = await original<typeof import('../../../src/model/containerBackground')>();
+  const actual =
+    await original<typeof import('../../../src/model/containerBackground')>();
   return { ...actual, containerBackgroundColor: vi.fn(actual.containerBackgroundColor) };
 });
 

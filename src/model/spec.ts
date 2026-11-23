@@ -1720,7 +1720,9 @@ const backgroundToken = z
   })
   .strict();
 
-const containerBackground = z.union([color, backgroundToken]);
+const containerBackground = z.union([color, backgroundToken], {
+  error: specMsg('spec.backgroundInvalid').text,
+});
 
 const containerShape = z
   .object({
