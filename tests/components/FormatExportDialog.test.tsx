@@ -149,7 +149,8 @@ describe('FormatExportDialog', () => {
       ]),
     );
     fireEvent.click(exportButton());
-    view.unmount();
+    // Preact 11 runs the cleanup of passive effects after the paint; `act` flushes it.
+    act(() => view.unmount());
     await act(async () => {
       finish({ ok: true, value: 'late' });
       await new Promise((resolve) => setTimeout(resolve, 30));

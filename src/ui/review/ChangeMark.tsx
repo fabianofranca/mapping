@@ -116,7 +116,7 @@ export function ChangeMark(subject: MarkSubject) {
   const names = useReviewNames();
   const openMark = useContext(OpenMarkContext);
   const [mode, setMode] = useState<OpenMode>('focus');
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const host = useRef<HTMLSpanElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const panelId = useId();

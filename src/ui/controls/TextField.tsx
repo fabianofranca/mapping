@@ -1,10 +1,16 @@
-import type { ComponentChildren, JSX, Ref } from 'preact';
+import type {
+  ComponentChildren,
+  LooseInputHTMLAttributes,
+  Ref,
+  TextareaHTMLAttributes,
+} from 'preact';
 import { CommitInput } from '../CommitInput';
 import type { SuggestionInput, SuggestionItem } from '../suggestions';
 import { classes } from './classes';
+import { inputAttrs } from './nativeAttrs';
 
 type NativeInput = Omit<
-  JSX.InputHTMLAttributes<HTMLInputElement>,
+  LooseInputHTMLAttributes<HTMLInputElement>,
   'class' | 'size' | 'value'
 >;
 
@@ -55,7 +61,14 @@ export function TextField(props: TextFieldProps) {
   if (rest.onCommit === undefined) {
     const { inputRef, ...input } = rest;
     control = (
-      <input {...input} ref={inputRef} class={className} aria-invalid={invalid} />
+      <input
+        {...inputAttrs({
+          ...input,
+          ref: inputRef,
+          class: className,
+          'aria-invalid': invalid,
+        })}
+      />
     );
   } else {
     control = <CommitInput {...rest} class={className} aria-invalid={invalid} />;
@@ -71,7 +84,7 @@ export function TextField(props: TextFieldProps) {
 }
 
 type NativeTextArea = Omit<
-  JSX.TextareaHTMLAttributes<HTMLTextAreaElement>,
+  TextareaHTMLAttributes<HTMLTextAreaElement>,
   'class' | 'value' | 'onInput' | 'onChange' | 'onBlur'
 >;
 

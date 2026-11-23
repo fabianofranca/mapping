@@ -1,4 +1,4 @@
-import type { JSX, Ref } from 'preact';
+import type { ButtonHTMLAttributes, Ref } from 'preact';
 import { ariaKeys } from '../../app/shortcuts';
 import { Icon, type IconName } from '../icons';
 import { classes } from './classes';
@@ -6,7 +6,7 @@ import { useHideDisabled } from './hideDisabled';
 import { Tooltip, type TooltipPlacement } from './Tooltip';
 
 type NativeButton = Omit<
-  JSX.ButtonHTMLAttributes<HTMLButtonElement>,
+  ButtonHTMLAttributes<HTMLButtonElement>,
   'class' | 'size' | 'title' | 'icon'
 >;
 

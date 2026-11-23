@@ -12,7 +12,7 @@ export const COPY_RESULT_MS = 2000;
  */
 export function useCopyResult() {
   const [result, setResult] = useState<CopyResult>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
 
   const reset = () => {

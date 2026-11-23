@@ -44,8 +44,8 @@ function useReplyAnchor(target: ComposerTarget): ThreadAnchor | null {
 function useRequestFocus(
   autoFocus: boolean | undefined,
   key: string,
-  field: RefObject<HTMLElement>,
-  button: RefObject<HTMLElement>,
+  field: RefObject<HTMLElement | null>,
+  button: RefObject<HTMLElement | null>,
 ): void {
   const { ui } = useEditor();
   const request = autoFocus ? ui.conversation.value : null;

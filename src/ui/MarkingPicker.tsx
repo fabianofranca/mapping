@@ -2,6 +2,7 @@ import { useId, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { projectIndex, type Marking, type Project } from '../model';
 import { IconButton } from './controls';
+import { inputAttrs } from './controls/nativeAttrs';
 import { useFocusOrigin, useModal, type FocusReturn } from './focus';
 import { Icon } from './icons';
 import { imageLabel, markingLabel, markingPath } from './labels';
@@ -114,9 +115,8 @@ export function MarkingPicker({
             <div class="picker-search">
               <input
                 ref={input}
-                type="search"
+                {...inputAttrs({ type: 'search', role: 'combobox' })}
                 class="input"
-                role="combobox"
                 aria-label={t('arrow.pickerSearch')}
                 placeholder={t('arrow.pickerSearch')}
                 aria-controls={listId}

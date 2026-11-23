@@ -125,7 +125,7 @@ export function place(
  * for the others, only Esc.
  */
 function usePopoverKeys(
-  panel: RefObject<HTMLElement>,
+  panel: RefObject<HTMLElement | null>,
   open: boolean,
   isMenu: boolean,
   close: () => void,

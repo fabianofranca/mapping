@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/preact';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'preact/hooks';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -340,7 +340,8 @@ describe('Tabs', () => {
       Object.defineProperty(list, 'clientWidth', { configurable: true, value: 200 });
       notify();
       expect(list.scrollLeft).toBe(180);
-      unmount();
+      // Preact 11 runs the cleanup of passive effects after the paint; `act` flushes it.
+      act(() => unmount());
       expect(disconnect).toHaveBeenCalled();
     } finally {
       geometry.forEach(([key], i) => {
