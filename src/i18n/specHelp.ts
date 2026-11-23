@@ -620,7 +620,8 @@ const PACKAGE_TREE = `sdui-backend/
   sdui-backend.spec.json       the specialization (formatVersion 9)
   components/sdui-button.json  one file per component (mapping-component)
   docs/sdui-button.md          the type's markdown document
-  examples/settings.sdui.json  an example screen of an external system
+  plugins/sdui.js              the plugin of a file format (fileFormats)
+  examples/home.sdui.json      an example file of the format
   fonts/Roboto-Regular.woff2   the design fonts (optional)`;
 
 /** Excerpt of the file formats (`fileFormats`, v20). */
@@ -819,6 +820,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 19 adds the copy-field migration step: in migrations, it copies the value of a field (or of a table column) into another one, only on the annotations that match when, so a library update can split a field into two without losing values (section "Version contract"). from keeps its value, to is only filled when empty, and nothing is ever lost. It covers no break. Only a specialization that declares the step goes up to 19. Versions 1 to 18 are still accepted.',
           'formatVersion 20 adds the file formats: fileFormats at the root, the list of file formats that the specialization reads and writes, each one handled by a plugin, a .js file of the package (section "Library: the package"). It makes the specialization a package. The key is outside the version contract: adding, changing or removing a format needs no version raise and no migration. Before 20 it is the error only allowed with formatVersion 20, at fileFormats. Only a specialization that declares fileFormats goes up to 20. Versions 1 to 19 are still accepted, and origins stays as it was.',
           'formatVersion 21 adds container classes: containerClasses at the root (named sets of classes, computed from the container size or chosen per container), classes on a ready-made size (the choice the size carries) and appliesIn on the type (the classes the type is meant for), sections "Containers (ready-made sizes)" and "What the type applies to"; it also adds documents at the root (the general documents of the library: id, name and doc, a package .md or { repo, path } of docRepos), section "Library documents (formatVersion 21)"; and accessibility.variants on the type (an enum field of the type chooses the role and/or the label per option, like code.variants: a filter chip is a checkbox and an assist chip is a button; the audit, Incomplete, the Details and get_code_hints follow the case), section "Accessibility (accessibility)". Only a specialization that uses them goes up to 21; versions 1 to 20 are still accepted.',
+          'formatVersion 22 makes sources plain data: the plugin of a file format (fileFormats) replaces origins. origins at the root and system with file on a type example are refused (only allowed up to formatVersion 21); path on a field or column source and slot and ignore on a type source are valid for any system, as data the plugins read (the core checks only the shape); a field or column source needs name or path; no system is executable. Only a specialization that declares formatVersion 22 gets these rules; versions 1 to 21 are still accepted unchanged.',
           'formatVersion 4 adds the library: components that draw the types, documents, examples, fonts, executable origins and the version contract (sections "Library: the package", "Version contract" and "Library validation").',
           'formatVersion 5 is 4 plus repo on the platforms: the library repository on each platform, where the link and the revision of the file of each symbol come from (section "Platforms and code").',
           'formatVersion 6 is 5 plus containers: the ready-made sizes the New container dialog offers when the specialization is applied (section "Containers (ready-made sizes)"). The core only has Custom and Selection size; versions 1 to 5 are still accepted.',
@@ -837,7 +839,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 21), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), containerClasses and documents (from version 21), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 22), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), containerClasses and documents (from version 21), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -1416,14 +1418,14 @@ const enUS: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'In an executable system (declared in origins, formatVersion 4):',
+        text: 'In an executable system (declared in origins, formatVersion 4 to 21; from 22 on sources are plain data and the file format plugin replaces origins):',
       },
       {
         kind: 'terms',
         items: [
           {
             term: 'path',
-            text: 'In a field or column source: the path of the value inside the external node’s props (a.b[0].c, no [*]). Required in a system declared in origins and forbidden in the others; name becomes just the display name.',
+            text: 'In a field or column source: the path of the value inside the external node’s props (a.b[0].c, no [*]). Up to 21: required in a system declared in origins and forbidden in the others, and name becomes just the display name. From 22: valid in any system, as data for the plugins, and a source needs name or path.',
           },
           {
             term: 'slot',
@@ -1435,7 +1437,7 @@ const enUS: readonly HelpSection[] = [
           },
           {
             term: 'origins',
-            text: 'At the root: the executable declaration of each system, with node (node keys), screen (width, height, background and roots with anchor and scrim), booleans and examples (example screens). The app runs the declaration, never code from the specialization.',
+            text: 'At the root: the executable declaration of each system, with node (node keys), screen (width, height, background and roots with anchor and scrim), booleans and examples (example screens). The app runs the declaration, never code from the specialization. Up to formatVersion 21; refused from 22.',
           },
           {
             term: 'kind',
@@ -1465,7 +1467,7 @@ const enUS: readonly HelpSection[] = [
           { term: 'doc', text: 'On each type: the type’s markdown (.md) document.' },
           {
             term: 'examples',
-            text: 'On each type: examples with a unique name and a single mode, values (values of the type’s fields; a table field takes only the list of rows, as in the component’s preview, and ref is not accepted) or system with file (the JSON of a node of an origins system).',
+            text: 'On each type: examples with a unique name and a single mode, values (values of the type’s fields; a table field takes only the list of rows, as in the component’s preview, and ref is not accepted) or system with file (the JSON of a node of an origins system; up to formatVersion 21).',
           },
           {
             term: 'fonts',
@@ -1473,7 +1475,7 @@ const enUS: readonly HelpSection[] = [
           },
           {
             term: 'origins',
-            text: 'At the root: the executable origin declaration (previous section), with example screens in examples.',
+            text: 'At the root: the executable origin declaration (previous section), with example screens in examples (up to formatVersion 21).',
           },
           {
             term: 'migrations',
@@ -1487,7 +1489,7 @@ const enUS: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'A fileFormats plugin is a text file of the package, read by the app and by the MCP server and copied with the package to specs/<id>/. It only ever runs isolated: it sees only its input, returns text or operations (which become a proposal for review), has no disk, network or storage, and has a time limit. The MCP server runs it (export_format, import_format and validate_library); the app does not run plugins yet.',
+        text: 'A fileFormats plugin is a text file of the package, read by the app and by the MCP server and copied with the package to specs/<id>/. It only ever runs isolated: it sees only its input, returns text or operations (which become a proposal for review), has no disk, network or storage, and has a time limit. The MCP server runs it (export_format, import_format and validate_library) and the app runs it too, isolated (Export in a format, Import from a format and the validation of a package).',
       },
       { kind: 'code', code: FILE_FORMATS_EXCERPT },
       {
@@ -1647,7 +1649,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 to 21), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 to 22), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types, in another layer (from formatVersion 13, also in the owner’s own layer);',
           'every type with requiresOwner: true appears in the allowedChildren of some type (in formatVersion 11, in the resolved set of children of some owner: by id, by whole layer or by group);',
@@ -1665,6 +1667,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 18, accessibility at the root and on the type: only in version 18 (before it the error is only allowed with formatVersion 18, at the path of each key); role is one of the listed roles; touchTarget has width and height above 0 and mode visual or expanded, and on a type it needs an interactive role; label.fields are string or enum fields of the type; the id of a part is unique and its when is a field, a table or table.column that exists; a part has no touchTarget.',
           'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) from formatVersion 3 on;',
           'formatVersion 11, children by layer and group: version 11 only (before it the error is only allowed with formatVersion 11, at the exact path); each allowedChildren item is a type id or a strict { layer, groups } clause (any other property is an error, and so is an empty groups); errors: a layer that is not a layer of the specialization or is the owner’s own before formatVersion 13 (children must be in another layer) and a group that does not exist in the clause’s layer; requiresOwner is checked against the resolved set; layer groups with a non-empty id unique in the layer and a non-empty name; type groups non-empty, without repetition and only from its own layer; warnings: 20 ids or more in text in the same allowedChildren and a group no type uses;',
+          'formatVersion 22, plain sources: origins at the root and system with file on a type example are refused (only allowed up to formatVersion 21, at the key); path on a field or column source is valid for any system, with valid syntax and no [*]; slot and ignore on a type source are valid for any system (slot still needs the component slot at the package level, ignore has no repeats); a field or column source needs name or path; no system is executable;',
           'formatVersion 21, containerClasses, classes on a ready-made size and appliesIn on the type: version 21 only (before it the error is only allowed with formatVersion 21, at the path of each key); a set has a unique id in [a-z0-9-]+ that is never width or height, a non-empty name and a non-empty list of classes with ids unique in the set; by is "width" or "height"; in a computed set (with by) every class but the last has below, a number above 0 that increases along the list (the error is at the class: below is required in every class but the last, the last class has no below, below must increase along the list), and in a chosen set below is an error; classes on a ready-made size names a chosen set of the specialization and one of its classes; appliesIn is a non-empty object whose keys are sets of the specialization and whose values are non-empty lists, without repetition, of classes of that set (at appliesIn.<set>), and only on a type that applies to markings and is not floating; formatVersion 21, documents: version 21 only (before it the error is only allowed with formatVersion 21, at the path documents); a non-empty list of strict { id, name, doc }, id in [a-z0-9-]+ and unique, name non-empty, doc a package .md or { repo, path } with a repo declared in docRepos (a text doc is a cited package file; a { repo, path } one counts as a use of its repository); formatVersion 21, accessibility.variants: version 21 only (before it the error is only allowed with formatVersion 21, at accessibility.variants); field is an enum field of the type (not a field of the type, must be an enum field of the type); cases has at least one case (declare at least one case) and each key is an option of the field; a case declares role, label or both (empty case: declare role or label); role is on the list; the label fields are string or enum fields of the type; any other key, touchTarget and parts included, is unknown key; the warning label-without-role also covers a case whose resolved role is absent or none and that declares a label;',
           'formatVersion 20, fileFormats: version 20 only (before it the error is only allowed with formatVersion 20, at fileFormats); a list of strict objects (another key is unknown key: <key>, at its exact path); id is [a-z0-9][a-z0-9-]* and unique, name is not empty, extension is [a-z0-9]+, plugin is a package path ending in .js, contract is required and only 1, scope is project or container; each example has a non-empty name, unique in the format, a file that is a package path and an optional input that is a .json package path; level 1 of the library validator checks that the plugin, the example files and the input exist in the package and that the plugin has at most 1 MiB (error at fileFormats[i].plugin); nothing here runs a plugin;',
           'formatVersion 19, copy-field step in migrations: version 19 only (before it the error is only allowed with formatVersion 19, at migrations[i].steps[j].op); strict keys type, from, to and when; type is a type of this version and to is a field or column of it; from may not exist; from and to are both fields or both columns of the same table, never a table field and never the same; when is not empty, its keys are top-level fields of the type that are not table or ref, each value is text, a number or a non-empty list of them and in an enum each value is an option; warning: a from that was not a field of the type in the previous version;',
@@ -1732,6 +1735,7 @@ const ptBR: readonly HelpSection[] = [
           'A formatVersion 19 acrescenta o passo de migração copy-field: em migrations, copia o valor de um campo (ou de uma coluna de table) para outro, só nas anotações que casam com when, para que a atualização de uma biblioteca possa dividir um campo em dois sem perder valores (seção "Contrato de versão"). O from guarda o valor, o to só é preenchido quando vazio e nunca há perda. Ele não cobre nenhuma quebra. Só sobe para a 19 quem declara o passo. As versões 1 a 18 continuam aceitas.',
           'A formatVersion 20 acrescenta os formatos de arquivo: fileFormats na raiz, a lista de formatos de arquivo que a especialização lê e escreve, cada um tratado por um plugin, um arquivo .js do pacote (seção "Biblioteca: o pacote"). Ela faz da especialização um pacote. A chave fica fora do contrato de versão: incluir, mudar ou tirar um formato não pede subir a versão nem migração. Antes da 20 o erro é só é permitido com formatVersion 20, em fileFormats. Só sobe para a 20 quem declara fileFormats. As versões 1 a 19 continuam aceitas, e origins continua como era.',
           'A formatVersion 21 acrescenta as classes de container: containerClasses na raiz (conjuntos nomeados de classes, calculados pelo tamanho do container ou escolhidos por container), classes num tamanho pronto (a escolha que o tamanho carrega) e appliesIn no tipo (as classes para as quais o tipo serve), seções "Containers (tamanhos prontos)" e "Onde o tipo se aplica"; acrescenta também documents na raiz (os documentos gerais da biblioteca: id, name e doc, um .md do pacote ou { repo, path } de docRepos), seção "Documentos da biblioteca (formatVersion 21)"; e accessibility.variants no tipo (um campo enum do tipo escolhe o papel e/ou o rótulo por opção, como o code.variants: um chip de filtro é checkbox e um chip de ação é button; a auditoria, as Incompletas, os Detalhes e o get_code_hints seguem o caso), seção "Acessibilidade (accessibility)". Só a especialização que as usa sobe para a 21; as versões 1 a 20 continuam aceitas.',
+          'A formatVersion 22 torna as sources dados simples: o plugin de um formato de arquivo (fileFormats) substitui as origins. origins na raiz e system com file num exemplo do tipo são recusados (só é permitido até a formatVersion 21); path numa origem de campo ou coluna e slot e ignore numa origem de tipo valem para qualquer system, como dados que os plugins leem (o núcleo só confere a forma); uma origem de campo ou coluna precisa de name ou path; nenhum system é executável. Só a especialização que declara a formatVersion 22 recebe essas regras; as versões 1 a 21 continuam aceitas sem mudança.',
           'A formatVersion 4 acrescenta a biblioteca: componentes que desenham os tipos, documentos, exemplos, fontes, origens executáveis e o contrato de versão (seções "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca").',
           'A formatVersion 5 é a 4 mais o repo nas plataformas: o repositório da biblioteca em cada plataforma, de onde vêm o link e a revisão do arquivo de cada symbol (seção "Plataformas e code").',
           'A formatVersion 6 é a 5 mais containers: os tamanhos prontos que o diálogo Novo container oferece quando a especialização está aplicada (seção "Containers (tamanhos prontos)"). O núcleo só tem Personalizado e Tamanho da seleção; as versões 1 a 5 continuam aceitas.',
@@ -1750,7 +1754,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 21), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), containerClasses e documents (a partir da versão 21), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 22), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), containerClasses e documents (a partir da versão 21), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -2326,14 +2330,14 @@ const ptBR: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'Num sistema executável (declarado em origins, formatVersion 4):',
+        text: 'Num sistema executável (declarado em origins, formatVersion 4 a 21; a partir da 22 as sources são dados simples e o plugin de um formato de arquivo substitui as origins):',
       },
       {
         kind: 'terms',
         items: [
           {
             term: 'path',
-            text: 'Na origem de um campo ou coluna: o caminho do valor dentro das props do nó externo (a.b[0].c, sem [*]). Obrigatório num sistema declarado em origins e proibido nos demais; name passa a ser só o nome de exibição.',
+            text: 'Na origem de um campo ou coluna: o caminho do valor dentro das props do nó externo (a.b[0].c, sem [*]). Até a 21: obrigatório num sistema declarado em origins e proibido nos demais, e name passa a ser só o nome de exibição. A partir da 22: vale em qualquer sistema, como dado para os plugins, e a origem precisa de name ou path.',
           },
           {
             term: 'slot',
@@ -2345,7 +2349,7 @@ const ptBR: readonly HelpSection[] = [
           },
           {
             term: 'origins',
-            text: 'Na raiz: a declaração executável de cada sistema, com node (chaves do nó), screen (largura, altura, fundo e raízes com âncora e película), booleans e examples (telas de exemplo). O app executa a declaração, nunca código da especialização.',
+            text: 'Na raiz: a declaração executável de cada sistema, com node (chaves do nó), screen (largura, altura, fundo e raízes com âncora e película), booleans e examples (telas de exemplo). O app executa a declaração, nunca código da especialização. Até a formatVersion 21; recusada a partir da 22.',
           },
           {
             term: 'kind',
@@ -2375,7 +2379,7 @@ const ptBR: readonly HelpSection[] = [
           { term: 'doc', text: 'Em cada tipo: o documento markdown (.md) do tipo.' },
           {
             term: 'examples',
-            text: 'Em cada tipo: exemplos com name único e um só modo, values (valores dos campos do tipo; um campo table aceita só a lista de linhas, como no preview do componente, e ref não entra) ou system com file (o JSON de um nó de um sistema de origins).',
+            text: 'Em cada tipo: exemplos com name único e um só modo, values (valores dos campos do tipo; um campo table aceita só a lista de linhas, como no preview do componente, e ref não entra) ou system com file (o JSON de um nó de um sistema de origins; até a formatVersion 21).',
           },
           {
             term: 'fonts',
@@ -2383,7 +2387,7 @@ const ptBR: readonly HelpSection[] = [
           },
           {
             term: 'origins',
-            text: 'Na raiz: a declaração de origem executável (seção anterior), com telas de exemplo em examples.',
+            text: 'Na raiz: a declaração de origem executável (seção anterior), com telas de exemplo em examples (até a formatVersion 21).',
           },
           {
             term: 'migrations',
@@ -2397,7 +2401,7 @@ const ptBR: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'Um plugin de fileFormats é um arquivo de texto do pacote, lido pelo app e pelo servidor MCP e copiado com o pacote para specs/<id>/. Ele só roda isolado: vê apenas a sua entrada, devolve texto ou operações (que viram uma proposta para revisão), não tem disco, rede nem armazenamento e tem tempo limite. O servidor MCP o executa (export_format, import_format e validate_library); o app ainda não executa plugins.',
+        text: 'Um plugin de fileFormats é um arquivo de texto do pacote, lido pelo app e pelo servidor MCP e copiado com o pacote para specs/<id>/. Ele só roda isolado: vê apenas a sua entrada, devolve texto ou operações (que viram uma proposta para revisão), não tem disco, rede nem armazenamento e tem tempo limite. O servidor MCP o executa (export_format, import_format e validate_library) e o app também o executa, isolado (Exportar em um formato, Importar de um formato e a validação de um pacote).',
       },
       { kind: 'code', code: FILE_FORMATS_EXCERPT },
       {
@@ -2557,7 +2561,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 a 21), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 a 22), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes, em outra camada (a partir da formatVersion 13, também na camada do próprio dono);',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo (na formatVersion 11, no conjunto resolvido dos filhos de algum dono: por id, por camada inteira ou por grupo);',
@@ -2575,6 +2579,7 @@ const ptBR: readonly HelpSection[] = [
           'formatVersion 18, accessibility na raiz e no tipo: só na versão 18 (antes dela o erro é só é permitido com formatVersion 18, no caminho de cada chave); role é um dos papéis listados; touchTarget tem width e height maiores que 0 e mode visual ou expanded, e no tipo exige um role interativo; label.fields são campos string ou enum do tipo; o id de uma parte é único e o when dela é um campo, uma tabela ou tabela.coluna que existe; uma parte não tem touchTarget.',
           'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) a partir da formatVersion 3;',
           'formatVersion 11, filhos por camada e grupo: só na versão 11 (antes dela o erro é só é permitido com formatVersion 11, no caminho exato); cada item de allowedChildren é um id de tipo ou uma cláusula { layer, groups } estrita (outra propriedade é erro, e groups vazio também); erros: layer que não é camada da especialização ou é a do próprio dono antes da formatVersion 13 (filhos devem estar em outra camada) e grupo inexistente na camada da cláusula; requiresOwner conferido no conjunto resolvido; groups da camada com id não vazio e único na camada e name não vazio; groups do tipo não vazio, sem repetição e só da própria camada; avisos: 20 ids ou mais em texto no mesmo allowedChildren e grupo que nenhum tipo usa;',
+          'formatVersion 22, sources simples: origins na raiz e system com file num exemplo do tipo são recusados (só é permitido até a formatVersion 21, na chave); path numa origem de campo ou coluna vale para qualquer system, com sintaxe válida e sem [*]; slot e ignore numa origem de tipo valem para qualquer system (o slot ainda exige o slot do componente no nível do pacote, o ignore não tem repetição); uma origem de campo ou coluna precisa de name ou path; nenhum system é executável;',
           'formatVersion 21, containerClasses, classes num tamanho pronto e appliesIn no tipo: só na versão 21 (antes dela o erro é só é permitido com formatVersion 21, no caminho de cada chave); um conjunto tem id único em [a-z0-9-]+ que nunca é width nem height, name não vazio e uma lista não vazia de classes com ids únicos no conjunto; by é "width" ou "height"; num conjunto calculado (com by) toda classe, menos a última, tem below, um número maior que 0 que cresce ao longo da lista (o erro fica na classe: below é obrigatório em todas as classes, menos na última; a última classe não tem below; below deve crescer ao longo da lista), e num conjunto escolhido below é erro; classes num tamanho pronto cita um conjunto escolhido da especialização e uma de suas classes; appliesIn é um objeto não vazio cujas chaves são conjuntos da especialização e cujos valores são listas não vazias, sem repetição, de classes desse conjunto (em appliesIn.<set>), e só num tipo que se aplica a marcações e não é flutuante; formatVersion 21, documents: só na versão 21 (antes dela o erro é só é permitido com formatVersion 21, no caminho documents); uma lista não vazia de { id, name, doc } estritos, id em [a-z0-9-]+ e único, name não vazio, doc um .md do pacote ou { repo, path } com repo declarado em docRepos (um doc em texto é arquivo citado do pacote; um { repo, path } conta como uso do seu repositório); formatVersion 21, accessibility.variants: só na versão 21 (antes dela o erro é só é permitido com formatVersion 21, em accessibility.variants); field é um campo enum do tipo (não é campo do tipo, deve ser campo enum do tipo); cases tem ao menos um caso (declare at least one case) e cada chave é uma opção do campo; um caso declara role, label ou os dois (caso vazio: declare role ou label); role está na lista; os campos do label são campos string ou enum do tipo; qualquer outra chave, touchTarget e parts inclusos, é unknown key; o aviso label-without-role também vale para um caso cujo papel resolvido é ausente ou none e que declara label;',
           'formatVersion 20, fileFormats: só na versão 20 (antes dela o erro é só é permitido com formatVersion 20, em fileFormats); uma lista de objetos estritos (outra chave é unknown key: <key>, no caminho exato dela); id é [a-z0-9][a-z0-9-]* e único, name não é vazio, extension é [a-z0-9]+, plugin é um caminho do pacote que termina em .js, contract é obrigatório e só 1, scope é project ou container; cada exemplo tem name não vazio, único no formato, um file que é caminho do pacote e um input opcional que é caminho .json do pacote; o nível 1 do validador da biblioteca confere que o plugin, os arquivos dos exemplos e o input existem no pacote e que o plugin tem no máximo 1 MiB (erro em fileFormats[i].plugin); nada aqui executa um plugin;',
           'formatVersion 19, passo copy-field em migrations: só na versão 19 (antes dela o erro é só é permitido com formatVersion 19, em migrations[i].steps[j].op); chaves estritas type, from, to e when; type é tipo desta versão e to é campo ou coluna dele; from pode não existir; from e to são ambos campos ou ambos colunas da mesma tabela, nunca um campo table e nunca o mesmo; when não é vazio, suas chaves são campos de primeiro nível do tipo que não são table nem ref, cada valor é texto, número ou lista não vazia deles e em um enum cada valor é uma option; aviso: um from que não era campo do tipo na versão anterior;',

@@ -333,6 +333,72 @@ export const enUS = {
   'export.downloadHint':
     'Downloading counts as exported. If you cancel saving the file, export again.',
 
+  'format.exportMenu': 'Export in a format…',
+  'format.export.title': 'Export in a format',
+  'format.export.format': 'Format',
+  'format.export.container': 'Container',
+  'format.export.option': '{spec} › {format} (.{extension})',
+  'format.export.run': 'Export',
+  'format.export.running': 'Running the plugin…',
+  'format.export.loading': 'Reading the specializations…',
+  'format.export.none': 'No applied specialization has a format that exports.',
+  'format.export.fileMeta': 'Text file · {size}',
+  'format.isolation':
+    'The plugin code runs isolated, without network, disk or access to your projects.',
+  'format.specNotice':
+    'Brings {count} file format(s); their code runs isolated, without network, disk or access to your projects.',
+  'format.error.unexpected': 'The export failed for an unexpected reason.',
+  'format.error.save':
+    'The pending changes could not be saved, so nothing was exported. Fix the save error and try again.',
+  'format.error.project': 'The project could not be read for this format.',
+  'format.error.container': 'Choose a container to export.',
+  'format.error.plugin-failed': 'The plugin failed: {message}',
+  'format.error.plugin-failed.at':
+    'The plugin failed: {message} (line {line}, column {column})',
+  'format.error.plugin-timeout': 'The plugin went past the time limit of {seconds} s.',
+  'format.error.plugin-limit': 'The plugin went past a limit: {message}',
+  'format.error.plugin-output-invalid':
+    'The plugin returned something the app cannot use: {message}',
+
+  'format.importMenu': 'Import from a format…',
+  'format.import.title': 'Import from a format',
+  'format.import.format': 'Format',
+  'format.import.target': 'Target',
+  'format.import.targetNone': 'None (the plugin creates it)',
+  'format.import.chooseFile': 'Choose file…',
+  'format.import.noFile': 'No file chosen',
+  'format.import.preview': 'Preview',
+  'format.import.run': 'Import',
+  'format.import.running': 'Running the plugin…',
+  'format.import.loading': 'Reading the specializations…',
+  'format.import.none': 'No applied specialization has a format that imports.',
+  'format.import.locked':
+    'The project cannot be edited right now (it is read-only or a proposal is in review), so nothing can be imported.',
+  'format.import.previewTitle': 'What Import will do',
+  'format.import.kind': 'Kind',
+  'format.import.created': 'Created',
+  'format.import.changed': 'Changed',
+  'format.import.containers': 'Containers',
+  'format.import.markings': 'Markings',
+  'format.import.annotations': 'Annotations',
+  'format.import.arrows': 'Arrows',
+  'format.import.nothing': 'The file creates and changes nothing.',
+  'format.import.warnings': 'Warnings from the plugin',
+  'format.import.notes': 'Notes',
+  'format.import.error.extension':
+    'Choose a .{extension} file: that is the format’s extension.',
+  'format.import.error.size': 'The file is above the limit of {size} MiB.',
+  'format.import.error.read': 'The file could not be read.',
+  'format.import.error.save':
+    'The pending changes could not be saved, so nothing was imported. Fix the save error and try again.',
+  'format.import.error.container': 'The target container is no longer in the project.',
+  'format.import.error.apply': 'The result cannot be applied. At {path}: {message}',
+  'format.import.error.more': '({count} more problem(s) not shown.)',
+  'format.import.error.locked':
+    'The project cannot be edited right now (it is read-only or a proposal is in review), so nothing was imported.',
+  'format.import.error.principalOnly': 'Open the Main perspective to import.',
+  'format.import.error.unexpected': 'The import failed for an unexpected reason.',
+
   'pwa.updateAvailable': 'New version available.',
   'pwa.update': 'Update',
   'pwa.installTitle': 'Install on this device',

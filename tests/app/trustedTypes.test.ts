@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { SANDBOX_SRCDOC } from '../../src/app/formatSandbox';
 import {
   SERVICE_WORKER_URL,
   createHTML,
@@ -8,9 +9,18 @@ import {
 import { reportedErrors } from '../../src/utils/report';
 
 describe('rules of the default Trusted Types policy', () => {
-  it('createHTML accepts only the empty string', () => {
+  it('createHTML accepts the empty string and exactly the sandbox document', () => {
     expect(createHTML('')).toBe('');
-    for (const input of ['<b>x</b>', ' ', '<img src="https://x/y.png">', 'text']) {
+    expect(createHTML(SANDBOX_SRCDOC)).toBe(SANDBOX_SRCDOC);
+    for (const input of [
+      '<b>x</b>',
+      ' ',
+      '<img src="https://x/y.png">',
+      'text',
+      `${SANDBOX_SRCDOC} `,
+      SANDBOX_SRCDOC.replace('<body>', '<body><b>x</b>'),
+      SANDBOX_SRCDOC.slice(0, -1),
+    ]) {
       expect(createHTML(input)).toBeNull();
     }
   });

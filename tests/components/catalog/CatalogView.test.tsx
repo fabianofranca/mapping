@@ -902,3 +902,63 @@ describe('library notices on the component page (stage #2085)', () => {
     expect(notes[0]!.closest('tr')?.textContent).toContain('draft');
   });
 });
+
+describe('file formats', () => {
+  const format = {
+    id: 'screen',
+    name: 'Screen',
+    extension: 'json',
+    scope: 'project' as const,
+    plugin: 'plugins/screen.js',
+    pluginText: null,
+    examples: [],
+  };
+  const withFormats: Catalog = { ...base, formats: [format] };
+
+  it('shows the "File formats" item after the layers only when the library declares formats', () => {
+    view();
+    expect(screen.queryByRole('button', { name: t('catalog.formats') })).toBeNull();
+    cleanup();
+    view({}, withFormats);
+    const list = screen.getByRole('navigation', { name: t('catalog.view.components') });
+    const buttons = within(list).getAllByRole('button');
+    expect(buttons.at(-1)).toBe(
+      screen.getByRole('button', { name: t('catalog.formats') }),
+    );
+  });
+
+  it('opens the formats page from the item', async () => {
+    const { user } = view({}, withFormats);
+    await user.click(screen.getByRole('button', { name: t('catalog.formats') }));
+    expect(screen.getByRole('article', { name: t('catalog.formats.page') })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Screen' })).toBeTruthy();
+    expect(
+      screen
+        .getByRole('button', { name: t('catalog.formats') })
+        .getAttribute('aria-current'),
+    ).toBe('true');
+  });
+
+  it('counts the format problems in the validation line, after the validation ones', () => {
+    view(
+      {
+        extraIssues: [
+          {
+            file: 'material3.spec.json',
+            path: 'fileFormats[0]',
+            message: 'plugin-failed: boom',
+            severity: 'error',
+          },
+        ],
+      },
+      withFormats,
+    );
+    const line = screen.getByRole('alert');
+    expect(line.textContent).toContain(
+      t('catalog.view.summary', {
+        errors: base.report.errors.length + 1,
+        warnings: base.report.warnings.length,
+      }),
+    );
+  });
+});

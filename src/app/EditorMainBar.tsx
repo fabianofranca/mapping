@@ -1,4 +1,5 @@
 import { useComputed } from '@preact/signals';
+import { declaredFormats } from '../store/formatActions';
 import { t } from '../i18n';
 import { useEditor } from '../ui/EditorContext';
 import { Icon } from '../ui/icons';
@@ -34,6 +35,9 @@ interface EditorMainBarProps {
 export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarProps) {
   const { store, review } = useEditor();
   const projectName = useComputed(() => store.committed.value?.project.name ?? '');
+  // Decision 6: the item shows when an applied specialization declares a format.
+  const hasFormats = useComputed(() => declaredFormats(store.committed.value) > 0);
+  const locked = useComputed(() => store.locked.value);
   return (
     <header class="main-bar" aria-label={t('editor.appName')}>
       <span class="main-bar-logo" aria-hidden="true">
@@ -52,6 +56,24 @@ export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarP
         >
           {t('editor.export')}
         </Button>
+        {hasFormats.value && (
+          <Button
+            role="menuitem"
+            disabled={busy}
+            onClick={() => dialogs.show({ kind: 'exportFormat' })}
+          >
+            {t('format.exportMenu')}
+          </Button>
+        )}
+        {hasFormats.value && (
+          <Button
+            role="menuitem"
+            disabled={busy || locked.value}
+            onClick={() => dialogs.show({ kind: 'importFormat' })}
+          >
+            {t('format.importMenu')}
+          </Button>
+        )}
         <Button role="menuitem" onClick={() => void commands.closeProject()}>
           {t('editor.closeProject')}
         </Button>

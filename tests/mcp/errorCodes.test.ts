@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { MCP_ERROR_CODES } from '../../mcp/errors';
 import { mcpSources } from './sources';
@@ -46,10 +46,17 @@ describe('server error codes', () => {
   });
 
   it('the registry has no code that no module uses', () => {
-    const used = mcpSources()
-      .filter(({ file }) => file !== 'errors.ts')
-      .map(({ code }) => code)
-      .join('\n');
+    // The batch rules moved to the model (`src/model/batch*.ts`): their `BatchRuleError` codes reach the
+    // agent as the batch's `ToolError` codes, so a code only a model rule raises still counts as used.
+    const modelRules = readdirSync('src/model')
+      .filter((file) => /^batch.*\.ts$/.test(file))
+      .map((file) => readFileSync(`src/model/${file}`, 'utf8'));
+    const used = [
+      ...mcpSources()
+        .filter(({ file }) => file !== 'errors.ts')
+        .map(({ code }) => code),
+      ...modelRules,
+    ].join('\n');
     const unused = MCP_ERROR_CODES.filter((code) => !used.includes(`'${code}'`));
     expect(unused).toEqual([]);
   });

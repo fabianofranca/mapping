@@ -1,0 +1,79 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 15,
+  "id": "measured",
+  "name": "Measured layout",
+  "version": 1,
+  "description": "Example of the measured origin: the tree of rectangles of a page (measured in a browser) becomes markings through the sources of the Button and Card types. Containment comes from the geometry.",
+  "origins": [
+    {
+      "system": "dom",
+      "name": "Measured page",
+      "kind": "measured"
+    }
+  ],
+  "layers": [
+    {
+      "id": "ui",
+      "name": "Interface",
+      "color": "#2563EB",
+      "annotationTypes": [
+        {
+          "id": "card",
+          "name": "Card",
+          "component": "components/card.json",
+          "doc": "docs/card.md",
+          "sources": [
+            {
+              "system": "dom",
+              "name": "card"
+            }
+          ],
+          "fields": []
+        },
+        {
+          "id": "button",
+          "name": "Button",
+          "labelField": "label",
+          "component": "components/button.json",
+          "doc": "docs/button.md",
+          "sources": [
+            {
+              "system": "dom",
+              "name": "btn-primary"
+            }
+          ],
+          "fields": [
+            {
+              "key": "label",
+              "label": "Label",
+              "type": "string",
+              "sources": [
+                {
+                  "system": "dom",
+                  "path": "label"
+                }
+              ]
+            },
+            {
+              "key": "tone",
+              "label": "Tone",
+              "type": "enum",
+              "options": ["neutral", "error"],
+              "default": "neutral",
+              "sources": [
+                {
+                  "system": "dom",
+                  "path": "tone",
+                  "values": {
+                    "danger": "error"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

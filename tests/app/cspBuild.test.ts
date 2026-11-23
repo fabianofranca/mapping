@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyCsp, buildCsp, cspHash, injectCsp, verifyCsp } from '../../pwa/csp';
+import { SANDBOX_BOOTSTRAP } from '../../src/app/formatSandbox';
 import source from '../../index.html?raw';
 
 const REFERRER = /<meta\s+name="referrer"\s+content="no-referrer"\s*\/?>/i;
@@ -184,6 +185,45 @@ describe('CSP of index.html (build)', () => {
     );
     const html = BUILT.replace('console.log("hi")', js);
     expect(verifyCsp(injectCsp(html, 'app'), 'app')).toEqual([]);
+  });
+
+  it("app profile: worker-src allows blob: and script-src has the hash of the sandbox's bootstrap", () => {
+    const directives = buildCsp(BUILT, 'app').split('; ');
+    expect(directives).toContain("worker-src 'self' blob:");
+    const scriptSrc = directives.find((d) => d.startsWith('script-src ')) ?? '';
+    expect(scriptSrc.split(' ')).toContain(cspHash(SANDBOX_BOOTSTRAP));
+    expect(scriptSrc.split(' ')).toContain(cspHash('console.log("hi")'));
+  });
+
+  it('app profile: verifyCsp accepts the bootstrap hash with no inline block, and wants it', () => {
+    const html = applyCsp(BUILT, 'app');
+    expect(verifyCsp(html, 'app')).toEqual([]);
+    expect(html).not.toContain('SANDBOX');
+    const without = html.replace(` ${cspHash(SANDBOX_BOOTSTRAP)}`, '');
+    expect(without).not.toBe(html);
+    expect(verifyCsp(without, 'app')).toEqual([
+      expect.stringContaining('sandbox bootstrap'),
+    ]);
+    const blob = html.replace("worker-src 'self' blob:", "worker-src 'self'");
+    expect(verifyCsp(blob, 'app')).toEqual([
+      expect.stringContaining('diretiva worker-src'),
+    ]);
+  });
+
+  it('static profile: no blob: worker and no bootstrap hash (it does not change)', () => {
+    const policy = buildCsp(BUILT, 'static');
+    expect(policy.split('; ')).toContain("worker-src 'self'");
+    expect(policy).not.toContain(cspHash(SANDBOX_BOOTSTRAP));
+    expect(policy).not.toContain('blob: ');
+    const html = injectCsp(BUILT, 'static');
+    expect(verifyCsp(html, 'static')).toEqual([]);
+    const withHash = html.replace(
+      'script-src ',
+      `script-src ${cspHash(SANDBOX_BOOTSTRAP)} `,
+    );
+    expect(verifyCsp(withHash, 'static')).toEqual([
+      expect.stringContaining('script-src tem um hash sem bloco'),
+    ]);
   });
 
   it('the source index.html has the referrer meta before any resource', () => {

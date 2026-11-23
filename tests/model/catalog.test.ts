@@ -542,3 +542,94 @@ describe('library documents (stage #1901, CX5)', () => {
     expect(catalog.documents).toEqual([]);
   });
 });
+
+describe('file formats (stage #2035, AF3)', () => {
+  const PLUGIN = 'function generate(input) { return "text"; }';
+  const build = (fileFormats?: unknown[], extra: LibraryFile[] = []) => {
+    const json = {
+      format: 'mapping-spec',
+      formatVersion: 20,
+      id: 'fmt-lib',
+      name: 'Formats',
+      version: 1,
+      ...(fileFormats === undefined ? {} : { fileFormats }),
+      layers: [
+        {
+          id: 'ui',
+          name: 'UI',
+          color: '#112233',
+          annotationTypes: [{ id: 'screen', name: 'Screen', fields: [] }],
+        },
+      ],
+    };
+    return buildCatalog([{ path: 'fmt-lib.json', text: JSON.stringify(json) }, ...extra]);
+  };
+
+  it('each declared format carries its plugin text and its examples texts', () => {
+    const result = build(
+      [
+        {
+          id: 'notes',
+          name: 'Notes',
+          extension: 'txt',
+          plugin: 'plugins/notes.js',
+          contract: 1,
+          scope: 'container',
+          description: 'A line per item',
+          examples: [
+            { name: 'basic', file: 'examples/basic.md', input: 'examples/basic.json' },
+            { name: 'gone', file: 'examples/gone.md' },
+          ],
+        },
+        {
+          id: 'csv',
+          name: 'CSV',
+          extension: 'csv',
+          plugin: 'plugins/csv.js',
+          contract: 1,
+        },
+      ],
+      [
+        { path: 'plugins/notes.js', text: PLUGIN },
+        { path: 'examples/basic.md', text: 'Alpha\n' },
+        { path: 'examples/basic.json', text: '{}' },
+      ],
+    );
+    expect(result.formats).toEqual([
+      {
+        id: 'notes',
+        name: 'Notes',
+        extension: 'txt',
+        scope: 'container',
+        description: 'A line per item',
+        plugin: 'plugins/notes.js',
+        pluginText: PLUGIN,
+        examples: [
+          {
+            name: 'basic',
+            file: 'examples/basic.md',
+            text: 'Alpha\n',
+            input: 'examples/basic.json',
+            inputText: '{}',
+          },
+          { name: 'gone', file: 'examples/gone.md', text: null },
+        ],
+      },
+      {
+        id: 'csv',
+        name: 'CSV',
+        extension: 'csv',
+        scope: 'project',
+        plugin: 'plugins/csv.js',
+        pluginText: null,
+        examples: [],
+      },
+    ]);
+  });
+
+  it('no fileFormats key: an empty list; no specialization: an empty list', () => {
+    expect(build().formats).toEqual([]);
+    expect(buildCatalog([]).formats).toEqual([]);
+    expect(catalog.formats).toEqual([]);
+  });
+});
