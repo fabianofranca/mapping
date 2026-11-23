@@ -6,7 +6,7 @@
 
 - **`slots.mjs` writes `save` (for whoever runs the tester, #2625, RH4):** `render` and `a11y` put in each call the name that `slots.mjs names 57|58a|58b` gives at its position, and `a11y <list.out> [58a|58b]` picks the `a-` or the `b-` run. R17.57 and R17.58 no longer ask for a rename.
 
-- **R12.15 and R12.47 step text (for whoever runs the tester, #2625, CL1):** R12.15 says the new and the upgraded project are born at the current schema (`schemaVersion` 23), not v22. R12.47 says the drawing takes the new size, weight and color but stays clipped by the 29x17 box until **Arrange** (R12.48), with the Incomplete notice "The component does not fit" expected there, and that an unset field is written as `null` (R12.48: `largura` is `null` after Arrange with the default width).
+- **R12.15 and R12.47 step text (for whoever runs the tester, #2625, CL1):** R12.15 says the new and the upgraded project are born at the current schema (`schemaVersion` 23), not v22. R12.47 says the drawing takes the new size, weight and color but stays clipped by the 29x17 box until **Arrange** (R12.48), with the Incomplete notice "The component does not fit" expected there, and that an unset field is written as `null` (R12.48: `largura` is `null` after Arrange with the default width), and that after Undo `cor` goes back to `null`.
 
 ## Corrigido
 
