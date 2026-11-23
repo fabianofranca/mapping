@@ -229,7 +229,7 @@ describe('product name (app)', () => {
 
 describe('migrations', () => {
   it('the current registry has no pending migrations', () => {
-    expect(SCHEMA_VERSION).toBe(23);
+    expect(SCHEMA_VERSION).toBe(24);
     expect(migrate({ a: 1 }, 23)).toEqual({ ok: true, data: { a: 1 } });
   });
 

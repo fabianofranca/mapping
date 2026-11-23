@@ -54,7 +54,7 @@ describe('guide preparation (R3.8 and R3.8b): the hand-edited file opens', () =>
       );
       if (!result.ok) throw new Error(JSON.stringify(result.error));
       expect(result.migratedFrom).toBe(version);
-      expect(result.project.schemaVersion).toBe(23);
+      expect(result.project.schemaVersion).toBe(24);
       expect(result.project.containers.length).toBeGreaterThan(0);
       expect(result.project.markings.length).toBeGreaterThan(0);
     },

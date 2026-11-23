@@ -51,14 +51,14 @@ describe('migration v9 → v10 (container)', () => {
     const result = load(v9Text(p));
     expect(result.migratedFrom).toBe(9);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(23);
+    expect(result.project.schemaVersion).toBe(24);
     expect(result.project.containers.every((i) => i.background === null)).toBe(true);
     expect(result.project).toEqual(p);
   });
 
   it('writes v10 and re-reading is stable', () => {
     const saved = serialize(load(v9Text(sampleProject())).project);
-    expect(JSON.parse(saved).schemaVersion).toBe(23);
+    expect(JSON.parse(saved).schemaVersion).toBe(24);
     const again = load(saved);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);
