@@ -370,6 +370,102 @@ for (const size of [
         .toEqual([]);
     });
 
+    // CL3.2: the ghost sits at the bottom of the canvas (no room below the bar) with the notice stack up.
+    test('the bar with the ghost at the bottom is clear of the notices and every button is hit', async ({
+      page,
+    }) => {
+      await openFolder(page);
+      await openConversation(page);
+      await expect(bar(page)).toBeVisible();
+      await addProposals(page, 4);
+      await expect(page.getByText(/more proposal notice/)).toBeVisible();
+      await page.mouse.move(5, 5);
+      const check = () =>
+        page.evaluate(() => {
+          const el = document.querySelector<HTMLElement>('.quick-bar');
+          const box = document.querySelector<HTMLElement>(
+            '[data-canvas-obstacle] .notice-box',
+          );
+          if (!el || !box)
+            return { bar: null, miss: ['no bar or notices'], overlap: true };
+          const b = el.getBoundingClientRect();
+          const n = box.getBoundingClientRect();
+          const overlap = !(
+            b.right <= n.left ||
+            n.right <= b.left ||
+            b.bottom <= n.top ||
+            n.bottom <= b.top
+          );
+          const miss = [...el.querySelectorAll<HTMLElement>('button')]
+            .filter((c) => {
+              const r = c.getBoundingClientRect();
+              const hit = document.elementFromPoint(
+                r.left + r.width / 2,
+                r.top + r.height / 2,
+              );
+              return !hit || !(c === hit || c.contains(hit));
+            })
+            .map((c) => c.textContent);
+          return {
+            bar: [b.left, b.top, b.right, b.bottom].map(Math.round),
+            miss,
+            overlap,
+          };
+        });
+      await expect.poll(async () => (await check()).miss).toEqual([]);
+      expect((await check()).overlap).toBe(false);
+      await page.keyboard.press('Alt+l');
+      await expect.poll(async () => (await check()).miss).toEqual([]);
+      expect((await check()).overlap).toBe(false);
+    });
+
+    // CL3.1: later messages follow the card, so at the end of the scroll the card sits above the scroll
+    // area (the notice measured 42 px). The card itself is not clipped: its text is whole and fully
+    // visible once it is scrolled into view.
+    test('a card followed by replies is whole and reachable by scrolling', async ({
+      page,
+    }) => {
+      await openFolder(page, undefined, true);
+      await page.keyboard.press('Control+Shift+3');
+      await openConversation(page);
+      await bar(page).getByRole('button', { name: 'Accept' }).focus();
+      await page.keyboard.press('Escape');
+      const card = page.locator('[data-proposal-card]');
+      await expect(card.getByText(/Rejected on the canvas/)).toBeVisible();
+      for (const msg of [
+        'Please make it a little larger.',
+        'And move it up a bit, thanks.',
+      ]) {
+        const field = page.locator('[data-composer-field]');
+        await field.focus();
+        await field.pressSequentially(msg);
+        await expect(field).toHaveText(msg);
+        await page.keyboard.press('Control+Enter');
+        await expect(page.getByText(msg)).toBeAttached();
+        await expect(field).toHaveText('');
+      }
+      const r = await page.evaluate(() => {
+        const body = document.querySelector<HTMLElement>(
+          '[data-window="conversation"] .tool-window-body',
+        )!;
+        const c = document.querySelector<HTMLElement>('[data-proposal-card]')!;
+        const text = c.querySelector<HTMLElement>('.proposal-card-text')!;
+        const area = body.getBoundingClientRect();
+        body.scrollTop = 0;
+        const topMax = Math.max(0, c.getBoundingClientRect().top - area.top - 8);
+        body.scrollTop = topMax;
+        const t = text.getBoundingClientRect();
+        return {
+          cardHeight: Math.round(c.getBoundingClientRect().height),
+          textWhole: text.scrollHeight <= text.clientHeight + 1,
+          visible: t.top >= area.top && t.bottom <= area.bottom,
+        };
+      });
+      expect(r.cardHeight).toBeLessThan(150);
+      expect(r.textWhole).toBe(true);
+      expect(r.visible).toBe(true);
+    });
+
     test('the rejected card is never clipped at the end of the scroll', async ({
       page,
     }) => {
