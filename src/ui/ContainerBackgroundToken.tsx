@@ -19,8 +19,9 @@ interface Props {
  * color in one undo entry. The app never writes a token, it only shows one that an agent proposed.
  */
 export function ContainerBackgroundToken({ image, token, disabled, onError }: Props) {
-  const { actions, store } = useEditor();
-  const project = store.project.value;
+  const { actions, review } = useEditor();
+  // The color shown is the one on screen (the Proposed view in a review); the button acts on the real project.
+  const project = review.derived.shownProject.value;
   const color = project
     ? (containerBackgroundColor(project, image.id) ?? '#FFFFFF')
     : '#FFFFFF';
