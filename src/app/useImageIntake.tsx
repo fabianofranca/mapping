@@ -4,7 +4,15 @@ import { t } from '../i18n';
 import type { ProjectContainer } from '../model';
 import type { AspectChange } from '../store/session';
 import { useEditor } from '../ui/EditorContext';
-import { dragHasFiles, imagesFromPaste, splitImageFiles } from './imageIntake';
+import { peekSelectedItems, showToast } from '../store/ui';
+import { readClipboardImage } from '../utils/clipboard';
+import {
+  dragHasFiles,
+  imagesFromPaste,
+  nameForPasted,
+  pasteTarget,
+  splitImageFiles,
+} from './imageIntake';
 import { isTextInput } from './shortcuts';
 import type { EditorDialogs } from './useEditorDialogs';
 import type { EditorNotices } from './useEditorNotices';
@@ -22,6 +30,8 @@ export interface ImageIntake {
   /** Add button: opens the file picker. */
   onAddClick(): void;
   requestReplace(image: ProjectContainer): void;
+  /** Canvas menu: replaces the container's file with the clipboard image (read on the click). */
+  replaceFromClipboard(containerId: string): Promise<void>;
   readonly dropHandlers: {
     readonly onDragOver: (e: DragEvent) => void;
     readonly onDragLeave: (e: DragEvent) => void;
@@ -76,10 +86,41 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
     else if (result === 'locked') setMessage(t('image.replaceLocked'));
   };
 
-  // Ctrl/Cmd+V with focus outside text fields adds the copied image.
-  // The listener is subscribed once; `pasteFiles` points to the current version of `addAtViewCenter`.
+  /** The clipboard image replaces the container's file; the toast says what went wrong. */
+  const replaceFromClipboard = async (containerId: string) => {
+    const result = await readClipboardImage();
+    if (result.kind === 'image')
+      return replaceWith(containerId, nameForPasted(result.blob));
+    const key =
+      result.kind === 'empty'
+        ? 'image.clipboardEmpty'
+        : result.kind === 'denied'
+          ? 'image.clipboardDenied'
+          : 'image.replaceFailed';
+    showToast(ui, t(key));
+  };
+
+  // Ctrl/Cmd+V with focus outside text fields adds the copied image, or, with one image container
+  // selected, asks whether to replace it. The listener is subscribed once; `pasteFiles` points to
+  // the current version of this function.
   const pasteFiles = useRef<(files: readonly File[]) => void>(() => {});
-  pasteFiles.current = (files) => void addAtViewCenter(files);
+  pasteFiles.current = (files) => {
+    const project = store.project.peek();
+    const containerId = project
+      ? pasteTarget(peekSelectedItems(ui), project, files.length)
+      : null;
+    const [file] = files;
+    if (containerId === null || !file) return void addAtViewCenter(files);
+    dialogs.show({
+      kind: 'pasteImage',
+      containerId,
+      file,
+      resolve: (answer) => {
+        if (answer === 'replace') void replaceWith(containerId, file);
+        else if (answer === 'add') void addAtViewCenter(files);
+      },
+    });
+  };
   const busyRef = useRef(busy);
   busyRef.current = busy;
   useEffect(() => {
@@ -174,6 +215,7 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
       replaceTarget.current = image.id;
       replaceInput.current?.click();
     },
+    replaceFromClipboard,
     dropHandlers: { onDragOver, onDragLeave, onDrop },
   };
 }

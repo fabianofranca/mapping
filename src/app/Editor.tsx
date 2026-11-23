@@ -142,7 +142,9 @@ export function EditorScreen() {
             >
               <CanvasHost />
               <CanvasNotices notices={notices} />
-              <CanvasContextMenu />
+              <CanvasContextMenu
+                onReplaceFromClipboard={(id) => void intake.replaceFromClipboard(id)}
+              />
               <Minimap />
               {/* After the notices and the minimap (same z-index): the bar is above them, so nothing ever covers its buttons (CL2.1). */}
               <QuickReviewBar />

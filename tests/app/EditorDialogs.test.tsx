@@ -209,3 +209,50 @@ describe('confirm selection deletion', () => {
     expect(harness.project().markings).toHaveLength(4);
   });
 });
+
+describe('paste image dialog (#2721, CE3)', () => {
+  function openPaste() {
+    const resolve = vi.fn();
+    const harness = createHarness(sampleProject());
+    const result = open(harness, {
+      kind: 'pasteImage',
+      containerId: 'I1',
+      file: new File(['x'], 'img.png', { type: 'image/png' }),
+      resolve,
+    } as EditorDialog);
+    return { ...result, resolve };
+  }
+
+  it('has Cancel, Add as new and Replace the selected image, with the container label', () => {
+    const { dialog } = openPaste();
+    expect(dialog.getByText(t('image.pasteTitle'))).toBeTruthy();
+    expect(dialog.getByRole('button', { name: t('common.cancel') })).toBeTruthy();
+    expect(dialog.getByRole('button', { name: t('image.pasteAdd') })).toBeTruthy();
+    expect(dialog.getByRole('button', { name: t('image.pasteReplace') })).toBeTruthy();
+    expect(dialog.getByText(/images\/lateral\.jpg/)).toBeTruthy();
+  });
+
+  it('Replace answers "replace" and closes', async () => {
+    const { dialog, resolve, close } = openPaste();
+    await userEvent.click(dialog.getByRole('button', { name: t('image.pasteReplace') }));
+    expect(resolve).toHaveBeenCalledWith('replace');
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('Add as new answers "add"', async () => {
+    const { dialog, resolve } = openPaste();
+    await userEvent.click(dialog.getByRole('button', { name: t('image.pasteAdd') }));
+    expect(resolve).toHaveBeenCalledWith('add');
+  });
+
+  it('Cancel answers null', async () => {
+    const { dialog, resolve } = openPaste();
+    await userEvent.click(dialog.getByRole('button', { name: t('common.cancel') }));
+    expect(resolve).toHaveBeenCalledWith(null);
+  });
+
+  it('Replace is the default focus', () => {
+    openPaste();
+    expect(document.activeElement?.textContent).toBe(t('image.pasteReplace'));
+  });
+});
