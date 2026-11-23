@@ -20,6 +20,7 @@ import {
 import { proposalIndex } from './proposalReview';
 import { isRecord } from './refs';
 import type { Spec } from './spec';
+import { expandTokenSuggestions } from './specSuggestions';
 import { fieldOf, findTypeInSpec } from './specLookup';
 import { projectIndex } from './projectIndex';
 import type {
@@ -133,6 +134,11 @@ function decodeArrow(value: JsonValue): Arrow {
   };
 }
 
+/** The proposal carries the list as written; the project holds the parsed one (`$tokens` expanded). */
+function parsedSpec(raw: JsonValue | undefined): Spec | null {
+  return raw ? expandTokenSuggestions(raw as unknown as Spec) : null;
+}
+
 function decode(entity: ChangeEntity, value: JsonValue): Entity {
   if (entity === 'arrow') return decodeArrow(value);
   // Proposal written before v14: an annotation without `parentRole` counts as having no role.
@@ -144,7 +150,7 @@ function decode(entity: ChangeEntity, value: JsonValue): Entity {
       id: value.id as string,
       version: value.version as number,
       file: value.file as string,
-      spec: (value.spec ?? null) as unknown as Spec | null,
+      spec: parsedSpec(value.spec),
     };
   }
   return value as unknown as Entity;

@@ -627,6 +627,18 @@ function allSlots(graph: Graph): string[] {
 }
 
 /** Depth-first walk of the slots an alias points to; a back edge closes a cycle, reported where it closes. */
+/** What an alias reads: its target and the tokens of its `alpha` (`{ "$token" }`) and `over`. */
+function edgesOf(ref: AliasRef): { name: string; field: string | undefined }[] {
+  const edges = [{ name: ref.name, field: ref.field }];
+  const { alpha, over } = ref;
+  if (isObject(alpha) && typeof alpha.$token === 'string')
+    edges.push(splitRef(alpha.$token));
+  if (typeof over === 'string' && TOKEN_NAME_PATTERN.test(over)) {
+    edges.push({ name: over, field: undefined });
+  }
+  return edges;
+}
+
 function visitSlot(
   slot: string,
   stack: string[],
@@ -636,14 +648,16 @@ function visitSlot(
   state.set(slot, 1);
   stack.push(slot);
   for (const node of slotNodes(slot, graph).flatMap(aliasesOf)) {
-    const target = resolveAlias(node.ref.name, node.ref.field, graph);
-    if (!('slot' in target)) continue;
-    const seen = state.get(target.slot);
-    if (seen === 1) {
-      const chain = [...stack.slice(stack.indexOf(target.slot)), target.slot];
-      graph.add(node.path, specMsg('spec.tokenCycle', { chain: chain.join(' → ') }));
-    } else if (seen === undefined) {
-      visitSlot(target.slot, stack, state, graph);
+    for (const ref of edgesOf(node.ref)) {
+      const target = resolveAlias(ref.name, ref.field, graph);
+      if (!('slot' in target)) continue;
+      const seen = state.get(target.slot);
+      if (seen === 1) {
+        const chain = [...stack.slice(stack.indexOf(target.slot)), target.slot];
+        graph.add(node.path, specMsg('spec.tokenCycle', { chain: chain.join(' → ') }));
+      } else if (seen === undefined) {
+        visitSlot(target.slot, stack, state, graph);
+      }
     }
   }
   stack.pop();

@@ -7,6 +7,7 @@ import {
 import { siblingPosition } from './markings';
 import { projectIndex } from './projectIndex';
 import { isRecord, parseRefValue } from './refs';
+import { writtenSpec } from './serialization';
 import type {
   Annotation,
   Arrow,
@@ -139,7 +140,12 @@ export function pageValue(g: Page): JsonValue {
 }
 
 export function specializationValue(s: ProjectSpecialization): JsonValue {
-  return toJson({ id: s.id, version: s.version, file: s.file, spec: s.spec });
+  return toJson({
+    id: s.id,
+    version: s.version,
+    file: s.file,
+    spec: s.spec ? writtenSpec(s.spec) : s.spec,
+  });
 }
 
 export function docRepoValue(r: DocRepo): JsonValue {

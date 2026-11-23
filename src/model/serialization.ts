@@ -160,13 +160,18 @@ function writtenSuggestions(_key: string, value: unknown): unknown {
   if (typeof value !== 'object' || value === null || !('suggestionsSource' in value)) {
     return value;
   }
-  const {
-    suggestionsSource,
-    suggestions: _expanded,
-    ...rest
-  } = value as Record<string, unknown>;
-  void _expanded;
-  return { ...rest, suggestions: suggestionsSource };
+  const record = value as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [name, item] of Object.entries(record)) {
+    if (name === 'suggestionsSource') continue;
+    out[name] = name === 'suggestions' ? record.suggestionsSource : item;
+  }
+  return out;
+}
+
+/** The specialization as it is written in its file (JSON value): `$tokens` items kept, no `suggestionsSource`. */
+export function writtenSpec(spec: Spec): unknown {
+  return JSON.parse(serializeSpec(spec));
 }
 
 /** The project's `specs/` files (path → text), to write or export. */
