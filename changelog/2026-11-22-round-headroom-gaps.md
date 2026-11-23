@@ -1,4 +1,4 @@
-# Seventh block of the full round and tester-script gaps — 2026-11-22 (épico `epic/round-headroom-gaps`, PR #2682, MCP unchanged, schema v23)
+# Seventh block of the full round and tester-script gaps — 2026-11-22 (épico `epic/round-headroom-gaps`, PR #2719, MCP unchanged, schema v23)
 
 ## Alterado
 
