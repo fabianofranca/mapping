@@ -56,6 +56,13 @@ export interface FormatScreenOptions {
   readonly drawingMode?: string | TokenSelection;
 }
 
+/** The library with the host's fonts and drawing mode applied, as the viewer draws it; unchanged when the host passes none. */
+function sizingLibrary(library: Library, options: FormatScreenOptions): Library {
+  const { fonts, drawingMode } = options;
+  if (fonts === undefined && drawingMode === undefined) return library;
+  return withHostTokens(library, fonts ?? {}, drawingMode);
+}
+
 export interface FormatScreenResult {
   /** One per container with component markings, in project order; empty with `error`. */
   readonly screens: readonly Screen[];
@@ -315,12 +322,7 @@ async function build(
     specPath: library.specPath,
     format: declared,
     pluginText: found.pluginText,
-    components: componentsOf(
-      options.fonts === undefined && options.drawingMode === undefined
-        ? library
-        : withHostTokens(library, options.fonts ?? {}, options.drawingMode),
-      spec,
-    ),
+    components: componentsOf(sizingLibrary(library, options), spec),
   };
   const applied = await applyFormatExample(input, text, options);
   if (!applied.ok) {
