@@ -6,7 +6,7 @@ import {
   type UndeclaredDrawingMode,
 } from '../model';
 
-/** The axis the editor lists until the full axes interface (NV5): `modes` of a specialization is the axis `mode`. */
+/** The axis that `modes` of a specialization stands for. */
 export const MODE_AXIS = 'mode';
 
 /** The axes that the applied specializations declare (`tokens.axes`, or `tokens.modes` as the axis `mode`). */
@@ -16,14 +16,24 @@ export function declaredDrawingAxes(
   return drawingAxesOf(project.specializations.map((s) => s.spec?.tokens));
 }
 
-/** The entries of the `mode` axis that the applied specializations declare, without repeats. */
-export function declaredDrawingModes(project: Project): readonly string[] {
-  return declaredDrawingAxes(project).get(MODE_AXIS) ?? [];
+/** Label of an axis: the `mode` axis keeps "Drawing mode", another one shows its name. */
+export function axisLabel(axis: string): string {
+  return axis === MODE_AXIS ? t('drawingMode.label') : axis;
 }
 
-/** The entry a mode map stores on the `mode` axis. */
-export function modeEntryOf(mode: DrawingModeMap | null | undefined): string | undefined {
-  return mode?.[MODE_AXIS];
+/**
+ * The axes to list: the declared ones, plus an axis the map stores that nothing declares (so its
+ * undeclared entry can be seen and replaced). Each with its declared entries.
+ */
+export function listedAxes(
+  project: Project,
+  ...stored: ReadonlyArray<DrawingModeMap | null | undefined>
+): ReadonlyMap<string, readonly string[]> {
+  const out = new Map(declaredDrawingAxes(project));
+  for (const map of stored) {
+    for (const axis of Object.keys(map ?? {})) if (!out.has(axis)) out.set(axis, []);
+  }
+  return out;
 }
 
 /** An undeclared (axis, entry) as text: just the entry on the `mode` axis, `axis: entry` on another. */

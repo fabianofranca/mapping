@@ -13,6 +13,7 @@
 - Proposal `formatVersion` 12 also carries a creation or a `background` change with a token (`a background token only exists in formatVersion 12 or later` below it); the review shows `token <name>`. The background token stays outside the specialization's version contract.
 - MCP 0.59.0: `add_container`, `update_container` (and the old `update_image`) take `background` as `"#RRGGBB"` or `{ "$token": "<name>" }`; a token no applied specialization declares as a color is `invalid-arguments` with `details.colorTokens`. `get_project`, `get_container` and `resolve` return `background` as stored and `resolvedBackground`; `render_container`, `render_marking` and `get_marking_image` paint the resolved color (with the pinned axes under `drawingMode`). `add_blank_image` stays `#RRGGBB` only.
 - The app never writes a token background; Details shows it read-only with **Use a fixed color**, and the **New container** dialog fills a preset's token with its resolved color.
+- App (NV5): Settings shows one list per declared drawing axis (the `mode` axis keeps "Drawing mode", another is labeled by its name) and the container Details one field per axis, with "Follow the project" removing only that axis. The Specializations window lists the axes and, per named value, its default-selection value, `→ target` for an alias, the composite fields, the description, the group and the notice badges.
 
 ## Alterado
 
