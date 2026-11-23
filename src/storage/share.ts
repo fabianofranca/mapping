@@ -103,6 +103,55 @@ export async function saveFileWithPicker(file: File): Promise<SaveResult> {
   }
 }
 
+/** The picker's file type for a blob: its MIME type with the extension of the suggested name. */
+function blobPickerType(
+  name: string,
+  mime: string,
+): { accept: Record<string, readonly string[]> } {
+  const dot = name.lastIndexOf('.');
+  return { accept: { [mime]: [dot > 0 ? name.slice(dot).toLowerCase() : ''] } };
+}
+
+/**
+ * Like `saveFileWithPicker`, for content that is produced after the click: the picker opens
+ * synchronously from the call (before any `await`, as it needs the user gesture), and only then
+ * is `data` awaited and written through the handle. A rejected `data` or a write error aborts
+ * the writable (the file on disk stays as it was) and gives `failed`.
+ */
+export async function saveBlobWithPicker(
+  name: string,
+  mime: string,
+  data: Promise<Blob>,
+): Promise<SaveResult> {
+  const picker = saveFilePicker();
+  if (!picker) return 'failed';
+  // Opened first and awaited later; a rejection of `data` is handled below, not as unhandled.
+  data.catch(() => undefined);
+  const opened = picker.call(globalThis, {
+    suggestedName: name,
+    types: [blobPickerType(name, mime)],
+  });
+  let handle: SaveHandleLike;
+  try {
+    handle = await opened;
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') return 'cancelled';
+    reportError('export.savePicker', e);
+    return 'failed';
+  }
+  let writable: WritableLike | null = null;
+  try {
+    writable = await handle.createWritable();
+    await writable.write(await data);
+    await writable.close();
+    return 'saved';
+  } catch (e) {
+    await writable?.abort().catch(() => undefined);
+    reportError('export.saveWrite', e);
+    return 'failed';
+  }
+}
+
 /** Downloads the file through the browser (temporary link with `download`). */
 export function downloadFile(file: File): void {
   const url = URL.createObjectURL(file);
