@@ -1,0 +1,556 @@
+{
+  "schemaVersion": 24,
+  "revision": 88,
+  "app": "mapping",
+  "coordinateSystem": "image-pixels-exif-oriented",
+  "project": {
+    "id": "ee618283-d304-417b-962a-3ff89f27d3e6",
+    "name": "principal",
+    "createdAt": "2026-11-23T22:28:15.864Z",
+    "updatedAt": "2026-11-23T23:10:38.937Z"
+  },
+  "specializations": [
+    {
+      "id": "notas",
+      "version": 5,
+      "file": "specs/notas/notas.spec.json"
+    },
+    {
+      "id": "sdui",
+      "version": 4,
+      "file": "specs/sdui.json"
+    },
+    {
+      "id": "data-model",
+      "version": 1,
+      "file": "specs/data-model.json"
+    }
+  ],
+  "platformRepos": {
+    "android": {
+      "localPath": "../../.."
+    },
+    "ios": {
+      "localPath": "../../../app-ios"
+    }
+  },
+  "docRepos": {},
+  "pages": [
+    {
+      "id": "1be7223e-51ed-493c-afff-4161f3a2d7c1",
+      "name": "Page 1"
+    }
+  ],
+  "layers": [
+    {
+      "id": "79dee013-c1c4-4e03-b68f-2a006a00e78a",
+      "name": "Layer 1",
+      "color": "#D32F2F",
+      "spec": null
+    },
+    {
+      "id": "78c5558f-7cf9-4588-ac30-ef28d3a87593",
+      "name": "Notes",
+      "color": "#F5C400",
+      "spec": {
+        "specId": "notas",
+        "layerId": "notas"
+      }
+    },
+    {
+      "id": "c1415ded-7db0-4628-89ec-09f80602533a",
+      "name": "Model",
+      "color": "#1E88E5",
+      "spec": null
+    },
+    {
+      "id": "26bf3a68-fd72-48fa-b9fe-a8ff77dbc680",
+      "name": "Components",
+      "color": "#D32F2F",
+      "spec": {
+        "specId": "sdui",
+        "layerId": "components"
+      }
+    },
+    {
+      "id": "02f0b88a-81e5-4fd0-ac97-ee7460280842",
+      "name": "Events",
+      "color": "#FB8C00",
+      "spec": {
+        "specId": "sdui",
+        "layerId": "events"
+      }
+    },
+    {
+      "id": "1c7d1585-fdc5-4565-869a-0354020ad7a6",
+      "name": "Screens",
+      "color": "#00897B",
+      "spec": {
+        "specId": "sdui",
+        "layerId": "screens"
+      }
+    },
+    {
+      "id": "89f99d5b-668c-41e8-b413-6bbf69f4e407",
+      "name": "Classes",
+      "color": "#43A047",
+      "spec": {
+        "specId": "data-model",
+        "layerId": "classes"
+      }
+    },
+    {
+      "id": "6798cf0e-78d9-4b70-87cf-8dacf5653a15",
+      "name": "Endpoints",
+      "color": "#8E24AA",
+      "spec": {
+        "specId": "data-model",
+        "layerId": "endpoints"
+      }
+    }
+  ],
+  "containers": [
+    {
+      "id": "2f42d514-0dad-4628-bfe6-5e482476ed6e",
+      "name": null,
+      "file": "images/cadastro.png",
+      "width": 484,
+      "height": 450,
+      "placement": {
+        "x": 0,
+        "y": 0,
+        "scale": 2.06611570248
+      },
+      "parentId": null,
+      "pageId": "1be7223e-51ed-493c-afff-4161f3a2d7c1",
+      "markingColor": null,
+      "locked": false,
+      "source": null,
+      "background": null
+    },
+    {
+      "id": "b96915e7-7217-4c3a-916d-8b0cc63914a6",
+      "name": null,
+      "file": "images/tela2.png",
+      "width": 484,
+      "height": 450,
+      "placement": {
+        "x": 1050,
+        "y": 0,
+        "scale": 2.06611570248
+      },
+      "parentId": null,
+      "pageId": "1be7223e-51ed-493c-afff-4161f3a2d7c1",
+      "markingColor": null,
+      "locked": false,
+      "source": null,
+      "background": null
+    },
+    {
+      "id": "7f5d00b9-dc3d-4967-84ec-f6200af03ffe",
+      "name": null,
+      "file": "images/nome-r6.png",
+      "width": 484,
+      "height": 450,
+      "placement": {
+        "x": 2100,
+        "y": 0,
+        "scale": 2.06611570248
+      },
+      "parentId": null,
+      "pageId": "1be7223e-51ed-493c-afff-4161f3a2d7c1",
+      "markingColor": null,
+      "locked": false,
+      "source": null,
+      "background": null
+    },
+    {
+      "id": "727d0cbd-2a65-4c88-a94f-18b41a1bc223",
+      "name": null,
+      "file": "images/NOME-R6-3.PNG",
+      "width": 484,
+      "height": 450,
+      "placement": {
+        "x": 3150,
+        "y": 0,
+        "scale": 2.06611570248
+      },
+      "parentId": null,
+      "pageId": "1be7223e-51ed-493c-afff-4161f3a2d7c1",
+      "markingColor": null,
+      "locked": false,
+      "source": null,
+      "background": null
+    }
+  ],
+  "markings": [
+    {
+      "id": "2e98e3e4-ef03-46d8-bf02-4c3c138e871d",
+      "containerId": "2f42d514-0dad-4628-bfe6-5e482476ed6e",
+      "parentId": null,
+      "pageId": null,
+      "name": "Form",
+      "rect": {
+        "x": 20,
+        "y": 125,
+        "width": 376,
+        "height": 286
+      },
+      "needsReview": false,
+      "locked": false,
+      "floating": false,
+      "source": null
+    },
+    {
+      "id": "b6a3c5d4-6952-4607-bcda-51a0f0964c8d",
+      "containerId": "2f42d514-0dad-4628-bfe6-5e482476ed6e",
+      "parentId": "2e98e3e4-ef03-46d8-bf02-4c3c138e871d",
+      "pageId": null,
+      "name": "Name",
+      "rect": {
+        "x": 32,
+        "y": 155,
+        "width": 349,
+        "height": 28
+      },
+      "needsReview": false,
+      "locked": false,
+      "floating": false,
+      "source": null
+    },
+    {
+      "id": "82b2978b-af94-44b1-a943-6637f4076c3e",
+      "containerId": "2f42d514-0dad-4628-bfe6-5e482476ed6e",
+      "parentId": "2e98e3e4-ef03-46d8-bf02-4c3c138e871d",
+      "pageId": null,
+      "name": "Age",
+      "rect": {
+        "x": 32,
+        "y": 226,
+        "width": 349,
+        "height": 29
+      },
+      "needsReview": false,
+      "locked": false,
+      "floating": false,
+      "source": null
+    },
+    {
+      "id": "7fd205f1-fd1f-47da-a168-46e3c25fa928",
+      "containerId": "2f42d514-0dad-4628-bfe6-5e482476ed6e",
+      "parentId": "2e98e3e4-ef03-46d8-bf02-4c3c138e871d",
+      "pageId": null,
+      "name": "Email",
+      "rect": {
+        "x": 32,
+        "y": 299,
+        "width": 349,
+        "height": 29
+      },
+      "needsReview": false,
+      "locked": false,
+      "floating": false,
+      "source": null
+    },
+    {
+      "id": "16d8e4c7-b5b7-4509-8963-567874648198",
+      "containerId": "2f42d514-0dad-4628-bfe6-5e482476ed6e",
+      "parentId": "2e98e3e4-ef03-46d8-bf02-4c3c138e871d",
+      "pageId": null,
+      "name": "Register",
+      "rect": {
+        "x": 32,
+        "y": 348,
+        "width": 141,
+        "height": 51
+      },
+      "needsReview": false,
+      "locked": false,
+      "floating": false,
+      "source": null
+    },
+    {
+      "id": "7cb3b415-b721-483f-b68c-5a65444a7ad5",
+      "containerId": "2f42d514-0dad-4628-bfe6-5e482476ed6e",
+      "parentId": null,
+      "pageId": null,
+      "name": "Title",
+      "rect": {
+        "x": 200,
+        "y": 60,
+        "width": 284,
+        "height": 40
+      },
+      "needsReview": false,
+      "locked": false,
+      "floating": false,
+      "source": null
+    }
+  ],
+  "arrows": [],
+  "perspectives": [],
+  "arrivals": [],
+  "annotations": [
+    {
+      "id": "950b94b3-d760-4e3d-a831-01e50de9acf2",
+      "markingId": "2e98e3e4-ef03-46d8-bf02-4c3c138e871d",
+      "layerId": "c1415ded-7db0-4628-89ec-09f80602533a",
+      "name": "User",
+      "parentAnnotationId": null,
+      "parentRole": null,
+      "type": null,
+      "values": null,
+      "entries": [
+        {
+          "id": "53d379df-e7a0-4330-b459-feb08f0dbe0e",
+          "key": "fullname",
+          "value": "string"
+        },
+        {
+          "id": "dbcd8eb8-4681-48d7-b2c8-f90868acb9d3",
+          "key": "age",
+          "value": "number"
+        },
+        {
+          "id": "da2b1191-2db2-47e2-82d8-c58dde4503e2",
+          "key": "r6",
+          "value": "x"
+        }
+      ]
+    },
+    {
+      "id": "779807ec-5350-4fef-a069-20b6b320f76d",
+      "markingId": "2e98e3e4-ef03-46d8-bf02-4c3c138e871d",
+      "layerId": "89f99d5b-668c-41e8-b413-6bbf69f4e407",
+      "name": null,
+      "parentAnnotationId": null,
+      "parentRole": null,
+      "type": {
+        "specId": "data-model",
+        "typeId": "class"
+      },
+      "values": {
+        "name": "Contact",
+        "description": null,
+        "version": 1,
+        "reviewedAt": "2026-11-23",
+        "attributes": [
+          {
+            "_id": "501ba021-ed11-4d10-a2ba-d6ee4f40bbae",
+            "name": "email",
+            "type": "String",
+            "required": "yes",
+            "example": "ana@example.com"
+          }
+        ]
+      },
+      "entries": []
+    },
+    {
+      "id": "89c5af8b-83c6-4a70-9772-50b33f994ec3",
+      "markingId": "b6a3c5d4-6952-4607-bcda-51a0f0964c8d",
+      "layerId": "26bf3a68-fd72-48fa-b9fe-a8ff77dbc680",
+      "name": null,
+      "parentAnnotationId": null,
+      "parentRole": null,
+      "type": {
+        "specId": "sdui",
+        "typeId": "input"
+      },
+      "values": {
+        "id": "input_name",
+        "inputType": "text",
+        "placeholder": null,
+        "required": "no",
+        "maxLength": null,
+        "data": {
+          "annotationId": "950b94b3-d760-4e3d-a831-01e50de9acf2",
+          "entryId": "53d379df-e7a0-4330-b459-feb08f0dbe0e"
+        }
+      },
+      "entries": []
+    },
+    {
+      "id": "da52baee-5428-4ee0-8559-cae36aac0afd",
+      "markingId": "82b2978b-af94-44b1-a943-6637f4076c3e",
+      "layerId": "26bf3a68-fd72-48fa-b9fe-a8ff77dbc680",
+      "name": null,
+      "parentAnnotationId": null,
+      "parentRole": null,
+      "type": {
+        "specId": "sdui",
+        "typeId": "input"
+      },
+      "values": {
+        "id": "input_age",
+        "inputType": "number",
+        "placeholder": null,
+        "required": "no",
+        "maxLength": null,
+        "data": {
+          "annotationId": "950b94b3-d760-4e3d-a831-01e50de9acf2",
+          "entryId": "dbcd8eb8-4681-48d7-b2c8-f90868acb9d3"
+        }
+      },
+      "entries": []
+    },
+    {
+      "id": "d19ead34-db1d-4524-b381-677a8a456420",
+      "markingId": "7fd205f1-fd1f-47da-a168-46e3c25fa928",
+      "layerId": "26bf3a68-fd72-48fa-b9fe-a8ff77dbc680",
+      "name": null,
+      "parentAnnotationId": null,
+      "parentRole": null,
+      "type": {
+        "specId": "sdui",
+        "typeId": "input"
+      },
+      "values": {
+        "id": "input_email",
+        "inputType": "email",
+        "placeholder": null,
+        "required": "yes",
+        "maxLength": null,
+        "data": {
+          "annotationId": "779807ec-5350-4fef-a069-20b6b320f76d",
+          "key": "attributes",
+          "rowId": "501ba021-ed11-4d10-a2ba-d6ee4f40bbae"
+        }
+      },
+      "entries": []
+    },
+    {
+      "id": "8adbb7d4-7c6a-4b79-a6cb-78a849d6e5d7",
+      "markingId": "16d8e4c7-b5b7-4509-8963-567874648198",
+      "layerId": "26bf3a68-fd72-48fa-b9fe-a8ff77dbc680",
+      "name": null,
+      "parentAnnotationId": null,
+      "parentRole": null,
+      "type": {
+        "specId": "sdui",
+        "typeId": "button"
+      },
+      "values": {
+        "id": "btn_register",
+        "text": "Register",
+        "style": "primary",
+        "enabled": "yes"
+      },
+      "entries": []
+    },
+    {
+      "id": "c26ee29e-c402-4c5f-bead-e21acd32d3e2",
+      "markingId": "7cb3b415-b721-483f-b68c-5a65444a7ad5",
+      "layerId": "26bf3a68-fd72-48fa-b9fe-a8ff77dbc680",
+      "name": null,
+      "parentAnnotationId": null,
+      "parentRole": null,
+      "type": {
+        "specId": "sdui",
+        "typeId": "text"
+      },
+      "values": {
+        "id": null,
+        "content": "Create your account",
+        "style": "body",
+        "data": null
+      },
+      "entries": []
+    },
+    {
+      "id": "cb5738a5-a13f-4592-a6af-827b64bf3cae",
+      "markingId": "16d8e4c7-b5b7-4509-8963-567874648198",
+      "layerId": "02f0b88a-81e5-4fd0-ac97-ee7460280842",
+      "name": null,
+      "parentAnnotationId": "8adbb7d4-7c6a-4b79-a6cb-78a849d6e5d7",
+      "parentRole": "click",
+      "type": {
+        "specId": "sdui",
+        "typeId": "action"
+      },
+      "values": {
+        "action": "submit",
+        "target": "/users",
+        "parameters": [
+          {
+            "_id": "bc52fbd3-4871-474b-9ef5-8ee713e38455",
+            "name": "origin",
+            "value": "signup"
+          }
+        ]
+      },
+      "entries": []
+    },
+    {
+      "id": "ebc527b1-a49e-4ea3-b50c-7a9c43c343d2",
+      "markingId": "16d8e4c7-b5b7-4509-8963-567874648198",
+      "layerId": "02f0b88a-81e5-4fd0-ac97-ee7460280842",
+      "name": null,
+      "parentAnnotationId": "8adbb7d4-7c6a-4b79-a6cb-78a849d6e5d7",
+      "parentRole": "hold",
+      "type": {
+        "specId": "sdui",
+        "typeId": "feedback"
+      },
+      "values": {
+        "action": "track",
+        "durationMs": 500
+      },
+      "entries": []
+    },
+    {
+      "id": "6c8cfb2b-5890-4752-8937-8e4b9f062e4e",
+      "markingId": "7fd205f1-fd1f-47da-a168-46e3c25fa928",
+      "layerId": "02f0b88a-81e5-4fd0-ac97-ee7460280842",
+      "name": null,
+      "parentAnnotationId": "d19ead34-db1d-4524-b381-677a8a456420",
+      "parentRole": "change",
+      "type": {
+        "specId": "sdui",
+        "typeId": "validation"
+      },
+      "values": {
+        "action": "validate",
+        "rule": "email"
+      },
+      "entries": []
+    },
+    {
+      "id": "e718b228-56eb-4f24-89b0-81d4e147f6a2",
+      "markingId": "2e98e3e4-ef03-46d8-bf02-4c3c138e871d",
+      "layerId": "6798cf0e-78d9-4b70-87cf-8dacf5653a15",
+      "name": null,
+      "parentAnnotationId": null,
+      "parentRole": null,
+      "type": {
+        "specId": "data-model",
+        "typeId": "endpoint"
+      },
+      "values": {
+        "method": "POST",
+        "path": "/v1/users",
+        "request": "User",
+        "response": "User",
+        "timeoutMs": 10000
+      },
+      "entries": []
+    },
+    {
+      "id": "6c4cc21c-a713-4d5d-9b02-4866d209630d",
+      "markingId": "2e98e3e4-ef03-46d8-bf02-4c3c138e871d",
+      "layerId": "1c7d1585-fdc5-4565-869a-0354020ad7a6",
+      "name": null,
+      "parentAnnotationId": null,
+      "parentRole": null,
+      "type": {
+        "specId": "sdui",
+        "typeId": "screen"
+      },
+      "values": {
+        "name": "Signup",
+        "route": "/signup"
+      },
+      "entries": []
+    }
+  ]
+}
