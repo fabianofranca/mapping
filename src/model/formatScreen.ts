@@ -181,16 +181,27 @@ interface Drawn {
   readonly warnings: string[];
 }
 
+/** The component markings (those with a drawing) of each container, in project order, in a single pass. */
+function markingsByContainer(
+  project: Project,
+  drawings: ReadonlyMap<string, ComponentDrawing>,
+): Map<string, Marking[]> {
+  const byContainer = new Map<string, Marking[]>();
+  for (const marking of project.markings) {
+    if (marking.containerId === null || !drawings.has(marking.id)) continue;
+    const list = byContainer.get(marking.containerId);
+    if (list === undefined) byContainer.set(marking.containerId, [marking]);
+    else list.push(marking);
+  }
+  return byContainer;
+}
+
 function instancesOf(
   project: Project,
-  container: ProjectContainer,
+  own: readonly Marking[],
   drawings: ReadonlyMap<string, ComponentDrawing>,
   density: number,
-): Drawn | null {
-  const own = project.markings.filter(
-    (m) => m.containerId === container.id && drawings.has(m.id),
-  );
-  if (own.length === 0) return null;
+): Drawn {
   const ids = instanceIds(own);
   const index = projectIndex(project);
   const warnings: string[] = [];
@@ -256,10 +267,12 @@ function screensOf(
 ): { readonly screens: Screen[]; readonly warnings: string[] } {
   const screens: Screen[] = [];
   const warnings: string[] = [];
+  const byContainer = markingsByContainer(project, drawings);
   for (const container of project.containers) {
+    const own = byContainer.get(container.id);
+    if (own === undefined) continue;
     const density = effectiveDensity(project, container.id);
-    const drawn = instancesOf(project, container, drawings, density);
-    if (drawn === null) continue;
+    const drawn = instancesOf(project, own, drawings, density);
     screens.push(screenOf(project, container, screens.length + 1, drawn, density));
     warnings.push(...drawn.warnings);
   }

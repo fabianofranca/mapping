@@ -103,7 +103,10 @@ export interface LibraryFileFormat {
   readonly scope: 'project' | 'container';
   /** Path of the plugin resolved in the package (relative to the root). */
   readonly plugin: string;
-  /** The plugin's `.js` text, or `null` when the file did not come with the library. */
+  /**
+   * The plugin's `.js` text, or `null` when the file did not come with the library: only a loader that passes the
+   * `.js` files (`loadLibraryFromUrl`) fills it.
+   */
   readonly pluginText: string | null;
 }
 

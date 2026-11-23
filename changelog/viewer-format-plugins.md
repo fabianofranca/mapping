@@ -1,4 +1,4 @@
-# The viewer reads a file through the format plugin — [Não lançado] (épico `epic/viewer-format-plugins`, MCP 0.59.1, schema v24)
+# The viewer reads a file through the format plugin — [Não lançado] (épico `epic/viewer-format-plugins`, PR #0, MCP 0.59.1, schema v24)
 
 ## Adicionado
 
