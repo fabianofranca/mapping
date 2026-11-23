@@ -77,3 +77,39 @@ export async function writeClipboardPng(png: Promise<Blob>): Promise<boolean> {
     return false;
   }
 }
+
+/** Can the browser read the clipboard (`navigator.clipboard.read`)? Detected at runtime. */
+export function canReadClipboard(): boolean {
+  try {
+    return typeof navigator.clipboard?.read === 'function';
+  } catch {
+    return false;
+  }
+}
+
+export type ClipboardImageResult =
+  | { readonly kind: 'image'; readonly blob: Blob }
+  | { readonly kind: 'empty' }
+  | { readonly kind: 'denied' }
+  | { readonly kind: 'failed' };
+
+/**
+ * Reads the image on the clipboard: the first `image/*` type of the first item that has one.
+ * Call it from a user gesture (on Chrome it may open a permission prompt). `denied` is the
+ * refused permission (`NotAllowedError`); any other error goes to the Diagnostics as `failed`.
+ */
+export async function readClipboardImage(): Promise<ClipboardImageResult> {
+  try {
+    const items = await navigator.clipboard.read();
+    for (const item of items) {
+      const type = item.types.find((t) => t.startsWith('image/'));
+      if (type) return { kind: 'image', blob: await item.getType(type) };
+    }
+    return { kind: 'empty' };
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'NotAllowedError')
+      return { kind: 'denied' };
+    reportError('image.clipboardRead', e);
+    return { kind: 'failed' };
+  }
+}
