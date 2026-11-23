@@ -1285,6 +1285,8 @@ export const enUS = {
   'container.height': 'Height',
   'container.background': 'Background color',
   'container.backgroundHint': 'In the #RRGGBB format.',
+  'container.backgroundToken': 'token {name}',
+  'container.useFixedColor': 'Use a fixed color',
   'container.preset': 'Preset size',
   'container.preset.custom': 'Custom',
   'container.preset.selection': 'Selection size',
@@ -1370,6 +1372,7 @@ export const enUS = {
   'drawingMode.light': 'Light',
   'drawingMode.dark': 'Dark',
   'drawingMode.followProject': 'Follow the project',
+  'drawingMode.projectDefault': 'Default (remove the choice)',
   'drawingMode.undeclared': '{mode} (not declared)',
   'drawingMode.containerHint':
     'Pins the mode of the components in this container; "Follow the project" uses the project mode.',
@@ -1387,6 +1390,11 @@ export const enUS = {
     'The choice stays saved; without a specialization that declares the set and the class, the container has no class there.',
   'diagnostics.containerClassUndeclared':
     '{container}: class {class} of the set {set} is not declared',
+  'diagnostics.backgroundTokens': 'Background tokens',
+  'diagnostics.backgroundTokensHint':
+    'The token stays saved; without a specialization that declares it as a color, the background is drawn white.',
+  'diagnostics.backgroundTokenUndeclared':
+    '{container}: background token {token} is not declared',
   'direction.title': 'Reading direction',
   'direction.intro':
     'Picks which way reading runs when the components are drawn: left to right (the default) or right to left. No marking moves.',

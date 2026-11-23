@@ -38,21 +38,21 @@ function withDoc(doc: unknown, edit?: (spec: Json) => void): Json {
 }
 
 describe('formatVersion 11: versions', () => {
-  it('the current version is 22 and v1 to v11 are still accepted', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(22);
+  it('the current version is 23 and v1 to v11 are still accepted', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(23);
     expect(SPEC_FORMAT_VERSIONS).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
     ]);
     for (const v of SPEC_FORMAT_VERSIONS) {
       expect(issuesOf(v11Json(undefined, v)), `v${v}`).toEqual([]);
     }
   });
 
-  it('the invalid-version message lists 1 to 22', () => {
-    expect(issuesOf(v11Json(undefined, 23))).toContainEqual({
+  it('the invalid-version message lists 1 to 23', () => {
+    expect(issuesOf(v11Json(undefined, 24))).toContainEqual({
       path: 'formatVersion',
       message:
-        'must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21 or 22',
+        'must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22 or 23',
     });
   });
 

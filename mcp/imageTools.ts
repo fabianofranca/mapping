@@ -1,12 +1,14 @@
 import { readFile, stat } from 'node:fs/promises';
 import { basename } from 'node:path';
 import {
+  containerBackgroundColor,
   isBackgroundContainer,
   projectIndex,
   type ExifOrientation,
   type Marking,
   type ProjectContainer,
 } from '../src/model';
+import type { TokenSelection } from '../src/model/components/tokens';
 import { ToolError } from './errors';
 import { assertFileSize, decodeImage, encodeImage } from './image/codecs';
 import {
@@ -103,7 +105,7 @@ const MAX_BACKGROUND_PIXELS = 4096 * 4096;
  * (the components' drawing is painted over it afterwards, only in the requested region) (downscaled
  * if huge: `scaleX`/`scaleY` ≠ 1 are already handled).
  */
-function backgroundImage(image: ProjectContainer): LoadedImage {
+function backgroundImage(image: ProjectContainer, color: string | null): LoadedImage {
   const shrink = Math.min(
     1,
     Math.sqrt(MAX_BACKGROUND_PIXELS / (image.width * image.height)),
@@ -112,7 +114,7 @@ function backgroundImage(image: ProjectContainer): LoadedImage {
     Math.max(1, Math.round(image.width * shrink)),
     Math.max(1, Math.round(image.height * shrink)),
   );
-  const [r, g, b] = hexToRgb(image.background ?? '#FFFFFF');
+  const [r, g, b] = hexToRgb(color ?? '#FFFFFF');
   for (let i = 0; i < raster.data.length; i += 4) {
     raster.data[i] = r;
     raster.data[i + 1] = g;
@@ -160,8 +162,15 @@ export async function loadImage(
   refs: Refs,
   image: ProjectContainer,
   source?: ImageSource,
+  /** The axes a `render_*` pins: the background token resolves with them. */
+  pinned?: TokenSelection,
 ): Promise<LoadedImage> {
-  if (image.file === null) return backgroundImage(image);
+  if (image.file === null) {
+    return backgroundImage(
+      image,
+      containerBackgroundColor(refs.project, image.id, pinned),
+    );
+  }
   const given = source === undefined ? null : await source(image.file);
   if (given !== null) return loadGiven(given, image, image.file);
   const absolute = await resolveProjectFile(roots, refs.loaded.location.dir, image.file);
@@ -335,6 +344,7 @@ export async function markingImage(
         ref: refs.ref('i', image.id),
         file: image.file,
         background: image.background,
+        resolvedBackground: containerBackgroundColor(refs.project, image.id),
       },
       ...(bgContainer
         ? {

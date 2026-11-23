@@ -38,13 +38,13 @@ describe('schema v17', () => {
     expect(result.migratedFrom).toBe(16);
     expect(result.readOnly).toBe(false);
     const project: Project = result.project;
-    expect(project.schemaVersion).toBe(23);
+    expect(project.schemaVersion).toBe(24);
     // Nothing but the version changes: the migrated project writes the same as the original, with the current version.
     const original = sampleProject();
     expect(serialize(project)).toBe(
       serialize({ ...original, schemaVersion: SCHEMA_VERSION }),
     );
     const saved = JSON.parse(serialize(project)) as Raw;
-    expect(saved.schemaVersion).toBe(23);
+    expect(saved.schemaVersion).toBe(24);
   });
 });

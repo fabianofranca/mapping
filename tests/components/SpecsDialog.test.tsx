@@ -147,6 +147,46 @@ describe('SpecsDialog', () => {
     expect(within(design).getByText('icons/set.json')).toBeTruthy();
   });
 
+  it('shows the axes, aliases, composites, description, group and notice of the named values (#1900, NV5)', () => {
+    const spec = libSpec(
+      1,
+      { c: [buttonType()] },
+      {
+        formatVersion: 23,
+        tokens: {
+          axes: { theme: ['light', 'dark'], contrast: ['normal', 'high'] },
+          values: {
+            surface: {
+              $value: { $axis: 'theme', light: '#ffffff', dark: '#202020' },
+              $description: 'Page background',
+              $group: 'color',
+            },
+            card: { $token: 'surface' },
+            title: { size: 20, weight: 700 },
+            old: {
+              $value: '#111111',
+              $notices: [{ kind: 'deprecated', message: 'Use surface' }],
+            },
+          },
+        },
+      },
+    );
+    let n = 0;
+    setup(applySpecialization(emptyProject(), spec, { newId: () => `LS${++n}` }));
+    const design = within(document.querySelector<HTMLElement>('.spec-item')!).getByRole(
+      'group',
+      { name: 'Drawing tokens' },
+    );
+    expect(within(design).getByText('theme: light, dark')).toBeTruthy();
+    expect(within(design).getByText('contrast: normal, high')).toBeTruthy();
+    expect(within(design).getByText('#ffffff')).toBeTruthy();
+    expect(within(design).getByText('→ surface')).toBeTruthy();
+    expect(within(design).getByText('size 20 · weight 700')).toBeTruthy();
+    expect(within(design).getByText('Page background')).toBeTruthy();
+    expect(within(design).getByText('color')).toBeTruthy();
+    expect(within(design).getByText('deprecated')).toBeTruthy();
+  });
+
   it('a specialization that declares file formats shows the isolation notice (#2035, AF3)', () => {
     let n = 0;
     const withFormats: Spec = {

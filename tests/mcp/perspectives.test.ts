@@ -140,7 +140,7 @@ afterAll(async () => {
 describe('get_project', () => {
   it('summarizes the perspectives and brings the arrival marks', async () => {
     const data = ok(await mcp.call<ProjectData>('get_project', { project: 'persp' }));
-    expect(data.schemaVersion).toBe(23);
+    expect(data.schemaVersion).toBe(24);
     expect(data.perspectives).toEqual([
       {
         id: id('P1'),
@@ -164,7 +164,7 @@ describe('get_project', () => {
     const path = join(base, 'v15', 'mapping.json');
     const before = hashOf(path);
     const data = ok(await mcp.call<ProjectData>('get_project', { project: 'v15' }));
-    expect(data).toMatchObject({ schemaVersion: 23, migratedFrom: 15 });
+    expect(data).toMatchObject({ schemaVersion: 24, migratedFrom: 15 });
     expect(data.perspectives).toEqual([]);
     expect(data.arrivals).toEqual([]);
     expect(hashOf(path)).toBe(before);

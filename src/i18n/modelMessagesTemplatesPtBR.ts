@@ -85,6 +85,16 @@ export const templatePtBR: {
     'o token "{name}" é família de fonte, mas aqui se espera cor',
   'model.library.tokenWrongKind.family.number':
     'o token "{name}" é família de fonte, mas aqui se espera número',
+  'model.library.tokenIsComposite':
+    'o token "{name}" é composto; leia um campo ({name}.<campo>)',
+  'model.library.tokenNoField': 'o token "{name}" não tem o campo "{field}"',
+  'model.library.tokenNotComposite': 'o token "{name}" não é composto',
+  'model.library.tokenFieldNotKey.font':
+    'o campo "{field}" do token "{name}" não é uma chave de font',
+  'model.library.tokenFieldNotKey.shadow':
+    'o campo "{field}" do token "{name}" não é uma chave de shadow',
+  'model.library.tokenDeprecated': 'o token "{name}" está obsoleto: {note}',
+  'model.library.tokenRemoved': 'o token "{name}" foi removido: {note}',
   'model.library.versionOtherSpec':
     'a versão anterior é da especialização "{previous}", não "{id}"',
   'model.library.versionNotGrown':
@@ -156,6 +166,14 @@ export const templatePtBR: {
   'model.spec.mustBeObject': 'deve ser um objeto',
   'model.spec.notEmpty': 'não pode ser vazio',
   'model.spec.colorInvalid': 'cor inválida; use o formato #RRGGBB',
+  'model.spec.backgroundInvalid':
+    'fundo inválido; use #RRGGBB ou { "$token": "nome" } com o nome de um token',
+  'model.spec.tokenMissing': 'o token "{name}" não existe nos tokens da especialização',
+  'model.spec.tokenNumberNotColor': 'o token "{name}" é número, mas aqui se espera cor',
+  'model.spec.tokenFamilyNotColor':
+    'o token "{name}" é família de fonte, mas aqui se espera cor',
+  'model.spec.tokenCompositeNotColor':
+    'o token "{name}" é composto, mas aqui se espera cor',
   'model.spec.tagInvalid': 'etiqueta inválida; use [a-z0-9-]+',
   'model.spec.keyInvalid': 'chave inválida; use apenas [A-Za-z0-9_], sem espaços',
   'model.spec.keyReserved': 'chave não pode começar com "_" (reservado)',
@@ -189,6 +207,9 @@ export const templatePtBR: {
   'model.spec.suggestionsBlank': 'sugestões não podem ser vazias',
   'model.spec.suggestionsTrim': 'sugestões não podem ter espaço no começo nem no fim',
   'model.spec.suggestionsRepeated': 'sugestões repetidas',
+  'model.spec.suggestionsGroupEmpty': 'nenhum token no grupo "{group}"',
+  'model.spec.suggestionsTokenNotText':
+    'o token "{name}" do grupo "{group}" não é texto fixo',
   'model.spec.columnTypeNotAllowed':
     '"{type}" não é permitido dentro de table; use "string", "number", "date", "enum" ou "ref"',
   'model.spec.optionsRequired': 'obrigatório e não vazio em enum',
@@ -411,6 +432,29 @@ export const templatePtBR: {
   'model.spec.tokenModeValueShape': 'cada modo deve ter texto ou número',
   'model.spec.tokenModesSameType':
     'os modos de um token devem ter o mesmo tipo (texto ou número)',
+  'model.spec.tokenModesAndAxes': 'use modes ou axes, não os dois',
+  'model.spec.tokenAxisUndeclared': 'o eixo "{axis}" não está declarado',
+  'model.spec.tokenAxisReused': 'o eixo "{axis}" já é usado por um valor que o contém',
+  'model.spec.tokenBranchKinds': 'os ramos de um valor devem ter o mesmo tipo',
+  'model.spec.tokenBranchFields': 'os ramos de um composto devem ter os mesmos campos',
+  'model.spec.tokenAliasMissing':
+    'o token "{name}" não existe nos tokens da especialização',
+  'model.spec.tokenCycle': 'ciclo de tokens: {chain}',
+  'model.spec.tokenAliasComposite':
+    'o token "{name}" é um composto; leia um campo ({name}.<campo>)',
+  'model.spec.tokenAliasNoField': 'o token "{name}" não tem o campo "{field}"',
+  'model.spec.tokenAlphaOnlyColor': 'alpha só vale em $token de cor',
+  'model.spec.tokenOverOnlyColor': 'over só vale em $token de cor',
+  'model.spec.tokenAlphaInvalid':
+    'alpha deve ser um número de 0 a 1 ou um $token de número',
+  'model.spec.tokenOverInvalid': 'over deve ser uma cor ou o nome de um token de cor',
+  'model.spec.tokenFieldInvalid': 'nome de campo inválido; use [a-z][a-zA-Z0-9]*',
+  'model.spec.tokenCompositeEmpty': 'um composto precisa de ao menos um campo',
+  'model.spec.tokenCompositeNested': 'um composto não pode conter outro composto',
+  'model.spec.tokenValueForm':
+    'deve ser texto, número, um alias, um composto ou um valor por eixo',
+  'model.spec.tokenGroupInvalid': 'grupo inválido; use [a-z0-9][a-z0-9-]*',
+  'model.spec.tokenWrapperNested': 'o envelope $value só vale num token inteiro',
   'model.spec.iconsPathShape': 'deve ser o caminho de um arquivo .json do pacote',
   'model.spec.zod.invalid_type': 'tipo inválido: esperava {expected}, recebeu {received}',
   'model.spec.zod.unrecognized_keys': 'propriedade desconhecida: {keys}',
@@ -522,7 +566,9 @@ export const templatePtBR: {
   'model.component.expectedWidthHeight': 'esperava "width" ou "height"',
   'model.component.tokenOnlyWhere':
     '$token só vale onde se espera cor, número ou família de fonte',
-  'model.component.expectedTokenName': 'esperava nome de token ([a-z0-9][a-z0-9-]*)',
+  'model.component.expectedPlainTokenName': 'esperava nome de token ([a-z0-9][a-z0-9-]*)',
+  'model.component.expectedTokenName':
+    'esperava nome de token ([a-z0-9][a-z0-9-]*) ou nome.campo',
   'model.component.alphaOnlyColor': 'alpha só vale em $token de cor',
   'model.component.exprManyOperators': 'expressão com mais de um operador: {ops}',
   'model.component.required': 'campo obrigatório',
@@ -575,7 +621,7 @@ export const templatePtBR: {
   'model.component.overOnlyColor': 'over só vale em $token de cor',
   'model.component.expectedTokenOrColor': 'esperava nome de token ou cor',
   'model.component.expectedTokenNameOrColor':
-    'esperava nome de token ([a-z0-9][a-z0-9-]*) ou cor',
+    'esperava nome de token ([a-z0-9][a-z0-9-]*), nome.campo ou cor',
   'model.component.emptyName': 'nome vazio',
   'model.component.providedOnlyColor': '$provided só vale onde se espera cor',
   'model.component.expectedProvidedName':

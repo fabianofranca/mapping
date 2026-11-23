@@ -20,6 +20,10 @@ export function useScanProposals(): () => void {
   return () => {
     session.proposals.scan({ full: true }).then(
       (found) => {
+        if (found.unavailable) {
+          showToast(ui, t('proposals.scanUnavailable'));
+          return;
+        }
         const changes = found.added.length + found.changed.length + found.removed.length;
         showToast(
           ui,

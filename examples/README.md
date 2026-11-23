@@ -84,6 +84,7 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 - The **Event** is a floating marking with a component: a purple header with the event name and one row per property, drawn by the `repeat` node (the `properties` field).
 - One document per type (`docs/event.md`, `docs/transition.md`) and one named example on each.
 - A library document (`documents`, `docs/conventions.md`, `formatVersion` 21): the event conventions, listed under **Documents** in the Catalog and read by the MCP with `get_library_document`.
+- Named values outside a design system (`formatVersion` 23): the event names are `tokens` in the group `events`, each with a `$description` (the `$value` wrapper), and one old name is an alias with a `deprecated` notice. The **Name** field of the Event and the **Event** field of the Transition list `{ "$tokens": "events" }` in `suggestions`: typing offers `checkout_started`, `purchase_completed` and `button_click`, without the deprecated one.
 
 **Scripts.** R10.15, R10.16, R12.19 and R12.20.
 
@@ -139,6 +140,22 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 - The same drawing in the app, in the viewer and in the `render_marking` PNG.
 
 **Scripts.** R39 in `docs/TESTING.md` ("Icon fill rule, SVG import and drawing keys"): it copies the package and the SVGs, runs `import_icons` (`dryRun`, for real, `replace` and the refusals), applies the package in a folder project and checks the five components with pixel probes in the app and in the `render_marking` PNG.
+
+### `examples/libraries/named-values/`
+
+**What it is.** The example of the **named values** of specialization `formatVersion` 23, written as a small design system. Two mode axes (`theme` with `light` and `dark`, `contrast` with `standard` and `high`), a base palette, semantic aliases (one derived with `alpha`), two composite values (the text style `title` and the shadow `raised`) and one deprecated token (`old-accent`). Two types: **Card** (fields `title` and `body`) and **Badge** (field `label`). The `Screen` preset (360 × 640) has `{ "$token": "surface" }` as its background.
+
+**How to open.** **Specializations** › **Apply folder…** and pick the folder. Mark a Card and a Badge; in **Settings** change the **Theme** and the **Contrast**, and pin one axis in the container Details.
+
+**What you can see.**
+
+- The Card reads the whole `title` composite in `font` and the whole `raised` composite in `shadow`; the contrast axis changes the title weight (500 in `standard`, 700 in `high`) and the theme the shadow color.
+- The colors by alias: `card-container` is an alias of `surface`, `ink-muted` and `outline` derive from `ink` with `alpha`; each follows both axes by itself, in the four combinations.
+- The Badge reads one field of a composite: its text size is `{ "$token": "title.size" }`.
+- A container created from the `Screen` preset through the MCP stores `"background": { "$token": "surface" }`: its board is light or dark with the theme; in the app, **New container** fills the field with the resolved color, and the container Details offers **Use a fixed color**.
+- The Specializations window lists the axes, an alias, a composite and the deprecated badge of `old-accent`.
+
+**Scripts.** R31 in `docs/TESTING.md` ("Named values").
 
 ### `examples/libraries/data-model/`
 
@@ -323,39 +340,40 @@ When one exists, the example is from `libraries/`. The features of the file form
 
 ### Specialization
 
-| Feature                                                                          | Where to see it                                                                                                           |
-| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `string`                                                                         | Note: `texto` (`notas`); Class: `name` (`kotlin`)                                                                         |
-| `number`                                                                         | `surface.tonalElevation` (`material3-compose`); `endpoint.timeoutMs` (`data-model.json`)                                  |
-| `date`                                                                           | `class.reviewedAt` (`data-model.json`); `since` column of `endpoint.params` (`sdui-backend`)                              |
-| `enum` and boolean as `enum`                                                     | `button.enabled` and `button.style` (`material3-compose`); class visibility (`kotlin`)                                    |
-| `table`                                                                          | Table: `linhas` (`notas`); Properties and Functions (`kotlin`); `action.parameters` (`sdui.json`)                         |
-| `ref` and `accepts`                                                              | `outer` and **Mapped type** (`kotlin`); `input.data` with `free` (`sdui.json`)                                            |
-| Tags (`tags`) and `rowLabel`                                                     | Properties with `data-field` and `kotlin-property` (`kotlin`); `class.attributes` (`data-model.json`)                     |
-| `suggestions`                                                                    | **Type** column of Properties (`kotlin`); icon fields (`material3-compose`)                                               |
-| `linkedRef`                                                                      | **Type** columns of Properties and Supertypes (`kotlin`); `examples/suggestions-kotlin.zip` shows the use                 |
-| Relations: `allowedChildren` and `requiresOwner`                                 | `button` and `action` (`sdui.json`)                                                                                       |
-| References between types                                                         | **Declared in** and **Supertypes** (`kotlin`); `input.data` points to the Data model (`sdui.json` with `data-model.json`) |
-| `platforms` and `repo` (`url`, `urlTemplate`, `ref`)                             | `compose` pinned to a commit (`material3-compose`); `android`, `ios` and `bff` (`sdui.json`)                              |
-| `code`: `symbol`, `path`, `params`, `values`, `notes`                            | All types (`material3-compose`); `button` and `input` on three platforms (`sdui.json`)                                    |
-| `variants` in `code`                                                             | `button.style` and 25 other types (`material3-compose`); the variants table in the Catalog                                |
-| `containers` (ready-made sizes)                                                  | Phone, Large phone, Tablet and Desktop (`material3-compose`); `background` on Phone (`sdui-backend`)                      |
-| `containerClasses` (chosen and computed sets) and `classes` on a ready-made size | `platform` and `window`; Phone and Web desktop (`sdui-backend`)                                                           |
-| `appliesIn` (classes a type is meant for)                                        | Bottom sheet and FAB (`sdui-backend`)                                                                                     |
-| `$container.*` in a component                                                    | `sdui-column` padding by `$container.window` (`sdui-backend`)                                                             |
-| `documents` (library documents)                                                  | `docs/conventions.md` (`analytics`), under **Documents** in the Catalog                                                   |
-| `accessibility.variants` (role per case)                                         | `sdui-button` `mode` `link` (`sdui-backend`)                                                                              |
-| `fonts`                                                                          | Roboto 400 and 500 as `.woff2` (`material3-compose`)                                                                      |
-| Floating type (`floating`)                                                       | Note and Table (`notas`); Event (`analytics`)                                                                             |
-| `appliesTo`                                                                      | Transition, arrow only (`analytics`); Endpoint, marking only (`sdui-backend`)                                             |
-| `component`, `doc` and `examples` (library package)                              | All the folders in `libraries/` and `analytics`                                                                           |
-| `sources` (plain data for a plugin) and a file format with components            | `sdui-backend`                                                                                                            |
-| `dom` file format (measured layout)                                              | `measured`                                                                                                                |
-| `migrations`                                                                     | `sdui-backend`; `sdui.json` and `roles-migration.json` (role steps)                                                       |
-| `formatVersion` 1                                                                | `data-model.json`                                                                                                         |
-| `formatVersion` 4 and 5                                                          | `sdui-backend` (4); `sdui.json` (5)                                                                                       |
-| `formatVersion` 6 to 9                                                           | `notas` and `analytics` (7); `kotlin` (8); `material3-compose` (9)                                                        |
-| `formatVersion` 2 and 3                                                          | No example of its own: the app accepts them, and a specialization 1 is a 2 without platforms                              |
+| Feature                                                                           | Where to see it                                                                                                           |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `string`                                                                          | Note: `texto` (`notas`); Class: `name` (`kotlin`)                                                                         |
+| `number`                                                                          | `surface.tonalElevation` (`material3-compose`); `endpoint.timeoutMs` (`data-model.json`)                                  |
+| `date`                                                                            | `class.reviewedAt` (`data-model.json`); `since` column of `endpoint.params` (`sdui-backend`)                              |
+| `enum` and boolean as `enum`                                                      | `button.enabled` and `button.style` (`material3-compose`); class visibility (`kotlin`)                                    |
+| `table`                                                                           | Table: `linhas` (`notas`); Properties and Functions (`kotlin`); `action.parameters` (`sdui.json`)                         |
+| `ref` and `accepts`                                                               | `outer` and **Mapped type** (`kotlin`); `input.data` with `free` (`sdui.json`)                                            |
+| Tags (`tags`) and `rowLabel`                                                      | Properties with `data-field` and `kotlin-property` (`kotlin`); `class.attributes` (`data-model.json`)                     |
+| `suggestions`                                                                     | **Type** column of Properties (`kotlin`); icon fields (`material3-compose`)                                               |
+| `linkedRef`                                                                       | **Type** columns of Properties and Supertypes (`kotlin`); `examples/suggestions-kotlin.zip` shows the use                 |
+| Relations: `allowedChildren` and `requiresOwner`                                  | `button` and `action` (`sdui.json`)                                                                                       |
+| References between types                                                          | **Declared in** and **Supertypes** (`kotlin`); `input.data` points to the Data model (`sdui.json` with `data-model.json`) |
+| `platforms` and `repo` (`url`, `urlTemplate`, `ref`)                              | `compose` pinned to a commit (`material3-compose`); `android`, `ios` and `bff` (`sdui.json`)                              |
+| `code`: `symbol`, `path`, `params`, `values`, `notes`                             | All types (`material3-compose`); `button` and `input` on three platforms (`sdui.json`)                                    |
+| `variants` in `code`                                                              | `button.style` and 25 other types (`material3-compose`); the variants table in the Catalog                                |
+| `containers` (ready-made sizes)                                                   | Phone, Large phone, Tablet and Desktop (`material3-compose`); `background` on Phone (`sdui-backend`)                      |
+| `containerClasses` (chosen and computed sets) and `classes` on a ready-made size  | `platform` and `window`; Phone and Web desktop (`sdui-backend`)                                                           |
+| `appliesIn` (classes a type is meant for)                                         | Bottom sheet and FAB (`sdui-backend`)                                                                                     |
+| `$container.*` in a component                                                     | `sdui-column` padding by `$container.window` (`sdui-backend`)                                                             |
+| `documents` (library documents)                                                   | `docs/conventions.md` (`analytics`), under **Documents** in the Catalog                                                   |
+| `tokens` as named values (`$value` wrapper, alias) and `$tokens` in `suggestions` | The `events` group (`analytics`)                                                                                          |
+| `accessibility.variants` (role per case)                                          | `sdui-button` `mode` `link` (`sdui-backend`)                                                                              |
+| `fonts`                                                                           | Roboto 400 and 500 as `.woff2` (`material3-compose`)                                                                      |
+| Floating type (`floating`)                                                        | Note and Table (`notas`); Event (`analytics`)                                                                             |
+| `appliesTo`                                                                       | Transition, arrow only (`analytics`); Endpoint, marking only (`sdui-backend`)                                             |
+| `component`, `doc` and `examples` (library package)                               | All the folders in `libraries/` and `analytics`                                                                           |
+| `sources` (plain data for a plugin) and a file format with components             | `sdui-backend`                                                                                                            |
+| `dom` file format (measured layout)                                               | `measured`                                                                                                                |
+| `migrations`                                                                      | `sdui-backend`; `sdui.json` and `roles-migration.json` (role steps)                                                       |
+| `formatVersion` 1                                                                 | `data-model.json`                                                                                                         |
+| `formatVersion` 4 and 5                                                           | `sdui-backend` (4); `sdui.json` (5)                                                                                       |
+| `formatVersion` 6 to 9                                                            | `notas` and `analytics` (7); `kotlin` (8); `material3-compose` (9)                                                        |
+| `formatVersion` 2 and 3                                                           | No example of its own: the app accepts them, and a specialization 1 is a 2 without platforms                              |
 
 ### Component
 

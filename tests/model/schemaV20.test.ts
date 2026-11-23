@@ -73,9 +73,12 @@ describe('schema v20', () => {
 
   it('key order: direction right after drawingMode, and density after it', () => {
     const id = sampleProject().containers[0]!.id;
-    let p = setProjectDirection(setProjectDrawingMode(sampleProject(), 'dark'), 'rtl');
+    let p = setProjectDirection(
+      setProjectDrawingMode(sampleProject(), { mode: 'dark' }),
+      'rtl',
+    );
     p = setContainerDensity(
-      setContainerDirection(setContainerDrawingMode(p, id, 'light'), id, 'rtl'),
+      setContainerDirection(setContainerDrawingMode(p, id, { mode: 'light' }), id, 'rtl'),
       id,
       2,
     );

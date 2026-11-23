@@ -1,4 +1,4 @@
-# Format of `mapping.json` (schema v23)
+# Format of `mapping.json` (schema v24)
 
 The project is a folder (or a zip with the same content) with `mapping.json`, `images/` (the containers' image files) and,
 if any specializations are applied, `specs/` (and, if there are change proposals, `proposals/`). All the markings' coordinates are
@@ -34,7 +34,7 @@ per project). The `backups/` folder is not part of the project: the exported zip
 
 ```json
 {
-  "schemaVersion": 23,
+  "schemaVersion": 24,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -108,7 +108,7 @@ such as `M1` in the examples are valid too). Colors are `#RRGGBB`.
 | `platformRepos`    | object  | Local clone of each platform (v7; only `localPath` since v11, see below).                                                                   |
 | `docRepos`         | object  | Local clone of each documents repository (v14, see "Fields of v14").                                                                        |
 | `pages`            | array   | The project's pages (v21, at least one): `id` and `name` (see "Fields of v21"). Absent reads as `[]`, which the repair turns into one page. |
-| `drawingMode`      | string  | The project's drawing mode (v18, optional, see "Fields of v18").                                                                            |
+| `drawingMode`      | object  | The project's drawing mode (v18; a map axis → entry since v24, optional, see "Fields of v24").                                              |
 | `direction`        | string  | The project's reading direction (v20, optional, see "Fields of v20").                                                                       |
 | `layers`           | array   | Layers, **global** (they apply to all containers), in display order.                                                                        |
 | `containers`       | array   | The project's containers (v12; formerly `images`).                                                                                          |
@@ -126,8 +126,8 @@ in the project; `null` in the container without a file, v10: see below); `width`
 `parentId` (v13: `null` or the canvas marking that wraps the container, computed by the app; see below);
 `pageId` (v21: the page the container lives on; see "Fields of v21 (pages)");
 `markingColor` (`null` or color); `locked` (boolean, v5: see below); `source` (`null` or source, v8:
-see below); `background` (`null` or `#RRGGBB` color, v10: the background color of the container without a file);
-`drawingMode` (v18, optional: the drawing mode that the container pins; see "Fields of v18"); `direction` (v20, optional: the reading direction that the container pins, `ltr` or `rtl`; see "Fields of v20"); `density` (v19, optional: image pixels per component unit; see "Fields of v19"). `classes` (v23, optional: the container classes the container is in, a map `set id → class id` of the chosen sets; see "Fields of v23").
+see below); `background` (`null`, a `#RRGGBB` color or, since v24, `{ "$token": "<name>" }`; v10: the background of the container without a file; see "Fields of v24");
+`drawingMode` (v18, optional: the drawing mode that the container pins, a map axis → entry since v24; see "Fields of v18" and "Fields of v24"); `direction` (v20, optional: the reading direction that the container pins, `ltr` or `rtl`; see "Fields of v20"); `density` (v19, optional: image pixels per component unit; see "Fields of v19"). `classes` (v23, optional: the container classes the container is in, a map `set id → class id` of the chosen sets; see "Fields of v23").
 
 **`markings[]`**: `id`; `containerId` (v12; formerly `imageId`; `null` in the canvas marking, v13); `parentId` (parent marking or `null`,
 computed by the app since v13); `pageId` (v21: the page of a canvas marking; `null` inside a container); `name` (`string` or `null`);
@@ -154,7 +154,7 @@ lists the problems and repairs what has a mechanical repair (see "Inconsistent f
 file on read.
 
 - Unique ids in each collection; unique `file` among the images that have a file; unique `file` of the specializations.
-- Container (v12): `file` is `null` if, and only if, `background` is a color (`container-content`).
+- Container (v12): `file` is `null` if, and only if, `background` is a color or, since v24, a token (`{ "$token": "brand-surface" }`) (`container-content`). A container with a file keeps `background: null` (`container-has-file`).
 - Every marking has a null `containerId` (canvas marking, v13) or one of an existing container; `parentId`, if any, is an existing marking.
 - `rect`: integers, width and height **≥ 1 px** (on opening, any marking is valid from 1 px; below that it is `rect-too-small`; gestures and MCP require 8 px on a regular marking, see "Fields of v18"); in the container marking, **entirely inside** the image (`0 ≤ x`,
   `x + width ≤ image width`; same for `y`); in the canvas marking, no position limit.
@@ -658,8 +658,8 @@ with or without an image file). Only the vocabulary of `mapping.json` changes; t
 - The `images` collection becomes **`containers`**, and the marking swaps `imageId` for **`containerId`**. The fields of
   each container (`id`, `name`, `file`, `width`, `height`, `placement`, `markingColor`, `locked`, `source`,
   `background`) do not change.
-- `file`: `string` (path in `images/`) or `null` (container without a file). `background`: `#RRGGBB` color or
-  `null`.
+- `file`: `string` (path in `images/`) or `null` (container without a file). `background`: `#RRGGBB` color,
+  since v24 `{ "$token": "<name>" }`, or `null`.
 - **Invariant `container-content`** (formerly `blank-background`): `file === null` if, and only if,
   `background !== null`. Related errors: `container-without-file` (reading the file of a container without a
   file) and `container-has-file` (an operation only for the container without a file applied to one with a file).
@@ -1042,9 +1042,9 @@ v18 adds the **drawing mode**, which chooses the mode of the specializations' `t
 see [`SPEC-FORMAT.md`](SPEC-FORMAT.md), `formatVersion` 15) with which the components are drawn. It does not
 depend on the interface's light/dark theme.
 
-- **`drawingMode` at the root** (string, optional): the project's mode. Absent, each specialization uses its
+- **`drawingMode` at the root** (string until v23, a map since v24: see "Fields of v24"; optional): the project's mode. Absent, each specialization uses its
   **first mode**.
-- **`containers[].drawingMode`** (string, optional): the mode that the container pins. Absent, the container **follows the
+- **`containers[].drawingMode`** (string until v23, a map since v24; optional): the mode that the container pins. Absent, the container **follows the
   project**. The canvas marking (`containerId` null) always follows the project. A marking's effective mode is
   its container's, if it pins one; otherwise the project's.
 - **`null` in the container** is read as absent and **is not written**; the field only appears in the file when it has a value.
@@ -1059,6 +1059,8 @@ depend on the interface's light/dark theme.
   `rect-too-small` invariant only applies below 1 px. No new field and no migration.
 
 An earlier app rejects the v18 file as a "newer version", instead of ignoring the mode and drawing wrong.
+
+Since v24 the stored `drawingMode` is a map axis → entry, not a string (see "Fields of v24 (drawing mode axes and background token)"); what this section says about absent, pinned and followed modes holds for each axis.
 
 ### Migration v17 → v18
 
@@ -1233,6 +1235,27 @@ An earlier app rejects the v23 file as a "newer version" (read-only), instead of
 
 Only `schemaVersion` changes to 23; no data is altered (no class is created). As in every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
 
+## Fields of v24 (drawing mode axes and background token)
+
+v24 turns the **drawing mode** into a map **axis → entry**, because a specialization can declare several mode axes (`tokens.axes`, specialization `formatVersion` 23; see [`SPEC-FORMAT.md`](SPEC-FORMAT.md)): `theme` and `contrast`, say, each with its own entries. The mode of v18 (`light`, `dark`…) is the entry of the `mode` axis, the one a library with `modes` declares.
+
+- **`drawingMode` at the root** (object, optional): the project's choice, e.g. `{ "theme": "dark", "contrast": "high" }`. An axis that is not listed uses the **default** entry of the axis (the first one declared). An empty map and `null` mean no choice, a read project never holds an empty map, and the writer leaves the key out.
+- **`containers[].drawingMode`** (object, optional): the axes the container **pins**. It follows the project in the axes it does not list. `null` is read as absent, an empty map is not written. The canvas marking (`containerId` null) always follows the project.
+- **Effective entry per axis** (of each axis the applied specializations declare): the container's entry, else the project's, else the default entry of the axis. A marking in a container takes the container's; a canvas marking, the project's.
+- **Shape of the names:** every axis and every entry must match `[a-z0-9][a-z0-9-]*`; outside that, reading the file fails with a schema error, and the model and the MCP refuse the write with `invalid-name`.
+- **The model does not check the choice against the specializations:** an axis, or an entry of a declared axis, that no applied specialization declares is **kept** (the specialization may be removed or updated later, and the choice comes back when it is declared again) and drawn with the default entry; `undeclaredDrawingMode` lists them and the Diagnostics view warns. The MCP is stricter when writing (`invalid-arguments` with the declared axes in `details`).
+- **Key order:** unchanged; the map's keys are written in the order the model holds them.
+- **Background token (`containers[].background`):** the `background` of a container **without a file** is either `"#RRGGBB"` (uppercase) or `{ "$token": "<name>" }`, the name of a **color** token of an applied specialization (`[a-z0-9][a-z0-9-]*`; the object is strict, any other key is a schema error). For example, `"background": "#FAFAFA"` stays valid as it is, and `"background": { "$token": "surface" }` follows the library. The token counts as a background in `container-content` (`file` is `null` if, and only if, `background` is not `null`); a container with a file still has `background: null`.
+- **How the token resolves:** in the container's **effective drawing mode** (the entry per axis above), the name is read in the **first applied specialization** (the order of the project's `specializations`) whose `tokens` declares it with a **color** value (a number of the same name in an earlier specialization is skipped). A color with alpha is composited over white, and `transparent`/`none` become white, so the board stays opaque, like a `#RRGGBB`. A token that no applied specialization declares as a color (the library was removed or updated) **stays stored**, draws `#FFFFFF` and the Diagnostics view lists the container and the token. Changing the project's or the container's drawing mode changes the color the same way it changes the components.
+- **Who writes it:** only an agent, through `add_container`/`update_container` (the MCP refuses a token no applied specialization declares as a color). The app never writes a token background: Details shows the token name and the resolved color, read-only, with a **Use a fixed color** button that replaces it with the resolved `#RRGGBB` (one undo entry).
+- **Proposal:** the map goes in the proposal's `formatVersion` 12 (see [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md)); a proposal of 6 to 11 with a string is read as `{ "mode": s }`.
+
+An earlier app rejects the v24 file as a "newer version" (read-only), instead of reading the map as a string and drawing wrong.
+
+### Migration v23 → v24
+
+A string `s` in the project's or a container's `drawingMode` becomes `{ "mode": s }`; nothing else changes (no mode is created, an absent one stays absent). The background token adds **no migration**: every `#RRGGBB` background stays valid and unchanged; a v24 file only holds a `{ "$token": … }` background when an agent wrote one. As in every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
+
 ## Migration
 
 v1 files are migrated on opening: every image gets `name: null` and every annotation gets
@@ -1243,7 +1266,7 @@ image and each marking. v5 files get `revision: 0`. v6 files get `platformRepos:
 v7 files get `source: null` on each image and each marking. v8 files lose the values of the
 `codeRef` fields, by the type declared in the specialization copy (see "Fields of v9"). v9 files
 get `background: null` on each image (see "Fields of v10"). v10 files lose the `urlTemplate` of
-each `platformRepos` entry, and an entry that only had it goes away (see "Fields of v11"). v11 files swap `images` for `containers` and `imageId` for `containerId` (see "Fields of v12"). v12 files lose `inherit` from each annotation and gain `floating: false` on each marking, `parentId: null` on each container and `arrows: []` at the root (see "Fields of v13"). v13 files gain `parentRole: null` on each annotation and `docRepos: {}` at the root (see "Fields of v14"). v14 files only get the number bumped (see "Fields of v15"). v15 files gain `project.id` (a new UUID), `perspectives: []` and `arrivals: []` (see "Fields of v16"). v16 files only get the number bumped (see "Fields of v17"). v17 files only get the number bumped (see "Fields of v18"). v18 files only get the number bumped (see "Fields of v19"). v19 files only get the number bumped (see "Fields of v20"). v20 files gain `pages` (one page) and the `pageId` of each container and canvas marking (see "Fields of v21"). v21 files only get the number bumped (see "Fields of v22"). v22 files only get the number bumped (see "Fields of v23"). On save, the
-file becomes v23 (and, in folder mode, the original goes first to `backups/`, as in any
+each `platformRepos` entry, and an entry that only had it goes away (see "Fields of v11"). v11 files swap `images` for `containers` and `imageId` for `containerId` (see "Fields of v12"). v12 files lose `inherit` from each annotation and gain `floating: false` on each marking, `parentId: null` on each container and `arrows: []` at the root (see "Fields of v13"). v13 files gain `parentRole: null` on each annotation and `docRepos: {}` at the root (see "Fields of v14"). v14 files only get the number bumped (see "Fields of v15"). v15 files gain `project.id` (a new UUID), `perspectives: []` and `arrivals: []` (see "Fields of v16"). v16 files only get the number bumped (see "Fields of v17"). v17 files only get the number bumped (see "Fields of v18"). v18 files only get the number bumped (see "Fields of v19"). v19 files only get the number bumped (see "Fields of v20"). v20 files gain `pages` (one page) and the `pageId` of each container and canvas marking (see "Fields of v21"). v21 files only get the number bumped (see "Fields of v22"). v22 files only get the number bumped (see "Fields of v23"). v23 files turn the string `drawingMode` of the project and of each container into the map `{ "mode": <string> }` (see "Fields of v24"). On save, the
+file becomes v24 (and, in folder mode, the original goes first to `backups/`, as in any
 migration).
 Files of a newer version open read-only.

@@ -2,6 +2,7 @@ import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { normalizedContainerClasses } from './containerClasses';
 import { MAX_DENSITY, MIN_DENSITY, withoutDensity } from './density';
 import { fail } from './errors';
+import { TOKEN_NAME_PATTERN } from './components/tokens';
 import { HEX_COLOR_RE } from './hexColor';
 import { idInUse } from './projectIndex';
 import {
@@ -29,7 +30,14 @@ import {
 import { findById, normalizeOptionalName, updateById } from './project';
 import { countBrokenRefs } from './refs';
 import { containersOfPage, firstPageId, requirePage } from './spaces';
-import type { Marking, Placement, Project, ProjectContainer, Rect } from './types';
+import type {
+  ContainerBackground,
+  Marking,
+  Placement,
+  Project,
+  ProjectContainer,
+  Rect,
+} from './types';
 
 /** Longest side of a newly added image, in canvas units. */
 export const INITIAL_IMAGE_SIZE = 1000;
@@ -60,10 +68,28 @@ function checkDimensions({
   if (!ok(width) || !ok(height)) fail('invalid-dimensions');
 }
 
-/** Valid background color (`#RRGGBB`), in uppercase. */
-function checkBackground(color: string): string {
-  if (!HEX_COLOR_RE.test(color)) fail('invalid-color');
-  return color.toUpperCase();
+/**
+ * Valid background: `#RRGGBB` (returned in uppercase) or a token reference `{ $token }` whose name matches
+ * `[a-z0-9][a-z0-9-]*`. Whether the token is declared is not checked here (the MCP layer does).
+ */
+function checkBackground(background: ContainerBackground): ContainerBackground {
+  if (typeof background === 'string') {
+    if (!HEX_COLOR_RE.test(background)) fail('invalid-color');
+    return background.toUpperCase();
+  }
+  const name: unknown = background.$token;
+  if (typeof name !== 'string' || !TOKEN_NAME_PATTERN.test(name)) fail('invalid-color');
+  return { $token: background.$token };
+}
+
+function sameBackground(
+  a: ContainerBackground | null,
+  b: ContainerBackground | null,
+): boolean {
+  if (typeof a === 'object' && a !== null && typeof b === 'object' && b !== null) {
+    return a.$token === b.$token;
+  }
+  return a === b;
 }
 
 /** Dimensions of a container without a file: integers from 1 to `MAX_CONTAINER_SIZE`. */
@@ -473,8 +499,8 @@ export function addBackgroundContainer(
     readonly name?: string | null;
     readonly width: number;
     readonly height: number;
-    /** Background color (`#RRGGBB`). */
-    readonly background: string;
+    /** Background: `#RRGGBB` or a color token reference (`{ $token }`). */
+    readonly background: ContainerBackground;
     /** Where the image's center should be (goes to the nearest free space). */
     readonly center?: { readonly x: number; readonly y: number };
     /** Id of a container: the new one is born to its right, with the same scale. */
@@ -513,7 +539,7 @@ export function addBackgroundContainer(
 export interface BackgroundContainerChanges {
   readonly width?: number;
   readonly height?: number;
-  readonly background?: string;
+  readonly background?: ContainerBackground;
 }
 
 /**
@@ -560,7 +586,7 @@ export function setBackgroundContainer(
     );
     if (overlap) failOverlap(overlap);
   }
-  if (!resized && background === image.background) return p;
+  if (!resized && sameBackground(background, image.background)) return p;
   return settleFrom(
     p,
     {

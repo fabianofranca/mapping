@@ -121,6 +121,26 @@ describe('folder: proposals/', () => {
     expect(await storage.listProposals()).toEqual(['A', 'B', 'C']);
   });
 
+  it('rootAvailable tells a stale project folder from a missing `proposals/`', async () => {
+    const root = new MemoryDirectory('p');
+    const storage = createFolderStorage(root);
+    // No `proposals/` inside a reachable folder: still available.
+    expect(await storage.rootAvailable?.()).toBe(true);
+    root.put(proposalFilePath('A'), 'a');
+    expect(await storage.rootAvailable?.()).toBe(true);
+    // The folder was moved: the handle fails with `NotFoundError`.
+    const gone = (): never => {
+      throw new DOMException('moved', 'NotFoundError');
+    };
+    root.values = gone;
+    expect(await storage.rootAvailable?.()).toBe(false);
+    // Another failure (permission) is not "gone".
+    root.values = (): never => {
+      throw new DOMException('denied', 'NotAllowedError');
+    };
+    expect(await storage.rootAvailable?.()).toBe(true);
+  });
+
   it('stampProposals stamps all the valid folders in a single step (decision 9, stage #1777)', async () => {
     const root = new MemoryDirectory('p');
     const storage = createFolderStorage(root);

@@ -56,10 +56,11 @@ describe('schema v18', () => {
     raw.drawingMode = 'dark';
     (raw.containers as Raw[])[0] = { ...(raw.containers as Raw[])[0], drawingMode: null };
     const project = open(raw);
-    expect(project.drawingMode).toBe('dark');
+    // v24: the string of an older file is the `mode` axis.
+    expect(project.drawingMode).toEqual({ mode: 'dark' });
     const text = serialize(project);
     const saved = JSON.parse(text) as Raw;
-    expect(saved.drawingMode).toBe('dark');
+    expect(saved.drawingMode).toEqual({ mode: 'dark' });
     // `null` is the same as missing: it follows the project, and the file does not store the key.
     expect('drawingMode' in (saved.containers as Raw[])[0]!).toBe(false);
   });
@@ -72,7 +73,7 @@ describe('schema v18', () => {
       drawingMode: 'light',
     };
     const saved = JSON.parse(serialize(open(raw))) as Raw;
-    expect((saved.containers as Raw[])[0]!.drawingMode).toBe('light');
+    expect((saved.containers as Raw[])[0]!.drawingMode).toEqual({ mode: 'light' });
   });
 
   it('a drawingMode that is not text fails', () => {

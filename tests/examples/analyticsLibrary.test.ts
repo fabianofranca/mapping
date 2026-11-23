@@ -5,6 +5,7 @@ import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { validateLibrary } from '../../src/model/library';
 import { parseSpecText } from '../../src/model/spec';
+import { serializeSpec } from '../../src/model/serialization';
 import { buildCatalog, drawEntry, findEntry } from '../../src/model/catalog';
 import { approximateMeasurer } from '../../src/model/components/instantiate';
 import type { SceneNode } from '../../src/model/components/scene';
@@ -48,11 +49,11 @@ describe('example analytics library', () => {
     expect(report.summary).toMatchObject({ level: 3, types: 2, components: 1, docs: 3 });
   });
 
-  it('the specialization is formatVersion 21: floating Event with a component and arrow-only Transition', () => {
+  it('the specialization is formatVersion 23: floating Event with a component and arrow-only Transition', () => {
     const parsed = parseSpecText(text(SPEC_FILE));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.spec).toMatchObject({ formatVersion: 21, id: 'analytics', version: 3 });
+    expect(parsed.spec).toMatchObject({ formatVersion: 23, id: 'analytics', version: 4 });
     const [layer] = parsed.spec.layers;
     expect(layer).toMatchObject({ id: 'analytics', name: 'Analytics' });
     const [event, transition] = layer?.annotationTypes ?? [];
@@ -72,6 +73,22 @@ describe('example analytics library', () => {
     expect(transition?.component).toBeUndefined();
     expect(transition?.floating).toBeUndefined();
     expect(transition?.fields.map((f) => f.key)).toEqual(['condition', 'event']);
+  });
+
+  it('the event names are tokens of the events group and the fields suggest them (stage #1900)', () => {
+    const parsed = parseSpecText(text(SPEC_FILE));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const [event, transition] = parsed.spec.layers[0]?.annotationTypes ?? [];
+    // The expanded list: the three live names, in file order, without the deprecated one.
+    const expected = ['checkout_started', 'purchase_completed', 'button_click'];
+    const name = event?.fields.find((f) => f.key === 'name');
+    expect(name?.type === 'string' && name.suggestions).toEqual(expected);
+    const fired = transition?.fields.find((f) => f.key === 'event');
+    expect(fired?.type === 'string' && fired.suggestions).toEqual(expected);
+    // The file keeps the item, and the written spec too.
+    expect(text(SPEC_FILE)).toContain('"suggestions": [{ "$tokens": "events" }]');
+    expect(JSON.parse(serializeSpec(parsed.spec))).toEqual(JSON.parse(text(SPEC_FILE)));
   });
 
   it('declares its conventions as a library document (stage #1901, decision 28)', () => {

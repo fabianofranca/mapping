@@ -1,0 +1,32 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 23,
+  "id": "named-values-background",
+  "name": "Named values background",
+  "version": 1,
+  "layers": [],
+  "tokens": {
+    "axes": { "theme": ["light", "dark"], "density": ["comfortable", "compact"] },
+    "values": {
+      "surface": { "$axis": "theme", "light": "#FFFFFF", "dark": "#121212" },
+      "canvas": { "$axis": "density", "comfortable": "#F5F5F5", "compact": "#EEEEEE" },
+      "gap": 8
+    }
+  },
+  "containers": [
+    {
+      "id": "fixed",
+      "name": "Fixed",
+      "width": 360,
+      "height": 800,
+      "background": "#FAFAFA"
+    },
+    {
+      "id": "themed",
+      "name": "Themed",
+      "width": 360,
+      "height": 800,
+      "background": { "$token": "surface" }
+    }
+  ]
+}

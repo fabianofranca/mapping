@@ -1,6 +1,6 @@
 import {
   createDrawingCache,
-  drawingModesOf,
+  type DrawingModeMap,
   type ComponentCatalog,
   type ComponentDrawing,
   type Project,
@@ -27,20 +27,23 @@ export interface PaintOptions {
   /** Only these markings (and no others); absent = all those of the container. */
   readonly markingIds?: ReadonlySet<string>;
   /** Pins the drawing mode across the whole container; absent = each one's effective mode. */
-  readonly drawingMode?: string;
+  readonly drawingMode?: DrawingModeMap;
   /** Pins the reading direction across the whole container; absent = each one's effective direction. */
   readonly direction?: ReadingDirection;
 }
 
 const caches = new WeakMap<FontBook, ReturnType<typeof createDrawingCache>>();
 
-/** The project with `mode` everywhere (the project's and that of the containers that pin their own). */
-export function withDrawingMode(p: Project, mode: string): Project {
+/**
+ * The project with the axes of `mode` pinned everywhere (on the project and on the containers that pin their
+ * own); the other axes stay as each container's effective mode has them.
+ */
+export function withDrawingMode(p: Project, mode: DrawingModeMap): Project {
   return {
     ...p,
-    drawingMode: mode,
+    drawingMode: { ...p.drawingMode, ...mode },
     containers: p.containers.map((c) =>
-      c.drawingMode == null ? c : { ...c, drawingMode: mode },
+      c.drawingMode == null ? c : { ...c, drawingMode: { ...c.drawingMode, ...mode } },
     ),
   };
 }
@@ -52,11 +55,6 @@ export function withDirection(p: Project, direction: ReadingDirection): Project 
     direction,
     containers: p.containers.map((c) => (c.direction == null ? c : { ...c, direction })),
   };
-}
-
-/** The drawing modes that the applied specializations declare. */
-export function declaredModes(p: Project): string[] {
-  return drawingModesOf(p.specializations.map((s) => s.spec?.tokens));
 }
 
 interface Selected {

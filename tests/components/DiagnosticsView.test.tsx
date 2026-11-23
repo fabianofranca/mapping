@@ -16,6 +16,7 @@ import {
 } from '../../src/ui/DiagnosticsView';
 import {
   SCHEMA_VERSION,
+  addBackgroundContainer,
   applySpecialization,
   setContainerClass,
   type ProjectContainer,
@@ -535,6 +536,72 @@ describe('Diagnostics: undeclared container classes (stage #1901, CX3, decision 
     );
     expect(
       screen.queryByRole('heading', { name: t('diagnostics.containerClasses') }),
+    ).toBeNull();
+  });
+});
+
+// Stage #1900, NV4 (decision 26): a stored background token that no applied specialization declares.
+describe('Diagnostics: undeclared background token', () => {
+  const TOKENS_SPEC = {
+    format: 'mapping-spec' as const,
+    formatVersion: 23 as const,
+    id: 'ds',
+    name: 'DS',
+    version: 1,
+    layers: [],
+    tokens: { values: { surface: '#FFFFFF' } },
+  };
+
+  it('lists the container and the token next to the other undeclared values', () => {
+    let p = applySpecialization(sampleProject(), TOKENS_SPEC as never);
+    p = addBackgroundContainer(p, {
+      id: 'B1',
+      width: 100,
+      height: 100,
+      background: { $token: 'gone' },
+    });
+    p = addBackgroundContainer(p, {
+      id: 'B2',
+      width: 100,
+      height: 100,
+      background: { $token: 'surface' },
+    });
+    const harness = createHarness(p);
+    render(
+      <EditorContext.Provider value={harness.context}>
+        <Diagnostics />
+      </EditorContext.Provider>,
+    );
+    expect(
+      screen.getByRole('heading', { name: t('diagnostics.backgroundTokens') }),
+    ).toBeTruthy();
+    const container = imageLabel(
+      p.containers.find((c) => c.id === 'B1') as ProjectContainer,
+    );
+    expect(
+      screen.getByText(
+        t('diagnostics.backgroundTokenUndeclared', { container, token: 'gone' }),
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/surface/)).toBeNull();
+  });
+
+  it('with every token declared, the section does not appear', () => {
+    let p = applySpecialization(sampleProject(), TOKENS_SPEC as never);
+    p = addBackgroundContainer(p, {
+      id: 'B2',
+      width: 100,
+      height: 100,
+      background: { $token: 'surface' },
+    });
+    const harness = createHarness(p);
+    render(
+      <EditorContext.Provider value={harness.context}>
+        <Diagnostics />
+      </EditorContext.Provider>,
+    );
+    expect(
+      screen.queryByRole('heading', { name: t('diagnostics.backgroundTokens') }),
     ).toBeNull();
   });
 });

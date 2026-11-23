@@ -549,6 +549,55 @@ const TOKENS_EXCERPT = `{
   }
 }`;
 
+/** Excerpt of the named values of `tokens` (`formatVersion` 23: axes, alias, composite, wrapper). */
+const NAMED_VALUES_EXCERPT = `{
+  "formatVersion": 23,
+  "tokens": {
+    "axes": { "theme": ["light", "dark"], "contrast": ["standard", "high"] },
+    "values": {
+      "blue-600": "#1A73E8",
+      "blue-200": "#AECBFA",
+      "ink": { "$axis": "theme", "light": "#1F1F1F", "dark": "#F2F2F2" },
+      "primary": {
+        "$axis": "theme",
+        "light": { "$token": "blue-600" },
+        "dark": { "$token": "blue-200" }
+      },
+      "primary-muted": { "$token": "primary", "alpha": 0.38 },
+      "title": {
+        "size": 22,
+        "lineHeight": 28,
+        "weight": 500,
+        "family": { "$token": "font-sans" }
+      },
+      "heading": { "$token": "title.size" },
+      "page-view": { "$value": "page_view", "$group": "events" }
+    }
+  }
+}`;
+
+/** Excerpt of the `suggestions` that read a group of tokens (`formatVersion` 23). */
+const SUGGESTIONS_TOKENS_EXCERPT = `{
+  "formatVersion": 23,
+  "tokens": {
+    "values": {
+      "page-view": { "$value": "page_view", "$group": "events" },
+      "click": { "$value": "click", "$group": "events" },
+      "old-click": {
+        "$value": "legacy_click",
+        "$group": "events",
+        "$notices": [{ "kind": "deprecated", "message": "use click" }]
+      }
+    }
+  }
+}`;
+
+const SUGGESTIONS_FIELD_EXCERPT = `{
+  "key": "name",
+  "type": "string",
+  "suggestions": [{ "$tokens": "events" }, "custom"]
+}`;
+
 const ICONS_EXCERPT = `{
   "format": "mapping-icons",
   "formatVersion": 3,
@@ -821,6 +870,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 20 adds the file formats: fileFormats at the root, the list of file formats that the specialization reads and writes, each one handled by a plugin, a .js file of the package (section "Library: the package"). It makes the specialization a package. The key is outside the version contract: adding, changing or removing a format needs no version raise and no migration. Before 20 it is the error only allowed with formatVersion 20, at fileFormats. Only a specialization that declares fileFormats goes up to 20. Versions 1 to 19 are still accepted, and origins stays as it was.',
           'formatVersion 21 adds container classes: containerClasses at the root (named sets of classes, computed from the container size or chosen per container), classes on a ready-made size (the choice the size carries) and appliesIn on the type (the classes the type is meant for), sections "Containers (ready-made sizes)" and "What the type applies to"; it also adds documents at the root (the general documents of the library: id, name and doc, a package .md or { repo, path } of docRepos), section "Library documents (formatVersion 21)"; and accessibility.variants on the type (an enum field of the type chooses the role and/or the label per option, like code.variants: a filter chip is a checkbox and an assist chip is a button; the audit, Incomplete, the Details and get_code_hints follow the case), section "Accessibility (accessibility)". Only a specialization that uses them goes up to 21; versions 1 to 20 are still accepted.',
           'formatVersion 22 makes sources plain data: the plugin of a file format (fileFormats) replaces origins. origins at the root and system with file on a type example are refused (only allowed up to formatVersion 21); path on a field or column source and slot and ignore on a type source are valid for any system, as data the plugins read (the core checks only the shape); a field or column source needs name or path; no system is executable. Only a specialization that declares formatVersion 22 gets these rules; versions 1 to 21 are still accepted unchanged.',
+          'formatVersion 23 adds named values to tokens: axes (several independent mode axes), aliases ({ "$token": "name" }), composite values (an object of named fields), per-axis values ({ "$axis": "theme", … }) and the { "$value": … } wrapper with $description, $group and $notices; and, in suggestions, the { "$tokens": "<group>" } item that expands to the text values of a group of tokens (sections "Design tokens" and "Text suggestions"). Only a specialization that declares formatVersion 23 gets these rules; versions 1 to 22 are still accepted unchanged, and a library of 15 to 22 moves to 23 without changes.',
           'formatVersion 4 adds the library: components that draw the types, documents, examples, fonts, executable origins and the version contract (sections "Library: the package", "Version contract" and "Library validation").',
           'formatVersion 5 is 4 plus repo on the platforms: the library repository on each platform, where the link and the revision of the file of each symbol come from (section "Platforms and code").',
           'formatVersion 6 is 5 plus containers: the ready-made sizes the New container dialog offers when the specialization is applied (section "Containers (ready-made sizes)"). The core only has Custom and Selection size; versions 1 to 5 are still accepted.',
@@ -839,7 +889,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 22), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), containerClasses and documents (from version 21), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 23), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), containerClasses and documents (from version 21), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -971,6 +1021,31 @@ const enUS: readonly HelpSection[] = [
             term: 'ref',
             text: 'Strong reference to a tuple of another annotation. The field value is the reference.',
           },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'suggestions',
+    title: 'Text suggestions',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'formatVersion 8 lets a string field (or a string column of a table) offer a suggested vocabulary with suggestions: while typing, the person sees the suggestions that match the word under the cursor. suggestions does not restrict the value: any text is still accepted. For a closed set of values use enum.',
+      },
+      { kind: 'code', code: SUGGESTIONS_FIELD_EXCERPT },
+      {
+        kind: 'p',
+        text: 'From formatVersion 23 an item of suggestions may be { "$tokens": "<group>" }: it expands, when the specialization is parsed, to the text values of the tokens of that group ($group of the wrapper, section "Design tokens"), in file order.',
+      },
+      { kind: 'code', code: SUGGESTIONS_TOKENS_EXCERPT },
+      {
+        kind: 'list',
+        items: [
+          'suggestions: a non-empty list, up to 200 items, of unique, non-empty texts without spaces at the ends; only on a string field or column.',
+          'The expansion leaves out the tokens with a deprecated or removed notice, drops repeated texts (the first wins) and applies the 200 limit after expanding. The parsed specialization carries the plain list of texts; the file keeps the item.',
+          'Errors at the item path: only allowed with formatVersion 23, no token in group "x" and the token "<name>" of group "x" is not fixed text (a number, a composite or a value that varies by axis).',
+          'The $tokens item and the tokens it reads are outside the version contract.',
         ],
       },
     ],
@@ -1251,7 +1326,7 @@ const enUS: readonly HelpSection[] = [
           },
           {
             term: 'background',
-            text: 'Optional. A #RRGGBB color; without it the container is born white (#FFFFFF).',
+            text: 'Optional. A #RRGGBB color or, from formatVersion 23, { "$token": "name" }: a color token of the same specialization (the name only, no alpha or over). The token is read in the container\'s selection (its axes over the project\'s), a color with alpha is composited over white, and a token that does not exist or is not a color is an error at containers[n].background. Without it the container is born white (#FFFFFF).',
           },
         ],
       },
@@ -1518,6 +1593,22 @@ const enUS: readonly HelpSection[] = [
           'Validation errors, with the path in tokens: only allowed with formatVersion 15, a name outside the pattern, empty modes or with a repeated name, a per-mode value missing a mode (or with a mode that is not in modes) and values of different types across modes. In library validation (level 2), a $token with a missing name or the wrong type is also an error.',
         ],
       },
+      {
+        kind: 'p',
+        text: 'From formatVersion 23, tokens is a system of named values: several independent axes, aliases, composite values and metadata. The first entry of each axis is its default; the drawing picks one entry per axis, and an axis or entry it does not pick uses the default.',
+      },
+      { kind: 'code', code: NAMED_VALUES_EXCERPT },
+      {
+        kind: 'list',
+        items: [
+          'axes: an object axis name → a non-empty list of distinct entry names ([a-z0-9][a-z0-9-]*). modes is the axis mode; modes and axes together are the error use modes or axes, not both, and axes before 23 is only allowed with formatVersion 23. In 23 neither is required: without them no value may vary.',
+          'Per-axis value: { "$axis": "<axis>", "<entry>": <value>, … } with all the entries of the axis and only them. A branch is any value, or another $axis of a different axis; every branch has the same kind (and a composite the same fields).',
+          'Alias: { "$token": "name" } anywhere a value goes (a whole entry, a branch or a composite field); in a color it also takes alpha and over. It may read one field of a composite ("title.size") and the built-ins font-sans and font-mono, and it always resolves in the reader’s selection. Errors: a missing token, a token cycle (a → b → a), alpha or over on a non-color, and a whole composite where a scalar is expected.',
+          'Composite value: a plain object of named fields ([a-z][a-zA-Z0-9]*), at least one, each a literal, an alias to a scalar or a per-axis value of those, with no nested composite. In a library with modes, a plain object whose keys are exactly the modes is still the per-mode value of 15 to 22, not a composite.',
+          'Metadata: an entry may be { "$value": <value>, "$description": "…", "$group": "<name>", "$notices": […] }. $value is required, $group follows [a-z0-9][a-z0-9-]* (and names a group for { "$tokens": "<group>" } in suggestions), $notices is the notice list of version 10, and another $ key is an unknown key. The wrapper only exists at entry level.',
+          'tokens in all its forms are outside the version contract.',
+        ],
+      },
     ],
   },
   {
@@ -1649,7 +1740,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 to 22), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 to 23), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types, in another layer (from formatVersion 13, also in the owner’s own layer);',
           'every type with requiresOwner: true appears in the allowedChildren of some type (in formatVersion 11, in the resolved set of children of some owner: by id, by whole layer or by group);',
@@ -1667,6 +1758,8 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 18, accessibility at the root and on the type: only in version 18 (before it the error is only allowed with formatVersion 18, at the path of each key); role is one of the listed roles; touchTarget has width and height above 0 and mode visual or expanded, and on a type it needs an interactive role; label.fields are string or enum fields of the type; the id of a part is unique and its when is a field, a table or table.column that exists; a part has no touchTarget.',
           'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) from formatVersion 3 on;',
           'formatVersion 11, children by layer and group: version 11 only (before it the error is only allowed with formatVersion 11, at the exact path); each allowedChildren item is a type id or a strict { layer, groups } clause (any other property is an error, and so is an empty groups); errors: a layer that is not a layer of the specialization or is the owner’s own before formatVersion 13 (children must be in another layer) and a group that does not exist in the clause’s layer; requiresOwner is checked against the resolved set; layer groups with a non-empty id unique in the layer and a non-empty name; type groups non-empty, without repetition and only from its own layer; warnings: 20 ids or more in text in the same allowedChildren and a group no type uses;',
+          'formatVersion 23, named values in tokens: axes, aliases, composites, per-axis values and the $value wrapper only in version 23 (before it tokens.axes is only allowed with formatVersion 23 and modes stays required); modes and axes together are use modes or axes, not both; the axis, alias, composite and wrapper rules and their messages are in "Design tokens";',
+          'formatVersion 23, { "$tokens": "<group>" } in suggestions: version 23 only (before it the error is only allowed with formatVersion 23, at the item path); only on a string field or column; no token in group "x" and the token "<name>" of group "x" is not fixed text; the list that results from the expansion follows the rules of suggestions (up to 200);',
           'formatVersion 22, plain sources: origins at the root and system with file on a type example are refused (only allowed up to formatVersion 21, at the key); path on a field or column source is valid for any system, with valid syntax and no [*]; slot and ignore on a type source are valid for any system (slot still needs the component slot at the package level, ignore has no repeats); a field or column source needs name or path; no system is executable;',
           'formatVersion 21, containerClasses, classes on a ready-made size and appliesIn on the type: version 21 only (before it the error is only allowed with formatVersion 21, at the path of each key); a set has a unique id in [a-z0-9-]+ that is never width or height, a non-empty name and a non-empty list of classes with ids unique in the set; by is "width" or "height"; in a computed set (with by) every class but the last has below, a number above 0 that increases along the list (the error is at the class: below is required in every class but the last, the last class has no below, below must increase along the list), and in a chosen set below is an error; classes on a ready-made size names a chosen set of the specialization and one of its classes; appliesIn is a non-empty object whose keys are sets of the specialization and whose values are non-empty lists, without repetition, of classes of that set (at appliesIn.<set>), and only on a type that applies to markings and is not floating; formatVersion 21, documents: version 21 only (before it the error is only allowed with formatVersion 21, at the path documents); a non-empty list of strict { id, name, doc }, id in [a-z0-9-]+ and unique, name non-empty, doc a package .md or { repo, path } with a repo declared in docRepos (a text doc is a cited package file; a { repo, path } one counts as a use of its repository); formatVersion 21, accessibility.variants: version 21 only (before it the error is only allowed with formatVersion 21, at accessibility.variants); field is an enum field of the type (not a field of the type, must be an enum field of the type); cases has at least one case (declare at least one case) and each key is an option of the field; a case declares role, label or both (empty case: declare role or label); role is on the list; the label fields are string or enum fields of the type; any other key, touchTarget and parts included, is unknown key; the warning label-without-role also covers a case whose resolved role is absent or none and that declares a label;',
           'formatVersion 20, fileFormats: version 20 only (before it the error is only allowed with formatVersion 20, at fileFormats); a list of strict objects (another key is unknown key: <key>, at its exact path); id is [a-z0-9][a-z0-9-]* and unique, name is not empty, extension is [a-z0-9]+, plugin is a package path ending in .js, contract is required and only 1, scope is project or container; each example has a non-empty name, unique in the format, a file that is a package path and an optional input that is a .json package path; level 1 of the library validator checks that the plugin, the example files and the input exist in the package and that the plugin has at most 1 MiB (error at fileFormats[i].plugin); nothing here runs a plugin;',
@@ -1676,7 +1769,8 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 11, docRepos and doc object: version 11 only; docRepos[n] with the rules of a platform repo (url required, http(s):// without spaces, urlTemplate optional with {path}, ref optional non-empty) and an id in the [a-z0-9-]+ format, unique; doc object { repo, path } strict: repo must be in docRepos, path relative (no ., .. or leading /), ending in .md and without #; the text doc is still valid from version 4 on; warning: a docRepos repository no doc uses;',
           'formatVersion 10, notices: only in version 10 (before it the error is only allowed with formatVersion 10, at the type, field or column path); a list of strict objects with kind (pending, deprecated, diverges or removed) and message (not empty or only spaces) required, since (a real YYYY-MM-DD date) and ref (non-empty text) optional; two notices with the same kind and message are the error repeated notice (aviso repetido), at the path of the second; any other property is refused;',
           'formatVersion 7, floating, appliesTo and ref column: version 7 only (before it the error is only allowed with formatVersion 7); floating is boolean; appliesTo is non-empty, without repetition, with "marking" and "arrow" only, and an arrow-only type has no component or floating;',
-          'formatVersion 6, containers: version 6 only (before it the error is only allowed with formatVersion 6); id in the [a-z0-9-]+ format and unique in the list; name non-empty; width and height integers from 1 to 20000; background optional, #RRGGBB; any other property is rejected;',
+          'formatVersion 23, background token: containers[n].background (and, in an origin, screen.background, as the whole value, as an entry of values and as default) may be { "$token": "name" } from version 23 (containers) or 15 (origins end at 21); before it the error is only allowed with formatVersion 23 (15 in an origin); the name is a token of the same specialization with a color value, otherwise the error the token "x" does not exist in the specialization tokens or the token "x" is a number, but a color is expected here, at the path of the background; any other key beside $token is rejected;',
+          'formatVersion 6, containers: version 6 only (before it the error is only allowed with formatVersion 6); id in the [a-z0-9-]+ format and unique in the list; name non-empty; width and height integers from 1 to 20000; background optional, #RRGGBB (or a color token from version 23, next bullet); any other property is rejected;',
           'formatVersion 5, repo: version 5 only, inside a platforms entry (before it the error is only allowed with formatVersion 5); url required, starting with http:// or https://; urlTemplate optional, http(s):// and containing {path}; ref optional, non-empty text; any other property is rejected. A platform with a path on some type and no repo is only a warning (path-without-repo);',
           'code only in specializations with platforms; the ids in code must exist in platforms;',
           'keys of params and values must be fields of the type; values only for enum, with keys that exist in options; symbol required and path, if present, relative to the platform repo root;',
@@ -1736,6 +1830,7 @@ const ptBR: readonly HelpSection[] = [
           'A formatVersion 20 acrescenta os formatos de arquivo: fileFormats na raiz, a lista de formatos de arquivo que a especialização lê e escreve, cada um tratado por um plugin, um arquivo .js do pacote (seção "Biblioteca: o pacote"). Ela faz da especialização um pacote. A chave fica fora do contrato de versão: incluir, mudar ou tirar um formato não pede subir a versão nem migração. Antes da 20 o erro é só é permitido com formatVersion 20, em fileFormats. Só sobe para a 20 quem declara fileFormats. As versões 1 a 19 continuam aceitas, e origins continua como era.',
           'A formatVersion 21 acrescenta as classes de container: containerClasses na raiz (conjuntos nomeados de classes, calculados pelo tamanho do container ou escolhidos por container), classes num tamanho pronto (a escolha que o tamanho carrega) e appliesIn no tipo (as classes para as quais o tipo serve), seções "Containers (tamanhos prontos)" e "Onde o tipo se aplica"; acrescenta também documents na raiz (os documentos gerais da biblioteca: id, name e doc, um .md do pacote ou { repo, path } de docRepos), seção "Documentos da biblioteca (formatVersion 21)"; e accessibility.variants no tipo (um campo enum do tipo escolhe o papel e/ou o rótulo por opção, como o code.variants: um chip de filtro é checkbox e um chip de ação é button; a auditoria, as Incompletas, os Detalhes e o get_code_hints seguem o caso), seção "Acessibilidade (accessibility)". Só a especialização que as usa sobe para a 21; as versões 1 a 20 continuam aceitas.',
           'A formatVersion 22 torna as sources dados simples: o plugin de um formato de arquivo (fileFormats) substitui as origins. origins na raiz e system com file num exemplo do tipo são recusados (só é permitido até a formatVersion 21); path numa origem de campo ou coluna e slot e ignore numa origem de tipo valem para qualquer system, como dados que os plugins leem (o núcleo só confere a forma); uma origem de campo ou coluna precisa de name ou path; nenhum system é executável. Só a especialização que declara a formatVersion 22 recebe essas regras; as versões 1 a 21 continuam aceitas sem mudança.',
+          'A formatVersion 23 acrescenta valores com nome aos tokens: axes (vários eixos de modo independentes), aliases ({ "$token": "nome" }), valores compostos (um objeto de campos com nome), valores por eixo ({ "$axis": "theme", … }) e o envoltório { "$value": … } com $description, $group e $notices; e, em suggestions, o item { "$tokens": "<grupo>" }, que se expande nos textos dos tokens de um grupo (seções "Tokens de design" e "Sugestões de texto"). Só a especialização que declara a formatVersion 23 recebe essas regras; as versões 1 a 22 continuam aceitas sem mudança, e uma biblioteca de 15 a 22 passa para a 23 sem alterações.',
           'A formatVersion 4 acrescenta a biblioteca: componentes que desenham os tipos, documentos, exemplos, fontes, origens executáveis e o contrato de versão (seções "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca").',
           'A formatVersion 5 é a 4 mais o repo nas plataformas: o repositório da biblioteca em cada plataforma, de onde vêm o link e a revisão do arquivo de cada symbol (seção "Plataformas e code").',
           'A formatVersion 6 é a 5 mais containers: os tamanhos prontos que o diálogo Novo container oferece quando a especialização está aplicada (seção "Containers (tamanhos prontos)"). O núcleo só tem Personalizado e Tamanho da seleção; as versões 1 a 5 continuam aceitas.',
@@ -1754,7 +1849,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 22), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), containerClasses e documents (a partir da versão 21), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 23), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), containerClasses e documents (a partir da versão 21), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -1883,6 +1978,31 @@ const ptBR: readonly HelpSection[] = [
             term: 'ref',
             text: 'Referência forte a uma tupla de outra anotação. O valor do campo é a referência.',
           },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'suggestions',
+    title: 'Sugestões de texto',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'A formatVersion 8 deixa um campo string (ou uma coluna string de uma table) oferecer um vocabulário sugerido com suggestions: ao digitar, a pessoa vê as sugestões que combinam com a palavra sob o cursor. suggestions não restringe o valor: qualquer texto continua aceito. Para um conjunto fechado de valores use enum.',
+      },
+      { kind: 'code', code: SUGGESTIONS_FIELD_EXCERPT },
+      {
+        kind: 'p',
+        text: 'A partir da formatVersion 23 um item de suggestions pode ser { "$tokens": "<grupo>" }: ele se expande, quando a especialização é lida, nos textos dos tokens desse grupo ($group do envoltório, seção "Tokens de design"), na ordem do arquivo.',
+      },
+      { kind: 'code', code: SUGGESTIONS_TOKENS_EXCERPT },
+      {
+        kind: 'list',
+        items: [
+          'suggestions: lista não vazia, de até 200 itens, de textos únicos, não vazios e sem espaço nas pontas; só em campo ou coluna string.',
+          'A expansão deixa de fora os tokens com aviso deprecated ou removed, descarta textos repetidos (vale o primeiro) e aplica o limite de 200 depois de expandir. A especialização lida carrega a lista simples de textos; o arquivo guarda o item.',
+          'Erros no caminho do item: só é permitido com formatVersion 23, no token in group "x" e the token "<name>" of group "x" is not fixed text (um número, um composto ou um valor que varia por eixo).',
+          'O item $tokens e os tokens que ele lê ficam fora do contrato de versão.',
         ],
       },
     ],
@@ -2163,7 +2283,7 @@ const ptBR: readonly HelpSection[] = [
           },
           {
             term: 'background',
-            text: 'Opcional. Cor #RRGGBB; sem ela, o container nasce branco (#FFFFFF).',
+            text: 'Opcional. Cor #RRGGBB ou, a partir da formatVersion 23, { "$token": "nome" }: um token de cor da mesma especialização (só o nome, sem alpha nem over). O token é lido na seleção do container (os seus eixos sobre os do projeto), uma cor com alpha é composta sobre o branco, e um token que não existe ou não é cor é um erro em containers[n].background. Sem ela, o container nasce branco (#FFFFFF).',
           },
         ],
       },
@@ -2430,6 +2550,22 @@ const ptBR: readonly HelpSection[] = [
           'Erros de validação, com o caminho em tokens: só é permitido com formatVersion 15, nome fora do padrão, modes vazio ou com nome repetido, valor por modo sem algum modo (ou com modo que não existe em modes) e valores de tipos diferentes entre os modos. Na validação da biblioteca (nível 2), $token com nome inexistente ou com tipo errado também é erro.',
         ],
       },
+      {
+        kind: 'p',
+        text: 'A partir da formatVersion 23, tokens é um sistema de valores com nome: vários eixos independentes, aliases, valores compostos e metadados. A primeira entrada de cada eixo é o padrão dele; o desenho escolhe uma entrada por eixo, e o eixo ou a entrada que ele não escolhe usa o padrão.',
+      },
+      { kind: 'code', code: NAMED_VALUES_EXCERPT },
+      {
+        kind: 'list',
+        items: [
+          'axes: um objeto nome do eixo → lista não vazia de nomes de entrada distintos ([a-z0-9][a-z0-9-]*). modes é o eixo mode; modes e axes juntos são o erro use modes or axes, not both, e axes antes da 23 é only allowed with formatVersion 23. Na 23 nenhum dos dois é obrigatório: sem eles nenhum valor pode variar.',
+          'Valor por eixo: { "$axis": "<eixo>", "<entrada>": <valor>, … } com todas as entradas do eixo e só elas. Um ramo é qualquer valor, ou outro $axis de um eixo diferente; todos os ramos têm o mesmo tipo (e um composto, os mesmos campos).',
+          'Alias: { "$token": "nome" } em qualquer lugar de um valor (uma entrada inteira, um ramo ou um campo de composto); numa cor também aceita alpha e over. Pode ler um campo de composto ("title.size") e os embutidos font-sans e font-mono, e sempre resolve na seleção de quem lê. Erros: token inexistente, ciclo de tokens (a → b → a), alpha ou over fora de uma cor e um composto inteiro onde se espera um escalar.',
+          'Valor composto: um objeto simples de campos com nome ([a-z][a-zA-Z0-9]*), pelo menos um, cada um um literal, um alias para um escalar ou um valor por eixo desses, sem composto dentro de composto. Numa biblioteca com modes, um objeto simples cujas chaves são exatamente os modes continua sendo o valor por modo da 15 à 22, não um composto.',
+          'Metadados: uma entrada pode ser { "$value": <valor>, "$description": "…", "$group": "<nome>", "$notices": […] }. $value é obrigatório, $group segue [a-z0-9][a-z0-9-]* (e nomeia um grupo para { "$tokens": "<grupo>" } em suggestions), $notices é a lista de avisos da versão 10 e outra chave com $ é chave desconhecida. O envoltório só existe no nível da entrada.',
+          'tokens, em todas as formas, ficam fora do contrato de versão.',
+        ],
+      },
     ],
   },
   {
@@ -2561,7 +2697,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 a 22), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 a 23), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes, em outra camada (a partir da formatVersion 13, também na camada do próprio dono);',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo (na formatVersion 11, no conjunto resolvido dos filhos de algum dono: por id, por camada inteira ou por grupo);',
@@ -2579,6 +2715,8 @@ const ptBR: readonly HelpSection[] = [
           'formatVersion 18, accessibility na raiz e no tipo: só na versão 18 (antes dela o erro é só é permitido com formatVersion 18, no caminho de cada chave); role é um dos papéis listados; touchTarget tem width e height maiores que 0 e mode visual ou expanded, e no tipo exige um role interativo; label.fields são campos string ou enum do tipo; o id de uma parte é único e o when dela é um campo, uma tabela ou tabela.coluna que existe; uma parte não tem touchTarget.',
           'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) a partir da formatVersion 3;',
           'formatVersion 11, filhos por camada e grupo: só na versão 11 (antes dela o erro é só é permitido com formatVersion 11, no caminho exato); cada item de allowedChildren é um id de tipo ou uma cláusula { layer, groups } estrita (outra propriedade é erro, e groups vazio também); erros: layer que não é camada da especialização ou é a do próprio dono antes da formatVersion 13 (filhos devem estar em outra camada) e grupo inexistente na camada da cláusula; requiresOwner conferido no conjunto resolvido; groups da camada com id não vazio e único na camada e name não vazio; groups do tipo não vazio, sem repetição e só da própria camada; avisos: 20 ids ou mais em texto no mesmo allowedChildren e grupo que nenhum tipo usa;',
+          'formatVersion 23, valores com nome em tokens: axes, aliases, compostos, valores por eixo e o envoltório $value só na versão 23 (antes dela tokens.axes é only allowed with formatVersion 23 e modes continua obrigatório); modes e axes juntos são use modes or axes, not both; as regras de eixo, alias, composto e envoltório e as mensagens estão em "Tokens de design";',
+          'formatVersion 23, { "$tokens": "<grupo>" } em suggestions: só na versão 23 (antes dela o erro é only allowed with formatVersion 23, no caminho do item); só em campo ou coluna string; no token in group "x" e the token "<name>" of group "x" is not fixed text; a lista que resulta da expansão segue as regras de suggestions (até 200);',
           'formatVersion 22, sources simples: origins na raiz e system com file num exemplo do tipo são recusados (só é permitido até a formatVersion 21, na chave); path numa origem de campo ou coluna vale para qualquer system, com sintaxe válida e sem [*]; slot e ignore numa origem de tipo valem para qualquer system (o slot ainda exige o slot do componente no nível do pacote, o ignore não tem repetição); uma origem de campo ou coluna precisa de name ou path; nenhum system é executável;',
           'formatVersion 21, containerClasses, classes num tamanho pronto e appliesIn no tipo: só na versão 21 (antes dela o erro é só é permitido com formatVersion 21, no caminho de cada chave); um conjunto tem id único em [a-z0-9-]+ que nunca é width nem height, name não vazio e uma lista não vazia de classes com ids únicos no conjunto; by é "width" ou "height"; num conjunto calculado (com by) toda classe, menos a última, tem below, um número maior que 0 que cresce ao longo da lista (o erro fica na classe: below é obrigatório em todas as classes, menos na última; a última classe não tem below; below deve crescer ao longo da lista), e num conjunto escolhido below é erro; classes num tamanho pronto cita um conjunto escolhido da especialização e uma de suas classes; appliesIn é um objeto não vazio cujas chaves são conjuntos da especialização e cujos valores são listas não vazias, sem repetição, de classes desse conjunto (em appliesIn.<set>), e só num tipo que se aplica a marcações e não é flutuante; formatVersion 21, documents: só na versão 21 (antes dela o erro é só é permitido com formatVersion 21, no caminho documents); uma lista não vazia de { id, name, doc } estritos, id em [a-z0-9-]+ e único, name não vazio, doc um .md do pacote ou { repo, path } com repo declarado em docRepos (um doc em texto é arquivo citado do pacote; um { repo, path } conta como uso do seu repositório); formatVersion 21, accessibility.variants: só na versão 21 (antes dela o erro é só é permitido com formatVersion 21, em accessibility.variants); field é um campo enum do tipo (não é campo do tipo, deve ser campo enum do tipo); cases tem ao menos um caso (declare at least one case) e cada chave é uma opção do campo; um caso declara role, label ou os dois (caso vazio: declare role ou label); role está na lista; os campos do label são campos string ou enum do tipo; qualquer outra chave, touchTarget e parts inclusos, é unknown key; o aviso label-without-role também vale para um caso cujo papel resolvido é ausente ou none e que declara label;',
           'formatVersion 20, fileFormats: só na versão 20 (antes dela o erro é só é permitido com formatVersion 20, em fileFormats); uma lista de objetos estritos (outra chave é unknown key: <key>, no caminho exato dela); id é [a-z0-9][a-z0-9-]* e único, name não é vazio, extension é [a-z0-9]+, plugin é um caminho do pacote que termina em .js, contract é obrigatório e só 1, scope é project ou container; cada exemplo tem name não vazio, único no formato, um file que é caminho do pacote e um input opcional que é caminho .json do pacote; o nível 1 do validador da biblioteca confere que o plugin, os arquivos dos exemplos e o input existem no pacote e que o plugin tem no máximo 1 MiB (erro em fileFormats[i].plugin); nada aqui executa um plugin;',
@@ -2588,7 +2726,8 @@ const ptBR: readonly HelpSection[] = [
           'formatVersion 11, docRepos e doc objeto: só na versão 11; docRepos[n] com as regras do repo de plataforma (url obrigatória http(s):// sem espaços, urlTemplate opcional com {path}, ref opcional não vazio) e id no formato [a-z0-9-]+ e único; doc objeto { repo, path } estrito: repo precisa estar em docRepos, path relativo (sem ., .. nem / no começo), terminando em .md e sem #; o doc em texto continua valendo da versão 4 em diante; aviso: repositório de docRepos que nenhum doc usa;',
           'formatVersion 10, notices: só na versão 10 (antes dela o erro é só é permitido com formatVersion 10, no caminho do tipo, do campo ou da coluna); lista de objetos estritos com kind (pending, deprecated, diverges ou removed) e message (não vazia nem só espaços) obrigatórios, since (data real AAAA-MM-DD) e ref (texto não vazio) opcionais; dois avisos com o mesmo kind e a mesma message são o erro aviso repetido, no caminho do segundo; qualquer outra propriedade é recusada;',
           'formatVersion 7, floating, appliesTo e coluna ref: só na versão 7 (antes dela o erro é só é permitido com formatVersion 7); floating booleano; appliesTo não vazio, sem repetição, só com "marking" e "arrow", e sem component nem floating num tipo só de seta;',
-          'formatVersion 6, containers: só na versão 6 (antes dela o erro é só é permitido com formatVersion 6); id no formato [a-z0-9-]+ e único na lista; name não vazio; width e height inteiros de 1 a 20000; background opcional, #RRGGBB; qualquer outra propriedade é recusada;',
+          'formatVersion 23, token em background: containers[n].background (e, numa origem, screen.background, como valor inteiro, como entrada de values e como default) pode ser { "$token": "nome" } a partir da versão 23 (containers) ou 15 (as origens vão até a 21); antes dela o erro é só é permitido com formatVersion 23 (15 numa origem); o nome é de um token da mesma especialização com valor de cor, senão o erro o token "x" não existe nos tokens da especialização ou o token "x" é número, mas aqui se espera cor, no caminho do fundo; qualquer outra chave junto de $token é recusada;',
+          'formatVersion 6, containers: só na versão 6 (antes dela o erro é só é permitido com formatVersion 6); id no formato [a-z0-9-]+ e único na lista; name não vazio; width e height inteiros de 1 a 20000; background opcional, #RRGGBB (ou um token de cor a partir da versão 23, próximo item); qualquer outra propriedade é recusada;',
           'formatVersion 5, repo: só na versão 5, dentro de uma entrada de platforms (antes dela o erro é só é permitido com formatVersion 5); url obrigatória, começando com http:// ou https://; urlTemplate opcional, http(s):// e com {path}; ref opcional, texto não vazio; qualquer outra propriedade é recusada. Plataforma com path em algum tipo e sem repo é só aviso (path-without-repo);',
           'code só em especializações com platforms; os ids de code precisam existir em platforms;',
           'chaves de params e values precisam ser campos do tipo; values só para enum, com chaves que existam em options; symbol obrigatório e path, se houver, relativo à raiz do repo da plataforma;',

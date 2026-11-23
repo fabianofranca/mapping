@@ -4,7 +4,7 @@ The table of an analytics event, loose on the canvas: the event name in a purple
 
 ## Fields
 
-- **Name** (required): the event name as the SDK receives it, for example `checkout_started`.
+- **Name** (required): the event name as the SDK receives it, for example `checkout_started`. Typing suggests the names of the library (the tokens of the `events` group; the deprecated `purchase_done` is not suggested).
 - **Properties**: one row per property, with its name (required) and the **Value**: a fixed value or where it comes from.
 
 ## How the event links to the element

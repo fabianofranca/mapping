@@ -14,7 +14,12 @@ import { type Origin, screenFromSource } from './components/origin';
 import type { IconSet } from './components/icons';
 import { isIntrinsicSize } from './components/layoutValues';
 import { expressionPx, fitComponentSize, resolveSizing } from './components/sizing';
-import { type ResolvedTokens, resolveTokens } from './components/tokens';
+import {
+  MODE_AXIS,
+  createTokenTables,
+  tokenAxes,
+  type ResolvedTokens,
+} from './components/tokens';
 import type { LibraryIssue } from './library';
 import { isRecord } from './isRecord';
 import { imageFieldRefs } from './libraryImages';
@@ -202,13 +207,21 @@ function drawCode(
 }
 
 /**
- * The modes in which the proof runs: each mode of `tokens` with its resolved table (as the
- * drawing does with `resolvedTokensByMode`); without `tokens`, a single pass, no mode in the message.
+ * The passes in which the proof runs: one per entry of each axis of `tokens` (`modes` as the axis `mode`),
+ * the other axes at their default (the sum of the entries, not the product), each with its resolved table
+ * (through the same per-selection tables the drawing uses). The message cites the entry of the axis `mode`
+ * as is and any other as `axis=entry`; without axes, a single pass, no mode in the message.
  */
 function drawingModes(spec: Spec): DrawingMode[] {
   const tokens = spec.tokens;
-  if (tokens === undefined || tokens.modes.length === 0) return [{}];
-  return tokens.modes.map((mode) => ({ mode, tokens: resolveTokens(tokens, {}, mode) }));
+  const tables = createTokenTables(tokens, {});
+  const passes = [...tokenAxes(tokens)].flatMap(([axis, entries]) =>
+    entries.map((entry) => ({
+      mode: axis === MODE_AXIS ? entry : `${axis}=${entry}`,
+      tokens: tables.get({ [axis]: entry }),
+    })),
+  );
+  return passes.length === 0 ? [{}] : passes;
 }
 
 type DrawingMode = { mode?: string; tokens?: ResolvedTokens };

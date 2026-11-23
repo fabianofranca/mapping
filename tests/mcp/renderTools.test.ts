@@ -81,6 +81,46 @@ const SPEC = {
   ],
 };
 
+// Two axes (stage #1900, NV3): `theme` colors the background, `contrast` colors the square in the middle.
+const AX_SPEC = {
+  format: 'mapping-spec',
+  formatVersion: 23,
+  id: 'ax',
+  name: 'Axes',
+  version: 1,
+  tokens: {
+    axes: { theme: ['light', 'dark'], contrast: ['normal', 'high'] },
+    values: {
+      tbg: { $axis: 'theme', light: '#ffffff', dark: '#202020' },
+      tfg: { $axis: 'contrast', normal: '#808080', high: '#ff0000' },
+    },
+  },
+  layers: [
+    {
+      id: 'ui',
+      name: 'UI',
+      color: '#6750A4',
+      annotationTypes: [
+        { id: 'tag', name: 'Tag', component: 'components/tag.json', fields: [] },
+      ],
+    },
+  ],
+};
+
+const TAG = {
+  format: 'mapping-component',
+  formatVersion: 4,
+  id: 'tag',
+  name: 'Tag',
+  size: { width: 120, height: 40 },
+  template: {
+    type: 'frame',
+    layout: { type: 'row', align: 'center', justify: 'center' },
+    fill: { $token: 'tbg' },
+    children: [{ type: 'frame', width: 20, height: 20, fill: { $token: 'tfg' } }],
+  },
+};
+
 const BUTTON = {
   format: 'mapping-component',
   formatVersion: 4,
@@ -137,6 +177,10 @@ beforeAll(async () => {
   mkdirSync(join(lib, 'icons'), { recursive: true });
   mkdirSync(join(dir, 'images'), { recursive: true });
   writeFileSync(join(lib, 'lib.spec.json'), JSON.stringify(SPEC));
+  const ax = join(dir, 'specs', 'ax');
+  mkdirSync(join(ax, 'components'), { recursive: true });
+  writeFileSync(join(ax, 'ax.spec.json'), JSON.stringify(AX_SPEC));
+  writeFileSync(join(ax, 'components', 'tag.json'), JSON.stringify(TAG));
   writeFileSync(join(lib, 'components', 'btn.json'), JSON.stringify(BUTTON));
   writeFileSync(join(lib, 'components', 'badge.json'), JSON.stringify(BADGE));
   cpSync('tests/fixtures/icons/icons/set.json', join(lib, 'icons', 'set.json'));
@@ -173,6 +217,9 @@ beforeAll(async () => {
     name: 'Faixa',
   });
   p = applySpecialization(p, parsed.spec, { packageSpecName: 'lib.spec.json' });
+  const axParsed = parseSpecText(readFileSync(join(ax, 'ax.spec.json'), 'utf8'));
+  if (!axParsed.ok) throw new Error(`invalid spec: ${JSON.stringify(axParsed)}`);
+  p = applySpecialization(p, axParsed.spec, { packageSpecName: 'ax.spec.json' });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
   roots = new Roots([base]);
   loaded = await loadProject(roots, await findProject(roots, 'telas'));
@@ -288,6 +335,51 @@ describe('render_marking', () => {
     await expect(
       renderMarking(roots, refs, marking('$b'), { drawingMode: 'sepia' }),
     ).rejects.toMatchObject({ code: 'invalid-arguments' });
+  });
+
+  it('drawingMode as a map pins the listed axes and leaves the others to each container', async () => {
+    const { refs, marking } = await setup([SCREEN, create('$t', BTN_RECT, {}, 'ax/tag')]);
+    const draw = async (drawingMode?: string | Record<string, string>) =>
+      (
+        await decodeImage(
+          (
+            await renderMarking(roots, refs, marking('$t'), {
+              background: 'none',
+              ...(drawingMode === undefined ? {} : { drawingMode }),
+            })
+          ).image.bytes,
+        )
+      ).raster;
+    const pixel = (r: Raster, x: number, y: number) => {
+      const i = (y * r.width + x) * 4;
+      return [r.data[i], r.data[i + 1], r.data[i + 2]];
+    };
+    // The defaults: theme light, contrast normal.
+    const base = await draw();
+    expect(pixel(base, 4, 4)).toEqual([255, 255, 255]);
+    expect(pixel(base, 60, 20)).toEqual([128, 128, 128]);
+    // Pinning `theme` changes the background only.
+    const dark = await draw({ theme: 'dark' });
+    expect(pixel(dark, 4, 4)).toEqual([32, 32, 32]);
+    expect(pixel(dark, 60, 20)).toEqual([128, 128, 128]);
+    // Pinning `contrast` changes the square only.
+    const high = await draw({ contrast: 'high' });
+    expect(pixel(high, 4, 4)).toEqual([255, 255, 255]);
+    expect(pixel(high, 60, 20)).toEqual([255, 0, 0]);
+    // An axis or entry no applied specialization declares is an error.
+    for (const bad of [{ theme: 'sepia' }, { palette: 'dark' }] as Record<
+      string,
+      string
+    >[]) {
+      await expect(
+        renderMarking(roots, refs, marking('$t'), { drawingMode: bad }),
+      ).rejects.toMatchObject({ code: 'invalid-arguments' });
+    }
+    // The result echoes the map.
+    const out = await renderMarking(roots, refs, marking('$t'), {
+      drawingMode: { theme: 'dark' },
+    });
+    expect(out.json.drawingMode).toEqual({ theme: 'dark' });
   });
 
   it("the button's shadow shows up with the margin (padding)", async () => {

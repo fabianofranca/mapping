@@ -14,6 +14,7 @@
  * the drawing adapts to the size of the rectangle.
  */
 import type { IconSet } from './icons';
+import type { TokenTables } from './tokens';
 import type { AnchorAlign, AnchorSide } from '../anchorSides';
 
 export const COMPONENT_FORMAT = 'mapping-component';
@@ -234,6 +235,12 @@ export const STROKE_SIDES: readonly StrokeSide[] = ['top', 'right', 'bottom', 'l
 type Radius = number | { readonly $token: string };
 
 export interface ShadowSpec {
+  /**
+   * The name of a composite token (`{ "$token": "elevation-1" }`) whose `color`, `x`, `y`, `blur` and
+   * `spread` fill the keys this shadow leaves out (formatVersion 4). The token is replaced before
+   * drawing, so the resolved shadow has no `$token` and always has `color`.
+   */
+  readonly $token?: string;
   readonly color: Expr<Color>;
   /** In v4 each measure also accepts a number `$token`. */
   readonly x?: number | { readonly $token: string };
@@ -246,6 +253,12 @@ export interface ShadowSpec {
 }
 
 export interface FontSpec {
+  /**
+   * The name of a composite token (`{ "$token": "title" }`) whose `family`, `size`, `weight`,
+   * `lineHeight` and `letterSpacing` fill the keys this font leaves out; the keys written next to it
+   * win (formatVersion 4). The token is replaced before drawing.
+   */
+  readonly $token?: string;
   readonly family?: Expr<string>;
   readonly size?: Expr<number>;
   /** 100..900. */
@@ -830,13 +843,11 @@ export interface ComponentFile {
    */
   readonly resolvedTokens?: Readonly<Record<string, string | number>>;
   /**
-   * The tokens of each declared mode (`tokens.modes`), set by the catalog: the drawing picks the
-   * table of the marking's effective mode without reloading the component. Absent = only
-   * `resolvedTokens`.
+   * The tables of the specialization's tokens per selection (axes), built on first use and shared by
+   * its components, set by the catalog: the drawing picks the table of the marking's effective selection
+   * without reloading the component. Absent = only `resolvedTokens`.
    */
-  readonly resolvedTokensByMode?: Readonly<
-    Record<string, Readonly<Record<string, string | number>>>
-  >;
+  readonly tokenTables?: TokenTables;
   /** Icon set of the specialization (`icons`), set by the catalog; never comes from the file. */
   readonly resolvedIcons?: IconSet;
   /**

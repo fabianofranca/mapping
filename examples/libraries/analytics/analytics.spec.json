@@ -1,9 +1,9 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 21,
+  "formatVersion": 23,
   "id": "analytics",
   "name": "Analytics",
-  "version": 3,
+  "version": 4,
   "description": "Analytics events on the canvas: the table of an event (name and properties), linked by an arrow to the element that fires it, and the transition annotated on the arrow between the source and the destination of a flow.",
   "documents": [
     {
@@ -12,6 +12,31 @@
       "doc": "docs/conventions.md"
     }
   ],
+  "tokens": {
+    "values": {
+      "checkout-started": {
+        "$value": "checkout_started",
+        "$description": "The user opened the checkout.",
+        "$group": "events"
+      },
+      "purchase-completed": {
+        "$value": "purchase_completed",
+        "$description": "The payment was approved.",
+        "$group": "events"
+      },
+      "button-click": {
+        "$value": "button_click",
+        "$description": "A button was tapped; the properties say which one.",
+        "$group": "events"
+      },
+      "purchase-done": {
+        "$value": { "$token": "purchase-completed" },
+        "$description": "The old name of purchase_completed, kept so that old markings still read.",
+        "$group": "events",
+        "$notices": [{ "kind": "deprecated", "message": "use purchase-completed" }]
+      }
+    }
+  },
   "migrations": [
     {
       "from": 1,
@@ -68,7 +93,8 @@
               "label": "Name",
               "type": "string",
               "required": true,
-              "description": "The event name as the analytics SDK receives it (checkout_started, button_click)."
+              "description": "The event name as the analytics SDK receives it (checkout_started, button_click).",
+              "suggestions": [{ "$tokens": "events" }]
             },
             {
               "key": "properties",
@@ -119,7 +145,8 @@
               "key": "event",
               "label": "Event",
               "type": "string",
-              "description": "The name of the analytics event fired on this transition, if any."
+              "description": "The name of the analytics event fired on this transition, if any.",
+              "suggestions": [{ "$tokens": "events" }]
             }
           ],
           "examples": [

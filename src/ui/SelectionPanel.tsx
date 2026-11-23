@@ -3,6 +3,7 @@ import { SHORTCUT_LABELS } from '../app/shortcuts';
 import { t } from '../i18n';
 import {
   canDeleteImage,
+  isBackgroundToken,
   projectIndex,
   type BackgroundContainerChanges,
   type Project,
@@ -26,6 +27,7 @@ import { ContainerClassField } from './ContainerClassField';
 import { ContainerDensityField } from './ContainerDensityField';
 import { ContainerDirectionField } from './ContainerDirectionField';
 import { ContainerDrawingModeField } from './ContainerDrawingModeField';
+import { ContainerBackgroundToken } from './ContainerBackgroundToken';
 import { MarkingColorField } from './MarkingColorField';
 import { Property, PropertyGrid } from './PropertyGrid';
 
@@ -303,24 +305,35 @@ function ContainerFields({ image, ids, disabled }: ContainerFieldsProps) {
       {side('height', ids.height)}
       <Property
         label={t('container.background')}
-        for={ids.background}
+        for={isBackgroundToken(image.background) ? undefined : ids.background}
         error={errors.background}
       >
-        <TextField
-          id={ids.background}
-          size="sm"
-          value={image.background ?? ''}
-          disabled={disabled}
-          onCommit={(text) => {
-            const color = parseContainerColor(text);
-            if (color === image.background) return false;
-            if (color === null) {
-              setError('background', containerErrorMessage('invalid-color'));
-              return false;
+        {isBackgroundToken(image.background) ? (
+          <ContainerBackgroundToken
+            image={image}
+            token={image.background}
+            disabled={disabled}
+            onError={(code) =>
+              setError('background', code === null ? null : containerErrorMessage(code))
             }
-            return commit('background', { background: color });
-          }}
-        />
+          />
+        ) : (
+          <TextField
+            id={ids.background}
+            size="sm"
+            value={typeof image.background === 'string' ? image.background : ''}
+            disabled={disabled}
+            onCommit={(text) => {
+              const color = parseContainerColor(text);
+              if (color === image.background) return false;
+              if (color === null) {
+                setError('background', containerErrorMessage('invalid-color'));
+                return false;
+              }
+              return commit('background', { background: color });
+            }}
+          />
+        )}
       </Property>
     </>
   );
