@@ -182,6 +182,14 @@ export const enUS = {
   'image.aspectConfirm': 'Replace anyway',
   'image.replacing': 'Replacing image…',
   'image.replaceFailed': 'Could not replace the image.',
+  'image.pasteTitle': 'Paste image',
+  'image.pasteMessage':
+    'The clipboard has an image and "{name}" is selected. Replace the selected image or add the clipboard image as a new one?',
+  'image.pasteReplace': 'Replace the selected image',
+  'image.pasteAdd': 'Add as new',
+  'image.replaceFromClipboard': 'Replace with clipboard image',
+  'image.clipboardEmpty': 'The clipboard has no image.',
+  'image.clipboardDenied': 'Allow clipboard access for this page to paste the image.',
 
   'tree.locate': 'Locate the selection in the tree',
   'tree.collapseAll': 'Collapse all',
