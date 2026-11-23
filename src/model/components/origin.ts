@@ -623,6 +623,20 @@ function parseRoot(
   };
 }
 
+/** `screen.roots`: a list with at least one root; the invalid ones are reported and left out. */
+function parseRoots(raw: unknown, path: string, problems: OriginProblem[]): RootSource[] {
+  const roots: RootSource[] = [];
+  if (!Array.isArray(raw) || raw.length === 0) {
+    problem(problems, path, 'expected a list with at least one root');
+    return roots;
+  }
+  raw.forEach((item, index) => {
+    const root = parseRoot(item, `${path}[${index}]`, problems);
+    if (root) roots.push(root);
+  });
+  return roots;
+}
+
 function parseScreen(
   raw: unknown,
   path: string,
@@ -659,15 +673,7 @@ function parseScreen(
   const width = required('width');
   const height = required('height');
   const direction = parseScreenDirection(raw.direction, `${path}.direction`, problems);
-  const roots: RootSource[] = [];
-  if (!Array.isArray(raw.roots) || raw.roots.length === 0) {
-    problem(problems, `${path}.roots`, 'expected a list with at least one root');
-  } else {
-    raw.roots.forEach((item, index) => {
-      const root = parseRoot(item, `${path}.roots[${index}]`, problems);
-      if (root) roots.push(root);
-    });
-  }
+  const roots = parseRoots(raw.roots, `${path}.roots`, problems);
   if (problems.length > before || width === undefined || height === undefined) {
     return undefined;
   }
