@@ -1,8 +1,9 @@
-import type { ComponentChildren, JSX } from 'preact';
+import type { ComponentChildren, LooseSelectHTMLAttributes } from 'preact';
 import { Icon } from '../icons';
 import { classes } from './classes';
+import { selectAttrs } from './nativeAttrs';
 
-type NativeSelect = Omit<JSX.SelectHTMLAttributes<HTMLSelectElement>, 'class' | 'size'>;
+type NativeSelect = Omit<LooseSelectHTMLAttributes<HTMLSelectElement>, 'class' | 'size'>;
 
 interface SelectProps extends NativeSelect {
   /** Visible label (the field sits inside the `<label>`); without it, pass `aria-label`. */
@@ -16,14 +17,16 @@ export function Select({ label, invalid, size = 'md', children, ...rest }: Selec
   const control = (
     <span class="select">
       <select
-        {...rest}
-        class={classes(
-          'input',
-          'select-control',
-          size === 'sm' && 'input-sm',
-          invalid && 'input-invalid',
-        )}
-        aria-invalid={invalid}
+        {...selectAttrs({
+          ...rest,
+          class: classes(
+            'input',
+            'select-control',
+            size === 'sm' && 'input-sm',
+            invalid && 'input-invalid',
+          ),
+          'aria-invalid': invalid,
+        })}
       >
         {children}
       </select>

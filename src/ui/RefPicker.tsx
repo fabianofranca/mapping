@@ -16,6 +16,7 @@ import {
   type SpecRefColumn,
 } from '../model';
 import { IconButton, Tabs, type TabItem } from './controls';
+import { inputAttrs } from './controls/nativeAttrs';
 import { useFocusOrigin, useModal, type FocusReturn } from './focus';
 import { Icon } from './icons';
 import { imageLabel, markingPath } from './labels';
@@ -318,9 +319,8 @@ export function RefPicker({
             <div class="picker-search">
               <input
                 ref={input}
-                type="search"
+                {...inputAttrs({ type: 'search', role: 'combobox' })}
                 class="input"
-                role="combobox"
                 aria-label={t('ref.search')}
                 placeholder={t('ref.search')}
                 aria-controls={listId}

@@ -8,7 +8,10 @@ import { useLayoutEffect } from 'preact/hooks';
 const ITEMS = '[role^="menuitem"]:not(:disabled)';
 
 /** Focuses the first enabled item of the menu inside `root`, on open. */
-export function useFocusFirstItem(root: RefObject<HTMLElement>, open: boolean): void {
+export function useFocusFirstItem(
+  root: RefObject<HTMLElement | null>,
+  open: boolean,
+): void {
   // In a layout effect: focus counts from the commit that opens the menu.
   useLayoutEffect(() => {
     if (open)
@@ -18,7 +21,7 @@ export function useFocusFirstItem(root: RefObject<HTMLElement>, open: boolean): 
 
 /** Menu keyboard handler: Esc closes (without bubbling) and ↑/↓ cycle among the items. */
 export function menuKeyDown(
-  root: RefObject<HTMLElement>,
+  root: RefObject<HTMLElement | null>,
   open: boolean,
   close: () => void,
 ): (e: KeyboardEvent) => void {

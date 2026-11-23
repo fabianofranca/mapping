@@ -445,7 +445,8 @@ describe('CitationEditor › composer bridge', () => {
     // pt-BR kept: shared fixture data asserted by tests/model (sampleProject)
     expect(last(seen)).toBe(`hi [Porta](${url}) `);
     expect(chipsOf(editor)).toHaveLength(1);
-    view.unmount();
+    // Preact 11 runs the cleanup of passive effects after the paint; `act` flushes it.
+    act(() => view.unmount());
     expect(composerOpen.value).toBe(false);
     expect(insertCitation({ kind: 'marking', id: 'M1' })).toBe(false);
   });

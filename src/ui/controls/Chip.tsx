@@ -1,8 +1,8 @@
-import type { ComponentChildren, JSX } from 'preact';
+import type { ButtonHTMLAttributes, ComponentChildren } from 'preact';
 import { classes } from './classes';
 
 type NativeButton = Omit<
-  JSX.ButtonHTMLAttributes<HTMLButtonElement>,
+  ButtonHTMLAttributes<HTMLButtonElement>,
   'class' | 'size' | 'children'
 >;
 

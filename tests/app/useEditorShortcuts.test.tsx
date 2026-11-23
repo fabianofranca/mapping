@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/preact';
+import { act, cleanup, render, screen } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { HelpTip } from '../../src/ui/controls';
 import { modalOpen } from '../../src/ui/focus';
@@ -891,7 +891,8 @@ describe('useEditorShortcuts: when the keys do not apply', () => {
   it('on unmount, the listener leaves the window', () => {
     const s = setup();
     s.harness.actions.renameLayer('L1', 'Pintura');
-    s.unmount();
+    // Preact 11 runs the cleanup of passive effects after the paint; `act` flushes it.
+    act(() => s.unmount());
     s.press('z', { ctrl: true });
     expect(s.harness.project().layers[0]?.name).toBe('Pintura');
   });

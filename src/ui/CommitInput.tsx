@@ -1,4 +1,4 @@
-import type { JSX } from 'preact';
+import type { LooseInputHTMLAttributes } from 'preact';
 import { useId, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { place } from './Popover';
@@ -11,9 +11,10 @@ import {
   type SuggestionInput,
   type SuggestionItem,
 } from './suggestions';
+import { inputAttrs } from './controls/nativeAttrs';
 
 type InputProps = Omit<
-  JSX.InputHTMLAttributes<HTMLInputElement>,
+  LooseInputHTMLAttributes<HTMLInputElement>,
   'value' | 'onInput' | 'onChange' | 'onKeyDown'
 >;
 
@@ -161,19 +162,21 @@ function CommitInputBody({ value, onCommit, suggestions, ...rest }: CommitInputP
 
   const input = (
     <input
-      {...rest}
-      ref={inputEl}
-      value={text}
-      {...(combo
-        ? {
-            role: 'combobox',
-            'aria-autocomplete': 'list' as const,
-            'aria-expanded': visible,
-            'aria-controls': listId,
-            'aria-activedescendant': active >= 0 ? `${listId}-${active}` : undefined,
-            autoComplete: 'off',
-          }
-        : {})}
+      {...inputAttrs({
+        ...rest,
+        ref: inputEl,
+        value: text,
+        ...(combo
+          ? {
+              role: 'combobox',
+              'aria-autocomplete': 'list' as const,
+              'aria-expanded': visible,
+              'aria-controls': listId,
+              'aria-activedescendant': active >= 0 ? `${listId}-${active}` : undefined,
+              autoComplete: 'off',
+            }
+          : {}),
+      })}
       onInput={(e) => {
         const el = e.currentTarget;
         setText(el.value);

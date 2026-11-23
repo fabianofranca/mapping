@@ -1,4 +1,4 @@
-import { cleanup, render } from '@testing-library/preact';
+import { act, cleanup, render } from '@testing-library/preact';
 import { signal } from '@preact/signals';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EMPTY_CATALOG, type ComponentCatalog, type Project } from '../../src/model';
@@ -75,7 +75,8 @@ describe('PreviewHost', () => {
 
   it('stops listening after unmount', () => {
     const { catalog } = mount();
-    cleanup();
+    // Preact 11 runs the cleanup of passive effects after the paint; `act` flushes it.
+    act(() => cleanup());
     const before = controllers.update.mock.calls.length;
     catalog.value = new Map();
     expect(controllers.update.mock.calls.length).toBe(before);

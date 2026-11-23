@@ -231,7 +231,7 @@ export const modalOpen = signal(0);
  * even if it leaves before the next frame (stage 8, F1).
  */
 export function useModal(
-  ref: RefObject<HTMLDialogElement>,
+  ref: RefObject<HTMLDialogElement | null>,
   origin: FocusOrigin,
   returnFocus: FocusReturn | undefined,
   focusInitial: (dialog: HTMLDialogElement) => void,

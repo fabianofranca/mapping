@@ -1,5 +1,5 @@
 import { useRef } from 'preact/hooks';
-import type { JSX } from 'preact';
+import type { KeyboardEventHandler } from 'preact';
 
 // Where a click on a review button came from. The keyboard (Enter or Space on the button
 // itself) does not suggest the note to the agent nor move focus; everything else counts as mouse:
@@ -10,7 +10,7 @@ import type { JSX } from 'preact';
 interface ClickSource {
   /** Props to spread on the button: they record the keyboard and forget it on leave or mouse. */
   readonly handlers: {
-    readonly onKeyDown: JSX.KeyboardEventHandler<HTMLElement>;
+    readonly onKeyDown: KeyboardEventHandler<HTMLElement>;
     readonly onPointerDown: () => void;
     readonly onBlur: () => void;
   };
@@ -20,7 +20,7 @@ interface ClickSource {
 
 export function useClickSource(): ClickSource {
   const keyboard = useRef(false);
-  const source = useRef<ClickSource>();
+  const source = useRef<ClickSource | undefined>(undefined);
   source.current ??= {
     handlers: {
       onKeyDown: (e) => {
