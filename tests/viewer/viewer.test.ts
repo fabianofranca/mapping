@@ -1146,3 +1146,86 @@ describe('package images (DX5)', () => {
     }
   });
 });
+
+describe('screen background by token follows drawingMode (NV4)', () => {
+  const spec = {
+    format: 'mapping-spec',
+    formatVersion: 23,
+    id: 'bg',
+    name: 'Bg',
+    version: 1,
+    tokens: {
+      axes: { mode: ['light', 'dark'], density: ['compact', 'roomy'] },
+      values: {
+        surface: { $axis: 'mode', light: '#ffffff', dark: '#101010' },
+        tint: { $axis: 'density', compact: '#aa0000', roomy: '#00aa00' },
+      },
+    },
+    origins: [
+      {
+        system: 'sdui',
+        node: { type: 'type', props: 'props', children: 'children' },
+        screen: {
+          width: { path: 'w' },
+          height: { path: 'h' },
+          background: { $token: 'surface' },
+          roots: [{ path: 'content' }],
+        },
+      },
+    ],
+    layers: [
+      {
+        id: 'l',
+        name: 'L',
+        color: '#112233',
+        annotationTypes: [
+          { id: 't', name: 'T', component: 'components/bg.json', fields: [] },
+        ],
+      },
+    ],
+  };
+  const component = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'bg',
+    name: 'Bg',
+    size: { width: 100, height: 50 },
+    template: { type: 'frame', fill: '#336699' },
+  };
+  const bgLibrary = loadLibrary([
+    { path: 'bg.spec.json', text: JSON.stringify(spec) },
+    { path: 'components/bg.json', text: JSON.stringify(component) },
+  ]);
+  const json = { w: 100, h: 50, content: { type: 't', props: {} } };
+  const artboardFill = (el: HTMLElement): unknown =>
+    stageOf(el).find<Konva.Rect>('Rect')[0]?.fill();
+
+  it('the library loads', () => {
+    expect(bgLibrary.problems).toEqual([]);
+  });
+
+  it('draws the token background in the first entry, in a string mode and in a map', () => {
+    const light = container();
+    make(light, { library: bgLibrary, source: json, drawingMode: 'light' });
+    expect(artboardFill(light)).toBe('#FFFFFF');
+
+    const dark = container();
+    make(dark, { library: bgLibrary, source: json, drawingMode: 'dark' });
+    expect(artboardFill(dark)).toBe('#101010');
+
+    const map = container();
+    make(map, { library: bgLibrary, source: json, drawingMode: { mode: 'dark' } });
+    expect(artboardFill(map)).toBe('#101010');
+  });
+
+  it('changing drawingMode at runtime changes the screen background', () => {
+    const el = container();
+    const viewer = make(el, { library: bgLibrary, source: json });
+    expect(artboardFill(el)).toBe('#FFFFFF');
+    viewer.update({ drawingMode: { mode: 'dark' } });
+    expect(artboardFill(el)).toBe('#101010');
+    expect(viewer.screen()?.background).toBe('#101010');
+    viewer.update({ drawingMode: 'light' });
+    expect(artboardFill(el)).toBe('#FFFFFF');
+  });
+});
