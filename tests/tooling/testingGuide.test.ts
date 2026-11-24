@@ -604,7 +604,8 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(aside('#FF4081')).toContain('AREA=20');
       // the `W` is a large blot: it stays at the default AREA.
       expect(aside('#76FF03')).not.toContain('AREA');
-      expect(aside('#FFAB40')).not.toContain('AREA');
+      // except `#FFAB40`: the Card's pin has the same color, so the step uses AREA=100 (finding 2.4, #812).
+      expect(aside('#FFAB40')).toContain('AREA=100');
     });
   });
 
