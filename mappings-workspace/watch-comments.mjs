@@ -353,6 +353,10 @@ export async function main(argv) {
       process.stdin.off('end', onOrphaned);
       process.stdin.off('close', onOrphaned);
       process.stdout.off('error', onOrphaned);
+      // `--emit` resumed stdin to notice an orphaned parent; stop reading it, or a live pipe keeps
+      // the event loop open after the signal.
+      process.stdin.pause();
+      process.stdin.unref?.();
       runner.stop();
       watcher?.close();
       done(code);

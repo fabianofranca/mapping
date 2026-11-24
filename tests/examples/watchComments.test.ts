@@ -423,6 +423,29 @@ describe('examples/workspace/watch-comments.mjs', { timeout: 20000 }, () => {
         expect(await code).toBe(0);
       });
 
+      it('exits on SIGTERM while its stdin is a live pipe (finding 3.2 of round #812)', async () => {
+        h.stderr = '';
+        const child = spawn(
+          process.execPath,
+          [SCRIPT, '--emit', '--root', h.root, '--quiet', QUIET],
+          { stdio: ['pipe', 'pipe', 'pipe'] },
+        );
+        h.child = child;
+        child.stderr?.on('data', (d: Buffer) => {
+          h.stderr += d.toString();
+        });
+        const code = new Promise<number | null>((r) => child.on('close', r));
+        await waitFor(
+          () => h.stderr.includes('watch-comments: observing'),
+          'the watcher',
+        );
+        // The parent keeps stdin open (it never calls `end()`), so only the signal can stop it.
+        child.kill('SIGTERM');
+        const e = { child, out: () => '', err: () => h.stderr, code };
+        expect(await exitsWithin(e, 3000)).toBe(true);
+        expect(await code).toBe(0);
+      });
+
       it('exits when its stdout pipe breaks and writes no wake line after it', async () => {
         const e = await startEmit();
         e.child.stdout?.destroy();
