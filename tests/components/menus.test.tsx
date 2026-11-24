@@ -171,6 +171,65 @@ describe('Popover', () => {
   });
 });
 
+// Stage #294 (Preact 11), P11.2, decision 6: a popover or menu removed from the tree while open
+// (the parent stops drawing it) leaves no listener on the document or on the window.
+describe('Popover and MenuPopover unmounted while open', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  function listeners() {
+    const doc = vi.spyOn(document, 'addEventListener');
+    const docOff = vi.spyOn(document, 'removeEventListener');
+    const win = vi.spyOn(globalThis, 'addEventListener');
+    const winOff = vi.spyOn(globalThis, 'removeEventListener');
+    const left = () => {
+      const count = (on: typeof doc, off: typeof doc) =>
+        on.mock.calls.filter(
+          ([type]) => type === 'pointerdown' || type === 'scroll' || type === 'resize',
+        ).length -
+        off.mock.calls.filter(
+          ([type]) => type === 'pointerdown' || type === 'scroll' || type === 'resize',
+        ).length;
+      return count(doc, docOff) + count(win, winOff);
+    };
+    return { left };
+  }
+
+  it('Popover: the outside-click, scroll and resize listeners leave with it', async () => {
+    const { left } = listeners();
+    const user = userEvent.setup();
+    const { unmount } = render(
+      <Popover
+        label="Colors"
+        trigger={({ open, toggle }) => (
+          <button aria-expanded={open} onClick={toggle}>
+            Color
+          </button>
+        )}
+      >
+        {(close) => <button onClick={close}>Red</button>}
+      </Popover>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Color' }));
+    expect(left()).toBeGreaterThan(0);
+    unmount();
+    expect(left()).toBe(0);
+  });
+
+  it('MenuPopover: the outside-click listener leaves with it', async () => {
+    const { left } = listeners();
+    const user = userEvent.setup();
+    const { unmount } = render(
+      <MenuPopover label="Project" buttonLabel="Project menu">
+        <Button>Export</Button>
+      </MenuPopover>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Project menu' }));
+    expect(left()).toBeGreaterThan(0);
+    unmount();
+    expect(left()).toBe(0);
+  });
+});
+
 describe('ActionMenu', () => {
   it('click outside with the focus on an item returns the focus to the trigger', async () => {
     render(<ActionMenu label="Actions" items={[{ label: 'Up', onSelect: vi.fn() }]} />);

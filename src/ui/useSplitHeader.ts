@@ -53,7 +53,7 @@ export function headerNeedsSplit(header: HTMLElement): boolean {
 
 /** Header ref and whether it is on two lines (`is-split`). Re-measures on every render and every resize. */
 export function useSplitHeader(): {
-  readonly ref: RefObject<HTMLDivElement>;
+  readonly ref: RefObject<HTMLDivElement | null>;
   readonly split: boolean;
 } {
   const ref = useRef<HTMLDivElement>(null);

@@ -1,4 +1,4 @@
-import type { JSX } from 'preact';
+import type { ComponentChildren, HTMLAttributes } from 'preact';
 import { useComputed } from '@preact/signals';
 import { t } from '../i18n';
 import { SCHEMA_VERSION } from '../model';
@@ -19,8 +19,9 @@ import { stepNoticeText, usePageStepNotice } from './PageNotices';
 // selection, cursor, zoom, schema, channel and build on the right. The cursor comes from the canvas in a
 // UI signal of its own, updated at most once per frame (HANDOFF, section 6).
 
-interface ItemProps extends JSX.HTMLAttributes<HTMLSpanElement> {
+interface ItemProps extends HTMLAttributes<HTMLSpanElement> {
   readonly icon?: IconName;
+  readonly children?: ComponentChildren;
 }
 
 /** A bar item: optional icon and the text in `.status-item-text` (never loose text beside the icon). */

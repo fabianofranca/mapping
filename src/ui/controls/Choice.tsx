@@ -1,7 +1,8 @@
-import type { ComponentChildren, JSX } from 'preact';
+import type { ComponentChildren, LooseInputHTMLAttributes } from 'preact';
+import { inputAttrs } from './nativeAttrs';
 
 type NativeInput = Omit<
-  JSX.InputHTMLAttributes<HTMLInputElement>,
+  LooseInputHTMLAttributes<HTMLInputElement>,
   'class' | 'size' | 'type'
 >;
 
@@ -16,7 +17,7 @@ interface ChoiceProps extends NativeInput {
 export function Choice({ type = 'checkbox', label, hint, ...rest }: ChoiceProps) {
   return (
     <label class="choice">
-      <input {...rest} type={type} class="choice-input" />
+      <input {...inputAttrs({ ...rest, type, class: 'choice-input' })} />
       <span class="choice-label">
         <span>
           {label}

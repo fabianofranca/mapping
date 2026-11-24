@@ -190,7 +190,7 @@ export class ReopenTrace implements ReopenSteps {
 
 export interface ReopenTracking {
   /** For the `dialogRef` of the "Folder unavailable" notice. */
-  readonly dialogRef: RefObject<HTMLDialogElement>;
+  readonly dialogRef: RefObject<HTMLDialogElement | null>;
   /** Creates the trace on the click and passes it to `openRecentFolder` (still in the same click). */
   track(
     open: (trace: ReopenTrace) => Promise<AppResult<RecentFolderOpen>>,

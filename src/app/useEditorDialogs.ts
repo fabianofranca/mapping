@@ -90,7 +90,7 @@ export interface EditorDialogs {
    * The bar's Export button (which fills it): the focus return of the export dialog,
    * opened after generating the zip with the button disabled.
    */
-  readonly exportButton: RefObject<HTMLButtonElement>;
+  readonly exportButton: RefObject<HTMLButtonElement | null>;
   requestDeleteImage(image: ProjectContainer): void;
   /** In cascade asks for confirmation; simple, does not (undo covers it). Locked item: does nothing. */
   requestDeleteMarking(marking: Marking): void;

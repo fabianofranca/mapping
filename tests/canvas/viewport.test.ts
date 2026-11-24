@@ -119,6 +119,32 @@ describe('center', () => {
     expect(small.scale).toBeCloseTo(20);
     expect(small.x).toBeCloseTo(200 - 5 * 20);
   });
+
+  // Finding 2.3 of round #812 (stage #294, R25.20): a click on a Marking tree row calls
+  // `centerSelection()` -> `centerOn()`, which re-zooms when the marking is under 15% or over 80% of
+  // the canvas. It is the documented behavior (same on `main`); the script presses Shift+2 after it.
+  it('re-zooms a ruler-3.05 view when the rectangle is outside 15%–80% of the canvas', () => {
+    const wide = { width: 1000, height: 700 };
+    const tooSmall = centerOn(
+      { x: 0, y: 0, scale: 3.05 },
+      { x: 100, y: 100, width: 44, height: 26 },
+      wide,
+    );
+    expect(tooSmall.scale).not.toBeCloseTo(3.05);
+    const tooBig = centerOn(
+      { x: 0, y: 0, scale: 3.05 },
+      { x: 100, y: 100, width: 300, height: 100 },
+      wide,
+    );
+    expect(tooBig.scale).toBeCloseTo((3.05 * 0.5) / ((300 * 3.05) / 1000));
+    expect(tooBig.scale).toBeLessThan(3.05);
+    const fits = centerOn(
+      { x: 0, y: 0, scale: 3.05 },
+      { x: 100, y: 100, width: 150, height: 100 },
+      wide,
+    );
+    expect(fits.scale).toBe(3.05);
+  });
 });
 
 describe('revealRect', () => {

@@ -16,10 +16,10 @@ export function ErrorBoundary({ children }: { readonly children: ComponentChildr
   });
   if (!error) return <>{children}</>;
   return (
-    <main class="notice notice-error crash" role="alert">
+    <div class="notice notice-error crash" role="alert">
       <h1>{t('error.crashed')}</h1>
       <p>{t('error.crashedHint')}</p>
       <Button onClick={() => location.reload()}>{t('error.reload')}</Button>
-    </main>
+    </div>
   );
 }

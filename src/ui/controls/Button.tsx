@@ -1,4 +1,4 @@
-import type { ComponentChildren, JSX, Ref } from 'preact';
+import type { ButtonHTMLAttributes, ComponentChildren, Ref } from 'preact';
 import { classes } from './classes';
 import { useHideDisabled } from './hideDisabled';
 
@@ -10,7 +10,7 @@ import { useHideDisabled } from './hideDisabled';
 export type ButtonVariant =
   'default' | 'primary' | 'danger' | 'accept' | 'reject' | 'ghost';
 
-type NativeButton = Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, 'class' | 'size'>;
+type NativeButton = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'class' | 'size'>;
 
 interface ButtonProps extends NativeButton {
   readonly variant?: ButtonVariant;
