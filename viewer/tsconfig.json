@@ -10,5 +10,10 @@
     "outDir": "../dist-viewer/types",
     "rootDir": ".."
   },
-  "include": ["index.ts", "react.tsx", "formats.ts"]
+  "include": [
+    "index.ts",
+    "react.tsx",
+    "formats.ts",
+    "../src/storage/drawingFontModules.d.ts"
+  ]
 }

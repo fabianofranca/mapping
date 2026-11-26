@@ -122,9 +122,9 @@ export const WHOLE_FIELD_KINDS: Readonly<
   shadow: { color: 'color', x: 'number', y: 'number', blur: 'number', spread: 'number' },
 };
 
-/** Family when the host provides none. */
-const DEFAULT_SANS = 'sans-serif';
-const DEFAULT_MONO = 'monospace';
+/** Family when the host provides none: the embedded Mapping Sans and Mono (the app, the viewer and the MCP measure with the same files). */
+const DEFAULT_SANS = '"Mapping Sans", sans-serif';
+const DEFAULT_MONO = '"Mapping Mono", monospace';
 
 const COLOR_VALUE =
   /^(#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})|(rgb|hsl)a?\(.*\)|none|transparent)$/i;

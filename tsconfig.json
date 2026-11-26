@@ -23,6 +23,7 @@
     "pwa",
     "mcp/image/wasm.d.ts",
     "mcp/image/font.d.ts",
+    "pwa/fontModules.d.mts",
     "mcp/image/harfbuzzjs.d.ts",
     "vite.config.ts",
     "vite.viewer.config.ts",

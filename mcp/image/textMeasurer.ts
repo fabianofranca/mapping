@@ -32,7 +32,7 @@ export { textWidth };
 const BOLD_FROM = 600;
 /** Families that ask for the embedded monospaced font. */
 const MONO_FAMILY =
-  /^(monospace|ui-monospace|mono|courier|courier new|consolas|menlo|monaco|sf mono|cascadia mono|cascadia code|source code pro|fira code|jetbrains mono|roboto mono|dejavu sans mono|liberation mono)$/i;
+  /^(monospace|ui-monospace|mono|courier|courier new|consolas|menlo|monaco|sf mono|cascadia mono|cascadia code|source code pro|fira code|jetbrains mono|roboto mono|dejavu sans mono|liberation mono|mapping mono)$/i;
 
 function embedded(bytes: Uint8Array): Face {
   const face = loadFace(bytes);

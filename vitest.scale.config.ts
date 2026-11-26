@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { drawingFontModules } from './pwa/fontModules.mjs';
 import { fontBytes, harfbuzzModule, wasmBytes } from './tests/support/mcpVitePlugins';
 
 /**
@@ -25,7 +26,8 @@ export default defineConfig({
         },
       },
       {
-        // Session, derived state and viewer: the DOM (jsdom) and the fake storage.
+        // Session, derived state and viewer: the DOM (jsdom) and the fake storage. The viewer registers the drawing font (`drawing-font:*`), so this project serves those modules too.
+        plugins: [drawingFontModules()],
         test: {
           name: 'scale-app',
           environment: 'jsdom',
