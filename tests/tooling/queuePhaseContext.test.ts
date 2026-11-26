@@ -645,7 +645,7 @@ describe('CX2 — the phase hands over above 300 thousand with its PR open (deci
   });
 
   it('item 7: the `CI vermelho depois do PR` line does not count the WIP commit of a handover', () => {
-    const line = between(phase, '     - `CI vermelho depois do PR`:', '     - `Revisão');
+    const line = between(phase, '     - `CI vermelho depois do PR`:', '\n');
     expect(line).toContain('the WIP commit of a handover');
   });
 
