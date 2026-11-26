@@ -29,6 +29,7 @@ import {
   opensPullRequest,
   sessionRole,
   shouldWarn,
+  testerStepCommand,
   // @ts-expect-error .mjs module without type declarations
 } from '../../scripts/ci/contextGuard.mjs';
 
@@ -45,6 +46,10 @@ const warns = shouldWarn as (
   ultimoAviso: number | null,
   gatilho?: number,
 ) => boolean;
+const stepCommand = testerStepCommand as (
+  toolName: unknown,
+  toolInput: unknown,
+) => 'passo' | 'run' | null;
 const MARK = MARCADOR as string;
 const TAIL = 2 * 1024 * 1024;
 
@@ -155,6 +160,7 @@ interface State {
   contexto?: number;
   ferramenta?: string;
   ultimoAviso: number | null;
+  execucoes?: number;
   saltos: { rotulo: string; mil: number }[];
   erro?: { mensagem: string; em: string } | null;
 }
@@ -1748,5 +1754,287 @@ describe('CG2 — docs/FLOW.md: the PR gate in the phase session (decision 8)', 
     expect(ceiling).toContain('Retomada por contexto (<k> de 5)');
     expect(checks).toContain('(a) before sending a new task to a subagent');
     expect(checks).toContain('(b) before running the gates of item 5');
+  });
+});
+
+// Stage #2783, phase CX3 (decisions 10 to 12): the tester gate, which keeps the steps in the batch subagents.
+const CLOUD = 'node scripts/testing/cloud.mjs';
+const testerPrompt =
+  'Read `docs/TESTING-NUVEM.md` and run in modo dirigido: R0. Passada visual: nenhuma. Branch `epic/x`.';
+const RUN_COMMAND = `${CLOUD} run ~/mapping-testes/2026-11-26-x/projeto --prazo=60 <<'JS'\nawait check('a', true);\nJS`;
+
+describe('CX3 — testerStepCommand: which Bash commands run a step (decision 10)', () => {
+  it.each([
+    [`${CLOUD} passo R12.3`, 'passo'],
+    [`${CLOUD} passo R25.1-R25.8 --preparo`, 'passo'],
+    [`${CLOUD} run ~/x/projeto`, 'run'],
+    [RUN_COMMAND, 'run'],
+    [`${CLOUD} run --novo`, 'run'],
+    ['cd scripts/testing && node cloud.mjs passo R1', 'passo'],
+    ['cd scripts/testing; node cloud.mjs run ~/x/projeto', 'run'],
+    [`FOO=1 ${CLOUD} passo R1`, 'passo'],
+    [`env FOO=1 ${CLOUD} passo R1`, 'passo'],
+    [`timeout 60 ${CLOUD} run ~/x/projeto`, 'run'],
+    [`/usr/bin/node scripts/testing/cloud.mjs passo R1`, 'passo'],
+    [`node --no-warnings scripts/testing/cloud.mjs passo R1`, 'passo'],
+    [`node "$CLAUDE_PROJECT_DIR/scripts/testing/cloud.mjs" passo R1`, 'passo'],
+    [`echo ok && ${CLOUD} passo R1 | head -40`, 'passo'],
+    [`bash -c '${CLOUD} passo R1'`, 'passo'],
+    [`eval "${CLOUD} run ~/x/projeto"`, 'run'],
+    [`${CLOUD} run ~/x/projeto && ${CLOUD} passo R2`, 'passo'],
+  ])('%s is a %s call', (command, kind) => {
+    expect(stepCommand('Bash', { command })).toBe(kind);
+  });
+
+  it.each([
+    `${CLOUD} secao consulta.subagente`,
+    `${CLOUD} mark ~/x/apoio R1 start`,
+    `${CLOUD} help`,
+    `${CLOUD} state ~/x/projeto`,
+    `${CLOUD} tempos ~/x/apoio`,
+    `${CLOUD} find Open`,
+    'echo "node scripts/testing/cloud.mjs passo R1"',
+    "echo 'cloud.mjs run x'",
+    'git commit -m "docs: node scripts/testing/cloud.mjs passo R1 is refused"',
+    'grep -n "cloud.mjs passo" docs/TESTING-NUVEM.md',
+    'cat <<EOF\nnode scripts/testing/cloud.mjs passo R1\nEOF',
+    "cat <<'EOF' > nota.md\nnode scripts/testing/cloud.mjs run x\nEOF",
+    '# node scripts/testing/cloud.mjs passo R1',
+    'node scripts/testing/other-cloud.mjs passo R1',
+    'node scripts/testing/mycloud.mjs run x',
+    'node scripts/testing/round-guide.mjs R1 passo',
+    'ls scripts/testing',
+  ])('%s is not', (command) => {
+    expect(stepCommand('Bash', { command })).toBeNull();
+  });
+
+  it('other tools and malformed input are not step commands', () => {
+    expect(stepCommand('Read', { file_path: 'scripts/testing/cloud.mjs' })).toBeNull();
+    expect(stepCommand('Bash', {})).toBeNull();
+    expect(stepCommand('Bash', null)).toBeNull();
+    expect(stepCommand(undefined, undefined)).toBeNull();
+  });
+});
+
+describe('CX3 — the tester gate (decisions 10 and 12)', () => {
+  const testerBox = (): Sandbox => sandbox([userLine(testerPrompt), measure(100_000)]);
+
+  it('cloud.mjs passo from the main thread is refused, with the JSON and the text of decision 10', () => {
+    const box = testerBox();
+    const out = denialOf(hook(box, preCall(`${CLOUD} passo R12.3`)));
+    expect(Object.keys(out)).toEqual(['hookSpecificOutput']);
+    expect(out.hookSpecificOutput.hookEventName).toBe('PreToolUse');
+    expect(out.hookSpecificOutput.permissionDecision).toBe('deny');
+    const text = out.hookSpecificOutput.permissionDecisionReason;
+    expect(text).toContain(
+      "The tester's main session does not run steps: hand this batch to a subagent (`node scripts/testing/cloud.mjs secao consulta.subagente`)",
+    );
+    expect(text).not.toContain('\n');
+  });
+
+  it('passo is refused on every call, with no count', () => {
+    const box = testerBox();
+    for (let i = 0; i < 6; i += 1) denialOf(hook(box, preCall(`${CLOUD} passo R1`)));
+    expect(stateOf(box).execucoes ?? 0).toBe(0);
+  });
+
+  it('the first 4 cloud.mjs run calls pass and the 5th is refused, counted in execucoes', () => {
+    const box = testerBox();
+    for (let n = 1; n <= 4; n += 1) {
+      silent(hook(box, preCall(RUN_COMMAND)));
+      expect(stateOf(box).execucoes).toBe(n);
+    }
+    const out = denialOf(hook(box, preCall(RUN_COMMAND)));
+    const text = out.hookSpecificOutput.permissionDecisionReason;
+    expect(text).toContain("The tester's main session does not run steps");
+    expect(text).toContain('secao consulta.subagente');
+    expect(stateOf(box).execucoes).toBe(5);
+    denialOf(hook(box, preCall(`${CLOUD} run --novo`)));
+  });
+
+  it('a call with agent_id goes through after the 5th, passo included, and is not counted', () => {
+    const box = testerBox();
+    for (let n = 0; n < 5; n += 1) hook(box, preCall(RUN_COMMAND));
+    expect(stateOf(box).execucoes).toBe(5);
+    silent(hook(box, { ...preCall(RUN_COMMAND), agent_id: 'agent-1' }));
+    silent(hook(box, { ...preCall(`${CLOUD} passo R1`), agent_id: 'agent-1' }));
+    expect(stateOf(box).execucoes).toBe(5);
+  });
+
+  it('a subagent that is the first to call never counts nor decides the role', () => {
+    const box = testerBox();
+    silent(hook(box, { ...preCall(RUN_COMMAND), agent_id: 'agent-1' }));
+    expect(existsSync(box.state)).toBe(false);
+  });
+
+  it('text that only mentions the command is not a call: echo, a commit message, a heredoc', () => {
+    const box = testerBox();
+    for (let i = 0; i < 6; i += 1) {
+      silent(hook(box, preCall('echo "node scripts/testing/cloud.mjs passo R1"')));
+      silent(hook(box, preCall('cat <<EOF\nnode scripts/testing/cloud.mjs run x\nEOF')));
+    }
+    expect(existsSync(box.state)).toBe(false);
+  });
+
+  it('the position is read with cd, NAME=value and the wrappers', () => {
+    const box = testerBox();
+    denialOf(hook(box, preCall('cd scripts/testing && node cloud.mjs passo R1')));
+    denialOf(hook(box, preCall(`FOO=1 ${CLOUD} passo R1`)));
+    denialOf(hook(box, preCall(`bash -c '${CLOUD} passo R1'`)));
+  });
+
+  it('secao, mark, help and the other commands go through at any count', () => {
+    const box = testerBox();
+    for (let n = 0; n < 6; n += 1) hook(box, preCall(RUN_COMMAND));
+    silent(hook(box, preCall(`${CLOUD} secao consulta.subagente`)));
+    silent(hook(box, preCall(`${CLOUD} mark ~/x/apoio R1 start`)));
+    silent(hook(box, preCall(`${CLOUD} help`)));
+    silent(hook(box, preCall('git status')));
+    silent(hook(box, { hook_event_name: 'PreToolUse', tool_name: 'Read' }));
+  });
+
+  it('it does not depend on the context: a tester at 10 thousand is held the same', () => {
+    const box = sandbox([userLine(testerPrompt), measure(10_000)]);
+    denialOf(hook(box, preCall(`${CLOUD} passo R1`)));
+  });
+
+  it('the first call, with no state yet, decides the role and counts', () => {
+    const box = testerBox();
+    expect(existsSync(box.state)).toBe(false);
+    silent(hook(box, preCall(RUN_COMMAND)));
+    expect(stateOf(box)).toMatchObject({ fase: false, papel: 'testador', execucoes: 1 });
+  });
+
+  it('the PostToolUse notice keeps execucoes and the gate never touches the notice fields', () => {
+    const box = testerBox();
+    silent(hook(box)); // PostToolUse: writes contexto, ferramenta, ultimoAviso, saltos
+    const before = stateOf(box);
+    silent(hook(box, preCall(RUN_COMMAND)));
+    silent(hook(box, preCall(RUN_COMMAND)));
+    const gated = stateOf(box);
+    expect(gated.execucoes).toBe(2);
+    expect(gated.contexto).toBe(before.contexto);
+    expect(gated.ferramenta).toBe(before.ferramenta);
+    expect(gated.ultimoAviso).toBe(before.ultimoAviso);
+    expect(gated.saltos).toEqual(before.saltos);
+    appendFileSync(box.transcript, measure(TESTER_TRIGGER + 1) + '\n');
+    warningOf(hook(box)); // the notice
+    expect(stateOf(box).execucoes).toBe(2);
+    silent(hook(box, preCall(RUN_COMMAND)));
+    silent(hook(box, preCall(RUN_COMMAND)));
+    denialOf(hook(box, preCall(RUN_COMMAND)));
+  });
+
+  it('a phase, the coordinator and another session are not affected', () => {
+    const phase = sandbox([userLine(phasePrompt), measure(100_000)]);
+    const coordinator = sandbox([userLine('/implementar-fila'), measure(100_000)]);
+    const other = sandbox([userLine('Fix the login screen.'), measure(100_000)]);
+    for (const box of [phase, coordinator, other])
+      for (let n = 0; n < 6; n += 1) {
+        silent(hook(box, preCall(`${CLOUD} passo R1`)));
+        silent(hook(box, preCall(RUN_COMMAND)));
+      }
+    expect(stateOf(phase).execucoes ?? 0).toBe(0);
+    expect(stateOf(coordinator).execucoes ?? 0).toBe(0);
+  });
+
+  it('an unreadable state, an unreadable transcript and no cloud fail open', () => {
+    const corrupt = testerBox();
+    mkdirSync(join(corrupt.tmp, 'context-guard'), { recursive: true });
+    writeFileSync(corrupt.state, '{not json');
+    silent(hook(corrupt, preCall(`${CLOUD} passo R1`)));
+
+    const missing = testerBox();
+    silent(
+      hook(missing, {
+        ...preCall(`${CLOUD} passo R1`),
+        transcript_path: join(missing.tmp, 'absent.jsonl'),
+      }),
+    );
+
+    const off = testerBox();
+    silent(hook(off, preCall(`${CLOUD} passo R1`), { remote: false }));
+
+    const empty = testerBox();
+    silent(hook(empty, preCall(`${CLOUD} passo R1`), { raw: '{}' }));
+    silent(hook(empty, preCall(`${CLOUD} passo R1`), { raw: 'not json' }));
+  });
+
+  it('an execucoes that is not a number starts again from zero', () => {
+    const box = testerBox();
+    silent(hook(box, preCall(RUN_COMMAND)));
+    writeFileSync(box.state, JSON.stringify({ ...stateOf(box), execucoes: 'x' }));
+    silent(hook(box, preCall(RUN_COMMAND)));
+    expect(stateOf(box).execucoes).toBe(1);
+  });
+});
+
+describe('CX3 — the texts of the tester gate (decisions 10 and 11)', () => {
+  const guard = readFileSync('scripts/ci/contextGuard.mjs', 'utf8');
+  const header = guard.slice(0, guard.indexOf('\nimport {'));
+  const tester = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
+  const consulta = readFileSync('docs/TESTING-NUVEM-CONSULTA.md', 'utf8');
+  const flow = readFileSync('docs/FLOW.md', 'utf8');
+
+  it('the header comment of contextGuard.mjs describes the tester gate and the state contract', () => {
+    expect(header).toContain('Tester gate');
+    expect(header).toContain('cloud.mjs passo');
+    expect(header).toContain('cloud.mjs run');
+    expect(header).toContain('`execucoes`');
+    expect(header).toContain('the first 4');
+    expect(header).toContain('which only this gate writes');
+  });
+
+  it('"How to act" says the hook gate holds the main session to the subagents', () => {
+    const how = section(tester, '## How to act');
+    expect(how).toContain("The context hook's gate holds this");
+    expect(how).toContain('`cloud.mjs passo` is refused');
+    expect(how).toContain('`cloud.mjs run` from the 5th call');
+    expect(how).toContain('plus one retry');
+    expect(how).toContain("a subagent's calls go through");
+  });
+
+  it('"Context up to 300 thousand" says the gate keeps the steps in the subagents, and the block table stays', () => {
+    const full = section(tester, '## Full round in blocks');
+    const paragraph = full.slice(full.indexOf('**Context up to 300 thousand.**'));
+    expect(paragraph.startsWith('**Context up to 300 thousand.**')).toBe(true);
+    expect(paragraph).toContain('the gate of "How to act" keeps the steps there');
+    expect(full).toContain('There are 7 blocks');
+  });
+
+  it('"Subagent per batch" always passes model "sonnet" and says why', () => {
+    const batch = between(
+      consulta,
+      '## Subagent per batch',
+      '## Directed round in groups',
+    );
+    expect(batch).toContain('always carries `model: "sonnet"`');
+    expect(batch).toContain('general-purpose (padrão)');
+    expect(batch).toContain('the context hook refuses');
+  });
+
+  it('the Hook sentence of FLOW says the tester also has a gate', () => {
+    const phase = section(flow, '## For the phase session');
+    const ceiling = between(
+      phase,
+      '   - **Phase context ceiling:**',
+      '4. Every briefing for a behavior change',
+    );
+    const hookSentence = between(ceiling, '**Hook:**', '**Transition:**');
+    expect(hookSentence).toContain('its own gate');
+    expect(hookSentence).toContain('`cloud.mjs passo`');
+    expect(hookSentence).toContain('the 5th call');
+    expect(hookSentence).toContain('"How to act"');
+    expect(hookSentence).toContain(
+      `its own notice from ${TESTER_TRIGGER / 1000} thousand`,
+    );
+  });
+
+  it('.claude/settings.json is unchanged: the Bash matcher of PreToolUse already covers the gate', () => {
+    const settings = JSON.parse(readFileSync('.claude/settings.json', 'utf8')) as {
+      hooks: { PreToolUse: { matcher: string }[] };
+    };
+    const matchers = settings.hooks.PreToolUse.map((h) => h.matcher);
+    expect(matchers.some((m) => new RegExp(`^(?:${m})$`).test('Bash'))).toBe(true);
   });
 });
