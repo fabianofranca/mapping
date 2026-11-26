@@ -36,7 +36,7 @@ const closingRules: [string, RegExp][] = [
 const noRunRules: [string, RegExp][] = [
   ['reads mergeable_state after ~10 min instead of waiting or ending', /~10 min[^.]*`mergeable_state`[^.]*`pull_request_read` `get`[^.]*instead of waiting or ending/],
   ['unknown re-read up to 3 times, then the coordinator is notified', /`unknown`[^.]*up to 3 times, then notify the coordinator/],
-  ['no run means empty check runs and actions_list', /`get_check_runs` and `actions_list`[^.]*empty/],
+  ['no run means ci=none and an empty actions_list', /`ci=none`[^.]*`actions_list`[^.]*empty/],
   ['dirty: merge the base, never rebase, restart the CI wait', /`dirty`: .*`git merge origin\/main`.*never rebase.*restart the \*\*CI wait\*\*/],
   ['version choice only on an epic PR', /on an epic PR redo the version choice[^.]*\(a phase PR has none\)/],
   ['ending without a CI run notifies through the Channel, never silently', /ends without a CI run on its PR notifies the coordinator through the Channel of item 7[^.]*never ends silently/],
