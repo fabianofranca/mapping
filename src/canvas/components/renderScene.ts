@@ -21,6 +21,7 @@ import {
   cutsText,
 } from '../../model/components/textWrap';
 import { canvasFontFamily } from '../../model/components/fontFamily';
+import { parseFormatColor } from '../../model/components/tokens';
 import Konva from 'konva/lib/Core';
 import { Ellipse as KonvaEllipse } from 'konva/lib/shapes/Ellipse';
 import { Image as KonvaImage } from 'konva/lib/shapes/Image';
@@ -31,6 +32,7 @@ import { PixelRect } from './pixelRect';
 import { Shape as KonvaShape } from 'konva/lib/Shape';
 import { Text as KonvaText, type TextConfig } from 'konva/lib/shapes/Text';
 import {
+  type ClipPath,
   type CornerRadius,
   type Matrix,
   type Paint,
@@ -198,6 +200,16 @@ class Renderer {
           ctx.rect(clipBox.x, clipBox.y, clipBox.width, clipBox.height);
           ctx.closePath();
         } else roundedRectPath(ctx, width, height, cornerRadius);
+      });
+    }
+
+    if (node.type === 'group' && node.clipPath) {
+      const { clipPath } = node;
+      // The clip of an icon: its path in the group's local space, with the `viewBox` matrix. The
+      // fill rule goes back to Konva, which hands it to `ctx.clip`.
+      container.clipFunc((ctx) => {
+        iconClipPath(ctx, clipPath);
+        return [clipPath.fillRule];
       });
     }
 
@@ -1137,16 +1149,9 @@ export function isInvisibleShadow(shadow: Shadow): boolean {
     return true;
   const color = shadow.color.trim().toLowerCase();
   if (color === 'transparent' || color === 'none') return true;
-  const rgba = /^rgba?\(([^)]*)\)$/.exec(color);
-  if (rgba) {
-    const parts = (rgba[1] ?? '').split(',').map((p) => p.trim());
-    return parts.length === 4 && Number(parts[3]) === 0;
-  }
-  const hex8 = /^#([0-9a-f]{8})$/.exec(color);
-  if (hex8) return (hex8[1] ?? '').endsWith('00');
-  const hex4 = /^#([0-9a-f]{4})$/.exec(color);
-  if (hex4) return (hex4[1] ?? '').endsWith('0');
-  return false;
+  // The model's reader: hex, `rgb()`/`rgba()` and `hsl()`/`hsla()`, comma or space/slash syntax.
+  const rgba = parseFormatColor(color);
+  return rgba !== undefined && rgba.a <= 0;
 }
 
 /**
@@ -1417,6 +1422,53 @@ type PathContext = Pick<
   CanvasRenderingContext2D,
   'beginPath' | 'moveTo' | 'lineTo' | 'arcTo' | 'closePath'
 >;
+
+type ClipContext = Pick<
+  CanvasRenderingContext2D,
+  | 'save'
+  | 'restore'
+  | 'transform'
+  | 'moveTo'
+  | 'lineTo'
+  | 'bezierCurveTo'
+  | 'quadraticCurveTo'
+  | 'ellipse'
+  | 'closePath'
+>;
+
+/**
+ * Draws the clip path of an icon (`d` in `viewBox` units) under its matrix. The matrix applies only
+ * while the points are added: restoring it leaves the path in the group's space, where Konva clips.
+ */
+function iconClipPath(ctx: ClipContext, clip: ClipPath): void {
+  const [a, b, c, d, e, f] = clip.transform;
+  ctx.save();
+  ctx.transform(a, b, c, d, e, f);
+  for (const { command, points: p } of KonvaPath.parsePathData(clip.d)) {
+    switch (command) {
+      case 'M':
+        ctx.moveTo(p[0]!, p[1]!);
+        break;
+      case 'L':
+        ctx.lineTo(p[0]!, p[1]!);
+        break;
+      case 'C':
+        ctx.bezierCurveTo(p[0]!, p[1]!, p[2]!, p[3]!, p[4]!, p[5]!);
+        break;
+      case 'Q':
+        ctx.quadraticCurveTo(p[0]!, p[1]!, p[2]!, p[3]!);
+        break;
+      case 'A':
+        // Konva's arc: [cx, cy, rx, ry, start, sweep, rotation, sweep flag].
+        ctx.ellipse(p[0]!, p[1]!, p[2]!, p[3]!, p[6]!, p[4]!, p[4]! + p[5]!, !p[7]);
+        break;
+      case 'z':
+        ctx.closePath();
+        break;
+    }
+  }
+  ctx.restore();
+}
 
 /** Rounded rectangle path on the context (for the frames' clip). */
 function roundedRectPath(

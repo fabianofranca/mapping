@@ -236,3 +236,41 @@ describe('what stays as it was', () => {
     near(pixel(drawn(node, { width: 10, height: 10 }), 5, 5), [255, 255, 255, 255], 0);
   });
 });
+
+describe('gradient under a group clipPath (icon clip)', () => {
+  it('the ramp is measured in the path node and only the clipped half shows', () => {
+    const path: SceneNode = {
+      ...baseNode({
+        id: 'p',
+        name: 'p',
+        width: 24,
+        height: 24,
+        transform: [2, 0, 0, 2, 0, 0],
+        fills: [
+          {
+            type: 'linear',
+            start: { x: 0, y: 0 },
+            end: { x: 24, y: 0 },
+            stops: RED_BLUE,
+          },
+        ],
+      }),
+      type: 'path',
+      d: 'M0 0h24v24H0z',
+      fillRule: 'nonzero',
+    };
+    const group: SceneNode = {
+      ...baseNode({ id: 'g', name: 'g', width: 48, height: 48 }),
+      type: 'group',
+      children: [path],
+      clipPath: {
+        d: 'M0 0h12v24H0z',
+        fillRule: 'nonzero',
+        transform: [2, 0, 0, 2, 0, 0],
+      },
+    };
+    const raster = drawn(group, { width: 48, height: 48 });
+    near(pixel(raster, 12, 24), [191, 0, 64, 255], 4);
+    near(pixel(raster, 36, 24), [255, 255, 255, 255], 0);
+  });
+});
