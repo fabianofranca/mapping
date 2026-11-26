@@ -63,6 +63,12 @@ function writeProject(name: string, extra: Record<string, unknown>): void {
             component: 'components/acme-label.json',
             fields: [{ key: 'label', type: 'string', default: 'Ok' }],
           },
+          {
+            id: 'inter-label',
+            name: 'Inter label',
+            component: 'components/inter-label.json',
+            fields: [{ key: 'label', type: 'string', default: 'Ok' }],
+          },
         ],
       },
     ],
@@ -97,6 +103,32 @@ function writeProject(name: string, extra: Record<string, unknown>): void {
             width: 'hug',
             height: 'hug',
             font: { family: 'Acme', size: 14, lineHeight: 20 },
+          },
+        ],
+      },
+    }),
+  );
+  // The same button in a stack that is not a library font: still approximate (stage #2825, decision 5).
+  writeFileSync(
+    join(dir, 'specs', 'fit', 'components', 'inter-label.json'),
+    JSON.stringify({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'inter-label',
+      name: 'inter-label',
+      size: { width: 120, height: 40 },
+      sizing: { width: 'hug', height: 'hug' },
+      template: {
+        type: 'frame',
+        layout: { type: 'column', padding: 8 },
+        children: [
+          {
+            type: 'text',
+            name: 'label',
+            text: { $field: 'label', default: '' },
+            width: 'hug',
+            height: 'hug',
+            font: { family: 'Inter, sans-serif', size: 14, lineHeight: 20 },
           },
         ],
       },
@@ -172,7 +204,8 @@ describe('measure_component: the response', () => {
     expect(r.density).toBe(1);
     expect(r.pixels).toEqual(r.units);
     expect(r.hint).toBeUndefined();
-    expect(r.approximate).toBe(true);
+    // Stage #2825, decision 5: a text in the default font (Mapping Sans) is exact.
+    expect(r.approximate).toBe(false);
     const again = await loadProject(roots, await findProject(roots, 'telas'));
     expect(again.project.markings).toHaveLength(1);
     expect(again.project.annotations).toHaveLength(1);
@@ -202,8 +235,15 @@ describe('measure_component: the response', () => {
     expect((await inFonted('acme-label')).approximate).toBe(false);
   });
 
-  it('approximate stays true in a project with a library font when the text is not set in it', async () => {
-    expect((await inFonted('fit-hug')).approximate).toBe(true);
+  it('approximate is false in a project with a library font when the text is in the default font', async () => {
+    expect((await inFonted('fit-hug')).approximate).toBe(false);
+  });
+
+  it('approximate stays true for a stack that does not start with a library font or the default one (Inter, sans-serif)', async () => {
+    expect((await inFonted('inter-label')).approximate).toBe(true);
+    expect(
+      ok(await measure('inter-label', { values: { label: LONG_LABEL } })).approximate,
+    ).toBe(true);
   });
 
   it('approximate is true for a family that is not a library font, and false for a component with no text', async () => {

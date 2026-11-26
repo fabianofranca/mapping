@@ -18,6 +18,7 @@ import { execFileSync } from 'node:child_process';
 import process from 'node:process';
 import { access, copyFile, rm, writeFile } from 'node:fs/promises';
 import { build } from 'esbuild';
+import { drawingFontEsbuild } from '../pwa/fontModules.mjs';
 import { packageJson } from './packageManifest.mjs';
 
 const OUT = 'dist-viewer';
@@ -46,6 +47,8 @@ await build({
   platform: 'browser',
   target: 'es2022',
   external: ['react', 'react/jsx-runtime', 'react-dom'],
+  // `drawing-font:*`: the Mapping faces the viewer registers (the same files the MCP measures with).
+  plugins: [drawingFontEsbuild],
   jsx: 'automatic',
   // 'eof': the embedded Konva license notice goes to the end of the bundle.
   legalComments: 'eof',

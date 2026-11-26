@@ -90,7 +90,7 @@ const library = await loadLibraryFromUrl('/libraries/sdui-backend/'); // also fe
 const result = await screenFromFormat(library, fileText, {
   format: 'sdui-backend/sdui', // <specId>/<formatId>
   measure: konvaMeasurer, // the one that draws, so the boxes match the drawing
-  // fonts: the same `fonts` you give createViewer (default: the viewer's own, which is also createViewer's default)
+  // fonts: the same `fonts` you give createViewer (default: the built-in Mapping Sans/Mono, which is also createViewer's default)
 });
 if (result.error) showError(result.error.code, result.error.message);
 else createViewer(el, { library, screen: result.screen }); // one `Screen` per container with components: `result.screens`
@@ -166,14 +166,14 @@ It fetches the specialization, the components and the fonts it points to (paths 
 
 ## Fonts
 
-The core does not load fonts. Two ways:
+The default font (Mapping Sans and Mono, embedded in the bundle, about 100 KB) needs nothing from you: the viewer registers it on the first `createViewer` and redraws when it loads; the `fonts` option still overrides it. The core does not load a library's fonts. Two ways:
 
 - **CSS:** declare the families with `@font-face` on your site;
 - **Through the library:** `await registerLibraryFonts(library)` registers, via `FontFace`, the fonts the specialization declares (with the loaded bytes) and returns the status of each one (`loaded`, `missing`, `failed`).
 
 ### Token mode
 
-A specialization with `tokens` (`light`, `dark`…) draws with the first entry of each axis. For another one, pass `drawingMode: 'dark'` (a string sets that entry on every axis that declares it) or a map with one entry per axis, `drawingMode: { theme: 'dark', density: 'compact' }`, to `createViewer` (or the `drawingMode` prop of `<MappingViewer/>`). An axis left out, or an entry it does not declare, falls back to its first entry. Changing it later, with `viewer.update({ drawingMode: 'light' })`, redraws without reloading the library or the screen; an equal selection (another key order, a default entry spelled out) does not redraw. With `source`, an origin whose `screen.background` is a token (`{ "$token": "surface" }`) draws that background in the same selection, so the screen background changes with `drawingMode` too. `font-sans` and `font-mono` (built in) resolve to the host's font in any mode.
+A specialization with `tokens` (`light`, `dark`…) draws with the first entry of each axis. For another one, pass `drawingMode: 'dark'` (a string sets that entry on every axis that declares it) or a map with one entry per axis, `drawingMode: { theme: 'dark', density: 'compact' }`, to `createViewer` (or the `drawingMode` prop of `<MappingViewer/>`). An axis left out, or an entry it does not declare, falls back to its first entry. Changing it later, with `viewer.update({ drawingMode: 'light' })`, redraws without reloading the library or the screen; an equal selection (another key order, a default entry spelled out) does not redraw. With `source`, an origin whose `screen.background` is a token (`{ "$token": "surface" }`) draws that background in the same selection, so the screen background changes with `drawingMode` too. `font-sans` and `font-mono` (built in) resolve to the built-in Mapping Sans/Mono (or the `fonts` option) in any mode.
 
 When the fonts finish loading, re-measure the texts: `viewer.redraw()` in the core, or change the value of `fontsVersion` in `<MappingViewer/>`.
 
