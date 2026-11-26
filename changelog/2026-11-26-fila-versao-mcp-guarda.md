@@ -1,4 +1,4 @@
-# Queue MCP version check guard — [Não lançado] (épico `epic/fila-versao-mcp-guarda`, PR #2876, MCP unchanged, schema v24)
+# Queue MCP version check guard — 2026-11-26 (épico `epic/fila-versao-mcp-guarda`, PR #2876, MCP unchanged, schema v24)
 
 MCP unchanged.
 
