@@ -187,7 +187,7 @@ describe('catalog and library load the icon set', () => {
 });
 
 // Icons file formatVersion 4 (stage #2829, LG2): the gradient `fill` and the `clip` go through the
-// library validator and the catalog, and reach the scene as paints the renderers already draw.
+// library validator and the catalog; the gradient reaches the scene as a paint the renderers already draw, the clip as a `clipPath` (drawn from LG3).
 describe('icons file formatVersion 4 in the package', () => {
   const GRADIENT = {
     type: 'linear',
