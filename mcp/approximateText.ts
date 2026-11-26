@@ -3,8 +3,9 @@ import { familyNames, type FontBook } from './image/textMeasurer';
 
 // What "approximate" means for the MCP's text measurements (stage #2267, decisions 3 to 5): a text is
 // approximate when its family stack does not resolve to a library face, so the embedded font stood in for
-// its family; the built-in drawing font (Mapping Sans and Mono, stage #2825, decision 5) is the embedded one itself. `measure_component` reads the families the engine measures; the drawing proof reads the ones
-// in the drawing's scene.
+// its family. `measure_component` reads the families the engine measures; the drawing proof reads the ones
+// in the drawing's scene. The built-in drawing font (Mapping Sans and Mono, stage #2825, decision 5) is the
+// embedded one itself, so a stack that starts with it is exact.
 
 /** A measurer that records the family of every text it measures, and the families recorded so far. */
 export function recordingMeasurer(measure: TextMeasurer): {
@@ -39,10 +40,15 @@ export function sceneFamilies(root: FrameNode): Set<string> {
 /** The names of the built-in drawing font, which the server embeds and the app and the viewer register (stage #2825). */
 const DRAWING_FONT = /^mapping (sans|mono)$/i;
 
-/** The stack's first name is Mapping Sans or Mapping Mono (any case, quotes stripped): the embedded face is the font. */
-export function isDrawingFont(family: string): boolean {
+/**
+ * The stack's first name is Mapping Sans or Mapping Mono (any case, quotes stripped) and the server measures the
+ * whole stack with that face: `"Mapping Sans", monospace` is not, because the server would stop at `monospace` and
+ * measure with the mono face while the browser draws Mapping Sans.
+ */
+export function isDrawingFont(fonts: FontBook, family: string): boolean {
   const first = familyNames(family)[0];
-  return first !== undefined && DRAWING_FONT.test(first);
+  if (first === undefined || !DRAWING_FONT.test(first)) return false;
+  return fonts.embeddedFor(family, 400) === fonts.embeddedFor(`"${first}"`, 400);
 }
 
 /**
@@ -51,6 +57,6 @@ export function isDrawingFont(family: string): boolean {
  */
 export function anyApproximate(fonts: FontBook, families: Iterable<string>): boolean {
   for (const family of families)
-    if (!isDrawingFont(family) && !fonts.isLibraryFamily(family)) return true;
+    if (!isDrawingFont(fonts, family) && !fonts.isLibraryFamily(family)) return true;
   return false;
 }

@@ -58,13 +58,14 @@ function bytesOf(base64: string): ArrayBuffer {
   return bytes.buffer;
 }
 
+/** Adds one face; `false` when it failed (the failure went to `onError`). */
 async function addFace(
   host: FontHost,
   face: DrawingFace,
   onError: (error: unknown) => void,
-): Promise<void> {
+): Promise<boolean> {
   const { FontFace, fonts } = host;
-  if (!FontFace || !fonts) return;
+  if (!FontFace || !fonts) return false;
   try {
     const font = new FontFace(face.family, bytesOf(face.base64), {
       weight: face.weight,
@@ -72,15 +73,18 @@ async function addFace(
     });
     await font.load();
     fonts.add(font);
+    return true;
   } catch (error) {
     onError(error);
+    return false;
   }
 }
 
 /**
  * Adds the four Mapping faces to `document.fonts` and resolves when they are loaded. A face that fails to load goes
  * to `onError` and the others carry on (the component text falls back to the stack's generic family); it never
- * throws. A second call on the same document adds nothing and gives the first call's promise. Without `FontFace`
+ * throws. A second call on the same document adds nothing and gives the first call's promise (unless a face
+ * failed: then the next call tries again). Without `FontFace`
  * or `document.fonts` (a test, an old browser) it does nothing.
  */
 export function registerDrawingFonts(
@@ -92,7 +96,10 @@ export function registerDrawingFonts(
   const done = (fonts as WithLoading)[LOADING];
   if (done !== undefined) return done;
   const loading = Promise.all(FACES.map((face) => addFace(host, face, onError))).then(
-    () => undefined,
+    (results) => {
+      // A failure is not kept: a later call (another viewer, a reload of the library) tries again.
+      if (results.includes(false)) delete (fonts as WithLoading)[LOADING];
+    },
   );
   (fonts as WithLoading)[LOADING] = loading;
   return loading;

@@ -34,12 +34,19 @@ bindInstallPrompt();
 if (import.meta.env.PROD) void registerServiceWorker();
 
 // The drawing font (Mapping Sans and Mono) is registered before the first render: the canvas, the Catalog and the
-// library preview measure and draw component text with it. A failure is reported and the stack's fallback applies.
+// library preview measure and draw component text with it. A failure is reported and the stack's fallback applies;
+// a registration that does not settle within `DRAWING_FONT_WAIT_MS` does not hold the app back (the faces are in
+// memory, so this is a safety net, not an expected wait).
+const DRAWING_FONT_WAIT_MS = 3000;
 const root = document.getElementById('app');
-if (root)
-  void registerDrawingFonts(undefined, (error) =>
+if (root) {
+  const fonts = registerDrawingFonts(undefined, (error) =>
     reportError('drawing-fonts', error),
-  ).then(() =>
+  );
+  const patience = new Promise<void>((resolve) =>
+    setTimeout(resolve, DRAWING_FONT_WAIT_MS),
+  );
+  void Promise.race([fonts, patience]).then(() =>
     render(
       <ErrorBoundary>
         <App />
@@ -47,3 +54,4 @@ if (root)
       root,
     ),
   );
+}

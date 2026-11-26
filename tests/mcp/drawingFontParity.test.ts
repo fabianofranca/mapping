@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { anyApproximate } from '../../mcp/approximateText';
 import { builtinFontBook, measurerFor } from '../../mcp/image/textMeasurer';
 import {
   DRAWING_PARITY_CASES,
@@ -84,5 +85,20 @@ describe('drawing font parity (server)', () => {
     expect(book.fontFor('"Mapping Mono"', 700, false)).toBe(
       book.fontFor(DRAWING_PARITY_FAMILIES.mono, 700, false),
     );
+  });
+
+  // Stage #2825, decision 5 and its review: a stack is exact only when the server measures it with the face the
+  // browser draws it with (the first name).
+  it('anyApproximate: the default stacks are exact, a stack the server resolves to another face is not', () => {
+    const book = builtinFontBook();
+    const exact = [
+      '"Mapping Sans", sans-serif',
+      '"mapping mono", monospace',
+      'Mapping Mono',
+    ];
+    for (const family of exact) expect(anyApproximate(book, [family])).toBe(false);
+    const approximate = ['sans-serif', 'Inter', '"Mapping Sans", monospace', 'monospace'];
+    for (const family of approximate) expect(anyApproximate(book, [family])).toBe(true);
+    expect(anyApproximate(book, [])).toBe(false);
   });
 });

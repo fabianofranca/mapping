@@ -54,7 +54,7 @@ import {
   type TokenSelection,
 } from '../src/model/components/tokens';
 import { tokenValue } from '../src/theme/tokens';
-import { loadViewerFonts, viewerHostFonts } from './hostFonts';
+import { loadViewerFonts, viewerFontsLoaded, viewerHostFonts } from './hostFonts';
 import type { TextMeasurer } from '../src/model/components/instantiate';
 import type { Box, Screen } from '../src/model/components/screen';
 import { type SourceResult, screenFromSource } from '../src/model/components/origin';
@@ -546,13 +546,16 @@ export function createViewer(
   resolveScreen();
   if (library !== undefined || screen !== undefined) sync(false);
 
-  // The built-in faces register on the first viewer of the document; the texts are measured and drawn again when
-  // they are loaded (a failure leaves the stack's generic family, and nothing to redraw changes).
-  void loadViewerFonts().then(() => {
-    if (disposed) return;
-    resolveScreen();
-    sync(true);
-  });
+  // The built-in faces register on the first viewer of the document; that viewer measures and draws again once they
+  // are loaded. A viewer created after they were loaded has nothing to redraw (and the host's `onSource` and
+  // `onWarnings` fire once, not twice), and neither has one with nothing to draw.
+  if (!viewerFontsLoaded()) {
+    void loadViewerFonts().then(() => {
+      if (disposed || (library === undefined && screen === undefined)) return;
+      resolveScreen();
+      sync(true);
+    });
+  }
 
   return {
     update(input) {

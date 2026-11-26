@@ -93,9 +93,9 @@ export function drawingFontModules() {
   const prefix = '\0';
   return {
     name: 'drawing-font-modules',
-    resolveId: (id) => (id in MODULES ? prefix + id : null),
+    resolveId: (id) => (Object.hasOwn(MODULES, id) ? prefix + id : null),
     load: (id) =>
-      id.startsWith(prefix) && id.slice(1) in MODULES
+      id.startsWith(prefix) && Object.hasOwn(MODULES, id.slice(1))
         ? drawingFontSource(id.slice(1))
         : null,
   };
@@ -106,7 +106,7 @@ export const drawingFontEsbuild = {
   name: 'drawing-font-modules',
   setup(esbuild) {
     esbuild.onResolve({ filter: /^drawing-font:/ }, (args) =>
-      args.path in MODULES
+      Object.hasOwn(MODULES, args.path)
         ? { path: args.path, namespace: 'drawing-font' }
         : { errors: [{ text: `unknown drawing font: ${args.path}` }] },
     );

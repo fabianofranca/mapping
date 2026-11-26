@@ -77,4 +77,12 @@ describe('registerDrawingFonts', () => {
   it('without FontFace or document.fonts it does nothing and does not throw', async () => {
     await expect(registerDrawingFonts({}, vi.fn())).resolves.toBeUndefined();
   });
+
+  it('a failed registration is not cached: a later call tries again', async () => {
+    const failing = fakeHost(true);
+    await registerDrawingFonts(failing.host, vi.fn());
+    expect(failing.made).toHaveLength(4);
+    await registerDrawingFonts(failing.host, vi.fn());
+    expect(failing.made).toHaveLength(8);
+  });
 });
