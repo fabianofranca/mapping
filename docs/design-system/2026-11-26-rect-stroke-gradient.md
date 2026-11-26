@@ -1,4 +1,4 @@
-# A rect stroke gradient follows the inset — [Não lançado] (épico `epic/rect-stroke-gradient`)
+# A rect stroke gradient follows the inset — 2026-11-26 (épico `epic/rect-stroke-gradient`)
 
 ## Pendências
 

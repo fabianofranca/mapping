@@ -1,4 +1,4 @@
-# A rect stroke gradient follows the inset — [Não lançado] (épico `epic/rect-stroke-gradient`, PR #2894, MCP unchanged, schema v23 unchanged)
+# A rect stroke gradient follows the inset — 2026-11-26 (épico `epic/rect-stroke-gradient`, PR #2894, MCP unchanged, schema v23 unchanged)
 
 ## Corrigido
 
