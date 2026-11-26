@@ -3,7 +3,6 @@ import { basename, dirname, extname, join } from 'node:path';
 import {
   DEFAULT_ICON_VIEWBOX,
   ICONS_FORMAT,
-  ICONS_FORMAT_VERSION,
   parseIconsFile,
   parseIconsText,
   type IconDef,
@@ -354,7 +353,9 @@ function mergeIcons(
 
 /**
  * The file's version after the import: 3 only when a written path has `evenodd`, 2 when `mirror`
- * meets a version 1 file; otherwise it stays (a new file starts at 1).
+ * meets a version 1 file; otherwise it stays (a new file starts at 1). Literal numbers, not
+ * `ICONS_FORMAT_VERSION`: the tool never writes a gradient or a `clip` (version 4), so a file
+ * that already is version 4 keeps it and the import alone never raises it past 3.
  */
 function versionAfter(
   current: number,
@@ -363,7 +364,7 @@ function versionAfter(
 ): number {
   let version = current;
   if (written.some((icon) => icon.paths.some((p) => p.fillRule === 'evenodd'))) {
-    version = Math.max(version, ICONS_FORMAT_VERSION);
+    version = Math.max(version, 3);
   }
   if (mirror && written.length > 0) version = Math.max(version, 2);
   return version;
