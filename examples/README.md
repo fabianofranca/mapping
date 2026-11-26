@@ -157,6 +157,20 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 **Scripts.** R31 in `docs/TESTING.md` ("Named values").
 
+### `examples/libraries/library-gaps/`
+
+**What it is.** The example of the **library format gaps** stage (#2829): one type per gap it closes, added phase by phase (the specialization goes up to the version each type needs). Today it has one type, **HSL swatch** (`hsl-swatch`, 96 × 48, no fields).
+
+**How to open.** **Specializations** › **Apply folder…** and pick the folder; mark an HSL swatch. With the MCP server, apply the folder to a project and call `render_marking` on it.
+
+**What you can see.**
+
+- The frame is `hsl(210, 100%, 50%)` (`#0080FF`), the right square `hsla(0, 100%, 50%, 0.5)` (about `#804080` over the frame) and the left one is white with a `hsl(120, 100%, 25%)` stroke (`#008000`, 4 wide, inside).
+- The app and the MCP PNG paint the same colors: the PNG reads colors with the model's one reader, which understands `hsl()` and `hsla()`.
+- The package validates with no error and no warning: `hsl()` is a color of the format. A literal such as `red` would be the warning `component.colorUnknown`.
+
+**Scripts.** Added with the stage's script (the last phase).
+
 ### `examples/libraries/data-model/`
 
 **What it is.** The example of the **file formats** (`fileFormats`, `formatVersion` 20) for a specialization **without components**: the data model of a service. Two types, **Class** (the `attributes` table: name, type, required, example) and **Endpoint** (method, path, request, response, timeout), and two formats, each one a plugin with `generate` and `parse`: **OpenAPI** (`yaml`, OpenAPI 3.0.3: the classes become `components.schemas`, the endpoints become `paths`) and **Attributes CSV** (`csv`, one line per attribute of each class).

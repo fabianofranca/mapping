@@ -2,6 +2,7 @@ import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { ScreenAnchor } from '../../src/model/components/componentFormat';
 import { CUT_REACH, cutsText } from '../../src/model/components/textWrap';
 import { gapOutlines } from '../../src/model/components/strokeGaps';
+import { parseFormatColor } from '../../src/model/components/tokens';
 import {
   growRadius,
   sideSegments,
@@ -84,43 +85,22 @@ const CURVE_STEPS = 16;
 const CORNER_STEPS = 10;
 const ELLIPSE_STEPS = 64;
 const CIRCLE_STEPS = 12;
-const HEX = /^#([0-9a-f]{3,8})$/i;
-const FUNC = /^rgba?\(\s*([^)]*)\)$/i;
 
 // ---------------------------------------------------------------------------
 // Cores
 
-/** `#rgb`, `#rrggbb`, `#rrggbbaa`, `rgb()` and `rgba()`; anything else becomes `null`. */
+/**
+ * The color the model's reader (`parseFormatColor`) understands, `transparent` as alpha 0, with the
+ * channels clamped; anything else (including a named color such as `red`) becomes `null`.
+ */
 export function parseColor(text: string): Color | null {
-  const value = text.trim();
-  if (value === 'transparent') return { rgb: [0, 0, 0], alpha: 0 };
-  const hex = HEX.exec(value);
-  if (hex) {
-    let digits = hex[1]!;
-    if (digits.length === 3 || digits.length === 4) {
-      digits = [...digits].map((d) => d + d).join('');
-    }
-    if (digits.length !== 6 && digits.length !== 8) return null;
-    const n = (i: number) => Number.parseInt(digits.slice(i, i + 2), 16);
-    return { rgb: [n(0), n(2), n(4)], alpha: digits.length === 8 ? n(6) / 255 : 1 };
-  }
-  const func = FUNC.exec(value);
-  if (func) {
-    const parts = func[1]!.split(/[\s,/]+/).filter((part) => part !== '');
-    const channel = (part: string | undefined) => {
-      if (part === undefined) return Number.NaN;
-      return part.endsWith('%') ? (Number.parseFloat(part) * 255) / 100 : Number(part);
-    };
-    const [r, g, b] = [channel(parts[0]), channel(parts[1]), channel(parts[2])];
-    if ([r, g, b].some((c) => Number.isNaN(c))) return null;
-    const a = parts[3] === undefined ? 1 : Number.parseFloat(parts[3]);
-    const alpha = parts[3]?.endsWith('%') ? a / 100 : a;
-    return {
-      rgb: [clamp255(r!), clamp255(g!), clamp255(b!)],
-      alpha: Number.isNaN(alpha) ? 1 : Math.min(1, Math.max(0, alpha)),
-    };
-  }
-  return null;
+  if (text.trim().toLowerCase() === 'transparent') return { rgb: [0, 0, 0], alpha: 0 };
+  const color = parseFormatColor(text);
+  if (color === undefined) return null;
+  return {
+    rgb: [clamp255(color.r), clamp255(color.g), clamp255(color.b)],
+    alpha: Math.min(1, Math.max(0, color.a)),
+  };
 }
 
 function clamp255(value: number): number {

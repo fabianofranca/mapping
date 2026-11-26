@@ -664,6 +664,8 @@ function readIcons(pkg: Package, out: Collector): void {
       out.passError(path, issue.path, issue.message, codingOf(issue));
     return;
   }
+  for (const warning of parsed.warnings)
+    out.passWarning(path, warning.path, warning.message, codingOf(warning));
   pkg.icons = parsed.set;
 }
 

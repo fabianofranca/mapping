@@ -688,6 +688,8 @@ export const templatePtBR: {
   'model.component.expectedCell': 'esperava texto, número ou null',
   'model.component.fontFamilyInvalid':
     'família de fonte inválida para o CSS ({family}): o texto cai em sans-serif',
+  'model.component.colorUnknown':
+    'não é uma cor do formato: {value} (use #rrggbb, rgb(), hsl(), transparent ou none)',
   'model.iconsFile.expectedObject': 'esperava um objeto',
   'model.iconsFile.expectedObjectShort': 'esperava objeto',
   'model.iconsFile.expectedViewBox':
@@ -706,6 +708,8 @@ export const templatePtBR: {
   'model.iconsFile.required': 'campo obrigatório',
   'model.iconsFile.expectedIcons': 'esperava um objeto com ao menos um ícone',
   'model.iconsFile.nameInvalid': 'nome inválido; use [a-z0-9][a-z0-9-_]*',
+  'model.iconsFile.colorUnknown':
+    'não é uma cor do formato: {value} (use #rrggbb, rgb(), hsl(), transparent ou none)',
   'model.svgIcon.xmlTooLarge': 'o SVG é maior que {max} KB',
   'model.svgIcon.xmlTooDeep':
     'o SVG tem mais de {max} níveis de aninhamento (linha {line})',

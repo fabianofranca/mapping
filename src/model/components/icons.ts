@@ -1,6 +1,7 @@
 import { isRecord } from '../isRecord';
 import type { ModelMessageTemplateCode } from '../messages';
 import { iconsFileCodeForText } from '../messages/textLookup';
+import { isFormatColor } from './tokens';
 /**
  * Icon set of the library (component format 4, "faithful components" stage, CF7).
  *
@@ -70,7 +71,8 @@ function issue(path: string, message: string): IconsIssue {
 }
 
 export type IconsParseResult =
-  { ok: true; set: IconSet } | { ok: false; issues: IconsIssue[]; errors: string[] };
+  | { ok: true; set: IconSet; warnings: IconsIssue[] }
+  | { ok: false; issues: IconsIssue[]; errors: string[] };
 
 const join = (path: string, key: string | number): string =>
   path === ''
@@ -215,11 +217,33 @@ function collectIssues(input: unknown): IconsIssue[] {
 const formatIssue = (issue: IconsIssue): string =>
   issue.path === '' ? issue.message : `${issue.path}: ${issue.message}`;
 
+/** Warnings (not errors) of a valid file: a path `fill`/`stroke` text that is not a color of the format. */
+function colorWarnings(set: IconSet): IconsIssue[] {
+  const out: IconsIssue[] = [];
+  for (const [name, icon] of Object.entries(set.icons)) {
+    icon.paths.forEach((path, i) => {
+      const at = `${join(join('icons', name), 'paths')}[${i}]`;
+      for (const key of ['fill', 'stroke'] as const) {
+        const value = path[key];
+        if (typeof value !== 'string' || isFormatColor(value)) continue;
+        out.push(
+          issue(
+            join(at, key),
+            `not a color of the format: ${JSON.stringify(value)} (use #rrggbb, rgb(), hsl(), transparent or none)`,
+          ),
+        );
+      }
+    });
+  }
+  return out;
+}
+
 /** Validates the JSON of the `mapping-icons` file (does not throw). */
 export function parseIconsFile(input: unknown): IconsParseResult {
   const issues = collectIssues(input);
   if (issues.length > 0) return { ok: false, issues, errors: issues.map(formatIssue) };
-  return { ok: true, set: input as IconSet };
+  const set = input as IconSet;
+  return { ok: true, set, warnings: colorWarnings(set) };
 }
 
 /** Validates the text of a `mapping-icons` file (invalid JSON becomes an issue, without throwing). */

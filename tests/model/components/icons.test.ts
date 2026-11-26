@@ -57,6 +57,11 @@ describe('parseIconsFile', () => {
       expect(result.errors.join('\n')).toContain('icons.Check: invalid name');
   });
 
+  it('a valid file has no warnings', () => {
+    const result = parseIconsFile(FILE);
+    expect(result.ok && result.warnings).toEqual([]);
+  });
+
   it('rejects empty paths', () => {
     const result = parseIconsFile({ ...FILE, icons: { check: { paths: [] } } });
     expect(result.ok).toBe(false);

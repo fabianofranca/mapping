@@ -20,4 +20,7 @@ export const iconsFileMessages = {
   'iconsFile.required': 'required field',
   'iconsFile.expectedIcons': 'expected an object with at least one icon',
   'iconsFile.nameInvalid': 'invalid name; use [a-z0-9][a-z0-9-_]*',
+  // Warning
+  'iconsFile.colorUnknown':
+    'not a color of the format: {value} (use #rrggbb, rgb(), hsl(), transparent or none)',
 } as const;

@@ -51,6 +51,16 @@ describe('validateLibrary: icon set', () => {
     expect(report.ok).toBe(true);
   });
 
+  it('an unknown color in the icons file is a warning at its path, never an error', () => {
+    const text = edit('icons/set.json', ['icons', 'dot', 'paths', 0, 'fill'], 'banana');
+    const report = validateLibrary({ files: pack({ 'icons/set.json': text }) });
+    expect(brief(report.errors)).toEqual([]);
+    expect(report.ok).toBe(true);
+    expect(brief(report.issues)).toEqual([
+      'warning icons/set.json icons.dot.paths[0].fill: not a color of the format: "banana" (use #rrggbb, rgb(), hsl(), transparent or none)',
+    ]);
+  });
+
   it('a missing icons file is a file error in the specialization', () => {
     const report = validateLibrary({ files: pack({ 'icons/set.json': null }) });
     expect(brief(report.errors)).toEqual([
