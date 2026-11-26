@@ -549,6 +549,10 @@ function coversRole(step: SpecMigrationStep, change: SpecChange): boolean {
  * | `removed-role`               | `rename-role{type, from: role}` ou `remove-role{type, role}`   |
  * | `roles-required`             | any `set-role{type}`                                           |
  *
+ * A field taken away (`remove-field`, `rename-field`) and brought back by a later `add-field`
+ * also has its `field-type`, `field-required` and `removed-option` breaks covered by the step
+ * that took it away (it cleared the old values).
+ *
  * Additive change or broken chain: `undefined`.
  */
 export function migrationFor(
@@ -569,7 +573,41 @@ function stepIn(
     const step = migration.steps.find((s) => covers(s, change));
     if (step !== undefined) return step;
   }
-  return undefined;
+  return clearedIn(chain, change);
+}
+
+/** The breaks of a field that a `remove-field` followed by an `add-field` of it covers. */
+const CLEARED_CODES: ReadonlySet<SpecChangeCode> = new Set([
+  'field-type',
+  'field-required',
+  'removed-option',
+]);
+
+/** `true` if `step` takes the field `key` of `typeId` away (`remove-field` or `rename-field` from it). */
+function takesAway(step: SpecMigrationStep, typeId: string, key: string): boolean {
+  return (
+    (step.op === 'remove-field' && step.type === typeId && step.field === key) ||
+    (step.op === 'rename-field' && step.type === typeId && step.from === key)
+  );
+}
+
+/**
+ * A field that a step took away and a later `add-field` brought back had its old values
+ * cleared: the `remove-field` (or `rename-field`) covers its `field-type`, `field-required` and
+ * `removed-option` breaks. The step that took it away, or `undefined`.
+ */
+function clearedIn(
+  chain: readonly SpecMigration[],
+  change: SpecChange,
+): SpecMigrationStep | undefined {
+  const { typeId = '', fieldKey = '' } = change;
+  if (!CLEARED_CODES.has(change.code)) return undefined;
+  const steps = chain.flatMap((m) => m.steps);
+  const at = steps.findIndex((s) => takesAway(s, typeId, fieldKey));
+  const back = steps.findIndex(
+    (s, i) => i > at && s.op === 'add-field' && s.type === typeId && s.field === fieldKey,
+  );
+  return at >= 0 && back > at ? steps[at] : undefined;
 }
 
 /**

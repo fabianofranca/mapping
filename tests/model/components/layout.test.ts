@@ -148,6 +148,16 @@ const COMPONENTS: ComponentFile[] = [
       weight: 1,
     },
   ),
+  // A weighted child that hugs its own height: in a hug column it is not a `fill` that falls back.
+  block(
+    'wgt-hug',
+    { width: 10, height: 10 },
+    { width: 'fill', height: 'hug' },
+    undefined,
+    {
+      weight: 2,
+    },
+  ),
   label('label', 12),
   // #2164: a `hug` width between 96 and 136 whose `fill` label is the content the root hugs.
   component(
@@ -1370,6 +1380,20 @@ describe('layoutScreen: weight (LG6, decision 10 of #2829)', () => {
       root(node('r', 'row', {}, [node('a', 'fixed'), node('b', 'wgt-px')])),
     ]);
     expect(boxOf(result, 'b').width).toBe(200);
+  });
+
+  it('a weighted child whose own height hugs, in a hug column, warns no fill fallback', () => {
+    const result = run([
+      root(node('c', 'col', {}, [node('a', 'fixed'), node('b', 'wgt-hug')])),
+    ]);
+    expect(result.messages.map((m) => m.code)).not.toContain('engine.fillInHugUsing');
+  });
+
+  it('a weighted fill child in a hug column still warns the fill fallback', () => {
+    const result = run([
+      root(node('c', 'col', {}, [node('a', 'fixed'), node('b', 'wgt1')])),
+    ]);
+    expect(result.messages.map((m) => m.code)).toContain('engine.fillInHugUsing');
   });
 
   it('the minSize floor still applies: a weighted child below its minimum freezes at it', () => {

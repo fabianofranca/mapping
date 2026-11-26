@@ -111,8 +111,8 @@ export interface ResolvedWeight {
 
 /**
  * The component's root `weight` (v4), evaluated with `values` and the same options as `resolveSizing`
- * (tokens, `$anchor.*`, `$container.*` and `$direction`). No value, `null` or no `weight` key: not
- * weighted and no warning. A result that is not a finite number greater than 0: not weighted, with the
+ * (tokens, `$anchor.*`, `$container.*` and `$direction`). No value, `null`, a blank text or no
+ * `weight` key: not weighted and no warning. A result that is not a finite number greater than 0: not weighted, with the
  * warning `invalid value in weight: <value>`.
  */
 export function resolveWeight(
@@ -127,7 +127,7 @@ export function resolveWeight(
   const resolved = substituteTokens(raw, tokens ?? {}) as Expr<unknown> | undefined;
   const value =
     resolved === undefined ? undefined : evaluate<unknown>(resolved, scope, undefined);
-  if (value === undefined || value === null) return { weight: undefined, messages: [] };
+  if (isEmptyWeight(value)) return { weight: undefined, messages: [] };
   const n = numericValue(value);
   if (Number.isFinite(n) && n > 0) return { weight: n, messages: [] };
   return {
@@ -139,6 +139,15 @@ export function resolveWeight(
       }),
     ],
   };
+}
+
+/** No value, `null` or a blank text: the weight is empty (not weighted, no warning). */
+function isEmptyWeight(value: unknown): boolean {
+  return (
+    value === undefined ||
+    value === null ||
+    (typeof value === 'string' && value.trim() === '')
+  );
 }
 
 /** The floor and ceiling of a weighted child's main axis (the component's own limits, before the marking minimum). */

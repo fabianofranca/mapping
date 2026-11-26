@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { parseSpec } from '../../src/model';
+import { migrationFor, missingMigrations, parseSpec, type Spec } from '../../src/model';
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -517,5 +517,63 @@ describe('per-version checks: review findings of LG5', () => {
       path: `${step('0')}.steps[0].field`,
       message: 'field "x" still exists in the type "icon" in this version',
     });
+  });
+});
+
+describe('contract: a field removed and brought back by add-field', () => {
+  function parsed(value: Json): Spec {
+    const result = parseSpec(value);
+    if (!result.ok) throw new Error(JSON.stringify(result.issues));
+    return result.spec;
+  }
+  const tintAs = (version: number, field: Json | undefined, migrations?: Json[]): Json =>
+    spec(migrations, (s) => {
+      s.version = version;
+      const fields = s.layers[0].annotationTypes[0].fields as Json[];
+      const at = fields.findIndex((f) => f.key === 'tint');
+      if (field === undefined) fields.splice(at, 1);
+      else fields[at] = field;
+    });
+
+  it('the field-type break of v1 → v3 is covered by the remove-field of 1 → 2', () => {
+    const v1 = parsed(tintAs(1, { key: 'tint', type: 'string' }));
+    const v3 = parsed(
+      tintAs(3, { key: 'tint', type: 'enum', options: ['red', 'blue'], required: true }, [
+        { from: 1, to: 2, steps: [removeTint] },
+        { from: 2, to: 3, steps: [addTint] },
+      ]),
+    );
+    expect(missingMigrations(v1, v3)).toEqual([]);
+    const change = {
+      kind: 'breaking',
+      code: 'field-type',
+      path: 'x',
+      typeId: 'icon',
+      fieldKey: 'tint',
+      message: '',
+    } as const;
+    expect(migrationFor(v3, 1, change)).toEqual(removeTint);
+  });
+
+  it('an add-field before the remove-field (or none) does not cover a field-type break', () => {
+    const v1 = parsed(tintAs(1, { key: 'tint', type: 'string' }));
+    const v3 = parsed(
+      tintAs(3, { key: 'tint', type: 'number' }, [
+        { from: 1, to: 2, steps: [removeTint] },
+        { from: 2, to: 3, steps: [addTint] },
+      ]),
+    );
+    const reordered: Spec = {
+      ...v3,
+      migrations: [
+        { from: 1, to: 2, steps: [addTint as never, removeTint as never] },
+        {
+          from: 2,
+          to: 3,
+          steps: [{ op: 'copy-field', type: 'icon', from: 'label', to: 'tint' }],
+        },
+      ],
+    };
+    expect(missingMigrations(v1, reordered).map((c) => c.code)).toEqual(['field-type']);
   });
 });

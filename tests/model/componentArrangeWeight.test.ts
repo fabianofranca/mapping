@@ -17,6 +17,10 @@ import {
   type Project,
   type Rect,
 } from '../../src/model';
+import { layoutScreen, type LayoutNode } from '../../src/model/components/layout';
+import { loadLibrary } from '../../src/model/components/library';
+import { resolveWeight } from '../../src/model/components/sizing';
+import type { ComponentFile } from '../../src/model/components/componentFormat';
 import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { emptyProject, marking } from './fixtures';
@@ -105,6 +109,11 @@ const COMPONENTS: Record<string, Json> = {
     { weight: 1, sizing: { width: 'hug', height: 40 } },
     { gap: 0, padding: 0, justify: 'end' },
   ),
+  // The screen layout and Arrange read the same root limits of a weighted child.
+  'wide-row': rowComponent('wide-row', { width: 400, height: 56 }),
+  'fixed-100': item('fixed-100', { size: { width: 100, height: 40 } }),
+  'capped-120': item('capped-120', { weight: 1 }, { maxWidth: 120 }),
+  'floor-200': item('floor-200', { weight: 1, minSize: undefined }, { minWidth: 200 }),
 };
 
 const SPEC_JSON = {
@@ -343,5 +352,109 @@ describe('fitMarking: the weighted axis belongs to the parent', () => {
     const p = add(baseProject(), 'T2', 'hug-item', box(100, 300, 236, 40));
     const fitted = fitMarking(p, catalog, 'T2', approximateMeasurer);
     expect(rectOf(fitted, 'T2').width).not.toBe(236);
+  });
+});
+
+describe('layoutScreen and Arrange: the same limits of a weighted child', () => {
+  const library = loadLibrary([
+    { path: 'spec.json', text: JSON.stringify(SPEC_JSON) },
+    ...Object.entries(COMPONENTS).map(([id, c]) => ({
+      path: `components/${id}.json`,
+      text: JSON.stringify(c),
+    })),
+  ]);
+
+  /** The widths of the children of a `wide-row`, by `layoutScreen` and by Arrange. */
+  function both(kids: readonly (readonly [string, number | undefined])[]) {
+    const nodes: LayoutNode[] = kids.map(([typeId, weight], i) => ({
+      id: `T${i + 1}`,
+      typeId,
+      values: weight === undefined ? {} : { weight },
+      children: [],
+    }));
+    const screen = layoutScreen(
+      {
+        id: 's',
+        name: 'Screen',
+        width: 1000,
+        height: 800,
+        background: '#FFF',
+        roots: [{ node: { id: 'C', typeId: 'wide-row', values: {}, children: nodes } }],
+      },
+      library,
+      approximateMeasurer,
+    ).screen.instances;
+    const laid = nodes.map((n) => screen.find((i) => i.id === n.id)?.box.width);
+    let p = add(baseProject(), 'C', 'wide-row', box(100, 100, 400, 56));
+    nodes.forEach((n, i) => {
+      p = add(
+        p,
+        n.id,
+        n.typeId,
+        box(108 + i * 108, 108, n.typeId === 'fixed-100' ? 100 : 40, 40),
+        'C',
+      );
+      const weight = kids[i]?.[1];
+      if (weight !== undefined) p = setFieldValue(p, `A_${n.id}`, 'weight', weight);
+    });
+    const { project } = arrange(p);
+    return { laid, arranged: nodes.map((n) => rectOf(project, n.id).width) };
+  }
+
+  it('the library loads without problems', () => {
+    expect(library.problems).toEqual([]);
+  });
+
+  it('a weighted child with maxWidth 120 next to a fixed 100 px one', () => {
+    const { laid, arranged } = both([
+      ['fixed-100', undefined],
+      ['capped-120', undefined],
+    ]);
+    expect(arranged).toEqual([100, 120]);
+    expect(laid).toEqual(arranged);
+  });
+
+  it('a weighted child with minWidth 200 and no minSize', () => {
+    const { laid, arranged } = both([
+      ['fixed-100', undefined],
+      ['floor-200', undefined],
+      ['expand-item', 1],
+    ]);
+    // 400 − 2 · 8 of padding − 2 · 8 of gap − 100 = 268: 134 each, the floor freezes at 200.
+    expect(arranged).toEqual([100, 200, 68]);
+    expect(laid).toEqual(arranged);
+  });
+});
+
+describe('resolveWeight: an empty result is not weighted', () => {
+  const withWeight = (weight: unknown) =>
+    item('grow-item', { weight }) as unknown as ComponentFile;
+  const grow = withWeight({ $field: 'grow' });
+
+  it('a weight field holding "" is not weighted and warns nothing', () => {
+    expect(resolveWeight(grow, { grow: '' })).toEqual({
+      weight: undefined,
+      messages: [],
+    });
+  });
+
+  it('an expression that resolves to "" (a default "") is not weighted and warns nothing', () => {
+    expect(resolveWeight(withWeight({ $field: 'grow', default: '' }), {})).toEqual({
+      weight: undefined,
+      messages: [],
+    });
+  });
+
+  it('a blank text result is empty too', () => {
+    expect(resolveWeight(withWeight('  '), {})).toEqual({
+      weight: undefined,
+      messages: [],
+    });
+  });
+
+  it('a text that is not a number still warns', () => {
+    expect(resolveWeight(grow, { grow: 'big' }).messages.map((m) => m.text)).toEqual([
+      'invalid value in weight: big',
+    ]);
   });
 });

@@ -29,3 +29,4 @@
 
 - The MCP PNG (`render_container`, `render_marking`, `get_marking_image`) now paints `hsl()` and `hsla()` colors; before, they were left out while the app drew them (#2829).
 - A fully transparent shadow written with `hsla()` or the space/slash syntax (`hsla(0,0%,0%,0)`, `rgb(0 0 0 / 0)`) is no longer treated as visible in the app's canvas: `isInvisibleShadow` delegates to `parseFormatColor`.
+- Review fixes (#2829): a field taken away by `remove-field`/`rename-field` and brought back by a later `add-field` has its type, option and required breaks covered by the step that cleared it; `layoutScreen` sizes a weighted child with the root `minWidth`/`minHeight`/`maxWidth`/`maxHeight` as Arrange does and warns `fill inside hug` only when the child's own height is `fill`; a `weight` that resolves to blank text is not weighted, with no warning.

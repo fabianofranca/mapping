@@ -52,7 +52,13 @@ import {
 } from './layoutValues';
 import { mirrorX } from './direction';
 import { lineExtents, needsNaturals, slotTrackGeometry } from './gridPlan';
-import { type ResolvedSizing, resolveSizing, resolveWeight } from './sizing';
+import {
+  type ResolvedSizing,
+  type WeightLimits,
+  resolveSizing,
+  resolveWeight,
+  resolveWeightLimits,
+} from './sizing';
 import { shareByWeight } from './flexShare';
 import type { Library } from './library';
 import type { Instance, Screen } from './screen';
@@ -165,6 +171,11 @@ interface Prepared {
   readonly sizing: ResolvedSizing;
   /** The component's root `weight` evaluated (v4); `undefined` = not weighted. */
   readonly weight: number | undefined;
+  /**
+   * A weighted node's main-axis floor and ceiling per axis (`resolveWeightLimits`, as Arrange reads
+   * them: `minSize` and the root `minWidth`/`minHeight`/`maxWidth`/`maxHeight`); `undefined` without a weight.
+   */
+  readonly limits: Readonly<Record<Axis, WeightLimits>> | undefined;
 }
 
 /** Rectangle of a child relative to the origin of the slot's content, and whether each axis came from the `hug`. */
@@ -244,13 +255,13 @@ function mainPositions(
  */
 function shareWithMins(
   fixed: readonly unknown[],
-  mins: readonly number[],
+  limits: readonly WeightLimits[],
   free: number,
   weights: readonly number[] = [],
 ): number[] {
   const fills = fixed.flatMap((f, i) => (f === undefined ? [i] : []));
   const shares = shareByWeight(
-    fills.map((i) => ({ min: mins[i] ?? 0, max: Infinity })),
+    fills.map((i) => limits[i] ?? { min: 0, max: Infinity }),
     free,
     fills.map((i) => weights[i] ?? 1),
   );
@@ -384,7 +395,13 @@ export function layoutScreen(
     const resolved = resolveWeight(component, node.values, undefined, { direction });
     for (const m of [...sizing.messages, ...resolved.messages])
       warn(m.code as ModelMessageTemplateCode, m.params);
-    return { sizing, weight: resolved.weight };
+    const limitsOf = (axis: Axis) =>
+      resolveWeightLimits(component, node.values, axis, undefined, { direction });
+    const limits =
+      resolved.weight === undefined
+        ? undefined
+        : { width: limitsOf('width'), height: limitsOf('height') };
+    return { sizing, weight: resolved.weight, limits };
   };
 
   const prepare = (node: LayoutNode): Prepared | undefined => {
@@ -403,10 +420,11 @@ export function layoutScreen(
         const prepared = prepare(child);
         if (prepared) kidsOf.get(slotOfChild(node, child, ids))?.push(prepared);
       }
-    const { sizing, weight } = resolveRoot(component, node);
+    const { sizing, weight, limits } = resolveRoot(component, node);
     return {
       node,
       weight,
+      limits,
       component,
       groups: slots.map((slot) => ({
         slot,
@@ -424,6 +442,9 @@ export function layoutScreen(
     p.weight === undefined ? specOf(p, axis) : 'fill';
   const withMin = (p: Prepared, axis: Axis, value: number) =>
     Math.max(value, p.component.minSize?.[axis] ?? 0);
+  /** The limits of a flow child's share on `axis`: a weighted one's own, otherwise its `minSize` floor. */
+  const shareLimits = (p: Prepared, axis: Axis): WeightLimits =>
+    p.limits?.[axis] ?? { min: p.component.minSize?.[axis] ?? 0, max: Infinity };
   const padW = (g: SlotGroup) => g.layout.padding.left + g.layout.padding.right;
   const padH = (g: SlotGroup) => g.layout.padding.top + g.layout.padding.bottom;
 
@@ -872,7 +893,7 @@ export function layoutScreen(
         if (typeof spec === 'number')
           return { h: withMin(kid, 'height', spec), hug: false };
         if (spec === 'hug' || isIntrinsicSize(spec) || ch === null) {
-          if (spec === 'fill' && emit)
+          if (specOf(kid, 'height') === 'fill' && emit)
             warn('engine.fillInHugUsing', { path: kid.node.id });
           const { w, hug } = widths[i] ?? { w: 0, hug: false };
           return { h: intrinsicHeight(kid, w, hug), hug: true };
@@ -883,7 +904,7 @@ export function layoutScreen(
       const taken = sum(fixed.map((f) => f?.h ?? 0));
       const shares = shareWithMins(
         fixed,
-        kids.map((k) => k.component.minSize?.height ?? 0),
+        kids.map((k) => shareLimits(k, 'height')),
         fills > 0 && ch !== null ? ch - taken - gaps : 0,
         kids.map((k) => k.weight ?? 1),
       );
@@ -922,7 +943,7 @@ export function layoutScreen(
       const taken = sum(fixed.map((f) => f?.w ?? 0));
       const shares = shareWithMins(
         fixed,
-        kids.map((k) => k.component.minSize?.width ?? 0),
+        kids.map((k) => shareLimits(k, 'width')),
         fills > 0 && cw !== null ? cw - taken - gaps : 0,
         kids.map((k) => k.weight ?? 1),
       );
