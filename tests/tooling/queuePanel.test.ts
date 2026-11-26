@@ -331,10 +331,10 @@ describe('Resilient CI: phase, check and dist ceiling (CR1)', () => {
     expect(item6).toMatch(/legitimate failure/i);
   });
 
-  it('Reading CI: check runs, no get_status, current commit and only the CI workflow (decisions 1 to 4)', () => {
-    expect(reading).toContain('`get_check_runs`');
+  it('Reading CI: the ciStatus script, no get_status, current commit and only the CI workflow (stage #2783)', () => {
+    expect(reading).toContain('node scripts/ci/ciStatus.mjs');
+    expect(reading).not.toContain('get_check_runs');
     expect(reading).toMatch(/never with `get_status`/);
-    expect(reading).toMatch(/`perPage` 100/);
     for (const job of ['epic', 'static', 'test', 'coverage', 'build', 'check', 'e2e'])
       expect(reading).toContain(`\`${job}\``);
     expect(reading).toMatch(/`queued` or `in_progress`/);
@@ -342,9 +342,7 @@ describe('Resilient CI: phase, check and dist ceiling (CR1)', () => {
     expect(reading).toMatch(/most recent run of each job/);
     expect(reading).toMatch(/other workflows do not count/);
     expect(reading).toMatch(/green of an earlier commit does not count/);
-    expect(reading).toMatch(
-      /Without `check` and `e2e` \(and `epic`, on an epic PR\) at `success` and with no failure, CI is still running/,
-    );
+    expect(reading).toMatch(/`ci=running`/);
     expect(reading).not.toMatch(/Ignore the `skipped` check runs/);
     expect(reading).not.toMatch(/no other with/);
   });
