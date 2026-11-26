@@ -19,7 +19,7 @@
 
 - `docs/TESTING.md`, R27.3: the icons file now uses `formatVersion` 5 to provoke `must be 1, 2, 3 or 4`.
 - `docs/COMPONENT-FORMAT.md`, "Known limits": the `filter.grayscale` line now says what a named color does (the app and the viewer draw it, the PNG does not paint it, the validator warns).
-- The `dist/index.html` ceiling went up 16 KiB, from 2637824 to 2654208, by the budget rule; above the limits, `bug` for the owner to review
+- The `dist/index.html` ceiling went up 16 KiB, from 2637824 to 2654208, by the budget rule; above the limits, `bug` #2888 for the owner to review
 
 ## Corrigido
 
