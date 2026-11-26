@@ -106,7 +106,7 @@ describe('painel.py outliers: base and ceiling (decisions 4, 5, 7 and 9)', () =>
       'product: 5 stages, median US$ 2.00 per phase, ceiling US$ 4.00',
     );
     expect(out).toContain(
-      '  #20 US$ 20.00 (2 phases, US$ 10.00 per phase) — cause: fase US$ 20.00 (group median US$ 4.00); switches 0; above 300k 0; testers 0; retests 0; fixes 0',
+      '  #20 US$ 20.00 (2 phases, US$ 10.00 per phase) — cause: fase US$ 20.00 (group median US$ 4.00); switches 0; above 300k 0; testers 0; retests 0; fixes 0; tester —; by phase',
     );
     for (const n of [10, 11, 12, 13]) expect(out).not.toContain(`#${n} `);
   });
@@ -138,10 +138,10 @@ describe('painel.py outliers: cause and counts (decision 8)', () => {
     cheap(10);
     stage(20, [
       ['fase', 4],
-      ['testador', 16],
+      ['correção', 16],
     ]);
     const out = run('outliers', dir);
-    expect(out).toContain('— cause: testador US$ 16.00 (group median US$ 0.00);');
+    expect(out).toContain('— cause: correção US$ 16.00 (group median US$ 0.00);');
   });
 
   it('a tie goes to the first kind of SESSION_KINDS', () => {
@@ -434,8 +434,8 @@ describe('painel.py outliers --encerradas-desde (stage #2635, decisions 11 and 1
     expect(run('outliers', dir)).toBe(
       [
         'outliers (since all): 5 stages in the base, without ficha: 0, partial: 0',
-        'product: 5 stages, median US$ 2.00 per phase, ceiling US$ 4.00',
-        '  #20 US$ 20.00 (2 phases, US$ 10.00 per phase) — cause: fase US$ 20.00 (group median US$ 4.00); switches 0; above 300k 0; testers 0; retests 0; fixes 0',
+        'product: 5 stages, median US$ 2.00 per phase, ceiling US$ 4.00, tester median — per step, ceiling —',
+        '  #20 US$ 20.00 (2 phases, US$ 10.00 per phase) — cause: fase US$ 20.00 (group median US$ 4.00); switches 0; above 300k 0; testers 0; retests 0; fixes 0; tester —; by phase',
         'process: base too small (0 stages)',
         '',
       ].join('\n'),
@@ -463,5 +463,138 @@ describe('painel.py outliers --encerradas-desde (stage #2635, decisions 11 and 1
     expect(supervisor).toContain('--encerradas-desde <ISO>');
     expect(script.split('"""')[1]).toContain('--encerradas-desde <ISO>');
     expect(run('outliers', '--help')).toContain('--encerradas-desde');
+  });
+});
+
+/** A finished stage whose tester (one session) has `steps` steps (ok + falha) and costs `testerUsd`. */
+function testedStage(
+  n: number,
+  testerUsd: number,
+  steps: number | null,
+  fase = 4,
+  ended?: string,
+): void {
+  stage(
+    n,
+    [
+      ['fase', fase],
+      ['testador', testerUsd],
+    ],
+    ended ? { ended } : {},
+  );
+  if (steps !== null) run('sinal', dir, `s_${n}_1`, `ok=${steps - 1}`, 'falha=1');
+}
+
+/** Four stages with a tester of 50 steps at US$ 0.10 per step (US$ 5.00), numbered from `from`. */
+function normalTesters(from: number, count = 4): void {
+  for (let i = 0; i < count; i++) testedStage(from + i, 5, 50);
+}
+
+describe('painel.py outliers: the tester apart, per step (stage #2783, decisions 13, 14 and 19)', () => {
+  it('the cost per planned phase leaves out the testador and reteste sessions', () => {
+    cheap(10);
+    stage(20, [
+      ['fase', 4],
+      ['testador', 16],
+      ['reteste', 10],
+    ]);
+    const out = run('outliers', dir);
+    expect(out).toContain(
+      'product: 5 stages, median US$ 2.00 per phase, ceiling US$ 4.00',
+    );
+    expect(out).toContain('  none above the ceiling');
+    expect(out).not.toContain('#20 ');
+  });
+
+  it('a large round at a normal cost per step is not listed (the #2448 case)', () => {
+    normalTesters(10);
+    testedStage(20, 14.2, 142); // 142 steps at US$ 0.10 per step, a 2-phase stage
+    const out = run('outliers', dir);
+    expect(out).toContain(
+      'product: 5 stages, median US$ 2.00 per phase, ceiling US$ 4.00, tester median US$ 0.10 per step, ceiling US$ 0.20',
+    );
+    expect(out).toContain('  none above the ceiling');
+    expect(out).not.toContain('#20 ');
+  });
+
+  it('a tester above twice the median per step is listed `by step`, with the tester fields', () => {
+    normalTesters(10);
+    testedStage(20, 25, 50); // US$ 0.50 per step
+    const out = run('outliers', dir);
+    expect(out).toContain(
+      '  #20 US$ 4.00 (2 phases, US$ 2.00 per phase) — cause: — US$ 0.00 (group median US$ 0.00); switches 0; above 300k 0; testers 1; retests 0; fixes 0; tester US$ 25.00 (50 steps, US$ 0.50 per step); by step',
+    );
+  });
+
+  it('a stage above the ceiling on both criteria is listed `by phase and step`', () => {
+    normalTesters(10);
+    testedStage(20, 25, 50, 20);
+    const out = run('outliers', dir);
+    expect(out).toContain(
+      'tester US$ 25.00 (50 steps, US$ 0.50 per step); by phase and step',
+    );
+  });
+
+  it('a stage above the phase ceiling with a tester at a normal cost is listed `by phase`', () => {
+    normalTesters(10);
+    testedStage(20, 5, 50, 20);
+    const out = run('outliers', dir);
+    expect(out).toContain('tester US$ 5.00 (50 steps, US$ 0.10 per step); by phase');
+  });
+
+  it('a tester without `sinais` has no per-step value and is never listed by that criterion', () => {
+    normalTesters(10);
+    testedStage(20, 40, null);
+    const out = run('outliers', dir);
+    expect(out).not.toContain('#20 ');
+    expect(out).toContain('  none above the ceiling');
+  });
+
+  it('a listed stage whose tester has no steps shows `no steps`', () => {
+    normalTesters(10);
+    testedStage(20, 40, null, 20);
+    expect(run('outliers', dir)).toContain('tester US$ 40.00 (no steps); by phase');
+  });
+
+  it('without the data of any tester the header carries `—` and the criterion stays silent', () => {
+    cheap(10);
+    stage(20, [
+      ['fase', 4],
+      ['testador', 400],
+    ]);
+    const out = run('outliers', dir);
+    expect(out).toContain('ceiling US$ 4.00, tester median — per step, ceiling —');
+    expect(out).not.toContain('#20 ');
+  });
+
+  it('--encerradas-desde still filters a stage listed by step', () => {
+    normalTesters(10);
+    testedStage(20, 25, 50, 4, '2026-11-12T08:30:00Z');
+    const before = run('outliers', '--encerradas-desde', '2026-11-12T09:00:00Z', dir);
+    expect(before).not.toContain('#20 ');
+    expect(before).toContain(
+      'none above the ceiling that ended in the window (1 older above the ceiling)',
+    );
+    const after = run('outliers', '--encerradas-desde', '2026-11-12T08:00:00Z', dir);
+    expect(after).toContain('#20 US$ 4.00');
+    expect(after).toContain('; by step');
+  });
+
+  it('the texts cite the per-step criterion, `Passos:` and the ranges of long scripts (decisions 15 to 17)', () => {
+    const queue = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+    const supervisor = readFileSync('.claude/skills/supervisionar-fila/SKILL.md', 'utf8');
+    const detail = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
+    const process = readFileSync('docs/PROCESS.md', 'utf8');
+    const script = readFileSync(SCRIPT, 'utf8');
+    expect(queue).toContain('tester cost per step');
+    expect(supervisor).toContain('tester cost per step');
+    expect(script.split('"""')[1]).toContain('tester cost per step');
+    expect(run('outliers', '--help')).toContain('tester cost per step');
+    for (const text of [detail, process]) {
+      expect(text).toContain('Passos: <n>');
+      expect(text).toContain('round-guide.mjs --grupos');
+      expect(text).toContain('R25.81-R25.100');
+      expect(text).toContain('above 40 steps');
+    }
   });
 });
