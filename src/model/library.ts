@@ -247,7 +247,7 @@ function containerNameChecks(
 ): void {
   if (!isRecord(raw)) return;
   const sets = new Set((pkg.spec.containerClasses ?? []).map((set) => set.id));
-  for (const where of ['template', 'sizing'] as const) {
+  for (const where of ['template', 'sizing', 'weight'] as const) {
     for (const name of citedContainerNames(raw[where])) {
       // A name that cannot be `width`, `height` or a set id was already refused by the parser, at its own path.
       if (name === 'width' || name === 'height' || sets.has(name)) continue;

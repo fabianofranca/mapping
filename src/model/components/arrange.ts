@@ -844,8 +844,22 @@ function placeLine(
     const raw: Box = row
       ? { x: mainPos, y: placed.pos, width: main, height: placed.size }
       : { x: placed.pos, y: mainPos, width: placed.size, height: main };
-    return roundedBox(raw);
+    return roundedBoxByEdges(raw, row);
   });
+}
+
+/**
+ * `roundedBox` with the main axis rounded by its edges: the width is the difference of the rounded start and end,
+ * so fractional shares (weights) never add up past the line and the gaps stay within a pixel of each other.
+ */
+function roundedBoxByEdges(raw: Box, row: boolean): Box {
+  const box = roundedBox(raw);
+  if (row) {
+    const width = Math.round(raw.x + raw.width) - box.x;
+    return { ...box, width: Math.max(1, width) };
+  }
+  const height = Math.round(raw.y + raw.height) - box.y;
+  return { ...box, height: Math.max(1, height) };
 }
 
 function sameBox(a: Box, b: Box): boolean {

@@ -840,21 +840,20 @@ A child of `row` or `column` (also of a `wrap` line) gets `weight` (a number gre
 
 - **Only on a `fill` child on the main axis.** A `hug`, px or `%` child on the main axis, a child of `none` or of `grid` and a `fill` only on the cross axis, with a literal `weight`, is an error (`weight: only valid on a fill child on the main axis of a row or column`). A child with no `width`/`height` on the main axis counts as `fill` (the default for what is not text); a text with neither is `hug`. When the parent's `layout.type` or the child's size is an expression, the validator accepts it.
 - **By expression**, a value that is not a finite number greater than 0 is ignored (weight 1) and the engine warns `invalid value in weight: <value>`.
+- In a `formatVersion` from 1 to 3, the `weight` of a template node is an error, `only allowed with formatVersion 4`.
 - The `weight` of a **template node** is the one above. The **root** `weight` (see "The file root") is another thing: it is the weight of the component itself as a child **marking** of a `row` or `column` slot, read by Arrange (below).
 
 ##### The root `weight` and the slot's Arrange (`formatVersion` 4)
 
 A component's root `weight` (a number greater than 0, literal or expression with the instance's values; `$size` and `$lines` are not valid in it, as in `sizing`) tells Arrange and `layoutScreen` that the instance grows on the main axis of the `row`/`column` slot it sits in, like Compose's `Modifier.weight(w)` and CSS's `flex-grow: w`:
 
-- The free main-axis space (the slot's content minus the fixed children and the `gap`s) is split among the children that have a `weight` in proportion to the weights, with the same freezing at the child's `minSize`/`minWidth`/`maxWidth` (and the height ones) as above. A child without a `weight` keeps its own size. In a `wrap` slot the weights split each line, and the line breaks use the floors.
+- The free main-axis space (the slot's content minus the fixed children and the `gap`s) is split among the children that have a `weight` in proportion to the weights, with the same freezing as above at the child's `minSize` and the root `minWidth`/`maxWidth` (and the height ones) in Arrange; `layoutScreen` freezes only at the `minSize`. A child without a `weight` keeps its own size. In a `wrap` slot the weights split each line, and the line breaks use the floors.
 - `sizing` `fill` alone **does not grow** a child in Arrange: only a root `weight` does (a `fill` without a `weight` keeps its size). In `layoutScreen` a valid `weight` counts as `fill` on the main axis.
 - An empty or invalid result (`0`, a negative number, text) means no weight: the child keeps its size, and the engine warns `invalid value in weight: <value>` for a value that is not a number greater than 0.
 - A `hug` parent counts the weighted children's floors (their `minSize`) as the content, so it never gets smaller than they need; a weighted child that is itself `hug` (or a container that hugs its content) takes the width the weight gives, not its own measured size.
 - `fit_marking` and the app's fit leave the weighted axis alone: the weight, not the content, owns it, so only the other axis follows the content.
 - A `grid` or `none` slot has no main axis: the root `weight` is ignored there (and the `layoutScreen` wrap path does not read it).
 - In a `formatVersion` from 1 to 3, the root `weight` is `only allowed with formatVersion 4`; a non-positive literal is `weight: expected a number greater than 0`.
-
-- In a `formatVersion` from 1 to 3, `weight` is an error, `only allowed with formatVersion 4`.
 
 ### Anchors (`layout: none`)
 

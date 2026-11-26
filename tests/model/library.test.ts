@@ -601,6 +601,20 @@ describe('validateLibrary: level 2 (consistency across files)', () => {
       expect(unused).not.toContain('share');
     });
 
+    it('a $container name that is not width, height or a set, cited only by the root weight, is an error at weight', () => {
+      const files = patch(
+        patch(miniPackage(), 'components/mini-button.json', ['formatVersion'], 4),
+        'components/mini-button.json',
+        ['weight'],
+        { $switch: '$container.nope', cases: { a: 1 }, default: 2 },
+      );
+      const report = validate(files);
+      expect(report.errors.map((e) => [e.code, e.path])).toContainEqual([
+        'library.containerFieldUnknown',
+        'weight',
+      ]);
+    });
+
     it('a field the root weight cites and the type does not declare is an error at weight', () => {
       const report = validate(weighted('nope'));
       expect(report.errors.map(brief)).toContainEqual([

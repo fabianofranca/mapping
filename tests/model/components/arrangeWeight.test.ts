@@ -208,3 +208,24 @@ describe('contentExtent: a weighted child counts at its floor', () => {
     expect(extent.width).toBe(148);
   });
 });
+
+describe('layoutChildren: fractional shares stay inside the line', () => {
+  it('four weight-1 children in 50 units of content end at the edge, never past it', () => {
+    const slot = box(0, 0, 50, 56);
+    const out = layoutChildren(
+      slot,
+      flow('row', { gap: 0, padding: { top: 8, right: 0, bottom: 8, left: 0 } }),
+      [
+        weighted(1, { minMain: 1 }),
+        weighted(1, { minMain: 1 }),
+        weighted(1, { minMain: 1 }),
+        weighted(1, { minMain: 1 }),
+      ],
+    );
+    const last = out[3]!;
+    expect(last.x + last.width).toBe(50);
+    for (let i = 1; i < out.length; i += 1) {
+      expect(out[i]!.x).toBe(out[i - 1]!.x + out[i - 1]!.width);
+    }
+  });
+});
