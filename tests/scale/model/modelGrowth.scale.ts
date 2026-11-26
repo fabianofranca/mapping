@@ -73,10 +73,16 @@ describe('model growth (n = 1,250, 4n = 5,000 markings)', () => {
       runs: 41,
     });
   });
+});
 
+describe('accessibility growth (n = 2,500, 4n = 10,000 markings)', () => {
+  // `accessibilityAudit` takes ~1.1 ms at 1,250 markings: the same short-sample mechanism as `perspectiveView` (stage #1968), where one
+  // preemption of the scheduler on a shared runner weighs the most (8.5-8.9× under saturation, #2296). Its center does not depend on n (4.1-4.6×
+  // at 1,250, 2,500 and 5,000), so the case measures at 2,500 and 10,000, where the run at n takes 2.4-2.9 ms and the ratio is 4.0-5.0× idle (stage #2300).
   it('audits accessibility (labels, parts and touch targets)', GROWTH_OPTIONS, () => {
     expectLinearGrowth('accessibilityAudit', {
       build: (markings) => withAccessibility(build(markings)),
+      n: 2500,
       // The index of the new version is already measured in the index case: here only the audit.
       prepare: projectIndex,
       run: (p) => {
@@ -93,8 +99,8 @@ describe('perspective growth (n = 2,500, 4n = 10,000 markings)', () => {
   // `perspectiveView` is a memory-bound linear pass: it reads the roots by position from the index (stage #2674) instead of hashing each
   // id and reading each annotation, and takes ~0.3 ms at 2,500 markings and ~1.6 ms at 10,000. At 1,250 the cache advantage of n weighs the
   // most and a loaded runner pushed the ratio over 6× (6.2-6.3× in the CI run of PR #1967, with the code untouched; stage #1968), so the case measures at 2,500 and 10,000,
-  // where both sizes are larger than the cache. Its center is ~5× (4.8-5.3× idle, pairwise third quartile ~5.3×), the memory effect that `projectIndex` itself shows, not an
-  // algorithm. The other cases keep 1,250 and 5,000: they measure from 1.5 ms (accessibilityAudit) to tens of ms at 1,250.
+  // where both sizes are larger than the cache. Its center today is 4.6-5.3× idle (pairwise third quartile ~5.4-5.7×) with the run at n ~0.3 ms, the memory effect that
+  // `projectIndex` itself shows, not an algorithm (#2674 tracks the ratio that rises with n). The other cases keep 1,250 and 5,000, except `accessibilityAudit`, which has its own describe above at 2,500 and 10,000.
   it.each([0, 1])('builds the perspective %i', GROWTH_OPTIONS, (which) => {
     expectLinearGrowth(`perspectiveView #${which + 1}`, {
       build,
