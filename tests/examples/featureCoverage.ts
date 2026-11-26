@@ -305,6 +305,7 @@ export const ROOT_KEYS = [
   'size',
   'minSize',
   'sizing',
+  'weight',
   'screen',
   'anchor',
   'preview',
