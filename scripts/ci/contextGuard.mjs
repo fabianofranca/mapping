@@ -521,20 +521,35 @@ export function shouldWarn(contexto, ultimoAviso, gatilho = GATILHO) {
   );
 }
 
-/** The notice text (one line), with the context and the session's largest jumps. */
+/**
+ * The notice text (one line), with the context and the session's largest jumps. Above the
+ * ceiling (300 thousand) the phase hands over even with its last PR open; at the ceiling or
+ * below, the last PR open still goes on (stage #2783, CX2).
+ */
 export function warningText(contexto, jumps) {
   const mil = Math.ceil(contexto / 1000);
   const saltos =
     jumps.length > 0
       ? jumps.map((j) => `${j.rotulo} +${j.mil} thousand`).join('; ')
       : 'none recorded';
-  return (
+  const above = contexto > TETO_MIL * 1000;
+  const head =
     `Context hook: this session is at ${mil} thousand, above the trigger of ${GATILHO / 1000} thousand ` +
     `(ceiling ${TETO_MIL} thousand; sub-item "Phase context ceiling" of item 3 of "For the phase session", ` +
-    `docs/FLOW.md). If this is not session 5 of 5 and the phase's last PR is not open, ` +
-    `hand over now (steps 1 to 5 of the handover), with <n> = ${mil}; ` +
-    `a phase that opens several PRs hands over between a merged PR and the next one. ` +
-    `With the phase's last PR open, or in session 5 of 5, carry on. ` +
+    `docs/FLOW.md). `;
+  const verdict = above
+    ? `You are above the ceiling of ${TETO_MIL} thousand: hand over now even with the phase's last PR open (not in session 5 of 5), ` +
+      `steps 1 to 5 of the handover, with <n> = ${mil}; with the PR open the handoff carries the line \`PR aberto:\` ` +
+      `and the request ends with \`; PR aberto: <link do PR>.\`. ` +
+      `Start no new gate run, \`/code-review\`, e2e or subagent. ` +
+      `In session 5 of 5, carry on to the end and ignore the line about no new work. `
+    : `If this is not session 5 of 5 and the phase's last PR is not open, ` +
+      `hand over now (steps 1 to 5 of the handover), with <n> = ${mil}; ` +
+      `a phase that opens several PRs hands over between a merged PR and the next one. ` +
+      `With the phase's last PR open, or in session 5 of 5, carry on. `;
+  return (
+    head +
+    verdict +
     `The \`/code-review\` of item 10 and the fixes of its findings come before the PR and are not the PR open; above the trigger the hook refuses to open the PR. ` +
     `Largest jumps (approximate): ${saltos}. Subagent: ignore this notice.`
   );
