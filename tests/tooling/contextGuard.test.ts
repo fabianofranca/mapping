@@ -867,7 +867,11 @@ describe('GC2 — docs/FLOW.md: the hook rule in the phase session (decisions 9 
 
   it('checks (a) and (b) run the script with --teto equal to the trigger', () => {
     expect(ceiling).toContain(`node scripts/ci/contextUsage.mjs --teto ${TRIGGER}`);
-    const checks = between(ceiling, 'Check at two points', 'Once the phase PR');
+    const checks = between(
+      ceiling,
+      'Check at two points',
+      'Between the trigger of 270 thousand',
+    );
     expect(checks).toContain(`--teto ${TRIGGER}`);
     expect(checks.indexOf('(a)')).toBeGreaterThan(checks.indexOf('--teto'));
     expect(checks.indexOf('(b)')).toBeGreaterThan(checks.indexOf('(a)'));
@@ -942,6 +946,44 @@ describe("CC1 — the notice exempts only the phase's last PR (#1949)", () => {
     );
     expect(ceiling).toContain("the phase's **last** PR");
     expect(ceiling).toContain('between a merged PR and the next one');
+  });
+});
+
+describe('CX2 — the notice above 300 thousand hands over even with the last PR open (decisions 4 to 7 of #2783)', () => {
+  /** The notice the hook writes when the context reads `n` tokens. */
+  const noticeAt = (n: number): string => {
+    const box = sandbox([userLine(phasePrompt), measure(n)]);
+    return warningOf(hook(box)).hookSpecificOutput.additionalContext;
+  };
+
+  it('at 290 thousand the notice keeps "carry on" with the last PR open', () => {
+    const text = noticeAt(290_000);
+    expect(text).toContain(
+      "With the phase's last PR open, or in session 5 of 5, carry on.",
+    );
+    expect(text).not.toContain('even with the phase');
+  });
+
+  it('at 310 thousand the notice says to hand over even with the last PR open, except in session 5 of 5', () => {
+    const text = noticeAt(310_000);
+    expect(text).toContain(
+      "above the ceiling of 300 thousand: hand over now even with the phase's last PR open (not in session 5 of 5)",
+    );
+    expect(text).not.toContain('carry on');
+    expect(text).toContain('with <n> = 310');
+    expect(text).toContain('`PR aberto:`');
+  });
+
+  it('the cut is at 300 thousand: 300,000 keeps the old text, 300,001 gets the new one', () => {
+    expect(noticeAt(300_000)).toContain('carry on');
+    expect(noticeAt(300_001)).toContain('hand over now even with the phase');
+  });
+
+  it('the notice above 300 thousand is one line and keeps the subagent line', () => {
+    const text = noticeAt(310_000);
+    expect(text).not.toContain('\n');
+    expect(text).toContain('Largest jumps (approximate)');
+    expect(text).toContain('Subagent: ignore this notice');
   });
 });
 
@@ -1654,7 +1696,11 @@ describe('CG2 — docs/FLOW.md: the PR gate in the phase session (decision 8)', 
     '4. Every briefing for a behavior change',
   );
   const hook = between(ceiling, '**Hook:**', '**Transition:**');
-  const checks = between(ceiling, 'Check at two points', 'Once the phase PR');
+  const checks = between(
+    ceiling,
+    'Check at two points',
+    'Between the trigger of 270 thousand',
+  );
 
   it('the Hook sentence describes the PreToolUse gate and its exemption', () => {
     expect(hook).toContain('`PreToolUse`');
@@ -1682,7 +1728,9 @@ describe('CG2 — docs/FLOW.md: the PR gate in the phase session (decision 8)', 
   });
 
   it('the /code-review and the fixes of its findings never count as the PR open', () => {
-    expect(ceiling).toMatch(/Once the phase PR is open[^.]*there is no switch/);
+    expect(ceiling).toMatch(
+      /Between the trigger of 270 thousand and 300 thousand, once the phase's last PR is open[^.]*there is no switch/,
+    );
     expect(ceiling).toContain(
       'The `/code-review` and the fixes of its findings come before the PR and never count as the PR open',
     );

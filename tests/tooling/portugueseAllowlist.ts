@@ -1063,6 +1063,12 @@ export const PROTOCOL_TERMS: readonly ProtocolTerm[] = [
   { term: 'O dono respondeu', source: 'docs/FLOW.md', group: 'session-notices' },
   { term: 'Passada visual:', source: 'docs/FLOW.md', group: 'session-notices' },
   { term: 'Passagem da fase', source: 'docs/FLOW.md', group: 'session-notices' },
+  { term: 'PR aberto:', source: 'docs/FLOW.md', group: 'session-notices' },
+  {
+    term: 'O PR <link> já está aberto: não abra outro; siga do item 6 nele.',
+    source: 'docs/FLOW.md',
+    group: 'session-notices',
+  },
   { term: 'Relato na sub-issue #', source: 'docs/FLOW.md', group: 'session-notices' },
   { term: 'Retomada por contexto', source: 'docs/FLOW.md', group: 'session-notices' },
   { term: 'Tag da release:', source: 'docs/FLOW.md', group: 'session-notices' },

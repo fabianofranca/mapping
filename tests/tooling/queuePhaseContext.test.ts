@@ -68,7 +68,9 @@ describe('CX1 — "For the phase session" of docs/FLOW.md, sub-item of item 3', 
   });
 
   it('after the PR is open there is no switch: the phase ends in the same session', () => {
-    expect(ceiling).toMatch(/Once the phase PR is open[^.]*there is no switch/);
+    expect(ceiling).toMatch(
+      /Between the trigger of 270 thousand and 300 thousand, once the phase's last PR is open[^.]*there is no switch/,
+    );
     expect(ceiling).toContain('ends in the same session');
   });
 
@@ -531,22 +533,145 @@ describe('CG2 — implementar-fila skill, "Phase above 300 thousand" (decision 8
     '- Then check whether the skill changed',
   );
 
-  it('keeps the condition: above 300 thousand, no switch request, last PR not open, `5 de 5` exempt', () => {
+  it('keeps the condition: above 300 thousand, no switch request, `5 de 5` exempt; no PR condition (CX2)', () => {
     expect(fallback).toContain('`used_tokens`');
     expect(fallback).toContain('above 300 thousand');
     expect(fallback).toContain('with no `Troca de sessão da fase` request');
-    expect(fallback).toContain('without its last PR open');
+    expect(fallback).not.toContain('without its last PR open');
+    expect(fallback).not.toContain('how many PRs the phase has');
     expect(fallback).toContain('The `5 de 5` session does not receive it');
   });
 
-  it('the message says not to open the PR, not even the only or last one, and only a PR already open goes on', () => {
+  it('the message says to hand over even with the PR open, and no longer says only a PR already open goes on', () => {
     expect(fallback).toContain(
-      '"Context above 300 thousand: hand over now (sub-item \\"Phase context ceiling\\" of item 3 of \\"For the phase session\\"); do not open the PR, not even the phase\'s only or last one: only a PR already open goes on."',
+      '"Context above 300 thousand: hand over now even with the phase\'s last PR open (sub-item \\"Phase context ceiling\\" of item 3 of \\"For the phase session\\"); do not open the PR if it is not open yet, and start no new work."',
     );
+    expect(fallback).not.toContain('only a PR already open goes on');
   });
 
   it('the words "another PR" leave the text', () => {
     expect(fallback).not.toContain('another PR');
     expect(fallback).not.toContain('do not open another');
+  });
+});
+
+describe('CX2 — the phase hands over above 300 thousand with its PR open (decisions 4 to 9 of #2783)', () => {
+  const handoverSteps = between(
+    ceiling,
+    'the phase hands over:',
+    'The one who creates the successor',
+  );
+  const request = between(
+    ceiling,
+    '     4. sends the coordinator',
+    '     5. Ends the turn',
+  );
+  const SENTENCE = 'O PR <link> já está aberto: não abra outro; siga do item 6 nele.';
+
+  it('decision 4: above 300 thousand the phase hands over even with its last PR open, except in `5 de 5`', () => {
+    expect(ceiling).toMatch(
+      /Above 300 thousand[^.]*the phase hands over even with its last PR open, except in the `5 de 5` session/,
+    );
+    expect(ceiling).toContain('`acima=true`');
+    expect(ceiling).toMatch(/hook notice[^.]*more than 300 thousand/);
+  });
+
+  it('decision 4: between the trigger and 300 thousand the phase with its last PR open still carries on', () => {
+    expect(ceiling).toMatch(
+      /Between the trigger of 270 thousand and 300 thousand, once the phase's last PR is open[^.]*there is no switch/,
+    );
+  });
+
+  it('decision 4: the old "Once the phase PR is open there is no switch" without a bound is gone', () => {
+    expect(ceiling).not.toMatch(/Once the phase PR is open[^.]*there is no switch/);
+  });
+
+  it('decision 5: step 2 pushes the WIP only with uncommitted work, and the PR open keeps the CI line clean', () => {
+    const step2 = between(handoverSteps, '     2. ', '     3. ');
+    expect(step2).toContain('only when there is uncommitted work');
+    expect(step2).toContain('With the PR already open');
+    expect(step2).toContain('that push runs the CI of the PR');
+    expect(step2).toContain(
+      'the `CI vermelho depois do PR` line (item 7) does not count the WIP commit',
+    );
+  });
+
+  it('decision 5: step 3 adds the `PR aberto:` line with the ciStatus line', () => {
+    const step3 = between(handoverSteps, '     3. ', '     4. ');
+    expect(step3).toContain(
+      '`PR aberto: <link> — <the line of `scripts/ci/ciStatus.mjs`>`',
+    );
+    expect(step3).toContain('with the PR open');
+  });
+
+  it('decision 5: step 4 sends the request with `; PR aberto: <link do PR>.` when the PR is open', () => {
+    expect(request).toContain(
+      '`Troca de sessão da fase <código>: contexto <n> mil; passagem em <link do comentário>.`',
+    );
+    expect(request).toContain(
+      '`Troca de sessão da fase <código>: contexto <n> mil; passagem em <link do comentário>; PR aberto: <link do PR>.`',
+    );
+  });
+
+  it('decision 5: the successor sentence lives in the sub-item, once in FLOW + skill, and the successor does not open another PR', () => {
+    expect(ceiling).toContain(`\`${SENTENCE}\``);
+    expect(occurrences(flow, SENTENCE) + occurrences(skill, SENTENCE)).toBe(1);
+    expect(ceiling).toContain('follows the open PR from item 6');
+    expect(ceiling).toContain('without opening another');
+  });
+
+  it('decision 5: the squash rule for a WIP commit holds for the open PR', () => {
+    expect(item6).toContain('`merge_method: squash`');
+    expect(ceiling).toContain(
+      'the squash of item 6 takes the WIP out of the epic history',
+    );
+  });
+
+  it('decision 6: from the hook notice on, no new gate run, /code-review, e2e or subagent', () => {
+    expect(ceiling).toContain('From the hook notice on, the phase starts no new work');
+    expect(ceiling).toContain('no new gate run, `/code-review`, e2e or subagent');
+    expect(ceiling).toContain('waits only for the subagents already running');
+    expect(ceiling).toContain(
+      'A command already running in the background is not waited for',
+    );
+    expect(ceiling).toContain('not seen finished');
+    expect(ceiling).toContain('the successor reruns it');
+  });
+
+  it('decision 4: the hook sentence says the notice above 300 thousand hands over with the last PR open', () => {
+    expect(ceiling).toContain(
+      "the notice that reads more than 300 thousand hands over even with the phase's last PR open",
+    );
+  });
+
+  it('item 7: the `CI vermelho depois do PR` line does not count the WIP commit of a handover', () => {
+    const line = between(phase, '     - `CI vermelho depois do PR`:', '     - `Revisão');
+    expect(line).toContain('the WIP commit of a handover');
+  });
+
+  it('decision 8: the skill hourly check hands over even with the PR open, still without the `5 de 5` session', () => {
+    const check = between(
+      perStage,
+      '- **Phase above 300 thousand:**',
+      '- Then check whether the skill changed',
+    );
+    expect(check).toContain("even with the phase's last PR open");
+    expect(check).not.toContain('without its last PR open');
+    expect(check).toContain('The `5 de 5` session does not receive it');
+  });
+
+  it('decision 8: "Phase that hands over by context" adds the PR sentence when the request carries `PR aberto:`', () => {
+    expect(handover).toContain('`; PR aberto: <link>`');
+    expect(handover).toContain('the sentence of the sub-item "Phase context ceiling"');
+    expect(handover).toContain('follows the open PR from item 6');
+    // cites by name, without copying the sentence
+    expect(handover).not.toContain(SENTENCE);
+  });
+
+  it('the stuck-CI check of the skill reads the commit through the ciStatus script, not "with the CI still running" (pending defect of CX1)', () => {
+    const who = between(perStage, '- **Who checks:**', '\n');
+    expect(who).not.toContain('with the CI still running');
+    expect(who).toContain('`ci=none`');
+    expect(who).toContain('`actions_list`');
   });
 });
