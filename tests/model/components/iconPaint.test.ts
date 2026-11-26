@@ -60,7 +60,14 @@ const SQUARE = 'M0 0h24v24H0z';
 describe('icon path gradient paint (decisions 4 and 5)', () => {
   it('the linear from/to keeps those points in the path scene', () => {
     const icons = setOf({
-      badge: { paths: [{ d: SQUARE, fill: { type: 'linear', from: [0, 0], to: [24, 0], stops: STOPS } }] },
+      badge: {
+        paths: [
+          {
+            d: SQUARE,
+            fill: { type: 'linear', from: [0, 0], to: [24, 0], stops: STOPS },
+          },
+        ],
+      },
     });
     const { root, warnings } = draw({ name: 'badge' }, icons);
     expect(warnings).toEqual([]);
@@ -76,7 +83,9 @@ describe('icon path gradient paint (decisions 4 and 5)', () => {
 
   it('angle 90 on a 24 × 24 viewBox runs from (12, 0) to (12, 24)', () => {
     const icons = setOf({
-      badge: { paths: [{ d: SQUARE, fill: { type: 'linear', angle: 90, stops: STOPS } }] },
+      badge: {
+        paths: [{ d: SQUARE, fill: { type: 'linear', angle: 90, stops: STOPS } }],
+      },
     });
     const [fill] = paths(draw({ name: 'badge' }, icons).root)[0]?.fills ?? [];
     expect(fill?.type).toBe('linear');
@@ -126,7 +135,12 @@ describe('icon path gradient paint (decisions 4 and 5)', () => {
   it('the angular gradient takes its center and start angle in the viewBox', () => {
     const icons = setOf({
       badge: {
-        paths: [{ d: SQUARE, fill: { type: 'angular', center: [0.5, 0.5], angle: 30, stops: STOPS } }],
+        paths: [
+          {
+            d: SQUARE,
+            fill: { type: 'angular', center: [0.5, 0.5], angle: 30, stops: STOPS },
+          },
+        ],
       },
     });
     expect(paths(draw({ name: 'badge' }, icons).root)[0]?.fills).toEqual([
@@ -144,7 +158,9 @@ describe('icon path gradient paint (decisions 4 and 5)', () => {
         ],
       },
     });
-    const [gradient, filled, plain] = paths(draw({ name: 'badge', color: '#112233' }, icons).root);
+    const [gradient, filled, plain] = paths(
+      draw({ name: 'badge', color: '#112233' }, icons).root,
+    );
     expect(gradient?.fills).toHaveLength(1);
     expect(gradient?.fills[0]?.type).toBe('linear');
     expect(JSON.stringify(gradient?.fills)).not.toContain('#112233');
@@ -198,13 +214,17 @@ describe('icon clip (decision 5)', () => {
 
   it('the clip mirrors in rtl, like the children', () => {
     const icons = withClip({ d: CIRCLE }, true);
-    const group = iconGroup(draw({ name: 'badge', direction: 'rtl' }, icons, {}, 48).root);
+    const group = iconGroup(
+      draw({ name: 'badge', direction: 'rtl' }, icons, {}, 48).root,
+    );
     expect(group?.clipPath?.transform).toEqual([-2, 0, 0, 2, 48, 0]);
     expect(paths(group as SceneNode)[0]?.transform).toEqual(group?.clipPath?.transform);
   });
 
   it('an icon without a clip has no clipPath', () => {
-    expect(iconGroup(draw({ name: 'plain' }, withClip({ d: CIRCLE })).root)?.clipPath).toBeUndefined();
+    expect(
+      iconGroup(draw({ name: 'plain' }, withClip({ d: CIRCLE })).root)?.clipPath,
+    ).toBeUndefined();
   });
 
   it('an unknown icon has no clipPath (it is the placeholder)', () => {

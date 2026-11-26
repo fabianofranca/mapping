@@ -235,7 +235,9 @@ describe('gradient fill and clip (formatVersion 4)', () => {
 
   it('a linear gradient takes angle, or from and to: both at once and neither are refused', () => {
     expect(
-      errorsOf(withFill({ type: 'linear', angle: 0, from: [0, 0], to: [1, 1], stops: STOPS })),
+      errorsOf(
+        withFill({ type: 'linear', angle: 0, from: [0, 0], to: [1, 1], stops: STOPS }),
+      ),
     ).toEqual([`${FILL}: use angle or from and to, not both`]);
     expect(errorsOf(withFill({ type: 'linear', stops: STOPS }))).toEqual([
       `${FILL}: expected angle or from and to`,
@@ -247,13 +249,13 @@ describe('gradient fill and clip (formatVersion 4)', () => {
 
   it('from and to are two finite numbers, each at its own path', () => {
     for (const from of [[0], [0, 'a'], [0, Number.POSITIVE_INFINITY], 'x']) {
-      expect(errorsOf(withFill({ type: 'linear', from, to: [1, 1], stops: STOPS }))).toEqual([
-        `${FILL}.from: expected two finite numbers`,
-      ]);
+      expect(
+        errorsOf(withFill({ type: 'linear', from, to: [1, 1], stops: STOPS })),
+      ).toEqual([`${FILL}.from: expected two finite numbers`]);
     }
-    expect(errorsOf(withFill({ type: 'linear', from: [0, 0], to: [1], stops: STOPS }))).toEqual(
-      [`${FILL}.to: expected two finite numbers`],
-    );
+    expect(
+      errorsOf(withFill({ type: 'linear', from: [0, 0], to: [1], stops: STOPS })),
+    ).toEqual([`${FILL}.to: expected two finite numbers`]);
   });
 
   it('the stops need at least 2, an offset from 0 to 1 and a color as text', () => {
@@ -271,7 +273,11 @@ describe('gradient fill and clip (formatVersion 4)', () => {
     ).toEqual([`${FILL}.stops[1].offset: expected a number between 0 and 1`]);
     expect(
       errorsOf(
-        withFill({ type: 'linear', angle: 0, stops: [STOPS[0], { offset: 1, color: 7 }] }),
+        withFill({
+          type: 'linear',
+          angle: 0,
+          stops: [STOPS[0], { offset: 1, color: 7 }],
+        }),
       ),
     ).toEqual([`${FILL}.stops[1].color: expected a color (non-empty text)`]);
     expect(errorsOf(withFill({ type: 'linear', angle: 0, stops: 'x' }))).toEqual([
@@ -299,9 +305,9 @@ describe('gradient fill and clip (formatVersion 4)', () => {
       errorsOf(withFill({ type: 'linear', angle: 0, shine: 1, stops: STOPS })),
     ).toEqual([`${FILL}.shine: unknown key: shine`]);
     // `from` belongs to the linear one only
-    expect(
-      errorsOf(withFill({ type: 'radial', from: [0, 0], stops: STOPS })),
-    ).toEqual([`${FILL}.from: unknown key: from`]);
+    expect(errorsOf(withFill({ type: 'radial', from: [0, 0], stops: STOPS }))).toEqual([
+      `${FILL}.from: unknown key: from`,
+    ]);
     expect(errorsOf(withClip({ d: 'M0 0h8v8z', extra: 1 }))).toEqual([
       'icons.badge.clip.extra: unknown key: extra',
     ]);
@@ -312,7 +318,9 @@ describe('gradient fill and clip (formatVersion 4)', () => {
       ...FILE,
       formatVersion: 4,
       icons: {
-        badge: { paths: [{ d: 'M0 0h24v24H0z', stroke: { type: 'radial', stops: STOPS } }] },
+        badge: {
+          paths: [{ d: 'M0 0h24v24H0z', stroke: { type: 'radial', stops: STOPS } }],
+        },
       },
     };
     expect(errorsOf(json)).toEqual([
@@ -330,7 +338,9 @@ describe('gradient fill and clip (formatVersion 4)', () => {
       expect(result.ok).toBe(true);
       if (result.ok) expect(result.set.icons.badge?.clip).toEqual(clip);
     }
-    expect(errorsOf(withClip({}))).toEqual(['icons.badge.clip.d: expected the path data (text)']);
+    expect(errorsOf(withClip({}))).toEqual([
+      'icons.badge.clip.d: expected the path data (text)',
+    ]);
     expect(errorsOf(withClip({ d: 'M0 0h8v8z', fillRule: 'odd' }))).toEqual([
       'icons.badge.clip.fillRule: expected one of: nonzero, evenodd',
     ]);
@@ -376,7 +386,9 @@ describe('gradient fill and clip (formatVersion 4)', () => {
     const neither = issueOf(withFill({ type: 'linear', stops: STOPS }));
     expect(neither?.code).toBe('iconsFile.expectedAngleOrFromTo');
     expect(text(neither)).toBe('esperava angle ou from e to');
-    const point = issueOf(withFill({ type: 'linear', from: [0], to: [1, 1], stops: STOPS }));
+    const point = issueOf(
+      withFill({ type: 'linear', from: [0], to: [1, 1], stops: STOPS }),
+    );
     expect(point?.code).toBe('iconsFile.expectedPoint');
     expect(text(point)).toBe('esperava dois números finitos');
     // a text shared with the component keeps the component's code and its pt-BR text

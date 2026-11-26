@@ -97,6 +97,7 @@ import { clampGrayscale, grayscaleNode } from './grayscale';
 import {
   DEFAULT_ICON_VIEWBOX,
   resolveIcon,
+  type IconClip,
   type IconGradient,
   type IconPath,
   type IconSet,
@@ -3393,6 +3394,15 @@ function createEngine(
     };
   };
 
+  /** The icon's `clip` as the scene's `clipPath`: in `viewBox` units, with the children's matrix. */
+  const iconClipPath = (
+    clip: IconClip | undefined,
+    matrix: Matrix,
+  ): ClipPath | undefined =>
+    clip === undefined
+      ? undefined
+      : { d: clip.d, fillRule: clip.fillRule ?? 'nonzero', transform: matrix };
+
   /** The icon becomes a group with one path per stroke, scaled from the `viewBox` to the node's box. */
   const buildIcon = (
     node: IconTemplate,
@@ -3424,11 +3434,7 @@ function createEngine(
       ...iconPathNode(iconPath, `${id}/${i}`, found.viewBox, color, strokeWidth),
       transform: matrix,
     }));
-    const clip = found.def.clip;
-    const clipPath: ClipPath | undefined =
-      clip === undefined
-        ? undefined
-        : { d: clip.d, fillRule: clip.fillRule ?? 'nonzero', transform: matrix };
+    const clipPath = iconClipPath(found.def.clip, matrix);
     return { ...base, type: 'group', children, ...(clipPath ? { clipPath } : {}) };
   };
 

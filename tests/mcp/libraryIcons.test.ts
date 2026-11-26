@@ -194,7 +194,10 @@ describe('the MCP PNG paints the gradient of an icon path', () => {
       id: 'c',
       name: 'C',
       size: { width: 24, height: 24 },
-      template: { type: 'frame', children: [{ type: 'icon', name: 'badge', color: '#00ff00' }] },
+      template: {
+        type: 'frame',
+        children: [{ type: 'icon', name: 'badge', color: '#00ff00' }],
+      },
     } as unknown as ComponentFile;
     const { root } = instantiate(
       component,

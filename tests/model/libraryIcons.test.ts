@@ -275,7 +275,9 @@ describe('icons file formatVersion 4 in the package', () => {
         stops: GRADIENT.stops,
       },
     ]);
-    const group = nodes.find((n): n is GroupNode => n.type === 'group' && n.clipPath !== undefined);
+    const group = nodes.find(
+      (n): n is GroupNode => n.type === 'group' && n.clipPath !== undefined,
+    );
     expect(group?.clipPath).toMatchObject({ d: 'M0 0h10v5H0z', fillRule: 'evenodd' });
   });
 });

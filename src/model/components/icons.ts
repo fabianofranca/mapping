@@ -190,14 +190,16 @@ function checkLinearDirection(
 ): void {
   const hasAngle = 'angle' in value;
   const hasPoints = 'from' in value || 'to' in value;
-  if (hasAngle && hasPoints)
-    out.push(issue(path, 'use angle or from and to, not both'));
+  if (hasAngle && hasPoints) out.push(issue(path, 'use angle or from and to, not both'));
   else if (!hasAngle && !('from' in value && 'to' in value))
     out.push(issue(path, 'expected angle or from and to'));
-  if (hasAngle && !isNumber(value.angle))
-    out.push(issue(join(path, 'angle'), 'expected a number'));
+  if (hasAngle) checkAngle(value.angle, join(path, 'angle'), out);
   for (const key of ['from', 'to'])
     if (key in value) checkPoint(value[key], join(path, key), out);
+}
+
+function checkAngle(value: unknown, path: string, out: IconsIssue[]): void {
+  if (!isNumber(value)) out.push(issue(path, 'expected a number'));
 }
 
 function checkCenter(value: unknown, path: string, out: IconsIssue[]): void {
@@ -221,10 +223,14 @@ function checkRoundGradient(
   out: IconsIssue[],
 ): void {
   if ('center' in value) checkCenter(value.center, join(path, 'center'), out);
-  if (type === 'radial' && 'radius' in value && !(isNumber(value.radius) && value.radius > 0))
+  if (
+    type === 'radial' &&
+    'radius' in value &&
+    !(isNumber(value.radius) && value.radius > 0)
+  )
     out.push(issue(join(path, 'radius'), 'expected a number greater than 0'));
-  if (type === 'angular' && 'angle' in value && !isNumber(value.angle))
-    out.push(issue(join(path, 'angle'), 'expected a number'));
+  if (type === 'angular' && 'angle' in value)
+    checkAngle(value.angle, join(path, 'angle'), out);
 }
 
 /** A gradient `fill` (file formatVersion 4): the shapes of decision 4, measured in the `viewBox`. */
@@ -332,7 +338,12 @@ function checkIconPath(
 }
 
 /** The icon's `clip` (file formatVersion 4): `d` and an optional `fillRule`. */
-function checkClip(value: unknown, path: string, version: unknown, out: IconsIssue[]): void {
+function checkClip(
+  value: unknown,
+  path: string,
+  version: unknown,
+  out: IconsIssue[],
+): void {
   if (typeof version === 'number' && version < 4)
     return void out.push(issue(path, 'only allowed with formatVersion 4'));
   if (!isRecord(value)) return void out.push(issue(path, 'expected object'));
@@ -413,7 +424,9 @@ function pathColorWarnings(path: IconPath, at: string): IconsIssue[] {
     const value = path[key];
     if (typeof value === 'object')
       value.stops.forEach((stop, i) =>
-        found.push(unknownColor(`${join(join(at, key), 'stops')}[${i}].color`, stop.color)),
+        found.push(
+          unknownColor(`${join(join(at, key), 'stops')}[${i}].color`, stop.color),
+        ),
       );
     else found.push(unknownColor(join(at, key), value));
   }

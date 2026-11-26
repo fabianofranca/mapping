@@ -1,0 +1,16 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "brand-badge",
+  "name": "Brand badge",
+  "description": "A square tile with one icon from the package icon set: the `brand` icon has a linear gradient from red to blue, a radial gradient in the middle and a circular clip.",
+  "size": { "width": 48, "height": 48 },
+  "preview": { "tint": "#FFFFFF" },
+  "template": {
+    "type": "frame",
+    "name": "tile",
+    "layout": { "type": "row", "align": "center", "justify": "center" },
+    "fill": { "$field": "tint", "default": "#FFFFFF" },
+    "children": [{ "type": "icon", "name": "brand", "width": 48, "height": 48 }]
+  }
+}
