@@ -1,4 +1,4 @@
-# Where the queue's context and cost go — [Não lançado] (épico `epic/queue-context-cost`, PR #0, MCP unchanged, schema v24)
+# Where the queue's context and cost go — 2026-11-26 (épico `epic/queue-context-cost`, PR #0, MCP unchanged, schema v24)
 
 MCP unchanged.
 
