@@ -38,7 +38,9 @@ export function shareByWeight(
       return { i, share, size: clampShare(limits[i], share) };
     });
     const violation = rows.reduce((sum, r) => sum + r.size - r.share, 0);
-    const frozen = rows.filter((r) => (violation > 0 ? r.size > r.share : r.size < r.share));
+    const frozen = rows.filter((r) =>
+      violation > 0 ? r.size > r.share : r.size < r.share,
+    );
     if (Math.abs(violation) < EPS || frozen.length === 0) {
       for (const r of rows) sizes[r.i] = r.size;
       break;

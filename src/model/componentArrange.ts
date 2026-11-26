@@ -655,7 +655,13 @@ export function arrangeMarking(
     const baselines =
       layout.align === 'baseline' ? kids.map((kid) => baselineOf(kid)) : [];
     const children: LayoutChild[] = kids.map((kid, i) => {
-      const { messages, ...weighted } = kidWeight(p, catalog, kid, layout, anchorOf(kid.id));
+      const { messages, ...weighted } = kidWeight(
+        p,
+        catalog,
+        kid,
+        layout,
+        anchorOf(kid.id),
+      );
       messages.forEach(warn);
       return { box: rects.get(kid.id) as Rect, baseline: baselines[i], ...weighted };
     });

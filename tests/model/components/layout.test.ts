@@ -139,9 +139,15 @@ const COMPONENTS: ComponentFile[] = [
   block('wgt-px', { width: 10, height: 10 }, { width: 20, height: 20 }, undefined, {
     weight: 1,
   }),
-  block('wgt-min', { width: 100, height: 10 }, { width: 'fill', height: 'fill' }, { width: 90, height: 10 }, {
-    weight: 1,
-  }),
+  block(
+    'wgt-min',
+    { width: 100, height: 10 },
+    { width: 'fill', height: 'fill' },
+    { width: 90, height: 10 },
+    {
+      weight: 1,
+    },
+  ),
   label('label', 12),
   // #2164: a `hug` width between 96 and 136 whose `fill` label is the content the root hugs.
   component(
@@ -1312,7 +1318,9 @@ describe('layoutScreen: named slots', () => {
 describe('layoutScreen: weight (LG6, decision 10 of #2829)', () => {
   it('two fill children with weights 1 and 3 share the slack 25% and 75%', () => {
     const result = run([
-      root(node('r', 'row', {}, [node('a', 'fixed'), node('b', 'wgt1'), node('c', 'wgt3')])),
+      root(
+        node('r', 'row', {}, [node('a', 'fixed'), node('b', 'wgt1'), node('c', 'wgt3')]),
+      ),
     ]);
     // 300 − 100 = 200 of slack
     expect(boxOf(result, 'a')).toMatchObject({ x: 0, width: 100 });
@@ -1323,7 +1331,11 @@ describe('layoutScreen: weight (LG6, decision 10 of #2829)', () => {
   it('a column shares the height the same way', () => {
     const result = run([
       root(
-        node('c', 'col-fill', {}, [node('a', 'fixed'), node('b', 'wgt1'), node('d', 'wgt3')]),
+        node('c', 'col-fill', {}, [
+          node('a', 'fixed'),
+          node('b', 'wgt1'),
+          node('d', 'wgt3'),
+        ]),
       ),
     ]);
     // 600 − 40 = 560 of slack
@@ -1333,7 +1345,13 @@ describe('layoutScreen: weight (LG6, decision 10 of #2829)', () => {
 
   it('without weight the fill children get equal shares, as before', () => {
     const result = run([
-      root(node('r', 'row', {}, [node('a', 'fixed'), node('b', 'filler'), node('c', 'filler')])),
+      root(
+        node('r', 'row', {}, [
+          node('a', 'fixed'),
+          node('b', 'filler'),
+          node('c', 'filler'),
+        ]),
+      ),
     ]);
     expect(boxOf(result, 'b').width).toBe(100);
     expect(boxOf(result, 'c').width).toBe(100);

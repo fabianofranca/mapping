@@ -137,7 +137,11 @@ describe('layoutChildren: weight on the main axis', () => {
   it('reverse mirrors the grown line', () => {
     const out = layoutChildren(
       box(0, 0, 300, 40),
-      flow('row', { reverse: true, padding: { top: 0, right: 0, bottom: 0, left: 0 }, gap: 0 }),
+      flow('row', {
+        reverse: true,
+        padding: { top: 0, right: 0, bottom: 0, left: 0 },
+        gap: 0,
+      }),
       [own(40), { box: box(0, 0, 40, 40), weight: 1 }],
     );
     expect(widths(out)).toEqual([40, 260]);

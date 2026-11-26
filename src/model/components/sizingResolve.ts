@@ -133,7 +133,10 @@ export function resolveWeight(
   return {
     weight: undefined,
     messages: [
-      templateMessage('engine.invalidValue', { label: 'weight', value: describeValue(value) }),
+      templateMessage('engine.invalidValue', {
+        label: 'weight',
+        value: describeValue(value),
+      }),
     ],
   };
 }

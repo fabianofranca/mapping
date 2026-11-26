@@ -35,7 +35,12 @@ const frame = (children: Json[], extra: Json = {}): Json => ({
 });
 
 /** A container whose slot is a `row` (gap 8, padding 8, `align: center`), as `expand-row` of `library-gaps`. */
-function rowComponent(id: string, size: Json, extra: Json = {}, slotLayout: Json = {}): Json {
+function rowComponent(
+  id: string,
+  size: Json,
+  extra: Json = {},
+  slotLayout: Json = {},
+): Json {
   return {
     format: 'mapping-component',
     formatVersion: 4,
@@ -53,7 +58,12 @@ function rowComponent(id: string, size: Json, extra: Json = {}, slotLayout: Json
   };
 }
 
-function item(id: string, extra: Json = {}, root: Json = {}, children: Json[] = []): Json {
+function item(
+  id: string,
+  extra: Json = {},
+  root: Json = {},
+  children: Json[] = [],
+): Json {
   return {
     format: 'mapping-component',
     formatVersion: 4,
@@ -80,19 +90,14 @@ const COMPONENTS: Record<string, Json> = {
   'fill-item': item('fill-item', { sizing: { width: 'fill', height: 40 } }),
   'capped-item': item('capped-item', { weight: 1 }, { maxWidth: 60 }),
   // The child's own `hug` must not remeasure the weighted axis.
-  'hug-item': item(
-    'hug-item',
-    { weight: 1, sizing: { width: 'hug', height: 40 } },
-    {},
-    [
-      {
-        type: 'text',
-        text: 'Hello world',
-        font: { size: 14, lineHeight: 20 },
-        anchors: { left: 0, top: 10 },
-      },
-    ],
-  ),
+  'hug-item': item('hug-item', { weight: 1, sizing: { width: 'hug', height: 40 } }, {}, [
+    {
+      type: 'text',
+      text: 'Hello world',
+      font: { size: 14, lineHeight: 20 },
+      anchors: { left: 0, top: 10 },
+    },
+  ]),
   // A weighted container that hugs its own content: its slot gets the final width, not the hugged one.
   'expand-card': rowComponent(
     'expand-card',
@@ -324,7 +329,12 @@ describe('arrangeMarking: weight on the main axis', () => {
 
 describe('fitMarking: the weighted axis belongs to the parent', () => {
   it('a weighted hug child in a row slot keeps its width', () => {
-    const arranged = arrange(expandRow([['plain-item', undefined], ['hug-item', undefined]])).project;
+    const arranged = arrange(
+      expandRow([
+        ['plain-item', undefined],
+        ['hug-item', undefined],
+      ]),
+    ).project;
     expect(canFit(arranged, catalog, 'T2')).toBe(true);
     expect(fitMarking(arranged, catalog, 'T2', approximateMeasurer)).toBe(arranged);
   });
