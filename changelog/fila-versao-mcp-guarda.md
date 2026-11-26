@@ -1,4 +1,4 @@
-# Queue MCP version check guard — [Não lançado] (épico `epic/fila-versao-mcp-guarda`, MCP 0.59.3, schema v24)
+# Queue MCP version check guard — [Não lançado] (épico `epic/fila-versao-mcp-guarda`, PR #2875, MCP 0.59.3, schema v24)
 
 MCP unchanged.
 
