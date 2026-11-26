@@ -1,4 +1,4 @@
-# Growth calibration — [Não lançado] (epic `epic/growth-calibration`)
+# Growth calibration — 2026-11-26 (épico `epic/growth-calibration`, MCP unchanged, schema v23)
 
 MCP unchanged. Schema v23.
 
