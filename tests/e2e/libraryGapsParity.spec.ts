@@ -188,3 +188,43 @@ test('brand-badge: the corners outside the circle show no paint on either render
     near(sample.raster, [255, 255, 255], CHANNEL_TOLERANCE);
   }
 });
+
+// The arc of a clip is the one place where the sweep flag is read: a full circle (two half arcs) looks the
+// same with the flag flipped, so this clip is a quarter disc centered on the top-left corner (a single arc,
+// clockwise from (24, 0) to (0, 24) through (17, 17)). Konva's `ellipse` and the raster's flattening must
+// keep the same quarter.
+test('a quarter-disc clip keeps the same quarter on both renderers', async ({ page }) => {
+  const quarter = {
+    ...icons,
+    icons: {
+      brand: {
+        clip: { d: 'M0 0H24A24 24 0 0 1 0 24Z' },
+        paths: [{ d: 'M0 0h24v24H0z', fill: true }],
+      },
+    },
+  };
+  const component = {
+    ...read('components/brand-badge.json'),
+    template: {
+      type: 'frame',
+      layout: { type: 'row', align: 'center', justify: 'center' },
+      fill: '#FFFFFF',
+      children: [
+        { type: 'icon', name: 'brand', color: '#000000', width: 48, height: 48 },
+      ],
+    },
+  };
+  const samples = await probe(page, component, quarter, 4, [
+    [6, 6],
+    [30, 6],
+    [6, 30],
+    [40, 40],
+  ]);
+  const inside = [0, 0, 0];
+  const outside = [255, 255, 255];
+  const wanted = [inside, inside, inside, outside];
+  samples.forEach((sample, i) => {
+    near(sample.konva, wanted[i]!, CHANNEL_TOLERANCE);
+    near(sample.raster, wanted[i]!, CHANNEL_TOLERANCE);
+  });
+});

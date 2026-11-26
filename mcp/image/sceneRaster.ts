@@ -986,6 +986,8 @@ class Painter {
   ): void {
     const into = multiply(matrix, clipPath.transform);
     const masks = flattenPath(clipPath.d).map((sub) => this.toRaster(sub.points, into));
+    // A clip with no area (a path that is not a shape) clips everything, like the app's.
+    if (masks.length === 0) return;
     this.masked(
       masks,
       clip,

@@ -42,6 +42,7 @@ const icons: IconSet = {
         },
       ],
     },
+    empty: { clip: { d: 'M0 0' }, paths: [{ d: SQUARE, fill: true }] },
     stroked: {
       clip: { d: 'M0 0h12v24H0z' },
       paths: [{ d: 'M0 12h24', stroke: true, width: 4 }],
@@ -127,6 +128,12 @@ describe('MCP raster: icon clip', () => {
     const raster = draw('ramp');
     near(pixel(raster, 12, 24), [191, 0, 64, 255]);
     near(pixel(raster, 36, 24), [64, 0, 191, 255]);
+    expect(pixel(raster, 2, 2)[3]).toBe(0);
+  });
+
+  it('a clip with no area clips everything (like the app), without NaN regions', () => {
+    const raster = draw('empty');
+    expect(pixel(raster, 24, 24)[3]).toBe(0);
     expect(pixel(raster, 2, 2)[3]).toBe(0);
   });
 

@@ -32,7 +32,6 @@ import { PixelRect } from './pixelRect';
 import { Shape as KonvaShape } from 'konva/lib/Shape';
 import { Text as KonvaText, type TextConfig } from 'konva/lib/shapes/Text';
 import {
-  type ClipPath,
   type CornerRadius,
   type Matrix,
   type Paint,
@@ -206,9 +205,11 @@ class Renderer {
     if (node.type === 'group' && node.clipPath) {
       const { clipPath } = node;
       // The clip of an icon: its path in the group's local space, with the `viewBox` matrix. The
-      // fill rule goes back to Konva, which hands it to `ctx.clip`.
+      // path is read once here; each draw only replays it. The fill rule goes back to Konva, which
+      // hands it to `ctx.clip`.
+      const segments = KonvaPath.parsePathData(clipPath.d);
       container.clipFunc((ctx) => {
-        iconClipPath(ctx, clipPath);
+        iconClipPath(ctx, segments, clipPath.transform);
         return [clipPath.fillRule];
       });
     }
@@ -1440,11 +1441,15 @@ type ClipContext = Pick<
  * Draws the clip path of an icon (`d` in `viewBox` units) under its matrix. The matrix applies only
  * while the points are added: restoring it leaves the path in the group's space, where Konva clips.
  */
-function iconClipPath(ctx: ClipContext, clip: ClipPath): void {
-  const [a, b, c, d, e, f] = clip.transform;
+function iconClipPath(
+  ctx: ClipContext,
+  segments: ReturnType<typeof KonvaPath.parsePathData>,
+  transform: Matrix,
+): void {
+  const [a, b, c, d, e, f] = transform;
   ctx.save();
   ctx.transform(a, b, c, d, e, f);
-  for (const { command, points: p } of KonvaPath.parsePathData(clip.d)) {
+  for (const { command, points: p } of segments) {
     switch (command) {
       case 'M':
         ctx.moveTo(p[0]!, p[1]!);
