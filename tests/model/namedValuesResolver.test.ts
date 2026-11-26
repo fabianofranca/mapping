@@ -98,7 +98,7 @@ describe('resolveTokens with a selection', () => {
     expect(t.gap).toBe(8);
     expect(t.note).toBe('#123456');
     expect(t['font-sans']).toBe('Inter');
-    expect(t['font-mono']).toBe('monospace');
+    expect(t['font-mono']).toBe('"Mapping Mono", monospace');
   });
 });
 

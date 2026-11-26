@@ -4,7 +4,9 @@
 // `src/storage/drawingFonts.ts` decodes the text with `atob` into an ArrayBuffer: never a URL (the CSP allows none).
 // One module serves Vite (`drawingFontModules`, the app build and the Vitest projects) and esbuild
 // (`drawingFontEsbuild`, the viewer build).
+import { Buffer } from 'node:buffer';
 import { readFileSync } from 'node:fs';
+import { URL } from 'node:url';
 import { deflateSync } from 'node:zlib';
 
 const MODULES = {

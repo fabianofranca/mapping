@@ -11,3 +11,4 @@
 - `DEFAULT_SANS` and `DEFAULT_MONO` of the model are `"Mapping Sans", sans-serif` and `"Mapping Mono", monospace`. The app no longer passes the theme's font stack to the component libraries (`readHostFonts` and `hostFontsFrom` are gone).
 - A family stack that is just `Mapping Mono` (no generic after it) now measures with the mono face in the server.
 - `docs/TESTING.md`, R12.47, R12.48, R25.26 and R39.16: the widths, the clipped box and the `approximate` values are recomputed for Mapping Sans and Mono.
+- The `dist/index.html` ceiling went up 80 KiB, from 2654208 to 2736128, by the budget rule; above the limits, `bug` para o dono revisar
