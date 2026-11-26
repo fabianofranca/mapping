@@ -33,6 +33,10 @@
     "sizing": {
       "$ref": "#/$defs/sizing"
     },
+    "weight": {
+      "description": "Arrange weight (formatVersion 4): the share of the free main-axis space this component takes as a child marking of a row/column slot, like the weight of a fill node. A number greater than 0 or an expression; an empty result does not grow.",
+      "$ref": "#/$defs/expr_positiveNumber"
+    },
     "screen": {
       "type": "object",
       "additionalProperties": false,

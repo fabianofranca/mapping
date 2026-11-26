@@ -247,7 +247,7 @@ function containerNameChecks(
 ): void {
   if (!isRecord(raw)) return;
   const sets = new Set((pkg.spec.containerClasses ?? []).map((set) => set.id));
-  for (const where of ['template', 'sizing'] as const) {
+  for (const where of ['template', 'sizing', 'weight'] as const) {
     for (const name of citedContainerNames(raw[where])) {
       // A name that cannot be `width`, `height` or a set id was already refused by the parser, at its own path.
       if (name === 'width' || name === 'height' || sets.has(name)) continue;
@@ -962,6 +962,10 @@ function typeCoherence(
   const raw = pkg.componentJson.get(path);
   const rawTemplate = isRecord(raw) ? raw.template : undefined;
   const where = fieldReferences(rawTemplate, 'template');
+  // The root `weight` cites fields too (LG6): its citation points at `weight`, not at the template.
+  if (isRecord(raw))
+    for (const [key, at] of fieldReferences(raw.weight, 'weight'))
+      if (!where.has(key)) where.set(key, at);
   const used2 = collectFieldKeys(component);
   let from = out.issues.length;
   for (const key of used2) {

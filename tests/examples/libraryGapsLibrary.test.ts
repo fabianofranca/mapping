@@ -2,6 +2,7 @@
 // LG2: the `brand-badge`, with an icon that has a gradient fill and a clip (icons file formatVersion 4);
 // LG4: the `masked-field`, with two `codeOnly` fields (specialization formatVersion 24).
 // LG5: the `brand-badge` `tint` field is removed in version 2 and added again in version 3 (`add-field`).
+// LG6: the `expand-row` and the `expand-item`, whose root `weight` comes from a field (Arrange `weight`).
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -71,6 +72,10 @@ describe('example library library-gaps', () => {
         'docs/brand-badge.md',
         'components/masked-field.json',
         'docs/masked-field.md',
+        'components/expand-row.json',
+        'docs/expand-row.md',
+        'components/expand-item.json',
+        'docs/expand-item.md',
         'icons/icons.json',
       ].sort(),
     );
@@ -205,5 +210,34 @@ describe('example library library-gaps', () => {
     near(hexAt(raster, 36, 24), [0x40, 0x00, 0xbf]);
     // The center of the radial: white, a few levels off because the pixel center is half a pixel away.
     near(hexAt(raster, 24, 24), [0xff, 0xff, 0xff], 32);
+  });
+
+  it('the expand item has a root weight from its weight field, with no default', () => {
+    const spec = JSON.parse(files.find((f) => f.path === SPEC_FILE)!.text) as {
+      layers: { annotationTypes: { id: string; fields: Record<string, unknown>[] }[] }[];
+    };
+    const type = spec.layers[0]!.annotationTypes.find((t) => t.id === 'expand-item')!;
+    expect(type.fields).toEqual([{ key: 'weight', type: 'number' }]);
+    const component = JSON.parse(
+      files.find((f) => f.path === 'components/expand-item.json')!.text,
+    ) as { weight: unknown };
+    expect(component.weight).toEqual({ $field: 'weight' });
+  });
+
+  it('the expand row and the expand item draw with no scene warning', () => {
+    expect(sceneOf('expand-row').warnings).toEqual([]);
+    expect(sceneOf('expand-item').warnings).toEqual([]);
+  });
+
+  it('with the weight root key removed, the item is still valid but the file is no longer a v3 gap', () => {
+    const without = files.map((f) => {
+      if (f.path !== 'components/expand-item.json') return f;
+      const c = JSON.parse(f.text) as Record<string, unknown>;
+      delete c.weight;
+      return { ...f, text: JSON.stringify(c) };
+    });
+    const report = validateLibrary({ files: without, specPath: SPEC_FILE });
+    expect(report.errors.map((e) => e.code)).toEqual([]);
+    expect(report.warnings.map((w) => w.code)).toContain('library.fieldUnused');
   });
 });

@@ -13,7 +13,12 @@ import { type Library, type TextFile, loadLibrary } from './components/library';
 import { type Origin, screenFromSource } from './components/origin';
 import type { IconSet } from './components/icons';
 import { isIntrinsicSize } from './components/layoutValues';
-import { expressionPx, fitComponentSize, resolveSizing } from './components/sizing';
+import {
+  expressionPx,
+  fitComponentSize,
+  resolveSizing,
+  resolveWeight,
+} from './components/sizing';
 import {
   MODE_AXIS,
   createTokenTables,
@@ -332,12 +337,16 @@ function proveCase(
         });
         // The `sizing` warning does not depend on the text measurement or the direction: it is
         // reported without the `(approximate)` suffix and only in the `ltr` pass.
+        const rootOptions = container === undefined ? {} : { container };
         const sizing =
           fitted || direction === 'rtl'
             ? []
-            : resolveSizing(component, drawCase.values, tokens, {
-                ...(container === undefined ? {} : { container }),
-              }).messages;
+            : [
+                ...resolveSizing(component, drawCase.values, tokens, rootOptions)
+                  .messages,
+                ...resolveWeight(component, drawCase.values, tokens, rootOptions)
+                  .messages,
+              ];
         return {
           mode,
           box: boxes[i] as Box,

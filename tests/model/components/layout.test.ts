@@ -42,11 +42,18 @@ function block(
   size: { width: number; height: number },
   sizing?: Sizing,
   minSize?: { width: number; height: number },
+  extra: Record<string, unknown> = {},
 ) {
   return component(
     id,
     {},
-    { size, ...(sizing ? { sizing } : {}), ...(minSize ? { minSize } : {}) },
+    {
+      size,
+      ...(sizing ? { sizing } : {}),
+      ...(minSize ? { minSize } : {}),
+      ...(extra.weight === undefined ? {} : { formatVersion: 4 }),
+      ...extra,
+    },
   );
 }
 
@@ -122,6 +129,25 @@ const COMPONENTS: ComponentFile[] = [
     { width: 50, height: 30 },
   ),
   block('hug-min', { width: 80, height: 30 }, HUG_HUG, { width: 80, height: 30 }),
+  // LG6: the root `weight` is the proportion of the main-axis slack (a `fill` without it counts 1).
+  block('wgt1', { width: 10, height: 10 }, { width: 'fill', height: 'fill' }, undefined, {
+    weight: 1,
+  }),
+  block('wgt3', { width: 10, height: 10 }, { width: 'fill', height: 'fill' }, undefined, {
+    weight: 3,
+  }),
+  block('wgt-px', { width: 10, height: 10 }, { width: 20, height: 20 }, undefined, {
+    weight: 1,
+  }),
+  block(
+    'wgt-min',
+    { width: 100, height: 10 },
+    { width: 'fill', height: 'fill' },
+    { width: 90, height: 10 },
+    {
+      weight: 1,
+    },
+  ),
   label('label', 12),
   // #2164: a `hug` width between 96 and 136 whose `fill` label is the content the root hugs.
   component(
@@ -1287,4 +1313,71 @@ describe('layoutScreen: named slots', () => {
   function widthOf(children: readonly LayoutNode[], values: LayoutNode['values'] = {}) {
     return widthOfBar(children, values);
   }
+});
+
+describe('layoutScreen: weight (LG6, decision 10 of #2829)', () => {
+  it('two fill children with weights 1 and 3 share the slack 25% and 75%', () => {
+    const result = run([
+      root(
+        node('r', 'row', {}, [node('a', 'fixed'), node('b', 'wgt1'), node('c', 'wgt3')]),
+      ),
+    ]);
+    // 300 − 100 = 200 of slack
+    expect(boxOf(result, 'a')).toMatchObject({ x: 0, width: 100 });
+    expect(boxOf(result, 'b')).toMatchObject({ x: 100, width: 50 });
+    expect(boxOf(result, 'c')).toMatchObject({ x: 150, width: 150 });
+  });
+
+  it('a column shares the height the same way', () => {
+    const result = run([
+      root(
+        node('c', 'col-fill', {}, [
+          node('a', 'fixed'),
+          node('b', 'wgt1'),
+          node('d', 'wgt3'),
+        ]),
+      ),
+    ]);
+    // 600 − 40 = 560 of slack
+    expect(boxOf(result, 'b')).toMatchObject({ y: 40, height: 140 });
+    expect(boxOf(result, 'd')).toMatchObject({ y: 180, height: 420 });
+  });
+
+  it('without weight the fill children get equal shares, as before', () => {
+    const result = run([
+      root(
+        node('r', 'row', {}, [
+          node('a', 'fixed'),
+          node('b', 'filler'),
+          node('c', 'filler'),
+        ]),
+      ),
+    ]);
+    expect(boxOf(result, 'b').width).toBe(100);
+    expect(boxOf(result, 'c').width).toBe(100);
+  });
+
+  it('a fill without weight counts 1 next to a weighted one', () => {
+    const result = run([
+      root(node('r', 'row', {}, [node('a', 'filler'), node('b', 'wgt3')])),
+    ]);
+    expect(boxOf(result, 'a').width).toBe(75);
+    expect(boxOf(result, 'b').width).toBe(225);
+  });
+
+  it('a child with a valid weight counts as fill on the main axis even with a px sizing', () => {
+    const result = run([
+      root(node('r', 'row', {}, [node('a', 'fixed'), node('b', 'wgt-px')])),
+    ]);
+    expect(boxOf(result, 'b').width).toBe(200);
+  });
+
+  it('the minSize floor still applies: a weighted child below its minimum freezes at it', () => {
+    const result = run([
+      root(node('r', 'row', {}, [node('a', 'wgt-min'), node('b', 'wgt3')])),
+    ]);
+    // shares 75 / 225: the first one is below its minSize (90) → frozen at 90, the second takes 210.
+    expect(boxOf(result, 'a').width).toBe(90);
+    expect(boxOf(result, 'b').width).toBe(210);
+  });
 });

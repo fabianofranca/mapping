@@ -2305,6 +2305,7 @@ const ROOT_KEYS = [
   'size',
   'minSize',
   'sizing',
+  'weight',
   'screen',
   'anchor',
   'preview',
@@ -2361,6 +2362,18 @@ function checkSizing(value: unknown, path: string, v4: boolean, out: Ctx): void 
       if (isExprObject(axis)) sizingForbiddenOps(axis, at, out);
     }
   }
+}
+
+/**
+ * The root `weight` (v4 only): a number greater than 0 or an expression that yields one (evaluated with
+ * the instance's values, so the container names are checked as in `sizing`).
+ */
+function checkRootWeight(value: unknown, version: unknown, out: Ctx): void {
+  if (typeof version === 'number' && version < COMPONENT_FORMAT_VERSION_FIDELITY)
+    return add(out, 'weight', V4_ONLY_MESSAGE);
+  checkExpr(value, 'weight', checkPositiveNumber, out);
+  if (isExprObject(value)) sizingForbiddenOps(value, 'weight', out);
+  out.issues.push(...containerFieldIssues(version, value, 'weight'));
 }
 
 /** `screen` (v4 only, root only): an object with an optional `anchor`, from `SCREEN_ANCHORS`. */
@@ -2499,6 +2512,8 @@ function collectIssues(
     // Before 4 the expression itself is already refused; from 4 the container names are checked in it too.
     if (v4) issues.push(...containerFieldIssues(version, input.sizing, 'sizing'));
   }
+
+  if ('weight' in input) checkRootWeight(input.weight, version, out);
 
   if ('screen' in input) {
     checkScreen(input.screen, 'screen', out);
@@ -2848,7 +2863,9 @@ export function parseComponentText(text: string): ComponentParseResult {
   return parseComponent(json);
 }
 
-/** Field keys cited anywhere in the template, sorted and without repetition. */
+/** Field keys cited anywhere in the template and in the root `weight`, sorted and without repetition. */
 export function collectFieldKeys(component: ComponentFile): string[] {
-  return [...referencedFields(component.template)].sort();
+  const keys = referencedFields(component.template);
+  referencedFields(component.weight, keys);
+  return [...keys].sort();
 }

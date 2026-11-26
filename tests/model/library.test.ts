@@ -570,6 +570,62 @@ describe('validateLibrary: level 2 (consistency across files)', () => {
     }
   });
 
+  describe('root weight (LG6)', () => {
+    const weighted = (field: string) =>
+      patch(
+        patch(miniPackage(), 'components/mini-button.json', ['formatVersion'], 4),
+        'components/mini-button.json',
+        ['weight'],
+        { $field: field },
+      );
+    const withWeightField = (files: LibraryFile[]): LibraryFile[] => {
+      const spec = JSON.parse(files.find((f) => f.path === SPEC)?.text ?? '{}') as {
+        layers: { annotationTypes: { fields: unknown[] }[] }[];
+      };
+      const fields = spec.layers[0]?.annotationTypes[0]?.fields ?? [];
+      return patch(
+        files,
+        SPEC,
+        [...TYPE0, 'fields'],
+        [...fields, { key: 'share', type: 'number' }],
+      );
+    };
+
+    it('a field that only the root weight reads is used: no library.fieldUnused', () => {
+      const files = withWeightField(weighted('share'));
+      const report = validate(files);
+      expect(report.errors).toEqual([]);
+      const unused = report.warnings
+        .filter((w) => w.code === 'library.fieldUnused')
+        .map((w) => w.params?.key);
+      expect(unused).not.toContain('share');
+    });
+
+    it('a $container name that is not width, height or a set, cited only by the root weight, is an error at weight', () => {
+      const files = patch(
+        patch(miniPackage(), 'components/mini-button.json', ['formatVersion'], 4),
+        'components/mini-button.json',
+        ['weight'],
+        { $switch: '$container.nope', cases: { a: 1 }, default: 2 },
+      );
+      const report = validate(files);
+      expect(report.errors.map((e) => [e.code, e.path])).toContainEqual([
+        'library.containerFieldUnknown',
+        'weight',
+      ]);
+    });
+
+    it('a field the root weight cites and the type does not declare is an error at weight', () => {
+      const report = validate(weighted('nope'));
+      expect(report.errors.map(brief)).toContainEqual([
+        'error',
+        'components/mini-button.json',
+        'weight.$field',
+        'the drawing uses the field "nope", which the type "mini-button" does not declare',
+      ]);
+    });
+  });
+
   describe('codeOnly (specialization formatVersion 24)', () => {
     const fieldsAt = ['layers', 0, 'annotationTypes', 0, 'fields'] as const;
     /** The mini package at 24: from 22 on `origins` and a `system` + `file` example are gone (plain sources). */

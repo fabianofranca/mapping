@@ -826,6 +826,13 @@ export interface ComponentFile {
   readonly minSize?: { readonly width: number; readonly height: number };
   /** Sizing without a rectangle (see `ComponentSizing`); absent = `size` on both axes. */
   readonly sizing?: ComponentSizing;
+  /**
+   * Arrange `weight` (v4): the share of the free main-axis space this component takes as a child
+   * marking of a `row`/`column` slot, like the `weight` of a `fill` node in a template. A number
+   * greater than 0, or an expression evaluated with the instance's values (an empty result: not
+   * weighted). The base is 0 and `minSize`/`minWidth`/`maxWidth` limit it.
+   */
+  readonly weight?: Expr<number>;
   /** Drawing in screen pixels anchored to the marking's rectangle (v4); see `ScreenSpec`. */
   readonly screen?: ScreenSpec;
   /** How the type prefers to touch the anchor (v4); see `ComponentAnchor`. */

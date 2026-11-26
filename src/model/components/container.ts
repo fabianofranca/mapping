@@ -100,7 +100,7 @@ export function citedContainerNames(
 const readsCache = new WeakMap<ComponentFile, ReadonlySet<string>>();
 
 /**
- * The `$container.*` names a component reads (without the prefix): in its template, in its `sizing`, or
+ * The `$container.*` names a component reads (without the prefix): in its template, in its `sizing`, in its root `weight`, or
  * through an inner component of a `component` node (`resolvedComponents`). Memoized per component object:
  * the drawing cache asks once per marking and per call.
  */
@@ -109,6 +109,7 @@ export function containerReads(component: ComponentFile): ReadonlySet<string> {
   if (known !== undefined) return known;
   const reads = citedContainerNames(component.template);
   citedContainerNames(component.sizing, reads);
+  citedContainerNames(component.weight, reads);
   for (const inner of Object.values(component.resolvedComponents ?? {}))
     for (const name of containerReads(inner.component)) reads.add(name);
   readsCache.set(component, reads);
