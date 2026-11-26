@@ -52,7 +52,19 @@
 //     `httpie`); a GraphQL query read from a file or from stdin (`-f query=@file`, `-F query=@-`); and the gate measures the
 //     `transcript_path` it receives, so if that is a subagent's own transcript the measure is lower and the
 //     call goes through.
-//   Always exit code 0: the hook never blocks or delays a call except by the gate's deny, and any failure
+//   Tester gate (`PreToolUse`, stage #2783, phase CX3; the same `Bash` matcher of `.claude/settings.json`
+//     covers it): the `testador` session's main thread, with no `agent_id`, does not run steps itself, so a
+//     `Bash` command that runs `scripts/testing/cloud.mjs passo` is refused on every call, and `cloud.mjs run`
+//     is allowed on the first 4 calls (items 5 and 6 of "First 10 minutes" of `docs/TESTING-NUVEM.md`, plus one
+//     retry) and refused from the 5th on, with the text of `testerGateText`. `secao`, `mark`, `help` and every
+//     other command go through, and so does every call with an `agent_id` (the batch subagents) and every
+//     other role. The command is read as the PR gate reads one (`testerStepCommand`: command position on the
+//     masked copy, the wrappers, `cd … &&`, `NAME=value` prefixes, `bash -c` and `eval`, a quoted path); the
+//     best effort that stays is the same (a script file, a command built in a variable). The count lives in
+//     the state field `execucoes` (calls of the main thread), which only this gate writes: the gate never
+//     touches `contexto`, `ferramenta`, `ultimoAviso` or `saltos`, and the notice keeps `execucoes` when it
+//     rewrites the state. It does not depend on the context and it fails open on any error, like the PR gate.
+//   Always exit code 0: the hook never blocks or delays a call except by a gate's deny, and any failure
 //   (an error, an undecided role, no measure, outside the cloud) only silences it.
 import {
   closeSync,
@@ -211,6 +223,15 @@ const SHELL_LINE =
 const HEREDOC_OPEN = /^<<(-?)[ \t]*(?:'([^']*)'|"([^"]*)"|\\?([A-Za-z0-9_]+))/;
 /** Shell wrappers (`bash -c`, `eval`) are unquoted and checked again up to this depth. */
 const MAX_WRAPPER_DEPTH = 3;
+/** The tester's main thread may run `cloud.mjs run` this many times; the next call is refused. */
+export const EXECUCOES_MAXIMAS = 4;
+// `node [options] <script> passo|run`, in command position. The script word may be quoted (the masked copy keeps
+// the quotes and blanks the text), so it is matched loosely there and checked on the original text.
+const CLOUD_CALL = commandStart(
+  '(?:[\\w.+~-]*/)*node\\s+(?:-\\S+\\s+)*((?:[^\\s\'"]|"[^"]*"|\'[^\']*\')+)\\s+(passo|run)(?![\\w-])',
+  'gd',
+);
+const CLOUD_SCRIPT = /(?:^|[/"'])cloud\.mjs["']?$/;
 
 /** On the masked segment: an explicit method decides; with none, a body flag makes `gh api` a POST. */
 function postsBody(masked) {
@@ -491,6 +512,33 @@ export function opensPullRequest(toolName, toolInput) {
   return typeof command === 'string' && commandOpensPullRequest(command, 0);
 }
 
+/** The `passo` and `run` subcommands of `cloud.mjs` called in the command, wrappers included. */
+function cloudStepCalls(command, depth) {
+  const masked = maskInert(command);
+  const calls = [];
+  for (const found of masked.matchAll(CLOUD_CALL)) {
+    const [from, to] = found.indices[1];
+    if (CLOUD_SCRIPT.test(command.slice(from, to))) calls.push(found[2]);
+  }
+  if (depth < MAX_WRAPPER_DEPTH)
+    for (const inner of wrappedCommands(command, masked))
+      calls.push(...cloudStepCalls(inner, depth + 1));
+  return calls;
+}
+
+/**
+ * The step command a tool call runs: `passo` or `run` when a `Bash` command runs `scripts/testing/cloud.mjs`
+ * with that subcommand (`passo` wins when it runs both), otherwise `null`.
+ */
+export function testerStepCommand(toolName, toolInput) {
+  if (toolName !== 'Bash') return null;
+  const command = toolInput?.command;
+  if (typeof command !== 'string') return null;
+  const calls = cloudStepCalls(command, 0);
+  if (calls.includes('passo')) return 'passo';
+  return calls.includes('run') ? 'run' : null;
+}
+
 /** Call label to attribute the jumps: `Bash: <40 characters>`, `Read: <file>`, … */
 export function toolLabel(toolName, toolInput) {
   const name = typeof toolName === 'string' && toolName ? toolName : 'ferramenta';
@@ -624,15 +672,28 @@ export function gateText(contexto) {
   );
 }
 
-/** The JSON that refuses a `PreToolUse` call. */
-export function gateOutput(contexto) {
+/** The tester gate's refusal text (one line). */
+export function testerGateText(kind) {
+  const base =
+    "The tester's main session does not run steps: hand this batch to a subagent (`node scripts/testing/cloud.mjs secao consulta.subagente`). ";
+  return kind === 'passo'
+    ? `Tester gate: ${base}\`cloud.mjs passo\` is the subagent's: it prints the steps of its batch.`
+    : `Tester gate: ${base}\`cloud.mjs run\` is allowed on the first ${EXECUCOES_MAXIMAS} calls of the main thread (items 5 and 6 of "First 10 minutes", plus one retry) and refused from the 5th on.`;
+}
+
+function denyOutput(reason) {
   return JSON.stringify({
     hookSpecificOutput: {
       hookEventName: 'PreToolUse',
       permissionDecision: 'deny',
-      permissionDecisionReason: gateText(contexto),
+      permissionDecisionReason: reason,
     },
   });
+}
+
+/** The JSON that refuses a `PreToolUse` call. */
+export function gateOutput(contexto) {
+  return denyOutput(gateText(contexto));
 }
 
 function readRange(path, start, length) {
@@ -775,6 +836,7 @@ export function handle(input, env = process.env) {
     ultimoAviso: warn ? contexto : lastWarning,
     saltos: jumps,
     erro: erroEstado(erro) ?? state?.erro ?? null,
+    ...(Number.isInteger(state?.execucoes) ? { execucoes: state.execucoes } : {}),
   });
   return warn ? warningOutput(contexto, jumps, papel) : null;
 }
@@ -789,39 +851,65 @@ function isLastSession(transcript) {
   return false;
 }
 
+/** Records the role the gate had to decide (never from a subagent) and returns the state it keeps. */
+function recordRole(file, state, papel) {
+  if (state?.papel === papel) return state;
+  const next = {
+    ...state,
+    fase: papel === 'fase',
+    papel,
+    ultimoAviso: state?.ultimoAviso ?? null,
+    saltos: Array.isArray(state?.saltos) ? state.saltos : [],
+    erro: state?.erro ?? null,
+  };
+  saveState(file, next);
+  return next;
+}
+
+/** The PR gate: a phase above the trigger that opens a PR, except in the last session of its phase. */
+function prGate(papel, transcript) {
+  if (papel !== 'fase') return null;
+  const contexto = measureTranscript(transcript);
+  if (contexto === null || contexto <= GATILHO) return null;
+  if (isLastSession(transcript)) return null;
+  return gateOutput(contexto);
+}
+
+/** The tester gate: `passo` is always refused, `run` from the 5th call of the main thread; counts in `execucoes`. */
+function testerGate(file, state, papel, kind) {
+  if (papel !== 'testador') return null;
+  if (kind === 'passo') return denyOutput(testerGateText(kind));
+  const previous =
+    Number.isInteger(state?.execucoes) && state.execucoes >= 0 ? state.execucoes : 0;
+  const execucoes = previous + 1;
+  saveState(file, { ...state, execucoes });
+  return execucoes > EXECUCOES_MAXIMAS ? denyOutput(testerGateText(kind)) : null;
+}
+
 /**
  * Handles one `PreToolUse` call: returns the refusal JSON, or `null` to let the call through. Writes the
- * state only to record the role it had to decide; throws on any failure (the caller turns it into silence).
+ * state only to record the role it had to decide and, for the tester gate, `execucoes`; throws on any
+ * failure (the caller turns it into silence).
  */
 export function handleGate(input, env = process.env) {
   if (env.CLAUDE_CODE_REMOTE !== 'true') return null;
-  if (!opensPullRequest(input.tool_name, input.tool_input)) return null;
+  const pullRequest = opensPullRequest(input.tool_name, input.tool_input);
+  const step = pullRequest ? null : testerStepCommand(input.tool_name, input.tool_input);
+  if (!pullRequest && step === null) return null;
+  // A subagent's `transcript_path` may be its own: its call never writes the role, and the tester gate leaves it be.
+  const subagent = typeof input.agent_id === 'string' && input.agent_id !== '';
+  if (subagent && !pullRequest) return null;
   const sessionId = input.session_id;
   if (typeof sessionId !== 'string' || !SESSION_ID.test(sessionId)) return null;
   const transcript = input.transcript_path;
   if (typeof transcript !== 'string' || transcript === '') return null;
 
   const file = statePath(sessionId);
-  const state = loadState(file); // a corrupted state throws: the gate fails open
+  let state = loadState(file); // a corrupted state throws: the gate fails open
   const papel = resolveRole(state, transcript);
   if (papel === null) return null;
-  // A subagent's `transcript_path` may be its own: its call never writes the role.
-  const subagent = typeof input.agent_id === 'string' && input.agent_id !== '';
-  if (!subagent && state?.papel !== papel)
-    saveState(file, {
-      ...state,
-      fase: papel === 'fase',
-      papel,
-      ultimoAviso: state?.ultimoAviso ?? null,
-      saltos: Array.isArray(state?.saltos) ? state.saltos : [],
-      erro: state?.erro ?? null,
-    });
-  if (papel !== 'fase') return null;
-
-  const contexto = measureTranscript(transcript);
-  if (contexto === null || contexto <= GATILHO) return null;
-  if (isLastSession(transcript)) return null;
-  return gateOutput(contexto);
+  if (!subagent) state = recordRole(file, state, papel);
+  return pullRequest ? prGate(papel, transcript) : testerGate(file, state, papel, step);
 }
 
 function erroEstado(mensagem) {
