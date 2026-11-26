@@ -12,6 +12,15 @@ import { expect } from 'vitest';
  * The ratio is not negotiable: going over the limit is a defect, not a limit to raise; 6× is the limit calibrated by the measurement, not
  * an adjustment to one case. A case with its center at 5× or more is "documented" in the case itself (where the excess comes from).
  *
+ * Sizes and rule for a new case (stage #2300). The default sizes are 1,250 and 5,000; the cases that measure at 2,500 and 10,000 are
+ * `perspectiveView` (stage #1968) and `accessibilityAudit` (stage #2300).
+ * - Choosing n: the run at n should take at least ~2 ms on an idle machine. Below that, the cache advantage of n and one preemption of
+ *   a shared runner weigh the most, so the case measures at a larger `n:`, confirmed by measuring the ratio at both sizes.
+ * - Choosing `runs`: 21 by default; 41 for cases of a few ms, where the median of few rounds oscillates. More rounds do not replace a
+ *   larger n (81 and 161 rounds did not narrow `perspectiveView`, #2674).
+ * - A ratio that rises with n (the center at 2n above the center at n) is not calibration: it is a defect of the operation, handled as a
+ *   `bug` (#2674), never with a larger n or a higher limit.
+ *
  * How it measures: after an equal warm-up at both sizes, each round collects garbage once (`globalThis.gc`,
  * outside the timing) and runs **one** execution at n and **one** at 4n, in alternating order per round, each run on
  * a fresh version of the project and with its `prepare` immediately before, outside the timing. This way both sizes
