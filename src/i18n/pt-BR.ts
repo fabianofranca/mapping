@@ -561,6 +561,7 @@ export const ptBR: Dictionary = {
   'spec.impact.op.removeTypeDelete': 'Remover o tipo {type} (apagar as anotações)',
   'spec.impact.op.renameField': 'Renomear o campo {from} → {to} em {type}',
   'spec.impact.op.removeField': 'Remover o campo {field} em {type}',
+  'spec.impact.op.addField': 'Campo adicionado: {type}.{field}',
   'spec.impact.op.mapValues': 'Mapear valores de {field} em {type}: {pairs}',
   'spec.impact.op.fillField': 'Preencher {field} em {type} com {value}',
   'spec.impact.op.copyField': 'Copiar {from} para {to} em {type}',

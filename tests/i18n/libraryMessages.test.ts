@@ -103,6 +103,109 @@ function tokenPackage(children: Raw[]): Files {
   ];
 }
 
+/** A `codeOnly` field (`formatVersion` 24) that the drawing uses anyway: `library.codeOnlyDrawn`. */
+function codeOnlyPackage(): Files {
+  const component = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'co',
+    name: 'Co',
+    size: { width: 100, height: 40 },
+    template: {
+      type: 'frame',
+      children: [
+        { type: 'text', text: { $field: 'mask', default: 'x' }, font: { size: 12 } },
+      ],
+    },
+  };
+  const spec = {
+    format: 'mapping-spec',
+    formatVersion: 24,
+    id: 'co',
+    name: 'Co',
+    version: 1,
+    layers: [
+      {
+        id: 'l',
+        name: 'L',
+        color: '#112233',
+        annotationTypes: [
+          {
+            id: 't',
+            name: 'T',
+            component: 'components/co.json',
+            fields: [{ key: 'mask', type: 'string', codeOnly: true }],
+          },
+        ],
+      },
+    ],
+  };
+  return [
+    { path: 'co.spec.json', text: JSON.stringify(spec) },
+    { path: 'components/co.json', text: JSON.stringify(component) },
+  ];
+}
+
+/** An `add-field` (`formatVersion` 24) of a field that the previous version already had: `library.fieldAlreadyInVersion`. */
+function addFieldPackage(): { files: Files; previous: ReturnType<typeof previousSpec> } {
+  const component = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'af',
+    name: 'Af',
+    size: { width: 100, height: 40 },
+    template: {
+      type: 'frame',
+      children: [
+        { type: 'text', text: { $field: 'mask', default: 'x' }, font: { size: 12 } },
+      ],
+    },
+  };
+  const spec = (version: number, migrations?: Raw[]): Raw => ({
+    format: 'mapping-spec',
+    formatVersion: 24,
+    id: 'af',
+    name: 'Af',
+    version,
+    layers: [
+      {
+        id: 'l',
+        name: 'L',
+        color: '#112233',
+        annotationTypes: [
+          {
+            id: 't',
+            name: 'T',
+            component: 'components/af.json',
+            fields: [{ key: 'mask', type: 'string' }],
+          },
+        ],
+      },
+    ],
+    ...(migrations ? { migrations } : {}),
+  });
+  const parsed = parseSpecText(JSON.stringify(spec(1)));
+  if (!parsed.ok) throw new Error('fixture inválida');
+  return {
+    files: [
+      {
+        path: 'af.spec.json',
+        text: JSON.stringify(
+          spec(2, [
+            {
+              from: 1,
+              to: 2,
+              steps: [{ op: 'add-field', type: 't', field: 'mask' }],
+            },
+          ]),
+        ),
+      },
+      { path: 'components/af.json', text: JSON.stringify(component) },
+    ],
+    previous: parsed.spec,
+  };
+}
+
 /** A `hug` component in height with `maxHeight`: the text does not fit even at the adjusted size (MC2). */
 function fittedPackage(): Files {
   const component = {
@@ -158,6 +261,12 @@ function allIssues(): LibraryIssue[] {
     ...validateLibrary({ files: noisy.files, specPath: SPEC, previous: noisy.previous })
       .issues,
     ...validateLibrary({ files: fittedPackage(), specPath: 'ft.spec.json' }).issues,
+    ...validateLibrary({ files: codeOnlyPackage(), specPath: 'co.spec.json' }).issues,
+    ...validateLibrary({
+      files: addFieldPackage().files,
+      specPath: 'af.spec.json',
+      previous: addFieldPackage().previous,
+    }).issues,
     ...validateLibrary({
       files: tokenPackage([
         { type: 'rect', fill: { $token: 'inexistente' } },
@@ -174,6 +283,8 @@ const EXPECTED_CODES = [
   'library.fileNotFound',
   'library.invalidJson',
   'library.fieldUnused',
+  'library.codeOnlyDrawn',
+  'library.fieldAlreadyInVersion',
   'library.tokenMissing',
   'library.tokenWrongKind.color.number',
   'library.fontMissing',

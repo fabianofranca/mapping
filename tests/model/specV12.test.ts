@@ -292,7 +292,7 @@ describe('formatVersion 12: errors on the right step and invalid op', () => {
     expectIssue(
       spec,
       `${M0}.steps[0].op`,
-      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role" or "copy-field"',
+      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role", "copy-field" or "add-field"',
     );
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
@@ -303,6 +303,7 @@ describe('formatVersion 12: JSON schema', () => {
     const schema = jsonSchema as Json;
     expect(schema.properties.formatVersion.enum).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+      24,
     ]);
     const ops = (schema.$defs.migrationStep.oneOf as Json[]).map(
       (s) => s.properties.op.const as string,
@@ -318,6 +319,7 @@ describe('formatVersion 12: JSON schema', () => {
       'remove-role',
       'set-role',
       'copy-field',
+      'add-field',
     ]);
   });
 });

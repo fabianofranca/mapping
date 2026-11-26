@@ -561,6 +561,7 @@ export const enUS = {
   'spec.impact.op.removeTypeDelete': 'Remove type {type} (delete the annotations)',
   'spec.impact.op.renameField': 'Rename field {from} → {to} in {type}',
   'spec.impact.op.removeField': 'Remove field {field} in {type}',
+  'spec.impact.op.addField': 'Field added: {type}.{field}',
   'spec.impact.op.mapValues': 'Map values of {field} in {type}: {pairs}',
   'spec.impact.op.fillField': 'Fill {field} in {type} with {value}',
   'spec.impact.op.copyField': 'Copy {from} to {to} in {type}',

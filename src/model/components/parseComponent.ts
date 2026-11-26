@@ -22,6 +22,7 @@ import { checkRemoteImageUrl } from '../remoteImages';
 import { MAX_TRACKS, parseTrack } from './gridLayout';
 import { isPackageImagePath } from './imagePath';
 import { isValidFontFamily } from './fontFamily';
+import { isFormatColor } from './tokens';
 import {
   ANCHOR_FIELDS,
   COMPARISON_OPS,
@@ -2304,6 +2305,7 @@ const ROOT_KEYS = [
   'size',
   'minSize',
   'sizing',
+  'weight',
   'screen',
   'anchor',
   'preview',
@@ -2360,6 +2362,18 @@ function checkSizing(value: unknown, path: string, v4: boolean, out: Ctx): void 
       if (isExprObject(axis)) sizingForbiddenOps(axis, at, out);
     }
   }
+}
+
+/**
+ * The root `weight` (v4 only): a number greater than 0 or an expression that yields one (evaluated with
+ * the instance's values, so the container names are checked as in `sizing`).
+ */
+function checkRootWeight(value: unknown, version: unknown, out: Ctx): void {
+  if (typeof version === 'number' && version < COMPONENT_FORMAT_VERSION_FIDELITY)
+    return add(out, 'weight', V4_ONLY_MESSAGE);
+  checkExpr(value, 'weight', checkPositiveNumber, out);
+  if (isExprObject(value)) sizingForbiddenOps(value, 'weight', out);
+  out.issues.push(...containerFieldIssues(version, value, 'weight'));
 }
 
 /** `screen` (v4 only, root only): an object with an optional `anchor`, from `SCREEN_ANCHORS`. */
@@ -2498,6 +2512,8 @@ function collectIssues(
     // Before 4 the expression itself is already refused; from 4 the container names are checked in it too.
     if (v4) issues.push(...containerFieldIssues(version, input.sizing, 'sizing'));
   }
+
+  if ('weight' in input) checkRootWeight(input.weight, version, out);
 
   if ('screen' in input) {
     checkScreen(input.screen, 'screen', out);
@@ -2750,13 +2766,67 @@ function familyWarning(holder: unknown, path: string): ComponentIssue[] {
   ];
 }
 
+/** Warning for a literal color text that the format does not know (`banana`, `red`); expressions pass. */
+function colorWarning(value: unknown, path: string): ComponentIssue[] {
+  if (typeof value !== 'string' || isFormatColor(value)) return [];
+  return [
+    issueOf(
+      path,
+      `not a color of the format: ${JSON.stringify(value)} (use #rrggbb, rgb(), hsl(), transparent or none)`,
+    ),
+  ];
+}
+
+/** The literal color texts of a `fill`: the text itself or each stop of a gradient. */
+function fillColorWarnings(fill: unknown, path: string): ComponentIssue[] {
+  if (typeof fill === 'string') return colorWarning(fill, path);
+  const stops = isRecord(fill) && Array.isArray(fill.stops) ? fill.stops : [];
+  return stops.flatMap((stop: unknown, i) =>
+    isRecord(stop) ? colorWarning(stop.color, `${join(path, 'stops')}[${i}].color`) : [],
+  );
+}
+
+/** `shadow.color`, in the object and in each item of a list. */
+function shadowColorWarnings(shadow: unknown, path: string): ComponentIssue[] {
+  if (Array.isArray(shadow))
+    return shadow.flatMap((item: unknown, i) =>
+      shadowColorWarnings(item, `${path}[${i}]`),
+    );
+  return isRecord(shadow) ? colorWarning(shadow.color, join(path, 'color')) : [];
+}
+
+/** The literal colors of one node (not of its children): fill, stroke, color, shadow and runs. */
+function nodeColorWarnings(
+  node: Record<string, unknown>,
+  path: string,
+): ComponentIssue[] {
+  const out = [
+    ...fillColorWarnings(node.fill, join(path, 'fill')),
+    ...colorWarning(node.color, join(path, 'color')),
+    ...shadowColorWarnings(node.shadow, join(path, 'shadow')),
+  ];
+  if (isRecord(node.stroke))
+    out.push(...colorWarning(node.stroke.color, join(path, 'stroke.color')));
+  if (Array.isArray(node.runs))
+    node.runs.forEach((run: unknown, i) => {
+      if (!isRecord(run)) return;
+      const at = `${join(path, 'runs')}[${i}]`;
+      out.push(
+        ...colorWarning(run.color, join(at, 'color')),
+        ...colorWarning(run.background, join(at, 'background')),
+      );
+    });
+  return out;
+}
+
 /**
- * Warnings (not errors): today, a literal `font.family` (or `runs[i].family`) that CSS does not
- * accept (the drawing falls back to `sans-serif`). Expressions are not checked here.
+ * Warnings (not errors): a literal `font.family` (or `runs[i].family`) that CSS does not accept (the
+ * drawing falls back to `sans-serif`), and a literal color that the format does not know. Expressions
+ * are not checked here.
  */
 function collectWarnings(node: unknown, path: string): ComponentIssue[] {
   if (!isRecord(node)) return [];
-  const out: ComponentIssue[] = [];
+  const out: ComponentIssue[] = nodeColorWarnings(node, path);
   out.push(...familyWarning(node.font, join(path, 'font')));
   if (Array.isArray(node.runs))
     node.runs.forEach((run: unknown, i) =>
@@ -2793,7 +2863,9 @@ export function parseComponentText(text: string): ComponentParseResult {
   return parseComponent(json);
 }
 
-/** Field keys cited anywhere in the template, sorted and without repetition. */
+/** Field keys cited anywhere in the template and in the root `weight`, sorted and without repetition. */
 export function collectFieldKeys(component: ComponentFile): string[] {
-  return [...referencedFields(component.template)].sort();
+  const keys = referencedFields(component.template);
+  referencedFields(component.weight, keys);
+  return [...keys].sort();
 }

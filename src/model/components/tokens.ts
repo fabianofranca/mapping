@@ -250,13 +250,24 @@ const toByte = (n: number): string =>
     .toString(16)
     .padStart(2, '0');
 
-function parseColor(text: string): Rgba | undefined {
-  return parseHex(text) ?? parseFunctional(text);
+/**
+ * The one reader of a literal color of the format: `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`,
+ * `rgb()`/`rgba()` and `hsl()`/`hsla()` (hue in `deg`, `grad`, `rad` or `turn`). The channels are not
+ * clamped (the caller decides). `none`, `transparent` and named colors (`red`) are not read: none.
+ */
+export function parseFormatColor(text: string): Rgba | undefined {
+  const value = text.trim();
+  return parseHex(value) ?? parseFunctional(value);
 }
 
 /** Is the text a literal color (`#rgb`, `#rrggbb`, `#rrggbbaa`, `rgb(...)`, `hsl(...)`)? */
 export function isLiteralColor(text: string): boolean {
-  return parseColor(text.trim()) !== undefined;
+  return parseFormatColor(text) !== undefined;
+}
+
+/** Is the text a color the format knows: a literal color, `none` or `transparent` (any case)? */
+export function isFormatColor(text: string): boolean {
+  return isLiteralColor(text) || /^(none|transparent)$/i.test(text.trim());
 }
 
 /**
@@ -265,7 +276,7 @@ export function isLiteralColor(text: string): boolean {
  */
 function withAlpha(color: string, alpha: number): string {
   const text = color.trim();
-  const rgba = parseColor(text);
+  const rgba = parseFormatColor(text);
   if (!rgba) return color;
   return `#${toByte(rgba.r)}${toByte(rgba.g)}${toByte(rgba.b)}${toByte(rgba.a * alpha * 255)}`;
 }
@@ -275,7 +286,7 @@ function withAlpha(color: string, alpha: number): string {
  * opaque). `none`, `transparent` and anything that is not an understood color stay as they are.
  */
 export function mapColor(color: string, change: (rgba: Rgba) => Rgba): string {
-  const rgba = parseColor(color.trim());
+  const rgba = parseFormatColor(color.trim());
   if (!rgba) return color;
   const out = change(rgba);
   const body = `#${toByte(out.r)}${toByte(out.g)}${toByte(out.b)}`;
@@ -295,8 +306,8 @@ function alphaOf(ref: TokenRef, lookup: Lookup): number | undefined {
 
 /** The color `top` composited over `base` (Compose's `compositeOver`); the base's alpha enters the result. */
 function compositeOver(top: string, base: string): string {
-  const above = parseColor(top.trim());
-  const below = parseColor(base.trim());
+  const above = parseFormatColor(top.trim());
+  const below = parseFormatColor(base.trim());
   if (!above || !below) return top;
   const alpha = above.a + below.a * (1 - above.a);
   if (alpha === 0) return `#00000000`;
@@ -312,7 +323,7 @@ function compositeOver(top: string, base: string): string {
 export function colorOverWhite(text: string): string | undefined {
   const color = text.trim();
   if (/^(none|transparent)$/i.test(color)) return '#FFFFFF';
-  const rgba = parseColor(color);
+  const rgba = parseFormatColor(color);
   if (rgba === undefined) return undefined;
   const mix = (c: number): string => toByte(c * rgba.a + 255 * (1 - rgba.a));
   return `#${mix(rgba.r)}${mix(rgba.g)}${mix(rgba.b)}`.toUpperCase();

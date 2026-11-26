@@ -1,0 +1,16 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "expand-item",
+  "name": "Expand item",
+  "description": "A tile that grows inside an Expand row: its root `weight` comes from the `weight` field; with no weight it keeps its own size.",
+  "size": { "width": 40, "height": 40 },
+  "minSize": { "width": 24, "height": 24 },
+  "weight": { "$field": "weight" },
+  "template": {
+    "type": "frame",
+    "name": "tile",
+    "layout": { "type": "none" },
+    "fill": "#7C3AED"
+  }
+}

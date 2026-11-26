@@ -76,6 +76,22 @@ describe('cor', () => {
     expect(parseColor('transparent')?.alpha).toBe(0);
     expect(parseColor('azul')).toBeNull();
   });
+
+  it('reads hsl() and hsla() like the app (the model reader)', () => {
+    expect(parseColor('hsl(0, 100%, 50%)')).toEqual({ rgb: [255, 0, 0], alpha: 1 });
+    expect(parseColor('hsl(210, 100%, 50%)')).toEqual({ rgb: [0, 128, 255], alpha: 1 });
+    const green = parseColor('hsla(120, 100%, 25%, 0.5)');
+    expect(green?.rgb).toEqual([0, 128, 0]);
+    expect(green?.alpha).toBeCloseTo(0.5, 5);
+    expect(parseColor('hsl(0.5turn 100% 50%)')).toEqual({ rgb: [0, 255, 255], alpha: 1 });
+  });
+
+  it('keeps the clamp, transparent and the named colors outside the format', () => {
+    expect(parseColor('rgb(300, -5, 10)')).toEqual({ rgb: [255, 0, 10], alpha: 1 });
+    expect(parseColor('rgba(0, 0, 0, 3)')?.alpha).toBe(1);
+    expect(parseColor('red')).toBeNull();
+    expect(parseColor('none')).toBeNull();
+  });
 });
 
 describe('caminho SVG', () => {

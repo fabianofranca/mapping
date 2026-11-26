@@ -157,6 +157,25 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 **Scripts.** R31 in `docs/TESTING.md` ("Named values").
 
+### `examples/libraries/library-gaps/`
+
+**What it is.** The example of the **library format gaps** stage (#2829): one type per gap it closes, added phase by phase (the specialization goes up to the version each type needs). Today it has five types: **HSL swatch** (`hsl-swatch`, 96 × 48, no fields), **Brand badge** (`brand-badge`, 48 × 48, one field `tint`, default `#FFFFFF`; the `brand` icon of `icons/icons.json`, `formatVersion` 4, with a gradient and a clip) and **Masked field** (`masked-field`, 160 × 40: `label` is drawn; `mask` and `keyboard` are `codeOnly`, with no `code` entry), plus **Expand row** (`expand-row`, 300 × 56, a `row` slot, no fields) and **Expand item** (`expand-item`, 40 × 40, one field `weight`, no default; its root `weight` comes from that field). The specialization is `formatVersion` 24 and `version` 3: the `tint` field of the Brand badge is dropped in the 1 → 2 migration (`remove-field`) and comes back in 2 → 3 (`add-field`).
+
+**How to open.** **Specializations** › **Apply folder…** and pick the folder; mark an HSL swatch. With the MCP server, apply the folder to a project and call `render_marking` on it.
+
+**What you can see.**
+
+- The frame is `hsl(210, 100%, 50%)` (`#0080FF`), the right square `hsla(0, 100%, 50%, 0.5)` (about `#804080` over the frame) and the left one is white with a `hsl(120, 100%, 25%)` stroke (`#008000`, 4 wide, inside).
+- The app and the MCP PNG paint the same colors: the PNG reads colors with the model's one reader, which understands `hsl()` and `hsla()`.
+- The package validates with no error and no warning: `hsl()` is a color of the format. A literal such as `red` would be the warning `component.colorUnknown`.
+- The Brand badge icon has a linear gradient `fill` from `[0, 0]` to `[24, 0]` (red to blue), a radial gradient in the middle and a `clip`; the clip is a circle of radius 12 at the center, as the file says. A node `color` does not tint the gradient paths.
+- The icons file is `formatVersion` 4: the gradient `fill` and the `clip` are only allowed there (`only allowed with formatVersion 4` below it).
+- The Masked field's `mask` and `keyboard` are not drawn and have no `code` entry, and the package still validates with no warning: `codeOnly: true` (specialization `formatVersion` 24) says they are deliberately non-visual. Remove the key from both and `validate_library` gives two `library.fieldUnused` warnings; add `mask` to the drawing and it gives `library.codeOnlyDrawn`.
+- Put two Expand items inside an Expand row (a marking inside the row's rectangle) and give them `weight` 1 and 2: Arrange gives them the free width in proportion, so the second one is about twice as wide as the first (a gap of 8 and padding of 8 stay). With the `weight` empty the item keeps its width, and `fit_marking` on a weighted item never changes the width the weight owns. A component whose `sizing` is only `fill` does not grow in Arrange: the root `weight` is what makes it grow (`docs/COMPONENT-FORMAT.md#sizing`).
+- The `migrations` of the package show `add-field`: `tint` is removed in version 2 and added again in version 3, with another meaning. Each version is checked with its own fields, so the file validates with no error. Take the `add-field` step out and `validate_library` gives `the field "tint" still exists in the type`. An update of a project from version 1 clears the old `tint` values (the `remove-field`), and the `add-field` step moves nothing.
+
+**Scripts.** Added with the stage's script (the last phase).
+
 ### `examples/libraries/data-model/`
 
 **What it is.** The example of the **file formats** (`fileFormats`, `formatVersion` 20) for a specialization **without components**: the data model of a service. Two types, **Class** (the `attributes` table: name, type, required, example) and **Endpoint** (method, path, request, response, timeout), and two formats, each one a plugin with `generate` and `parse`: **OpenAPI** (`yaml`, OpenAPI 3.0.3: the classes become `components.schemas`, the endpoints become `paths`) and **Attributes CSV** (`csv`, one line per attribute of each class).

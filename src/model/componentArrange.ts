@@ -4,6 +4,7 @@ import {
   isPlainNone,
   resolveSlotLayout,
   slotBoxOfScene,
+  type LayoutChild,
   type ResolvedSlotLayout,
 } from './components/arrange';
 import { assignSlots, componentSlots, slotKey } from './components/slots';
@@ -21,6 +22,8 @@ import {
   fitComponentSize,
   followedAxes,
   resolveSizing,
+  resolveWeight,
+  resolveWeightLimits,
   type ResolvedAxis,
   type ResolvedSizing,
 } from './components/sizing';
@@ -245,6 +248,71 @@ function alongTracks(layout: ResolvedSlotLayout): boolean {
 function layoutOfKid(parent: Container, kidId: string): ResolvedSlotLayout | undefined {
   const id = parent.slotOf.get(kidId);
   return parent.slots.find((slot) => slot.id === id)?.layout;
+}
+
+/** The main axis of a `row`/`column` slot layout (`row`: the width); `undefined` in `grid` and `none`, which ignore `weight`. */
+function mainAxisOf(layout: ResolvedSlotLayout): 'width' | 'height' | undefined {
+  if (layout.type === 'row') return 'width';
+  return layout.type === 'column' ? 'height' : undefined;
+}
+
+/**
+ * What a child marking asks of its `row`/`column` slot through the root `weight` of its component (decision 10
+ * of #2829): the weight and its main-axis floor and ceiling, or the warning of an invalid result. A child
+ * without a `weight`, or with an empty one, is not weighted (no warning).
+ */
+interface KidWeight {
+  readonly weight?: number;
+  readonly minMain?: number;
+  readonly maxMain?: number;
+  readonly messages: readonly ModelMessage[];
+}
+
+/**
+ * The floor is the largest of the component's `minSize`, the root's `minWidth`/`minHeight` and the marking
+ * minimum; the ceiling is the root's `maxWidth`/`maxHeight`. `anchor`: the marking's anchor as the drawing
+ * reads it (`$anchor.*`).
+ */
+function kidWeight(
+  p: Project,
+  catalog: ComponentCatalog,
+  kid: Marking,
+  layout: ResolvedSlotLayout,
+  anchor: InstanceAnchor | undefined,
+): KidWeight {
+  const main = mainAxisOf(layout);
+  const mc = markingComponent(p, catalog, kid.id);
+  if (main === undefined || mc === null || mc.component.weight === undefined)
+    return { messages: [] };
+  const values = drawingValues(p, mc.annotation, mc.type).values;
+  const drawn = { ...componentForDrawing(p, mc.component, kid.containerId), anchor };
+  const resolved = resolveWeight(mc.component, values, drawn.tokens, drawn);
+  if (resolved.weight === undefined) return { messages: resolved.messages };
+  const limits = resolveWeightLimits(mc.component, values, main, drawn.tokens, drawn);
+  return {
+    weight: resolved.weight,
+    minMain: Math.max(limits.min, MIN_STORED_MARKING_SIZE),
+    ...(Number.isFinite(limits.max) ? { maxMain: limits.max } : {}),
+    messages: [],
+  };
+}
+
+/**
+ * The axis the parent owns because the child is weighted: the main axis of the child's `row`/`column`
+ * slot. Like the axis that `align: stretch` stretches, the child's own `sizing` and the fit leave it alone.
+ */
+function weightedAxisOf(
+  p: Project,
+  catalog: ComponentCatalog,
+  parent: Container | null,
+  kid: Marking,
+  anchor: InstanceAnchor | undefined,
+): 'width' | 'height' | undefined {
+  const layout = parent === null ? undefined : layoutOfKid(parent, kid.id);
+  if (layout === undefined) return undefined;
+  return kidWeight(p, catalog, kid, layout, anchor).weight === undefined
+    ? undefined
+    : mainAxisOf(layout);
 }
 
 /** The parent slot's `align: stretch` stretches the child on this axis (the cross axis of its layout). */
@@ -504,10 +572,17 @@ export function arrangeMarking(
     }
   };
 
-  /** The parent stretches this component with a slot on the axis (the parent's `stretch` outweighs the `hug`). */
+  /**
+   * The parent owns this component's axis: its `stretch` stretches it, or the component is weighted and the axis is
+   * the main one of the parent's slot (either outweighs the component's own `hug`).
+   */
   const stretchedByParent = (id: string, axis: 'width' | 'height'): boolean => {
-    const parentId = (index.markings.get(id) as Marking).parentId;
-    return stretchedBy(parentId === null ? null : containerAt(parentId), id, axis);
+    const marking = index.markings.get(id) as Marking;
+    const parent = marking.parentId === null ? null : containerAt(marking.parentId);
+    return (
+      stretchedBy(parent, id, axis) ||
+      weightedAxisOf(p, catalog, parent, marking, anchorOf(id)) === axis
+    );
   };
 
   // By text, so the same warning is not repeated across passes.
@@ -571,7 +646,7 @@ export function arrangeMarking(
   /** What the children of one slot ask of it: their boxes (and baselines) and the size of the content. */
   interface SlotWork {
     readonly slot: ContainerSlot;
-    readonly children: readonly { box: Rect; baseline: number | undefined }[];
+    readonly children: readonly LayoutChild[];
     content: { width: number; height: number };
   }
 
@@ -579,10 +654,17 @@ export function arrangeMarking(
     const { layout, kids } = slot;
     const baselines =
       layout.align === 'baseline' ? kids.map((kid) => baselineOf(kid)) : [];
-    const children = kids.map((kid, i) => ({
-      box: rects.get(kid.id) as Rect,
-      baseline: baselines[i],
-    }));
+    const children: LayoutChild[] = kids.map((kid, i) => {
+      const { messages, ...weighted } = kidWeight(
+        p,
+        catalog,
+        kid,
+        layout,
+        anchorOf(kid.id),
+      );
+      messages.forEach(warn);
+      return { box: rects.get(kid.id) as Rect, baseline: baselines[i], ...weighted };
+    });
     return { slot, children, content: paddedContent(layout, children, null) };
   };
 
@@ -900,8 +982,11 @@ export function fitMarking(
   const marking = findById(p.markings, markingId);
   const target = fitTargetOf(p, catalog, marking) ?? fail('not-fittable', markingId);
   const auto: { width?: boolean; height?: boolean } = {};
-  if (stretchedBy(target.parent, target.marking.id, 'width')) auto.width = false;
-  if (stretchedBy(target.parent, target.marking.id, 'height')) auto.height = false;
+  // The parent owns the axis its `align: stretch` stretches and the weighted one (the main axis of its slot).
+  const weighted = weightedAxisOf(p, catalog, target.parent, marking, target.anchor);
+  for (const axis of ['width', 'height'] as const)
+    if (stretchedBy(target.parent, target.marking.id, axis) || weighted === axis)
+      auto[axis] = false;
   // Measures in component units and writes in image pixels (× density, rounded up).
   const density = effectiveDensity(p, marking.containerId);
   const base = rectToUnits(marking.rect, density);

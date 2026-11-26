@@ -1,0 +1,32 @@
+# Library format gaps — 2026-11-26 (épico `epic/library-gaps`, PR #2892, MCP 0.60.0, schema v24 unchanged)
+
+## Adicionado
+
+- One color reader in the model (`parseFormatColor`, `isFormatColor`): the MCP PNG (`render_container`, `render_marking`, `get_marking_image`) now paints `hsl()` and `hsla()` like the app (hue in `deg`, `grad`, `rad` or `turn`).
+- A literal color that the format does not know (`"banana"`, `red`) in a component or in the icons file is now a warning, never a refusal: `component.colorUnknown` and `iconsFile.colorUnknown`, at the path of the value, in `validate_library` and when a package is applied. Expressions and token values are not checked.
+- `examples/libraries/library-gaps` (LG1: the `hsl-swatch` type).
+- Icons file (`mapping-icons`) `formatVersion` 4: a path `fill` may be a gradient (`linear` with `angle` or `from` and `to`, `radial`, `angular`, literal-color `stops`) and an icon may carry a `clip` (`{ d, fillRule? }`, in `viewBox` units). In the scene, the icon group carries `clipPath { d, fillRule, transform }`. The app and the MCP PNG paint the gradient.
+- A gradient or a `clip` in a `formatVersion` 1 to 3 icons file is `only allowed with formatVersion 4` (`iconsFile.v4Only`), and the version message is now `formatVersion: must be 1, 2, 3 or 4`. `import_icons` keeps the file's version and never writes a gradient or a `clip`.
+- `examples/libraries/library-gaps`: the `brand-badge` type (a gradient and a clip in the icon; the specialization is `formatVersion` 15).
+
+- The icon `clip` is drawn: the app and the viewer clip the icon's paths with the path, its fill rule and the `viewBox` matrix (mirrored in `rtl`), and the MCP PNG paints the group through the mask of the flattened path (several subpaths, `nonzero` or `evenodd`). The `brand-badge` icon now shows the corners outside the circle without paint and the same ramp in the app, the viewer and the PNG. `mapping-viewer` 0.11.0.
+- Specialization `formatVersion` 24: `codeOnly: true` on a top-level field marks a deliberately non-visual property. `library.fieldUnused` is not emitted for it, and `library.codeOnlyDrawn` warns when the drawing uses it anyway. Before 24 the key is `only allowed with formatVersion 24`; on a `table` column it is `only valid on a field, not on a table column`. Versions 1 to 23 behave as before and adding or removing `codeOnly` is additive in the version contract.
+- `examples/libraries/library-gaps`: the `masked-field` type (`label` drawn; `mask` and `keyboard` are `codeOnly`, with no `code` entry); the specialization is now `formatVersion` 24.
+- Specialization `formatVersion` 24 also adds the `add-field` migration step: a field that an earlier migration removed and a later one brings back (with another meaning) is declared with `remove-field` in one entry and `add-field` in the other, and every version of the chain is checked with its own fields (the checks rebuild the types backwards from the file). It covers no break and moves no value; before 24 it is `only allowed with formatVersion 24`, and the invalid `op` message now lists `"add-field"`. `library.fieldAlreadyInVersion` (warning) is for an `add-field` of a field the previous version already had. The `plan_library_update` and the update dialog list the step ("Field added: type.field").
+- `examples/libraries/library-gaps`: the specialization is now `version` 3, with `remove-field brand-badge.tint` (1 → 2) and `add-field brand-badge.tint` (2 → 3).
+- Component `formatVersion` 4: a root `weight` (a number greater than 0 or an expression; `{ "weight": { "$field": "weight" } }`). Arrange and `layoutScreen` give a child marking with a root `weight` a share of the free main-axis space of its `row`/`column` slot, in proportion to the weights and with the same freezing at the `minSize`/limits; the child without one keeps its size (`sizing` `fill` alone still does not grow in Arrange). An empty or invalid value means no weight (`invalid value in weight: <value>` for a value that is not a number greater than 0). The root `weight` of a file below `formatVersion` 4 is `only allowed with formatVersion 4`. A hug parent counts the weighted children's floors, `fit_marking` and the app's fit leave the weighted axis alone, and the field a root `weight` cites counts as used (`library.fieldUnused`) or undeclared (`library.fieldUndeclared`, at `weight`). One undo entry per Arrange. The specialization `formatVersion` does not change.
+- `examples/libraries/library-gaps`: the `expand-row` and `expand-item` types (the item's root `weight` comes from its `weight` field, with no default).
+- `docs/TESTING.md`, R48 "Library format gaps (hsl, icon gradient and clip, codeOnly, add-field, weight)": the new test script of the stage (12 steps over `examples/libraries/library-gaps/`: validator, app, MCP PNG, Arrange of `weight`, `plan_library_update`), in block 6 of the full round (143 steps).
+
+## Alterado
+
+- `docs/TESTING.md`, R27.3: the icons file now uses `formatVersion` 5 to provoke `must be 1, 2, 3 or 4`.
+- `docs/COMPONENT-FORMAT.md`, "Known limits": the line "A slot's children's `weight` does not exist" is replaced by the limits of the root `weight` (a `grid`/`none` parent and a `hug` parent).
+- `docs/COMPONENT-FORMAT.md`, "Known limits": the `filter.grayscale` line now says what a named color does (the app and the viewer draw it, the PNG does not paint it, the validator warns).
+- The `dist/index.html` ceiling went up 16 KiB, from 2637824 to 2654208, by the budget rule; above the limits, `bug` #2888 for the owner to review
+
+## Corrigido
+
+- The MCP PNG (`render_container`, `render_marking`, `get_marking_image`) now paints `hsl()` and `hsla()` colors; before, they were left out while the app drew them (#2829).
+- A fully transparent shadow written with `hsla()` or the space/slash syntax (`hsla(0,0%,0%,0)`, `rgb(0 0 0 / 0)`) is no longer treated as visible in the app's canvas: `isInvisibleShadow` delegates to `parseFormatColor`.
+- Review fixes (#2829): a field taken away by `remove-field`/`rename-field` and brought back by a later `add-field` has its type, option and required breaks covered by the step that cleared it; `layoutScreen` sizes a weighted child with the root `minWidth`/`minHeight`/`maxWidth`/`maxHeight` as Arrange does and warns `fill inside hug` only when the child's own height is `fill`; a `weight` that resolves to blank text is not weighted, with no warning.

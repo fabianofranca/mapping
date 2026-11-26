@@ -1,0 +1,145 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 24,
+  "id": "library-gaps",
+  "name": "Library gaps",
+  "version": 3,
+  "description": "One type per format gap that the library-gaps stage closed. The Swatch (`hsl-swatch`) writes its colors with hsl() and hsla(): the MCP PNG paints them like the app. The Brand badge (`brand-badge`) uses an icon with a gradient fill and a clip (icons file `formatVersion` 4). The Masked field (`masked-field`) has two `codeOnly` fields, `mask` and `keyboard`, that the drawing does not use and the validator does not flag. The `tint` field of the Brand badge was dropped in version 2 and came back in version 3 with another meaning: the `add-field` step of the 2 to 3 migration says so. The Expand row (`expand-row`) and the Expand item (`expand-item`) use the root `weight` of a component: the item grows in the row's free width.",
+  "icons": "icons/icons.json",
+  "layers": [
+    {
+      "id": "gaps",
+      "name": "Gaps",
+      "color": "#7C3AED",
+      "annotationTypes": [
+        {
+          "id": "hsl-swatch",
+          "name": "HSL swatch",
+          "component": "components/hsl-swatch.json",
+          "doc": "docs/hsl-swatch.md",
+          "fields": [],
+          "examples": [
+            {
+              "name": "Default",
+              "values": {}
+            }
+          ]
+        },
+        {
+          "id": "brand-badge",
+          "name": "Brand badge",
+          "component": "components/brand-badge.json",
+          "doc": "docs/brand-badge.md",
+          "fields": [
+            {
+              "key": "tint",
+              "type": "string",
+              "default": "#FFFFFF"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Default",
+              "values": {}
+            }
+          ]
+        },
+        {
+          "id": "masked-field",
+          "name": "Masked field",
+          "component": "components/masked-field.json",
+          "doc": "docs/masked-field.md",
+          "labelField": "label",
+          "fields": [
+            {
+              "key": "label",
+              "type": "string",
+              "default": "Phone"
+            },
+            {
+              "key": "mask",
+              "type": "string",
+              "codeOnly": true,
+              "description": "The input mask the code applies, such as (##) #####-####."
+            },
+            {
+              "key": "keyboard",
+              "type": "enum",
+              "options": ["text", "number", "phone", "email"],
+              "default": "text",
+              "codeOnly": true,
+              "description": "The keyboard type the code asks for."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Default",
+              "values": {}
+            }
+          ]
+        },
+        {
+          "id": "expand-row",
+          "name": "Expand row",
+          "component": "components/expand-row.json",
+          "doc": "docs/expand-row.md",
+          "fields": [],
+          "examples": [
+            {
+              "name": "Default",
+              "values": {}
+            }
+          ]
+        },
+        {
+          "id": "expand-item",
+          "name": "Expand item",
+          "component": "components/expand-item.json",
+          "doc": "docs/expand-item.md",
+          "fields": [
+            {
+              "key": "weight",
+              "type": "number"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Default",
+              "values": {}
+            },
+            {
+              "name": "Weight 2",
+              "values": {
+                "weight": 2
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "migrations": [
+    {
+      "from": 1,
+      "to": 2,
+      "steps": [
+        {
+          "op": "remove-field",
+          "type": "brand-badge",
+          "field": "tint"
+        }
+      ]
+    },
+    {
+      "from": 2,
+      "to": 3,
+      "steps": [
+        {
+          "op": "add-field",
+          "type": "brand-badge",
+          "field": "tint"
+        }
+      ]
+    }
+  ]
+}

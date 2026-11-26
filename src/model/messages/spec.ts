@@ -62,6 +62,7 @@ export const specMessages = {
   // Fields and columns
   'spec.columnTypeNotAllowed':
     '"{type}" is not allowed inside a table; use "string", "number", "date", "enum" or "ref"',
+  'spec.codeOnlyColumn': 'only valid on a field, not on a table column',
   'spec.optionsRequired': 'required and not empty in an enum',
   'spec.optionsBlank': 'options cannot be empty',
   'spec.optionsRepeated': 'repeated options',
@@ -158,7 +159,7 @@ export const specMessages = {
   'spec.migrationModeRemoveType': 'use "convert" or "delete"',
   'spec.migrationModeRemoveRole': 'use "clear" or "unlink"',
   'spec.migrationOpInvalid':
-    'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role" or "copy-field"',
+    'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role", "copy-field" or "add-field"',
   'spec.notEmptyList': 'cannot be an empty list',
   'spec.copyFieldWhenValue': 'must be text, a number or a non-empty list of them',
   'spec.copyFieldWhenKind': 'a "table" or "ref" field cannot be tested in "when"',

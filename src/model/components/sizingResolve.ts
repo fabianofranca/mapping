@@ -18,6 +18,7 @@ import { type InstanceContainer, containerFieldValues } from './container';
 import { DIRECTION_FIELD, evaluate } from './expressions';
 import { type ResolvedTokens, substituteTokens } from './tokens';
 import { describeValue, isIntrinsicSize, parseSizeSpec } from './layoutValues';
+import { numericValue } from './gridPlan';
 
 export type SizingAxis = 'width' | 'height';
 
@@ -100,4 +101,87 @@ export function resolveSizing(
   const width = axis('width');
   const height = axis('height');
   return { width, height, messages };
+}
+
+/** The root `weight` of an instance evaluated: the weight (`undefined` = not weighted) and its warnings. */
+export interface ResolvedWeight {
+  readonly weight: number | undefined;
+  readonly messages: readonly ModelMessage[];
+}
+
+/**
+ * The component's root `weight` (v4), evaluated with `values` and the same options as `resolveSizing`
+ * (tokens, `$anchor.*`, `$container.*` and `$direction`). No value, `null`, a blank text or no
+ * `weight` key: not weighted and no warning. A result that is not a finite number greater than 0: not weighted, with the
+ * warning `invalid value in weight: <value>`.
+ */
+export function resolveWeight(
+  component: ComponentFile,
+  values: FieldValues,
+  tokens: ResolvedTokens | undefined = component.resolvedTokens,
+  reserved?: ReservedValues,
+): ResolvedWeight {
+  const raw = component.weight as Expr<unknown> | undefined;
+  if (raw === undefined) return { weight: undefined, messages: [] };
+  const scope = reserved === undefined ? values : withReserved(values, reserved);
+  const resolved = substituteTokens(raw, tokens ?? {}) as Expr<unknown> | undefined;
+  const value =
+    resolved === undefined ? undefined : evaluate<unknown>(resolved, scope, undefined);
+  if (isEmptyWeight(value)) return { weight: undefined, messages: [] };
+  const n = numericValue(value);
+  if (Number.isFinite(n) && n > 0) return { weight: n, messages: [] };
+  return {
+    weight: undefined,
+    messages: [
+      templateMessage('engine.invalidValue', {
+        label: 'weight',
+        value: describeValue(value),
+      }),
+    ],
+  };
+}
+
+/** No value, `null` or a blank text: the weight is empty (not weighted, no warning). */
+function isEmptyWeight(value: unknown): boolean {
+  return (
+    value === undefined ||
+    value === null ||
+    (typeof value === 'string' && value.trim() === '')
+  );
+}
+
+/** The floor and ceiling of a weighted child's main axis (the component's own limits, before the marking minimum). */
+export interface WeightLimits {
+  readonly min: number;
+  readonly max: number;
+}
+
+/**
+ * The limits a weighted component keeps on `axis`: the floor is the larger of its `minSize` and the
+ * root template's `minWidth`/`minHeight` (evaluated with the instance's values, a negative or invalid
+ * result counts as none); the ceiling is the root's `maxWidth`/`maxHeight` (`Infinity` without one).
+ */
+export function resolveWeightLimits(
+  component: ComponentFile,
+  values: FieldValues,
+  axis: SizingAxis,
+  tokens: ResolvedTokens | undefined = component.resolvedTokens,
+  reserved?: ReservedValues,
+): WeightLimits {
+  const scope = reserved === undefined ? values : withReserved(values, reserved);
+  const limit = (expr: Expr<number> | undefined): number | undefined => {
+    if (expr === undefined) return undefined;
+    const resolved = substituteTokens(expr, tokens ?? {}) as Expr<unknown>;
+    const n = numericValue(evaluate<unknown>(resolved, scope, Number.NaN));
+    return Number.isFinite(n) && n >= 0 ? n : undefined;
+  };
+  const root = component.template;
+  const wide = axis === 'width';
+  return {
+    min: Math.max(
+      component.minSize?.[axis] ?? 0,
+      limit(wide ? root.minWidth : root.minHeight) ?? 0,
+    ),
+    max: limit(wide ? root.maxWidth : root.maxHeight) ?? Infinity,
+  };
 }

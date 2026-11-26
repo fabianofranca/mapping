@@ -275,9 +275,22 @@ export interface FrameNode extends NodeBase {
   readonly children: readonly SceneNode[];
 }
 
+/**
+ * The clip of an icon group (icons file formatVersion 4): a path in the group's local space,
+ * with the matrix that takes its `viewBox` to the box (the same as the children's, mirrored in
+ * `rtl`) and the fill rule that decides what is inside.
+ */
+export interface ClipPath {
+  readonly d: string;
+  readonly fillRule: 'nonzero' | 'evenodd';
+  readonly transform: Matrix;
+}
+
 export interface GroupNode extends NodeBase {
   readonly type: 'group';
   readonly children: readonly SceneNode[];
+  /** Clips every child to this path; absent = no clip. Only an icon with a `clip` carries it. */
+  readonly clipPath?: ClipPath;
 }
 
 /** A radius or [top-left, top-right, bottom-right, bottom-left]. */

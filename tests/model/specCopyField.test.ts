@@ -89,7 +89,7 @@ function expectIssue(spec: Json, path: string, message: string): void {
 
 describe('formatVersion 19: the version number', () => {
   it('is no longer the current version, but still an accepted one', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(N + 4);
+    expect(SPEC_FORMAT_VERSION).toBe(N + 5);
     expect(SPEC_FORMAT_VERSIONS).toContain(N);
   });
 });
@@ -172,7 +172,7 @@ describe('copy-field: level 1 (one file)', () => {
     expectIssue(
       withSteps([{ op: 'zz' }]),
       `${S0}.op`,
-      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role" or "copy-field"',
+      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role", "copy-field" or "add-field"',
     );
   });
 

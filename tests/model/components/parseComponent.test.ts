@@ -1110,3 +1110,46 @@ describe('parseComponent: none aligned and clip (L2, format 4)', () => {
     }
   });
 });
+
+describe('parseComponent: root weight (LG6, format 4)', () => {
+  const V4 = 'only allowed with formatVersion 4';
+  const file = (weight: unknown, version = 4): unknown => ({
+    format: 'mapping-component',
+    formatVersion: version,
+    id: 'c',
+    name: 'C',
+    size: { width: 40, height: 40 },
+    weight,
+    template: { type: 'frame' },
+  });
+
+  it('accepts a number greater than 0 and an expression', () => {
+    expect(validateComponent(file(1))).toEqual([]);
+    expect(validateComponent(file(0.5))).toEqual([]);
+    expect(validateComponent(file({ $field: 'weight' }))).toEqual([]);
+    expect(
+      validateComponent(file({ $if: { $has: 'weight' }, then: 2, else: 1 })),
+    ).toEqual([]);
+  });
+
+  it('a literal that is not a number greater than 0 is an error at the weight path', () => {
+    for (const value of [0, -1, 'x', true]) {
+      expect(validateComponent(file(value))).toEqual([
+        'weight: expected a number greater than 0',
+      ]);
+    }
+  });
+
+  it('formatVersion 1 to 3: only allowed with formatVersion 4', () => {
+    for (const version of [1, 2, 3]) {
+      expect(validateComponent(file(2, version))).toEqual([`weight: ${V4}`]);
+      expect(validateComponent(file({ $field: 'weight' }, version))).toEqual([
+        `weight: ${V4}`,
+      ]);
+    }
+  });
+
+  it('keeps the weight in the parsed file', () => {
+    expect(parsedOf(file({ $field: 'weight' })).weight).toEqual({ $field: 'weight' });
+  });
+});

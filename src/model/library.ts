@@ -247,7 +247,7 @@ function containerNameChecks(
 ): void {
   if (!isRecord(raw)) return;
   const sets = new Set((pkg.spec.containerClasses ?? []).map((set) => set.id));
-  for (const where of ['template', 'sizing'] as const) {
+  for (const where of ['template', 'sizing', 'weight'] as const) {
     for (const name of citedContainerNames(raw[where])) {
       // A name that cannot be `width`, `height` or a set id was already refused by the parser, at its own path.
       if (name === 'width' || name === 'height' || sets.has(name)) continue;
@@ -664,6 +664,8 @@ function readIcons(pkg: Package, out: Collector): void {
       out.passError(path, issue.path, issue.message, codingOf(issue));
     return;
   }
+  for (const warning of parsed.warnings)
+    out.passWarning(path, warning.path, warning.message, codingOf(warning));
   pkg.icons = parsed.set;
 }
 
@@ -960,6 +962,10 @@ function typeCoherence(
   const raw = pkg.componentJson.get(path);
   const rawTemplate = isRecord(raw) ? raw.template : undefined;
   const where = fieldReferences(rawTemplate, 'template');
+  // The root `weight` cites fields too (LG6): its citation points at `weight`, not at the template.
+  if (isRecord(raw))
+    for (const [key, at] of fieldReferences(raw.weight, 'weight'))
+      if (!where.has(key)) where.set(key, at);
   const used2 = collectFieldKeys(component);
   let from = out.issues.length;
   for (const key of used2) {
@@ -1000,14 +1006,18 @@ function typeCoherence(
   const drawn = new Set([...used2, ...innerUsed]);
   const coded = fieldsUsedByCode(type);
   type.fields.forEach((field, index) => {
+    const at = `${base}.fields[${index}]`;
+    const params = { key: field.key, typeId: type.id, path };
+    // `codeOnly` (v24): a deliberately non-visual field. It is not "forgotten", and drawing it is the odd case.
+    if (field.codeOnly === true) {
+      if (drawn.has(field.key))
+        out.warning(pkg.specPath, at, 'library.codeOnlyDrawn', params);
+      return;
+    }
     // A field the drawing does not use but the `code` does (modifiers, accessibility description)
     // is not a forgotten field: it exists for the code.
     if (drawn.has(field.key) || coded.has(field.key)) return;
-    out.warning(pkg.specPath, `${base}.fields[${index}]`, 'library.fieldUnused', {
-      key: field.key,
-      typeId: type.id,
-      path,
-    });
+    out.warning(pkg.specPath, at, 'library.fieldUnused', params);
   });
 }
 
@@ -1246,6 +1256,37 @@ function roleReference(step: SpecMigrationStep, at: string, refs: RoleReferences
   }
 }
 
+/**
+ * `add-field` of a field that the previous version already has, with no `remove-field` (or `rename-field`
+ * away from it) before it in the same migration: nothing enters, so the step is probably misplaced (warning).
+ */
+function addFieldReference(
+  steps: readonly SpecMigrationStep[],
+  index: number,
+  fields: ReadonlyMap<string, SpecField> | undefined,
+  warn: (
+    code: 'library.fieldAlreadyInVersion',
+    params: Record<string, string | number>,
+  ) => void,
+  version: number,
+): void {
+  const step = steps[index];
+  if (step?.op !== 'add-field' || !fields?.has(step.field)) return;
+  const cleared = steps
+    .slice(0, index)
+    .some(
+      (s) =>
+        (s.op === 'remove-field' && s.type === step.type && s.field === step.field) ||
+        (s.op === 'rename-field' && s.type === step.type && s.from === step.field),
+    );
+  if (!cleared)
+    warn('library.fieldAlreadyInVersion', {
+      key: step.field,
+      typeId: step.type,
+      version,
+    });
+}
+
 /** Steps of the migration leaving the previous version that cite what did not exist in it (warning). */
 function migrationReferences(
   previous: Spec,
@@ -1304,6 +1345,15 @@ function migrationReferences(
           version: previous.version,
         });
       }
+    } else if (step.op === 'add-field') {
+      const fields = before.get(renamedFrom.get(step.type) ?? step.type);
+      addFieldReference(
+        migration.steps,
+        si,
+        fields,
+        (code, params) => out.warning(specPath, `${at}.field`, code, params),
+        previous.version,
+      );
     } else if (step.op === 'map-values') {
       const fields = oldType(step, at);
       if (fields === undefined) return;

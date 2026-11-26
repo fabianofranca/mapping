@@ -2,6 +2,7 @@ import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { ScreenAnchor } from '../../src/model/components/componentFormat';
 import { CUT_REACH, cutsText } from '../../src/model/components/textWrap';
 import { gapOutlines } from '../../src/model/components/strokeGaps';
+import { parseFormatColor } from '../../src/model/components/tokens';
 import {
   growRadius,
   sideSegments,
@@ -17,6 +18,7 @@ import {
   type Paint,
   type Point,
   type FrameNode,
+  type ClipPath,
   type GroupNode,
   type SceneNode,
   type Shadow,
@@ -84,43 +86,22 @@ const CURVE_STEPS = 16;
 const CORNER_STEPS = 10;
 const ELLIPSE_STEPS = 64;
 const CIRCLE_STEPS = 12;
-const HEX = /^#([0-9a-f]{3,8})$/i;
-const FUNC = /^rgba?\(\s*([^)]*)\)$/i;
 
 // ---------------------------------------------------------------------------
 // Cores
 
-/** `#rgb`, `#rrggbb`, `#rrggbbaa`, `rgb()` and `rgba()`; anything else becomes `null`. */
+/**
+ * The color the model's reader (`parseFormatColor`) understands, `transparent` as alpha 0, with the
+ * channels clamped; anything else (including a named color such as `red`) becomes `null`.
+ */
 export function parseColor(text: string): Color | null {
-  const value = text.trim();
-  if (value === 'transparent') return { rgb: [0, 0, 0], alpha: 0 };
-  const hex = HEX.exec(value);
-  if (hex) {
-    let digits = hex[1]!;
-    if (digits.length === 3 || digits.length === 4) {
-      digits = [...digits].map((d) => d + d).join('');
-    }
-    if (digits.length !== 6 && digits.length !== 8) return null;
-    const n = (i: number) => Number.parseInt(digits.slice(i, i + 2), 16);
-    return { rgb: [n(0), n(2), n(4)], alpha: digits.length === 8 ? n(6) / 255 : 1 };
-  }
-  const func = FUNC.exec(value);
-  if (func) {
-    const parts = func[1]!.split(/[\s,/]+/).filter((part) => part !== '');
-    const channel = (part: string | undefined) => {
-      if (part === undefined) return Number.NaN;
-      return part.endsWith('%') ? (Number.parseFloat(part) * 255) / 100 : Number(part);
-    };
-    const [r, g, b] = [channel(parts[0]), channel(parts[1]), channel(parts[2])];
-    if ([r, g, b].some((c) => Number.isNaN(c))) return null;
-    const a = parts[3] === undefined ? 1 : Number.parseFloat(parts[3]);
-    const alpha = parts[3]?.endsWith('%') ? a / 100 : a;
-    return {
-      rgb: [clamp255(r!), clamp255(g!), clamp255(b!)],
-      alpha: Number.isNaN(alpha) ? 1 : Math.min(1, Math.max(0, alpha)),
-    };
-  }
-  return null;
+  if (text.trim().toLowerCase() === 'transparent') return { rgb: [0, 0, 0], alpha: 0 };
+  const color = parseFormatColor(text);
+  if (color === undefined) return null;
+  return {
+    rgb: [clamp255(color.r), clamp255(color.g), clamp255(color.b)],
+    alpha: Math.min(1, Math.max(0, color.a)),
+  };
 }
 
 function clamp255(value: number): number {
@@ -941,6 +922,10 @@ class Painter {
     this.strokeNode(node, shapes, matrix, alpha, clip);
     if (node.type === 'text') this.text(node, matrix, alpha, clip);
 
+    if (node.type === 'group' && node.clipPath) {
+      this.paintClipped(node, node.clipPath, matrix, alpha, clip);
+      return;
+    }
     if (node.type === 'frame' || node.type === 'group') {
       let childClip = clip;
       if (node.type === 'frame' && node.clip) {
@@ -981,10 +966,37 @@ class Painter {
       this.paint(node, matrix, 1, clip);
       return;
     }
-    this.masked(mask, clip, (inner, shift, area) => {
+    this.masked([mask], clip, (inner, shift, area) => {
       const moved = rest.map((poly) => poly.map((p) => apply(shift, p)));
       inner.paintThrough(node, multiply(shift, matrix), area, moved);
     });
+  }
+
+  /**
+   * The children of an icon group with a `clipPath`: painted on a separate layer and composed by the
+   * coverage of the clip's flattened subpaths, under its fill rule (the path's matrix is the
+   * children's, `viewBox` to box, mirrored in `rtl`).
+   */
+  private paintClipped(
+    node: GroupNode,
+    clipPath: ClipPath,
+    matrix: Matrix,
+    alpha: number,
+    clip: PixelRect,
+  ): void {
+    const into = multiply(matrix, clipPath.transform);
+    const masks = flattenPath(clipPath.d).map((sub) => this.toRaster(sub.points, into));
+    // A clip with no area (a path that is not a shape) clips everything, like the app's.
+    if (masks.length === 0) return;
+    this.masked(
+      masks,
+      clip,
+      (inner, shift, area) => {
+        const moved = multiply(shift, matrix);
+        for (const child of node.children) inner.paint(child, moved, alpha, area);
+      },
+      clipPath.fillRule,
+    );
   }
 
   /**
@@ -998,25 +1010,27 @@ class Painter {
     clip: PixelRect,
     corners: Polygon,
   ): void {
-    this.masked(corners, clip, (inner, shift, area) => {
+    this.masked([corners], clip, (inner, shift, area) => {
       const into = multiply(shift, matrix);
       for (const child of node.children) inner.paint(child, into, alpha, area);
     });
   }
 
   /**
-   * Paints with `draw` on a layer the size of the region (`clip` ∩ box of `mask`) and composes the
-   * result by the coverage of the `mask` polygon: a clip that is not straight. `draw` receives the
+   * Paints with `draw` on a layer the size of the region (`clip` ∩ box of the `masks`) and composes the
+   * result by the coverage of the `masks` polygons under `rule` (the frame's clip is one polygon, an
+   * icon's `clip` has several subpaths and a fill rule): a clip that is not straight. `draw` receives the
    * layer's painter, the translation that takes the raster to the layer (multiply it into the matrices) and the
    * region in layer coordinates.
    */
   private masked(
-    mask: Polygon,
+    masks: readonly Polygon[],
     clip: PixelRect,
     draw: (painter: Painter, shift: Matrix, area: PixelRect) => void,
+    rule: 'nonzero' | 'evenodd' = 'nonzero',
   ): void {
     const { raster } = this;
-    const region = intersect(clip, bounds(mask));
+    const region = intersect(clip, bounds(masks.flat()));
     const x0 = Math.max(0, Math.floor(region.x));
     const y0 = Math.max(0, Math.floor(region.y));
     const x1 = Math.min(raster.width, Math.ceil(region.x + region.width));
@@ -1032,9 +1046,9 @@ class Painter {
       height: region.height,
     });
     const coverage = createRaster(width, height);
-    const shifted = mask.map((p) => ({ x: p.x - x0, y: p.y - y0 }));
+    const shifted = masks.map((mask) => mask.map((p) => ({ x: p.x - x0, y: p.y - y0 })));
     const whole = { x: 0, y: 0, width, height };
-    fillPolygons(coverage, [shifted], 'nonzero', { rgb: [0, 0, 0], alpha: 1 }, whole);
+    fillPolygons(coverage, shifted, rule, { rgb: [0, 0, 0], alpha: 1 }, whole);
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const at = (y * width + x) * 4;
@@ -1354,7 +1368,7 @@ class Painter {
     if (isAxisAligned(matrix))
       return this.drawInk(ink, own, matrix, opacity, intersect(clip, bounds(strip)));
     // Rotated text: the cut band is a rotated rectangle, which only a mask clips.
-    this.masked(strip, clip, (inner, shift, area) =>
+    this.masked([strip], clip, (inner, shift, area) =>
       inner.drawInk(ink, own, multiply(shift, matrix), opacity, area),
     );
   }

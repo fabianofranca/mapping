@@ -221,6 +221,16 @@ describe('component messages', () => {
     if (parsed.ok) expectLocalized(parsed.warnings);
   });
 
+  it('the unknown color warning has a code and comes out in the app language', () => {
+    const input = validComponent();
+    input.template = { type: 'frame', fill: 'banana' };
+    const parsed = parseComponent(input);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.warnings.map((w) => w.code)).toEqual(['component.colorUnknown']);
+    expectLocalized(parsed.warnings);
+  });
+
   it('invalid JSON uses library.invalidJson, with the same text', () => {
     const parsed = parseComponentText('{ não é json');
     expect(parsed.ok).toBe(false);
@@ -301,6 +311,21 @@ describe('icon messages', () => {
       if (!parsed.ok) expectLocalized(parsed.issues as readonly IconsIssue[]);
     },
   );
+
+  it('the unknown color warning has a code and comes out in the app language', () => {
+    const parsed = parseIconsText(
+      JSON.stringify({
+        format: 'mapping-icons',
+        formatVersion: 3,
+        viewBox: [24, 24],
+        icons: { dot: { paths: [{ d: 'M0 0h8v8H0z', fill: 'red' }] } },
+      }),
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.warnings.map((w) => w.code)).toEqual(['iconsFile.colorUnknown']);
+    expectLocalized(parsed.warnings);
+  });
 
   it('invalid JSON uses library.invalidJson, with the same text', () => {
     const parsed = parseIconsText('{');

@@ -1,0 +1,30 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "masked-field",
+  "name": "Masked field",
+  "description": "A text input drawn as a bordered box with its label. The mask and the keyboard type are not drawn: only the code uses them.",
+  "size": { "width": 160, "height": 40 },
+  "preview": { "label": "Phone" },
+  "template": {
+    "type": "frame",
+    "name": "field",
+    "layout": {
+      "type": "row",
+      "align": "center",
+      "padding": [0, 12]
+    },
+    "fill": "#FFFFFF",
+    "stroke": { "color": "#79747E", "width": 1, "align": "inside" },
+    "cornerRadius": 4,
+    "children": [
+      {
+        "type": "text",
+        "name": "label",
+        "text": { "$field": "label", "default": "Phone" },
+        "font": { "size": 14, "lineHeight": 20 },
+        "color": "#1D1B20"
+      }
+    ]
+  }
+}

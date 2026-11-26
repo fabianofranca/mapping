@@ -31,7 +31,7 @@
   },
   "mcp/image/sceneRaster.ts": {
     "complexity": {
-      "count": 4
+      "count": 3
     }
   },
   "mcp/imageTools.ts": {
@@ -151,7 +151,7 @@
   },
   "src/canvas/components/renderScene.ts": {
     "complexity": {
-      "count": 5
+      "count": 4
     }
   },
   "src/canvas/containment.ts": {
@@ -421,7 +421,7 @@
   },
   "src/model/spec.ts": {
     "complexity": {
-      "count": 8
+      "count": 7
     }
   },
   "src/model/specVersions.ts": {

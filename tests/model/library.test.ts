@@ -570,6 +570,134 @@ describe('validateLibrary: level 2 (consistency across files)', () => {
     }
   });
 
+  describe('root weight (LG6)', () => {
+    const weighted = (field: string) =>
+      patch(
+        patch(miniPackage(), 'components/mini-button.json', ['formatVersion'], 4),
+        'components/mini-button.json',
+        ['weight'],
+        { $field: field },
+      );
+    const withWeightField = (files: LibraryFile[]): LibraryFile[] => {
+      const spec = JSON.parse(files.find((f) => f.path === SPEC)?.text ?? '{}') as {
+        layers: { annotationTypes: { fields: unknown[] }[] }[];
+      };
+      const fields = spec.layers[0]?.annotationTypes[0]?.fields ?? [];
+      return patch(
+        files,
+        SPEC,
+        [...TYPE0, 'fields'],
+        [...fields, { key: 'share', type: 'number' }],
+      );
+    };
+
+    it('a field that only the root weight reads is used: no library.fieldUnused', () => {
+      const files = withWeightField(weighted('share'));
+      const report = validate(files);
+      expect(report.errors).toEqual([]);
+      const unused = report.warnings
+        .filter((w) => w.code === 'library.fieldUnused')
+        .map((w) => w.params?.key);
+      expect(unused).not.toContain('share');
+    });
+
+    it('a $container name that is not width, height or a set, cited only by the root weight, is an error at weight', () => {
+      const files = patch(
+        patch(miniPackage(), 'components/mini-button.json', ['formatVersion'], 4),
+        'components/mini-button.json',
+        ['weight'],
+        { $switch: '$container.nope', cases: { a: 1 }, default: 2 },
+      );
+      const report = validate(files);
+      expect(report.errors.map((e) => [e.code, e.path])).toContainEqual([
+        'library.containerFieldUnknown',
+        'weight',
+      ]);
+    });
+
+    it('a field the root weight cites and the type does not declare is an error at weight', () => {
+      const report = validate(weighted('nope'));
+      expect(report.errors.map(brief)).toContainEqual([
+        'error',
+        'components/mini-button.json',
+        'weight.$field',
+        'the drawing uses the field "nope", which the type "mini-button" does not declare',
+      ]);
+    });
+  });
+
+  describe('codeOnly (specialization formatVersion 24)', () => {
+    const fieldsAt = ['layers', 0, 'annotationTypes', 0, 'fields'] as const;
+    /** The mini package at 24: from 22 on `origins` and a `system` + `file` example are gone (plain sources). */
+    const v24 = (files: LibraryFile[]): LibraryFile[] => {
+      let out = patch(files, SPEC, ['formatVersion'], 24);
+      out = patch(out, SPEC, ['origins'], undefined);
+      return patch(
+        out,
+        SPEC,
+        [...TYPE0, 'examples'],
+        [
+          { name: 'Primary', values: { label: 'Save', variant: 'primary' } },
+          { name: 'Text', values: { label: 'Cancel', variant: 'text' } },
+        ],
+      );
+    };
+    const withMask = (
+      codeOnly: boolean | undefined,
+      extra: Record<string, unknown> = {},
+    ) => {
+      const base = miniPackage();
+      const type = (
+        JSON.parse(base[0]?.text ?? '{}') as {
+          layers: { annotationTypes: { fields: unknown[] }[] }[];
+        }
+      ).layers[0]?.annotationTypes[0];
+      const mask = {
+        key: 'mask',
+        type: 'string',
+        ...(codeOnly === undefined ? {} : { codeOnly }),
+        ...extra,
+      };
+      return v24(patch(base, SPEC, [...fieldsAt], [...(type?.fields ?? []), mask]));
+    };
+    const unusedKeys = (files: readonly LibraryFile[]) =>
+      validate(files)
+        .warnings.filter((w) => w.code === 'library.fieldUnused')
+        .map((w) => w.message.match(/the field "(\w+)"/)?.[1]);
+
+    it('a codeOnly field that the drawing does not use gives no library.fieldUnused', () => {
+      const report = validate(withMask(true));
+      expect(report.errors).toEqual([]);
+      expect(unusedKeys(withMask(true))).not.toContain('mask');
+      expect(report.warnings.map((w) => w.code)).not.toContain('library.codeOnlyDrawn');
+    });
+
+    it('the same field without codeOnly still warns', () => {
+      expect(unusedKeys(withMask(undefined))).toContain('mask');
+      expect(unusedKeys(withMask(false))).toContain('mask');
+    });
+
+    it('a codeOnly field that the drawing uses gives library.codeOnlyDrawn, with the exact text', () => {
+      // `label` is drawn by the component.
+      const files = patch(v24(miniPackage()), SPEC, [...fieldsAt, 0, 'codeOnly'], true);
+      const report = validate(files);
+      expect(report.errors).toEqual([]);
+      expect(report.warnings.map(brief)).toContainEqual([
+        'warning',
+        SPEC,
+        'layers[0].annotationTypes[0].fields[0]',
+        'the field "label" of the type "mini-button" is marked codeOnly but the drawing of the component components/mini-button.json uses it',
+      ]);
+      expect(
+        report.warnings.find((w) => w.code === 'library.codeOnlyDrawn')?.params,
+      ).toEqual({
+        key: 'label',
+        typeId: 'mini-button',
+        path: 'components/mini-button.json',
+      });
+    });
+  });
+
   it('declared slot that does not exist in the component (and component without a slot)', () => {
     const wrongName = patch(
       miniPackage(),
@@ -862,6 +990,112 @@ describe('validateLibrary: version contract (previous)', () => {
         'the field "vanished" of the type "mini-note" did not exist in version 1',
       ],
     ]);
+  });
+
+  describe('add-field (specialization formatVersion 24)', () => {
+    /** `nextPackage` at 24 (from 22 on `origins` are gone and the examples carry plain values) with these steps in 1 → 2. */
+    function withSteps(...steps: unknown[]): LibraryFile[] {
+      let files = patch(nextPackage(), SPEC, ['formatVersion'], 24);
+      files = patch(files, SPEC, ['origins'], undefined);
+      files = patch(
+        files,
+        SPEC,
+        [...TYPE0, 'examples'],
+        [
+          { name: 'Primary', values: { label: 'Save', variant: 'primary' } },
+          { name: 'Text', values: { label: 'Cancel', variant: 'text' } },
+        ],
+      );
+      // `legacy` stays in the new version (the previous one has it too); `rows.b` is the break the steps cover.
+      files = patch(files, SPEC, [...TYPE2, 'fields', 1], {
+        key: 'legacy',
+        type: 'string',
+      });
+      return patch(files, SPEC, ['migrations'], [{ from: 1, to: 2, steps }]);
+    }
+    const drop = { op: 'remove-field', type: 'mini-note', field: 'rows.b' };
+    const add = { op: 'add-field', type: 'mini-note', field: 'legacy' };
+    const FIELD_PATH = 'migrations[0].steps[1].field';
+    /** The contract warnings of the report (the other warnings of the shortened package are not the subject). */
+    const contract = (report: ReturnType<typeof validate>) =>
+      report.warnings.filter((w) => w.code === 'library.fieldAlreadyInVersion');
+
+    it('an add-field of a field that already exists in the previous version is a warning, at the field', () => {
+      const report = validate(withSteps(drop, add), { previous: previousSpec() });
+      expect(report.errors.map(brief)).toEqual([]);
+      expect(contract(report).map(brief)).toEqual([
+        [
+          'warning',
+          SPEC,
+          FIELD_PATH,
+          'the field "legacy" of the type "mini-note" already exists in version 1; add-field is for a field that enters or comes back (remove it first to clear its old values)',
+        ],
+      ]);
+      expect(contract(report)[0]?.params).toEqual({
+        key: 'legacy',
+        typeId: 'mini-note',
+        version: 1,
+      });
+    });
+
+    it('with an earlier remove-field of it in the same migration there is nothing', () => {
+      const clear = { op: 'remove-field', type: 'mini-note', field: 'legacy' };
+      const report = validate(withSteps(drop, clear, { ...add }), {
+        previous: previousSpec(),
+      });
+      expect(report.errors).toEqual([]);
+      expect(contract(report)).toEqual([]);
+    });
+
+    it('an add-field after a rename-field away from the same name gives nothing', () => {
+      let files = withSteps(
+        drop,
+        { op: 'rename-field', type: 'mini-note', from: 'legacy', to: 'x' },
+        add,
+      );
+      files = patch(files, SPEC, [...TYPE2, 'fields', 2], { key: 'x', type: 'string' });
+      const report = validate(files, { previous: previousSpec() });
+      expect(contract(report)).toEqual([]);
+    });
+
+    it('an add-field of a field that is new in this version gives nothing', () => {
+      let files = withSteps(drop, { op: 'add-field', type: 'mini-note', field: 'fresh' });
+      files = patch(files, SPEC, [...TYPE2, 'fields', 2], {
+        key: 'fresh',
+        type: 'string',
+      });
+      const report = validate(files, { previous: previousSpec() });
+      expect(report.errors).toEqual([]);
+      expect(contract(report)).toEqual([]);
+    });
+
+    it('an add-field of a type that is new in this version gives nothing', () => {
+      let files = withSteps(drop, { op: 'add-field', type: 'mini-new', field: 'x' });
+      files = patch(files, SPEC, ['layers', 0, 'annotationTypes', 3], {
+        id: 'mini-new',
+        name: 'New',
+        fields: [{ key: 'x', type: 'string' }],
+      });
+      const report = validate(files, { previous: previousSpec() });
+      expect(contract(report)).toEqual([]);
+    });
+
+    it('the column of a table: add-field table.column of a column the previous version has', () => {
+      const clearCol = { op: 'remove-field', type: 'mini-note', field: 'rows.b' };
+      let files = withSteps(clearCol, {
+        op: 'add-field',
+        type: 'mini-note',
+        field: 'rows.a',
+      });
+      files = patch(
+        files,
+        SPEC,
+        [...TYPE2, 'fields', 0, 'columns'],
+        [{ key: 'a', type: 'string' }],
+      );
+      const report = validate(files, { previous: previousSpec() });
+      expect(contract(report).map((w) => w.path)).toEqual([FIELD_PATH]);
+    });
   });
 });
 

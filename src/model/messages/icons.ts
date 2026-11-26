@@ -13,11 +13,18 @@ export const iconsFileMessages = {
   'iconsFile.expectedPathData': 'expected the path data (text)',
   'iconsFile.expectedPaths': 'expected a non-empty list of paths',
   'iconsFile.formatInvalid': 'must be "{format}"',
-  'iconsFile.formatVersionInvalid': 'must be 1, 2 or 3',
+  'iconsFile.formatVersionInvalid': 'must be 1, 2, 3 or 4',
   'iconsFile.v2Only': 'only allowed with formatVersion 2',
   'iconsFile.v3Only': 'only allowed with formatVersion 3',
+  'iconsFile.v4Only': 'only allowed with formatVersion 4',
+  'iconsFile.angleOrFromTo': 'use angle or from and to, not both',
+  'iconsFile.expectedAngleOrFromTo': 'expected angle or from and to',
+  'iconsFile.expectedPoint': 'expected two finite numbers',
   'iconsFile.expectedBoolean': 'expected true or false',
   'iconsFile.required': 'required field',
   'iconsFile.expectedIcons': 'expected an object with at least one icon',
   'iconsFile.nameInvalid': 'invalid name; use [a-z0-9][a-z0-9-_]*',
+  // Warning
+  'iconsFile.colorUnknown':
+    'not a color of the format: {value} (use #rrggbb, rgb(), hsl(), transparent or none)',
 } as const;

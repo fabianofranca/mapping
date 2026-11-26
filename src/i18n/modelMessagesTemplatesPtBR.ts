@@ -44,6 +44,8 @@ export const templatePtBR: {
   'model.library.containerFieldUnknown': 'campo não existe: $container.{name}',
   'model.library.fieldUnused':
     'o campo "{key}" do tipo "{typeId}" não é usado pelo desenho do componente {path}',
+  'model.library.codeOnlyDrawn':
+    'o campo "{key}" do tipo "{typeId}" está marcado como codeOnly, mas o desenho do componente {path} o usa',
   'model.library.previewNoField': 'o tipo "{typeId}" não tem o campo "{key}"',
   'model.library.previewNotTable':
     '"{key}" não é uma table do tipo "{typeId}"; o preview dele deve ser um valor simples',
@@ -102,6 +104,8 @@ export const templatePtBR: {
   'model.library.typeNotInVersion': 'o tipo "{typeId}" não existia na versão {version}',
   'model.library.roleNotInVersion':
     'o papel "{role}" do tipo "{typeId}" não existia na versão {version}',
+  'model.library.fieldAlreadyInVersion':
+    'o campo "{key}" do tipo "{typeId}" já existe na versão {version}; add-field serve para um campo que entra ou volta (remova-o antes para limpar os valores antigos)',
   'model.library.fieldNotInVersion':
     'o campo "{key}" do tipo "{typeId}" não existia na versão {version}',
   'model.library.optionNotInVersion':
@@ -212,6 +216,7 @@ export const templatePtBR: {
     'o token "{name}" do grupo "{group}" não é texto fixo',
   'model.spec.columnTypeNotAllowed':
     '"{type}" não é permitido dentro de table; use "string", "number", "date", "enum" ou "ref"',
+  'model.spec.codeOnlyColumn': 'só é válido em um campo, não em uma coluna de table',
   'model.spec.optionsRequired': 'obrigatório e não vazio em enum',
   'model.spec.optionsBlank': 'opções não podem ser vazias',
   'model.spec.optionsRepeated': 'opções repetidas',
@@ -309,7 +314,7 @@ export const templatePtBR: {
   'model.spec.migrationModeRemoveType': 'use "convert" ou "delete"',
   'model.spec.migrationModeRemoveRole': 'use "clear" ou "unlink"',
   'model.spec.migrationOpInvalid':
-    '"op" inválido; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role" ou "copy-field"',
+    '"op" inválido; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role", "copy-field" ou "add-field"',
   'model.spec.notEmptyList': 'não pode ser vazia',
   'model.spec.copyFieldWhenValue': 'deve ser texto, número ou uma lista não vazia deles',
   'model.spec.copyFieldWhenKind':
@@ -688,6 +693,8 @@ export const templatePtBR: {
   'model.component.expectedCell': 'esperava texto, número ou null',
   'model.component.fontFamilyInvalid':
     'família de fonte inválida para o CSS ({family}): o texto cai em sans-serif',
+  'model.component.colorUnknown':
+    'não é uma cor do formato: {value} (use #rrggbb, rgb(), hsl(), transparent ou none)',
   'model.iconsFile.expectedObject': 'esperava um objeto',
   'model.iconsFile.expectedObjectShort': 'esperava objeto',
   'model.iconsFile.expectedViewBox':
@@ -699,13 +706,19 @@ export const templatePtBR: {
   'model.iconsFile.expectedPathData': 'esperava os dados do caminho (texto)',
   'model.iconsFile.expectedPaths': 'esperava lista não vazia de caminhos',
   'model.iconsFile.formatInvalid': 'deve ser "{format}"',
-  'model.iconsFile.formatVersionInvalid': 'deve ser 1, 2 ou 3',
+  'model.iconsFile.formatVersionInvalid': 'deve ser 1, 2, 3 ou 4',
   'model.iconsFile.v2Only': 'só é permitido com formatVersion 2',
   'model.iconsFile.v3Only': 'só é permitido com formatVersion 3',
+  'model.iconsFile.v4Only': 'só é permitido com formatVersion 4',
+  'model.iconsFile.angleOrFromTo': 'use angle ou from e to, não os dois',
+  'model.iconsFile.expectedAngleOrFromTo': 'esperava angle ou from e to',
+  'model.iconsFile.expectedPoint': 'esperava dois números finitos',
   'model.iconsFile.expectedBoolean': 'esperava true ou false',
   'model.iconsFile.required': 'campo obrigatório',
   'model.iconsFile.expectedIcons': 'esperava um objeto com ao menos um ícone',
   'model.iconsFile.nameInvalid': 'nome inválido; use [a-z0-9][a-z0-9-_]*',
+  'model.iconsFile.colorUnknown':
+    'não é uma cor do formato: {value} (use #rrggbb, rgb(), hsl(), transparent ou none)',
   'model.svgIcon.xmlTooLarge': 'o SVG é maior que {max} KB',
   'model.svgIcon.xmlTooDeep':
     'o SVG tem mais de {max} níveis de aninhamento (linha {line})',
