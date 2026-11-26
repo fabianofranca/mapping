@@ -2076,6 +2076,25 @@
             }
           },
           "description": "formatVersion 19: copies the field (or column table.column) from into to on the annotations of the type that match when (every key is a field of the type; the value is text, a number or a list of them, any one matches), only where to is empty; from keeps its value and nothing is lost. In an earlier version it is an error (checked by the app validator)."
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "type", "field"],
+          "properties": {
+            "op": {
+              "const": "add-field"
+            },
+            "type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "field": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "description": "formatVersion 24: the field (or column table.column) of the type enters, or comes back after a remove-field of it in an earlier migration; it moves no value. It lets a version that removed a field be followed by one that returns it: each step is checked against the types at its own version. In an earlier version it is an error (checked by the app validator)."
         }
       ]
     },

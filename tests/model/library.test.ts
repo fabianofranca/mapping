@@ -935,6 +935,109 @@ describe('validateLibrary: version contract (previous)', () => {
       ],
     ]);
   });
+
+  describe('add-field (specialization formatVersion 24)', () => {
+    /** `nextPackage` at 24 (from 22 on `origins` are gone and the examples carry plain values) with these steps in 1 → 2. */
+    function withSteps(...steps: unknown[]): LibraryFile[] {
+      let files = patch(nextPackage(), SPEC, ['formatVersion'], 24);
+      files = patch(files, SPEC, ['origins'], undefined);
+      files = patch(
+        files,
+        SPEC,
+        [...TYPE0, 'examples'],
+        [
+          { name: 'Primary', values: { label: 'Save', variant: 'primary' } },
+          { name: 'Text', values: { label: 'Cancel', variant: 'text' } },
+        ],
+      );
+      // `legacy` stays in the new version (the previous one has it too); `rows.b` is the break the steps cover.
+      files = patch(files, SPEC, [...TYPE2, 'fields', 1], {
+        key: 'legacy',
+        type: 'string',
+      });
+      return patch(files, SPEC, ['migrations'], [{ from: 1, to: 2, steps }]);
+    }
+    const drop = { op: 'remove-field', type: 'mini-note', field: 'rows.b' };
+    const add = { op: 'add-field', type: 'mini-note', field: 'legacy' };
+    const FIELD_PATH = 'migrations[0].steps[1].field';
+    /** The contract warnings of the report (the other warnings of the shortened package are not the subject). */
+    const contract = (report: ReturnType<typeof validate>) =>
+      report.warnings.filter((w) => w.code === 'library.fieldAlreadyInVersion');
+
+    it('an add-field of a field that already exists in the previous version is a warning, at the field', () => {
+      const report = validate(withSteps(drop, add), { previous: previousSpec() });
+      expect(report.errors.map(brief)).toEqual([]);
+      expect(contract(report).map(brief)).toEqual([
+        [
+          'warning',
+          SPEC,
+          FIELD_PATH,
+          'the field "legacy" of the type "mini-note" already exists in version 1; add-field is for a field that enters or comes back (remove it first to clear its old values)',
+        ],
+      ]);
+      expect(contract(report)[0]?.params).toEqual({
+        key: 'legacy',
+        typeId: 'mini-note',
+        version: 1,
+      });
+    });
+
+    it('with an earlier remove-field of it in the same migration there is nothing', () => {
+      const clear = { op: 'remove-field', type: 'mini-note', field: 'legacy' };
+      const report = validate(withSteps(drop, clear, { ...add }), {
+        previous: previousSpec(),
+      });
+      expect(report.errors).toEqual([]);
+      expect(contract(report)).toEqual([]);
+    });
+
+    it('a remove-field AFTER the add-field does not count as earlier', () => {
+      const clear = { op: 'remove-field', type: 'mini-note', field: 'legacy' };
+      const report = validate(withSteps(drop, add, clear), { previous: previousSpec() });
+      expect(contract(report).map((w) => w.path)).toEqual([
+        'migrations[0].steps[1].field',
+      ]);
+    });
+
+    it('an add-field of a field that is new in this version gives nothing', () => {
+      let files = withSteps(drop, { op: 'add-field', type: 'mini-note', field: 'fresh' });
+      files = patch(files, SPEC, [...TYPE2, 'fields', 2], {
+        key: 'fresh',
+        type: 'string',
+      });
+      const report = validate(files, { previous: previousSpec() });
+      expect(report.errors).toEqual([]);
+      expect(contract(report)).toEqual([]);
+    });
+
+    it('an add-field of a type that is new in this version gives nothing', () => {
+      let files = withSteps(drop, { op: 'add-field', type: 'mini-new', field: 'x' });
+      files = patch(files, SPEC, ['layers', 0, 'annotationTypes', 3], {
+        id: 'mini-new',
+        name: 'New',
+        fields: [{ key: 'x', type: 'string' }],
+      });
+      const report = validate(files, { previous: previousSpec() });
+      expect(contract(report)).toEqual([]);
+    });
+
+    it('the column of a table: add-field table.column of a column the previous version has', () => {
+      const clearCol = { op: 'remove-field', type: 'mini-note', field: 'rows.b' };
+      let files = withSteps(clearCol, {
+        op: 'add-field',
+        type: 'mini-note',
+        field: 'rows.a',
+      });
+      files = patch(
+        files,
+        SPEC,
+        [...TYPE2, 'fields', 0, 'columns'],
+        [{ key: 'a', type: 'string' }],
+      );
+      const report = validate(files, { previous: previousSpec() });
+      expect(contract(report).map((w) => w.path)).toEqual([FIELD_PATH]);
+    });
+  });
 });
 
 /** The button of the mini package with (initial and minimum) size of 20×40: the content does not fit. */

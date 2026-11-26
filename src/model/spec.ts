@@ -30,6 +30,7 @@ import {
   type SpecTypeAccessibility,
 } from './specAccessibility';
 import { checkSignatureKeys } from './specSignature';
+import { checkMigrations as checkMigrationSteps } from './specMigrationChecks';
 import { checkFileFormats, type SpecFileFormat } from './fileFormats';
 import {
   checkContainerClasses,
@@ -334,7 +335,10 @@ export type SpecMigrationStep =
   | { op: 'set-role'; type: string; role: string; childType?: string }
   // `formatVersion` 19 only: copies `from` into an empty `to` (field or `table.column`), on the
   // annotations of `type` whose values match every key of `when`; `from` keeps its value.
-  | { op: 'copy-field'; type: string; from: string; to: string; when?: CopyFieldWhen };
+  | { op: 'copy-field'; type: string; from: string; to: string; when?: CopyFieldWhen }
+  // `formatVersion` 24 only (stage #2829): the field (or `table.column`) enters, or comes back after a
+  // `remove-field`; it moves no value. It is what lets a version that removed the field be followed by one that returns it.
+  | { op: 'add-field'; type: string; field: string };
 
 /** A value of `when` in a `copy-field` step: text, a number or a non-empty list of them (any one matches). */
 export type CopyFieldWhenValue = string | number | readonly (string | number)[];
@@ -801,7 +805,7 @@ const fieldShape = z
   })
   .strict();
 
-type RawField = z.infer<typeof fieldShape>;
+export type RawField = z.infer<typeof fieldShape>;
 
 /**
  * Why `value` does not work as the value of a field of type `type` (a field's `default`, the
@@ -1883,10 +1887,12 @@ const migrationStepShape = z.discriminatedUnion(
         when: copyFieldWhenShape.optional(),
       })
       .strict(),
+    // `formatVersion` 24 only (the gate is in `specMigrationChecks.ts`).
+    z.object({ op: z.literal('add-field'), type: nonEmpty, field: nonEmpty }).strict(),
   ],
   {
     error:
-      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role" or "copy-field"',
+      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role", "copy-field" or "add-field"',
   },
 );
 
@@ -2209,411 +2215,6 @@ function columnOf(table: RawField, key: string): RawField | undefined {
     if (parsed.success && parsed.data.key === key) return parsed.data;
   }
   return undefined;
-}
-
-/** A step's field key: `key` (top level) or `table.column`. */
-type FieldRef =
-  | { kind: 'field' }
-  | { kind: 'column'; table: string; column: string }
-  | { kind: 'invalid'; message: SpecMsg };
-
-function parseFieldRef(ref: string): FieldRef {
-  const parts = ref.split('.');
-  if (parts.length === 1) return { kind: 'field' };
-  if (parts.length > 2) {
-    return { kind: 'invalid', message: specMsg('spec.fieldRefManyDots', { ref }) };
-  }
-  const [table = '', column = ''] = parts;
-  if (table === '' || column === '') {
-    return { kind: 'invalid', message: specMsg('spec.fieldRefEmptyPart', { ref }) };
-  }
-  return { kind: 'column', table, column };
-}
-
-/** Role step of the link (`formatVersion` 12 only). */
-type RoleStep = Extract<
-  SpecMigrationStep,
-  { op: 'rename-role' | 'remove-role' | 'set-role' }
->;
-
-/** What `checkRoleStep` reads from the specialization: this version's types and roles, and the step's `add`. */
-interface RoleStepEnv {
-  readonly formatVersion: number;
-  /** type id → roles (`childRoles`); a type without `childRoles` has no entry. */
-  readonly roles: ReadonlyMap<string, ReadonlySet<string>>;
-  readonly hasType: (id: string) => boolean;
-  /** Error at the path `migrations[i].steps[j].<key>`. */
-  readonly add: (key: string, message: string | SpecMsg) => void;
-}
-
-/** The role exists on the type (new side). */
-function roleHere(
-  roles: ReadonlySet<string>,
-  typeId: string,
-  role: string,
-  where: string,
-  env: RoleStepEnv,
-): void {
-  if (!roles.has(role)) env.add(where, specMsg('spec.roleNotOfType', { role, typeId }));
-}
-
-/** The role no longer exists on the type (old side). */
-function roleGone(
-  roles: ReadonlySet<string> | undefined,
-  typeId: string,
-  role: string,
-  where: string,
-  env: RoleStepEnv,
-): void {
-  if (roles?.has(role)) {
-    env.add(where, specMsg('spec.roleStillExists', { role, typeId }));
-  }
-}
-
-/**
- * The role steps (formatVersion 12): `rename-role` and `set-role` require a type of this version
- * with `childRoles`; `remove-role` requires only the type (it may have no roles left). The
- * `childType` of `set-role` only has its format checked by zod, the type need not exist.
- */
-function checkRoleStep(step: RoleStep, env: RoleStepEnv): void {
-  if (env.formatVersion < 12) {
-    env.add('op', onlyFormat(12));
-    return;
-  }
-  if (!env.hasType(step.type)) {
-    env.add('type', specMsg('spec.typeNotInVersion', { typeId: step.type }));
-    return;
-  }
-  const roles = env.roles.get(step.type);
-  if (step.op === 'remove-role') {
-    roleGone(roles, step.type, step.role, 'role', env);
-    return;
-  }
-  if (roles === undefined) {
-    env.add('type', specMsg('spec.typeNoRoles', { typeId: step.type }));
-    return;
-  }
-  if (step.op === 'set-role') {
-    roleHere(roles, step.type, step.role, 'role', env);
-    return;
-  }
-  roleHere(roles, step.type, step.to, 'to', env);
-  roleGone(roles, step.type, step.from, 'from', env);
-}
-
-type CopyFieldStep = Extract<SpecMigrationStep, { op: 'copy-field' }>;
-
-/** The keys of `when` are top-level fields of the type and, in an `enum`, each value is an option. */
-function checkCopyWhen(step: CopyFieldStep, fields: FieldsByKey, stepAdd: StepAdd): void {
-  for (const [key, value] of Object.entries(step.when ?? {})) {
-    const field = fields.get(key);
-    if (!field) {
-      stepAdd(['when', key], specMsg('spec.notFieldOfType', { key, typeId: step.type }));
-    } else if (field.type === 'table' || field.type === 'ref') {
-      stepAdd(['when', key], specMsg('spec.copyFieldWhenKind'));
-    } else if (field.type === 'enum') {
-      const list = typeof value === 'object' ? value : [value];
-      list.forEach((item, index) => {
-        if ((field.options ?? []).includes(String(item))) return;
-        const path = typeof value === 'object' ? ['when', key, index] : ['when', key];
-        stepAdd(path, specMsg('spec.notInOptions', { value: String(item) }));
-      });
-    }
-  }
-}
-
-/** The shape of `from` and `to` (decision 10 of #2164); `toField` is the field that `to` names. */
-function copyShapeProblem(
-  step: CopyFieldStep,
-  fields: FieldsByKey,
-  toField: RawField,
-): { key: 'from' | 'to'; message: SpecMsg } | undefined {
-  const from = parseFieldRef(step.from);
-  const to = parseFieldRef(step.to);
-  if (step.from === step.to) {
-    return { key: 'to', message: specMsg('spec.copyFieldSame') };
-  }
-  if (from.kind === 'field' && fields.get(step.from)?.type === 'table') {
-    return { key: 'from', message: specMsg('spec.copyFieldTable') };
-  }
-  if (toField.type === 'table') {
-    return { key: 'to', message: specMsg('spec.copyFieldTable') };
-  }
-  const sameShape =
-    from.kind === to.kind &&
-    (from.kind !== 'column' || from.table === (to as typeof from).table);
-  return sameShape ? undefined : { key: 'to', message: specMsg('spec.copyFieldMixed') };
-}
-
-/**
- * The `copy-field` step (formatVersion 19): `type` and `to` exist in this version; `from` may not
- * (copy, then `remove-field`); both are fields or both are columns of the same table, never a
- * `table` field, never the same; `when` keys are fields of the type.
- */
-function checkCopyFieldStep(
-  step: CopyFieldStep,
-  env: {
-    readonly formatVersion: number;
-    readonly types: ReadonlyMap<string, FieldsByKey>;
-    readonly add: StepAdd;
-  },
-): void {
-  if (env.formatVersion < 19) {
-    env.add('op', onlyFormat(19));
-    return;
-  }
-  const fields = typeHere(env.types, step.type, env.add);
-  if (!fields) return;
-  checkCopyWhen(step, fields, env.add);
-  const toField = fieldHere(fields, step.type, step.to, 'to', env.add);
-  const from = parseFieldRef(step.from);
-  if (from.kind === 'invalid') env.add('from', from.message);
-  if (!toField || from.kind === 'invalid') return;
-  const problem = copyShapeProblem(step, fields, toField);
-  if (problem) env.add(problem.key, problem.message);
-}
-
-/** type id → role ids (`childRoles`); a type without `childRoles` is left out. */
-function rolesByType(
-  layers: readonly {
-    annotationTypes: readonly {
-      id: string;
-      childRoles?: readonly { id: string }[] | undefined;
-    }[];
-  }[],
-): Map<string, Set<string>> {
-  const roles = new Map<string, Set<string>>();
-  for (const layer of layers) {
-    for (const type of layer.annotationTypes) {
-      if (type.childRoles !== undefined) {
-        roles.set(type.id, new Set(type.childRoles.map((r) => r.id)));
-      }
-    }
-  }
-  return roles;
-}
-
-type StepAdd = (key: string | PathKeys, message: string | SpecMsg) => void;
-type FieldsByKey = ReadonlyMap<string, RawField>;
-
-/** The type exists in this version (the step deals with one of its fields). */
-function typeHere(
-  types: ReadonlyMap<string, FieldsByKey>,
-  id: string,
-  stepAdd: StepAdd,
-): FieldsByKey | undefined {
-  const fields = types.get(id);
-  if (!fields) stepAdd('type', specMsg('spec.typeNotInVersion', { typeId: id }));
-  return fields;
-}
-
-/** The field (or the column `table.column`) exists on the type (new side). */
-function fieldHere(
-  fields: FieldsByKey,
-  typeId: string,
-  key: string,
-  where: string,
-  stepAdd: StepAdd,
-): RawField | undefined {
-  const ref = parseFieldRef(key);
-  if (ref.kind === 'invalid') {
-    stepAdd(where, ref.message);
-    return undefined;
-  }
-  if (ref.kind === 'field') {
-    const field = fields.get(key);
-    if (!field) stepAdd(where, specMsg('spec.notFieldOfType', { key, typeId }));
-    return field;
-  }
-  const table = fields.get(ref.table);
-  if (!table) {
-    stepAdd(where, specMsg('spec.notFieldOfType', { key: ref.table, typeId }));
-    return undefined;
-  }
-  if (table.type !== 'table') {
-    stepAdd(where, specMsg('spec.notTableOfType', { key: ref.table, typeId }));
-    return undefined;
-  }
-  const column = columnOf(table, ref.column);
-  if (!column) {
-    stepAdd(where, specMsg('spec.notColumnOfTable', { key, table: ref.table, typeId }));
-  }
-  return column;
-}
-
-/** The field (or the column `table.column`) no longer exists on the type (old side). */
-function fieldGone(
-  fields: FieldsByKey,
-  typeId: string,
-  key: string,
-  where: string,
-  stepAdd: StepAdd,
-): void {
-  const ref = parseFieldRef(key);
-  if (ref.kind === 'invalid') {
-    stepAdd(where, ref.message);
-  } else if (ref.kind === 'field') {
-    if (fields.has(key)) {
-      stepAdd(where, specMsg('spec.fieldStillExists', { key, typeId }));
-    }
-  } else {
-    // Table that no longer exists: the column went with it, and that is what the step declares.
-    const table = fields.get(ref.table);
-    if (!table) return;
-    if (table.type !== 'table') {
-      stepAdd(where, specMsg('spec.notTableOfType', { key: ref.table, typeId }));
-    } else if (columnOf(table, ref.column)) {
-      stepAdd(
-        where,
-        specMsg('spec.columnStillExists', {
-          column: ref.column,
-          table: ref.table,
-          typeId,
-        }),
-      );
-    }
-  }
-}
-
-function typeGone(
-  types: ReadonlyMap<string, FieldsByKey>,
-  id: string,
-  where: string,
-  stepAdd: StepAdd,
-): void {
-  if (types.has(id)) stepAdd(where, specMsg('spec.typeStillExists', { typeId: id }));
-}
-
-/**
- * Checks of the `migrations` that a single file allows: versions, unique `from` and, in each
- * step, the new side exists and the old side no longer exists in this version. A step's field
- * key is `key` (top-level field) or `table.column` (column of a `table` field, which also holds
- * data). Whether the old side existed in the previous version is a matter for `diffSpecs`, which
- * compares two versions.
- */
-function checkMigrations(
-  spec: {
-    version: number;
-    formatVersion: number;
-    layers: readonly {
-      annotationTypes: readonly {
-        id: string;
-        fields: readonly RawField[];
-        childRoles?: readonly { id: string }[] | undefined;
-      }[];
-    }[];
-  },
-  migrations: readonly z.infer<typeof migrationShape>[],
-  ctx: z.RefinementCtx,
-): void {
-  /** type id → fields (without the removed type) by key. */
-  const types = new Map<string, Map<string, RawField>>();
-  for (const layer of spec.layers) {
-    for (const type of layer.annotationTypes) {
-      types.set(
-        type.id,
-        new Map(
-          type.fields.filter((f) => f.type !== REMOVED_FIELD_TYPE).map((f) => [f.key, f]),
-        ),
-      );
-    }
-  }
-  const roles = rolesByType(spec.layers);
-  const fromSeen = new Set<number>();
-  migrations.forEach((migration, mi) => {
-    const mp: PathKeys = ['migrations', mi];
-    const add = (sub: PathKeys, message: string | SpecMsg) =>
-      addSpecIssue(ctx, [...mp, ...sub], message);
-
-    if (fromSeen.has(migration.from)) {
-      add(['from'], specMsg('spec.migrationFromRepeated', { from: migration.from }));
-    }
-    fromSeen.add(migration.from);
-    if (migration.to <= migration.from) {
-      add(['to'], specMsg('spec.migrationToGreater', { from: migration.from }));
-    }
-    if (migration.to > spec.version) {
-      add(['to'], specMsg('spec.migrationToMax', { version: spec.version }));
-    }
-
-    migration.steps.forEach((step, si) => {
-      const sp: PathKeys = ['steps', si];
-      const stepAdd: StepAdd = (key, message) =>
-        add([...sp, ...(typeof key === 'string' ? [key] : key)], message);
-      switch (step.op) {
-        case 'rename-type':
-          if (!types.has(step.to))
-            stepAdd('to', specMsg('spec.typeNotInVersion', { typeId: step.to }));
-          typeGone(types, step.from, 'from', stepAdd);
-          break;
-        case 'remove-type':
-          typeGone(types, step.type, 'type', stepAdd);
-          break;
-        case 'rename-field': {
-          const fields = typeHere(types, step.type, stepAdd);
-          if (!fields) break;
-          fieldHere(fields, step.type, step.to, 'to', stepAdd);
-          fieldGone(fields, step.type, step.from, 'from', stepAdd);
-          break;
-        }
-        case 'remove-field': {
-          const fields = typeHere(types, step.type, stepAdd);
-          if (fields) fieldGone(fields, step.type, step.field, 'field', stepAdd);
-          break;
-        }
-        case 'map-values': {
-          const fields = typeHere(types, step.type, stepAdd);
-          if (!fields) break;
-          const field = fieldHere(fields, step.type, step.field, 'field', stepAdd);
-          if (!field) break;
-          if (field.type !== 'enum') {
-            stepAdd(
-              'field',
-              specMsg(
-                step.field.includes('.')
-                  ? 'spec.migrationColumnNotEnum'
-                  : 'spec.codeFieldNotEnum',
-                { key: step.field },
-              ),
-            );
-            break;
-          }
-          for (const [from, to] of Object.entries(step.values)) {
-            if (!(field.options ?? []).includes(to)) {
-              stepAdd(['values', from], specMsg('spec.notInOptions', { value: to }));
-            }
-          }
-          break;
-        }
-        case 'fill-field': {
-          const fields = typeHere(types, step.type, stepAdd);
-          if (!fields) break;
-          const field = fieldHere(fields, step.type, step.field, 'field', stepAdd);
-          if (!field) break;
-          const problem = valueProblem(field.type, field.options, step.default);
-          if (problem !== undefined) stepAdd('default', problem);
-          break;
-        }
-        case 'rename-role':
-        case 'remove-role':
-        case 'set-role':
-          checkRoleStep(step, {
-            formatVersion: spec.formatVersion,
-            roles,
-            hasType: (id) => types.has(id),
-            add: stepAdd,
-          });
-          break;
-        case 'copy-field':
-          checkCopyFieldStep(step, {
-            formatVersion: spec.formatVersion,
-            types,
-            add: stepAdd,
-          });
-          break;
-      }
-    });
-  });
 }
 
 /** Each `parseOrigins` problem (path, message and code) becomes an issue at the exact path. */
@@ -3357,7 +2958,11 @@ export const specSchema = z
     if (v4) {
       checkExampleSystems(spec.layers, spec.formatVersion, executable, ctx);
       checkFonts(spec.fonts ?? [], ctx);
-      checkMigrations(spec, spec.migrations ?? [], ctx);
+      checkMigrationSteps(spec, spec.migrations ?? [], ctx, {
+        columnOf,
+        valueProblem,
+        isRemoved: (field) => field.type === REMOVED_FIELD_TYPE,
+      });
     }
     const layerIds = new Set<string>();
     /** type id → index of the layer where it is defined. */

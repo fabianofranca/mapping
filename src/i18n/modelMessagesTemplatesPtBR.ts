@@ -104,6 +104,8 @@ export const templatePtBR: {
   'model.library.typeNotInVersion': 'o tipo "{typeId}" não existia na versão {version}',
   'model.library.roleNotInVersion':
     'o papel "{role}" do tipo "{typeId}" não existia na versão {version}',
+  'model.library.fieldAlreadyInVersion':
+    'o campo "{key}" do tipo "{typeId}" já existe na versão {version}; add-field serve para um campo que entra ou volta (remova-o antes para limpar os valores antigos)',
   'model.library.fieldNotInVersion':
     'o campo "{key}" do tipo "{typeId}" não existia na versão {version}',
   'model.library.optionNotInVersion':
@@ -312,7 +314,7 @@ export const templatePtBR: {
   'model.spec.migrationModeRemoveType': 'use "convert" ou "delete"',
   'model.spec.migrationModeRemoveRole': 'use "clear" ou "unlink"',
   'model.spec.migrationOpInvalid':
-    '"op" inválido; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role" ou "copy-field"',
+    '"op" inválido; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role", "copy-field" ou "add-field"',
   'model.spec.notEmptyList': 'não pode ser vazia',
   'model.spec.copyFieldWhenValue': 'deve ser texto, número ou uma lista não vazia deles',
   'model.spec.copyFieldWhenKind':

@@ -106,6 +106,8 @@ export function stepLabel(step: SpecMigrationStep): string {
       });
     case 'copy-field':
       return copyFieldLabel(step);
+    case 'add-field':
+      return t('spec.impact.op.addField', { type: step.type, field: step.field });
   }
 }
 

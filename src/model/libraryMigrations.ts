@@ -68,6 +68,8 @@ import type { Annotation, JsonValue, Project, TypedValues } from './types';
 //   (every key a top-level field: text exactly, a number by value, a list matches any one). `from` keeps its
 //   value and a filled `to` stays. It never generates a loss; a copied value that is not valid in `to`
 //   becomes a pending item (as `map-values`). `values` counts the copies, `annotations` those with one.
+// - `add-field` (`formatVersion` 24) declares that a field enters, or comes back after a `remove-field`: it is a
+//   no-op step in the report (all zeros) and moves no value; the earlier `remove-field` keeps clearing the old ones.
 // - Immutable; ids untouched; the other `values` keys stay as they were.
 
 export type MigrationLossReason =
@@ -771,6 +773,9 @@ function runStep(
       return fillField(p, next.id, next, step);
     case 'copy-field':
       return copyField(p, next.id, step);
+    case 'add-field':
+      // The field enters, or comes back: no value moves (an earlier `remove-field` already cleared the old ones).
+      return { project: p, counts: NO_COUNTS };
   }
 }
 
