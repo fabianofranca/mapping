@@ -224,6 +224,39 @@ describe('a linear stroke gradient', () => {
     expect(rect.strokeLinearGradientStartPoint()).toEqual({ x: 0, y: 0 });
     expect(rect.strokeLinearGradientEndPoint()).toEqual({ x: 100, y: 0 });
   });
+
+  /** The stroke `Rect` of a 100 × 40 frame with `stroke`. */
+  function strokeRect(stroke: Stroke): Konva.Rect {
+    const node: FrameNode = {
+      ...baseNode({ id: 'r', name: 'r', width: 100, height: 40 }),
+      type: 'frame',
+      clip: false,
+      cornerRadius: 0,
+      children: [],
+      stroke,
+    };
+    return renderScene({ root: node, warnings: [] }).root.find('Rect')[0] as Konva.Rect;
+  }
+
+  it.each([
+    ['inside', { width: 4, align: 'inside' }, { x: -2, y: -2 }, { x: 98, y: -2 }],
+    ['outside', { width: 4, align: 'outside' }, { x: 2, y: 2 }, { x: 102, y: 2 }],
+    [
+      'center with an offset',
+      { width: 2, align: 'center', offset: 3 },
+      { x: 3, y: 3 },
+      { x: 103, y: 3 },
+    ],
+  ] as const)(
+    'on a rect, the %s stroke follows the scene points',
+    (_name, shape, start, end) => {
+      const rect = strokeRect({ ...shape, paints: [LINEAR] });
+      expect(rect.strokeLinearGradientStartPoint()).toEqual(start);
+      expect(rect.strokeLinearGradientEndPoint()).toEqual(end);
+      expect(rect.x() + rect.strokeLinearGradientStartPoint().x).toBe(0);
+      expect(rect.x() + rect.strokeLinearGradientEndPoint().x).toBe(100);
+    },
+  );
 });
 
 describe('the warning text', () => {

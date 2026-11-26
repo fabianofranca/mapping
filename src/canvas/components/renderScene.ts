@@ -795,7 +795,11 @@ class Renderer {
       height: Math.max(0, box.height - inset * 2),
       cornerRadius: konvaRadius(shrinkRadius(growRadius(radius, offset), align)),
     });
-    this.applyStroke(shape, stroke);
+    // Konva reads gradient points from the shape origin (x = y = inset): move them back by the inset.
+    this.applyStroke(shape, stroke, 'box', false, (p) => ({
+      x: p.x - inset,
+      y: p.y - inset,
+    }));
     return shape;
   }
 
