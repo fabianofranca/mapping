@@ -1,0 +1,34 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "hsl-swatch",
+  "name": "HSL swatch",
+  "description": "A frame and two squares whose colors are all written with hsl() and hsla(): the frame, a half-transparent square over it and a white square with an hsl() stroke.",
+  "size": { "width": 96, "height": 48 },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "swatch",
+    "layout": { "type": "none" },
+    "fill": "hsl(210, 100%, 50%)",
+    "children": [
+      {
+        "type": "rect",
+        "name": "white",
+        "fill": "#FFFFFF",
+        "stroke": { "color": "hsl(120, 100%, 25%)", "width": 4, "align": "inside" },
+        "width": 32,
+        "height": 32,
+        "anchors": { "left": 8, "top": 8 }
+      },
+      {
+        "type": "rect",
+        "name": "red",
+        "fill": "hsla(0, 100%, 50%, 0.5)",
+        "width": 32,
+        "height": 32,
+        "anchors": { "left": 56, "top": 8 }
+      }
+    ]
+  }
+}

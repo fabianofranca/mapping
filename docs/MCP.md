@@ -297,6 +297,12 @@ The stage `epic/format-plugins` lets a specialization (`formatVersion` 20) carry
 - **Errors.** New code `format-not-found` (an unknown `<specId>/<formatId>`; `details.formats` lists the available ones). The plugin errors `plugin-failed`, `plugin-timeout`, `plugin-limit` and `plugin-output-invalid` come from the executor (`details.path` is the path inside the result for `plugin-output-invalid`). An operation of the result that the model refuses is the batch's usual error with `details.path` = `operations[i].result[j]` and `details.resultOp` = the operation's name. No error brings the server down and nothing is written.
 - **Update the MCP first:** an earlier version does not know `export_format` or `import_format` (`unknown operation`) and does not run the plugins in `validate_library`.
 
+### Colors in the PNG and the unknown-color warning (stage #2829, 0.60.0)
+
+- **`hsl()` in the PNG.** `render_container`, `render_marking` and `get_marking_image` read a color with the model's one reader (`parseFormatColor`), the same one the app uses: `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb()`/`rgba()` and `hsl()`/`hsla()` (hue in `deg`, `grad`, `rad` or `turn`), plus `transparent` and `none`. Before, `hsl()` was not painted.
+- **A named color is not painted.** `red` (a CSS name) is not a color of the format: the app and the viewer draw it, the PNG does not. Write hex, `rgb()` or `hsl()`.
+- **The warning.** `validate_library` (and the app, when a package is applied) warns with `component.colorUnknown` (a component) and `iconsFile.colorUnknown` (the icons file) on a literal color the format does not know, at its path. It is a warning, never an error. No tool, schema or proposal format changes.
+
 ### Drawing mode axes and the `tokens` index (schema v24, stage #1900, 0.59.0)
 
 With several mode axes (`tokens.axes`, specialization `formatVersion` 23) the project's drawing mode is a **map axis → entry**, not a string. A library that declares `modes` is the axis `mode`.

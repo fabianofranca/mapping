@@ -1,0 +1,25 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 4,
+  "id": "library-gaps",
+  "name": "Library gaps",
+  "version": 1,
+  "description": "One type per format gap that the library-gaps stage closed. The Swatch (`hsl-swatch`) writes its colors with hsl() and hsla(): the MCP PNG paints them like the app.",
+  "layers": [
+    {
+      "id": "gaps",
+      "name": "Gaps",
+      "color": "#7C3AED",
+      "annotationTypes": [
+        {
+          "id": "hsl-swatch",
+          "name": "HSL swatch",
+          "component": "components/hsl-swatch.json",
+          "doc": "docs/hsl-swatch.md",
+          "fields": [],
+          "examples": [{ "name": "Default", "values": {} }]
+        }
+      ]
+    }
+  ]
+}

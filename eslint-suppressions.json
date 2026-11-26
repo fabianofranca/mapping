@@ -31,7 +31,7 @@
   },
   "mcp/image/sceneRaster.ts": {
     "complexity": {
-      "count": 4
+      "count": 3
     }
   },
   "mcp/imageTools.ts": {

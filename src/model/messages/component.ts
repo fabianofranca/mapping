@@ -168,4 +168,6 @@ export const componentMessages = {
   // Warning
   'component.fontFamilyInvalid':
     'font family not valid for CSS ({family}): the text falls back to sans-serif',
+  'component.colorUnknown':
+    'not a color of the format: {value} (use #rrggbb, rgb(), hsl(), transparent or none)',
 } as const;
