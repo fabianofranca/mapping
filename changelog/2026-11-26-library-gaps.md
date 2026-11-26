@@ -1,4 +1,4 @@
-# Library format gaps — [Não lançado] (épico `epic/library-gaps`, PR #0, MCP 0.60.0, schema v24 unchanged)
+# Library format gaps — 2026-11-26 (épico `epic/library-gaps`, PR #2892, MCP 0.60.0, schema v24 unchanged)
 
 ## Adicionado
 
