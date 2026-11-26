@@ -73,7 +73,11 @@ the date on; the line of a stage in `meta.partialCost` ends in ` (partial: impor
 `outliers [--desde <ISO>] [--encerradas-desde <ISO>] DIR` (decisions 3 to 9 of #1937, read-only, outside `apply`) reads the queue and the meta: for the `concluída` stages
 with a valid `fases=` and a `toca=` other than `?` (with `--desde`, `started` from the date on) it divides the stage cost by the planned
 phases and lists, per group (`process` by `is_process_stage`, else `product`), those strictly above `OUTLIER_FACTOR` times the group
-median, with the cause: the session kind that went furthest above the group's median in that kind. A group under `OUTLIER_MIN_BASE` stages
+median, with the cause: the session kind that went furthest above the group's median in that kind. The tester is apart (stage #2783,
+decisions 13 and 14): the cost per planned phase leaves out the `testador` and `reteste` kinds, and the tester cost per step (their US$ over the `ok` + `falha`
+of their `sinais`) is listed on its own, `by step`, when above `OUTLIER_FACTOR` times the group's median per step (the stages whose testers have steps, at least `OUTLIER_MIN_BASE` of them); each line ends
+in `; tester US$ <usd> (<n> steps, US$ <y> per step)` (`tester —` without one) and `; by phase`, `; by step` or `; by phase and step`, and the group header adds
+`, tester median US$ <x> per step, ceiling US$ <2x>`. A tester without `sinais` has no per-step value and never enters that criterion. A group under `OUTLIER_MIN_BASE` stages
 flags nothing; a stage without a usable ficha (and one only in `meta.merged`) enters `without ficha`. A stage in `meta.partialCost` (below) is
 out of the base and counted in the header's `, partial: <k>` (decision 13 of #2293). `--encerradas-desde <ISO>` (decision 11 of #2635) keeps the
 medians over the base (every stage with a ficha, or those of `--desde`: the flag filters only the listing) and lists only the stages above the ceiling whose row `ended` is from `<ISO>` on (a row
@@ -311,7 +315,7 @@ ESCAPE_CHECK_HOURS = 24  # `show` asks to check the escaped defects again after 
 RULER_KINDS = ["fase", "correção", "testador", "reteste"]  # the roles that have a rework ruler (decision 6)
 PHASE_KINDS = ["fase", "correção"]  # the roles that can have a context switch (a successor session of the same stage and label)
 CEILING_KINDS = RULER_KINDS  # where the 300 thousand context ceiling applies (decision 3)
-OUTLIER_FACTOR = 2  # a stage is an outlier above this many times the median cost per planned phase of its group
+OUTLIER_FACTOR = 2  # a stage is an outlier above this many times the median cost per planned phase (or tester cost per step) of its group
 OUTLIER_MIN_BASE = 5  # fewer stages than this in a group: no median worth comparing
 CONTEXT_CEILING = 300000  # final-context ceiling of the phase and of the tester (docs/FLOW.md, item 3)
 EFFORT_LADDER = ["medium", "high", "xhigh", "max"]  # `low` is below `medium`: the step below of an effort above `medium` goes down this list
@@ -1547,9 +1551,12 @@ def stage_kind_costs(meta, issues):
 
 def outlier_cause(kinds, group_kinds):
     """The session kind with the largest positive difference against the group's median in that kind (a missing kind
-    is 0; a tie goes by the order of `SESSION_KINDS`): `(kind, usd, group median)`, or None with no positive difference."""
+    is 0; a tie goes by the order of `SESSION_KINDS`; the tester kinds are apart, decision 13 of #2783): `(kind, usd,
+    group median)`, or None with no positive difference."""
     best = None
     for k in SESSION_KINDS:
+        if k in TESTER_KINDS:
+            continue
         median = statistics.median([g.get(k, 0) for g in group_kinds])
         diff = kinds.get(k, 0) - median
         if diff > 0 and (best is None or diff > best[0]):
@@ -1567,33 +1574,83 @@ def outlier_counts(meta, issue):
             kinds.count("testador"), kinds.count("reteste"), kinds.count("correção"))
 
 
-def outlier_line(row, total, phases, cause, counts):
+def phase_cost(kinds):
+    """US$ of a stage without the tester kinds: the cost the per-phase criterion divides (decision 13 of #2783)."""
+    return sum(v for k, v in kinds.items() if k not in TESTER_KINDS)
+
+
+def tester_figures(meta, issue, kinds):
+    """`(US$, steps, US$ per step)` of the stage's testers: `US$` is the whole cost of `testador` + `reteste`; the steps are
+    the `ok` + `falha` of the `sinais` of those sessions, and the per-step value divides only the cost of the costed sessions
+    that have them (the same `step_figures` rule), so a tester recorded before the signals existed does not inflate it; None
+    with no step."""
+    usd = sum(v for k, v in kinds.items() if k in TESTER_KINDS)
+    es = [e for e in costed(meta) if e.get("issue") == issue and e.get("kind") in TESTER_KINDS
+          and ("ok" in (e.get("sinais") or {}) or "falha" in (e.get("sinais") or {}))]
+    steps = sum(signal_count(e, "ok") + signal_count(e, "falha") for e in es)
+    return usd, steps, (sum(usd_of(e) for e in es) / steps if steps else None)
+
+
+def outlier_line(row, total, phases, cause, counts, tester, criterion, phase_cost_of):
     switches, over, testers, retests, fixes = counts
-    kind, usd, median = cause or ("—", 0, 0)
-    return (f"  {row['issue']} {money(total)} ({phases} phases, {money(total / phases)} per phase) — "
-            f"cause: {kind} {money(usd)} (group median {money(median)}); switches {switches}; above 300k {over}; "
-            f"testers {testers}; retests {retests}; fixes {fixes}")
+    shown_cause = f"{cause[0]} {money(cause[1])} (group median {money(cause[2])})" if cause else "—"
+    t_usd, t_steps, t_per = tester
+    if not t_usd:
+        shown = "—"
+    elif t_per is None:
+        shown = f"{money(t_usd)} (no steps)"
+    else:
+        shown = f"{money(t_usd)} ({t_steps} steps, {money(t_per)} per step)"
+    return (f"  {row['issue']} {money(total)} ({phases} phases, {money(phase_cost_of / phases)} per phase) — "
+            f"cause: {shown_cause}; switches {switches}; above 300k {over}; "
+            f"testers {testers}; retests {retests}; fixes {fixes}; tester {shown}; {criterion}")
 
 
 def outlier_group(name, rows, meta, costs, ended_since=None):
-    """The lines of one group: its header and the stages above the ceiling, or `base too small`. The median and the
-    ceiling come from every row of the group (the base `--desde` leaves); with `ended_since`, only the rows whose `ended` is from there on are listed
+    """The lines of one group: its header and the stages above a ceiling, or `base too small`. Two criteria (stage
+    #2783, decisions 13 and 14): the cost per planned phase without the tester kinds above `OUTLIER_FACTOR` times the group
+    median (`by phase`), or the tester cost per step above `OUTLIER_FACTOR` times the median per step of the stages of
+    the group whose testers have steps (`by step`; a tester without `sinais` is never listed by it). The medians and the
+    ceilings come from every row of the group (the base `--desde` leaves); with `ended_since`, only the rows whose `ended` is from there on are listed
     (stage #2635, decision 11; ISO UTC strings compare in order, and a row with no `ended` is left out)."""
     if len(rows) < OUTLIER_MIN_BASE:
         return [f"{name}: base too small ({len(rows)} stages)"]
     per_phase = {}
     for r in rows:
-        per_phase[r["issue"]] = sum(costs[r["issue"]].values()) / len(plan_phase_codes(r["plan"]))
+        per_phase[r["issue"]] = phase_cost(costs[r["issue"]]) / len(plan_phase_codes(r["plan"]))
     median = statistics.median(per_phase.values())
     ceiling = OUTLIER_FACTOR * median
-    lines = [f"{name}: {len(rows)} stages, median {money(median)} per phase, ceiling {money(ceiling)}"]
-    group_kinds = [costs[r["issue"]] for r in rows]
-    above = [r for r in rows if per_phase[r["issue"]] > ceiling]
+    tester = {r["issue"]: tester_figures(meta, r["issue"], costs[r["issue"]]) for r in rows}
+    per_step = [t[2] for t in tester.values() if t[2] is not None]
+    step_median = statistics.median(per_step) if len(per_step) >= OUTLIER_MIN_BASE else None
+    step_ceiling = OUTLIER_FACTOR * step_median if step_median else None  # too few stages with steps, or a 0 median: no ceiling
+    step_text = "tester median — per step, ceiling —" if step_ceiling is None else (
+        f"tester median {money(step_median)} per step, ceiling {money(step_ceiling)}")
+    lines = [f"{name}: {len(rows)} stages, median {money(median)} per phase, ceiling {money(ceiling)}, {step_text}"]
+    group_kinds = [{k: v for k, v in costs[r["issue"]].items() if k not in TESTER_KINDS} for r in rows]
+
+    def criteria(r):
+        i = r["issue"]
+        phase = per_phase[i] > ceiling
+        step = step_ceiling is not None and tester[i][2] is not None and tester[i][2] > step_ceiling
+        return phase, step
+
+    def severity(r):  # the larger ratio against its own ceiling orders the listing
+        i = r["issue"]
+        ratios = [per_phase[i] / ceiling if ceiling else float("inf")]
+        if step_ceiling and tester[i][2] is not None:
+            ratios.append(tester[i][2] / step_ceiling)
+        return max(ratios)
+
+    above = [r for r in rows if any(criteria(r))]
     over = [r for r in above if not ended_since or (r.get("ended") or "") >= ended_since]
-    for r in sorted(over, key=lambda r: -per_phase[r["issue"]]):
+    for r in sorted(over, key=lambda r: -severity(r)):
         i, phases = r["issue"], len(plan_phase_codes(r["plan"]))
-        lines.append(outlier_line(r, sum(costs[i].values()), phases, outlier_cause(costs[i], group_kinds),
-                                  outlier_counts(meta, i)))
+        by_phase, by_step = criteria(r)
+        criterion = "by phase and step" if by_phase and by_step else ("by phase" if by_phase else "by step")
+        kinds = {k: v for k, v in costs[i].items() if k not in TESTER_KINDS}
+        lines.append(outlier_line(r, sum(costs[i].values()), phases, outlier_cause(kinds, group_kinds),
+                                  outlier_counts(meta, i), tester[i], criterion, phase_cost(costs[i])))
     if over:
         return lines
     older = len(above) - len(over)  # only with `ended_since`: the outliers that ended before the window
@@ -3786,7 +3843,8 @@ def build_parser():
     sp.add_argument("--desde", help="only the sessions with created from this date on (ISO UTC)")
     sp.add_argument("dir", help="folder of the JSON files")
     sp.set_defaults(fn=cmd_uso)
-    sp = sub.add_parser("outliers", help="stages above 2x the median cost per planned phase of their group, with the cause (reads queue and meta; --desde <ISO> filters the base by started; --encerradas-desde <ISO> lists only the stages that ended from then on)")
+    sp = sub.add_parser("outliers", help="stages above 2x the median cost per planned phase (without the tester) or the median tester cost per step of their group, with the cause and the criterion (reads queue and meta; --desde <ISO> filters the base by started; --encerradas-desde <ISO> lists only the stages that ended from then on)",
+                        description="Stages above 2x the group median cost per planned phase (the tester left out) or above 2x the group median tester cost per step (ok + falha of the sinais), with the cause, the tester figures and the criterion: by phase, by step or by phase and step. A tester without sinais has no per-step value.")
     sp.add_argument("--desde", help="only the stages with started from this date on (ISO UTC)")
     sp.add_argument("--encerradas-desde", help="list only the outliers whose ended is from this date on (ISO UTC); the medians still come from the whole base")
     sp.add_argument("dir", help="folder of the JSON files")

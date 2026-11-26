@@ -35,9 +35,10 @@ describe('#1922 — the handover exemption holds only for the phase last PR', ()
     expect(ceiling).toContain('between a merged PR and the next one');
   });
 
-  it('implementar-fila: above 300 thousand, with no switch request and no last PR open, the coordinator sends the handover; the `5 de 5` session does not receive it', () => {
+  it('implementar-fila: above 300 thousand, with no switch request, the coordinator sends the handover even with the last PR open; the `5 de 5` session does not receive it', () => {
     expect(checks).toContain('above 300 thousand');
-    expect(checks).toContain('without its last PR open');
+    expect(checks).not.toContain('without its last PR open');
+    expect(checks).toContain("even with the phase's last PR open");
     expect(checks).toContain('`send_message`');
     expect(checks).toContain('The `5 de 5` session does not receive it');
   });
