@@ -473,7 +473,7 @@ function checkFieldStep(step: FieldStep, env: StepEnv): void {
   if (!state) return;
   if (step.op === 'rename-field') {
     fieldHere(state, step.type, step.to, 'to', env);
-    fieldGone(state, step.type, step.from, 'from', env);
+    if (!env.readded) fieldGone(state, step.type, step.from, 'from', env);
   } else if (step.op === 'add-field') {
     fieldHere(state, step.type, step.field, 'field', env);
   } else if (!env.readded) {
@@ -481,17 +481,12 @@ function checkFieldStep(step: FieldStep, env: StepEnv): void {
   }
 }
 
-/** `map-values` (the target is an enum with these options) and `fill-field` (the default fits the field). */
-function checkValueStep(step: ValueStep, env: StepEnv): void {
-  const state = typeHere(env, step.type);
-  if (!state) return;
-  const field = fieldHere(state, step.type, step.field, 'field', env);
-  if (!field || shapeUnknown(state, step.field)) return;
-  if (step.op === 'fill-field') {
-    const problem = env.h.valueProblem(field.type, field.options, step.default);
-    if (problem !== undefined) env.add('default', problem);
-    return;
-  }
+/** `map-values`: the field is an enum and every target is one of its options. */
+function checkMapValues(
+  step: Extract<SpecMigrationStep, { op: 'map-values' }>,
+  field: RawField,
+  env: StepEnv,
+): void {
   if (field.type !== 'enum') {
     env.add(
       'field',
@@ -509,6 +504,20 @@ function checkValueStep(step: ValueStep, env: StepEnv): void {
       env.add(['values', from], specMsg('spec.notInOptions', { value: to }));
     }
   }
+}
+
+/** `map-values` (the target is an enum with these options) and `fill-field` (the default fits the field). */
+function checkValueStep(step: ValueStep, env: StepEnv): void {
+  const state = typeHere(env, step.type);
+  if (!state) return;
+  const field = fieldHere(state, step.type, step.field, 'field', env);
+  if (!field || shapeUnknown(state, step.field)) return;
+  if (step.op === 'fill-field') {
+    const problem = env.h.valueProblem(field.type, field.options, step.default);
+    if (problem !== undefined) env.add('default', problem);
+    return;
+  }
+  checkMapValues(step, field, env);
 }
 
 /** The role exists on the type (new side). */
@@ -679,13 +688,17 @@ function checkVersions(
   }
 }
 
-/** A `remove-field` that a later step of the same migration declares back (`add-field` of the same field). */
+/**
+ * A `remove-field` (or the `from` of a `rename-field`) that a later step of the same migration
+ * declares back with an `add-field` of the same field: the name is cleared and added again.
+ */
 function isReadded(steps: readonly SpecMigrationStep[], index: number): boolean {
   const step = steps[index];
-  if (step?.op !== 'remove-field') return false;
+  if (step?.op !== 'remove-field' && step?.op !== 'rename-field') return false;
+  const field = step.op === 'rename-field' ? step.from : step.field;
   return steps
     .slice(index + 1)
-    .some((s) => s.op === 'add-field' && s.type === step.type && s.field === step.field);
+    .some((s) => s.op === 'add-field' && s.type === step.type && s.field === field);
 }
 
 /** Checks `migrations` (see the top of the file); the errors go to `ctx` at the exact paths. */
@@ -703,7 +716,10 @@ export function checkMigrations(
     const add = (sub: Path, message: string | SpecMsg) =>
       addSpecIssue(ctx, ['migrations', mi, ...sub], message);
     checkVersions(migration, spec.version, fromSeen, add);
-    const types = typesAt(migration.to) ?? current;
+    // Before `add-field` (24) there is no way to bring a removed field back: the checks keep reading the file's types.
+    const types =
+      (spec.formatVersion >= ADD_FIELD_VERSION ? typesAt(migration.to) : undefined) ??
+      current;
     migration.steps.forEach((step, si) => {
       const stepAdd: StepAdd = (key, message) =>
         add(['steps', si, ...(typeof key === 'string' ? [key] : key)], message);

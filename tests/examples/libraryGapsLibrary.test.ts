@@ -1,6 +1,7 @@
 // Example library `library-gaps` (stage #2829): one type per format gap. LG1: the `hsl-swatch`;
 // LG2: the `brand-badge`, with an icon that has a gradient fill and a clip (icons file formatVersion 4);
 // LG4: the `masked-field`, with two `codeOnly` fields (specialization formatVersion 24).
+// LG5: the `brand-badge` `tint` field is removed in version 2 and added again in version 3 (`add-field`).
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -114,6 +115,38 @@ describe('example library library-gaps', () => {
         ['library.fieldUnused', 'keyboard', 'masked-field'],
       ],
     );
+  });
+
+  it('the package is version 3: remove-field tint (1 → 2), then add-field tint (2 → 3)', () => {
+    const spec = JSON.parse(files.find((f) => f.path === SPEC_FILE)!.text) as {
+      version: number;
+      migrations: { from: number; to: number; steps: Record<string, unknown>[] }[];
+    };
+    expect(spec.version).toBe(3);
+    expect(spec.migrations).toEqual([
+      {
+        from: 1,
+        to: 2,
+        steps: [{ op: 'remove-field', type: 'brand-badge', field: 'tint' }],
+      },
+      {
+        from: 2,
+        to: 3,
+        steps: [{ op: 'add-field', type: 'brand-badge', field: 'tint' }],
+      },
+    ]);
+  });
+
+  it('without the add-field step the remove-field of tint is the error spec.fieldStillExists', () => {
+    const without = files.map((f) => {
+      if (f.path !== SPEC_FILE) return f;
+      const spec = JSON.parse(f.text) as { version: number; migrations: unknown[] };
+      spec.migrations.splice(1, 1);
+      spec.version = 2;
+      return { ...f, text: JSON.stringify(spec) };
+    });
+    const report = validateLibrary({ files: without, specPath: SPEC_FILE });
+    expect(report.errors.map((e) => e.code)).toContain('spec.fieldStillExists');
   });
 
   it('the masked field draws its label and the scene has no warning', () => {

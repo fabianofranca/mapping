@@ -319,6 +319,7 @@ describe('formatVersion 12: JSON schema', () => {
       'remove-role',
       'set-role',
       'copy-field',
+      'add-field',
     ]);
   });
 });

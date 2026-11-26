@@ -1253,8 +1253,8 @@ function roleReference(step: SpecMigrationStep, at: string, refs: RoleReferences
 }
 
 /**
- * `add-field` of a field that the previous version already has, with no `remove-field` of it before it
- * in the same migration: nothing enters, so the step is probably misplaced (warning).
+ * `add-field` of a field that the previous version already has, with no `remove-field` (or `rename-field`
+ * away from it) before it in the same migration: nothing enters, so the step is probably misplaced (warning).
  */
 function addFieldReference(
   steps: readonly SpecMigrationStep[],
@@ -1271,7 +1271,9 @@ function addFieldReference(
   const cleared = steps
     .slice(0, index)
     .some(
-      (s) => s.op === 'remove-field' && s.type === step.type && s.field === step.field,
+      (s) =>
+        (s.op === 'remove-field' && s.type === step.type && s.field === step.field) ||
+        (s.op === 'rename-field' && s.type === step.type && s.from === step.field),
     );
   if (!cleared)
     warn('library.fieldAlreadyInVersion', {

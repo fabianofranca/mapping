@@ -1327,3 +1327,55 @@ describe('copy-field', () => {
     expect(valuesOf(out.project, 'C1').avatarIcon).toBe('star');
   });
 });
+
+describe('add-field', () => {
+  it('a step that moves nothing: no annotation, no value, no loss', () => {
+    const p = libProject(libSpec(1), [
+      { id: 'B1', type: 'button', values: { label: 'OK', size: 2 } },
+    ]);
+    const out = run(p, nextWith({ op: 'add-field', type: 'button', field: 'label' }));
+    expect(out.project).toBe(p);
+    expect(out.steps[0]).toMatchObject({
+      from: 1,
+      to: 2,
+      index: 0,
+      annotations: 0,
+      values: 0,
+      converted: 0,
+      deleted: 0,
+      refs: 0,
+      unlinked: 0,
+    });
+    expect(out.losses).toEqual([]);
+  });
+
+  it('v1 → v3: the remove-field clears the old values and the add-field reports zeros', () => {
+    const p = libProject(libSpec(1), [
+      { id: 'B1', type: 'button', values: { label: 'OK', size: 2 } },
+      { id: 'B2', type: 'button' },
+    ]);
+    const next = libSpec(3, undefined, {
+      migrations: [
+        {
+          from: 1,
+          to: 2,
+          steps: [{ op: 'remove-field', type: 'button', field: 'label' }],
+        },
+        {
+          from: 2,
+          to: 3,
+          steps: [{ op: 'add-field', type: 'button', field: 'label' }],
+        },
+      ],
+    });
+    const out = run(p, next);
+    expect('label' in valuesOf(out.project, 'B1')).toBe(false);
+    expect(valuesOf(out.project, 'B1').size).toBe(2);
+    expect(out.steps).toHaveLength(2);
+    expect(out.steps[0]).toMatchObject({ from: 1, to: 2, annotations: 2, values: 2 });
+    expect(out.steps[1]).toMatchObject({ from: 2, to: 3, annotations: 0, values: 0 });
+    expect(out.losses.map((l) => [l.annotationId, l.field, l.value])).toEqual([
+      ['B1', 'label', 'OK'],
+    ]);
+  });
+});

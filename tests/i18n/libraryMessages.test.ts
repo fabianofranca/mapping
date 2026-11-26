@@ -146,6 +146,66 @@ function codeOnlyPackage(): Files {
   ];
 }
 
+/** An `add-field` (`formatVersion` 24) of a field that the previous version already had: `library.fieldAlreadyInVersion`. */
+function addFieldPackage(): { files: Files; previous: ReturnType<typeof previousSpec> } {
+  const component = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'af',
+    name: 'Af',
+    size: { width: 100, height: 40 },
+    template: {
+      type: 'frame',
+      children: [
+        { type: 'text', text: { $field: 'mask', default: 'x' }, font: { size: 12 } },
+      ],
+    },
+  };
+  const spec = (version: number, migrations?: Raw[]): Raw => ({
+    format: 'mapping-spec',
+    formatVersion: 24,
+    id: 'af',
+    name: 'Af',
+    version,
+    layers: [
+      {
+        id: 'l',
+        name: 'L',
+        color: '#112233',
+        annotationTypes: [
+          {
+            id: 't',
+            name: 'T',
+            component: 'components/af.json',
+            fields: [{ key: 'mask', type: 'string' }],
+          },
+        ],
+      },
+    ],
+    ...(migrations ? { migrations } : {}),
+  });
+  const parsed = parseSpecText(JSON.stringify(spec(1)));
+  if (!parsed.ok) throw new Error('fixture inválida');
+  return {
+    files: [
+      {
+        path: 'af.spec.json',
+        text: JSON.stringify(
+          spec(2, [
+            {
+              from: 1,
+              to: 2,
+              steps: [{ op: 'add-field', type: 't', field: 'mask' }],
+            },
+          ]),
+        ),
+      },
+      { path: 'components/af.json', text: JSON.stringify(component) },
+    ],
+    previous: parsed.spec,
+  };
+}
+
 /** A `hug` component in height with `maxHeight`: the text does not fit even at the adjusted size (MC2). */
 function fittedPackage(): Files {
   const component = {
@@ -203,6 +263,11 @@ function allIssues(): LibraryIssue[] {
     ...validateLibrary({ files: fittedPackage(), specPath: 'ft.spec.json' }).issues,
     ...validateLibrary({ files: codeOnlyPackage(), specPath: 'co.spec.json' }).issues,
     ...validateLibrary({
+      files: addFieldPackage().files,
+      specPath: 'af.spec.json',
+      previous: addFieldPackage().previous,
+    }).issues,
+    ...validateLibrary({
       files: tokenPackage([
         { type: 'rect', fill: { $token: 'inexistente' } },
         { type: 'rect', cornerRadius: { $token: 'primary' } },
@@ -219,6 +284,7 @@ const EXPECTED_CODES = [
   'library.invalidJson',
   'library.fieldUnused',
   'library.codeOnlyDrawn',
+  'library.fieldAlreadyInVersion',
   'library.tokenMissing',
   'library.tokenWrongKind.color.number',
   'library.fontMissing',

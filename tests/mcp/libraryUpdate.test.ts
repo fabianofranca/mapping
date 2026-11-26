@@ -262,6 +262,31 @@ function makeCopy(dir: string): void {
   });
 }
 
+/**
+ * v3 (formatVersion 24): the `supporting` field is removed in 1 → 2 and added again in 2 → 3 (`add-field`),
+ * so the chain checks each version with its own fields.
+ */
+function makeAddField(dir: string): void {
+  editSpec(dir, (spec) => {
+    spec.version = 3;
+    (spec as { formatVersion: number }).formatVersion = 24;
+    // From 22 on, `origins` is refused (the fixture only uses it for the sources).
+    delete (spec as { origins?: unknown }).origins;
+    spec.migrations = [
+      {
+        from: 1,
+        to: 2,
+        steps: [{ op: 'remove-field', type: 'm3-text-field', field: 'supporting' }],
+      },
+      {
+        from: 2,
+        to: 3,
+        steps: [{ op: 'add-field', type: 'm3-text-field', field: 'supporting' }],
+      },
+    ];
+  });
+}
+
 /** v2 that changes the layer id (same types, no break): its typed annotations become free-form. */
 function makeLayerRename(dir: string): void {
   editSpec(dir, (spec) => {
@@ -332,6 +357,7 @@ beforeAll(async () => {
   makeRename(copyPackage('v2-rename'), true);
   makeRename(copyPackage('v2-no-migration'), false);
   makeCopy(copyPackage('v2-copy'));
+  makeAddField(copyPackage('v3-add-field'));
   makeRemoval(copyPackage('v2-remove'));
   makeRequiredLabel(copyPackage('v2-label'));
   makeLayerRename(copyPackage('v2-layer'));
@@ -476,6 +502,25 @@ describe('plan_library_update', () => {
       losses: [],
     });
     expect(result.hint).toMatch(/copy values/);
+  });
+
+  it('add-field: the chain 1 → 3 validates, the steps come as declared and nothing moves', async () => {
+    const result = await plan('v3-add-field/material3');
+    expect(result.to).toBe(3);
+    expect(result.validation.errors).toEqual([]);
+    expect(result.validation.valid).toBe(true);
+    expect(result.refused).toBe(false);
+    expect(result.stepsTotal).toBe(2);
+    expect(result.steps?.[0]).toMatchObject({
+      step: { op: 'remove-field', type: 'm3-text-field', field: 'supporting' },
+    });
+    expect(result.steps?.[1]).toMatchObject({
+      step: { op: 'add-field', type: 'm3-text-field', field: 'supporting' },
+      annotations: 0,
+      values: 0,
+      lossCount: 0,
+      losses: [],
+    });
   });
 
   it('a break without a migration: refused with the list of what is missing', async () => {

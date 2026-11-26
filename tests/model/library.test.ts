@@ -991,12 +991,15 @@ describe('validateLibrary: version contract (previous)', () => {
       expect(contract(report)).toEqual([]);
     });
 
-    it('a remove-field AFTER the add-field does not count as earlier', () => {
-      const clear = { op: 'remove-field', type: 'mini-note', field: 'legacy' };
-      const report = validate(withSteps(drop, add, clear), { previous: previousSpec() });
-      expect(contract(report).map((w) => w.path)).toEqual([
-        'migrations[0].steps[1].field',
-      ]);
+    it('an add-field after a rename-field away from the same name gives nothing', () => {
+      let files = withSteps(
+        drop,
+        { op: 'rename-field', type: 'mini-note', from: 'legacy', to: 'x' },
+        add,
+      );
+      files = patch(files, SPEC, [...TYPE2, 'fields', 2], { key: 'x', type: 'string' });
+      const report = validate(files, { previous: previousSpec() });
+      expect(contract(report)).toEqual([]);
     });
 
     it('an add-field of a field that is new in this version gives nothing', () => {

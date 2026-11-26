@@ -908,6 +908,21 @@ describe('UpdateImpact: library with migrations', () => {
     });
   });
 
+  it('add-field: the label names the field and the step changes nothing in the project', () => {
+    const next = libNext([
+      {
+        from: 1,
+        to: 2,
+        steps: [{ op: 'add-field', type: 'button', field: 'label' }],
+      },
+    ]);
+    renderImpact(base(), next);
+    expect(screen.getByText('Migration steps')).toBeTruthy();
+    expect(screen.getByText('Field added: button.label')).toBeTruthy();
+    expect(screen.getByText('nothing to change in this project')).toBeTruthy();
+    expect(screen.queryByText(/This update deletes/)).toBeNull();
+  });
+
   it('step with no effect in this project', () => {
     const next = libNext([
       {

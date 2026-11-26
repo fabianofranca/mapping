@@ -444,3 +444,78 @@ describe('per-version checks: renames, placeholders and the chain', () => {
     expect(issuesOf(value)).toEqual([]);
   });
 });
+
+describe('per-version checks: review findings of LG5', () => {
+  it('a rename-field X→Y followed by an add-field X in the same migration is valid', () => {
+    const value = spec(
+      [
+        {
+          from: 11,
+          to: 12,
+          steps: [{ op: 'rename-field', type: 'icon', from: 'tint', to: 'hue' }, addTint],
+        },
+      ],
+      (s) => {
+        s.layers[0].annotationTypes[0].fields.push({ key: 'hue', type: 'string' });
+      },
+    );
+    expect(issuesOf(value)).toEqual([]);
+  });
+
+  it('an add-field BEFORE the rename-field of the same name does not excuse it', () => {
+    const value = spec(
+      [
+        {
+          from: 11,
+          to: 12,
+          steps: [addTint, { op: 'rename-field', type: 'icon', from: 'tint', to: 'hue' }],
+        },
+      ],
+      (s) => {
+        s.layers[0].annotationTypes[0].fields.push({ key: 'hue', type: 'string' });
+      },
+    );
+    expect(issuesOf(value)).toContainEqual({
+      path: `${step('0')}.steps[1].from`,
+      message: 'field "tint" still exists in the type "icon" in this version',
+    });
+  });
+
+  it('before 24 the checks stay against the current types: remove x then rename x→y is accepted', () => {
+    const value = spec(
+      [
+        { from: 1, to: 2, steps: [{ op: 'remove-field', type: 'icon', field: 'x' }] },
+        {
+          from: 2,
+          to: 3,
+          steps: [{ op: 'rename-field', type: 'icon', from: 'x', to: 'tint' }],
+        },
+      ],
+      (s) => {
+        s.version = 3;
+      },
+      23,
+    );
+    expect(issuesOf(value)).toEqual([]);
+  });
+
+  it('in 24 the same chain is read per version and refused (x exists again at 2)', () => {
+    const value = spec(
+      [
+        { from: 1, to: 2, steps: [{ op: 'remove-field', type: 'icon', field: 'x' }] },
+        {
+          from: 2,
+          to: 3,
+          steps: [{ op: 'rename-field', type: 'icon', from: 'x', to: 'tint' }],
+        },
+      ],
+      (s) => {
+        s.version = 3;
+      },
+    );
+    expect(issuesOf(value)).toContainEqual({
+      path: `${step('0')}.steps[0].field`,
+      message: 'field "x" still exists in the type "icon" in this version',
+    });
+  });
+});
