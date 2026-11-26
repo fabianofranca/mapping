@@ -52,6 +52,29 @@ function roleStepLabel(step: RoleStep): string {
   }
 }
 
+type StepOf<Op extends SpecMigrationStep['op']> = Extract<SpecMigrationStep, { op: Op }>;
+
+type FieldStep = Extract<
+  SpecMigrationStep,
+  { op: 'rename-field' | 'remove-field' | 'add-field' }
+>;
+
+/** Label of the steps that name a field. */
+function fieldStepLabel(step: FieldStep): string {
+  switch (step.op) {
+    case 'rename-field':
+      return t('spec.impact.op.renameField', {
+        type: step.type,
+        from: step.from,
+        to: step.to,
+      });
+    case 'remove-field':
+      return t('spec.impact.op.removeField', { type: step.type, field: step.field });
+    case 'add-field':
+      return t('spec.impact.op.addField', { type: step.type, field: step.field });
+  }
+}
+
 /** `key = value` pairs of a `copy-field` `when` (a list reads `a | b`). */
 function whenText(when: CopyFieldWhen): string {
   return Object.entries(when)
@@ -69,41 +92,51 @@ function copyFieldLabel(step: Extract<SpecMigrationStep, { op: 'copy-field' }>):
   });
 }
 
+/** Label of the steps that rename or remove a type. */
+function typeStepLabel(step: StepOf<'rename-type' | 'remove-type'>): string {
+  if (step.op === 'rename-type') {
+    return t('spec.impact.op.renameType', { from: step.from, to: step.to });
+  }
+  return t(
+    step.mode === 'convert'
+      ? 'spec.impact.op.removeTypeConvert'
+      : 'spec.impact.op.removeTypeDelete',
+    { type: step.type },
+  );
+}
+
+/** Label of the steps that change the values of a field. */
+function valueStepLabel(step: StepOf<'map-values' | 'fill-field'>): string {
+  if (step.op === 'fill-field') {
+    return t('spec.impact.op.fillField', {
+      type: step.type,
+      field: step.field,
+      value: String(step.default),
+    });
+  }
+  return t('spec.impact.op.mapValues', {
+    type: step.type,
+    field: step.field,
+    pairs: Object.entries(step.values)
+      .map(([a, b]) => `${a} → ${b}`)
+      .join(', '),
+  });
+}
+
 /** Readable label of a declared migration step. */
 export function stepLabel(step: SpecMigrationStep): string {
   if (isRoleStep(step)) return roleStepLabel(step);
   switch (step.op) {
     case 'rename-type':
-      return t('spec.impact.op.renameType', { from: step.from, to: step.to });
     case 'remove-type':
-      return t(
-        step.mode === 'convert'
-          ? 'spec.impact.op.removeTypeConvert'
-          : 'spec.impact.op.removeTypeDelete',
-        { type: step.type },
-      );
+      return typeStepLabel(step);
     case 'rename-field':
-      return t('spec.impact.op.renameField', {
-        type: step.type,
-        from: step.from,
-        to: step.to,
-      });
     case 'remove-field':
-      return t('spec.impact.op.removeField', { type: step.type, field: step.field });
+    case 'add-field':
+      return fieldStepLabel(step);
     case 'map-values':
-      return t('spec.impact.op.mapValues', {
-        type: step.type,
-        field: step.field,
-        pairs: Object.entries(step.values)
-          .map(([a, b]) => `${a} → ${b}`)
-          .join(', '),
-      });
     case 'fill-field':
-      return t('spec.impact.op.fillField', {
-        type: step.type,
-        field: step.field,
-        value: String(step.default),
-      });
+      return valueStepLabel(step);
     case 'copy-field':
       return copyFieldLabel(step);
   }

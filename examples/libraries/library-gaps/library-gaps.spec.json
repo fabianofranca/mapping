@@ -3,8 +3,8 @@
   "formatVersion": 24,
   "id": "library-gaps",
   "name": "Library gaps",
-  "version": 1,
-  "description": "One type per format gap that the library-gaps stage closed. The Swatch (`hsl-swatch`) writes its colors with hsl() and hsla(): the MCP PNG paints them like the app. The Brand badge (`brand-badge`) uses an icon with a gradient fill and a clip (icons file `formatVersion` 4). The Masked field (`masked-field`) has two `codeOnly` fields, `mask` and `keyboard`, that the drawing does not use and the validator does not flag.",
+  "version": 3,
+  "description": "One type per format gap that the library-gaps stage closed. The Swatch (`hsl-swatch`) writes its colors with hsl() and hsla(): the MCP PNG paints them like the app. The Brand badge (`brand-badge`) uses an icon with a gradient fill and a clip (icons file `formatVersion` 4). The Masked field (`masked-field`) has two `codeOnly` fields, `mask` and `keyboard`, that the drawing does not use and the validator does not flag. The `tint` field of the Brand badge was dropped in version 2 and came back in version 3 with another meaning: the `add-field` step of the 2 to 3 migration says so.",
   "icons": "icons/icons.json",
   "layers": [
     {
@@ -79,6 +79,18 @@
           ]
         }
       ]
+    }
+  ],
+  "migrations": [
+    {
+      "from": 1,
+      "to": 2,
+      "steps": [{ "op": "remove-field", "type": "brand-badge", "field": "tint" }]
+    },
+    {
+      "from": 2,
+      "to": 3,
+      "steps": [{ "op": "add-field", "type": "brand-badge", "field": "tint" }]
     }
   ]
 }

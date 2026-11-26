@@ -108,6 +108,8 @@ export const libraryMessages = {
   'library.typeNotInVersion': 'the type "{typeId}" did not exist in version {version}',
   'library.roleNotInVersion':
     'the role "{role}" of the type "{typeId}" did not exist in version {version}',
+  'library.fieldAlreadyInVersion':
+    'the field "{key}" of the type "{typeId}" already exists in version {version}; add-field is for a field that enters or comes back (remove it first to clear its old values)',
   'library.fieldNotInVersion':
     'the field "{key}" of the type "{typeId}" did not exist in version {version}',
   'library.optionNotInVersion':

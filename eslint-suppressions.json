@@ -421,7 +421,7 @@
   },
   "src/model/spec.ts": {
     "complexity": {
-      "count": 8
+      "count": 7
     }
   },
   "src/model/specVersions.ts": {

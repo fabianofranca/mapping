@@ -1252,6 +1252,37 @@ function roleReference(step: SpecMigrationStep, at: string, refs: RoleReferences
   }
 }
 
+/**
+ * `add-field` of a field that the previous version already has, with no `remove-field` (or `rename-field`
+ * away from it) before it in the same migration: nothing enters, so the step is probably misplaced (warning).
+ */
+function addFieldReference(
+  steps: readonly SpecMigrationStep[],
+  index: number,
+  fields: ReadonlyMap<string, SpecField> | undefined,
+  warn: (
+    code: 'library.fieldAlreadyInVersion',
+    params: Record<string, string | number>,
+  ) => void,
+  version: number,
+): void {
+  const step = steps[index];
+  if (step?.op !== 'add-field' || !fields?.has(step.field)) return;
+  const cleared = steps
+    .slice(0, index)
+    .some(
+      (s) =>
+        (s.op === 'remove-field' && s.type === step.type && s.field === step.field) ||
+        (s.op === 'rename-field' && s.type === step.type && s.from === step.field),
+    );
+  if (!cleared)
+    warn('library.fieldAlreadyInVersion', {
+      key: step.field,
+      typeId: step.type,
+      version,
+    });
+}
+
 /** Steps of the migration leaving the previous version that cite what did not exist in it (warning). */
 function migrationReferences(
   previous: Spec,
@@ -1310,6 +1341,15 @@ function migrationReferences(
           version: previous.version,
         });
       }
+    } else if (step.op === 'add-field') {
+      const fields = before.get(renamedFrom.get(step.type) ?? step.type);
+      addFieldReference(
+        migration.steps,
+        si,
+        fields,
+        (code, params) => out.warning(specPath, `${at}.field`, code, params),
+        previous.version,
+      );
     } else if (step.op === 'map-values') {
       const fields = oldType(step, at);
       if (fields === undefined) return;

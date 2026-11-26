@@ -206,7 +206,7 @@ describe('migrations: keys per op', () => {
     expectIssue(
       spec,
       `${M0}.steps[0].op`,
-      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role" or "copy-field"',
+      'invalid "op"; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role", "set-role", "copy-field" or "add-field"',
     );
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
