@@ -17,9 +17,13 @@ export {
   type ReservedValues,
   type ResolvedAxis,
   type ResolvedSizing,
+  type ResolvedWeight,
   type SizingAxis,
   type SizingSource,
+  type WeightLimits,
   resolveSizing,
+  resolveWeight,
+  resolveWeightLimits,
 } from './sizingResolve';
 import {
   type ReservedValues,

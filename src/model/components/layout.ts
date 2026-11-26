@@ -52,7 +52,8 @@ import {
 } from './layoutValues';
 import { mirrorX } from './direction';
 import { lineExtents, needsNaturals, slotTrackGeometry } from './gridPlan';
-import { type ResolvedSizing, resolveSizing } from './sizing';
+import { type ResolvedSizing, resolveSizing, resolveWeight } from './sizing';
+import { shareByWeight } from './flexShare';
 import type { Library } from './library';
 import type { Instance, Screen } from './screen';
 import { componentSlots, slotForPlacement, slotKey } from './slots';
@@ -162,6 +163,8 @@ interface Prepared {
   readonly groups: readonly SlotGroup[];
   /** The `sizing` evaluated with the node's values (px, `fill` or `hug` per axis). */
   readonly sizing: ResolvedSizing;
+  /** The component's root `weight` evaluated (v4); `undefined` = not weighted. */
+  readonly weight: number | undefined;
 }
 
 /** Rectangle of a child relative to the origin of the slot's content, and whether each axis came from the `hug`. */
@@ -235,28 +238,25 @@ function mainPositions(
 
 /**
  * Splits `free` among the `fill`s (the indices of `fixed` without a size) respecting each one's
- * `minSize`, like the instantiator's `distributeFill`: whoever does not fit in the equal share
- * freezes at its minimum and the rest is redistributed. Returns the size per index (0 where it
+ * `minSize`, like the instantiator's `distributeFill`: each takes the share of its `weight` (1 without
+ * one: equal shares), whoever does not fit freezes at its minimum and the rest is redistributed. Returns the size per index (0 where it
  * is not `fill`).
  */
 function shareWithMins(
   fixed: readonly unknown[],
   mins: readonly number[],
   free: number,
+  weights: readonly number[] = [],
 ): number[] {
+  const fills = fixed.flatMap((f, i) => (f === undefined ? [i] : []));
+  const shares = shareByWeight(
+    fills.map((i) => ({ min: mins[i] ?? 0, max: Infinity })),
+    free,
+    fills.map((i) => weights[i] ?? 1),
+  );
   const sizes = fixed.map(() => 0);
-  let active = fixed.flatMap((f, i) => (f === undefined ? [i] : []));
-  let space = Math.max(0, free);
-  for (;;) {
-    const share = space / active.length;
-    const frozen = active.filter((i) => (mins[i] ?? 0) > share);
-    if (frozen.length === 0) {
-      for (const i of active) sizes[i] = share;
-      return sizes;
-    }
-    for (const i of frozen) space = Math.max(0, space - (sizes[i] = mins[i] ?? 0));
-    active = active.filter((i) => !frozen.includes(i));
-  }
+  fills.forEach((i, k) => (sizes[i] = shares[k] ?? 0));
+  return sizes;
 }
 
 function crossPosition(
@@ -395,8 +395,13 @@ export function layoutScreen(
     // has no geometry between the instances (decision 6 of #1893).
     const sizing = resolveSizing(component, node.values, undefined, { direction });
     for (const m of sizing.messages) warn(m.code as ModelMessageTemplateCode, m.params);
+    const { weight, messages } = resolveWeight(component, node.values, undefined, {
+      direction,
+    });
+    for (const m of messages) warn(m.code as ModelMessageTemplateCode, m.params);
     return {
       node,
+      weight,
       component,
       groups: slots.map((slot) => ({
         slot,
@@ -409,6 +414,9 @@ export function layoutScreen(
   };
 
   const specOf = (p: Prepared, axis: Axis) => p.sizing[axis].spec;
+  /** The size spec on a flow's main axis: a valid root `weight` counts as `fill` there. */
+  const mainSpecOf = (p: Prepared, axis: Axis) =>
+    p.weight === undefined ? specOf(p, axis) : 'fill';
   const withMin = (p: Prepared, axis: Axis, value: number) =>
     Math.max(value, p.component.minSize?.[axis] ?? 0);
   const padW = (g: SlotGroup) => g.layout.padding.left + g.layout.padding.right;
@@ -855,7 +863,7 @@ export function layoutScreen(
         widthOf(kid, cw, stretch && specOf(kid, 'width') === 'hug'),
       );
       const fixed = kids.map((kid, i) => {
-        const spec = specOf(kid, 'height');
+        const spec = mainSpecOf(kid, 'height');
         if (typeof spec === 'number')
           return { h: withMin(kid, 'height', spec), hug: false };
         if (spec === 'hug' || isIntrinsicSize(spec) || ch === null) {
@@ -872,6 +880,7 @@ export function layoutScreen(
         fixed,
         kids.map((k) => k.component.minSize?.height ?? 0),
         fills > 0 && ch !== null ? ch - taken - gaps : 0,
+        kids.map((k) => k.weight ?? 1),
       );
       const sized = kids.map((kid, i) => {
         const f = fixed[i];
@@ -900,7 +909,7 @@ export function layoutScreen(
 
     if (layout.type === 'row') {
       const fixed = kids.map((kid) => {
-        const spec = specOf(kid, 'width');
+        const spec = mainSpecOf(kid, 'width');
         if (spec === 'fill' && cw !== null) return undefined;
         return widthOf(kid, null, false);
       });
@@ -910,6 +919,7 @@ export function layoutScreen(
         fixed,
         kids.map((k) => k.component.minSize?.width ?? 0),
         fills > 0 && cw !== null ? cw - taken - gaps : 0,
+        kids.map((k) => k.weight ?? 1),
       );
       const widths = kids.map((kid, i) => {
         const f = fixed[i];

@@ -65,6 +65,7 @@ import {
   validTrack,
 } from './gridPlan';
 import { breakLines, stackLines } from './wrapLines';
+import { shareByWeight } from './flexShare';
 
 /**
  * The tracks of the grid (`layout.type: "grid"`): `count` (`columns`/`rows`) or `min`
@@ -438,9 +439,64 @@ function slotGeometry(slot: Box, layout: ResolvedSlotLayout): SlotGeometry {
   };
 }
 
-interface LayoutChild {
+export interface LayoutChild {
   readonly box: Box;
   readonly baseline?: number | undefined;
+  /**
+   * The root `weight` of the child's component (Arrange, `row`/`column` only): it shares the line's free
+   * main-axis space with the other weighted children, in proportion to the weights, from a base of 0.
+   * `grid` and `none` ignore it.
+   */
+  readonly weight?: number | undefined;
+  /** The weighted child's floor on the main axis (default 0); the layout and what the slot asks count it. */
+  readonly minMain?: number | undefined;
+  /** The weighted child's ceiling on the main axis (default none). */
+  readonly maxMain?: number | undefined;
+}
+
+/** The child's main size as the layout measures it: a weighted child counts at its floor. */
+function mainOf(child: LayoutChild, row: boolean): number {
+  if (child.weight !== undefined) return child.minMain ?? 0;
+  return row ? child.box.width : child.box.height;
+}
+
+function withMain(child: LayoutChild, row: boolean, size: number): LayoutChild {
+  return {
+    ...child,
+    box: row ? { ...child.box, width: size } : { ...child.box, height: size },
+  };
+}
+
+/**
+ * The line's children with each weighted child at the size its share gives: the free main-axis space
+ * (the content minus the main sizes of the others minus the `gap`s) shared by weight, each child
+ * between its floor and its ceiling. A line without a weighted child comes back as it is.
+ */
+function growWeighted(
+  layout: ResolvedSlotLayout,
+  row: boolean,
+  content: number,
+  line: readonly LayoutChild[],
+): LayoutChild[] {
+  const weighted = line.flatMap((c, i) => (c.weight === undefined ? [] : [i]));
+  if (weighted.length === 0) return [...line];
+  const taken = line.reduce(
+    (sum, c) => sum + (c.weight === undefined ? mainOf(c, row) : 0),
+    0,
+  );
+  const free = content - taken - layout.gap * Math.max(0, line.length - 1);
+  const shares = shareByWeight(
+    weighted.map((i) => ({
+      min: line[i]?.minMain ?? 0,
+      max: line[i]?.maxMain ?? Infinity,
+    })),
+    free,
+    weighted.map((i) => line[i]?.weight ?? 1),
+  );
+  return line.map((c, i) => {
+    const at = weighted.indexOf(i);
+    return at < 0 ? c : withMain(c, row, shares[at] ?? 0);
+  });
 }
 
 /** The extent of a line on the cross axis: the largest (or, with `baseline`, from the highest top to the lowest bottom). */
@@ -515,7 +571,7 @@ function layoutPhysical(
   const geometry = slotGeometry(slot, layout);
   const { row } = geometry;
   const wrapped = layout.wrap !== 'none';
-  const mains = children.map((c) => (row ? c.box.width : c.box.height));
+  const mains = children.map((c) => mainOf(c, row));
   const broken = wrapped
     ? breakLines(mains, geometry.mainContent, {
         gap: layout.gap,
@@ -523,7 +579,8 @@ function layoutPhysical(
         maxLines: layout.maxLines,
       })
     : { lines: [children.map((_, i) => i)], dropped: 0 };
-  const members = broken.lines.map((line) => line.map((i) => children[i] as LayoutChild));
+  const sized = withGrownLines(layout, geometry, children, broken.lines);
+  const members = broken.lines.map((line) => line.map((i) => sized[i] as LayoutChild));
   // Without `wrap` there is a single line, with the extent of the whole content (`center` and `end` apply to it).
   const extents = wrapped
     ? members.map((line) => lineExtent(layout, row, line))
@@ -531,12 +588,32 @@ function layoutPhysical(
   const stacked = stackLines(extents, layout.lineGap, layout.wrap === 'wrap-reverse');
   const out: Box[] = children.map((c) => c.box);
   broken.lines.forEach((line, k) => {
-    const place = placeLine(layout, geometry, line, children, {
+    const place = placeLine(layout, geometry, line, sized, {
       extent: extents[k] ?? 0,
       top: geometry.crossStart + (stacked.tops[k] ?? 0),
     });
     line.forEach((index, i) => (out[index] = place[i] as Box));
   });
+  return out;
+}
+
+/** The children with the weighted ones of each line grown by their share (the others untouched). */
+function withGrownLines(
+  layout: ResolvedSlotLayout,
+  geometry: SlotGeometry,
+  children: readonly LayoutChild[],
+  lines: readonly (readonly number[])[],
+): LayoutChild[] {
+  const out = [...children];
+  for (const line of lines) {
+    const grown = growWeighted(
+      layout,
+      geometry.row,
+      geometry.mainContent,
+      line.map((i) => children[i] as LayoutChild),
+    );
+    line.forEach((index, k) => (out[index] = grown[k] as LayoutChild));
+  }
   return out;
 }
 
@@ -577,7 +654,7 @@ export function contentExtent(
       height: Math.max(0, ...children.map((c) => c.box.height)),
     };
   const row = layout.type === 'row';
-  const mains = children.map((c) => (row ? c.box.width : c.box.height));
+  const mains = children.map((c) => mainOf(c, row));
   const lines =
     layout.wrap === 'none'
       ? [children.map((_, i) => i)]
