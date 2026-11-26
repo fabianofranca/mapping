@@ -94,7 +94,14 @@ import { STROKE_SIDES } from './componentFormat';
 import { clipBoxOf } from './clipBox';
 import { arcPath } from './arc';
 import { clampGrayscale, grayscaleNode } from './grayscale';
-import { DEFAULT_ICON_VIEWBOX, resolveIcon, type IconPath, type IconSet } from './icons';
+import {
+  DEFAULT_ICON_VIEWBOX,
+  resolveIcon,
+  type IconClip,
+  type IconGradient,
+  type IconPath,
+  type IconSet,
+} from './icons';
 import {
   evaluate,
   evaluateBoolean,
@@ -179,6 +186,7 @@ import {
 import {
   type CornerRadius,
   type FrameNode,
+  type ClipPath,
   type Matrix,
   type GradientStop,
   type Paint,
@@ -2956,7 +2964,7 @@ function createEngine(
 
   // --- style ----------------------------------------------------------------------------
 
-  const stopsOf = (gradient: GradientSpec): GradientStop[] =>
+  const stopsOf = (gradient: Pick<GradientSpec, 'stops'>): GradientStop[] =>
     gradient.stops.map((stop) => ({
       offset: stop.offset,
       color: ev<Color>(stop.color, 'none'),
@@ -3317,9 +3325,33 @@ function createEngine(
     return typeof value === 'string' ? value : nodeColor;
   };
 
+  /**
+   * The paint of an icon gradient, in `viewBox` units (the path node is in that space): the linear
+   * one by `from`/`to` keeps the points, the others use the component's `gradientPaint` on the box.
+   * The node's color does not tint it.
+   */
+  const iconGradientPaint = (
+    gradient: IconGradient,
+    box: readonly [number, number],
+  ): Paint => {
+    if (gradient.type === 'linear' && 'from' in gradient)
+      return {
+        type: 'linear',
+        start: { x: gradient.from[0], y: gradient.from[1] },
+        end: { x: gradient.to[0], y: gradient.to[1] },
+        stops: stopsOf(gradient),
+      };
+    return gradientPaint(gradient, box[0], box[1]);
+  };
+
   /** Path fill: explicit `fill`, otherwise the node's color, unless it only has a stroke. */
-  const iconFills = (iconPath: IconPath, nodeColor: string): Paint[] => {
+  const iconFills = (
+    iconPath: IconPath,
+    nodeColor: string,
+    box: readonly [number, number],
+  ): Paint[] => {
     const wanted = iconPath.fill ?? iconPath.stroke === undefined;
+    if (typeof wanted === 'object') return [iconGradientPaint(wanted, box)];
     const color = iconPaint(wanted, nodeColor);
     return color === undefined || isNone(color) ? [] : [{ type: 'solid', color }];
   };
@@ -3354,13 +3386,22 @@ function createEngine(
       ...baseNode({ id, name: 'icon-path' }),
       width: box[0],
       height: box[1],
-      fills: iconFills(iconPath, nodeColor),
+      fills: iconFills(iconPath, nodeColor, box),
       ...(stroke ? { stroke } : {}),
       type: 'path',
       d: iconPath.d,
       fillRule: iconPath.fillRule ?? 'nonzero',
     };
   };
+
+  /** The icon's `clip` as the scene's `clipPath`: in `viewBox` units, with the children's matrix. */
+  const iconClipPath = (
+    clip: IconClip | undefined,
+    matrix: Matrix,
+  ): ClipPath | undefined =>
+    clip === undefined
+      ? undefined
+      : { d: clip.d, fillRule: clip.fillRule ?? 'nonzero', transform: matrix };
 
   /** The icon becomes a group with one path per stroke, scaled from the `viewBox` to the node's box. */
   const buildIcon = (
@@ -3393,7 +3434,8 @@ function createEngine(
       ...iconPathNode(iconPath, `${id}/${i}`, found.viewBox, color, strokeWidth),
       transform: matrix,
     }));
-    return { ...base, type: 'group', children };
+    const clipPath = iconClipPath(found.def.clip, matrix);
+    return { ...base, type: 'group', children, ...(clipPath ? { clipPath } : {}) };
   };
 
   /** The `$lines` key that cites this node: the name, with the row scope when inside a `repeat`. */

@@ -1,9 +1,11 @@
-// Example library `library-gaps` (stage #2829): one type per format gap. LG1: the `hsl-swatch`.
+// Example library `library-gaps` (stage #2829): one type per format gap. LG1: the `hsl-swatch`;
+// LG2: the `brand-badge`, with an icon that has a gradient fill and a clip (icons file formatVersion 4).
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
+import { walk, type GroupNode, type PathNode } from '../../src/model/components/scene';
 import { defaultValues } from '../../src/model/libraryDrawing';
 import { validateLibrary } from '../../src/model/library';
 import { paintScene } from '../../mcp/image/sceneRaster';
@@ -32,15 +34,21 @@ function hexAt(raster: ReturnType<typeof createRaster>, x: number, y: number): s
   return `#${[r, g, b].map((n) => n.toString(16).padStart(2, '0')).join('')}`.toUpperCase();
 }
 
-function rasterOf(id: string) {
+function sceneOf(id: string) {
   const entry = findEntry(catalog, id)!;
   const component = entry.component!;
-  const { root } = instantiate(
+  return instantiate(
     component,
     defaultValues(entry.type),
     { x: 0, y: 0, ...component.size },
     { measure: approximateMeasurer },
   );
+}
+
+function rasterOf(id: string) {
+  const entry = findEntry(catalog, id)!;
+  const component = entry.component!;
+  const { root } = sceneOf(id);
   const raster = createRaster(component.size.width, component.size.height);
   paintScene(raster, [{ root }], approximateMeasurer, {
     scaleX: 1,
@@ -53,7 +61,14 @@ function rasterOf(id: string) {
 describe('example library library-gaps', () => {
   it('has the specialization, the swatch component and its document', () => {
     expect(files.map((f) => f.path)).toEqual(
-      [SPEC_FILE, 'components/hsl-swatch.json', 'docs/hsl-swatch.md'].sort(),
+      [
+        SPEC_FILE,
+        'components/hsl-swatch.json',
+        'docs/hsl-swatch.md',
+        'components/brand-badge.json',
+        'docs/brand-badge.md',
+        'icons/icons.json',
+      ].sort(),
     );
   });
 
@@ -75,5 +90,45 @@ describe('example library library-gaps', () => {
     expect(Math.abs(channel(5) - 0x80)).toBeLessThanOrEqual(2);
     expect(hexAt(raster, 10, 24)).toBe('#008000');
     expect(hexAt(raster, 24, 24)).toBe('#FFFFFF');
+  });
+
+  it('the scene of the brand badge carries the linear points (0, 0) → (24, 0) and the clipPath', () => {
+    const { root, warnings } = sceneOf('brand-badge');
+    expect(warnings).toEqual([]);
+    const nodes = [...walk(root)];
+    const [linear, radial] = nodes.filter((n): n is PathNode => n.type === 'path');
+    expect(linear?.fills[0]).toMatchObject({
+      type: 'linear',
+      start: { x: 0, y: 0 },
+      end: { x: 24, y: 0 },
+    });
+    expect(radial?.fills[0]).toMatchObject({
+      type: 'radial',
+      center: { x: 12, y: 12 },
+      radius: 4,
+    });
+    const group = nodes.find(
+      (n): n is GroupNode => n.type === 'group' && n.clipPath !== undefined,
+    );
+    expect(group?.clipPath).toEqual({
+      d: 'M12 0a12 12 0 1 0 0 24a12 12 0 1 0 0-24z',
+      fillRule: 'nonzero',
+      transform: [2, 0, 0, 2, 0, 0],
+    });
+  });
+
+  it('the MCP raster of the brand badge paints the gradients in the middle of the ramp', () => {
+    const raster = rasterOf('brand-badge');
+    const near = (hex: string, expected: [number, number, number], slack = 6): void => {
+      [1, 3, 5].forEach((at, i) =>
+        expect(
+          Math.abs(parseInt(hex.slice(at, at + 2), 16) - expected[i]!),
+        ).toBeLessThanOrEqual(slack),
+      );
+    };
+    near(hexAt(raster, 12, 24), [0xbf, 0x00, 0x40]);
+    near(hexAt(raster, 36, 24), [0x40, 0x00, 0xbf]);
+    // The center of the radial: white, a few levels off because the pixel center is half a pixel away.
+    near(hexAt(raster, 24, 24), [0xff, 0xff, 0xff], 32);
   });
 });

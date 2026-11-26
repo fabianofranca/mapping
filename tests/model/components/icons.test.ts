@@ -69,18 +69,17 @@ describe('parseIconsFile', () => {
       expect(result.errors.join('\n')).toContain('icons.check.paths: expected');
   });
 
-  it('rejects formatVersion 4 with a version message (1, 2 and 3 apply)', () => {
-    const result = parseIconsFile({ ...FILE, formatVersion: 4 });
+  it('rejects formatVersion 5 with a version message (1 to 4 apply)', () => {
+    const result = parseIconsFile({ ...FILE, formatVersion: 5 });
     expect(result.ok).toBe(false);
     if (!result.ok)
-      expect(result.errors.join('\n')).toContain('formatVersion: must be 1, 2 or 3');
-    expect(parseIconsFile({ ...FILE, formatVersion: 1 }).ok).toBe(true);
-    expect(parseIconsFile({ ...FILE, formatVersion: 2 }).ok).toBe(true);
-    expect(parseIconsFile({ ...FILE, formatVersion: 3 }).ok).toBe(true);
+      expect(result.errors.join('\n')).toContain('formatVersion: must be 1, 2, 3 or 4');
+    for (const version of [1, 2, 3, 4])
+      expect(parseIconsFile({ ...FILE, formatVersion: version }).ok).toBe(true);
   });
 
   it('the invalid formatVersion message: model text in English and the whole pt-BR rendering', () => {
-    const result = parseIconsFile({ ...FILE, formatVersion: 4 });
+    const result = parseIconsFile({ ...FILE, formatVersion: 5 });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     const issue = result.issues.find((i) => i.path === 'formatVersion');
@@ -90,10 +89,10 @@ describe('parseIconsFile', () => {
       issue?.params ?? {},
       issue?.message ?? '',
     );
-    expect(issue?.message).toBe('must be 1, 2 or 3');
-    expect(message.text).toBe('must be 1, 2 or 3');
+    expect(issue?.message).toBe('must be 1, 2, 3 or 4');
+    expect(message.text).toBe('must be 1, 2, 3 or 4');
     // pt-BR kept: the object of the test is the pt-BR rendering of the model message
-    expect(ptBRText(message)).toBe('deve ser 1, 2 ou 3');
+    expect(ptBRText(message)).toBe('deve ser 1, 2, 3 ou 4');
   });
 
   it('mapping-icons 2 accepts mirror per icon (boolean); 1 is still accepted without it', () => {
@@ -194,6 +193,228 @@ describe('parseIconsFile', () => {
       expect(text).toContain('icons.x.paths[0].cap');
       expect(text).toContain('icons.x.paths[0].extra: unknown key');
     }
+  });
+});
+
+describe('gradient fill and clip (formatVersion 4)', () => {
+  const STOPS = [
+    { offset: 0, color: '#ff0000' },
+    { offset: 1, color: '#0000ff' },
+  ];
+  const FILL = 'icons.badge.paths[0].fill';
+  const withFill = (fill: unknown, formatVersion = 4) => ({
+    ...FILE,
+    formatVersion,
+    icons: { badge: { paths: [{ d: 'M0 0h24v24H0z', fill }] } },
+  });
+  const withClip = (clip: unknown, formatVersion = 4) => ({
+    ...FILE,
+    formatVersion,
+    icons: { badge: { clip, paths: [{ d: 'M0 0h24v24H0z' }] } },
+  });
+  const errorsOf = (json: unknown): string[] => {
+    const result = parseIconsFile(json);
+    return result.ok ? [] : result.errors;
+  };
+
+  it('accepts the four gradient shapes and keeps them as written', () => {
+    const shapes = [
+      { type: 'linear', angle: 90, stops: STOPS },
+      { type: 'linear', from: [0, 0], to: [24, 0], stops: STOPS },
+      { type: 'radial', center: [0.5, 0.5], radius: 4, stops: STOPS },
+      { type: 'angular', center: [0.25, 0.75], angle: 45, stops: STOPS },
+    ];
+    for (const shape of shapes) {
+      const result = parseIconsFile(withFill(shape));
+      expect(result.ok && result.warnings).toEqual([]);
+      if (result.ok) expect(result.set.icons.badge?.paths[0]?.fill).toEqual(shape);
+    }
+    expect(parseIconsFile(withFill({ type: 'radial', stops: STOPS })).ok).toBe(true);
+    expect(parseIconsFile(withFill({ type: 'angular', stops: STOPS })).ok).toBe(true);
+  });
+
+  it('a linear gradient takes angle, or from and to: both at once and neither are refused', () => {
+    expect(
+      errorsOf(
+        withFill({ type: 'linear', angle: 0, from: [0, 0], to: [1, 1], stops: STOPS }),
+      ),
+    ).toEqual([`${FILL}: use angle or from and to, not both`]);
+    expect(errorsOf(withFill({ type: 'linear', stops: STOPS }))).toEqual([
+      `${FILL}: expected angle or from and to`,
+    ]);
+    expect(errorsOf(withFill({ type: 'linear', from: [0, 0], stops: STOPS }))).toEqual([
+      `${FILL}: expected angle or from and to`,
+    ]);
+  });
+
+  it('from and to are two finite numbers, each at its own path', () => {
+    for (const from of [[0], [0, 'a'], [0, Number.POSITIVE_INFINITY], 'x']) {
+      expect(
+        errorsOf(withFill({ type: 'linear', from, to: [1, 1], stops: STOPS })),
+      ).toEqual([`${FILL}.from: expected two finite numbers`]);
+    }
+    expect(
+      errorsOf(withFill({ type: 'linear', from: [0, 0], to: [1], stops: STOPS })),
+    ).toEqual([`${FILL}.to: expected two finite numbers`]);
+  });
+
+  it('the stops need at least 2, an offset from 0 to 1 and a color as text', () => {
+    expect(errorsOf(withFill({ type: 'linear', angle: 0, stops: [STOPS[0]] }))).toEqual([
+      `${FILL}.stops: expected at least 2 stops`,
+    ]);
+    expect(
+      errorsOf(
+        withFill({
+          type: 'linear',
+          angle: 0,
+          stops: [STOPS[0], { offset: 1.5, color: '#00f' }],
+        }),
+      ),
+    ).toEqual([`${FILL}.stops[1].offset: expected a number between 0 and 1`]);
+    expect(
+      errorsOf(
+        withFill({
+          type: 'linear',
+          angle: 0,
+          stops: [STOPS[0], { offset: 1, color: 7 }],
+        }),
+      ),
+    ).toEqual([`${FILL}.stops[1].color: expected a color (non-empty text)`]);
+    expect(errorsOf(withFill({ type: 'linear', angle: 0, stops: 'x' }))).toEqual([
+      `${FILL}.stops: expected a list of stops`,
+    ]);
+  });
+
+  it('the type, angle, center and radius are checked like the component gradient', () => {
+    expect(errorsOf(withFill({ type: 'conic', stops: STOPS }))).toEqual([
+      `${FILL}.type: expected "linear", "radial" or "angular"`,
+    ]);
+    expect(errorsOf(withFill({ type: 'linear', angle: 'x', stops: STOPS }))).toEqual([
+      `${FILL}.angle: expected a number`,
+    ]);
+    expect(errorsOf(withFill({ type: 'radial', center: [2, 0], stops: STOPS }))).toEqual([
+      `${FILL}.center: expected two numbers from 0 to 1`,
+    ]);
+    expect(errorsOf(withFill({ type: 'radial', radius: 0, stops: STOPS }))).toEqual([
+      `${FILL}.radius: expected a number greater than 0`,
+    ]);
+  });
+
+  it('an unknown key in the gradient and in the clip is refused at its path', () => {
+    expect(
+      errorsOf(withFill({ type: 'linear', angle: 0, shine: 1, stops: STOPS })),
+    ).toEqual([`${FILL}.shine: unknown key: shine`]);
+    // `from` belongs to the linear one only
+    expect(errorsOf(withFill({ type: 'radial', from: [0, 0], stops: STOPS }))).toEqual([
+      `${FILL}.from: unknown key: from`,
+    ]);
+    expect(errorsOf(withClip({ d: 'M0 0h8v8z', extra: 1 }))).toEqual([
+      'icons.badge.clip.extra: unknown key: extra',
+    ]);
+  });
+
+  it('the stroke stays true, false or a color: a gradient there is refused', () => {
+    const json = {
+      ...FILE,
+      formatVersion: 4,
+      icons: {
+        badge: {
+          paths: [{ d: 'M0 0h24v24H0z', stroke: { type: 'radial', stops: STOPS } }],
+        },
+      },
+    };
+    expect(errorsOf(json)).toEqual([
+      'icons.badge.paths[0].stroke: expected true, false or a color (text)',
+    ]);
+  });
+
+  it('the clip takes d and an optional fillRule', () => {
+    for (const clip of [
+      { d: 'M0 0h8v8z' },
+      { d: 'M0 0h8v8z', fillRule: 'evenodd' },
+      { d: 'M0 0h8v8z', fillRule: 'nonzero' },
+    ]) {
+      const result = parseIconsFile(withClip(clip));
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.set.icons.badge?.clip).toEqual(clip);
+    }
+    expect(errorsOf(withClip({}))).toEqual([
+      'icons.badge.clip.d: expected the path data (text)',
+    ]);
+    expect(errorsOf(withClip({ d: 'M0 0h8v8z', fillRule: 'odd' }))).toEqual([
+      'icons.badge.clip.fillRule: expected one of: nonzero, evenodd',
+    ]);
+    expect(errorsOf(withClip('x'))).toEqual(['icons.badge.clip: expected object']);
+  });
+
+  it('a gradient or a clip in a file of formatVersion 1 to 3 is only allowed with formatVersion 4, at the key path', () => {
+    for (const version of [1, 2, 3]) {
+      expect(
+        errorsOf(withFill({ type: 'linear', angle: 0, stops: STOPS }, version)),
+      ).toEqual([`${FILL}: ${V4}`]);
+      expect(errorsOf(withClip({ d: 'M0 0h8v8z' }, version))).toEqual([
+        `icons.badge.clip: ${V4}`,
+      ]);
+    }
+  });
+
+  it('versions 1 to 3 without the new keys validate as before', () => {
+    for (const version of [1, 2, 3]) {
+      expect(parseIconsFile({ ...FILE, formatVersion: version }).ok).toBe(true);
+      expect(parseIconsFile(withFill('#ff0000', version)).ok).toBe(true);
+      expect(parseIconsFile(withFill(true, version)).ok).toBe(true);
+    }
+  });
+
+  it('the messages carry their code and the pt-BR text', () => {
+    const issueOf = (json: unknown) => {
+      const result = parseIconsFile(json);
+      if (result.ok) throw new Error('expected an error');
+      return result.issues[0];
+    };
+    const old = issueOf(withFill({ type: 'linear', angle: 0, stops: STOPS }, 3));
+    expect(old?.code).toBe('iconsFile.v4Only');
+    const text = (issue: typeof old) =>
+      ptBRText(modelMessage(issue?.code ?? 'iconsFile.v4Only', issue?.params ?? {}, ''));
+    // portuguese-guard:begin the object of the test is the pt-BR rendering of the model message
+    expect(text(old)).toBe('só é permitido com formatVersion 4');
+    const both = issueOf(
+      withFill({ type: 'linear', angle: 0, from: [0, 0], to: [1, 1], stops: STOPS }),
+    );
+    expect(both?.code).toBe('iconsFile.angleOrFromTo');
+    expect(text(both)).toBe('use angle ou from e to, não os dois');
+    const neither = issueOf(withFill({ type: 'linear', stops: STOPS }));
+    expect(neither?.code).toBe('iconsFile.expectedAngleOrFromTo');
+    expect(text(neither)).toBe('esperava angle ou from e to');
+    const point = issueOf(
+      withFill({ type: 'linear', from: [0], to: [1, 1], stops: STOPS }),
+    );
+    expect(point?.code).toBe('iconsFile.expectedPoint');
+    expect(text(point)).toBe('esperava dois números finitos');
+    // a text shared with the component keeps the component's code and its pt-BR text
+    const stops = issueOf(withFill({ type: 'linear', angle: 0, stops: [STOPS[0]] }));
+    expect(stops?.code).toBe('component.expectedTwoStops');
+    expect(text(stops)).toBe('esperava ao menos 2 paradas');
+    // portuguese-guard:end
+  });
+
+  it('a stop color that is not a color of the format is a warning at its path, with the code', () => {
+    const result = parseIconsFile(
+      withFill({
+        type: 'linear',
+        angle: 0,
+        stops: [
+          { offset: 0, color: 'banana' },
+          { offset: 1, color: '#0000ff' },
+        ],
+      }),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.warnings.map((w) => `${w.path}: ${w.message}`)).toEqual([
+      `${FILL}.stops[0].color: not a color of the format: "banana" (use #rrggbb, rgb(), hsl(), transparent or none)`,
+    ]);
+    expect(result.warnings[0]?.code).toBe('iconsFile.colorUnknown');
   });
 });
 

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { componentPaths, loadSpecComponents } from '../../src/model/componentCatalog';
 import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
+import { walk, type GroupNode, type PathNode } from '../../src/model/components/scene';
 import { loadLibrary, withHostTokens } from '../../src/model/components/library';
 import { validateLibrary, type LibraryFile } from '../../src/model/library';
 import { usesPackageFiles } from '../../src/model/libraryPackage';
@@ -182,5 +183,101 @@ describe('catalog and library load the icon set', () => {
   it('the package that declares icons is a file package', () => {
     expect(usesPackageFiles(spec)).toBe(true);
     expect(usesPackageFiles({ ...spec, icons: undefined, layers: [] })).toBe(false);
+  });
+});
+
+// Icons file formatVersion 4 (stage #2829, LG2): the gradient `fill` and the `clip` go through the
+// library validator and the catalog; the gradient reaches the scene as a paint the renderers already draw, the clip as a `clipPath` (drawn from LG3).
+describe('icons file formatVersion 4 in the package', () => {
+  const GRADIENT = {
+    type: 'linear',
+    from: [0, 0],
+    to: [10, 0],
+    stops: [
+      { offset: 0, color: '#ff0000' },
+      { offset: 1, color: '#0000ff' },
+    ],
+  };
+
+  /** The package's icons file as version 4, the `dot` path with a gradient fill and the icon with a clip. */
+  function v4Set(version = 4): string {
+    const json = JSON.parse(read('icons/set.json')) as {
+      formatVersion: number;
+      icons: { dot: { clip?: unknown; paths: Record<string, unknown>[] } };
+    };
+    json.formatVersion = version;
+    json.icons.dot.paths[0]!.fill = GRADIENT;
+    json.icons.dot.clip = { d: 'M0 0h10v5H0z', fillRule: 'evenodd' };
+    return JSON.stringify(json);
+  }
+
+  it('the package passes with no errors or warnings, and the drawing proof draws the gradient icon', () => {
+    const comp = edit('components/badge.json', ['preview', 'icon'], 'dot');
+    const report = validateLibrary({
+      files: pack({ 'icons/set.json': v4Set(), 'components/badge.json': comp }),
+    });
+    expect(brief(report.issues)).toEqual([]);
+  });
+
+  it('a gradient or clip in a formatVersion 3 file is refused at the key path', () => {
+    const report = validateLibrary({ files: pack({ 'icons/set.json': v4Set(3) }) });
+    expect(brief(report.errors)).toEqual([
+      'error icons/set.json icons.dot.clip: only allowed with formatVersion 4',
+      'error icons/set.json icons.dot.paths[0].fill: only allowed with formatVersion 4',
+    ]);
+  });
+
+  it('formatVersion 5 is refused with the version message', () => {
+    const report = validateLibrary({ files: pack({ 'icons/set.json': v4Set(5) }) });
+    expect(brief(report.errors)).toContain(
+      'error icons/set.json formatVersion: must be 1, 2, 3 or 4',
+    );
+  });
+
+  it('a stop color outside the format is a warning at its path, not an error', () => {
+    const json = JSON.parse(v4Set()) as {
+      icons: { dot: { paths: { fill: { stops: { color: string }[] } }[] } };
+    };
+    json.icons.dot.paths[0]!.fill.stops[0]!.color = 'banana';
+    const report = validateLibrary({
+      files: pack({ 'icons/set.json': JSON.stringify(json) }),
+    });
+    expect(report.errors).toEqual([]);
+    expect(brief(report.warnings)).toEqual([
+      'warning icons/set.json icons.dot.paths[0].fill.stops[0].color: not a color of the format: "banana" (use #rrggbb, rgb(), hsl(), transparent or none)',
+    ]);
+  });
+
+  it('the catalog draws the package icon with the gradient paint and the clip, in viewBox units', () => {
+    const parsed = parseSpecText(read(SPEC));
+    if (!parsed.ok) throw new Error('invalid spec');
+    const files: Record<string, string> = {
+      ...Object.fromEntries(PATHS.map((path) => [path, read(path)])),
+      'icons/set.json': v4Set(),
+    };
+    const loaded = loadSpecComponents(parsed.spec, SPEC, 1, (path) => files[path]);
+    expect(loaded.problems).toEqual([]);
+    const component = loaded.byType.get('badge');
+    if (component === undefined) throw new Error('no component');
+    const { root } = instantiate(
+      component,
+      { icon: 'dot', tint: '#0a7' },
+      { x: 0, y: 0, width: 48, height: 48 },
+      { measure: approximateMeasurer },
+    );
+    const nodes = [...walk(root)];
+    const path = nodes.find((n): n is PathNode => n.type === 'path');
+    expect(path?.fills).toEqual([
+      {
+        type: 'linear',
+        start: { x: 0, y: 0 },
+        end: { x: 10, y: 0 },
+        stops: GRADIENT.stops,
+      },
+    ]);
+    const group = nodes.find(
+      (n): n is GroupNode => n.type === 'group' && n.clipPath !== undefined,
+    );
+    expect(group?.clipPath).toMatchObject({ d: 'M0 0h10v5H0z', fillRule: 'evenodd' });
   });
 });

@@ -159,7 +159,7 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 ### `examples/libraries/library-gaps/`
 
-**What it is.** The example of the **library format gaps** stage (#2829): one type per gap it closes, added phase by phase (the specialization goes up to the version each type needs). Today it has one type, **HSL swatch** (`hsl-swatch`, 96 × 48, no fields).
+**What it is.** The example of the **library format gaps** stage (#2829): one type per gap it closes, added phase by phase (the specialization goes up to the version each type needs). Today it has two types: **HSL swatch** (`hsl-swatch`, 96 × 48, no fields) and **Brand badge** (`brand-badge`, 48 × 48, one field `tint`, default `#FFFFFF`; the `brand` icon of `icons/icons.json`, `formatVersion` 4, with a gradient and a clip). The specialization is `formatVersion` 15.
 
 **How to open.** **Specializations** › **Apply folder…** and pick the folder; mark an HSL swatch. With the MCP server, apply the folder to a project and call `render_marking` on it.
 
@@ -168,6 +168,8 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 - The frame is `hsl(210, 100%, 50%)` (`#0080FF`), the right square `hsla(0, 100%, 50%, 0.5)` (about `#804080` over the frame) and the left one is white with a `hsl(120, 100%, 25%)` stroke (`#008000`, 4 wide, inside).
 - The app and the MCP PNG paint the same colors: the PNG reads colors with the model's one reader, which understands `hsl()` and `hsla()`.
 - The package validates with no error and no warning: `hsl()` is a color of the format. A literal such as `red` would be the warning `component.colorUnknown`.
+- The Brand badge icon has a linear gradient `fill` from `[0, 0]` to `[24, 0]` (red to blue), a radial gradient in the middle and a `clip`; the clip is a circle of radius 12 at the center, as the file says. A node `color` does not tint the gradient paths.
+- The icons file is `formatVersion` 4: the gradient `fill` and the `clip` are only allowed there (`only allowed with formatVersion 4` below it).
 
 **Scripts.** Added with the stage's script (the last phase).
 

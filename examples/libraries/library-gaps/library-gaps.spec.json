@@ -1,10 +1,11 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 4,
+  "formatVersion": 15,
   "id": "library-gaps",
   "name": "Library gaps",
   "version": 1,
-  "description": "One type per format gap that the library-gaps stage closed. The Swatch (`hsl-swatch`) writes its colors with hsl() and hsla(): the MCP PNG paints them like the app.",
+  "description": "One type per format gap that the library-gaps stage closed. The Swatch (`hsl-swatch`) writes its colors with hsl() and hsla(): the MCP PNG paints them like the app. The Brand badge (`brand-badge`) uses an icon with a gradient fill and a clip (icons file `formatVersion` 4).",
+  "icons": "icons/icons.json",
   "layers": [
     {
       "id": "gaps",
@@ -17,7 +18,31 @@
           "component": "components/hsl-swatch.json",
           "doc": "docs/hsl-swatch.md",
           "fields": [],
-          "examples": [{ "name": "Default", "values": {} }]
+          "examples": [
+            {
+              "name": "Default",
+              "values": {}
+            }
+          ]
+        },
+        {
+          "id": "brand-badge",
+          "name": "Brand badge",
+          "component": "components/brand-badge.json",
+          "doc": "docs/brand-badge.md",
+          "fields": [
+            {
+              "key": "tint",
+              "type": "string",
+              "default": "#FFFFFF"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Default",
+              "values": {}
+            }
+          ]
         }
       ]
     }
