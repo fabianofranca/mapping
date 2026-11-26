@@ -24,6 +24,15 @@ const FIXTURE = JSON.parse(
 
 const TOLERANCE = 0.5;
 
+// Chromium on Linux hints glyph advances to whole pixels depending on the machine's fontconfig (the CI runner does,
+// a container may not); the server measures the unhinted advances, so the comparison fixes the hinting off.
+test.use({
+  launchOptions: {
+    executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined,
+    args: ['--font-render-hinting=none'],
+  },
+});
+
 // The app's measurer and the registration of the faces, on a blank page (as `textMetrics.spec.ts` does).
 const ENTRY = `
 import { konvaMeasurer } from './src/canvas/components/konvaMeasurer';
