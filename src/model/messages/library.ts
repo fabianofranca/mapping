@@ -44,6 +44,8 @@ export const libraryMessages = {
   'library.containerFieldUnknown': 'field does not exist: $container.{name}',
   'library.fieldUnused':
     'the field "{key}" of the type "{typeId}" is not used by the drawing of the component {path}',
+  'library.codeOnlyDrawn':
+    'the field "{key}" of the type "{typeId}" is marked codeOnly but the drawing of the component {path} uses it',
   'library.previewNoField': 'the type "{typeId}" has no field "{key}"',
   'library.previewNotTable':
     '"{key}" is not a table of the type "{typeId}"; its preview must be a simple value',

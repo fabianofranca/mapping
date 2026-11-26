@@ -39,10 +39,11 @@ function parsed(input: unknown): Spec {
 }
 
 describe('formatVersion 9: variants', () => {
-  it('the current version is 23 and v1 to v9 are still accepted, with or without code', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(23);
+  it('the current version is 24 and v1 to v9 are still accepted, with or without code', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(24);
     expect(SPEC_FORMAT_VERSIONS).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+      24,
     ]);
     const plain = (formatVersion: number): Json => ({
       format: 'mapping-spec',
@@ -63,6 +64,7 @@ describe('formatVersion 9: variants', () => {
     });
     for (const v of [
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+      24,
     ]) {
       const input: Json = plain(v);
       if (v >= 2) {

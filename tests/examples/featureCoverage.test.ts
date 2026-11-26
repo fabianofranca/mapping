@@ -41,6 +41,8 @@ const EXCEPTIONS: Record<string, string> = {
     'type removed in stage 9; the parser accepts it only to ignore it and warn',
   'spec:layers[].annotationTypes[].fields[].columns[].type=table':
     'the schema declares the column with the shape of the field, but a column of a column does not exist',
+  'spec:layers[].annotationTypes[].fields[].columns[].codeOnly':
+    'the schema declares the column with the shape of the field, but codeOnly is only valid on a top-level field (a column refuses it)',
   'spec:layers[].annotationTypes[].accessibility.parts[].touchTarget':
     'a part has no touch target: the key is accepted by the shape only to be rejected at its exact path',
   'spec:fonts[].style':

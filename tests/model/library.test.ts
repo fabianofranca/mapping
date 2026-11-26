@@ -570,6 +570,78 @@ describe('validateLibrary: level 2 (consistency across files)', () => {
     }
   });
 
+  describe('codeOnly (specialization formatVersion 24)', () => {
+    const fieldsAt = ['layers', 0, 'annotationTypes', 0, 'fields'] as const;
+    /** The mini package at 24: from 22 on `origins` and a `system` + `file` example are gone (plain sources). */
+    const v24 = (files: LibraryFile[]): LibraryFile[] => {
+      let out = patch(files, SPEC, ['formatVersion'], 24);
+      out = patch(out, SPEC, ['origins'], undefined);
+      return patch(
+        out,
+        SPEC,
+        [...TYPE0, 'examples'],
+        [
+          { name: 'Primary', values: { label: 'Save', variant: 'primary' } },
+          { name: 'Text', values: { label: 'Cancel', variant: 'text' } },
+        ],
+      );
+    };
+    const withMask = (
+      codeOnly: boolean | undefined,
+      extra: Record<string, unknown> = {},
+    ) => {
+      const base = miniPackage();
+      const type = (
+        JSON.parse(base[0]?.text ?? '{}') as {
+          layers: { annotationTypes: { fields: unknown[] }[] }[];
+        }
+      ).layers[0]?.annotationTypes[0];
+      const mask = {
+        key: 'mask',
+        type: 'string',
+        ...(codeOnly === undefined ? {} : { codeOnly }),
+        ...extra,
+      };
+      return v24(patch(base, SPEC, [...fieldsAt], [...(type?.fields ?? []), mask]));
+    };
+    const unusedKeys = (files: readonly LibraryFile[]) =>
+      validate(files)
+        .warnings.filter((w) => w.code === 'library.fieldUnused')
+        .map((w) => w.message.match(/the field "(\w+)"/)?.[1]);
+
+    it('a codeOnly field that the drawing does not use gives no library.fieldUnused', () => {
+      const report = validate(withMask(true));
+      expect(report.errors).toEqual([]);
+      expect(unusedKeys(withMask(true))).not.toContain('mask');
+      expect(report.warnings.map((w) => w.code)).not.toContain('library.codeOnlyDrawn');
+    });
+
+    it('the same field without codeOnly still warns', () => {
+      expect(unusedKeys(withMask(undefined))).toContain('mask');
+      expect(unusedKeys(withMask(false))).toContain('mask');
+    });
+
+    it('a codeOnly field that the drawing uses gives library.codeOnlyDrawn, with the exact text', () => {
+      // `label` is drawn by the component.
+      const files = patch(v24(miniPackage()), SPEC, [...fieldsAt, 0, 'codeOnly'], true);
+      const report = validate(files);
+      expect(report.errors).toEqual([]);
+      expect(report.warnings.map(brief)).toContainEqual([
+        'warning',
+        SPEC,
+        'layers[0].annotationTypes[0].fields[0]',
+        'the field "label" of the type "mini-button" is marked codeOnly but the drawing of the component components/mini-button.json uses it',
+      ]);
+      expect(
+        report.warnings.find((w) => w.code === 'library.codeOnlyDrawn')?.params,
+      ).toEqual({
+        key: 'label',
+        typeId: 'mini-button',
+        path: 'components/mini-button.json',
+      });
+    });
+  });
+
   it('declared slot that does not exist in the component (and component without a slot)', () => {
     const wrongName = patch(
       miniPackage(),

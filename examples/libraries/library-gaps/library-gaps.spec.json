@@ -1,10 +1,10 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 15,
+  "formatVersion": 24,
   "id": "library-gaps",
   "name": "Library gaps",
   "version": 1,
-  "description": "One type per format gap that the library-gaps stage closed. The Swatch (`hsl-swatch`) writes its colors with hsl() and hsla(): the MCP PNG paints them like the app. The Brand badge (`brand-badge`) uses an icon with a gradient fill and a clip (icons file `formatVersion` 4).",
+  "description": "One type per format gap that the library-gaps stage closed. The Swatch (`hsl-swatch`) writes its colors with hsl() and hsla(): the MCP PNG paints them like the app. The Brand badge (`brand-badge`) uses an icon with a gradient fill and a clip (icons file `formatVersion` 4). The Masked field (`masked-field`) has two `codeOnly` fields, `mask` and `keyboard`, that the drawing does not use and the validator does not flag.",
   "icons": "icons/icons.json",
   "layers": [
     {
@@ -35,6 +35,40 @@
               "key": "tint",
               "type": "string",
               "default": "#FFFFFF"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Default",
+              "values": {}
+            }
+          ]
+        },
+        {
+          "id": "masked-field",
+          "name": "Masked field",
+          "component": "components/masked-field.json",
+          "doc": "docs/masked-field.md",
+          "labelField": "label",
+          "fields": [
+            {
+              "key": "label",
+              "type": "string",
+              "default": "Phone"
+            },
+            {
+              "key": "mask",
+              "type": "string",
+              "codeOnly": true,
+              "description": "The input mask the code applies, such as (##) #####-####."
+            },
+            {
+              "key": "keyboard",
+              "type": "enum",
+              "options": ["text", "number", "phone", "email"],
+              "default": "text",
+              "codeOnly": true,
+              "description": "The keyboard type the code asks for."
             }
           ],
           "examples": [

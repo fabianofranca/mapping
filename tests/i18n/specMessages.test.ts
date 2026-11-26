@@ -264,6 +264,19 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
         { key: 'tb', type: 'table', columns: [{ key: 'c', type: 'table' }] },
       ]),
   ],
+  [
+    'spec.codeOnlyColumn',
+    (s) => (
+      (s.formatVersion = 24),
+      (type(s).fields = [
+        {
+          key: 'tb',
+          type: 'table',
+          columns: [{ key: 'c', type: 'string', codeOnly: true }],
+        },
+      ])
+    ),
+  ],
   ['spec.optionsRequired', (s) => (type(s).fields = [{ key: 'e', type: 'enum' }])],
   [
     'spec.optionsBlank',
