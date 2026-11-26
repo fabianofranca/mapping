@@ -1,4 +1,4 @@
-# Growth calibration — [Não lançado] (epic `epic/growth-calibration`)
+# Growth calibration — [Não lançado] (épico `epic/growth-calibration`)
 
 ## Pendências
 

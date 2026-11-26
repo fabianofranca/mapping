@@ -1,6 +1,6 @@
 # Growth calibration — [Não lançado] (epic `epic/growth-calibration`)
 
-MCP sem mudança. Schema v23.
+MCP unchanged. Schema v23.
 
 ## Corrigido
 
