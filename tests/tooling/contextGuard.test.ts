@@ -969,7 +969,13 @@ describe('CX2 — the notice above 300 thousand hands over even with the last PR
     expect(text).toContain(
       "above the ceiling of 300 thousand: hand over now even with the phase's last PR open (not in session 5 of 5)",
     );
-    expect(text).not.toContain('carry on');
+    expect(text).not.toContain(
+      "With the phase's last PR open, or in session 5 of 5, carry on.",
+    );
+    // session 5 of 5 never hands over: the no-new-work line does not apply to it
+    expect(text).toContain(
+      'In session 5 of 5, carry on to the end and ignore the line about no new work.',
+    );
     expect(text).toContain('with <n> = 310');
     expect(text).toContain('`PR aberto:`');
   });

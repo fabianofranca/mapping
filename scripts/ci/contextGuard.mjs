@@ -541,7 +541,8 @@ export function warningText(contexto, jumps) {
     ? `You are above the ceiling of ${TETO_MIL} thousand: hand over now even with the phase's last PR open (not in session 5 of 5), ` +
       `steps 1 to 5 of the handover, with <n> = ${mil}; with the PR open the handoff carries the line \`PR aberto:\` ` +
       `and the request ends with \`; PR aberto: <link do PR>.\`. ` +
-      `Start no new gate run, \`/code-review\`, e2e or subagent. `
+      `Start no new gate run, \`/code-review\`, e2e or subagent. ` +
+      `In session 5 of 5, carry on to the end and ignore the line about no new work. `
     : `If this is not session 5 of 5 and the phase's last PR is not open, ` +
       `hand over now (steps 1 to 5 of the handover), with <n> = ${mil}; ` +
       `a phase that opens several PRs hands over between a merged PR and the next one. ` +

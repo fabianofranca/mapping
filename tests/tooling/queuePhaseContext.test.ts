@@ -627,8 +627,34 @@ describe('CX2 — the phase hands over above 300 thousand with its PR open (deci
     );
   });
 
+  it('review: the no-new-work rule binds only the phase that hands over; one that carries on keeps working to the merge', () => {
+    const rule = between(
+      ceiling,
+      '**No new work after the notice:**',
+      'Above the trigger of 270 thousand',
+    );
+    expect(rule).toContain('applies to the phase that hands over');
+    expect(rule).toContain(
+      'A phase that carries on (its last PR open up to 300 thousand, or the `5 de 5` session) keeps its gates, subagents and CI fixes until the merge',
+    );
+  });
+
+  it('review: the `PR aberto:` line reads the CI after the push of step 2', () => {
+    const step3 = between(handoverSteps, '     3. ', '     4. ');
+    expect(step3).toContain('read after the push of step 2, on the head of the branch');
+  });
+
+  it('review: the skill hourly check skips a phase whose PR is already merged', () => {
+    const check = between(
+      perStage,
+      '- **Phase above 300 thousand:**',
+      '- Then check whether the skill changed',
+    );
+    expect(check).toContain('whose PR is not merged yet');
+  });
+
   it('decision 6: from the hook notice on, no new gate run, /code-review, e2e or subagent', () => {
-    expect(ceiling).toContain('From the hook notice on, the phase starts no new work');
+    expect(ceiling).toContain('From the hook notice on, it starts no new work');
     expect(ceiling).toContain('no new gate run, `/code-review`, e2e or subagent');
     expect(ceiling).toContain('waits only for the subagents already running');
     expect(ceiling).toContain(
