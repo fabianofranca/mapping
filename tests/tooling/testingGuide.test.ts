@@ -503,8 +503,8 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(r16).toContain('OutlinedButton');
     });
 
-    it('the cloud prompt lists the scripts up to R47', () => {
-      expect(prompt).toContain('R0 to R47');
+    it('the cloud prompt lists the scripts up to R48', () => {
+      expect(prompt).toContain('R0 to R48');
     });
   });
 
@@ -572,8 +572,8 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(r17).toContain('Apply zip…');
     });
 
-    it('the cloud prompt lists the scripts up to R47', () => {
-      expect(prompt).toContain('R0 to R47');
+    it('the cloud prompt lists the scripts up to R48', () => {
+      expect(prompt).toContain('R0 to R48');
     });
   });
 
@@ -648,12 +648,12 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(JSON.parse(block)).toEqual(JSON.parse(fixture));
     });
 
-    it('the cloud prompt lists the scripts up to R47', () => {
-      expect(prompt).toContain('R0 to R47');
+    it('the cloud prompt lists the scripts up to R48', () => {
+      expect(prompt).toContain('R0 to R48');
     });
 
-    it('the full-round order enumeration ends at R47, like the heading', () => {
-      expect(prompt).toContain('R5, R8 and R9 to R47.');
+    it('the full-round order enumeration ends at R48, like the heading', () => {
+      expect(prompt).toContain('R5, R8 and R9 to R48.');
       expect(prompt).not.toContain('R9 to R27');
     });
   });

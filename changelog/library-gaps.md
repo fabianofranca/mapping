@@ -16,6 +16,7 @@
 - `examples/libraries/library-gaps`: the specialization is now `version` 3, with `remove-field brand-badge.tint` (1 → 2) and `add-field brand-badge.tint` (2 → 3).
 - Component `formatVersion` 4: a root `weight` (a number greater than 0 or an expression; `{ "weight": { "$field": "weight" } }`). Arrange and `layoutScreen` give a child marking with a root `weight` a share of the free main-axis space of its `row`/`column` slot, in proportion to the weights and with the same freezing at the `minSize`/limits; the child without one keeps its size (`sizing` `fill` alone still does not grow in Arrange). An empty or invalid value means no weight (`invalid value in weight: <value>` for a value that is not a number greater than 0). The root `weight` of a file below `formatVersion` 4 is `only allowed with formatVersion 4`. A hug parent counts the weighted children's floors, `fit_marking` and the app's fit leave the weighted axis alone, and the field a root `weight` cites counts as used (`library.fieldUnused`) or undeclared (`library.fieldUndeclared`, at `weight`). One undo entry per Arrange. The specialization `formatVersion` does not change.
 - `examples/libraries/library-gaps`: the `expand-row` and `expand-item` types (the item's root `weight` comes from its `weight` field, with no default).
+- `docs/TESTING.md`, R48 "Library format gaps (hsl, icon gradient and clip, codeOnly, add-field, weight)": the new test script of the stage (12 steps over `examples/libraries/library-gaps/`: validator, app, MCP PNG, Arrange of `weight`, `plan_library_update`), in block 6 of the full round (143 steps).
 
 ## Alterado
 
@@ -26,4 +27,5 @@
 
 ## Corrigido
 
+- The MCP PNG (`render_container`, `render_marking`, `get_marking_image`) now paints `hsl()` and `hsla()` colors; before, they were left out while the app drew them (#2829).
 - A fully transparent shadow written with `hsla()` or the space/slash syntax (`hsla(0,0%,0%,0)`, `rgb(0 0 0 / 0)`) is no longer treated as visible in the app's canvas: `isInvisibleShadow` delegates to `parseFormatColor`.
