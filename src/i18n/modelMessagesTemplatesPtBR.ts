@@ -44,6 +44,8 @@ export const templatePtBR: {
   'model.library.containerFieldUnknown': 'campo não existe: $container.{name}',
   'model.library.fieldUnused':
     'o campo "{key}" do tipo "{typeId}" não é usado pelo desenho do componente {path}',
+  'model.library.codeOnlyDrawn':
+    'o campo "{key}" do tipo "{typeId}" está marcado como codeOnly, mas o desenho do componente {path} o usa',
   'model.library.previewNoField': 'o tipo "{typeId}" não tem o campo "{key}"',
   'model.library.previewNotTable':
     '"{key}" não é uma table do tipo "{typeId}"; o preview dele deve ser um valor simples',
@@ -212,6 +214,7 @@ export const templatePtBR: {
     'o token "{name}" do grupo "{group}" não é texto fixo',
   'model.spec.columnTypeNotAllowed':
     '"{type}" não é permitido dentro de table; use "string", "number", "date", "enum" ou "ref"',
+  'model.spec.codeOnlyColumn': 'só é válido em um campo, não em uma coluna de table',
   'model.spec.optionsRequired': 'obrigatório e não vazio em enum',
   'model.spec.optionsBlank': 'opções não podem ser vazias',
   'model.spec.optionsRepeated': 'opções repetidas',

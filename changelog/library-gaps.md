@@ -10,6 +10,8 @@
 - `examples/libraries/library-gaps`: the `brand-badge` type (a gradient and a clip in the icon; the specialization is `formatVersion` 15).
 
 - The icon `clip` is drawn: the app and the viewer clip the icon's paths with the path, its fill rule and the `viewBox` matrix (mirrored in `rtl`), and the MCP PNG paints the group through the mask of the flattened path (several subpaths, `nonzero` or `evenodd`). The `brand-badge` icon now shows the corners outside the circle without paint and the same ramp in the app, the viewer and the PNG. `mapping-viewer` 0.11.0.
+- Specialization `formatVersion` 24: `codeOnly: true` on a top-level field marks a deliberately non-visual property. `library.fieldUnused` is not emitted for it, and `library.codeOnlyDrawn` warns when the drawing uses it anyway. Before 24 the key is `only allowed with formatVersion 24`; on a `table` column it is `only valid on a field, not on a table column`. Versions 1 to 23 behave as before and adding or removing `codeOnly` is additive in the version contract.
+- `examples/libraries/library-gaps`: the `masked-field` type (`label` drawn; `mask` and `keyboard` are `codeOnly`, with no `code` entry); the specialization is now `formatVersion` 24.
 
 ## Alterado
 

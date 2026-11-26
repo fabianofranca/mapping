@@ -78,7 +78,7 @@ function onlyUpTo(version: number): SpecMsg {
 /** The first `formatVersion` where `sources` are plain data and `origins` is refused. */
 const PLAIN_SOURCES_VERSION = 22;
 
-// Specialization format (`formatVersion` 1 to 23), see docs/SPEC-FORMAT.md. Version 2 adds
+// Specialization format (`formatVersion` 1 to 24), see docs/SPEC-FORMAT.md. Version 2 adds
 // `platforms` and `code`; version 1 is 2 without platforms and without `code`; version 3 is 2 plus
 // `sources` (external origins on types and fields, including `table` columns); version 4 is 3
 // plus the library: the package (the specialization's folder) with `component`, `doc` and
@@ -128,7 +128,9 @@ const PLAIN_SOURCES_VERSION = 22;
 // stand for any `system`, with no tie to `origins` (the plugins read them; the core checks the shape);
 // version 23 is 22 plus named values in `tokens` (stage #1900): `axes` (several mode axes), aliases
 // (`{ "$token": … }`), composite values, per-axis values (`{ "$axis": … }`) and the `{ "$value": … }`
-// metadata wrapper, outside the version contract too (see `specTokens.ts`).
+// metadata wrapper, outside the version contract too (see `specTokens.ts`); version 24 is 23 plus
+// `codeOnly: true` on a top-level field (stage #2829: a deliberately non-visual property, which
+// silences the library validator's `library.fieldUnused`), additive in the version contract.
 // The zod here is the source of truth; `docs/spec.schema.json` mirrors it for those who do not
 // use TypeScript. No browser APIs: reusable by the MCP server.
 //
@@ -141,10 +143,10 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Value used before the product rename: import still accepts it. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Current format version (the one that the documentation and new examples use). */
-export const SPEC_FORMAT_VERSION = 23;
+export const SPEC_FORMAT_VERSION = 24;
 /** Versions accepted on import. */
 export const SPEC_FORMAT_VERSIONS = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
 ] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
@@ -383,6 +385,11 @@ interface SpecFieldBase {
   tags?: string[];
   /** Origin properties (`formatVersion` 3 onward). */
   sources?: SpecFieldSource[];
+  /**
+   * A deliberately non-visual property (`formatVersion` 24, top-level fields only): the library
+   * validator does not warn that the drawing leaves it out, and warns if the drawing uses it.
+   */
+  codeOnly?: boolean;
   /** Notices of the field or column (`formatVersion` 10 only). */
   notices?: SpecNotice[];
 }
@@ -789,6 +796,8 @@ const fieldShape = z
     description: z.string().optional(),
     sources: z.array(fieldSourceShape).optional(),
     notices: noticesShape.optional(),
+    // `formatVersion` 24, top-level fields only (a column is an error, the version a gate in `checkNoCodeOnly`).
+    codeOnly: z.boolean().optional(),
   })
   .strict();
 
@@ -949,6 +958,9 @@ function checkField(
     }
   });
 
+  if (column && field.codeOnly !== undefined) {
+    add('codeOnly', specMsg('spec.codeOnlyColumn'));
+  }
   if (type === 'table' && column) return;
   if (column && field.tags !== undefined) {
     add('tags', 'columns have no tags; use "tags" on the table');
@@ -1594,6 +1606,27 @@ function checkNoStructural(
         ['layers', li, 'annotationTypes', ti, 'structural'],
         onlyFormat(15),
       );
+    });
+  });
+}
+
+/** Before v24, `codeOnly` on a top-level field is an error at the exact path (a column has its own error). */
+function checkNoCodeOnly(
+  layers: readonly {
+    annotationTypes: readonly { fields: readonly { codeOnly?: unknown }[] }[];
+  }[],
+  ctx: z.RefinementCtx,
+): void {
+  layers.forEach((layer, li) => {
+    layer.annotationTypes.forEach((type, ti) => {
+      type.fields.forEach((field, fi) => {
+        if (field.codeOnly === undefined) return;
+        addSpecIssue(
+          ctx,
+          ['layers', li, 'annotationTypes', ti, 'fields', fi, 'codeOnly'],
+          onlyFormat(24),
+        );
+      });
     });
   });
 }
@@ -3280,6 +3313,8 @@ export const specSchema = z
     if (spec.formatVersion < 10) checkNoNotices(spec.layers, ctx);
     // v15: `structural` on the type. Before it, an error at the exact path.
     if (spec.formatVersion < 15) checkNoStructural(spec.layers, ctx);
+    // v24: `codeOnly` on a field. Before it, an error at the exact path.
+    if (spec.formatVersion < 24) checkNoCodeOnly(spec.layers, ctx);
     // v11: clauses, `groups`, roles and external document. Before it, an error at the exact path.
     if (spec.formatVersion < 11) checkNoV11Keys(spec, ctx);
     // v6: `containers`. Before it, an error at the exact path.

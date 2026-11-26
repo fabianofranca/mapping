@@ -62,6 +62,7 @@ export const specMessages = {
   // Fields and columns
   'spec.columnTypeNotAllowed':
     '"{type}" is not allowed inside a table; use "string", "number", "date", "enum" or "ref"',
+  'spec.codeOnlyColumn': 'only valid on a field, not on a table column',
   'spec.optionsRequired': 'required and not empty in an enum',
   'spec.optionsBlank': 'options cannot be empty',
   'spec.optionsRepeated': 'repeated options',

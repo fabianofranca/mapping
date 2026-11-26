@@ -103,6 +103,49 @@ function tokenPackage(children: Raw[]): Files {
   ];
 }
 
+/** A `codeOnly` field (`formatVersion` 24) that the drawing uses anyway: `library.codeOnlyDrawn`. */
+function codeOnlyPackage(): Files {
+  const component = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'co',
+    name: 'Co',
+    size: { width: 100, height: 40 },
+    template: {
+      type: 'frame',
+      children: [
+        { type: 'text', text: { $field: 'mask', default: 'x' }, font: { size: 12 } },
+      ],
+    },
+  };
+  const spec = {
+    format: 'mapping-spec',
+    formatVersion: 24,
+    id: 'co',
+    name: 'Co',
+    version: 1,
+    layers: [
+      {
+        id: 'l',
+        name: 'L',
+        color: '#112233',
+        annotationTypes: [
+          {
+            id: 't',
+            name: 'T',
+            component: 'components/co.json',
+            fields: [{ key: 'mask', type: 'string', codeOnly: true }],
+          },
+        ],
+      },
+    ],
+  };
+  return [
+    { path: 'co.spec.json', text: JSON.stringify(spec) },
+    { path: 'components/co.json', text: JSON.stringify(component) },
+  ];
+}
+
 /** A `hug` component in height with `maxHeight`: the text does not fit even at the adjusted size (MC2). */
 function fittedPackage(): Files {
   const component = {
@@ -158,6 +201,7 @@ function allIssues(): LibraryIssue[] {
     ...validateLibrary({ files: noisy.files, specPath: SPEC, previous: noisy.previous })
       .issues,
     ...validateLibrary({ files: fittedPackage(), specPath: 'ft.spec.json' }).issues,
+    ...validateLibrary({ files: codeOnlyPackage(), specPath: 'co.spec.json' }).issues,
     ...validateLibrary({
       files: tokenPackage([
         { type: 'rect', fill: { $token: 'inexistente' } },
@@ -174,6 +218,7 @@ const EXPECTED_CODES = [
   'library.fileNotFound',
   'library.invalidJson',
   'library.fieldUnused',
+  'library.codeOnlyDrawn',
   'library.tokenMissing',
   'library.tokenWrongKind.color.number',
   'library.fontMissing',

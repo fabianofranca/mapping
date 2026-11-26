@@ -159,7 +159,7 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 ### `examples/libraries/library-gaps/`
 
-**What it is.** The example of the **library format gaps** stage (#2829): one type per gap it closes, added phase by phase (the specialization goes up to the version each type needs). Today it has two types: **HSL swatch** (`hsl-swatch`, 96 × 48, no fields) and **Brand badge** (`brand-badge`, 48 × 48, one field `tint`, default `#FFFFFF`; the `brand` icon of `icons/icons.json`, `formatVersion` 4, with a gradient and a clip). The specialization is `formatVersion` 15.
+**What it is.** The example of the **library format gaps** stage (#2829): one type per gap it closes, added phase by phase (the specialization goes up to the version each type needs). Today it has three types: **HSL swatch** (`hsl-swatch`, 96 × 48, no fields), **Brand badge** (`brand-badge`, 48 × 48, one field `tint`, default `#FFFFFF`; the `brand` icon of `icons/icons.json`, `formatVersion` 4, with a gradient and a clip) and **Masked field** (`masked-field`, 160 × 40: `label` is drawn; `mask` and `keyboard` are `codeOnly`, with no `code` entry). The specialization is `formatVersion` 24.
 
 **How to open.** **Specializations** › **Apply folder…** and pick the folder; mark an HSL swatch. With the MCP server, apply the folder to a project and call `render_marking` on it.
 
@@ -170,6 +170,7 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 - The package validates with no error and no warning: `hsl()` is a color of the format. A literal such as `red` would be the warning `component.colorUnknown`.
 - The Brand badge icon has a linear gradient `fill` from `[0, 0]` to `[24, 0]` (red to blue), a radial gradient in the middle and a `clip`; the clip is a circle of radius 12 at the center, as the file says. A node `color` does not tint the gradient paths.
 - The icons file is `formatVersion` 4: the gradient `fill` and the `clip` are only allowed there (`only allowed with formatVersion 4` below it).
+- The Masked field's `mask` and `keyboard` are not drawn and have no `code` entry, and the package still validates with no warning: `codeOnly: true` (specialization `formatVersion` 24) says they are deliberately non-visual. Remove the key from both and `validate_library` gives two `library.fieldUnused` warnings; add `mask` to the drawing and it gives `library.codeOnlyDrawn`.
 
 **Scripts.** Added with the stage's script (the last phase).
 

@@ -1,5 +1,6 @@
 // Example library `library-gaps` (stage #2829): one type per format gap. LG1: the `hsl-swatch`;
-// LG2: the `brand-badge`, with an icon that has a gradient fill and a clip (icons file formatVersion 4).
+// LG2: the `brand-badge`, with an icon that has a gradient fill and a clip (icons file formatVersion 4);
+// LG4: the `masked-field`, with two `codeOnly` fields (specialization formatVersion 24).
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -67,6 +68,8 @@ describe('example library library-gaps', () => {
         'docs/hsl-swatch.md',
         'components/brand-badge.json',
         'docs/brand-badge.md',
+        'components/masked-field.json',
+        'docs/masked-field.md',
         'icons/icons.json',
       ].sort(),
     );
@@ -77,6 +80,45 @@ describe('example library library-gaps', () => {
     expect(report.errors).toEqual([]);
     expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
+  });
+
+  it('the specialization is at formatVersion 24 and the masked field has two codeOnly fields', () => {
+    const spec = JSON.parse(files.find((f) => f.path === SPEC_FILE)!.text) as {
+      formatVersion: number;
+      layers: { annotationTypes: { id: string; fields: Record<string, unknown>[] }[] }[];
+    };
+    expect(spec.formatVersion).toBe(24);
+    const masked = spec.layers[0]!.annotationTypes.find((t) => t.id === 'masked-field')!;
+    expect(masked.fields.map((f) => [f.key, f.codeOnly])).toEqual([
+      ['label', undefined],
+      ['mask', true],
+      ['keyboard', true],
+    ]);
+    expect(masked).not.toHaveProperty('code');
+  });
+
+  it('without codeOnly the two fieldUnused warnings of the masked field come back', () => {
+    const withoutCodeOnly = (text: string): string =>
+      JSON.stringify(JSON.parse(text), (key, value: unknown) =>
+        key === 'codeOnly' ? undefined : value,
+      );
+    const plain = files.map((f) =>
+      f.path === SPEC_FILE ? { ...f, text: withoutCodeOnly(f.text) } : f,
+    );
+    expect(plain.find((f) => f.path === SPEC_FILE)!.text).not.toContain('"codeOnly"');
+    const report = validateLibrary({ files: plain, specPath: SPEC_FILE });
+    expect(report.errors).toEqual([]);
+    expect(report.warnings.map((w) => [w.code, w.params?.key, w.params?.typeId])).toEqual(
+      [
+        ['library.fieldUnused', 'mask', 'masked-field'],
+        ['library.fieldUnused', 'keyboard', 'masked-field'],
+      ],
+    );
+  });
+
+  it('the masked field draws its label and the scene has no warning', () => {
+    const { warnings } = sceneOf('masked-field');
+    expect(warnings).toEqual([]);
   });
 
   it('the MCP raster of the swatch paints its three hsl() colors', () => {

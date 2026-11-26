@@ -108,10 +108,10 @@ const windowSet = (s: Json): Json => s.containerClasses[1];
 const typeOf = (s: Json, i: number): Json => s.layers[0].annotationTypes[i];
 
 describe('formatVersion 21: version and valid shapes', () => {
-  it('23 is the current version and 21 is still accepted', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(23);
+  it('24 is the current version and 21 is still accepted', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(24);
     expect(SPEC_FORMAT_VERSIONS).toContain(21);
-    expect(SPEC_FORMAT_VERSIONS.at(-1)).toBe(23);
+    expect(SPEC_FORMAT_VERSIONS.at(-1)).toBe(24);
   });
 
   it('a computed set, a chosen set and both together are accepted and read as written', () => {

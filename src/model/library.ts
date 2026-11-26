@@ -1002,14 +1002,18 @@ function typeCoherence(
   const drawn = new Set([...used2, ...innerUsed]);
   const coded = fieldsUsedByCode(type);
   type.fields.forEach((field, index) => {
+    const at = `${base}.fields[${index}]`;
+    const params = { key: field.key, typeId: type.id, path };
+    // `codeOnly` (v24): a deliberately non-visual field. It is not "forgotten", and drawing it is the odd case.
+    if (field.codeOnly === true) {
+      if (drawn.has(field.key))
+        out.warning(pkg.specPath, at, 'library.codeOnlyDrawn', params);
+      return;
+    }
     // A field the drawing does not use but the `code` does (modifiers, accessibility description)
     // is not a forgotten field: it exists for the code.
     if (drawn.has(field.key) || coded.has(field.key)) return;
-    out.warning(pkg.specPath, `${base}.fields[${index}]`, 'library.fieldUnused', {
-      key: field.key,
-      typeId: type.id,
-      path,
-    });
+    out.warning(pkg.specPath, at, 'library.fieldUnused', params);
   });
 }
 
