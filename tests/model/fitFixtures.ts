@@ -262,6 +262,16 @@ export const FIT_COMPONENTS: Record<string, Json> = {
   'fit-row-start': row('fit-row-start', 'start'),
   // Slot with no layout and `hug` height: with children it is neither arranged nor fitted.
   'fit-row-none': row('fit-row-none', 'start', 'none', { height: 'hug' }),
+  // LG6: a row with a weighted child: the weight owns the child's width in the row, the fit leaves it alone.
+  'fit-expand-row': row('fit-expand-row', 'center'),
+  'fit-expand-item': {
+    ...button(
+      'fit-expand-item',
+      { width: 120, height: 40 },
+      { width: 'hug', height: 'hug' },
+    ),
+    weight: 1,
+  },
   // Aligned `none` slot (v4): `justify` stretches the width, `align` the height.
   'fit-none-justify': overlaid('fit-none-justify', 'start', 'stretch'),
   'fit-none-align': overlaid('fit-none-align', 'stretch', 'start'),

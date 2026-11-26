@@ -375,6 +375,18 @@ export function layoutScreen(
     return placed.ok ? placed.id : '';
   };
 
+  /**
+   * The root `sizing` and `weight` of a node. The screen's direction is the effective one of every node (no node
+   * fixes its own); no anchor: the screen has no geometry between the instances (decision 6 of #1893).
+   */
+  const resolveRoot = (component: ComponentFile, node: LayoutNode) => {
+    const sizing = resolveSizing(component, node.values, undefined, { direction });
+    const resolved = resolveWeight(component, node.values, undefined, { direction });
+    for (const m of [...sizing.messages, ...resolved.messages])
+      warn(m.code as ModelMessageTemplateCode, m.params);
+    return { sizing, weight: resolved.weight };
+  };
+
   const prepare = (node: LayoutNode): Prepared | undefined => {
     const component = types.get(node.typeId)?.component;
     if (!component) {
@@ -391,14 +403,7 @@ export function layoutScreen(
         const prepared = prepare(child);
         if (prepared) kidsOf.get(slotOfChild(node, child, ids))?.push(prepared);
       }
-    // The screen's direction is the effective one of every node (no node fixes its own); no anchor: the screen
-    // has no geometry between the instances (decision 6 of #1893).
-    const sizing = resolveSizing(component, node.values, undefined, { direction });
-    for (const m of sizing.messages) warn(m.code as ModelMessageTemplateCode, m.params);
-    const { weight, messages } = resolveWeight(component, node.values, undefined, {
-      direction,
-    });
-    for (const m of messages) warn(m.code as ModelMessageTemplateCode, m.params);
+    const { sizing, weight } = resolveRoot(component, node);
     return {
       node,
       weight,

@@ -48,6 +48,9 @@ const BUTTON = 'dddddddd-0000-4000-8000-000000000001';
 const BUTTON_A = 'eeeeeeee-0000-4000-8000-000000000001';
 const LOCKED = 'dddddddd-0000-4000-8000-000000000002';
 const PLAIN = 'dddddddd-0000-4000-8000-000000000003';
+const EXPAND_ROW = 'dddddddd-0000-4000-8000-000000000004';
+const EXPAND_ITEM = 'dddddddd-0000-4000-8000-000000000005';
+const EXPAND_ITEM_A = 'eeeeeeee-0000-4000-8000-000000000005';
 
 let base: string;
 let roots: Roots;
@@ -83,7 +86,36 @@ function project(): Project {
   p = setFieldValue(p, 'eeeeeeee-0000-4000-8000-000000000002', 'label', LONG_LABEL);
   p = setMarkingLocked(p, LOCKED, true);
   p = add(PLAIN, 'eeeeeeee-0000-4000-8000-000000000003', 'fit-plain', 380, 20);
-  return setFieldValue(p, 'eeeeeeee-0000-4000-8000-000000000003', 'label', LONG_LABEL);
+  p = setFieldValue(p, 'eeeeeeee-0000-4000-8000-000000000003', 'label', LONG_LABEL);
+  // LG6: a weighted `hug` item inside a row slot (the weight owns its width).
+  p = addComponentMarking(
+    p,
+    fitCatalog(),
+    {
+      markingId: EXPAND_ROW,
+      annotationId: 'eeeeeeee-0000-4000-8000-000000000004',
+      containerId: IMAGE,
+      parentId: null,
+      specId: FIT_SPEC_ID,
+      typeId: 'fit-expand-row',
+      rect: { x: 20, y: 100, width: 400, height: 100 },
+    },
+    approximateMeasurer,
+  );
+  return addComponentMarking(
+    p,
+    fitCatalog(),
+    {
+      markingId: EXPAND_ITEM,
+      annotationId: EXPAND_ITEM_A,
+      containerId: IMAGE,
+      parentId: EXPAND_ROW,
+      specId: FIT_SPEC_ID,
+      typeId: 'fit-expand-item',
+      rect: { x: 20, y: 130, width: 120, height: 40 },
+    },
+    approximateMeasurer,
+  );
 }
 
 beforeAll(async () => {
@@ -187,6 +219,35 @@ describe('fit_marking in the batch', () => {
     expect(result.errors).toEqual([]);
     const id = (result.aliases.get('$b') as { id: string }).id;
     expect(rectOf(result, id).height).toBeGreaterThanOrEqual(76);
+  });
+});
+
+describe('fit_marking on a weighted child of a row (LG6, decision 10 of #2829)', () => {
+  it('fits the other axis and keeps the width the weight owns', async () => {
+    const result = await run([relabel(LONG_LABEL, EXPAND_ITEM_A), fit(EXPAND_ITEM)]);
+    expect(result.errors).toEqual([]);
+    const rect = rectOf(result, EXPAND_ITEM);
+    expect(rect.width).toBe(120);
+    expect(rect.height).toBeGreaterThan(40);
+  });
+
+  it('the same item outside a weighted slot fits its width to the label', async () => {
+    const result = await run([
+      {
+        op: 'create_marking',
+        as: '$free',
+        container: IMAGE,
+        rect: { x: 20, y: 250, width: 120, height: 40 },
+        annotation: {
+          type: `${FIT_SPEC_ID}/fit-expand-item`,
+          values: { label: LONG_LABEL },
+        },
+      } as Operation,
+      fit('$free'),
+    ]);
+    expect(result.errors).toEqual([]);
+    const id = (result.aliases.get('$free') as { id: string }).id;
+    expect(rectOf(result, id).width).not.toBe(120);
   });
 });
 
