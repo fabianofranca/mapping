@@ -4,7 +4,10 @@
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
-import { renderScene } from '../../../src/canvas/components/renderScene';
+import {
+  isInvisibleShadow,
+  renderScene,
+} from '../../../src/canvas/components/renderScene';
 import {
   baseNode,
   type SceneNode,
@@ -263,5 +266,33 @@ describe('outline with a gap in Konva (decision 7)', () => {
     };
     const { byId } = renderScene({ root: node, warnings: [] });
     expect(byId.get('o')!.getChildren()[0]).toBeInstanceOf(Konva.Rect);
+  });
+});
+
+describe('isInvisibleShadow reads colors like the model (pending defect of LG1)', () => {
+  const hidden = (color: string): boolean =>
+    isInvisibleShadow({ color, offset: { x: 0, y: 2 }, blur: 4 });
+
+  it.each([
+    'transparent',
+    'none',
+    'rgba(0,0,0,0)',
+    '#00000000',
+    '#0000',
+    'hsla(0,0%,0%,0)',
+    'hsl(0 0% 0% / 0)',
+    'rgb(0 0 0 / 0%)',
+  ])('%s is fully transparent', (color) => {
+    expect(hidden(color)).toBe(true);
+  });
+
+  it.each([
+    '#000000',
+    'rgba(0,0,0,0.5)',
+    'hsla(0,0%,0%,0.4)',
+    'hsl(0 0% 0% / 0.5)',
+    'red',
+  ])('%s is drawn', (color) => {
+    expect(hidden(color)).toBe(false);
   });
 });

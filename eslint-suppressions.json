@@ -151,7 +151,7 @@
   },
   "src/canvas/components/renderScene.ts": {
     "complexity": {
-      "count": 5
+      "count": 4
     }
   },
   "src/canvas/containment.ts": {

@@ -9,7 +9,13 @@
 - A gradient or a `clip` in a `formatVersion` 1 to 3 icons file is `only allowed with formatVersion 4` (`iconsFile.v4Only`), and the version message is now `formatVersion: must be 1, 2, 3 or 4`. `import_icons` keeps the file's version and never writes a gradient or a `clip`.
 - `examples/libraries/library-gaps`: the `brand-badge` type (a gradient and a clip in the icon; the specialization is `formatVersion` 15).
 
+- The icon `clip` is drawn: the app and the viewer clip the icon's paths with the path, its fill rule and the `viewBox` matrix (mirrored in `rtl`), and the MCP PNG paints the group through the mask of the flattened path (several subpaths, `nonzero` or `evenodd`). The `brand-badge` icon now shows the corners outside the circle without paint and the same ramp in the app, the viewer and the PNG. `mapping-viewer` 0.11.0.
+
 ## Alterado
 
 - `docs/TESTING.md`, R27.3: the icons file now uses `formatVersion` 5 to provoke `must be 1, 2, 3 or 4`.
 - `docs/COMPONENT-FORMAT.md`, "Known limits": the `filter.grayscale` line now says what a named color does (the app and the viewer draw it, the PNG does not paint it, the validator warns).
+
+## Corrigido
+
+- A fully transparent shadow written with `hsla()` or the space/slash syntax (`hsla(0,0%,0%,0)`, `rgb(0 0 0 / 0)`) is no longer treated as visible in the app's canvas: `isInvisibleShadow` delegates to `parseFormatColor`.
