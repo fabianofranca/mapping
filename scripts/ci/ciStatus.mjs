@@ -5,9 +5,9 @@
 //     only the most recent run (highest `id`) of each name. `--epico` also requires the `epic` job.
 //     Writes one line: `ci=<green|red|running|none> sha=<7 characters> failed=<names|none> pending=<names|none>`.
 //     Exit code 0 green, 1 red, 3 running, 4 none; 2 on a usage error or an invalid file.
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import process from 'node:process';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 const USAGE = 'Usage: node scripts/ci/ciStatus.mjs --checks <file> [--epico]';
 
@@ -101,6 +101,8 @@ function readRuns(path) {
   for (const run of runs) {
     if (run === null || typeof run !== 'object' || typeof run.name !== 'string')
       throw new Error(`${path}: every check run needs a string "name"`);
+    if (typeof run.id !== 'number' || !Number.isFinite(run.id))
+      throw new Error(`${path}: every check run needs a finite numeric "id"`);
   }
   return runs;
 }
@@ -116,7 +118,17 @@ export function run(argv) {
   return EXIT[state.ci];
 }
 
-if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
+/** True when this file is the entry point; `import.meta.url` is realpath-resolved, `argv[1]` is not. */
+function isEntryPoint() {
+  if (!process.argv[1]) return false;
+  try {
+    return realpathSync(process.argv[1]) === fileURLToPath(import.meta.url);
+  } catch {
+    return false;
+  }
+}
+
+if (isEntryPoint()) {
   try {
     process.exit(run(process.argv.slice(2)));
   } catch (error) {

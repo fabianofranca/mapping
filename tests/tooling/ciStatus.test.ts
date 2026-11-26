@@ -3,9 +3,9 @@
 // runs of the GitHub API, and the flow text that uses it. The unit and the CLI run with fixtures in a
 // temporary folder; the rest is a text test.
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 // @ts-expect-error .mjs module without type declarations
 import { CI_JOBS, ciState } from '../../scripts/ci/ciStatus.mjs';
@@ -227,6 +227,31 @@ describe('CLI', () => {
     }
   });
 
+  it('runs the CLI when started through a symlink', () => {
+    const link = join(dir, 'ciStatus-link.mjs');
+    symlinkSync(resolve('scripts/ci/ciStatus.mjs'), link);
+    const r = spawnSync(
+      process.execPath,
+      [link, '--checks', fixture([...GREEN, run('build', 'failure')])],
+      { encoding: 'utf8' },
+    );
+    expect(r.status).toBe(1);
+    expect(r.stdout.startsWith('ci=red')).toBe(true);
+  });
+
+  it.each([
+    ['without an id', { name: 'check', status: 'completed', conclusion: 'success' }],
+    [
+      'with a string id',
+      { id: '7', name: 'check', status: 'completed', conclusion: 'success' },
+    ],
+  ])('a check run %s: exit 2, message on stderr, empty stdout', (_label, bad) => {
+    const r = cliRuns([...GREEN, bad]);
+    expect(r.code).toBe(2);
+    expect(r.out).toBe('');
+    expect(r.err).toMatch(/"id"/);
+  });
+
   it('usage errors: exit 2 with nothing on stdout', () => {
     const file = fixture(GREEN);
     const cases = [
@@ -287,6 +312,24 @@ describe('docs/FLOW.md: Reading CI', () => {
     expect(reading).toMatch(/other workflows do not count/);
     expect(reading).toMatch(/green of an earlier commit does not count/);
     expect(reading).not.toContain('get_check_runs');
+  });
+
+  it('Reading CI documents sha=none', () => {
+    expect(between(item6, '**Reading CI:**', '\n   - **')).toContain('`sha=none`');
+  });
+
+  it('the transition sub-item names the stdout line and no stale exit range', () => {
+    const transition = between(item6, '   - **Transition (CI script):**', '\n   - **');
+    expect(transition).toMatch(/no `ci=` line on stdout/);
+    expect(transition).not.toContain('outside 0 to 4');
+  });
+
+  it('the stuck sub-item separates ci=none from ci=running', () => {
+    const stuck = between(item6, '   - **Run stuck in the queue:**', '   - **Ceiling of');
+    expect(stuck).toContain('`ci=none`');
+    expect(stuck).toContain('`ci=running`');
+    expect(stuck).toMatch(/non-empty `actions_list`/);
+    expect(stuck).not.toMatch(/read by Reading CI as "CI is still running"/);
   });
 
   it('the transition sub-item keeps get_check_runs for the commit that lacks the script', () => {
