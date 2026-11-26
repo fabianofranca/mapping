@@ -522,7 +522,7 @@ describe('painel.py outliers: the tester apart, per step (stage #2783, decisions
     testedStage(20, 25, 50); // US$ 0.50 per step
     const out = run('outliers', dir);
     expect(out).toContain(
-      '  #20 US$ 4.00 (2 phases, US$ 2.00 per phase) — cause: — US$ 0.00 (group median US$ 0.00); switches 0; above 300k 0; testers 1; retests 0; fixes 0; tester US$ 25.00 (50 steps, US$ 0.50 per step); by step',
+      '  #20 US$ 29.00 (2 phases, US$ 2.00 per phase) — cause: —; switches 0; above 300k 0; testers 1; retests 0; fixes 0; tester US$ 25.00 (50 steps, US$ 0.50 per step); by step',
     );
   });
 
@@ -576,8 +576,29 @@ describe('painel.py outliers: the tester apart, per step (stage #2783, decisions
       'none above the ceiling that ended in the window (1 older above the ceiling)',
     );
     const after = run('outliers', '--encerradas-desde', '2026-11-12T08:00:00Z', dir);
-    expect(after).toContain('#20 US$ 4.00');
+    expect(after).toContain('#20 US$ 29.00');
     expect(after).toContain('; by step');
+  });
+
+  it('the cost per step divides only the testers that have steps (review of #2853)', () => {
+    normalTesters(10);
+    stage(20, [
+      ['fase', 4],
+      ['testador', 40], // a costed tester recorded before the signals existed
+      ['reteste', 0.5],
+    ]);
+    run('sinal', dir, 's_20_2', 'ok=5');
+    const out = run('outliers', dir);
+    expect(out).not.toContain('#20 ');
+  });
+
+  it('with fewer than OUTLIER_MIN_BASE stages with steps the per-step criterion stays silent', () => {
+    normalTesters(10, 3);
+    cheap(13, 1);
+    testedStage(20, 25, 50);
+    const out = run('outliers', dir);
+    expect(out).toContain('tester median — per step, ceiling —');
+    expect(out).not.toContain('#20 ');
   });
 
   it('the texts cite the per-step criterion, `Passos:` and the ranges of long scripts (decisions 15 to 17)', () => {
