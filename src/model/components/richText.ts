@@ -292,6 +292,14 @@ export function dropLastChar(text: string): string {
   return [...text].slice(0, -1).join('');
 }
 
+/** A chip or an inline icon leaves whole, never cut. */
+const isAtomic = (seg: Seg): boolean => seg.chip || seg.inline === true;
+
+/** The run whose font the `…` takes after `tail`: the tail's own, or, for an icon, the text before it. */
+function fontRunOf(tail: Seg, kept: readonly Seg[], ctx: Context): number {
+  return tail.inline ? textRunBefore(kept, ctx) : tail.run;
+}
+
 /** The run the `…` takes its font from when the line ends in an inline icon: the nearest text run before it. */
 function textRunBefore(kept: readonly Seg[], ctx: Context): number {
   for (let i = kept.length - 1; i >= 0; i--) {
@@ -313,10 +321,10 @@ function ellipsize(line: readonly Seg[], ctx: Context, limit: number): Seg[] {
     while (isBlank(kept[kept.length - 1])) kept.pop();
     const tail = kept[kept.length - 1];
     if (tail === undefined) break;
-    run = tail.inline ? textRunBefore(kept, ctx) : tail.run;
+    run = fontRunOf(tail, kept, ctx);
     if (sumWidths(kept) + ctx.textWidth(run, '…') <= limit + EPS) break;
     kept.pop();
-    const shorter = tail.chip || tail.inline ? '' : dropLastChar(tail.text).trimEnd();
+    const shorter = isAtomic(tail) ? '' : dropLastChar(tail.text).trimEnd();
     if (shorter !== '') kept.push(ctx.seg(tail.run, shorter));
   }
   return [...kept, { run, text: '…', width: ctx.textWidth(run, '…'), chip: false }];
