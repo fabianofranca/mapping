@@ -140,7 +140,10 @@ describe('parse of a runs table item', () => {
 
   it('the color and family warnings read the template of the item', () => {
     const raw = component([
-      { field: 'pieces', template: { text: 'a', color: '#12', family: 'Inter, "aberta' } },
+      {
+        field: 'pieces',
+        template: { text: 'a', color: '#12', family: 'Inter, "aberta' },
+      },
     ]);
     const parsed = parseComponent(raw);
     expect(parsed.ok).toBe(true);
