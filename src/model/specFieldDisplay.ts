@@ -54,7 +54,12 @@ export const visibleWhenShape = z
 /** An item of a type's `fieldGroups`. */
 export const fieldGroupShape = z
   .object({
-    id: requiredText.regex(GROUP_ID_RE, 'invalid field group id; use [a-z0-9-]+'),
+    // The pattern already refuses the empty text, so no `.min(1)` (one error, not two).
+    id: z
+      .string({
+        error: (issue) => (issue.input === undefined ? 'required' : 'must be text'),
+      })
+      .regex(GROUP_ID_RE, 'invalid field group id; use [a-z0-9-]+'),
     name: requiredText,
     description: z.string().optional(),
     visibleWhen: visibleWhenShape.optional(),

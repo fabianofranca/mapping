@@ -173,6 +173,16 @@ describe('formatVersion 26: field groups and visibleWhen', () => {
       );
     });
 
+    it('an empty group id gives a single error', () => {
+      const fields = [{ key: 'a', type: 'string', group: '' }];
+      const errors = errorsOf(withFields(fields, [{ id: '', name: 'G' }])).filter((e) =>
+        e.startsWith(`${TYPE}.fieldGroups[0].id: `),
+      );
+      expect(errors).toEqual([
+        `${TYPE}.fieldGroups[0].id: invalid field group id; use [a-z0-9-]+`,
+      ]);
+    });
+
     it('group and visibleWhen on a table column', () => {
       const fields = [
         { key: 'g1', type: 'string', group: 'g' },
