@@ -11,4 +11,4 @@ Nothing was written to the Mapping artifact: the two items above are pending for
 
 ## Ficou sem gravar
 
-The two items under **Pendências**.
+The two DS impact items above.

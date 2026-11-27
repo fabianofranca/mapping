@@ -1,4 +1,4 @@
-# The Page menu and the perspective picker fit in the window — [Não lançado] (épico `epic/page-menu-overflow`, MCP unchanged (0.60.0), schema v24)
+# The Page menu and the perspective picker fit in the window — [Não lançado] (épico `epic/page-menu-overflow`, PR #2901, MCP unchanged, schema v24)
 
 ## Corrigido
 
