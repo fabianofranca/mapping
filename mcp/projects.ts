@@ -284,18 +284,22 @@ async function loadSpecCatalog(
   const cached = catalogCache.get(key);
   if (cached !== undefined) return cached;
   const texts = new Map<string, string>();
-  for (const path of paths) {
+  let complete = true;
+  for (const [i, path] of paths.entries()) {
     try {
       const text = await readText(roots, dir, onDisk(path));
       if (text !== null) texts.set(path, text);
+      else if (stamps[i] !== null) complete = false;
     } catch {
       // Unreadable or too-large file: the type is left without a component (a catalog problem).
+      complete = false;
     }
   }
   const loaded = loadSpecComponents(spec, applied.file, applied.version, (path) =>
     texts.get(path),
   );
-  catalogCache.set(key, loaded);
+  // Only a complete load is kept (#2815): a transient read failure must not stick while the stamps hold.
+  if (complete) catalogCache.set(key, loaded);
   return loaded;
 }
 
