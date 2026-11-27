@@ -12,6 +12,7 @@ import {
 } from './glyphs';
 import { blockTop, lineHeightOf, lineLeft, plainLines, richShift } from './textBars';
 import type { FontBook } from './textMeasurer';
+import type { BidiRun } from './harfbuzz';
 
 // Layout of a scene's text with a real font: the glyph outlines of each line and run
 // (and the chips' background), measured with the same font that draws them.
@@ -111,9 +112,59 @@ function decorationBar(
   return rectPolygon(x, y, width, thickness);
 }
 
+/** A piece of a justified line: a word, its offsets in the line, its `x` and the direction of the run it sits in. */
+export interface JustifiedPiece {
+  readonly start: number;
+  readonly end: number;
+  readonly x: number;
+  readonly rtl: boolean;
+}
+
 /**
- * Justified line (like Konva): the space left up to the node's width is split equally
- * among the line's spaces; the words keep their size.
+ * The words of one directional run, in the order they read on the screen: a right-to-left run goes from right to left,
+ * so its words are taken in reverse logical order. An empty word (two spaces in a row) stays: it still counts its space.
+ */
+function runWords(line: string, run: BidiRun): { start: number; end: number }[] {
+  const words: { start: number; end: number }[] = [];
+  let start = run.start;
+  for (let i = run.start; i <= run.end; i++) {
+    if (i === run.end || line[i] === ' ') {
+      words.push({ start, end: i });
+      start = i + 1;
+    }
+  }
+  return run.rtl ? words.reverse() : words;
+}
+
+/**
+ * The pieces of a justified `line`, reordered as a whole like Chromium's DOM (stage #2653, decision 3): each run, in the
+ * visual order of `runs`, is split at its spaces and each word is laid out in its run's direction. `x` starts at 0 and
+ * grows by the width of each word and by `spaceWidth + extra` for each space, wherever the space sits in the visual order.
+ */
+export function justifiedPieces(
+  line: string,
+  runs: readonly BidiRun[],
+  widthOf: (text: string, rtl: boolean) => number,
+  spaceWidth: number,
+  extra: number,
+): JustifiedPiece[] {
+  const pieces: JustifiedPiece[] = [];
+  let x = 0;
+  for (const run of runs) {
+    const words = runWords(line, run);
+    words.forEach((word, i) => {
+      if (word.end > word.start)
+        pieces.push({ start: word.start, end: word.end, x, rtl: run.rtl });
+      x += widthOf(line.slice(word.start, word.end), run.rtl);
+      if (i < words.length - 1) x += spaceWidth + extra;
+    });
+  }
+  return pieces;
+}
+
+/**
+ * Justified line (like Konva, laid out like the DOM): the space left up to the node's width is split equally
+ * among the line's spaces; the words keep their size and each is drawn in the direction of its run.
  */
 function justifiedInk(
   book: FontBook,
@@ -124,16 +175,36 @@ function justifiedInk(
   lineHeight: number,
   decoration: 'underline' | 'line-through' | undefined,
 ): Polygon[] {
-  const words = line.split(' ');
+  const spaces = line.split(' ').length - 1;
   const spaceWidth = textWidth(book, ' ', spec);
-  const extra = (nodeWidth - textWidth(book, line, spec)) / (words.length - 1);
-  const polygons: Polygon[] = [];
-  let x = 0;
-  for (const word of words) {
-    if (word !== '')
-      polygons.push(...lineInk(book, word, spec, x, top, lineHeight, undefined));
-    x += textWidth(book, word, spec) + spaceWidth + extra;
-  }
+  const extra = (nodeWidth - textWidth(book, line, spec)) / spaces;
+  const ltrSpec: FontSpec = {
+    family: spec.family,
+    size: spec.size,
+    weight: spec.weight,
+    italic: spec.italic,
+    letterSpacing: spec.letterSpacing,
+  };
+  const specOf = (rtl: boolean): FontSpec =>
+    rtl ? { ...ltrSpec, direction: 'rtl' } : ltrSpec;
+  const pieces = justifiedPieces(
+    line,
+    book.bidiRuns(line, spec.direction ?? 'ltr'),
+    (text, rtl) => textWidth(book, text, specOf(rtl)),
+    spaceWidth,
+    extra,
+  );
+  const polygons = pieces.flatMap((piece) =>
+    lineInk(
+      book,
+      line.slice(piece.start, piece.end),
+      specOf(piece.rtl),
+      piece.x,
+      top,
+      lineHeight,
+      undefined,
+    ),
+  );
   if (decoration === undefined) return polygons;
   // The decoration belongs to the line: its baseline comes from the face that lays the whole line out.
   const baseline = lineBaseline(

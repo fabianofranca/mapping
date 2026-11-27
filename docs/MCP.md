@@ -298,6 +298,11 @@ The stage `epic/format-plugins` lets a specialization (`formatVersion` 20) carry
 - **Errors.** New code `format-not-found` (an unknown `<specId>/<formatId>`; `details.formats` lists the available ones). The plugin errors `plugin-failed`, `plugin-timeout`, `plugin-limit` and `plugin-output-invalid` come from the executor (`details.path` is the path inside the result for `plugin-output-invalid`). An operation of the result that the model refuses is the batch's usual error with `details.path` = `operations[i].result[j]` and `details.resultOp` = the operation's name. No error brings the server down and nothing is written.
 - **Update the MCP first:** an earlier version does not know `export_format` or `import_format` (`unknown operation`) and does not run the plugins in `validate_library`.
 
+### Change in 0.61.1 — a justified line is reordered as a whole (stage #2653)
+
+- **Justified lines in the PNG** (JB1): `render_marking` and `render_container` lay out a justified line (`align: justify`) that is `rtl`, or that holds a code unit at or above U+0590, the way Chromium's DOM does. The line is reordered once by the Unicode bidirectional algorithm with the node's direction as the base; each word is laid out in the direction of the run it sits in, so a comma or period at the edge of a word stays on the side the DOM puts it (`Hello, world.` in `rtl` draws the period at the left edge and the comma on the right of `Hello`); the words of a right-to-left run go from right to left (`אבג דה` puts `אבג` at the right edge); and every space gets the same share of the slack. An `ltr` line with no code unit at or above U+0590 is drawn exactly as before. The app's canvas does not change (see `docs/COMPONENT-FORMAT.md`, "Known limits").
+- **No tool, parameter, error code, schema or format change.** Only the pixels of those justified lines change.
+
 ### Change in 0.61.0 — one built-in drawing font (stage #2825)
 
 The built-in `font-sans` and `font-mono` are now `"Mapping Sans", sans-serif` and `"Mapping Mono", monospace`, the faces the server already measures and draws with. The app canvas, the Catalog, the library preview and the viewer register the same embedded faces, so the default font is the same everywhere. The schema and the formats do not change; no new tool.
