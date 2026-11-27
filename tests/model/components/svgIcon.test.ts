@@ -291,6 +291,30 @@ describe('svgToIcon: the icon entry', () => {
     expect(convert(svg(group + defs)).icon.paths).toHaveLength(1);
   });
 
+  it('a full-viewBox clip leaves no clip on the icon, and a shifted rect is one', () => {
+    const full =
+      '<defs><clipPath id="a"><rect width="24" height="24"/></clipPath></defs><g clip-path="url(#a)"><path d="M0 0h4v4z"/></g>';
+    expect(convert(svg(full)).icon).not.toHaveProperty('clip');
+    const shifted =
+      '<defs><clipPath id="a"><rect x="1" width="24" height="24"/></clipPath></defs><g clip-path="url(#a)"><path d="M0 0h4v4z"/></g>';
+    expect(convert(svg(shifted)).icon.clip).toEqual({ d: 'M1 0H25V24H1Z' });
+    const half =
+      '<defs><clipPath id="a"><rect width="12" height="24"/></clipPath></defs><g clip-path="url(#a)"><path d="M0 0h4v4z"/></g>';
+    expect(convert(svg(half)).icon.clip).toEqual({ d: 'M0 0H12V24H0Z' });
+  });
+
+  it('a clipPath that nothing references is ignored', () => {
+    const body =
+      '<defs><clipPath id="a"><circle r="5"/></clipPath></defs><path d="M0 0h4v4z"/>';
+    expect(convert(svg(body)).icon).not.toHaveProperty('clip');
+  });
+
+  it('a clip-path on a path whose id is missing is an invalid value', () => {
+    expect(problemsOf(svg('<path clip-path="url(#a)" d="M0 0h4v4z"/>'))).toEqual([
+      'invalid value in SVG: path clip-path="url(#a)"',
+    ]);
+  });
+
   it('omits the viewBox when it is the file default and carries it otherwise', () => {
     expect(
       convert(svg('<path d="M0 0h4v4z"/>'), { defaultViewBox: [24, 24] }).icon,
@@ -347,19 +371,14 @@ describe('svgToIcon: what it refuses', () => {
       'unsupported in SVG: path stroke-dasharray',
     ],
     [
-      'a gradient paint',
+      'a gradient paint with no definition (SG1: a url paint is a reference, so it is a missing id)',
       '<path fill="url(#g)" d="M0 0h4v4z"/>',
-      'unsupported in SVG: path fill',
+      'invalid value in SVG: path fill="url(#g)"',
     ],
     [
       'a url stroke',
       '<path stroke="url(#g)" d="M0 0h4v4z"/>',
       'unsupported in SVG: path stroke',
-    ],
-    [
-      'a gradient definition',
-      '<defs><linearGradient id="g"/></defs><path d="M0 0h4v4z"/>',
-      'unsupported in SVG: linearGradient',
     ],
     [
       'a filter attribute',
@@ -377,26 +396,6 @@ describe('svgToIcon: what it refuses', () => {
       'unsupported in SVG: path mask',
     ],
     ['a mask element', '<mask id="m"/><path d="M0 0h4v4z"/>', 'unsupported in SVG: mask'],
-    [
-      'a clip that is not the viewBox',
-      '<defs><clipPath id="a"><rect width="12" height="24"/></clipPath></defs><g clip-path="url(#a)"><path d="M0 0h4v4z"/></g>',
-      'unsupported in SVG: g clip-path',
-    ],
-    [
-      'a clipPath that is not the viewBox',
-      '<defs><clipPath id="a"><circle r="5"/></clipPath></defs><path d="M0 0h4v4z"/>',
-      'unsupported in SVG: clipPath',
-    ],
-    [
-      'a clip with a shifted rect',
-      '<defs><clipPath id="a"><rect x="1" width="24" height="24"/></clipPath></defs><g clip-path="url(#a)"><path d="M0 0h4v4z"/></g>',
-      'unsupported in SVG: g clip-path',
-    ],
-    [
-      'a clip-path on a path',
-      '<path clip-path="url(#a)" d="M0 0h4v4z"/>',
-      'unsupported in SVG: path clip-path',
-    ],
     ['a use', '<use href="#a"/><path d="M0 0h4v4z"/>', 'unsupported in SVG: use'],
     ['a text', '<text>a</text><path d="M0 0h4v4z"/>', 'unsupported in SVG: text'],
     [

@@ -21,6 +21,12 @@ export const svgIconMessages = {
   'svgIcon.viewBoxOrigin':
     'unsupported in SVG: svg viewBox with an origin other than 0 0 ({value})',
   'svgIcon.invalidValue': 'invalid value in SVG: {element} {attribute}="{value}"',
+  'svgIcon.radialElliptical':
+    'unsupported in SVG: radialGradient {id} is an ellipse (only a circle converts)',
+  'svgIcon.clipShapes': 'unsupported in SVG: clipPath {id} with more than one shape',
+  'svgIcon.clipNested': 'unsupported in SVG: a clip-path inside another clip-path ({id})',
+  'svgIcon.clipPartial':
+    'unsupported in SVG: the clip-path {id} covers only part of the icon',
   'svgIcon.noSize': 'the SVG has no viewBox and no numeric width and height',
   'svgIcon.noShape': 'the SVG has no shape',
   'svgIcon.nameInvalid': 'the icon name "{name}" is invalid; use [a-z0-9][a-z0-9-_]*',
