@@ -435,7 +435,8 @@ Also counted as a finding: noticeable slowness (more than a second to respond), 
 <!-- /roteiros -->
 <!-- roteiros: R39 -->
 
-- R39 uses folders of its own (`dk`, `svg`, `dk-v2`, `dk-app`, `host`, `sem-icones`, `dkp`, and `dk-font`, `dk-roboto`, `dkf`, `dkr` (R39.16), `dk-clear` and `svg-clear` (R39.15), and `lg-imp`, `svg-paint` and `lgp` (R39.17 to R39.19), built by the shell from `REPO/examples/libraries/drawing-keys/`, `REPO/examples/libraries/library-gaps/` and `REPO/tests/fixtures/svg-icons/`), the shell, ImageMagick, the MCP client over stdio and the app; the steps follow in sequence (R39.5 copies the `dk` of R39.2; R39.6 to R39.13 use the markings of R39.5; R39.16 compares with `dkp`) and do not depend on any other script. Without the MCP, mark R39.1 to R39.4, R39.8 and R39.12 "not executed (no MCP)".
+- R39 uses folders of its own (`dk`, `svg`, `dk-v2`, `dk-app`, `host`, `sem-icones`, `dkp`, and `dk-font`, `dk-roboto`, `dkf`, `dkr` (R39.16), `dk-clear` and `svg-clear` (R39.15), built by the shell from `REPO/examples/libraries/drawing-keys/` and `REPO/tests/fixtures/svg-icons/`), the shell, ImageMagick, the MCP client over stdio and the app; the steps follow in sequence (R39.5 copies the `dk` of R39.2; R39.6 to R39.13 use the markings of R39.5; R39.16 compares with `dkp`) and do not depend on any other script. Without the MCP, mark R39.1 to R39.4, R39.8 and R39.12 "not executed (no MCP)".
+- R39.17 to R39.19 add `lg-imp` (a copy of `REPO/examples/libraries/library-gaps/`), `svg-paint` (a copy of `REPO/tests/fixtures/svg-icons/paint/`) and `lgp` (the app's project folder); R39.18 and R39.19 use the `lg-imp` that R39.17 copies.
 
 <!-- /roteiros -->
 <!-- roteiros: R40 -->
