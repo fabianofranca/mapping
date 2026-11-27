@@ -1353,10 +1353,21 @@ export function registerTools(
     'measure_component',
     {
       description:
-        "The size a component has for given field values, in component units (`units`) and in image pixels (`pixels`, `units` × the container's `density`, rounded up), to place a component by hand (a `rect` for `create_marking`) with no dry-run batch. It creates no marking and plans nothing: it is read-only. The values are the type's defaults plus `values` (the form of `create_marking`'s `annotation.values`), with no `preview`; an unknown field fails with `unknown-field` and a refused value with `invalid-value`. `container` (a reference or an id) gives the density and the drawing mode and direction of a marking in it; without it, density 1 and the canvas's. `size` (`width`/`height`, in units) is the base of the axes that do not follow the content (default: the component's `size`). `follows` says which axes follow the content; with none, `units` is the base and `hint` says `fit_marking` would give `not-fittable`. `pixels` is what `fit_marking` gives with room (no image-edge limit). `approximate` is true when some text it measured fell to the built-in font in place of its family (the family is neither a library font of the project nor the default Mapping Sans or Mapping Mono, which the app draws with the same files, so a text in the default font gives false; a component with no text gives false). A component with a slot and an axis that follows the content also gets a `hint`: `units` and `pixels` are the size with the slots empty, and a new instance is born at the component's `size`. Provide `project` + `specId` (the applied copy); `type` is the id (or the name). Read-only.",
+        "The size a component has for given field values, in component units (`units`) and in image pixels (`pixels`, `units` × the container's `density`, rounded up), to place a component by hand (a `rect` for `create_marking`) with no dry-run batch. It creates no marking and plans nothing: it is read-only. The values are the type's defaults plus `values` (the form of `create_marking`'s `annotation.values`), with no `preview`; an unknown field fails with `unknown-field` and a refused value with `invalid-value`. `container` (a reference or an id) gives the density and the drawing mode and direction of a marking in it; without it, density 1 and the canvas's. `size` (`width`/`height`, in units) is the base of the axes that do not follow the content (default: the component's `size`). `follows` says which axes follow the content; with none, `units` is the base and `hint` says `fit_marking` would give `not-fittable`. `pixels` is what `fit_marking` gives with room (no image-edge limit). `approximate` is true when some text it measured fell to the built-in font in place of its family (the family is neither a library font of the project nor the default Mapping Sans or Mapping Mono, which the app draws with the same files, so a text in the default font gives false; a component with no text gives false). A component with a slot and an axis that follows the content also gets a `hint`: `units` and `pixels` are the size with the slots empty, and a new instance is born at the component's `size`. Provide `project` + `specId` (the applied copy); `type` is the id (or the name). To measure a working copy before `update_specialization`, pass `path` (the package folder or its specialization file) + `project` instead of `specId`: it measures with the folder's own components and fonts (the font files it carries, so `approximate` is false when it carries the font its text uses) in place of the project's copy of that library, over the project's containers and other libraries; nothing is applied or written. Read-only.",
       inputSchema: {
-        project: z.string().describe('Project (name or folder).'),
-        specId: z.string().describe('Id of an applied specialization, see get_project.'),
+        project: z.string().optional().describe('Project (name or folder). Required.'),
+        specId: z
+          .string()
+          .optional()
+          .describe(
+            'Id of an applied specialization, see get_project. Required without `path`.',
+          ),
+        path: z
+          .string()
+          .optional()
+          .describe(
+            'A package folder (or its specialization file) to measure instead of the applied copy, with `project` and no `specId`.',
+          ),
         type: z
           .string()
           .describe('Id of the annotation type (or the name), see list_components.'),
