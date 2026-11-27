@@ -77,6 +77,19 @@ const MISSING_TODAY: string[] = [
   // today; #2951 brings a real one. Covered by tests/model/specSlotExcept.test.ts and, for the app, by
   // tests/fixtures/field-display/ and script R50.
   'spec:layers[].annotationTypes[].slots[].accepts[].except',
+  // `fieldGroups`, `group` and `visibleWhen` (formatVersion 26, stage #2918, FG2; decision 11): no example package
+  // either (each one needs its `examples/README.md` section, held by #1905); #2951 brings a real one. Covered by
+  // tests/model/specFieldDisplay.test.ts and tests/model/fieldDisplay.test.ts and, for the app, by
+  // tests/fixtures/field-display/ and script R50.
+  'spec:layers[].annotationTypes[].fieldGroups',
+  'spec:layers[].annotationTypes[].fieldGroups[].description',
+  'spec:layers[].annotationTypes[].fieldGroups[].id',
+  'spec:layers[].annotationTypes[].fieldGroups[].name',
+  'spec:layers[].annotationTypes[].fieldGroups[].visibleWhen',
+  'spec:layers[].annotationTypes[].fields[].group',
+  'spec:layers[].annotationTypes[].fields[].columns[].group',
+  'spec:layers[].annotationTypes[].fields[].columns[].visibleWhen',
+  'spec:layers[].annotationTypes[].fields[].visibleWhen',
   // `$tokens` in a table column's `suggestions` (formatVersion 23, stage #1900, NV1): `examples/libraries/analytics`
   // covers `$tokens` on fields (`event.name`, `transition.event`) only; the column case is covered by
   // tests/model/namedValuesSuggestions.test.ts.
