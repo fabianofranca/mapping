@@ -124,9 +124,6 @@ const MISSING_TODAY: string[] = [
   // Component layout v4 (stage #747, CF2): the distributed libraries do not migrate to
   // format 4 in this stage ('Out' decision of #747); covered by
   // tests/model/components/layoutFidelity.test.ts, layoutV4Parse.test.ts and by script R25.
-  // Literal `font.family`: the last Material 3 component that used it migrated (stage #833, M5) and
-  // inherits Roboto from the `font-sans` token; covered by tests/model/components/ and by script R25.
-  'component:font.family',
   // `font.verticalAlign: "middle"`: Material 3 moved the labels and numbers to `cap-middle` (stage #896,
   // FX6, decision 23); `middle` is still covered by tests/e2e/textMetrics.spec.ts and by script R25.
   'component:font.verticalAlign=middle',
@@ -178,6 +175,10 @@ const MISSING_TODAY: string[] = [
   // tests/model/specTokens.test.ts, tests/model/components/tokens.test.ts, libraryTokens.test.ts and
   // by script R25.
   'component:expr.$token',
+  // `$tokenNamed` (stage #2825, FN2): a token named by a field value; no distributed library uses it yet. Covered by
+  // tests/model/components/tokenNamedParse.test.ts, tokenNamedEngine.test.ts, tests/model/projectTokens.test.ts
+  // and tests/mcp/tokenNamed.test.ts.
+  'component:expr.$tokenNamed',
   // Icons (formatVersion 15, stage #747, CF7): the `icons` root and the `icon` node already have an example in the
   // Material 3 library (stage #833, M1); `icon.name`/`strokeWidth` do not yet. Covered by
   // tests/model/components/icons.test.ts, libraryIcons.test.ts, tests/mcp/libraryIcons.test.ts and

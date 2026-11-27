@@ -20,12 +20,12 @@ describe('loadSpecComponents with the host font', () => {
     }
   });
 
-  it('without a host the defaults are sans-serif and monospace', () => {
+  it('without a host the defaults are Mapping Sans and Mapping Mono', () => {
     const loaded = loadSpecComponents(testSpec(), SPEC_FILE, 1, read);
     const file = [...loaded.byType.values()][0];
     expect(file?.resolvedTokens).toMatchObject({
-      'font-sans': 'sans-serif',
-      'font-mono': 'monospace',
+      'font-sans': '"Mapping Sans", sans-serif',
+      'font-mono': '"Mapping Mono", monospace',
     });
   });
 

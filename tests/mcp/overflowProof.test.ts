@@ -399,11 +399,27 @@ describe('plan_changes: drawing proof per instance', () => {
   });
 
   it('with library fonts, a drawing whose text is not in that family is still (approximate)', async () => {
+    // `lib/face` reads the token `face`, whose light value is `sans-serif`: not a library font.
     const items = overflows(
-      await plan(real, [SCREEN, create({ x: 10, y: 10, width: 60, height: 20 })]),
+      await plan(real, [
+        SCREEN,
+        create({ x: 10, y: 10, width: 60, height: 20 }, 'lib/face'),
+      ]),
     );
     expect(items[0]!.message).toContain('(approximate)');
     expect(items[0]!.approximate).toBe(true);
+  });
+
+  // Stage #2825, decision 5: the built-in font is the embedded Mapping Sans, so a text in it is exact.
+  it('a drawing in the default font (Mapping Sans) is not (approximate), with or without library fonts', async () => {
+    for (const ws of [approx, real]) {
+      const items = overflows(
+        await plan(ws, [SCREEN, create({ x: 10, y: 10, width: 60, height: 20 })]),
+      );
+      expect(items[0]).toMatchObject({ code: 'component-overflow', node: 'label' });
+      expect(items[0]!.message).not.toContain('(approximate)');
+      expect(items[0]!.approximate).toBeUndefined();
+    }
   });
 
   it('an update_marking that shrinks generates the item; a marking not touched by the batch does not', async () => {

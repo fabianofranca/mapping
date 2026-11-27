@@ -11,7 +11,8 @@ afterEach(() => {
 });
 
 describe('readSpecComponents: host font', () => {
-  it('the components carry the font-sans and the font-mono of the theme', async () => {
+  // Stage #2825, decision 2: the app no longer passes the theme's stack; the drawing font is the embedded Mapping one.
+  it('the components carry the Mapping fonts, not the font-sans and the font-mono of the theme', async () => {
     document.documentElement.style.setProperty('--font-sans', 'Theme Sans, sans-serif');
     document.documentElement.style.setProperty('--font-mono', 'Theme Mono, monospace');
     const loaded = await readSpecComponents(
@@ -21,7 +22,7 @@ describe('readSpecComponents: host font', () => {
       async (path) => texts.get(path) ?? null,
     );
     const file = [...loaded.byType.values()][0];
-    expect(file?.resolvedTokens?.['font-sans']).toBe('Theme Sans, sans-serif');
-    expect(file?.resolvedTokens?.['font-mono']).toBe('Theme Mono, monospace');
+    expect(file?.resolvedTokens?.['font-sans']).toBe('"Mapping Sans", sans-serif');
+    expect(file?.resolvedTokens?.['font-mono']).toBe('"Mapping Mono", monospace');
   });
 });

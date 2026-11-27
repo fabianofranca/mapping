@@ -2,10 +2,8 @@
 // the files are imported as text (`?raw`), with no copy. `tests/model/notesLibrary.test.ts`
 // checks that the package is valid and that this list has every file in the folder.
 import notaComponent from './components/nota.json?raw';
-import tabelaComponent from './components/tabela.json?raw';
 import textoComponent from './components/texto.json?raw';
 import notaDoc from './docs/nota.md?raw';
-import tabelaDoc from './docs/tabela.md?raw';
 import textoDoc from './docs/texto.md?raw';
 import notasSpec from './notas.spec.json?raw';
 
@@ -19,8 +17,6 @@ export const NOTES_FILES: ReadonlyMap<string, string> = new Map([
   [NOTES_SPEC_FILE, notasSpec],
   ['components/nota.json', notaComponent],
   ['docs/nota.md', notaDoc],
-  ['components/tabela.json', tabelaComponent],
-  ['docs/tabela.md', tabelaDoc],
   ['components/texto.json', textoComponent],
   ['docs/texto.md', textoDoc],
 ]);

@@ -282,6 +282,7 @@ export const EXPR_OPS = [
   '$switch',
   '$concat',
   '$token',
+  '$tokenNamed',
   '$rows',
   '$size',
   '$lines',

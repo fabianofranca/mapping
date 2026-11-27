@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  canvasTokensFrom,
-  hostFontsFrom,
-  readCanvasTokens,
-} from '../../src/canvas/theme';
+import { canvasTokensFrom, readCanvasTokens } from '../../src/canvas/theme';
 import { TOKENS, tokenValue } from '../../src/theme/tokens';
 
 /** Reader that resolves the tokens of `tokens.ts` (including the `var(--…)` ones), like the browser. */
@@ -22,19 +18,6 @@ function leaves(value: unknown, path = ''): [string, unknown][] {
     ? Object.entries(value).flatMap(([k, v]) => leaves(v, path ? `${path}.${k}` : k))
     : [[path, value]];
 }
-
-describe('hostFontsFrom', () => {
-  it('the host font is the stack of --font-sans and --font-mono of the theme', () => {
-    expect(hostFontsFrom(reader('light'))).toEqual({
-      sans: tokenValue('font-sans', 'light'),
-      mono: tokenValue('font-mono', 'light'),
-    });
-  });
-
-  it('empty value becomes absent (the model default applies)', () => {
-    expect(hostFontsFrom(() => '')).toEqual({});
-  });
-});
 
 describe('canvasTokensFrom', () => {
   it('reads each canvas token from the theme tokens', () => {

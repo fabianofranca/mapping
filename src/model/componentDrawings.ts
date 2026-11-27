@@ -18,7 +18,12 @@ import {
   type SlotSize,
   type TextMeasurer,
 } from './components/instantiate';
-import { applyTokens, type ResolvedTokens } from './components/tokens';
+import {
+  applyTokens,
+  type NamedTokenLookup,
+  type ResolvedTokens,
+  type SpecTokens,
+} from './components/tokens';
 import {
   assignSlots,
   componentSlots,
@@ -62,6 +67,7 @@ import {
 } from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
+import { projectNamedLookup } from './projectTokens';
 import {
   multiply,
   type CornerRadius,
@@ -241,6 +247,8 @@ interface Entry {
   readonly epoch: number;
   /** Effective drawing mode of the marking (axis → entry; `undefined` = the first entry of each axis). */
   readonly mode: DrawingModeSelection | undefined;
+  /** The tokens of the applied specializations, which `$tokenNamed` reads by name (decision 10 of #2825). */
+  readonly specTokens: readonly (SpecTokens | undefined)[];
   /** Density of the marking's container (1 on the canvas). */
   readonly density: number;
   /** Effective reading direction of the marking (`ltr` by default): `rtl` mirrors the drawing. */
@@ -638,10 +646,12 @@ function instantiateOptions(
   direction: ReadingDirection,
   anchor: InstantiateOptions['anchor'],
   container: InstanceContainer | undefined,
+  tokenNamed: NamedTokenLookup,
 ): InstantiateOptions {
   return {
     measure,
     idPrefix: markingId,
+    tokenNamed,
     ...(tokens === undefined ? {} : { tokens }),
     ...(provided === NO_PROVIDED ? {} : { provided }),
     ...(direction === 'rtl' ? { direction } : {}),
@@ -881,6 +891,7 @@ interface DrawInput {
   readonly slotDefs: readonly TypeSlot[];
   readonly measure: TextMeasurer;
   readonly mode: DrawingModeSelection | undefined;
+  readonly tokenNamed: NamedTokenLookup;
   readonly provided: ProvidedValues;
   readonly received: Received;
   readonly density: number;
@@ -961,6 +972,51 @@ function slotFacts(
   };
 }
 
+const NO_SPEC_TOKENS: readonly (SpecTokens | undefined)[] = [];
+const tokenNamedUse = new WeakMap<ComponentFile, boolean>();
+
+/**
+ * Does the drawing of the component depend on other libraries' tokens? When it reads `$tokenNamed` itself, or
+ * has a `component` node (the nested file is not in its text and receives the same lookup).
+ */
+export function readsTokenNamed(component: ComponentFile): boolean {
+  let used = tokenNamedUse.get(component);
+  if (used === undefined) {
+    const text = JSON.stringify(component.template);
+    used = text.includes('"$tokenNamed"') || text.includes('"type":"component"');
+    tokenNamedUse.set(component, used);
+  }
+  return used;
+}
+
+const specTokensKeys = new WeakMap<SpecTokens, string>();
+
+/** The content of a specialization's tokens as text, computed once per object. */
+function specTokensKey(tokens: SpecTokens): string {
+  let key = specTokensKeys.get(tokens);
+  if (key === undefined) {
+    key = JSON.stringify(tokens);
+    specTokensKeys.set(tokens, key);
+  }
+  return key;
+}
+
+function sameTokensOf(a: SpecTokens | undefined, b: SpecTokens | undefined): boolean {
+  if (a === b) return true;
+  return a !== undefined && b !== undefined && specTokensKey(a) === specTokensKey(b);
+}
+
+/**
+ * Are the specializations' tokens the same, in the same order? By content: the Proposed view reads the
+ * project again, with new objects for specializations that did not change, and must not redraw them.
+ */
+function sameSpecTokens(
+  a: readonly (SpecTokens | undefined)[],
+  b: readonly (SpecTokens | undefined)[],
+): boolean {
+  return a.length === b.length && a.every((tokens, i) => sameTokensOf(tokens, b[i]));
+}
+
 function draw(input: DrawInput): Drawn {
   const { mc, markingId, containerId, rect, valueWarnings, received } = input;
   const { measure, mode, provided, density, direction, anchor, container } = input;
@@ -981,6 +1037,7 @@ function draw(input: DrawInput): Drawn {
       direction,
       instanceAnchor(anchor, rect, mc.component, space.density),
       container,
+      input.tokenNamed,
     ),
   );
   const { messages, provides } = instantiated;
@@ -1081,6 +1138,7 @@ export function createDrawingCache(): DrawingCache {
     }
 
     const { children, markings: markingsById } = projectIndex(p);
+    const allSpecTokens = p.specializations.map((s) => s.spec?.tokens);
     const next = new Map<string, Entry>();
     const drawings = new Map<string, ComponentDrawing>();
     const components = new Map<string, MarkingComponent | null>();
@@ -1143,6 +1201,7 @@ export function createDrawingCache(): DrawingCache {
       const direction = effectiveDirection(p, marking.containerId);
       const anchor = anchorOfMarking(marking, markingsById);
       const container = readContainerOf(p, mc.component, marking.containerId);
+      const specTokens = readsTokenNamed(mc.component) ? allSpecTokens : NO_SPEC_TOKENS;
       const before = entries.get(marking.id);
       if (
         before !== undefined &&
@@ -1154,6 +1213,7 @@ export function createDrawingCache(): DrawingCache {
         before.measure === measure &&
         before.epoch === epoch &&
         sameDrawingMode(before.mode, mode) &&
+        sameSpecTokens(before.specTokens, specTokens) &&
         before.density === density &&
         before.direction === direction &&
         sameContainer(before.container, container) &&
@@ -1197,6 +1257,7 @@ export function createDrawingCache(): DrawingCache {
         slotDefs,
         measure,
         mode,
+        tokenNamed: projectNamedLookup(p, mc.component, marking.containerId),
         provided,
         received,
         density,
@@ -1226,6 +1287,7 @@ export function createDrawingCache(): DrawingCache {
         measure,
         epoch,
         mode,
+        specTokens,
         density,
         direction,
         container,

@@ -57,13 +57,13 @@ describe('offeredTypeChoice', () => {
     expect(choice.empty).toBe('not-for-arrow');
   });
 
-  it('floating marking: the list is Nota, Tabela and Texto', () => {
+  it('floating marking: the list is Nota and Texto', () => {
     const choice = offeredTypeChoice(notesProject(), 'LN', {
       kind: 'marking',
       floating: true,
     });
     expect(choice.empty).toBeNull();
-    expect(choice.types.map((type) => type.id)).toEqual(['nota', 'tabela', 'texto']);
+    expect(choice.types.map((type) => type.id)).toEqual(['nota', 'texto']);
   });
 
   it('a layer with only floating types: the plain marking gets "floating"', () => {
@@ -104,7 +104,7 @@ describe('offeredTypeChoice', () => {
       floating: false,
     });
     expect(marking.empty).toBeNull();
-    expect(marking.types).toHaveLength(3);
+    expect(marking.types).toHaveLength(2);
   });
 
   it('plain type that applies only to arrows: the marking gets "not-for-marking"', () => {
@@ -120,6 +120,6 @@ describe('offeredTypeChoice', () => {
     );
     const choice = offeredTypeChoice(project, 'LN', { kind: 'marking', floating: false });
     expect(choice.empty).toBeNull();
-    expect(choice.types.map((type) => type.id)).toEqual(['tabela', 'texto']);
+    expect(choice.types.map((type) => type.id)).toEqual(['texto']);
   });
 });

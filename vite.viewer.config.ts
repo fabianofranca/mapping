@@ -9,6 +9,7 @@
 import { defineConfig, type Plugin } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { applyCsp } from './pwa/csp';
+import { drawingFontModules } from './pwa/fontModules.mjs';
 
 function contentSecurityPolicy(): Plugin {
   return {
@@ -29,7 +30,7 @@ export default defineConfig({
   root: 'viewer/demo',
   base: './',
   publicDir: false,
-  plugins: [viteSingleFile(), contentSecurityPolicy()],
+  plugins: [drawingFontModules(), viteSingleFile(), contentSecurityPolicy()],
   esbuild: { jsx: 'automatic', jsxImportSource: 'react' },
   build: {
     outDir: '../../dist-viewer-demo',
