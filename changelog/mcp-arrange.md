@@ -1,4 +1,4 @@
-# Arrange in the MCP batch — [Não lançado] (épico `epic/mcp-arrange`, PR #3023, MCP 0.63.0, schema v25 unchanged)
+# Arrange in the MCP batch — [Não lançado] (épico `epic/mcp-arrange`, PR #3023, MCP 0.64.0, schema v25 unchanged)
 
 ## Adicionado
 

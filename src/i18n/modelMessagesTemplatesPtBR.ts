@@ -739,6 +739,13 @@ export const templatePtBR: {
   'model.svgIcon.viewBoxOrigin':
     'sem suporte no SVG: viewBox do svg com origem diferente de 0 0 ({value})',
   'model.svgIcon.invalidValue': 'valor inválido no SVG: {element} {attribute}="{value}"',
+  'model.svgIcon.radialElliptical':
+    'sem suporte no SVG: radialGradient {id} é uma elipse (só um círculo converte)',
+  'model.svgIcon.clipShapes': 'sem suporte no SVG: clipPath {id} com mais de uma forma',
+  'model.svgIcon.clipNested':
+    'sem suporte no SVG: um clip-path dentro de outro clip-path ({id})',
+  'model.svgIcon.clipPartial':
+    'sem suporte no SVG: o clip-path {id} cobre só parte do ícone',
   'model.svgIcon.noSize': 'o SVG não tem viewBox nem width e height numéricos',
   'model.svgIcon.noShape': 'o SVG não tem nenhuma forma',
   'model.svgIcon.nameInvalid':

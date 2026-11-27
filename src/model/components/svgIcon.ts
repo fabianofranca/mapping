@@ -3,11 +3,21 @@ import type { ModelMessage } from '../modelMessage';
 import {
   ICON_NAME_PATTERN,
   type IconCap,
+  type IconClip,
   type IconDef,
   type IconFillRule,
+  type IconGradient,
   type IconJoin,
   type IconPath,
 } from './icons';
+import { ClipResolver } from './svgClip';
+import { convertGradient, isGradientElement } from './svgGradient';
+import {
+  invalidValue,
+  Problems,
+  unsupportedAttribute,
+  unsupportedElement,
+} from './svgProblems';
 import {
   SHAPE_ATTRIBUTES,
   isBasicShape,
@@ -15,7 +25,7 @@ import {
   parseNumber,
   shapePath,
 } from './svgShapes';
-import { parseXml, type XmlElement } from './svgXml';
+import { parseXml, styleDeclarations, type XmlElement } from './svgXml';
 
 /**
  * SVG file → icon entry of the library's icon set (stage #2087, decisions 5 to 7).
@@ -24,11 +34,15 @@ import { parseXml, type XmlElement } from './svgXml';
  * with `svgShapes.ts`, resolves the presentation properties (as attributes or inside `style`,
  * inherited from `g` and `svg`) into `fill`, `fillRule`, `stroke`, `width`, `cap` and `join`, and
  * applies the color rule (a single color follows the `icon` node; several are kept as written).
+ * A `fill="url(#id)"` that points at a linear or radial gradient becomes the icon's gradient
+ * `fill` (`svgGradient.ts`, stage #2847), and a `clip-path` to a `clipPath` of one shape becomes the
+ * icon's `clip` (`svgClip.ts`; Figma's full-`viewBox` wrapper is dropped).
  *
  * What it does not support is an error that names it (`unsupported in SVG: <element>
- * <attribute>`), never a silent loss: `transform`, gradients and `url(#…)` paints, `mask`,
- * `filter`, any clip other than the full-`viewBox` one that Figma wraps its icons in, `use`, `text`,
- * `image`, opacity below 1, `stroke-dasharray`, a `viewBox` with an origin other than `0 0`, and
+ * <attribute>`), never a silent loss: `transform`, a gradient on a `stroke`, the gradients that
+ * `svgGradient.ts` refuses (`href`, `spreadMethod`, a focal point, an ellipse), `mask`, `filter`,
+ * the clips that `svgClip.ts` refuses (several shapes, nested, over only part of the icon), `use`,
+ * `text`, `image`, opacity below 1, `stroke-dasharray`, a `viewBox` with an origin other than `0 0`, and
  * units other than px.
  *
  * Pure functions, no DOM: it runs in Node (the `import_icons` tool) and in the browser.
@@ -80,41 +94,25 @@ export function iconNameFromFile(file: string): string {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Problems
-
-class Problems {
-  private readonly byText = new Map<string, ModelMessage>();
-
-  add(message: ModelMessage): void {
-    if (!this.byText.has(message.text)) this.byText.set(message.text, message);
-  }
-
-  get size(): number {
-    return this.byText.size;
-  }
-
-  list(): ModelMessage[] {
-    return [...this.byText.values()];
-  }
-}
-
-const unsupportedElement = (element: string): ModelMessage =>
-  templateMessage('svgIcon.unsupportedElement', { element });
-const unsupportedAttribute = (element: string, attribute: string): ModelMessage =>
-  templateMessage('svgIcon.unsupportedAttribute', { element, attribute });
-const invalidValue = (element: string, attribute: string, value: string): ModelMessage =>
-  templateMessage('svgIcon.invalidValue', { element, attribute, value });
-
-// ---------------------------------------------------------------------------------------------
 // Colors and paints
 
-type Paint =
+type SolidPaint =
   | { readonly kind: 'none' }
   | { readonly kind: 'current' }
   | { readonly kind: 'color'; readonly value: string };
 
-const NONE: Paint = { kind: 'none' };
-const BLACK: Paint = { kind: 'color', value: '#000000' };
+/** A fill once its `url(#id)` is resolved: a solid paint or a gradient of the icon format. */
+type Paint = SolidPaint | { readonly kind: 'gradient'; readonly gradient: IconGradient };
+
+/** A `fill="url(#id)"` as written, with the optional fallback color, before it is resolved. */
+interface PaintRef {
+  readonly kind: 'ref';
+  readonly id: string;
+  readonly fallback: SolidPaint | undefined;
+}
+
+const NONE: SolidPaint = { kind: 'none' };
+const BLACK: SolidPaint = { kind: 'color', value: '#000000' };
 
 /** The basic CSS colors by name (what the editors that export SVG write). */
 const NAMED_COLORS: Readonly<Record<string, string>> = {
@@ -188,7 +186,7 @@ export function normalizeColor(value: string): string | undefined {
   return Object.hasOwn(NAMED_COLORS, text) ? NAMED_COLORS[text] : undefined;
 }
 
-function parsePaint(value: string): Paint | undefined {
+function parsePaint(value: string): SolidPaint | undefined {
   const text = value.trim().toLowerCase();
   if (text === 'none') return NONE;
   if (text === 'currentcolor') return { kind: 'current' };
@@ -200,13 +198,25 @@ function parsePaint(value: string): Paint | undefined {
     : { kind: 'color', value: color };
 }
 
+const URL_PAINT = /^url\(\s*['"]?#([^'")\s]+)['"]?\s*\)\s*(.*)$/i;
+
+/** A `fill`: a solid paint or `url(#id)` with an optional fallback color (`url(#a) #fff`). */
+function parseFill(value: string): SolidPaint | PaintRef | undefined {
+  const ref = URL_PAINT.exec(value.trim());
+  if (ref === null) return parsePaint(value);
+  const rest = (ref[2] ?? '').trim();
+  const fallback = rest === '' ? undefined : parsePaint(rest);
+  if (rest !== '' && fallback === undefined) return undefined;
+  return { kind: 'ref', id: ref[1] ?? '', fallback };
+}
+
 // ---------------------------------------------------------------------------------------------
 // Presentation properties
 
 interface Style {
-  readonly fill: Paint;
+  readonly fill: SolidPaint | PaintRef;
   readonly fillRule: IconFillRule;
-  readonly stroke: Paint;
+  readonly stroke: SolidPaint;
   readonly width: number;
   readonly cap: IconCap;
   readonly join: IconJoin;
@@ -234,7 +244,7 @@ const fullOpacity: Handler = (style, value) =>
 
 const PROPERTIES: Readonly<Record<string, Handler>> = {
   fill(style, value) {
-    const fill = parsePaint(value);
+    const fill = parseFill(value);
     return fill === undefined ? undefined : { ...style, fill };
   },
   stroke(style, value) {
@@ -274,17 +284,6 @@ const SILENT_ATTRIBUTES: ReadonlySet<string> = new Set(['id', 'class', 'version'
 const SILENT_ELEMENTS: ReadonlySet<string> = new Set(['title', 'desc', 'metadata']);
 
 const isXmlns = (name: string): boolean => name === 'xmlns' || name.startsWith('xmlns:');
-
-/** The `name: value` declarations of a `style` attribute (an invalid one is dropped, as CSS does). */
-function styleDeclarations(text: string): [string, string][] {
-  const out: [string, string][] = [];
-  for (const part of text.split(';')) {
-    const colon = part.indexOf(':');
-    if (colon > 0)
-      out.push([part.slice(0, colon).trim().toLowerCase(), part.slice(colon + 1)]);
-  }
-  return out;
-}
 
 /**
  * The element's own declarations (`style` wins over the attribute) applied over the inherited
@@ -380,85 +379,66 @@ function boxOf(root: XmlElement, problems: Problems): Box | undefined {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Figma's wrapper: a `clip-path` on a `g` whose `<clipPath>` is a `rect` covering the `viewBox`
-
-const CLIP_RECT_ATTRIBUTES = ['x', 'y', 'width', 'height', 'fill', 'id'];
-
-function coversBox(rect: XmlElement, box: Box): boolean {
-  const at = (name: string, fallback: number): number | undefined => {
-    const value = rect.attributes.get(name);
-    const n = value === undefined ? fallback : parseLength(value);
-    return typeof n === 'number' ? n : undefined;
-  };
-  return (
-    rect.name === 'rect' &&
-    [...rect.attributes.keys()].every((name) => CLIP_RECT_ATTRIBUTES.includes(name)) &&
-    at('x', 0) === 0 &&
-    at('y', 0) === 0 &&
-    at('width', NaN) === box[0] &&
-    at('height', NaN) === box[1]
-  );
-}
-
-function isFullClip(clip: XmlElement, box: Box): boolean {
-  const [rect] = clip.children;
-  return (
-    clip.children.length === 1 &&
-    rect !== undefined &&
-    rect.children.length === 0 &&
-    [...clip.attributes.keys()].every((name) => name === 'id') &&
-    coversBox(rect, box)
-  );
-}
-
-/** The ids of the `<clipPath>`s of the file that are the full-`viewBox` clip. */
-function fullClipIds(
-  element: XmlElement,
-  box: Box,
-  ids = new Set<string>(),
-): Set<string> {
-  const id = element.attributes.get('id');
-  if (element.name === 'clipPath' && id !== undefined && isFullClip(element, box))
-    ids.add(id);
-  for (const child of element.children) fullClipIds(child, box, ids);
-  return ids;
-}
-
-const CLIP_REFERENCE = /^url\(\s*['"]?#([^'")\s]+)['"]?\s*\)$/;
-
-// ---------------------------------------------------------------------------------------------
 // The walk
 
 interface Shape {
   readonly d: string;
+  /** The fill with its `url(#id)` resolved. */
+  readonly fill: Paint;
   readonly style: Style;
+  /** The non-trivial clip ids on its ancestors and on itself, outermost first. */
+  readonly clips: readonly string[];
 }
 
 interface Walk {
   readonly box: Box;
-  readonly clips: ReadonlySet<string>;
+  readonly clips: ClipResolver;
+  /** Every element of the file with an `id` (the first one wins): what a `url(#id)` points at. */
+  readonly ids: ReadonlyMap<string, XmlElement>;
   readonly shapes: Shape[];
   readonly problems: Problems;
 }
 
-/** `<defs>` only holds the full-`viewBox` clips; anything else in it is named. */
+function collectIds(
+  element: XmlElement,
+  ids = new Map<string, XmlElement>(),
+): Map<string, XmlElement> {
+  const id = element.attributes.get('id');
+  if (id !== undefined && !ids.has(id)) ids.set(id, element);
+  for (const child of element.children) collectIds(child, ids);
+  return ids;
+}
+
+/** Gradients and clips are definitions wherever they are: read where something points at them, never drawn. */
+const isDefinition = (name: string): boolean =>
+  isGradientElement(name) || name === 'clipPath';
+
+/** `<defs>` holds the definitions; anything else in it is named. */
 function visitDefs(walk: Walk, defs: XmlElement): void {
   checkAttributes(defs, [], walk.problems);
   for (const child of defs.children)
-    if (child.name !== 'clipPath') walk.problems.add(unsupportedElement(child.name));
-    else if (!isFullClip(child, walk.box))
-      walk.problems.add(unsupportedElement('clipPath'));
+    if (!isDefinition(child.name)) walk.problems.add(unsupportedElement(child.name));
 }
 
-function visitGroup(walk: Walk, group: XmlElement, inherited: Style): void {
+/** The clip ids down to this element: the chain so far plus the element's own non-trivial clip. */
+function chainOf(
+  walk: Walk,
+  element: XmlElement,
+  clips: readonly string[],
+): readonly string[] {
+  const id = walk.clips.reference(element);
+  return id === undefined ? clips : [...clips, id];
+}
+
+function visitGroup(
+  walk: Walk,
+  group: XmlElement,
+  inherited: Style,
+  clips: readonly string[],
+): void {
   checkAttributes(group, ['clip-path'], walk.problems);
-  const clip = group.attributes.get('clip-path');
-  if (clip !== undefined) {
-    const id = CLIP_REFERENCE.exec(clip.trim())?.[1];
-    if (id === undefined || !walk.clips.has(id))
-      walk.problems.add(unsupportedAttribute('g', 'clip-path'));
-  }
-  visitChildren(walk, group, styleOf(group, inherited, walk.problems));
+  const chain = chainOf(walk, group, clips);
+  visitChildren(walk, group, styleOf(group, inherited, walk.problems), chain);
 }
 
 /** The `d` of a `path`; `undefined` after reporting that it is missing or blank. */
@@ -485,33 +465,86 @@ function shapeData(walk: Walk, element: XmlElement): string | undefined {
 const dataOf = (walk: Walk, element: XmlElement): string | undefined =>
   element.name === 'path' ? pathData(walk, element) : shapeData(walk, element);
 
-function visitShape(walk: Walk, element: XmlElement, inherited: Style): void {
+function visitShape(
+  walk: Walk,
+  element: XmlElement,
+  inherited: Style,
+  clips: readonly string[],
+): void {
   checkAttributes(
     element,
-    element.name === 'path' ? ['d'] : (SHAPE_ATTRIBUTES[element.name] ?? []),
+    [
+      'clip-path',
+      ...(element.name === 'path' ? ['d'] : (SHAPE_ATTRIBUTES[element.name] ?? [])),
+    ],
     walk.problems,
   );
+  const chain = chainOf(walk, element, clips);
   const style = styleOf(element, inherited, walk.problems);
   const d = dataOf(walk, element);
   if (d === undefined) return;
   // A line has no area, so its fill is nothing (and does not count as the default black).
-  const painted = element.name === 'line' ? { ...style, fill: NONE } : style;
+  const fill = element.name === 'line' ? NONE : resolveFill(walk, element, style.fill, d);
+  if (fill === undefined) return;
   // Neither fill nor stroke: the shape draws nothing, so it is not an icon path.
-  if (painted.fill.kind !== 'none' || painted.stroke.kind !== 'none')
-    walk.shapes.push({ d, style: painted });
+  if (fill.kind !== 'none' || style.stroke.kind !== 'none')
+    walk.shapes.push({ d, fill, style, clips: chain });
 }
 
-function visit(walk: Walk, element: XmlElement, inherited: Style): void {
-  if (SILENT_ELEMENTS.has(element.name)) return;
+/** The paint a gradient definition makes: the gradient, or the color it reduces to. */
+function gradientPaint(walk: Walk, definition: XmlElement, d: string): Paint | undefined {
+  const converted = convertGradient(definition, {
+    box: walk.box,
+    d,
+    problems: walk.problems,
+    normalizeColor,
+  });
+  if (converted === undefined) return undefined;
+  if (converted.kind === 'gradient') return converted;
+  return converted.kind === 'none' ? NONE : converted;
+}
+
+/**
+ * The fill of a shape with its `url(#id)` resolved (decision 2): a missing id uses the fallback,
+ * or else is an invalid value, and so is a `url` to anything but a gradient. `undefined` after
+ * reporting it.
+ */
+function resolveFill(
+  walk: Walk,
+  element: XmlElement,
+  fill: SolidPaint | PaintRef,
+  d: string,
+): Paint | undefined {
+  if (fill.kind !== 'ref') return fill;
+  const target = walk.ids.get(fill.id);
+  if (target === undefined && fill.fallback !== undefined) return fill.fallback;
+  if (target !== undefined && isGradientElement(target.name))
+    return gradientPaint(walk, target, d);
+  walk.problems.add(invalidValue(element.name, 'fill', `url(#${fill.id})`));
+  return undefined;
+}
+
+function visit(
+  walk: Walk,
+  element: XmlElement,
+  inherited: Style,
+  clips: readonly string[],
+): void {
+  if (SILENT_ELEMENTS.has(element.name) || isDefinition(element.name)) return;
   if (element.name === 'defs') visitDefs(walk, element);
-  else if (element.name === 'g') visitGroup(walk, element, inherited);
+  else if (element.name === 'g') visitGroup(walk, element, inherited, clips);
   else if (element.name === 'path' || isBasicShape(element.name))
-    visitShape(walk, element, inherited);
+    visitShape(walk, element, inherited, clips);
   else walk.problems.add(unsupportedElement(element.name));
 }
 
-function visitChildren(walk: Walk, parent: XmlElement, style: Style): void {
-  for (const child of parent.children) visit(walk, child, style);
+function visitChildren(
+  walk: Walk,
+  parent: XmlElement,
+  style: Style,
+  clips: readonly string[],
+): void {
+  for (const child of parent.children) visit(walk, child, style, clips);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -519,38 +552,42 @@ function visitChildren(walk: Walk, parent: XmlElement, style: Style): void {
 
 /**
  * Decision 6: the distinct literal colors over fill and stroke. With one (and not `keep`) every
- * paint that has it follows the `icon` node; with several each path keeps its own color.
+ * paint that has it follows the `icon` node; with several each path keeps its own color; with a
+ * gradient on any path the icon has its own colors, so they all stay (stage #2847, decision 8).
  * `currentColor` is always the node's color and `none` is `false`.
  */
 function paintResolver(
   shapes: readonly Shape[],
   colors: SvgColors,
-): (paint: Paint) => boolean | string {
+): (paint: Paint) => boolean | string | IconGradient {
   const literals = new Set<string>();
-  for (const { style } of shapes)
-    for (const paint of [style.fill, style.stroke])
+  for (const { fill, style } of shapes)
+    for (const paint of [fill, style.stroke])
       if (paint.kind === 'color') literals.add(paint.value);
   // A fully transparent paint is already `none` (`parsePaint`), so it is not in this set.
   // The `icon` node color has no alpha, so a lone color with alpha keeps its literal.
   const [only] = literals;
-  const single = colors !== 'keep' && literals.size === 1 && only?.length === 7;
+  const gradient = shapes.some(({ fill }) => fill.kind === 'gradient');
+  const single =
+    colors !== 'keep' && !gradient && literals.size === 1 && only?.length === 7;
   return (paint) => {
     if (paint.kind === 'none') return false;
+    if (paint.kind === 'gradient') return paint.gradient;
     return paint.kind === 'current' || single ? true : paint.value;
   };
 }
 
 function iconPath(
-  { d, style }: Shape,
-  paint: (paint: Paint) => boolean | string,
+  { d, fill, style }: Shape,
+  paint: (paint: Paint) => boolean | string | IconGradient,
 ): IconPath {
   return {
     d,
-    fill: paint(style.fill),
+    fill: paint(fill),
     ...(style.stroke.kind === 'none'
       ? {}
       : {
-          stroke: paint(style.stroke),
+          stroke: paint(style.stroke) as boolean | string,
           width: style.width,
           ...(style.cap === 'butt' ? {} : { cap: style.cap }),
           ...(style.join === 'miter' ? {} : { join: style.join }),
@@ -574,28 +611,44 @@ const failed = (problems: Problems): SvgIconResult => ({
 });
 
 /** The icon entry of the shapes found: the color rule applied and the `viewBox` written or omitted. */
-function buildIcon(walk: Walk, options: SvgIconOptions): IconDef {
+function buildIcon(
+  walk: Walk,
+  clip: IconClip | undefined,
+  options: SvgIconOptions,
+): IconDef {
   const paint = paintResolver(walk.shapes, options.colors ?? 'auto');
   const { box } = walk;
   const sameBox =
     options.defaultViewBox?.[0] === box[0] && options.defaultViewBox[1] === box[1];
   return {
     ...(sameBox ? {} : { viewBox: box }),
+    ...(clip === undefined ? {} : { clip }),
     ...(options.mirror === true ? { mirror: true } : {}),
     paths: walk.shapes.map((shape) => iconPath(shape, paint)),
   };
 }
 
-/** Reads the root: the box and the walk over its children; `undefined` with the problems reported. */
-function walkRoot(root: XmlElement, problems: Problems): Walk | undefined {
+/** Reads the root: the box, the walk over its children and the icon's clip; `undefined` with the problems reported. */
+function walkRoot(
+  root: XmlElement,
+  problems: Problems,
+): { readonly walk: Walk; readonly clip: IconClip | undefined } | undefined {
   const box = boxOf(root, problems);
   checkAttributes(root, ['width', 'height', 'viewBox'], problems);
   if (box === undefined) return undefined;
-  const walk: Walk = { box, clips: fullClipIds(root, box), shapes: [], problems };
-  visitChildren(walk, root, styleOf(root, DEFAULT_STYLE, problems));
+  const ids = collectIds(root);
+  const walk: Walk = {
+    box,
+    clips: new ClipResolver({ box, ids, problems }),
+    ids,
+    shapes: [],
+    problems,
+  };
+  visitChildren(walk, root, styleOf(root, DEFAULT_STYLE, problems), []);
+  const clip = walk.clips.settle(walk.shapes.map((shape) => shape.clips));
   if (problems.size === 0 && walk.shapes.length === 0)
     problems.add(templateMessage('svgIcon.noShape'));
-  return walk;
+  return { walk, clip };
 }
 
 /** Converts the text of an SVG file into an icon entry; never throws. */
@@ -607,8 +660,9 @@ export function svgToIcon(text: string, options: SvgIconOptions = {}): SvgIconRe
   const name = nameOf(options, problems);
   if (root.name !== 'svg')
     problems.add(templateMessage('svgIcon.notSvg', { element: root.name }));
-  const walk = root.name === 'svg' ? walkRoot(root, problems) : undefined;
-  if (walk === undefined || problems.size > 0) return failed(problems);
-  const icon = buildIcon(walk, options);
+  const walked = root.name === 'svg' ? walkRoot(root, problems) : undefined;
+  if (walked === undefined || problems.size > 0) return failed(problems);
+  const { walk, clip } = walked;
+  const icon = buildIcon(walk, clip, options);
   return { ok: true, ...(name === undefined ? {} : { name }), icon, viewBox: walk.box };
 }
