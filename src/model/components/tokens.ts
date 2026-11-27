@@ -706,6 +706,8 @@ export function selectionKey(
 /** The tables of a specialization's tokens, one per selection, built on first use and then shared. */
 export interface TokenTables {
   readonly get: (selection: string | TokenSelection | undefined) => ResolvedTokens;
+  /** Does the library itself declare the token `name` (its `tokens.values`), as opposed to a built-in? */
+  readonly declared: (name: string) => boolean;
 }
 
 /**
@@ -718,6 +720,7 @@ export function createTokenTables(
 ): TokenTables {
   const tables = new Map<string, ResolvedTokens>();
   return {
+    declared: (name) => tokens !== undefined && Object.hasOwn(tokens.values, name),
     get: (selection) => {
       const key = selectionKey(tokens, selection);
       let table = tables.get(key);
@@ -728,4 +731,83 @@ export function createTokenTables(
       return table;
     },
   };
+}
+
+// ---- `$tokenNamed`: a token named by a field value (format 4) ----------------------------------------
+
+/** The kinds of position that read a token by name: a color or a font family. */
+export type NamedPositionKind = 'color' | 'family';
+
+/** The value of the token `name` of that kind, or none. Each library and the built-ins are tried in order by the chain. */
+export type NamedTokenLookup = (
+  name: string,
+  kind: NamedPositionKind,
+) => string | undefined;
+
+/** A token value that has the position's kind (a number or the other kind is skipped). */
+export function valueOfKind(
+  value: TokenValue | undefined,
+  kind: NamedPositionKind,
+): string | undefined {
+  return typeof value === 'string' && tokenKind(value) === kind ? value : undefined;
+}
+
+/** The first answer of the lookups, in order; none when no one has the name. */
+export function chainNamedLookups(
+  lookups: readonly NamedTokenLookup[],
+): NamedTokenLookup {
+  return (name, kind) => {
+    for (const lookup of lookups) {
+      const value = lookup(name, kind);
+      if (value !== undefined) return value;
+    }
+    return undefined;
+  };
+}
+
+/**
+ * The lookup of a library's own tokens: the names the library declares, in `table` (its selection already
+ * chosen). Without `tables`, every name of the table counts.
+ */
+export function declaredNamedLookup(
+  table: ResolvedTokens,
+  tables: TokenTables | undefined,
+): NamedTokenLookup {
+  return (name, kind) =>
+    TOKEN_NAME_PATTERN.test(name) &&
+    Object.hasOwn(table, name) &&
+    (tables === undefined || tables.declared(name))
+      ? valueOfKind(table[name], kind)
+      : undefined;
+}
+
+/** The built-ins (`font-sans`, `font-mono`) with their default stacks, the last place of every lookup. */
+export function builtinNamedLookup(): NamedTokenLookup {
+  builtinLookup ??= (() => {
+    const table = resolveTokens(undefined, {});
+    return (name: string, kind: NamedPositionKind) =>
+      BUILTIN_TOKENS.includes(name) ? valueOfKind(table[name], kind) : undefined;
+  })();
+  return builtinLookup;
+}
+
+let builtinLookup: NamedTokenLookup | undefined;
+
+/**
+ * The text the position takes as it is, when it names no token: a color for a color position, a font
+ * family stack for a family one (never a color or a number).
+ */
+export function literalOfKind(text: string, kind: NamedPositionKind): string | undefined {
+  return tokenKind(text) === kind ? text : undefined;
+}
+
+/**
+ * The lookup of a component with no project around it (the Catalog, the viewer, a library's own proof):
+ * the tokens its library declares, in `table` (the drawing's selection), and then the built-ins.
+ */
+export function ownNamedLookup(
+  table: ResolvedTokens,
+  tables: TokenTables | undefined,
+): NamedTokenLookup {
+  return chainNamedLookups([declaredNamedLookup(table, tables), builtinNamedLookup()]);
 }
