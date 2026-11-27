@@ -390,7 +390,7 @@ function deletion(
 /** How the preview cites a container it creates: its `$alias`, or the final reference of a proposal's. */
 function citationOf(preview: Previewed, id: string, before: Project): string | undefined {
   for (const [alias, target] of preview.aliases) {
-    if (target.id === id) return alias;
+    if ('id' in target && target.id === id) return alias;
   }
   return projectIndex(before).containers.has(id) ? preview.refs.ref('i', id) : undefined;
 }
