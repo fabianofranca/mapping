@@ -23,7 +23,7 @@ import {
 import { batchAudits, touchWarnings, withDrawingIssues } from './drawingProof';
 import { ToolError } from './errors';
 import { Refs } from './items';
-import { membershipView } from './membership';
+import { membershipView, placeView } from './membership';
 import type { Operation } from './operations';
 import { Roots, resolveProjectFile } from './paths';
 import { newProposalReserveAt } from './proposalStore';
@@ -92,7 +92,29 @@ async function takenImageFiles(dir: string): Promise<Set<string>> {
   }
 }
 
-/** References of the created items, with the alias of each one. */
+/** The final place of a created marking (`parent`, `container`) or container (`parent`); nothing for an annotation. */
+function createdPlace(
+  refs: Refs,
+  index: ReturnType<typeof projectIndex>,
+  kind: 'm' | 'i' | 'a',
+  id: string,
+): object {
+  if (kind === 'm') {
+    const marking = index.markings.get(id);
+    if (!marking) return {};
+    return placeView(refs, {
+      parentId: marking.parentId,
+      containerId: marking.containerId,
+    });
+  }
+  if (kind === 'i') {
+    const container = index.containers.get(id);
+    return container ? placeView(refs, { parentId: container.parentId }) : {};
+  }
+  return {};
+}
+
+/** References of the created items, with the alias of each one and the place of markings and containers. */
 export function createdRefs(refs: Refs, result: BatchResult): Record<string, unknown>[] {
   const index = projectIndex(refs.project);
   const byKind = {
@@ -119,12 +141,12 @@ export function createdRefs(refs: Refs, result: BatchResult): Record<string, unk
         return { ...base, kind: 'page', id: page.id, name: page.name };
       }
       const kind = item.kind;
+      const isArrow = index.arrows.has(item.id);
       return {
         ...base,
-        kind: index.arrows.has(item.id)
-          ? 'arrow'
-          : { m: 'marking', i: 'container', a: 'annotation' }[kind],
+        kind: isArrow ? 'arrow' : { m: 'marking', i: 'container', a: 'annotation' }[kind],
         ref: refs.ref(kind, item.id),
+        ...(isArrow ? {} : createdPlace(refs, index, item.kind, item.id)),
       };
     });
 }
@@ -344,7 +366,7 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
       audits,
     ),
     notices: noticeChanges(refs, prepared.changes()),
-    ...(membership.length > 0 ? { membership } : {}),
+    membership,
     ...(warnings.length > 0 ? { warnings } : {}),
     created,
     ...(result.formatImports.length > 0
