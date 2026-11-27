@@ -359,17 +359,19 @@ export function startGesture(
           startRect: marking.rect,
           limits: { outer: space.bounds },
           // Absorbs what crosses the rectangle, except itself and the ancestors (which contain it). The
-          // floating one absorbs nothing: it stays outside the membership tree both ways.
-          candidates: marking.floating
-            ? []
-            : absorbCandidates(
-                project,
-                marking.containerId,
-                new Set([
-                  marking.id,
-                  ...ancestorsOf(project, marking.id).map((a) => a.id),
-                ]),
-              ),
+          // floating one absorbs nothing: it stays outside the membership tree both ways. The
+          // decorative one is never a parent, so it absorbs nothing either.
+          candidates:
+            marking.floating || marking.decorative
+              ? []
+              : absorbCandidates(
+                  project,
+                  marking.containerId,
+                  new Set([
+                    marking.id,
+                    ...ancestorsOf(project, marking.id).map((a) => a.id),
+                  ]),
+                ),
         };
   return { gesture, draft: null };
 }

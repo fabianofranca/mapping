@@ -15,6 +15,7 @@ const marking = (id: string, containerId: string | null, x = 0): Marking => ({
   needsReview: false,
   locked: false,
   floating: false,
+  decorative: false,
   source: null,
 });
 

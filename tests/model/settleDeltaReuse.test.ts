@@ -30,6 +30,7 @@ function mk(id: string, parentId: string | null, x: number, size: number): Marki
     needsReview: false,
     locked: false,
     floating: false,
+    decorative: false,
     source: null,
   };
 }

@@ -44,7 +44,8 @@ export type RepairAction =
   | 'released'
   | 'created'
   | 'page-set'
-  | 'page-cleared';
+  | 'page-cleared'
+  | 'decorative-cleared';
 
 export interface RepairRecord {
   readonly action: RepairAction;
@@ -80,6 +81,8 @@ const REPAIRABLE: ReadonlySet<InvariantCode> = new Set<InvariantCode>([
   'container-outside-parent',
   'floating-in-container',
   'parent-floating',
+  'parent-decorative',
+  'decorative-floating',
   'arrow-endpoint-missing',
   'arrow-self',
   'duplicate-id', // only the perspective one (see `isRepairable`)
@@ -283,9 +286,16 @@ function repairRound(
     } else if (next.parentId !== null && has('marking', m.id, 'parent-floating')) {
       next = { ...next, parentId: null };
       record(out, 'made-root', 'parent-floating', 'marking', m);
+    } else if (next.parentId !== null && has('marking', m.id, 'parent-decorative')) {
+      next = { ...next, parentId: null };
+      record(out, 'made-root', 'parent-decorative', 'marking', m);
     } else if (has('marking', m.id, 'hierarchy-cycle') && inCycle(m, byId)) {
       next = { ...next, parentId: null };
       record(out, 'made-root', 'hierarchy-cycle', 'marking', m);
+    }
+    if (next.decorative && has('marking', m.id, 'decorative-floating')) {
+      next = { ...next, decorative: false };
+      record(out, 'decorative-cleared', 'decorative-floating', 'marking', m);
     }
     next = repairMarkingPage(next, has, pageIds, firstPage, out);
     // A page set this round may already fix the mismatch: the next round decides.

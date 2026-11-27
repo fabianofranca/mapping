@@ -33,6 +33,8 @@ export type InvariantCode =
   | 'container-outside-parent'
   | 'floating-in-container'
   | 'parent-floating'
+  | 'parent-decorative'
+  | 'decorative-floating'
   | 'arrow-endpoint-missing'
   | 'arrow-self'
   | 'anchor-missing'
@@ -528,6 +530,7 @@ export function validateProject(p: Project): InvariantIssue[] {
     if (m.floating && (m.containerId !== null || m.parentId !== null)) {
       marking('floating-in-container', m);
     }
+    if (m.decorative && m.floating) marking('decorative-floating', m);
     if (m.parentId === null) continue;
     const parent = markings.get(m.parentId);
     if (!parent) {
@@ -535,6 +538,7 @@ export function validateProject(p: Project): InvariantIssue[] {
       continue;
     }
     if (parent.floating) marking('parent-floating', m, parent.id);
+    else if (parent.decorative) marking('parent-decorative', m, parent.id);
     else if (parent.containerId !== m.containerId)
       marking('parent-other-image', m, parent.id);
     else if (m.containerId === null && parent.pageId !== m.pageId)
@@ -558,7 +562,7 @@ export function validateProject(p: Project): InvariantIssue[] {
     if (c.parentId === null) continue;
     const parent = markings.get(c.parentId);
     if (!parent) imageIssue('container-parent-missing', c, c.parentId);
-    else if (parent.containerId !== null || parent.floating) {
+    else if (parent.containerId !== null || parent.floating || parent.decorative) {
       imageIssue('container-parent-not-canvas', c, parent.id);
     } else if (parent.pageId !== c.pageId) {
       imageIssue('page-parent-mismatch', c, parent.id);

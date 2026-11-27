@@ -45,8 +45,8 @@ function v23WithStrings(): Raw {
 }
 
 describe('schema v24', () => {
-  it('the current version is 24 and the registry has the v23 → v24 migration', () => {
-    expect(SCHEMA_VERSION).toBe(24);
+  it('the registry has the v23 → v24 migration', () => {
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(24);
     expect(migrations.get(23)).toBe(migrateFrom23To24);
   });
 

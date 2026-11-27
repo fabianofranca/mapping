@@ -2889,9 +2889,13 @@ export function parseComponentText(text: string): ComponentParseResult {
   return parseComponent(json);
 }
 
-/** Field keys cited anywhere in the template and in the root `weight`, sorted and without repetition. */
+/**
+ * Field keys cited anywhere in the template, in the root `weight` and in the root `sizing`, sorted and
+ * without repetition (a field only the `sizing` reads still changes the drawing: it sets the size).
+ */
 export function collectFieldKeys(component: ComponentFile): string[] {
   const keys = referencedFields(component.template);
   referencedFields(component.weight, keys);
+  referencedFields(component.sizing, keys);
   return [...keys].sort();
 }

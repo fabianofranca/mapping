@@ -155,13 +155,17 @@ function areaTies(
   }
 }
 
-/** The ties of a space: the groups of equal rectangles and the candidates of the same area. */
+/**
+ * The ties of a space: the groups of equal rectangles and the candidates of the same area. A decorative
+ * marking is never a parent (the settle leaves it out of the candidates), so it only counts as a child.
+ */
 function spaceTies(ties: Ties, group: readonly Marking[]): void {
-  for (const bucket of groupBy(group, (m) => rectKey(m.rect)).values()) {
+  const parents = group.filter((m) => !m.decorative);
+  for (const bucket of groupBy(parents, (m) => rectKey(m.rect)).values()) {
     chainTies(ties, bucket);
   }
   for (const m of group) {
-    const candidates = group.filter(
+    const candidates = parents.filter(
       (c) => area(c.rect) > area(m.rect) && containsRect(c.rect, m.rect),
     );
     areaTies(ties, candidates, m.parentId, ties.pre(m.id));
@@ -179,7 +183,9 @@ function tieConstraints(base: Project, after: Project): Before[] {
   const canvas = placed.filter((m) => m.containerId === null);
   for (const c of after.containers) {
     const rect = imageCanvasRect(c, c.placement);
-    const candidates = canvas.filter((m) => containsRectApprox(m.rect, rect));
+    const candidates = canvas.filter(
+      (m) => !m.decorative && containsRectApprox(m.rect, rect),
+    );
     areaTies(ties, candidates, c.parentId, baseContainers.get(c.id) ?? null);
   }
   return ties.out;

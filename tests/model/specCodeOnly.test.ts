@@ -70,9 +70,9 @@ const onColumn = (value: unknown) => (s: Json) => {
 };
 
 describe('formatVersion 24: codeOnly on a field', () => {
-  it('the current version is 24 and 24 is in the list', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(24);
-    expect(SPEC_FORMAT_VERSIONS.at(-1)).toBe(24);
+  it('24 is in the list and is no longer the current version', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(25);
+    expect(SPEC_FORMAT_VERSIONS).toContain(24);
   });
 
   it('codeOnly: true is valid in 24 and is kept in the parsed field', () => {

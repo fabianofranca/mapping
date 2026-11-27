@@ -83,6 +83,7 @@ const MARKING_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
   'rect-outside-parent': 'marking.error.rect-outside-parent',
   'invalid-parent': 'marking.error.invalid-parent',
   'invalid-space': 'marking.error.invalid-space',
+  'decorative-floating': 'marking.error.decorative-floating',
   'not-arrangeable': 'marking.error.not-arrangeable',
   'not-fittable': 'marking.error.not-fittable',
   'anchor-missing': 'marking.error.anchor-missing',

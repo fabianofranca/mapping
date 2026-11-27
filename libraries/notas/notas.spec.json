@@ -1,10 +1,10 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 7,
+  "formatVersion": 25,
   "id": "notas",
   "name": "Notes",
-  "version": 6,
-  "description": "Notes on the canvas: floating sticky notes in six colors, with a title, free text, a table of key and value rows and a text after the rows (any of them can be left out), to comment on a screen, record a business rule, list the data of an event or leave a message for whoever reads the mapping; and plain text, loose on the canvas or inside a container, for labels, titles and captions, with its own size, weight, color, font family and alignment. Version 6 folds the old Table type into the note.",
+  "version": 7,
+  "description": "Notes on the canvas: floating sticky notes in six colors, with a title, free text, a table of key and value rows and a text after the rows (any of them can be left out), to comment on a screen, record a business rule, list the data of an event or leave a message for whoever reads the mapping; and plain text, loose on the canvas or inside a container, for labels, titles and captions, with its own size, weight, color, font family and alignment. Version 6 folds the old Table type into the note. Version 7 adds three decorative types for documentation pages: a frame (outline and optional fill), a bracket and a line.",
   "layers": [
     {
       "id": "notas",
@@ -142,6 +142,147 @@
               }
             }
           ]
+        },
+        {
+          "id": "moldura",
+          "name": "Frame",
+          "description": "A rectangular frame, solid or dashed, with an optional fill and corner radius: it groups a region of a documentation page (a grid of samples, a section) or, filled, paints a background behind samples. Decorative: it lives in its space, follows its container and never contains other markings, so a sample inside it stays a child of whatever contains the frame.",
+          "decorative": true,
+          "component": "components/moldura.json",
+          "doc": "docs/moldura.md",
+          "fields": [
+            {
+              "key": "cor",
+              "label": "Color",
+              "type": "string",
+              "description": "Color of the drawing: the name of a color token of an applied library (such as outline) or a literal color as #RRGGBB. A name that no applied library declares and that is not a color draws #79747E, like an empty value."
+            },
+            {
+              "key": "espessura",
+              "label": "Thickness",
+              "type": "number",
+              "description": "Stroke width in the component's units. Empty draws 1; 0 draws no outline."
+            },
+            {
+              "key": "estilo",
+              "label": "Style",
+              "type": "enum",
+              "options": ["solido", "tracejado"],
+              "description": "solido: a continuous stroke. tracejado: a dashed stroke (6 on, 4 off). Empty draws solido."
+            },
+            {
+              "key": "raio",
+              "label": "Radius",
+              "type": "number",
+              "description": "Corner radius in the component's units. Empty draws 0."
+            },
+            {
+              "key": "fundo",
+              "label": "Fill",
+              "type": "string",
+              "description": "Fill of the box: the name of a color token of an applied library or a literal color as #RRGGBB. Empty, or a name that is not a color, draws no fill."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Dashed section",
+              "values": {
+                "cor": "#79747E",
+                "estilo": "tracejado",
+                "raio": 8
+              }
+            }
+          ]
+        },
+        {
+          "id": "colchete",
+          "name": "Bracket",
+          "description": "A bracket beside a group of rows or items: an outline on three sides, open on the side the field names. Decorative: it never contains other markings.",
+          "decorative": true,
+          "component": "components/colchete.json",
+          "doc": "docs/colchete.md",
+          "fields": [
+            {
+              "key": "cor",
+              "label": "Color",
+              "type": "string",
+              "description": "Color of the drawing: the name of a color token of an applied library (such as outline) or a literal color as #RRGGBB. A name that no applied library declares and that is not a color draws #79747E, like an empty value."
+            },
+            {
+              "key": "espessura",
+              "label": "Thickness",
+              "type": "number",
+              "description": "Stroke width in the component's units. Empty draws 1; 0 draws no outline."
+            },
+            {
+              "key": "estilo",
+              "label": "Style",
+              "type": "enum",
+              "options": ["solido", "tracejado"],
+              "description": "solido: a continuous stroke. tracejado: a dashed stroke (6 on, 4 off). Empty draws solido."
+            },
+            {
+              "key": "aberto",
+              "label": "Open side",
+              "type": "enum",
+              "options": ["direita", "esquerda", "baixo", "cima"],
+              "description": "The side with no stroke: direita draws \"[\" (the default), esquerda \"]\", baixo and cima the horizontal brackets. Empty draws direita."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Beside three rows",
+              "values": {
+                "aberto": "direita",
+                "espessura": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "linha",
+          "name": "Line",
+          "description": "A straight divider through the middle of its box, along its whole width or height. Decorative: it never contains other markings.",
+          "decorative": true,
+          "component": "components/linha.json",
+          "doc": "docs/linha.md",
+          "fields": [
+            {
+              "key": "cor",
+              "label": "Color",
+              "type": "string",
+              "description": "Color of the drawing: the name of a color token of an applied library (such as outline) or a literal color as #RRGGBB. A name that no applied library declares and that is not a color draws #79747E, like an empty value."
+            },
+            {
+              "key": "espessura",
+              "label": "Thickness",
+              "type": "number",
+              "description": "Stroke width in the component's units. Empty draws 1; 0 draws no outline."
+            },
+            {
+              "key": "estilo",
+              "label": "Style",
+              "type": "enum",
+              "options": ["solido", "tracejado"],
+              "description": "solido: a continuous stroke. tracejado: a dashed stroke (6 on, 4 off). Empty draws solido."
+            },
+            {
+              "key": "orientacao",
+              "label": "Orientation",
+              "type": "enum",
+              "options": ["horizontal", "vertical"],
+              "description": "horizontal runs along the whole width, vertical along the whole height. Empty draws horizontal."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Section divider",
+              "values": {
+                "orientacao": "horizontal",
+                "estilo": "tracejado"
+              }
+            }
+          ]
         }
       ]
     }
@@ -149,7 +290,7 @@
   "migrations": [
     {
       "from": 1,
-      "to": 6,
+      "to": 7,
       "steps": [
         {
           "op": "rename-type",
@@ -160,7 +301,7 @@
     },
     {
       "from": 2,
-      "to": 6,
+      "to": 7,
       "steps": [
         {
           "op": "rename-type",
@@ -171,7 +312,7 @@
     },
     {
       "from": 3,
-      "to": 6,
+      "to": 7,
       "steps": [
         {
           "op": "rename-type",
@@ -182,7 +323,7 @@
     },
     {
       "from": 4,
-      "to": 6,
+      "to": 7,
       "steps": [
         {
           "op": "rename-type",
@@ -193,7 +334,7 @@
     },
     {
       "from": 5,
-      "to": 6,
+      "to": 7,
       "steps": [
         {
           "op": "rename-type",

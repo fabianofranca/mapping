@@ -13,6 +13,7 @@ import {
   instantiate,
   measureComponent,
   type MeasureFont,
+  type TextMeasurer,
 } from '../../../src/model/components/instantiate';
 import {
   collectFieldKeys,
@@ -613,6 +614,44 @@ describe('measureRichText', () => {
     const metrics = measureRichText([run('abc def')], BASE, approximateMeasurer);
     expect(metrics.lines).toEqual(['abc def']);
     expect(metrics.height).toBeCloseTo(16.8, 6);
+  });
+});
+
+describe('hug width of rich text (#2925)', () => {
+  /** Like a trailing side bearing: two strings measured apart are wider than the same text whole. */
+  const padded: TextMeasurer = (text, font, maxWidth) => {
+    const m = approximateMeasurer(text, font, maxWidth);
+    return { ...m, width: m.width + 2 };
+  };
+  const RUNS_HUG: RichRun[] = [
+    run('Hello, ', { weight: 400 }),
+    run('Inter', { weight: 600 }),
+  ];
+
+  it('layoutRuns at Math.ceil of the measured width keeps one line', () => {
+    const measured = measureRichText(RUNS_HUG, BASE, padded);
+    expect(measured.lines).toHaveLength(1);
+    const again = layoutRuns(RUNS_HUG, BASE, padded, Math.ceil(measured.width));
+    expect(lineTexts(again)).toEqual(['Hello, Inter']);
+  });
+
+  it('a hug text with those runs keeps one line at the measured instance width', () => {
+    const file = richFile({
+      font: { size: 14 },
+      width: 'hug',
+      runs: [{ text: 'Hello, ' }, { text: 'Inter', weight: 600 }],
+    });
+    const options = { measure: padded };
+    const { width, height } = measureComponent(
+      file,
+      {},
+      { width: null, height: null },
+      options,
+    );
+    const { root } = instantiate(file, {}, { x: 0, y: 0, width, height }, options);
+    const node = [...walk(root)].find((n): n is TextNode => n.type === 'text')!;
+    expect(node.runLayout!.lines).toHaveLength(1);
+    expect(node.runLayout!.width).toBeLessThanOrEqual(node.width + 1e-9);
   });
 });
 

@@ -250,6 +250,7 @@ function genMarking(
 ): Marking {
   const containerId = rng.pick(keys);
   const ctx = spaces.get(containerId) as SpaceCtx;
+  const floating = rng.chance(0.1);
   return {
     id: `M${i}`,
     containerId,
@@ -259,7 +260,9 @@ function genMarking(
     rect: nextRect(ctx),
     needsReview: false,
     locked: false,
-    floating: rng.chance(0.1),
+    floating,
+    // Decorative (v25): a child like any marking, never a parent.
+    decorative: !floating && rng.chance(0.12),
     source: null,
   };
 }
