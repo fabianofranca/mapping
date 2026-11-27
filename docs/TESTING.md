@@ -4016,7 +4016,7 @@ The app's crop of a marking: select it (Tree), `Shift+2` (zoom to the selection)
 export W51=<work folder>/r51 && mkdir -p "$W51" && cp -r REPO/tests/fixtures/rich-runs ROOT/rr
 hex() { convert "$1" -format "%[hex:p{$2,$3}]\n" info:; }          # first six digits: the color; the last two: the alpha
 ink() { convert "$1" -alpha off -colorspace Gray -threshold 60% -negate -format '%@\n' info:; }   # WxH+X+Y of the dark ink of a text on a light background
-blue() { convert "$1" -alpha off -fuzz 14% -fill black -opaque '#0B5FFF' -fill white +opaque black -negate -trim -format '%@\n' info:; }   # WxH+X+Y of the 0B5FFF ink (the link and the icon); 1x1+0+0 when there is none
+blue() { convert "$1" -alpha off -fuzz 14% -fill black -opaque '#0B5FFF' -fill white +opaque black -negate -format '%@\n' info: 2>/dev/null | sed 's/^0x0+.*/1x1+0+0/'; }   # WxH+X+Y of the 0B5FFF ink (the link and the icon), measured on the whole image (no -trim, which would move the offset); 1x1+0+0 when there is none
 band() { convert "$1" -crop 240x20+0+$2 +repage "$3"; }            # the 20-px line $2 (0, 20, 40…) of a 240-wide crop of the decorated text
 cut_to() { awk -v s="$2" 'BEGIN{split(s,a," "); printf "%dx%d+%d+%d", a[3]+.5, a[4]+.5, a[1]+.5, a[2]+.5}' | xargs -I{} convert "$1" -crop {} +repage "$3"; }   # cuts the marking's box (sel) out of the host's crop
 python3 - <<'PY'
