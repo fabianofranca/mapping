@@ -1,4 +1,4 @@
-import { useId, useState } from 'preact/hooks';
+import { useEffect, useId, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   annotationDeletionImpact,
@@ -13,6 +13,7 @@ import {
   type Layer,
   type Project,
 } from '../model';
+import { fieldDisplay } from '../model/specFieldDisplay';
 import { isSectionCollapsed, toggleSection, type AnnotationLocation } from '../store/ui';
 import { IssueBadge } from './AnnotationSummary';
 import { CodeDefinitions } from './CodeDefinitions';
@@ -26,6 +27,7 @@ import { ReferencedByRow } from './ReferencedBy';
 import { OwnerRoleField } from './OwnerRoleField';
 import { useEditor } from './EditorContext';
 import { Button, HelpTip, IconButton, Select } from './controls';
+import { FieldDisplayItems, HiddenFieldsLine } from './FieldGroups';
 import { KeyValueGrid } from './KeyValueGrid';
 import { annotationLabel } from './labels';
 import { Property, PropertyGrid } from './PropertyGrid';
@@ -70,7 +72,12 @@ function TypedBody({
   readonly readOnly: boolean;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }) {
-  const { actions, review } = useEditor();
+  const { actions, review, ui } = useEditor();
+  const ext = useDetailsExtension();
+  const issues = useIssuesOf(annotation.id);
+  // "Show" lists every hidden field until the selection changes (local state, per annotation).
+  const [showAll, setShowAll] = useState(false);
+  useEffect(() => setShowAll(false), [annotation.id]);
   const resolved = typeOfAnnotation(project, annotation);
   // The fields resolve references on every page (stage #883, CL1): a target on another page is
   // not broken. Only when `project` is the one in view (a given project stays as it is).
@@ -102,12 +109,41 @@ function TypedBody({
     );
   }
   const ctx = { project: fieldProject, annotation, readOnly, onGoToAnnotation };
+  const { type } = resolved;
+  const hasContent = (c: unknown) => c !== undefined && c !== null && c !== false;
+  // A hidden field still shows with a pending item of its own, a review mark or text below it.
+  const keep = new Set(
+    type.fields
+      .filter(
+        (f) =>
+          issues.some((i) => i.key === f.key && i.rowId === undefined) ||
+          hasContent(ext?.mark(annotation.id, `values.${f.key}`)) ||
+          hasContent(ext?.below(annotation.id, `values.${f.key}`)),
+      )
+      .map((f) => f.key),
+  );
+  const base = fieldDisplay(type, annotation.values ?? {}, keep);
+  const display = showAll
+    ? fieldDisplay(type, annotation.values ?? {}, new Set(type.fields.map((f) => f.key)))
+    : base;
+  const groupSection = (groupId: string) =>
+    ({ kind: 'fieldGroup', id: `${resolved.spec.id}/${type.id}/${groupId}` }) as const;
   return (
     <>
       <PropertyGrid>
-        {resolved.type.fields.map((field) => (
-          <TypedField key={field.key} field={field} {...ctx} />
-        ))}
+        <FieldDisplayItems
+          items={display.items}
+          isCollapsed={(id) => isSectionCollapsed(ui, groupSection(id))}
+          onToggle={(id) => toggleSection(ui, groupSection(id))}
+          renderField={(field) => <TypedField key={field.key} field={field} {...ctx} />}
+        />
+        {base.hidden.length > 0 && (
+          <HiddenFieldsLine
+            count={base.hidden.length}
+            shown={showAll}
+            onToggle={() => setShowAll((on) => !on)}
+          />
+        )}
         <CodeDefinitions
           project={project}
           specId={resolved.spec.id}
