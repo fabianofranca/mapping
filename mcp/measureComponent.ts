@@ -1,5 +1,4 @@
 import { dirname } from 'node:path';
-import { readFile, stat } from 'node:fs/promises';
 import {
   ModelError,
   applySpecialization,
@@ -19,9 +18,14 @@ import { findTypeEntry, openPackage, type ComponentArgs } from './componentTools
 import { resolveItem } from './items';
 import { builtinFontBook, measurerFor, type FontBook } from './image/textMeasurer';
 import { anyApproximate, recordingMeasurer } from './approximateText';
-import { MAX_FONT_BYTES, findProject, loadProject, type LoadedProject } from './projects';
-import { resolveProjectFile, type Roots } from './paths';
-import { buildPreviewFonts, readPackageBytes, type FontReader } from './previewFonts';
+import { findProject, loadProject, type LoadedProject } from './projects';
+import type { Roots } from './paths';
+import {
+  buildPreviewFonts,
+  readPackageBytes,
+  readProjectBytes,
+  type FontReader,
+} from './previewFonts';
 import { packageByPath, type PackageSource } from './library';
 
 // `measure_component` (FM3 of #2089): the size of a component for given field values, in units and
@@ -153,14 +157,7 @@ function pathFontReader(
   return async (path) => {
     const inside = underPrefix(path, prefix);
     if (inside !== null) return readPackageBytes(roots, source.dir, inside);
-    const real = await resolveProjectFile(roots, loaded.location.dir, path);
-    if (real === null) return null;
-    try {
-      if ((await stat(real)).size > MAX_FONT_BYTES) return null;
-      return new Uint8Array(await readFile(real));
-    } catch {
-      return null;
-    }
+    return readProjectBytes(roots, loaded.location.dir, path);
   };
 }
 

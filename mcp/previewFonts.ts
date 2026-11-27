@@ -5,7 +5,7 @@ import type { Project, ProjectSpecialization } from '../src/model';
 import { resolvePath, type LoadedFont } from '../src/model/components/library';
 import { MAX_FONT_BYTES } from './projects';
 import { createFontBook, type FontBook } from './image/textMeasurer';
-import { hasParentSegment, isWithin, type Roots } from './paths';
+import { hasParentSegment, isWithin, resolveProjectFile, type Roots } from './paths';
 
 // The font book of the `render_*` preview (stage #2928, decisions 1 to 3): the fonts of every specialization
 // of the previewed project, read through a reader the caller gives (the batch's package files, the proposal
@@ -150,6 +150,22 @@ export async function readPackageBytes(
     if (!isWithin(realDir, real) || (await roots.locate(real)) === null) return null;
     const info = await stat(real);
     if (!info.isFile() || info.size > MAX_FONT_BYTES) return null;
+    return new Uint8Array(await readFile(real));
+  } catch {
+    return null;
+  }
+}
+
+/** Reads a font of the project folder (`specs/<id>/…`) as bytes, through the confined project path; `null` if unreadable or too large. */
+export async function readProjectBytes(
+  roots: Roots,
+  projectDir: string,
+  path: string,
+): Promise<Uint8Array | null> {
+  const real = await resolveProjectFile(roots, projectDir, path);
+  if (real === null) return null;
+  try {
+    if ((await stat(real)).size > MAX_FONT_BYTES) return null;
     return new Uint8Array(await readFile(real));
   } catch {
     return null;
