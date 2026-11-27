@@ -18,6 +18,7 @@ import {
   proposalDir,
   proposalFilePath,
   proposalImagePath,
+  EPSILON,
   changeImageFile,
   imageCanvasRect,
   packageDirOf,
@@ -320,7 +321,8 @@ function subtractRect(piece: Rect, cut: Rect): Rect[] {
     { x: piece.x, y: rowTop, width: cut.x - piece.x, height: rowBottom - rowTop },
     { x: cRight, y: rowTop, width: pRight - cRight, height: rowBottom - rowTop },
   ];
-  return pieces.filter((r) => r.width > 0 && r.height > 0);
+  // Float noise is not a place to hold: `rectsOverlap` already ignores up to `EPSILON`.
+  return pieces.filter((r) => r.width > EPSILON && r.height > EPSILON);
 }
 
 /**

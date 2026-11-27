@@ -340,6 +340,12 @@ describe('reservedContainers leaves out the containers the proposal deletes (#29
     }
   });
 
+  it('a creation that sticks out of the deleted one by float noise holds no sliver', () => {
+    // The rectangles overlap (more than EPSILON), but 1e-9 of width is not a place to hold.
+    const noisy = swap([box('A', A)], [box('B', { ...A, width: A.width + 1e-9 })]);
+    expect(reservedContainers(noisy)).toEqual([]);
+  });
+
   it('a delete already applied, or on another page, subtracts nothing', () => {
     const proposal = swap([box('A', A)], [box('B', A)]);
     const del = changeOfDeleted(proposal, 'A');

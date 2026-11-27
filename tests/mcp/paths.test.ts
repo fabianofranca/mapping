@@ -195,6 +195,13 @@ describe('Roots with scratch folders (input files)', () => {
       });
     });
 
+    it('a leading `./` before the folder name is the same path', async () => {
+      writeFileSync(join(scratch, 'batch.json'), 'scratch');
+      expect((await roots.resolveInputFile('./scratch/batch.json')).real).toBe(
+        join(scratch, 'batch.json'),
+      );
+    });
+
     it('`<root name>/<file>` is the file in that root', async () => {
       writeFileSync(join(root, 'b.json'), 'root');
       expect(await roots.resolveInputFile('projects/b.json')).toMatchObject({

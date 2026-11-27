@@ -100,7 +100,9 @@ function areaHoldsReal(area: Area, real: string): boolean {
 function inputCandidates(input: string, areas: readonly Area[]): string[] {
   const dirs = areas.flatMap((area) => area.dirs);
   const literal = dirs.map((dir) => join(dir, input));
-  const [first, ...rest] = input.split(/[\\/]+/).filter((part) => part !== '');
+  const [first, ...rest] = input
+    .split(/[\\/]+/)
+    .filter((part) => part !== '' && part !== '.');
   if (first === undefined || rest.length === 0) return literal;
   const stripped = join(...rest);
   return [
