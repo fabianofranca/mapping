@@ -479,7 +479,7 @@ describe('library package', () => {
     },
   ];
 
-  it('a batch that applies the package draws its components, with the fonts warning', async () => {
+  it('a batch that applies the package draws its components and counts its fonts (no warning)', async () => {
     const reply = ok(
       await call('render_container', {
         project: 'telas',
@@ -488,7 +488,7 @@ describe('library package', () => {
       }),
     );
     expect(pixel(await raster(reply), 30, 30)).toEqual([255, 0, 0]);
-    expect(String(reply.json.warning)).toContain('fonts');
+    expect(reply.json.warning).toBeUndefined();
     expect(existsSync(join(dir, 'specs', 'pkg'))).toBe(false);
   });
 
@@ -500,7 +500,7 @@ describe('library package', () => {
       await call('render_container', { ref: p.container, proposal: p.ref }),
     );
     expect(pixel(await raster(reply), 30, 30)).toEqual([255, 0, 0]);
-    expect(String(reply.json.warning)).toContain('fonts');
+    expect(reply.json.warning).toBeUndefined();
   });
 
   it('accepts a drawingMode that only the previewed package declares', async () => {

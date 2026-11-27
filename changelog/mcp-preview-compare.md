@@ -2,4 +2,8 @@
 
 ## Adicionado
 
-- Work in progress.
+- The `fonts` of a library that a batch or proposal applies or updates measure and draw the text in the `render_container` and `render_marking` preview, before it is applied (#2928).
+
+## Alterado
+
+- The preview warning "the library's fonts count only after it is applied" is gone; a declared font the package does not carry gives a warning with its path and is drawn with the embedded font (#2928).

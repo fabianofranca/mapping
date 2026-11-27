@@ -27,7 +27,15 @@ import {
 import { resolveOptionalOperations } from './operationsFile';
 import type { Operation } from './operations';
 import { resolveProjectFile, type Roots } from './paths';
-import { findProject, loadCatalog, loadProject, type ProjectLocation } from './projects';
+import {
+  MAX_FONT_BYTES,
+  findProject,
+  loadCatalog,
+  loadProject,
+  type LoadedProject,
+  type ProjectLocation,
+} from './projects';
+import { broughtFontSpecs, buildPreviewFonts, type FontReader } from './previewFonts';
 import { revisionReserve, toToolError } from './proposalRevise';
 import { newProposalReserveAt } from './proposalStore';
 import { resolveProposal, type ResolvedProposal } from './proposalRefs';
@@ -167,19 +175,47 @@ function imageSourceOf(
   };
 }
 
-/** The specializations the preview brings (new or changed) that declare `fonts`: they count only once applied. */
-function fontsWarning(disk: Project, previewed: Project): string | undefined {
-  const brought = previewed.specializations.filter((s) => {
-    if ((s.spec?.fonts?.length ?? 0) === 0) return false;
-    const was = disk.specializations.find((d) => d.id === s.id);
-    return (
-      was === undefined ||
-      (was.spec !== s.spec && JSON.stringify(was.spec) !== JSON.stringify(s.spec))
-    );
-  });
-  if (brought.length === 0) return undefined;
-  const ids = brought.map((s) => s.id).join(', ');
-  return `the library ${ids} declares fonts: the preview draws its text with the fonts already in the project (or the embedded one); the library's fonts count only after it is applied`;
+/** Where a font file is read: the batch's package files, the proposal folder, then the project copy (decision 2). */
+function fontReaderOf(
+  roots: Roots,
+  location: ProjectLocation,
+  packageFiles: ReadonlyMap<string, Uint8Array>,
+  mapped: ((path: string) => string) | undefined,
+): FontReader {
+  return async (path) => {
+    const given = packageFiles.get(path);
+    if (given !== undefined) return given.byteLength > MAX_FONT_BYTES ? null : given;
+    for (const candidate of mapped === undefined ? [path] : [mapped(path), path]) {
+      const real = await resolveProjectFile(roots, location.dir, candidate);
+      if (real === null) continue;
+      try {
+        if ((await stat(real)).size > MAX_FONT_BYTES) return null;
+        return new Uint8Array(await readFile(real));
+      } catch {
+        // Unreadable: the next place, then the embedded font.
+      }
+    }
+    return null;
+  };
+}
+
+/**
+ * The loaded project the preview draws with: the font book of the previewed project (its libraries' `fonts`,
+ * read through `read`) when a brought specialization declares fonts; otherwise `loaded` as it is (decision 2).
+ */
+async function withPreviewFonts(
+  base: LoadedProject,
+  disk: Project,
+  previewed: Project,
+  read: FontReader,
+): Promise<{ loaded: LoadedProject; warning: string | undefined }> {
+  const brought = broughtFontSpecs(disk, previewed);
+  if (brought.length === 0) return { loaded: base, warning: undefined };
+  const { book, warnings } = await buildPreviewFonts(previewed, read, brought);
+  return {
+    loaded: { ...base, fonts: book },
+    warning: warnings.length === 0 ? undefined : warnings.join('; '),
+  };
 }
 
 function invalidBatch(result: BatchResult): ToolError {
@@ -213,14 +249,21 @@ async function previewProposal(
     proposed,
     componentPath(stored.proposal),
   );
+  const read = fontReaderOf(roots, location, new Map(), componentPath(stored.proposal));
+  const drawn = await withPreviewFonts(
+    { ...loaded, project: proposed, catalog },
+    loaded.project,
+    proposed,
+    read,
+  );
   return {
-    refs: new Refs({ ...loaded, project: proposed, catalog }),
+    refs: new Refs(drawn.loaded),
     before: proposed,
     aliases: new Map(),
     source: imageSourceOf(roots, location, stored.id, new Map()),
     operations: undefined,
     proposal: resolved.refs.ref(stored.id),
-    warning: fontsWarning(loaded.project, proposed),
+    warning: drawn.warning,
     revision: loaded.project.revision,
   };
 }
@@ -264,14 +307,26 @@ async function previewBatch(
   );
   if (!prepared.valid) throw invalidBatch(prepared.result);
   const { result } = prepared;
+  const read = fontReaderOf(
+    roots,
+    location,
+    result.packageFiles,
+    resolved === undefined ? undefined : componentPath(resolved.stored.proposal),
+  );
+  const drawn = await withPreviewFonts(
+    prepared.refs.loaded,
+    prepared.loaded.project,
+    result.project,
+    read,
+  );
   return {
-    refs: prepared.refs,
+    refs: drawn.loaded === prepared.refs.loaded ? prepared.refs : new Refs(drawn.loaded),
     before: result.before,
     aliases: result.aliases,
     source: imageSourceOf(roots, location, resolved?.stored.id, result.imageFiles),
     operations: batch.length,
     proposal: resolved?.refs.ref(resolved.stored.id),
-    warning: fontsWarning(prepared.loaded.project, result.project),
+    warning: drawn.warning,
     revision: prepared.loaded.project.revision,
   };
 }
