@@ -148,6 +148,8 @@ export const markingSchema = z.object({
   locked: z.boolean(),
   /** Floating (v13). Absent in a v13 from before this field: `false`. */
   floating: z.boolean().default(false),
+  /** Decorative (v25): never a parent. Absent: `false`. */
+  decorative: z.boolean().default(false),
   source: sourceSchema.nullable(),
   /** Anchor (v20); absent or `null` = no anchor. */
   anchor: anchorSchema.nullable().optional(),

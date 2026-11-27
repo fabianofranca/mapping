@@ -25,6 +25,8 @@ export type ModelErrorCode =
   | 'invalid-parent'
   // Marking space (Spatial markings stage): the floating one lives only on the canvas
   | 'invalid-space'
+  // Decorative marking (v25): a floating marking cannot be decorative, nor the reverse
+  | 'decorative-floating'
   | 'invalid-annotation-parent'
   // Arrows (v13, ME4): they link markings, never another arrow or container
   | 'arrow-endpoint'

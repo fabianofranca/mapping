@@ -126,7 +126,7 @@ bounds); `toCanvasRect`/`fromCanvasRect` (`geometry.ts`) convert from one to the
 idempotent, returns the same object if nothing changes) recomputes it from the geometry and, before that, decides the space of each
 non-floating marking (the container that fully contains it, otherwise the canvas; if it changed, it converts the `rect` and the descendants go along).
 The rules are in [`FORMAT.md`](FORMAT.md), "v13 fields (containment)": inside means fully contained, the parent is the smallest one in the
-same space, the container's parent is the smallest canvas marking that contains it, and floating ones stay outside the tree. In ties
+same space, the container's parent is the smallest canvas marking that contains it, and floating ones stay outside the tree. A **decorative** marking (v25) is a child like any other and never a parent: it is not a candidate in the full or local settle, for a container, for wrap or for free placement, so the parents of everything else are the same as without it. In ties
 (equal rectangles; candidates of equal area for parent, also for the container) **the current relation holds** and the array order only
 decides the new tie: within a group of equal rectangles the outside-in order is the topological sort of the current
 `parentId`s (the parent before the child; among the free ones, the one that comes first in the array; whoever has no parent in the group enters by the array;
