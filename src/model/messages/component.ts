@@ -78,6 +78,7 @@ export const componentMessages = {
   'component.expectedRunObject': 'expected an object (run)',
   'component.expectedRuns': 'expected a non-empty list of runs',
   'component.textAndRuns': 'text and runs together: use one or the other',
+  'component.textAndIcon': 'text and icon together: use one or the other',
   'component.expectedNodeObject': 'expected an object (node)',
   'component.nodeTypeUnknown': 'unknown node type: {type} (expected {types})',
   'component.onlyFrameAccepts': 'only nodes of type frame accept {key} (this is {type})',

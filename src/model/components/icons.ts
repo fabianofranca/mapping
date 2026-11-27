@@ -494,6 +494,11 @@ export function iconNodes(template: unknown, path = 'template'): IconNodeRef[] {
   const out: IconNodeRef[] = [];
   if (template.type === 'icon')
     out.push({ path: join(path, 'name'), name: template.name });
+  if (template.type === 'text' && Array.isArray(template.runs))
+    template.runs.forEach((run: unknown, i) => {
+      if (isRecord(run) && 'icon' in run)
+        out.push({ path: `${join(path, 'runs')}[${i}].icon`, name: run.icon });
+    });
   if (Array.isArray(template.children))
     template.children.forEach((child: unknown, i) =>
       out.push(...iconNodes(child, join(join(path, 'children'), i))),

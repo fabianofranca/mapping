@@ -18,6 +18,11 @@
  * - Chip: unbreakable atom of width `text + 2·h` and height `run line + 2·v`. Larger than the
  *   line, it stays alone and overflows the width; one that does not fit in the rest of the line
  *   goes whole to the next line. A word larger than the width also stays alone on the line.
+ * - Inline icon (`RichRun.inline`): an unbreakable atom like the chip, of the icon's box (`width`
+ *   × `height`, no padding). Its edges are break opportunities; larger than the line it stays
+ *   alone and overflows; `ellipsis` removes it whole. The piece's height is the icon's, so the
+ *   line is the tallest of the node's line height and the icon. A leading space before it, at
+ *   the start of the line, is discarded like any other.
  * - Line height of a run = the node's `lineHeight` × (run size / node size); the line height is
  *   the maximum between the node's `lineHeight` and the height of the pieces (the chip includes
  *   the vertical padding). Limit: the pieces are vertically centered on the line, not aligned
@@ -46,6 +51,8 @@ export interface RichRun {
   readonly font: MeasureFont;
   /** Present = the run has a background (chip): `padding` is `[vertical, horizontal]` in px. */
   readonly chip?: { readonly padding: readonly [number, number] };
+  /** Present = an inline icon: an unbreakable box of this size in px (the `text` is empty). */
+  readonly inline?: { readonly width: number; readonly height: number };
 }
 
 /** What belongs to the node, not to the runs. */
@@ -82,6 +89,8 @@ export interface RunPiece {
   readonly height: number;
   /** `true` = inline box (draws the background; the text sits the horizontal `padding` inward). */
   readonly chip: boolean;
+  /** `true` = inline icon (the box has `width` × `height`; there is no text). */
+  readonly inline?: true;
 }
 
 export interface RunLine {
@@ -111,6 +120,8 @@ interface Seg {
   readonly text: string;
   readonly width: number;
   readonly chip: boolean;
+  /** An inline icon: an atom with no text, of the icon's width. */
+  readonly inline?: boolean;
 }
 
 type Atom =
@@ -162,10 +173,17 @@ function createContext(
   };
   const padding = (run: number): readonly [number, number] =>
     runs[run]?.chip?.padding ?? [0, 0];
-  const heightOf = (run: number): number =>
-    runLineHeight(base, runs[run]?.font as MeasureFont) +
-    (runs[run]?.chip ? 2 * padding(run)[0] : 0);
+  const heightOf = (run: number): number => {
+    const inline = runs[run]?.inline;
+    if (inline) return inline.height;
+    return (
+      runLineHeight(base, runs[run]?.font as MeasureFont) +
+      (runs[run]?.chip ? 2 * padding(run)[0] : 0)
+    );
+  };
   const seg = (run: number, text: string): Seg => {
+    const inline = runs[run]?.inline;
+    if (inline) return { run, text: '', width: inline.width, chip: false, inline: true };
     const chip = runs[run]?.chip !== undefined;
     const width = textWidth(run, text) + (chip ? 2 * padding(run)[1] : 0);
     return { run, text, width, chip };
@@ -193,6 +211,11 @@ function toAtoms(ctx: Context): Atom[] {
     word = [];
   };
   ctx.runs.forEach((run, index) => {
+    if (run.inline) {
+      flush();
+      atoms.push(wordAtom([ctx.seg(index, '')]));
+      return;
+    }
     if (run.text === '') return;
     if (run.chip) {
       flush();
@@ -262,11 +285,29 @@ const sumWidths = (segs: readonly Seg[]): number =>
   segs.reduce((sum, seg) => sum + seg.width, 0);
 
 const isBlank = (seg: Seg | undefined): boolean =>
-  seg !== undefined && !seg.chip && seg.text.trim() === '';
+  seg !== undefined && !seg.chip && seg.inline !== true && seg.text.trim() === '';
 
 /** Removes the last code point (emoji and surrogate pairs go whole). */
 export function dropLastChar(text: string): string {
   return [...text].slice(0, -1).join('');
+}
+
+/** A chip or an inline icon leaves whole, never cut. */
+const isAtomic = (seg: Seg): boolean => seg.chip || seg.inline === true;
+
+/** The run whose font the `…` takes after `tail`: the tail's own, or, for an icon, the text before it. */
+function fontRunOf(tail: Seg, kept: readonly Seg[], ctx: Context): number {
+  return tail.inline ? textRunBefore(kept, ctx) : tail.run;
+}
+
+/** The run the `…` takes its font from when the line ends in an inline icon: the nearest text run before it. */
+function textRunBefore(kept: readonly Seg[], ctx: Context): number {
+  for (let i = kept.length - 1; i >= 0; i--) {
+    const seg = kept[i];
+    if (seg !== undefined && seg.inline !== true) return seg.run;
+  }
+  const first = ctx.runs.findIndex((r) => r.inline === undefined);
+  return first >= 0 ? first : 0;
 }
 
 /**
@@ -280,10 +321,10 @@ function ellipsize(line: readonly Seg[], ctx: Context, limit: number): Seg[] {
     while (isBlank(kept[kept.length - 1])) kept.pop();
     const tail = kept[kept.length - 1];
     if (tail === undefined) break;
-    run = tail.run;
+    run = fontRunOf(tail, kept, ctx);
     if (sumWidths(kept) + ctx.textWidth(run, '…') <= limit + EPS) break;
     kept.pop();
-    const shorter = tail.chip ? '' : dropLastChar(tail.text).trimEnd();
+    const shorter = isAtomic(tail) ? '' : dropLastChar(tail.text).trimEnd();
     if (shorter !== '') kept.push(ctx.seg(tail.run, shorter));
   }
   return [...kept, { run, text: '…', width: ctx.textWidth(run, '…'), chip: false }];
@@ -313,17 +354,40 @@ function clipLines(
 
 /** Joins neighboring segments of the same run (without a background) into a single, already measured piece. */
 function mergePieces(line: readonly Seg[], ctx: Context): Omit<RunPiece, 'x'>[] {
-  const groups: { run: number; text: string; chip: boolean; width: number }[] = [];
+  const groups: {
+    run: number;
+    text: string;
+    chip: boolean;
+    inline: boolean;
+    width: number;
+  }[] = [];
   for (const seg of line) {
     const prev = groups[groups.length - 1];
-    if (prev && !prev.chip && !seg.chip && prev.run === seg.run) prev.text += seg.text;
-    else groups.push({ run: seg.run, text: seg.text, chip: seg.chip, width: seg.width });
+    const inline = seg.inline === true;
+    if (
+      prev &&
+      !prev.chip &&
+      !prev.inline &&
+      !seg.chip &&
+      !inline &&
+      prev.run === seg.run
+    )
+      prev.text += seg.text;
+    else
+      groups.push({
+        run: seg.run,
+        text: seg.text,
+        chip: seg.chip,
+        inline,
+        width: seg.width,
+      });
   }
   return groups.map((g) => ({
     run: g.run,
     text: g.text,
     chip: g.chip,
-    width: g.chip ? g.width : ctx.textWidth(g.run, g.text),
+    ...(g.inline ? { inline: true as const } : {}),
+    width: g.chip || g.inline ? g.width : ctx.textWidth(g.run, g.text),
     height: ctx.heightOf(g.run),
   }));
 }
