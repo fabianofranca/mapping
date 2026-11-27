@@ -22,6 +22,25 @@ import { NOW } from '../model/fixtures';
 // `loadProject` (decision 7 of the stage): the `mapping.json` is parsed once; the catalog and the
 // sources are cached by path, size and `mtime`; `list_projects` does not parse sources.
 const fontBooks = vi.hoisted(() => ({ created: 0 }));
+// #2815: `failNext` makes the next `readFile` of a file ending in that suffix throw `EMFILE` once.
+const readFailure = vi.hoisted(() => ({ failNext: null as string | null }));
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>();
+  return {
+    ...actual,
+    readFile: (...args: Parameters<typeof actual.readFile>) => {
+      const path = String(args[0]);
+      if (readFailure.failNext !== null && path.endsWith(readFailure.failNext)) {
+        readFailure.failNext = null;
+        return Promise.reject(
+          Object.assign(new Error('EMFILE: too many open files'), { code: 'EMFILE' }),
+        );
+      }
+      return actual.readFile(...args);
+    },
+  };
+});
 
 vi.mock('../../mcp/image/textMeasurer', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../mcp/image/textMeasurer')>();
@@ -116,6 +135,21 @@ describe('loadProject: cache and single read', () => {
     const second = await loadProject(roots, location);
     expect(second.fonts).toBe(first.fonts);
     expect(second.catalog.get('lib')).toBe(first.catalog.get('lib'));
+  });
+
+  it('does not keep an incomplete catalog after a transient read failure (#2815)', async () => {
+    const { roots } = workspace();
+    const location = await findProject(roots, 'telas');
+    readFailure.failNext = 'btn.json';
+    const first = await loadProject(roots, location);
+    expect(readFailure.failNext).toBeNull();
+    expect(first.catalog.get('lib')!.byType.get('btn')).toBeUndefined();
+    // The file did not change (same size and `mtime`): the second load reads it again.
+    const second = await loadProject(roots, location);
+    expect(second.catalog.get('lib')!.byType.get('btn')).toBeDefined();
+    // A complete load is still cached.
+    const third = await loadProject(roots, location);
+    expect(third.catalog.get('lib')).toBe(second.catalog.get('lib'));
   });
 
   it('sees the component and the source swapped on disk', async () => {

@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   addBackgroundContainer,
+  chosenContainerClassSets,
   computedClassOf,
   containerClassSets,
   createMarking,
@@ -11,6 +12,7 @@ import {
   isComputedSet,
   setContainerClass,
   setContainerDensity,
+  specContainerClasses,
   undeclaredContainerClasses,
   unitsOf,
   type Project,
@@ -302,5 +304,107 @@ describe('setContainerClass', () => {
     expect(() => setContainerClass(p, 'c1', 'platform', 'And roid')).toThrowError(
       /container-class/,
     );
+  });
+});
+
+// ---- Per specialization and chosen across specializations (stage #2489, CF1) ----------------------
+
+const strictWindow: SpecContainerClassSet = {
+  id: 'window',
+  name: 'Window',
+  by: 'width',
+  classes: [
+    { id: 'narrow', name: 'Narrow', below: 1200 },
+    { id: 'wide', name: 'Wide' },
+  ],
+};
+
+const platformComputed: SpecContainerClassSet = {
+  id: 'platform',
+  name: 'Platform (computed)',
+  by: 'width',
+  classes: [
+    { id: 'small', name: 'Small', below: 100 },
+    { id: 'large', name: 'Large' },
+  ],
+};
+
+describe('specContainerClasses (decision 1 of #2489)', () => {
+  const p = setContainerClass(
+    projectWith(specWith('a', [windowSet]), specWith('b', [strictWindow, platformSet])),
+    'c1',
+    'platform',
+    'ios',
+  );
+
+  it('each specialization reads its own thresholds: 1080 px is expanded for a, narrow for b', () => {
+    expect(specContainerClasses(p, 'c1', 'a')).toEqual({ window: 'expanded' });
+    expect(specContainerClasses(p, 'c1', 'b')).toEqual({
+      window: 'narrow',
+      platform: 'ios',
+    });
+    expect(effectiveContainerClasses(p, 'c1')).toEqual({
+      window: 'expanded',
+      platform: 'ios',
+    });
+  });
+
+  it('a chosen set only counts when that specialization lists the class', () => {
+    const other = setContainerClass(p, 'c1', 'platform', 'tv');
+    expect(specContainerClasses(other, 'c1', 'b')).toEqual({ window: 'narrow' });
+  });
+
+  it('the canvas, an unknown container and an unknown specialization give {}', () => {
+    expect(specContainerClasses(p, null, 'a')).toEqual({});
+    expect(specContainerClasses(p, 'nope', 'a')).toEqual({});
+    expect(specContainerClasses(p, 'c1', 'nope')).toEqual({});
+  });
+
+  it('a specialization without container classes gives {}', () => {
+    const plain = projectWith(specWith('a', [windowSet]), {
+      ...specWith('z', []),
+      containerClasses: undefined,
+    });
+    expect(specContainerClasses(plain, 'c1', 'z')).toEqual({});
+  });
+});
+
+describe('chosenContainerClassSets (decision 3 of #2489)', () => {
+  const computedFirst = () =>
+    projectWith(specWith('a', [platformComputed]), specWith('b', [platformSet]));
+
+  it('lists the chosen declarations, merged by id, ignoring computed ones', () => {
+    const p = projectWith(
+      specWith('a', [windowSet, platformComputed]),
+      specWith('b', [platformSet]),
+      specWith('c', [
+        { id: 'platform', name: 'Other', classes: [{ id: 'web', name: 'Web' }] },
+      ]),
+    );
+    const chosen = chosenContainerClassSets(p);
+    expect(chosen.map((s) => s.id)).toEqual(['platform']);
+    expect(chosen[0]?.name).toBe('Platform');
+    expect(chosen[0]?.classes.map((c) => c.id)).toEqual(['android', 'ios', 'web']);
+  });
+
+  it('is memoized by the specializations list', () => {
+    const p = computedFirst();
+    expect(chosenContainerClassSets(p)).toBe(chosenContainerClassSets({ ...p }));
+  });
+
+  it('a set computed by the first specialization and chosen by the second is chosen, and its choice is declared', () => {
+    const p = setContainerClass(computedFirst(), 'c1', 'platform', 'ios');
+    expect(chosenContainerClassSets(p).map((s) => s.id)).toEqual(['platform']);
+    expect(undeclaredContainerClasses(p)).toEqual([]);
+    expect(
+      undeclaredContainerClasses(setContainerClass(p, 'c1', 'platform', 'tv')),
+    ).toEqual([{ containerId: 'c1', set: 'platform', class: 'tv' }]);
+  });
+
+  it('the merged view keeps the first declaration (decision 4)', () => {
+    const p = setContainerClass(computedFirst(), 'c1', 'platform', 'ios');
+    expect(containerClassSets(p).find((s) => s.id === 'platform')?.by).toBe('width');
+    // 1080 px ≥ 100: `large` by the first declaration; the choice does not enter the union.
+    expect(effectiveContainerClasses(p, 'c1')).toEqual({ platform: 'large' });
   });
 });

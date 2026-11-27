@@ -125,4 +125,28 @@ describe('ContainerClassField', () => {
     setup(withSets(), true);
     expect(select().disabled).toBe(true);
   });
+
+  it('a set computed by one specialization and chosen by another shows the Select and no read-only line', () => {
+    const computed: Spec = {
+      ...SPEC,
+      id: 'first',
+      containerClasses: [
+        {
+          id: 'platform',
+          name: 'Platform',
+          by: 'width',
+          classes: [
+            { id: 'small', name: 'Small', below: 100 },
+            { id: 'large', name: 'Large' },
+          ],
+        },
+      ],
+    };
+    const base = applySpecialization(sampleProject(), computed);
+    setup(applySpecialization(base, SPEC));
+    expect(select().value).toBe('');
+    expect(screen.getAllByText('Platform')).toHaveLength(1);
+    expect(document.body.textContent).not.toContain('Large');
+    expect(document.body.textContent).not.toContain('Small');
+  });
 });

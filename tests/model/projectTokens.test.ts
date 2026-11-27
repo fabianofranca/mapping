@@ -123,7 +123,7 @@ describe('projectNamedLookup', () => {
 describe('componentForDrawing carries the lookup into the engine options', () => {
   it('drawOptions passes tokenNamed', () => {
     const p = project(specOf('own', OWN), specOf('other', OTHER));
-    const drawn = componentForDrawing(p, component(OWN), 'D');
+    const drawn = componentForDrawing(p, component(OWN), 'D', 'own');
     const options = drawOptions(drawn);
     expect(options.tokenNamed?.('surface', 'color')).toBe('#101010');
   });
