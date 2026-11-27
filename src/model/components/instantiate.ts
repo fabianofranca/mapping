@@ -1019,9 +1019,11 @@ function createEngine(
     const measured = options.measure(plainText(node), free, limit);
     if (font.maxLines !== undefined && measuredLines(measured) > font.maxLines)
       return false;
-    // Without `lines` the measurer's width may be clamped to the limit: measure it free.
+    // Without `lines` the measurer's width may be clamped to the limit: measure it free. With
+    // `wrap: none` its `lines` may be cut at the limit (Konva keeps only what fits), so the width
+    // is the whole text's, measured free as well.
     const widest =
-      measured.lines === undefined
+      measured.lines === undefined || font.wrap === 'none'
         ? options.measure(plainText(node), free).width
         : widestWord(measured.lines, free, limit);
     return widest <= limit + WRAP_SLACK;
