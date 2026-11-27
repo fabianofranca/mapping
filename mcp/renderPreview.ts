@@ -9,6 +9,7 @@ import {
   proposalImagePath,
   type ItemKind,
   type Project,
+  type ProjectContainer,
   type Proposal,
   type ReviseError,
 } from '../src/model';
@@ -67,7 +68,7 @@ export function hasPreview(args: Omit<PreviewArgs, 'ref'>): boolean {
 type Aliases = BatchResult['aliases'];
 
 /** What the preview draws: the previewed project and what the drawing needs to read from it. */
-interface Previewed {
+export interface Previewed {
   readonly refs: Refs;
   /** The project the batch started from (disk, or the proposal's whole proposed state): what is not here is provisional. */
   readonly before: Project;
@@ -465,7 +466,7 @@ function citedItem(preview: Previewed, ref: string, kind: ItemKind): string {
   return found[0]!.id;
 }
 
-interface Target {
+export interface Target {
   readonly id: string;
   /** Set when the reference was a `$alias`. */
   readonly alias: string | undefined;
@@ -477,6 +478,25 @@ function targetOf(preview: Previewed, ref: string, kind: ItemKind): Target {
     : { id: citedItem(preview, ref, kind), alias: undefined };
 }
 
+/** The `alias`, `provisional` and `preview` fields of a previewed item, as the response carries them. */
+export function previewFields(
+  preview: Previewed,
+  target: Target,
+  kind: ItemKind,
+): Record<string, unknown> {
+  const known = projectIndex(preview.before);
+  const exists = (kind === 'i' ? known.containers : known.markings).has(target.id);
+  return {
+    ...(target.alias === undefined ? {} : { alias: target.alias }),
+    ...(exists ? {} : { provisional: true }),
+    preview: {
+      ...(preview.proposal === undefined ? {} : { proposal: preview.proposal }),
+      ...(preview.operations === undefined ? {} : { operations: preview.operations }),
+      revision: preview.revision,
+    },
+  };
+}
+
 /** The `preview` of the response, with the item's `alias` and `provisional` when the batch creates it. */
 function withPreview(
   preview: Previewed,
@@ -484,25 +504,40 @@ function withPreview(
   kind: ItemKind,
   result: ImageResult,
 ): ImageResult {
-  const known = projectIndex(preview.before);
-  const exists = (kind === 'i' ? known.containers : known.markings).has(target.id);
   const warning = [result.json.warning, preview.warning]
     .filter((w): w is string => typeof w === 'string')
     .join('; ');
+  const { alias, provisional, preview: previewed } = previewFields(preview, target, kind);
   return {
     ...result,
     json: {
       ...result.json,
-      ...(target.alias === undefined ? {} : { alias: target.alias }),
-      ...(exists ? {} : { provisional: true }),
+      ...(alias === undefined ? {} : { alias }),
+      ...(provisional === undefined ? {} : { provisional }),
       ...(warning === '' ? {} : { warning }),
-      preview: {
-        ...(preview.proposal === undefined ? {} : { proposal: preview.proposal }),
-        ...(preview.operations === undefined ? {} : { operations: preview.operations }),
-        revision: preview.revision,
-      },
+      preview: previewed,
     },
   };
+}
+
+/** One side of a container preview: the previewed project, the container the reference names in it, and what it carries. */
+export interface ContainerSide {
+  readonly preview: Previewed;
+  readonly target: Target;
+  readonly container: ProjectContainer;
+}
+
+/** Opens the preview of `args` and finds the container its `ref` names, without drawing (the compare draws two sides). */
+export async function openContainerSide(
+  roots: Roots,
+  now: () => number,
+  args: PreviewArgs,
+): Promise<ContainerSide> {
+  const preview = await openPreview(roots, now, args);
+  const target = targetOf(preview, args.ref, 'i');
+  const container = projectIndex(preview.refs.project).containers.get(target.id);
+  if (!container) throw new ToolError('not-found', `container not found: ${args.ref}`);
+  return { preview, target, container };
 }
 
 /** `render_container` with `proposal`, `operations` or `operationsFile`. */
@@ -513,10 +548,7 @@ export async function previewContainer(
   options: RenderOptions,
   images: ImageServer | null,
 ): Promise<ImageResult> {
-  const preview = await openPreview(roots, now, args);
-  const target = targetOf(preview, args.ref, 'i');
-  const container = projectIndex(preview.refs.project).containers.get(target.id);
-  if (!container) throw new ToolError('not-found', `container not found: ${args.ref}`);
+  const { preview, target, container } = await openContainerSide(roots, now, args);
   const result = await renderContainer(
     roots,
     preview.refs,

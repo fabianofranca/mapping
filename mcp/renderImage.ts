@@ -13,7 +13,14 @@ import { hexToRgb } from './image/compose';
 import { paintContainerDrawingsWithImages } from './image/containerDrawing';
 import { drawingModeToPin, type DrawingModeInput } from './drawingModeInput';
 import { MAX_PIXELS, MIME, type ImageFormat } from './image/formats';
-import { clampRect, createRaster, crop, resize, type PixelRect } from './image/raster';
+import {
+  clampRect,
+  createRaster,
+  crop,
+  resize,
+  type PixelRect,
+  type Raster,
+} from './image/raster';
 import { loadImage, rectJson, scaleRect, sizeWarning, urlFields } from './imageTools';
 import type { ImageResult, ImageSource } from './imageTools';
 import type { ImageServer } from './imageServer';
@@ -122,16 +129,23 @@ function pinnedMode(refs: Refs, mode: DrawingModeInput | undefined) {
   return mode === undefined ? undefined : drawingModeToPin(refs.project, mode);
 }
 
-async function renderRegion(
+/** A drawn window of a container: the raster before `encodeImage` and the fields of the response. */
+interface DrawnRegion {
+  readonly raster: Raster;
+  readonly format: ImageFormat;
+  /** The response fields, without the image's `url`/`markdown` (they depend on the encoded bytes). */
+  readonly json: Record<string, unknown>;
+}
+
+async function drawRegion(
   roots: Roots,
   refs: Refs,
   container: ProjectContainer,
   region: PixelRect,
   options: RenderOptions,
   markingIds: ReadonlySet<string> | undefined,
-  images: ImageServer | null,
   source: ImageSource | undefined,
-): Promise<{ json: Record<string, unknown>; image: ImageResult['image'] }> {
+): Promise<DrawnRegion> {
   const pinned = pinnedMode(refs, options.drawingMode);
   const zoom = options.zoom ?? 1;
   const width = Math.max(1, Math.round(region.width * zoom));
@@ -174,8 +188,9 @@ async function renderRegion(
     },
   );
   const warnings = [warning, ...drawn.notes].filter((w) => w !== undefined);
-  const bytes = await encodeImage(raster, format);
   return {
+    raster,
+    format,
     json: {
       container: { ref: refs.ref('i', container.id), file: container.file },
       format,
@@ -189,9 +204,33 @@ async function renderRegion(
       drawings: drawn.count,
       ...(warnings.length === 0 ? {} : { warning: warnings.join('; ') }),
       note: "the server's drawing (bundled free font or the library's), not a capture of the app; the images of the library package are drawn from its files; a remote image becomes a placeholder",
-      ...(await urlFields(images, bytes, format, 'drawing')),
     },
-    image: { bytes, mimeType: MIME[format] },
+  };
+}
+
+async function renderRegion(
+  roots: Roots,
+  refs: Refs,
+  container: ProjectContainer,
+  region: PixelRect,
+  options: RenderOptions,
+  markingIds: ReadonlySet<string> | undefined,
+  images: ImageServer | null,
+  source: ImageSource | undefined,
+): Promise<{ json: Record<string, unknown>; image: ImageResult['image'] }> {
+  const drawn = await drawRegion(
+    roots,
+    refs,
+    container,
+    region,
+    options,
+    markingIds,
+    source,
+  );
+  const bytes = await encodeImage(drawn.raster, drawn.format);
+  return {
+    json: { ...drawn.json, ...(await urlFields(images, bytes, drawn.format, 'drawing')) },
+    image: { bytes, mimeType: MIME[drawn.format] },
   };
 }
 
@@ -280,6 +319,39 @@ function containerRegion(
     : { region };
 }
 
+/** A container drawn to a raster (nothing encoded): what `render_container` and the compare share. */
+export interface DrawnContainer {
+  readonly raster: Raster;
+  readonly format: ImageFormat;
+  /** The fields of the response before the image's `url`/`markdown`, without the region's `warning`. */
+  readonly json: Record<string, unknown>;
+  /** The window that was drawn, in container pixels (the whole container without `region`). */
+  readonly region: PixelRect;
+  /** The warning of a clipped `region`. */
+  readonly warning: string | undefined;
+}
+
+/** The drawing of the components of the container (all of it, or a `region`), as a raster. */
+export async function drawContainer(
+  roots: Roots,
+  refs: Refs,
+  container: ProjectContainer,
+  options: RenderOptions,
+  source?: ImageSource,
+): Promise<DrawnContainer> {
+  const { region, warning } = containerRegion(container, options.region);
+  const drawn = await drawRegion(
+    roots,
+    refs,
+    container,
+    region,
+    options,
+    undefined,
+    source,
+  );
+  return { ...drawn, region, warning };
+}
+
 /** `render_container`: the drawing of the components of the container (all of it, or a `region`). */
 export async function renderContainer(
   roots: Roots,
@@ -289,24 +361,16 @@ export async function renderContainer(
   images: ImageServer | null = null,
   source?: ImageSource,
 ): Promise<ImageResult> {
-  const { region, warning } = containerRegion(container, options.region);
-  const result = await renderRegion(
-    roots,
-    refs,
-    container,
-    region,
-    options,
-    undefined,
-    images,
-    source,
-  );
-  const warnings = [result.json.warning, warning].filter((w) => w !== undefined);
+  const drawn = await drawContainer(roots, refs, container, options, source);
+  const bytes = await encodeImage(drawn.raster, drawn.format);
+  const json: Record<string, unknown> = {
+    ref: refs.ref('i', container.id),
+    ...drawn.json,
+    ...(await urlFields(images, bytes, drawn.format, 'drawing')),
+  };
+  const warnings = [json.warning, drawn.warning].filter((w) => w !== undefined);
   return {
-    json: {
-      ref: refs.ref('i', container.id),
-      ...result.json,
-      ...(warnings.length === 0 ? {} : { warning: warnings.join('; ') }),
-    },
-    image: result.image,
+    json: { ...json, ...(warnings.length === 0 ? {} : { warning: warnings.join('; ') }) },
+    image: { bytes, mimeType: MIME[drawn.format] },
   };
 }
