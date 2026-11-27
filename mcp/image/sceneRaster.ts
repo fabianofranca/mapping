@@ -34,8 +34,8 @@ import { gradientShader, type Shader } from './gradientShader';
 import { imageShader } from './imageShader';
 import type { PackageImages } from './packageImages';
 import { createRaster, type PixelRect, type Raster } from './raster';
-import { textBars, type TextBar } from './textBars';
-import { textInk } from './textLayout';
+import { iconPlacements, textBars, type TextBar } from './textBars';
+import { iconInk, textInk } from './textLayout';
 import type { FontBook } from './textMeasurer';
 
 export { textBars, type TextBar };
@@ -1337,7 +1337,17 @@ class Painter {
 
   /** Text: the font's glyphs (with `fonts`) or bars, one per line, in the text color. */
   private text(node: TextNode, matrix: Matrix, opacity: number, clip: PixelRect): void {
-    if (node.text === '') return;
+    if (node.text !== '') this.textBody(node, matrix, opacity, clip);
+    // A text whose only runs are icons has no `text` and still draws them.
+    this.runIcons(node, matrix, opacity, clip);
+  }
+
+  private textBody(
+    node: TextNode,
+    matrix: Matrix,
+    opacity: number,
+    clip: PixelRect,
+  ): void {
     if (this.fonts) {
       this.glyphText(node, matrix, opacity, clip, this.fonts);
       return;
@@ -1350,6 +1360,27 @@ class Painter {
     if (color === null) return;
     const bars = textBars(node, this.measure);
     this.fill(bars.map(barPolygon), matrix, 'nonzero', color, opacity, clip);
+  }
+
+  /**
+   * The inline icons of a rich text: each group painted like a scene group, moved to its piece's
+   * box. The cut of a `wrap: none` text that goes past its box applies to them as to the glyphs
+   * (an axis-aligned one only).
+   */
+  private runIcons(
+    node: TextNode,
+    matrix: Matrix,
+    opacity: number,
+    clip: PixelRect,
+  ): void {
+    const placements = this.fonts ? iconInk(node, this.fonts) : iconPlacements(node);
+    if (placements.length === 0) return;
+    const area =
+      cutsText(node) && isAxisAligned(matrix)
+        ? intersect(clip, bounds(this.toRaster(cutStrip(node), matrix)))
+        : clip;
+    for (const { icon, x, y } of placements)
+      this.paint(icon, multiply(matrix, translate(x, y)), opacity, area);
   }
 
   /** The text's glyphs (and the chips' background), each run in its own color. */
