@@ -10,7 +10,16 @@ import {
   textWidth,
   type Polygon,
 } from './glyphs';
-import { blockTop, lineHeightOf, lineLeft, plainLines, richShift } from './textBars';
+import {
+  blockTop,
+  iconPlacements,
+  lineHeightOf,
+  lineLeft,
+  pieceTop,
+  plainLines,
+  richShift,
+  type IconPlacement,
+} from './textBars';
 import type { FontBook } from './textMeasurer';
 import type { BidiRun } from './harfbuzz';
 
@@ -304,9 +313,9 @@ function pieceInk(
   });
 }
 
-function richInk(node: TextNode, layout: RunLayout, book: FontBook): TextInk {
-  const runs = node.runs ?? [];
-  const base: FontSpec = {
+/** The node's base font, with which the rich text's vertical shift reads its metrics. */
+function baseSpec(node: TextNode): FontSpec {
+  return {
     family: node.style.fontFamily,
     size: node.style.fontSize,
     weight: node.style.fontWeight,
@@ -314,22 +323,38 @@ function richInk(node: TextNode, layout: RunLayout, book: FontBook): TextInk {
     letterSpacing: 0,
     ...(node.style.direction ? { direction: node.style.direction } : {}),
   };
-  const shift = richShift(
-    node,
-    layout,
-    needsMetrics(node) ? capMetricsOf(book, base, node.text) : undefined,
-  );
+}
+
+/** The metrics the node's vertical shift reads (only `cap-middle` and `baselinePadding.top` need them). */
+function shiftMetrics(node: TextNode, book: FontBook): CapMetrics | undefined {
+  return needsMetrics(node) ? capMetricsOf(book, baseSpec(node), node.text) : undefined;
+}
+
+function richInk(node: TextNode, layout: RunLayout, book: FontBook): TextInk {
+  const runs = node.runs ?? [];
+  const shift = richShift(node, layout, shiftMetrics(node, book));
   const out: TextInk = { glyphs: [], boxes: [] };
   for (const line of layout.lines) {
     for (const piece of line.pieces) {
       const run = runs[piece.run];
-      if (run === undefined) continue;
-      const top =
-        line.y + (line.height - piece.height) / 2 + shift - (run.baselineShift ?? 0);
-      pieceInk(book, piece, run, top, out, node.style.direction);
+      // An inline icon has no glyph, bar or decoration: the raster paints its paths.
+      if (run === undefined || piece.inline) continue;
+      pieceInk(
+        book,
+        piece,
+        run,
+        pieceTop(line, piece, run, shift),
+        out,
+        node.style.direction,
+      );
     }
   }
   return out;
+}
+
+/** The inline icons of a rich text, placed with the same shift as its glyphs. */
+export function iconInk(node: TextNode, book: FontBook): IconPlacement[] {
+  return iconPlacements(node, shiftMetrics(node, book));
 }
 
 /** The glyphs (and the chip backgrounds) of the text in the node's local space, measured and drawn with the same font. */
