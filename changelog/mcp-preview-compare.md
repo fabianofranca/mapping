@@ -3,6 +3,7 @@
 ## Adicionado
 
 - The `fonts` of a library that a batch or proposal applies or updates measure and draw the text in the `render_container` and `render_marking` preview, before it is applied (#2928).
+- `measure_component` accepts `path` (a package folder) with `project`: it measures a working copy with the folder's own components and fonts, before `update_specialization` (#2928).
 
 ## Alterado
 

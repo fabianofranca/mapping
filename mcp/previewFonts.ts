@@ -1,8 +1,11 @@
 import { createHash } from 'node:crypto';
+import { readFile, realpath, stat } from 'node:fs/promises';
+import { join } from 'node:path';
 import type { Project, ProjectSpecialization } from '../src/model';
 import { resolvePath, type LoadedFont } from '../src/model/components/library';
 import { MAX_FONT_BYTES } from './projects';
 import { createFontBook, type FontBook } from './image/textMeasurer';
+import { hasParentSegment, isWithin, type Roots } from './paths';
 
 // The font book of the `render_*` preview (stage #2928, decisions 1 to 3): the fonts of every specialization
 // of the previewed project, read through a reader the caller gives (the batch's package files, the proposal
@@ -122,4 +125,33 @@ export async function buildPreviewFonts(
   const book = createFontBook(files.map((r) => r.font));
   remember(key, book);
   return { book, warnings };
+}
+
+/**
+ * Reads a file of a package folder as bytes, with the guards of `readPackageFile` (`mcp/library.ts`): inside
+ * the folder and the roots, a regular file, at most `MAX_FONT_BYTES`; `null` otherwise.
+ */
+export async function readPackageBytes(
+  roots: Roots,
+  dir: string,
+  path: string,
+): Promise<Uint8Array | null> {
+  if (
+    path === '' ||
+    path.includes('\0') ||
+    path.includes('\\') ||
+    hasParentSegment(path)
+  ) {
+    return null;
+  }
+  try {
+    const real = await realpath(join(dir, path));
+    const realDir = await realpath(dir).catch(() => dir);
+    if (!isWithin(realDir, real) || (await roots.locate(real)) === null) return null;
+    const info = await stat(real);
+    if (!info.isFile() || info.size > MAX_FONT_BYTES) return null;
+    return new Uint8Array(await readFile(real));
+  } catch {
+    return null;
+  }
 }
