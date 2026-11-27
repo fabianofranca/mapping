@@ -10,6 +10,7 @@ import type {
   FieldValue,
   FieldValues,
 } from './componentFormat';
+import { isRowsNode, isRunsKey } from './componentFormat';
 
 /** Numeric operations (format 4): the key and the arity (list of `min` or more, or fixed). */
 export const NUMERIC_OPS: Readonly<
@@ -458,18 +459,20 @@ export function evaluateText(
 export function repeatInnerFields(
   node: unknown,
   out: Set<string> = new Set(),
+  runsItem = false,
 ): Set<string> {
   if (Array.isArray(node)) {
-    for (const item of node) repeatInnerFields(item, out);
+    for (const item of node) repeatInnerFields(item, out, runsItem);
     return out;
   }
   if (typeof node !== 'object' || node === null) return out;
   const record = node as Record<string, unknown>;
-  if (record.type === 'repeat') {
+  if (isRowsNode(record, runsItem)) {
     referencedFields(record.template, out);
     return out;
   }
-  for (const value of Object.values(record)) repeatInnerFields(value, out);
+  for (const [key, value] of Object.entries(record))
+    repeatInnerFields(value, out, isRunsKey(record, key));
   return out;
 }
 
@@ -477,14 +480,17 @@ export function repeatInnerFields(
 export function referencedFields(
   expr: unknown,
   out: Set<string> = new Set(),
+  runsItem = false,
 ): Set<string> {
   if (Array.isArray(expr)) {
-    for (const item of expr) referencedFields(item, out);
+    for (const item of expr) referencedFields(item, out, runsItem);
     return out;
   }
   if (typeof expr !== 'object' || expr === null) return out;
   const record = expr as Record<string, unknown>;
-  const isRepeat = record.type === 'repeat';
+  // A runs table item (`{ field, template }`, only as an item of a text node's `runs`) reads its
+  // `table` field and its `template` like a `repeat`.
+  const isRepeat = isRowsNode(record, runsItem);
   for (const [key, value] of Object.entries(record)) {
     // `repeat`: counts the `table` field and the expressions of the node itself; the `template` reads the columns
     // of the row (`repeatInnerFields`), not the type's fields.
@@ -501,7 +507,7 @@ export function referencedFields(
     } else if (key === '$eq' && Array.isArray(value) && typeof value[0] === 'string') {
       if (!isReservedFieldName(value[0])) out.add(value[0]);
     } else {
-      referencedFields(value, out);
+      referencedFields(value, out, isRunsKey(record, key));
     }
   }
   return out;

@@ -6,7 +6,7 @@ import {
 } from '../../src/model/components/baseline';
 import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { RunLayout, RunPiece } from '../../src/model/components/richText';
-import type { SceneTextRun, TextNode } from '../../src/model/components/scene';
+import type { GroupNode, SceneTextRun, TextNode } from '../../src/model/components/scene';
 import {
   WRAP_SLACK,
   cutLineLeft,
@@ -160,8 +160,46 @@ function richBars(
   return layout.lines.flatMap((line) =>
     line.pieces.flatMap((piece) => {
       const run = runs[piece.run];
-      const top = line.y + (line.height - piece.height) / 2 + shift;
-      return run ? pieceBars(piece, run, top) : [];
+      // An inline icon has no bar: the raster paints its paths (`iconPlacements`).
+      return run && !piece.inline
+        ? pieceBars(piece, run, pieceTop(line, piece, run, shift))
+        : [];
+    }),
+  );
+}
+
+/** The top of a piece in the node: centered on its line, with the node's shift and the run's rise. */
+export function pieceTop(
+  line: { readonly y: number; readonly height: number },
+  piece: RunPiece,
+  run: SceneTextRun | undefined,
+  shift: number,
+): number {
+  return line.y + (line.height - piece.height) / 2 + shift - (run?.baselineShift ?? 0);
+}
+
+/** An inline icon of a run: its group and where its box sits in the text node (local space). */
+export interface IconPlacement {
+  readonly icon: GroupNode;
+  readonly x: number;
+  readonly y: number;
+}
+
+/**
+ * The inline icons of a rich text (`runLayout`), each with the position of its piece: the node's
+ * vertical shift (`richShift`, with the font's `metrics` when it has them) and the run's
+ * `baselineShift` are applied here.
+ */
+export function iconPlacements(node: TextNode, metrics?: CapMetrics): IconPlacement[] {
+  const { runs, runLayout } = node;
+  if (!runs || !runLayout) return [];
+  const shift = richShift(node, runLayout, metrics);
+  return runLayout.lines.flatMap((line) =>
+    line.pieces.flatMap((piece) => {
+      const run = runs[piece.run];
+      return piece.inline && run?.icon
+        ? [{ icon: run.icon, x: piece.x, y: pieceTop(line, piece, run, shift) }]
+        : [];
     }),
   );
 }
