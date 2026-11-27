@@ -208,7 +208,9 @@ describe('update_marking.decorative', () => {
     expect(c.parentId).toBe(p.id);
     expect((await get(p.id)).members.markings.map((m) => m.name)).toEqual(['C']);
 
-    const turnOn = await plan([{ op: 'update_marking', marking: p.id, decorative: true }]);
+    const turnOn = await plan([
+      { op: 'update_marking', marking: p.id, decorative: true },
+    ]);
     expect(turnOn.valid, JSON.stringify(turnOn.errors)).toBe(true);
     expect(turnOn.summary.join('\n')).toMatch(/decorative/);
 
@@ -219,7 +221,9 @@ describe('update_marking.decorative', () => {
     expect(viewOn.decorative).toBe(true);
     expect(viewOn.members.markings).toEqual([]);
 
-    const turnOff = await plan([{ op: 'update_marking', marking: p.id, decorative: false }]);
+    const turnOff = await plan([
+      { op: 'update_marking', marking: p.id, decorative: false },
+    ]);
     expect(turnOff.summary.join('\n')).toMatch(/stop being decorative/);
     const off = await apply([{ op: 'update_marking', marking: p.id, decorative: false }]);
     expect(byName(off, 'P').decorative).toBe(false);
@@ -232,7 +236,13 @@ describe('update_marking.decorative', () => {
   it('a locked marking fails with locked, in both directions', async () => {
     const created = await apply([
       container('$s', 'LockedScreen'),
-      { op: 'create_marking', as: '$l', container: '$s', rect: rect(10, 10, 100, 60), name: 'L' },
+      {
+        op: 'create_marking',
+        as: '$l',
+        container: '$s',
+        rect: rect(10, 10, 100, 60),
+        name: 'L',
+      },
       {
         op: 'create_marking',
         as: '$ld',
@@ -287,7 +297,12 @@ describe('list_markings', () => {
   it('the rows carry decorative and the filter keeps the decorative ones or the others', async () => {
     await apply([
       container('$s', 'ListScreen'),
-      { op: 'create_marking', container: '$s', rect: rect(20, 30, 100, 60), name: 'Sample' },
+      {
+        op: 'create_marking',
+        container: '$s',
+        rect: rect(20, 30, 100, 60),
+        name: 'Sample',
+      },
       {
         op: 'create_marking',
         container: '$s',
