@@ -51,7 +51,11 @@ let roots: Roots;
 const dirOf = (name: string) => join(base, name);
 
 /** A copy of the fixture package; the font file is copied in unless `withFont` is false. */
-function copyPackage(name: string, withFont: boolean, edit?: (spec: any) => void) {
+function copyPackage(
+  name: string,
+  withFont: boolean,
+  edit?: (spec: Record<string, unknown>) => void,
+) {
   const pkg = join(base, name);
   mkdirSync(join(pkg, 'fonts'), { recursive: true });
   cpSync(join(FIXTURE, 'components'), join(pkg, 'components'), { recursive: true });
@@ -67,7 +71,11 @@ function writeProject(name: string, p: Project) {
   writeFileSync(join(dirOf(name), 'mapping.json'), serialize(p));
 }
 
-function applied(pkg: string, name: string, edit?: (spec: any) => void) {
+function applied(
+  pkg: string,
+  name: string,
+  edit?: (spec: Record<string, unknown>) => void,
+) {
   const dir = join(dirOf(name), 'specs', 'preview-fonts');
   mkdirSync(join(dir, 'fonts'), { recursive: true });
   cpSync(join(pkg, 'components'), join(dir, 'components'), { recursive: true });
