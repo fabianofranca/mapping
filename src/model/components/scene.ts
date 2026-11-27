@@ -333,6 +333,8 @@ export interface SceneTextRun {
   readonly radius?: number;
   /** Inline box padding: [vertical, horizontal]. */
   readonly padding?: readonly [number, number];
+  /** Moves the whole piece up (px; negative goes down); the drawing only, never the measurement. */
+  readonly baselineShift?: number;
 }
 
 export interface TextNode extends NodeBase {

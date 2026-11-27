@@ -160,7 +160,8 @@ function richBars(
   return layout.lines.flatMap((line) =>
     line.pieces.flatMap((piece) => {
       const run = runs[piece.run];
-      const top = line.y + (line.height - piece.height) / 2 + shift;
+      const top =
+        line.y + (line.height - piece.height) / 2 + shift - (run?.baselineShift ?? 0);
       return run ? pieceBars(piece, run, top) : [];
     }),
   );

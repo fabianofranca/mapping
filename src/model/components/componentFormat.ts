@@ -546,6 +546,11 @@ export interface TextRunTemplate {
   readonly background?: Expr<Color>;
   readonly radius?: Expr<number>;
   readonly padding?: Expr<number | readonly [Expr<number>, Expr<number>]>;
+  /**
+   * Moves the run up (positive) or down, for `sub` and `sup` (v4): px, or a signed percentage of
+   * the run's size (`"33%"`). The drawing only: the measurement does not change.
+   */
+  readonly baselineShift?: Expr<number | string>;
 }
 
 /**

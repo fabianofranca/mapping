@@ -1522,18 +1522,19 @@ In `formatVersion` 4, the `text` node accepts `runs` **in place of** `text`: a n
 
 Each run is an object with `text` (required) and the keys below. All accept an expression, and the run's `text` accepts `$field`, `$concat` and the others, evaluated like the node's `text` (a number becomes text, empty becomes empty text).
 
-| Key          | Values                                                                                                                               | Effect                                                                                               |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `text`       | text, number or expression                                                                                                           | The run's text. Required.                                                                            |
-| `weight`     | 100 to 900                                                                                                                           | Overrides the node's `font.weight`.                                                                  |
-| `italic`     | `true` / `false`                                                                                                                     | Overrides the node's `font.italic`.                                                                  |
-| `family`     | family or CSS stack                                                                                                                  | Overrides the node's `font.family` (family or CSS stack, as in `font`).                              |
-| `size`       | number                                                                                                                               | Overrides the node's `font.size`. The run's line height scales with it (see below).                  |
-| `decoration` | `none`, `underline`, `line-through`                                                                                                  | Overrides the node's `font.decoration`.                                                              |
-| `color`      | CSS color                                                                                                                            | Overrides the node's `color`.                                                                        |
-| `background` | CSS color                                                                                                                            | **Makes the run a chip**: an inline box with that background. Without it, the run is just text.      |
-| `radius`     | number greater than or equal to 0                                                                                                    | The chip's corner radius. Only applies with `background`. Default 0.                                 |
-| `padding`    | number, or `[vertical, horizontal]` (numbers greater than or equal to 0; in `formatVersion` 4 each item is also a number expression) | The chip's breathing room: a number applies on both axes. Only applies with `background`. Default 0. |
+| Key             | Values                                                                                                                               | Effect                                                                                               |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `text`          | text, number or expression                                                                                                           | The run's text. Required.                                                                            |
+| `weight`        | 100 to 900                                                                                                                           | Overrides the node's `font.weight`.                                                                  |
+| `italic`        | `true` / `false`                                                                                                                     | Overrides the node's `font.italic`.                                                                  |
+| `family`        | family or CSS stack                                                                                                                  | Overrides the node's `font.family` (family or CSS stack, as in `font`).                              |
+| `size`          | number                                                                                                                               | Overrides the node's `font.size`. The run's line height scales with it (see below).                  |
+| `decoration`    | `none`, `underline`, `line-through`                                                                                                  | Overrides the node's `font.decoration`.                                                              |
+| `color`         | CSS color                                                                                                                            | Overrides the node's `color`.                                                                        |
+| `background`    | CSS color                                                                                                                            | **Makes the run a chip**: an inline box with that background. Without it, the run is just text.      |
+| `radius`        | number greater than or equal to 0                                                                                                    | The chip's corner radius. Only applies with `background`. Default 0.                                 |
+| `padding`       | number, or `[vertical, horizontal]` (numbers greater than or equal to 0; in `formatVersion` 4 each item is also a number expression) | The chip's breathing room: a number applies on both axes. Only applies with `background`. Default 0. |
+| `baselineShift` | number (px), or a signed percentage of the run's size (`"33%"`, `"-20%"`)                                                            | Moves the run up (positive) or down, for `sub` and `sup`. **The drawing only.** Default 0.           |
 
 Example, an invoice with the month in bold and a red chip at the end of the line:
 
@@ -1555,6 +1556,23 @@ Example, an invoice with the month in bold and a red chip at the end of the line
       "radius": 8,
       "padding": [2, 6]
     }
+  ]
+}
+```
+
+**Baseline shift (`sub` and `sup`).** `baselineShift` moves the **whole piece** up (a positive value) or down: the chip's background, the text and the decoration line, in the app and in the MCP's PNG, by the same px. A number is px; a percentage is of the **run's own size** (`"33%"` of a run of `size` 12 is 3.96 px; `"-20%"` goes down). It is **the drawing only**: the measurement (`hug` size, wrapping, `$lines`, the baselines and the warnings) is the same with and without it, so a shifted run needs room in the line height (the node's `lineHeight`) to avoid touching its neighbors. An expression that gives something other than a number or a percentage draws 0 with the warning `invalid value in baselineShift`. An app or MCP from before this stage refuses the key with `unknown key: baselineShift`.
+
+```json
+{
+  "type": "text",
+  "name": "formula",
+  "width": "fill",
+  "font": { "size": 14, "lineHeight": 22 },
+  "runs": [
+    { "text": "H" },
+    { "text": "2", "size": 10, "baselineShift": "-33%" },
+    { "text": "O and x" },
+    { "text": "2", "size": 10, "baselineShift": "40%" }
   ]
 }
 ```
@@ -1612,6 +1630,7 @@ Whoever reads a warning ending in **`(approximate)`** (the library validator's d
 - **A token named by a field value (`$tokenNamed`, `formatVersion` 4):** in a version lower than 4 it is `only allowed with formatVersion 4`, at the `$tokenNamed` key's path; outside a color or font-family position it is `$tokenNamed is only valid where a color or font family is expected`, at the expression's path; a third key is `unknown key: <key>`; the name is a text expression and `default` an expression. The library validator reads no token from it: a name that resolves to nothing is not an error.
 - **`scale` and `filter` (`formatVersion` 4):** in a version lower than 4 they are `only allowed with formatVersion 4`, at the key's path (`scale` or `filter`). The other problems: a negative literal `scale` (`scale: expected a number greater than or equal to 0`) and any other key inside `filter` (`filter: unknown key: blur`). An invalid value that comes from an expression only warns at draw time (`invalid value in scale: <value>`, `invalid value in filter.grayscale: <value>`).
 - **`startAngle` and `sweepAngle` (`formatVersion` 4):** only on `ellipse` (`unknown key: sweepAngle` on another node) and, in a version lower than 4, `only allowed with formatVersion 4`, at the key's path. A literal that is not a number is `expected a number`.
+- **Baseline shift (`runs[i].baselineShift`, `formatVersion` 4):** a value that is not a number nor a signed percentage is `template.children[0].runs[0].baselineShift: expected a number or a percentage ("33%")`. In a version lower than 4 the whole `runs` is `only allowed with formatVersion 4`, at the `runs` path. From an expression, an invalid value is not a parse error: the drawing takes 0 and the engine warns `invalid value in baselineShift`.
 - **Shrink to fit (`font.fit` and `font.fitSizes`, `formatVersion` 4):** in a version lower than 4 they are `only allowed with formatVersion 4`, at the key's path (`template.children[0].font.fit`, `template.children[0].font.fitSizes`). The other problems: a literal `fit: "shrink"` without `fitSizes` is `font.fitSizes: required with fit "shrink"`; a literal list that does not go from the largest to the smallest is `font.fitSizes: expected sizes from the largest to the smallest`; a `fitSizes` that is not a list of 1 to 8 items is `font.fitSizes: expected a list of 1 to 8 sizes`; an item that is not a number greater than 0 (or a number expression) is `font.fitSizes[i]: expected a number greater than 0`; a literal `fit: "shrink"` on a node with `runs` is `font.fit: does not combine with runs`. Warnings: a candidate that is not greater than 0, or not smaller than the previous one kept, is skipped with `invalid value in font.fitSizes: <value>`; a `fit` that comes from an expression on a node with `runs` keeps `font.size` with `invalid value in font.fit: shrink`. An app or MCP from before this stage refuses both keys with `unknown key: fit` / `unknown key: fitSizes`.
 - **Colors (warnings only).** The colors the format writes are `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb()`/`rgba()` and `hsl()`/`hsla()` (hue in `deg`, `grad`, `rad` or `turn`), plus `none` and `transparent`; one reader (`parseFormatColor` in `src/model/components/tokens.ts`) serves the engine (token `alpha`/`over`, the filter) and the MCP PNG, so `hsl()` is painted in the PNG like in the app. A **literal** that is not one of them (`"banana"`, `red`) is the warning `component.colorUnknown` at its path (`template.fill`, `template.fill.stops[1].color`, `template.stroke.color`, `…color` of a `text` or `icon`, `…shadow.color` and `…shadow[1].color`, a run's `…runs[0].color` and `…runs[0].background`): `not a color of the format: "red" (use #rrggbb, rgb(), hsl(), transparent or none)`. Nothing is refused. A value inside an expression (`$switch`, `$if`, `$field`, `$token`) and the value of a token are not checked. The app and the viewer still draw a named color; the MCP PNG does not paint it.
 - `parseComponentText(text)` reads the JSON text (invalid JSON becomes a problem with an empty path) and `validateComponent(json)` returns only the `string[]` list.

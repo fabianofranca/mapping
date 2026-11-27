@@ -910,6 +910,24 @@ function createEngine(
     return 0;
   };
 
+  /**
+   * A run's `baselineShift` in px: a number, numeric text or a signed percentage of the run's size
+   * (`"33%"` of 12 is 3.96). Another value is an invalid value: the warning and 0.
+   */
+  const baselineShiftOf = (
+    expr: TextRunTemplate['baselineShift'],
+    size: number,
+  ): number => {
+    const value = ev<unknown>(expr as Expr<unknown> | undefined, 0);
+    if (value === undefined || value === null || value === '') return 0;
+    if (typeof value === 'string' && PERCENT_TEXT.test(value))
+      return (parseFloat(value) / 100) * size;
+    const n = typeof value === 'number' ? value : Number(value);
+    if (Number.isFinite(n)) return n;
+    invalidValue('baselineShift', value);
+    return 0;
+  };
+
   /** The node's declared `font.size` (px ≥ 0). */
   const declaredSize = (node: TextTemplate): number =>
     Math.max(0, num(node.font?.size, 14));
@@ -1063,15 +1081,18 @@ function createEngine(
       'none',
     );
     const background = str(run.background, 'none');
+    const fontSize = Math.max(0, num(run.size, font.size));
+    const shift = baselineShiftOf(run.baselineShift, fontSize);
     return {
       // A literal text counts as is, even whitespace only (the gap between runs); an empty field's falls back.
       text: typeof run.text === 'string' ? run.text : evaluateText(run.text, values, ''),
       fontFamily: str(run.family, font.family, familyContext),
-      fontSize: Math.max(0, num(run.size, font.size)),
+      fontSize,
       fontWeight: num(run.weight, font.weight),
       italic: bool(run.italic, font.italic),
       color: str(run.color, str(node.color, '#000000')),
       ...(decoration === 'none' ? {} : { decoration }),
+      ...(shift === 0 ? {} : { baselineShift: shift }),
       ...(isNone(background)
         ? {}
         : {

@@ -497,7 +497,8 @@ class Renderer {
       for (const piece of line.pieces) {
         const run = runs[piece.run];
         if (!run) continue;
-        const top = line.y + (line.height - piece.height) / 2 + shift;
+        const top =
+          line.y + (line.height - piece.height) / 2 + shift - (run.baselineShift ?? 0);
         if (piece.chip) shapes.push(chipShape(piece, run, top));
         shapes.push(runTextShape(node, run, piece, top));
         if (node.stroke) {
