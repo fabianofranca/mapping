@@ -164,6 +164,8 @@ export interface NewComponentArgs {
   readonly center?: { readonly x: number; readonly y: number };
   /** Explicit rectangle (MCP), in the instance's space; absent = `componentPlacement`. */
   readonly rect?: Rect;
+  /** Decorative (v25): absent takes the type's `decorative`; `false` makes an instance of a decorative type ordinary. */
+  readonly decorative?: boolean;
   /**
    * Floating type only: positions the instance in a free spot of the target's margin (container or
    * marking; `placeFloatingNear`) with the component's size. An explicit `rect` wins.
@@ -1370,7 +1372,7 @@ export function addComponentMarking(
       rect,
       ...(args.name !== undefined ? { name: args.name } : {}),
       ...(floating ? { floating: true } : {}),
-      ...(type.decorative === true ? { decorative: true } : {}),
+      ...((args.decorative ?? type.decorative === true) ? { decorative: true } : {}),
     },
     {
       minSize: componentFileMinSize(component, effectiveDensity(p, args.containerId)),

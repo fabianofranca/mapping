@@ -26,6 +26,8 @@ export interface MarkingFilters {
   readonly canvas?: boolean;
   /** Only floating ones (`true`) or only non-floating ones (`false`). */
   readonly floating?: boolean;
+  /** Only decorative ones (`true`) or only non-decorative ones (`false`). */
+  readonly decorative?: boolean;
   /** Layer: id or name. */
   readonly layer?: string;
   /** Annotation type: `typeId`, `specId/typeId` or the type's name. */
@@ -198,6 +200,9 @@ export function listMarkings(
   );
   const matching = inScope.filter((marking) => {
     if (filters.floating !== undefined && marking.floating !== filters.floating) {
+      return false;
+    }
+    if (filters.decorative !== undefined && marking.decorative !== filters.decorative) {
       return false;
     }
     let candidates = index.annotationsByMarking.get(marking.id) ?? [];

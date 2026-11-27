@@ -1284,6 +1284,21 @@ describe('decorative type (stage #2826, DM2)', () => {
     expectValid(p);
   });
 
+  it('decorative overrides the type: false makes an instance of the decorative type ordinary, true makes an ordinary one decorative', () => {
+    let p = addDeco(base, 'T1', 'text', {
+      rect: { x: 150, y: 150, width: 100, height: 40 },
+    });
+    p = addDeco(p, 'F1', 'frame', { rect: AROUND, decorative: false });
+    expect(marking(p, 'F1').decorative).toBe(false);
+    expect(marking(p, 'T1').parentId).toBe('F1');
+    p = addDeco(p, 'T2', 'text', {
+      rect: { x: 600, y: 600, width: 100, height: 40 },
+      decorative: true,
+    });
+    expect(marking(p, 'T2').decorative).toBe(true);
+    expect(p.markings.filter((m) => m.parentId === null)[0]!.id).toBe('T2');
+  });
+
   it('an instance of an ordinary type is not decorative and is born last', () => {
     let p = addDeco(base, 'T1', 'text', {
       rect: { x: 150, y: 150, width: 100, height: 40 },
