@@ -31,7 +31,9 @@ import { READING_DIRECTIONS, type JsonValue } from './types';
 export const PROPOSAL_FORMAT = 'mapping-proposal';
 export const PROPOSAL_FORMAT_VERSION = 4;
 /**
- * Versions read, from 1 to 12: 12 adds the drawing mode as a map axis → entry (the `project` entity's and the
+ * Versions read, from 1 to 13: 13 adds the marking's `decorative` flag (the marking's `decorative` field and
+ * `decorative: true` in the value of a created or removed marking, schema v25) and is only written when the
+ * proposal uses it (it includes what 12 and the earlier ones have); 12 adds the drawing mode as a map axis → entry (the `project` entity's and the
  * container's `drawingMode` hold the map, schema v24) and is only written when the proposal carries one (it
  * includes what 11 and the earlier ones have; a 6 to 11 proposal with a string reads as `{ "mode": s }`); 11 adds the container classes (the container's `classes` field and the
  * `classes` in the value of a created container, schema v23) and is only written when the proposal
@@ -54,7 +56,9 @@ export const PROPOSAL_FORMAT_VERSION = 4;
  * `add_container` to the `operations`; 1 is still valid. Creation writes 4 (6, with the drawing
  * mode).
  */
-export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+export const PROPOSAL_FORMAT_VERSIONS = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+] as const;
 
 /**
  * Proposal version that carries the drawing mode (schema v18): the `project` entity (field
@@ -230,6 +234,33 @@ function hasPageId(value: JsonValue): boolean {
 }
 
 /**
+ * Proposal version that carries the marking's decorative flag (schema v25): the `decorative` field of a
+ * marking and `decorative: true` in the value of a created or removed marking. An earlier version would
+ * silently drop the flag of a created marking (the reader ignores unknown keys), so a proposal that uses
+ * it is written as 13. A whole marking without the key reads as `false`, and the writer only writes the
+ * key when it is `true`, so a proposal that never touches the flag keeps the version it had.
+ */
+export const PROPOSAL_DECORATIVE_FORMAT_VERSION = 13;
+
+/** Does the proposal use the decorative flag (so that only `formatVersion` 13 represents it)? */
+export function usesDecorative(changes: readonly Change[]): boolean {
+  return changes.some(
+    (c) =>
+      c.entity === 'marking' &&
+      (c.field === 'decorative' || hasDecorative(c.to) || hasDecorative(c.from)),
+  );
+}
+
+function hasDecorative(value: JsonValue): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    (value as { readonly decorative?: JsonValue }).decorative === true
+  );
+}
+
+/**
  * Proposal version that carries the container classes (schema v23): the container's `classes` field
  * (the whole map set id → class id, or `null`) and the `classes` in the value of a created container.
  * An earlier version would silently drop the created container's `classes` (and refuse the new
@@ -256,9 +287,9 @@ function hasContainerClasses(value: JsonValue): boolean {
 }
 
 /**
- * The `formatVersion` that creation or revision writes: 12 with a drawing mode map, 11 with container classes, 10 with pages, 9 with an anchor, 8 with a direction, 7
+ * The `formatVersion` that creation or revision writes: 13 with a decorative marking, 12 with a drawing mode map, 11 with container classes, 10 with pages, 9 with an anchor, 8 with a direction, 7
  * with a density, 6 with a drawing mode, otherwise `fallback` (4 on creation, 5 on revision).
- * `current` is the version of the proposal being rewritten: a 6, 7, 8, 9, 10, 11 or 12 never goes down.
+ * `current` is the version of the proposal being rewritten: a 6, 7, 8, 9, 10, 11, 12 or 13 never goes down.
  */
 export function proposalFormatVersionFor(
   changes: readonly Change[],
@@ -276,6 +307,7 @@ const VERSIONS_BY_FEATURE: readonly (readonly [
   (typeof PROPOSAL_FORMAT_VERSIONS)[number],
   (changes: readonly Change[]) => boolean,
 ])[] = [
+  [PROPOSAL_DECORATIVE_FORMAT_VERSION, usesDecorative],
   [
     PROPOSAL_DRAWING_MODE_MAP_FORMAT_VERSION,
     (changes) => usesDrawingModeMap(changes) || usesBackgroundToken(changes),
@@ -405,6 +437,7 @@ export const MARKING_FIELDS = [
   'position',
   'anchor',
   'page',
+  'decorative',
 ] as const;
 /**
  * The arrow (v13, ME4) only has creation and removal (`create-arrow`, `delete-arrow`): no field
@@ -744,6 +777,7 @@ const markingFieldSchemas: Record<(typeof MARKING_FIELDS)[number], z.ZodType> = 
   position: z.number().int().min(0),
   anchor: anchorSchema.nullable(),
   page: z.object({ pageId: id, position: looseRect }),
+  decorative: z.boolean(),
 };
 
 const pageFieldSchemas: Record<(typeof PAGE_FIELDS)[number], z.ZodType> = {
@@ -1014,6 +1048,26 @@ function checkBackgroundTokenVersion(
 }
 
 /**
+ * The decorative flag exists from formatVersion 13: an earlier file with the `decorative` field or a
+ * `decorative: true` in a created or removed marking is refused (a reader of an earlier version would drop
+ * the flag of a created marking without a trace).
+ */
+function checkDecorativeVersion(
+  p: { readonly formatVersion: number; readonly changes: readonly Change[] },
+  add: AddIssue,
+): void {
+  if (p.formatVersion >= PROPOSAL_DECORATIVE_FORMAT_VERSION) return;
+  p.changes.forEach((c, i) => {
+    if (usesDecorative([c])) {
+      add(
+        ['changes', i, 'entity'],
+        'the decorative flag only exists in formatVersion 13 or later',
+      );
+    }
+  });
+}
+
+/**
  * Rules of the revision history (formatVersion 5): `revisions` is required in 5 and does not
  * exist before; a withdrawn change is no longer in `changes`; a new change enters the history
  * only once. Ids cited in `changed`, `added` and `notes` that no longer exist are history.
@@ -1066,8 +1120,9 @@ export const proposalSchema = z
         z.literal(10),
         z.literal(11),
         z.literal(12),
+        z.literal(13),
       ],
-      { error: 'must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 or 12' },
+      { error: 'must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 or 13' },
     ),
     id: proposalId,
     title: z.string().trim().min(1, 'cannot be empty'),
@@ -1125,6 +1180,7 @@ export const proposalSchema = z
     checkRevisions(p, changeIds, add);
     checkPagesVersion(p, add);
     checkBackgroundTokenVersion(p, add);
+    checkDecorativeVersion(p, add);
     const noteIds = new Set<string>();
     p.notes.forEach((n, i) => {
       if (noteIds.has(n.id)) add(['notes', i, 'id'], `duplicate id "${n.id}"`);

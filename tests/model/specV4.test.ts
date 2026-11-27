@@ -61,10 +61,10 @@ function expectIssueStarting(spec: Json, path: string, start: string): void {
 }
 
 describe('the library example (formatVersion 4)', () => {
-  it('the accepted versions go from 1 to 24', () => {
+  it('the accepted versions go from 1 to 25', () => {
     expect(SPEC_FORMAT_VERSIONS).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-      24,
+      24, 25,
     ]);
   });
 
