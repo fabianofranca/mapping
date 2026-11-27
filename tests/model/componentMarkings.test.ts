@@ -656,6 +656,9 @@ describe('floating type (notes library)', () => {
     expect(types.map((t) => [t.typeId, t.floating])).toEqual([
       ['nota', true],
       ['texto', false],
+      ['moldura', false],
+      ['colchete', false],
+      ['linha', false],
     ]);
     expect(componentTypes(componentProject(), catalog).every((t) => !t.floating)).toBe(
       true,
