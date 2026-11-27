@@ -42,7 +42,7 @@ export interface MeasureComponentToolArgs extends ComponentArgs {
 }
 
 const EMPTY_SLOT_HINT =
-  "this is the size with the slots empty: a new instance is born at the component's `size`; add the children and fit with Arrange or `fit_marking`";
+  "this is the size with the slots empty: a new instance is born at the component's `size`; add the children and fit with `arrange_marking` or `fit_marking`";
 
 const NOT_FOLLOWING_HINT =
   "the component's sizing does not follow the content: this is its size (`fit_marking` would give `not-fittable`)";

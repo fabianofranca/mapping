@@ -27,7 +27,14 @@ interface Plan {
   errors?: { index: number; op: string; code: string; message: string }[];
   summary: string[];
   membership?: MembershipEntry[];
-  created?: { op: number; alias?: string; kind: string; ref?: string }[];
+  created?: {
+    op: number;
+    alias?: string;
+    kind: string;
+    ref?: string;
+    parent?: string | null;
+    container?: string | null;
+  }[];
 }
 
 let root: string;
@@ -139,13 +146,13 @@ describe('membership', () => {
     expect(button.containerId).toBe(before.containers[0]!.id);
   });
 
-  it('a batch without a membership change does not carry the field', async () => {
+  it('a batch where nothing that existed changes place carries an empty `membership`', async () => {
     const p = readProject(dir);
     const result = await plan([
       { op: 'update_marking', marking: byName(p, 'Top').id, name: 'Top 2' },
     ]);
     expect(result.valid).toBe(true);
-    expect(result).not.toHaveProperty('membership');
+    expect(result.membership).toEqual([]);
   });
 
   it('wrap_items lists both items, with the created one (by alias) as the new parent', async () => {
@@ -203,5 +210,81 @@ describe('membership on a rectangle tie', () => {
     expect(byName(after, 'Everything').parentId).toBe(wrapper.id);
     expect(membership![0]!.to.parent).toContain(codeOf(wrapper.id));
     expect(membership![0]!.message).toBe('Everything enters Wrapper');
+  });
+});
+
+describe('the place of each created item', () => {
+  const batch = [
+    {
+      op: 'add_container',
+      as: '$box',
+      name: 'Box',
+      width: 400,
+      height: 400,
+      background: '#FFFFFF',
+    },
+    {
+      op: 'create_marking',
+      as: '$card',
+      container: '$box',
+      rect: { x: 0, y: 0, width: 300, height: 300 },
+      name: 'Card',
+    },
+    {
+      op: 'create_marking',
+      as: '$label',
+      container: '$box',
+      rect: { x: 10, y: 10, width: 100, height: 40 },
+      name: 'Label',
+    },
+    {
+      op: 'create_marking',
+      as: '$free',
+      rect: { x: 5000, y: 5000, width: 50, height: 50 },
+      name: 'Free',
+    },
+  ];
+
+  const check = (created: NonNullable<Plan['created']>) => {
+    const at = (alias: string) => created.find((c) => c.alias === alias)!;
+    expect(at('$box')).toHaveProperty('parent', null);
+    expect(at('$box')).not.toHaveProperty('container');
+    expect(at('$card').parent).toBeNull();
+    expect(at('$card').container).toBe(at('$box').ref);
+    expect(at('$label').parent).toBe(at('$card').ref);
+    expect(at('$label').container).toBe(at('$box').ref);
+    expect(at('$free').parent).toBeNull();
+    expect(at('$free').container).toBeNull();
+  };
+
+  it('plan_changes carries parent and container (final references) and the 0-based op', async () => {
+    const result = await plan(batch);
+    expect(result.valid, JSON.stringify(result.errors)).toBe(true);
+    check(result.created!);
+    expect(result.created![0]!.op).toBe(0);
+    expect(result.summary[0]).toMatch(/^0\. /);
+    expect(result.membership).toEqual([]);
+  });
+
+  it('propose_changes returns the same place and an empty `membership`', async () => {
+    const proposed = await propose(mcp, project, batch);
+    expect(proposed.valid, JSON.stringify(proposed.errors)).toBe(true);
+    const report = proposed as unknown as Plan;
+    check(report.created!);
+    expect(report.membership).toEqual([]);
+  });
+
+  it('revise_proposal carries the place too', async () => {
+    const proposed = await propose(mcp, project, batch.slice(0, 3));
+    const revised = ok(
+      await mcp.call<{ created: NonNullable<Plan['created']> }>('revise_proposal', {
+        project,
+        ref: proposed.proposal.ref,
+        operations: [batch[3]],
+      }),
+    );
+    const free = revised.created.find((c) => c.alias === '$free')!;
+    expect(free.parent).toBeNull();
+    expect(free.container).toBeNull();
   });
 });

@@ -34,7 +34,8 @@ function messageOf(name: string, from: Names, to: Names): string {
   return `${name} ${parts.join('; ')}`;
 }
 
-function placeView(refs: Refs, place: MembershipChange['from']): Place {
+/** The `{ parent, container? }` form of a place: a `membership` entry's `to`, and the place of a created item. */
+export function placeView(refs: Refs, place: MembershipChange['from']): Place {
   const parent = place.parentId === null ? null : refs.ref('m', place.parentId);
   if (place.containerId === undefined) return { parent };
   return {
@@ -70,7 +71,7 @@ function entryView(
 
 /**
  * The `membership` list: each marking or container that already existed and whose parent or
- * space changes in the batch. Empty when nothing changes (the field does not appear in the response).
+ * space changes in the batch. Empty when nothing changes (the response still carries `membership: []`).
  */
 export function membershipView(
   base: Project,
