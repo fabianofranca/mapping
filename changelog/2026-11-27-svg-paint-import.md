@@ -1,4 +1,4 @@
-# SVG paint import: gradients and clips in `import_icons` — [Não lançado] (épico `epic/svg-paint-import`, PR #0, MCP 0.62.0, schema v24, unchanged)
+# SVG paint import: gradients and clips in `import_icons` — 2026-11-27 (épico `epic/svg-paint-import`, PR #2998, MCP 0.63.0, schema v25, unchanged)
 
 ## Adicionado
 
