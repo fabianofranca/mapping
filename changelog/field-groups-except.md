@@ -8,6 +8,7 @@
 - `validate_specialization` and `validate_library` accept `fieldGroups`, `group` and `visibleWhen` and check them.
 
 - Details and the Catalog Playground show a type's field groups as collapsible subheadings (open at the start; the state holds per type and group for the session and makes no undo entry), hide the fields and groups whose `visibleWhen` does not hold, and end the typed fields with an "<n> hidden fields · Show" line that lists every hidden field until the selection changes. A hidden field with a pending item of its own, a review mark or text below it always shows. Editing the controlling field never clears the hidden values. A type without the keys renders as before (#2918).
+- Test fixture `tests/fixtures/field-display/` (a `formatVersion` 26 package with a `scroll` slot that excepts `scroll`, a `column`, a `text` and a `decorated-text` with two conditional field groups) and the cloud test script R51 ("Slot except, field groups and conditional display", 12 steps, in block 5 of the full round) that covers the stage end to end.
 
 ## Alterado
 

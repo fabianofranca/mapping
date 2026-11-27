@@ -1,0 +1,33 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "text",
+  "name": "Text",
+  "size": {
+    "width": 120,
+    "height": 24
+  },
+  "template": {
+    "type": "frame",
+    "layout": {
+      "type": "row",
+      "align": "center"
+    },
+    "children": [
+      {
+        "type": "text",
+        "text": {
+          "$field": "label",
+          "default": "text"
+        },
+        "font": {
+          "size": 14
+        },
+        "width": "hug"
+      }
+    ]
+  },
+  "preview": {
+    "label": "text"
+  }
+}
