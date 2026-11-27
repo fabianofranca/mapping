@@ -10,17 +10,41 @@ import type { Roots } from './paths';
 // folders (`--scratch`, read-only), in place of inline `operations` (a measured screen has
 // hundreds of operations, too large for the tool call).
 
-/** Size limit of the operations file (the inline batch has at most 1000 operations). */
+/**
+ * Size limit of the operations file. The inline batch has at most 1,000 operations (the size of a
+ * tool call); a file takes up to `MAX_FILE_OPERATIONS` in the read-only tools and
+ * `MAX_WRITE_OPERATIONS` in the ones that write (the 32 MB limit does not change).
+ */
 const MAX_OPERATIONS_BYTES = 32 * 1024 * 1024;
 
-export const operationsListSchema = z.array(operationSchema).min(1).max(1000);
+/** Most operations in a batch read from `operationsFile` (`plan_changes`, `render_container`, `render_marking`). */
+export const MAX_FILE_OPERATIONS = 5000;
+/** Most operations `propose_changes` and `revise_proposal` take, from a file too. */
+export const MAX_WRITE_OPERATIONS = 1000;
+
+export const operationsListSchema = z
+  .array(operationSchema)
+  .min(1)
+  .max(MAX_FILE_OPERATIONS);
 
 export interface OperationsArgs {
   readonly operations?: readonly Operation[];
   readonly operationsFile?: string;
 }
 
-function parseOperations(text: string, file: string): Operation[] {
+const fmt = (n: number) => n.toLocaleString('en-US');
+
+/** The message of a file over its tool's limit: the count and the limits of both kinds of tool. */
+function tooMany(file: string, count: number, max: number): string {
+  const limits =
+    max < MAX_FILE_OPERATIONS
+      ? `propose_changes and revise_proposal take at most ${fmt(MAX_WRITE_OPERATIONS)} ` +
+        `(plan_changes, render_container and render_marking take up to ${fmt(MAX_FILE_OPERATIONS)} from a file)`
+      : `an operationsFile takes at most ${fmt(MAX_FILE_OPERATIONS)}`;
+  return `operationsFile ${basename(file)}: ${fmt(count)} operations; ${limits}: split the batch`;
+}
+
+function parseOperations(text: string, file: string, maxOperations: number): Operation[] {
   let data: unknown;
   try {
     data = JSON.parse(text);
@@ -31,6 +55,11 @@ function parseOperations(text: string, file: string): Operation[] {
       `operationsFile ${basename(file)}: invalid JSON (${detail})`,
       { path: file },
     );
+  }
+  if (Array.isArray(data) && data.length > maxOperations) {
+    throw new ToolError('invalid-arguments', tooMany(file, data.length, maxOperations), {
+      path: file,
+    });
   }
   const parsed = operationsListSchema.safeParse(data);
   if (parsed.success) return parsed.data;
@@ -48,6 +77,7 @@ function parseOperations(text: string, file: string): Operation[] {
 export async function resolveOperations(
   roots: Roots,
   args: OperationsArgs,
+  maxOperations: number = MAX_FILE_OPERATIONS,
 ): Promise<readonly Operation[]> {
   const { operations, operationsFile } = args;
   if (operations !== undefined && operationsFile !== undefined) {
@@ -77,7 +107,7 @@ export async function resolveOperations(
       path: operationsFile,
     });
   }
-  return parseOperations(await readFile(real, 'utf8'), real);
+  return parseOperations(await readFile(real, 'utf8'), real, maxOperations);
 }
 
 /**
@@ -87,9 +117,10 @@ export async function resolveOperations(
 export async function resolveOptionalOperations(
   roots: Roots,
   args: OperationsArgs,
+  maxOperations: number = MAX_FILE_OPERATIONS,
 ): Promise<readonly Operation[] | undefined> {
   // An empty inline list counts as absent (some clients send `[]` for "unset").
   const operations = args.operations?.length === 0 ? undefined : args.operations;
   if (operations === undefined && args.operationsFile === undefined) return undefined;
-  return resolveOperations(roots, { ...args, operations });
+  return resolveOperations(roots, { ...args, operations }, maxOperations);
 }

@@ -21,6 +21,8 @@ const OPTIONS = { ...GROWTH_OPTIONS, timeout: 120_000 };
 /** Absolute budgets (measured in the cloud: see the PR; ~0.3 s and ~0.5 s), with headroom for the runner. */
 const BUDGET_1000_MS = 1000;
 const BUDGET_TOOL_1000_MS = 2000;
+/** `plan_changes` of 5,000 creations by `operationsFile` (AR3, decision 12): measured in the cloud at ~1.7 s, cap with ~3× headroom (as the 1,000 budget). */
+const BUDGET_TOOL_5000_MS = 5000;
 
 /** The i-th new marking of `I0`: on a grid below the fixture groups. */
 const newRect = (i: number) => ({
@@ -29,12 +31,19 @@ const newRect = (i: number) => ({
   width: 20,
   height: 20,
 });
+/** A denser grid (8 × 8 on a 10 px pitch) for batches of more than 2,000 creations: the strip below the fixture groups fits 9,750. */
+const denseRect = (i: number) => ({
+  x: (i % 390) * 10 + 5,
+  y: 2750 + Math.floor(i / 390) * 10,
+  width: 8,
+  height: 8,
+});
 /** `count` creations in `I0`, cited by the `mapping://` reference, as the agent cites a container. */
 const creations = (count: number) =>
   Array.from({ length: count }, (_, i) => ({
     op: 'create_marking',
     container: 'mapping://grande/i/i0',
-    rect: newRect(i),
+    rect: count > 2000 ? denseRect(i) : newRect(i),
   }));
 
 const median = (xs: number[]) =>
@@ -102,10 +111,13 @@ describe('MCP batch at scale', () => {
       for (const root of roots) rmSync(root, { recursive: true, force: true });
     });
 
-    budgetIt(
-      '1,000 creations in a project of 2,500 markings under budget',
+    budgetIt.each([
+      [1000, BUDGET_TOOL_1000_MS],
+      [5000, BUDGET_TOOL_5000_MS],
+    ])(
+      '%i creations in a project of 2,500 markings under budget (%i ms)',
       OPTIONS,
-      async () => {
+      async (count: number, cap: number) => {
         const root = mkdtempSync(join(tmpdir(), 'mapping-batch-'));
         roots.push(root);
         mkdirSync(join(root, 'grande'), { recursive: true });
@@ -113,8 +125,8 @@ describe('MCP batch at scale', () => {
           join(root, 'grande', 'mapping.json'),
           serialize(buildLargeProject({ images: 100 })),
         );
-        const file = join(root, 'batch.json');
-        writeFileSync(file, JSON.stringify(creations(1000)));
+        const file = join(root, `batch-${count}.json`);
+        writeFileSync(file, JSON.stringify(creations(count)));
         const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
         await createServer({ roots: [root] }).connect(serverSide);
         client = new Client({ name: 'batch', version: '0' });
@@ -130,11 +142,14 @@ describe('MCP batch at scale', () => {
         const ms = performance.now() - start;
         const text = (result.content as { text: string }[])[0]!.text;
         expect(result.isError, text.slice(0, 300)).toBeFalsy();
-        expect(JSON.parse(text).valid).toBe(true);
+        expect(
+          JSON.parse(text).valid,
+          JSON.stringify(JSON.parse(text).errors?.slice(0, 2)),
+        ).toBe(true);
         console.info(
-          `budget · plan_changes of 1,000 creations (2,500 markings): ${ms.toFixed(0)} ms (cap ${BUDGET_TOOL_1000_MS} ms)`,
+          `budget · plan_changes of ${count} creations (2,500 markings): ${ms.toFixed(0)} ms (cap ${cap} ms)`,
         );
-        expect(ms).toBeLessThan(BUDGET_TOOL_1000_MS);
+        expect(ms).toBeLessThan(cap);
       },
     );
   });
