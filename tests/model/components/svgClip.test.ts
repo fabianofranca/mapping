@@ -161,6 +161,7 @@ describe('svgClip: what is named', () => {
     expect(problemsOf(svg(body))[0]).toMatch(/covers only part of the icon/);
   });
 
+  // portuguese-guard:begin the object of the test is the pt-BR rendering of the model message
   it('has the three messages in pt-BR', () => {
     const result = svgToIcon(svg(clipped('<circle r="4"/><rect width="1" height="1"/>')));
     expect(result.ok).toBe(false);
@@ -179,4 +180,5 @@ describe('svgClip: what is named', () => {
         'sem suporte no SVG: o clip-path c cobre só parte do ícone',
       );
   });
+  // portuguese-guard:end
 });
