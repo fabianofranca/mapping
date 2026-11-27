@@ -1089,6 +1089,7 @@ function createEngine(
     node: TextTemplate,
     font: MeasureFont,
     index: number,
+    ownerId: string,
   ): ResolvedRun => {
     const name = str(run.icon, '');
     const size = Math.max(0, num(run.size, font.size));
@@ -1113,7 +1114,7 @@ function createEngine(
     const width = vbH > 0 ? (size * vbW) / vbH : size;
     const mirror = dirOf(node) === 'rtl' && found.def.mirror === true;
     const icon = iconGroup(found, {
-      id: `${prefix}/run-icon-${index}`,
+      id: `${ownerId}/run-icon-${index}`,
       name,
       w: width,
       h: size,
@@ -1129,8 +1130,9 @@ function createEngine(
     node: TextTemplate,
     font: MeasureFont,
     index: number,
+    ownerId: string,
   ): ResolvedRun => {
-    if (run.icon !== undefined) return resolveIconRun(run, node, font, index);
+    if (run.icon !== undefined) return resolveIconRun(run, node, font, index, ownerId);
     const decoration = oneOf(
       run.decoration ?? node.font?.decoration,
       ['none', 'underline', 'line-through'],
@@ -1164,14 +1166,18 @@ function createEngine(
   const richRuns = (
     node: TextTemplate,
     font: MeasureFont,
+    ownerId: string = prefix,
   ): { scene: SceneTextRun[]; runs: RichRun[] } => {
-    const resolved = (node.runs ?? []).map((run, i) => resolveRun(run, node, font, i));
+    const resolved = (node.runs ?? []).map((run, i) =>
+      resolveRun(run, node, font, i, ownerId),
+    );
     const scene = resolved.map((r) => r.scene);
     const runs = resolved.map(({ scene: run, inline }): RichRun => ({
       text: run.text,
       font: {
         family: run.fontFamily,
-        size: run.fontSize,
+        // An icon's font is the node's: the `…` after it is measured and drawn in the text's size.
+        size: inline ? font.size : run.fontSize,
         weight: run.fontWeight,
         italic: run.italic,
         lineHeight: font.lineHeight,
@@ -3796,6 +3802,7 @@ function createEngine(
   /** The scene's text and, with `runs`, the resolved runs and their layout in the box. */
   const textContent = (
     node: TextTemplate,
+    id: string,
     font: MeasureFont,
     w: number,
     h: number,
@@ -3809,12 +3816,13 @@ function createEngine(
       if (cited) recordLines(node, text === '' ? 0 : measuredLines(measured()));
       return { text, extra: {} };
     }
-    const rich = richRuns(node, font);
+    const rich = richRuns(node, font, id);
     const runLayout = layoutRuns(rich.runs, richBase(node, font), options.measure, w);
     warnTextTooTall(node, runLayout.height, font, w, h);
     warnTextTooWide(node, runLayout.width, font, w);
     const text = rich.scene.map((run) => run.text).join('');
-    if (cited) recordLines(node, text === '' ? 0 : runLayout.lines.length);
+    const hasBox = rich.runs.some((run) => run.inline !== undefined);
+    if (cited) recordLines(node, text === '' && !hasBox ? 0 : runLayout.lines.length);
     return { text, extra: { runs: rich.scene, runLayout } };
   };
 
@@ -3887,7 +3895,7 @@ function createEngine(
   ): SceneNode => {
     const font = fittedFont(node, w);
     const style = textStyleOf(node, font, baselineTopOf(node, w));
-    const { text, extra } = textContent(node, font, w, h);
+    const { text, extra } = textContent(node, id, font, w, h);
     const color = str(node.color, '#000000');
     const stroke = strokeOf(node.stroke, 'inside', 1);
     const result: TextNode = {

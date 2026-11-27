@@ -386,3 +386,74 @@ describe('docs/component.schema.json mirrors the icon run', () => {
     expect(accepts([run])).toBe(false);
   });
 });
+
+describe('review fixes', () => {
+  const ids = (node: TextNode) => {
+    const out: string[] = [];
+    const visit = (n: { id: string; children?: readonly unknown[] }): void => {
+      out.push(n.id);
+      (n.children ?? []).forEach((c) => visit(c as never));
+    };
+    node.runs?.forEach((r) => r.icon && visit(r.icon));
+    return out;
+  };
+
+  it('two text nodes with an icon run at the same index have different scene ids', () => {
+    const two = file([{ icon: 'check' }]);
+    const frame = two.template as unknown as { children: Record<string, unknown>[] };
+    frame.children.push({
+      ...frame.children[0]!,
+      name: 'u',
+      anchors: { left: 0, top: 20 },
+    });
+    const result = instantiate(
+      two,
+      {},
+      { x: 0, y: 0, width: 200, height: 40 },
+      { measure: approximateMeasurer, icons: ICONS },
+    );
+    const nodes = [...walk(result.root)].filter((n): n is TextNode => n.type === 'text');
+    const all = nodes.flatMap(ids);
+    expect(all.length).toBeGreaterThan(2);
+    expect(new Set(all).size).toBe(all.length);
+  });
+
+  it('the ellipsis after an icon uses the text font and does not stretch the line', () => {
+    const base: RichBase = { ...BASE, maxLines: 1, ellipsis: true };
+    const runs: RichRun[] = [
+      text('aaaa aaaa '),
+      { text: '', font: { ...FONT, size: 32 }, inline: { width: 10, height: 32 } },
+      text(' bbbbbbbb'),
+    ];
+    const layout = layoutRuns(runs, base, approximateMeasurer, 100);
+    const pieces = layout.lines[0]!.pieces;
+    expect(pieces.map((p) => p.inline === true)).toContain(true);
+    const dots = pieces[pieces.length - 1]!;
+    expect(dots.text).toBe('…');
+    expect(runs[dots.run]!.inline).toBeUndefined();
+    expect(dots.height).toBeLessThan(32);
+  });
+
+  it('$lines counts the line of a node whose runs are all icons', () => {
+    const f = file([{ icon: 'check' }]);
+    const frame = f.template as unknown as { children: Record<string, unknown>[] };
+    frame.children.push({
+      type: 'text',
+      name: 'u',
+      anchors: { left: 0, top: 20 },
+      width: 100,
+      height: 'hug',
+      text: { $lines: 't' },
+    });
+    const result = instantiate(
+      f,
+      {},
+      { x: 0, y: 0, width: 200, height: 40 },
+      { measure: approximateMeasurer, icons: ICONS },
+    );
+    const u = [...walk(result.root)].find(
+      (n): n is TextNode => n.type === 'text' && n.name === 'u',
+    );
+    expect(u?.text).toBe('1');
+  });
+});

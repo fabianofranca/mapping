@@ -607,6 +607,7 @@ export const templatePtBR: {
   'model.component.expectedRunObject': 'esperava objeto (trecho)',
   'model.component.expectedRuns': 'esperava lista não vazia de trechos',
   'model.component.textAndRuns': 'text e runs juntos: use um ou outro',
+  'model.component.textAndIcon': 'text e icon juntos: use um ou outro',
   'model.component.expectedNodeObject': 'esperava objeto (nó)',
   'model.component.nodeTypeUnknown': 'tipo de nó desconhecido: {type} (esperava {types})',
   'model.component.onlyFrameAccepts':

@@ -292,6 +292,16 @@ export function dropLastChar(text: string): string {
   return [...text].slice(0, -1).join('');
 }
 
+/** The run the `…` takes its font from when the line ends in an inline icon: the nearest text run before it. */
+function textRunBefore(kept: readonly Seg[], ctx: Context): number {
+  for (let i = kept.length - 1; i >= 0; i--) {
+    const seg = kept[i];
+    if (seg !== undefined && seg.inline !== true) return seg.run;
+  }
+  const first = ctx.runs.findIndex((r) => r.inline === undefined);
+  return first >= 0 ? first : 0;
+}
+
 /**
  * Removes from the end of the line (whole chips, letters of the last text) until the line + `…`
  * fits in `limit`; the `…` uses the font of the last piece that remained.
@@ -303,7 +313,7 @@ function ellipsize(line: readonly Seg[], ctx: Context, limit: number): Seg[] {
     while (isBlank(kept[kept.length - 1])) kept.pop();
     const tail = kept[kept.length - 1];
     if (tail === undefined) break;
-    run = tail.run;
+    run = tail.inline ? textRunBefore(kept, ctx) : tail.run;
     if (sumWidths(kept) + ctx.textWidth(run, '…') <= limit + EPS) break;
     kept.pop();
     const shorter = tail.chip || tail.inline ? '' : dropLastChar(tail.text).trimEnd();
