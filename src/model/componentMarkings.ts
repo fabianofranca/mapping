@@ -93,6 +93,8 @@ export interface ComponentType {
   readonly container: boolean;
   /** The type declares `floating`: the instance is born floating, on the canvas (`formatVersion` 7). */
   readonly floating: boolean;
+  /** The type declares `decorative`: the instance is born decorative and at the back (`formatVersion` 25). */
+  readonly decorative: boolean;
   readonly component: ComponentFile;
 }
 
@@ -116,6 +118,7 @@ export function componentTypes(p: Project, catalog: ComponentCatalog): Component
           layerId: layer.id,
           container: hasSlotComponent(component),
           floating: type.floating === true,
+          decorative: type.decorative === true,
           component,
         });
       }
@@ -1367,6 +1370,7 @@ export function addComponentMarking(
       rect,
       ...(args.name !== undefined ? { name: args.name } : {}),
       ...(floating ? { floating: true } : {}),
+      ...(type.decorative === true ? { decorative: true } : {}),
     },
     {
       minSize: componentFileMinSize(component, effectiveDensity(p, args.containerId)),

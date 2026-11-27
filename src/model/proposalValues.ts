@@ -107,6 +107,8 @@ export function markingValue(m: Marking, withPage = false): JsonValue {
     source: m.source,
     // Only when anchored (formatVersion 9): without it the value is that of before the anchor.
     ...(m.anchor == null ? {} : { anchor: m.anchor }),
+    // Only when decorative (formatVersion 13): without it the value is that of before the flag.
+    ...(m.decorative ? { decorative: true } : {}),
     // Only when the proposal carries pages (formatVersion 10).
     ...(withPage && m.containerId === null && m.pageId !== null
       ? { pageId: m.pageId }
@@ -203,7 +205,17 @@ export const COMPARED_FIELDS = {
     'classes',
     'page',
   ],
-  marking: ['name', 'space', 'rect', 'floating', 'locked', 'source', 'anchor', 'page'],
+  marking: [
+    'name',
+    'space',
+    'rect',
+    'floating',
+    'decorative',
+    'locked',
+    'source',
+    'anchor',
+    'page',
+  ],
   // The arrow is only created and removed: none of its fields is compared (see `ARROW_FIELDS`).
   arrow: [],
   annotation: ['name', 'parentAnnotationId', 'parentRole', 'markingId', 'layerId'],
@@ -291,6 +303,7 @@ const MARKING_FIELD_READERS: Readonly<Record<string, (m: Marking) => JsonValue>>
   space: (m) => toJson({ containerId: m.containerId, rect: m.rect }),
   containerId: (m) => m.containerId,
   floating: (m) => m.floating,
+  decorative: (m) => m.decorative,
   locked: (m) => m.locked,
   source: (m) => toJson(m.source),
   anchor: (m) => toJson(m.anchor ?? null),
