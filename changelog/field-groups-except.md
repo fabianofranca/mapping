@@ -7,4 +7,4 @@
 
 ## Alterado
 
-- Teto do `dist/index.html` subiu 16 KiB, de 2768896 para 2785280, pela regra do orçamento; acima dos limites, `bug` para o dono revisar.
+- Teto do `dist/index.html` subiu 16 KiB, de 2768896 para 2785280, pela regra do orçamento; acima dos limites, `bug` #3059 para o dono revisar.
