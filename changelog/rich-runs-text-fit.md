@@ -11,4 +11,4 @@
 
 ## Alterado
 
-- Teto do `dist/index.html` subiu 16 KiB, de 2768896 para 2785280, pela regra do orçamento; acima dos limites, `bug` #3051 para o dono revisar.
+- The `dist/index.html` ceiling went up 16 KiB, from 2768896 to 2785280, by the budget rule; above the limits, `bug` #3051 for the owner to review.
