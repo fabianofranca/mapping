@@ -93,6 +93,8 @@ export interface ComponentType {
   readonly container: boolean;
   /** The type declares `floating`: the instance is born floating, on the canvas (`formatVersion` 7). */
   readonly floating: boolean;
+  /** The type declares `decorative`: the instance is born decorative and at the back (`formatVersion` 25). */
+  readonly decorative: boolean;
   readonly component: ComponentFile;
 }
 
@@ -116,6 +118,7 @@ export function componentTypes(p: Project, catalog: ComponentCatalog): Component
           layerId: layer.id,
           container: hasSlotComponent(component),
           floating: type.floating === true,
+          decorative: type.decorative === true,
           component,
         });
       }
@@ -161,6 +164,8 @@ export interface NewComponentArgs {
   readonly center?: { readonly x: number; readonly y: number };
   /** Explicit rectangle (MCP), in the instance's space; absent = `componentPlacement`. */
   readonly rect?: Rect;
+  /** Decorative (v25): absent takes the type's `decorative`; `false` makes an instance of a decorative type ordinary. */
+  readonly decorative?: boolean;
   /**
    * Floating type only: positions the instance in a free spot of the target's margin (container or
    * marking; `placeFloatingNear`) with the component's size. An explicit `rect` wins.
@@ -479,7 +484,7 @@ function drawnWithSlots(
   containerId: string | null,
 ): ReturnType<typeof componentForDrawing> | null {
   if (mc === null) return null;
-  const drawn = componentForDrawing(p, mc.component, containerId);
+  const drawn = componentForDrawing(p, mc.component, containerId, mc.specId);
   return drawn === null || componentSlots(drawn.component).length === 0 ? null : drawn;
 }
 
@@ -654,6 +659,7 @@ function initialValues(
     needsReview: false,
     locked: false,
     floating: false,
+    decorative: false,
     source: null,
   };
   let next: Project = { ...p, markings: [...p.markings, scratch] };
@@ -708,7 +714,7 @@ function wantedSize(
   // Component with a slot and an axis that follows the content: the content is the children, which do not
   // exist yet (born at `size`; Arrange adjusts it after they come in). With no such axis (the Material 3
   // top app bar's height by `style`) nothing depends on them and the component is measured as always.
-  const drawn = componentForDrawing(p, component, args.containerId);
+  const drawn = componentForDrawing(p, component, args.containerId, args.specId);
   const reserved = {
     anchor: args.instanceAnchor,
     direction: drawn.direction,
@@ -1366,6 +1372,7 @@ export function addComponentMarking(
       rect,
       ...(args.name !== undefined ? { name: args.name } : {}),
       ...(floating ? { floating: true } : {}),
+      ...((args.decorative ?? type.decorative === true) ? { decorative: true } : {}),
     },
     {
       minSize: componentFileMinSize(component, effectiveDensity(p, args.containerId)),

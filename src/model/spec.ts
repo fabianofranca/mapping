@@ -79,7 +79,7 @@ function onlyUpTo(version: number): SpecMsg {
 /** The first `formatVersion` where `sources` are plain data and `origins` is refused. */
 const PLAIN_SOURCES_VERSION = 22;
 
-// Specialization format (`formatVersion` 1 to 24), see docs/SPEC-FORMAT.md. Version 2 adds
+// Specialization format (`formatVersion` 1 to 25), see docs/SPEC-FORMAT.md. Version 2 adds
 // `platforms` and `code`; version 1 is 2 without platforms and without `code`; version 3 is 2 plus
 // `sources` (external origins on types and fields, including `table` columns); version 4 is 3
 // plus the library: the package (the specialization's folder) with `component`, `doc` and
@@ -131,7 +131,9 @@ const PLAIN_SOURCES_VERSION = 22;
 // (`{ "$token": … }`), composite values, per-axis values (`{ "$axis": … }`) and the `{ "$value": … }`
 // metadata wrapper, outside the version contract too (see `specTokens.ts`); version 24 is 23 plus
 // `codeOnly: true` on a top-level field (stage #2829: a deliberately non-visual property, which
-// silences the library validator's `library.fieldUnused`), additive in the version contract.
+// silences the library validator's `library.fieldUnused`), additive in the version contract;
+// version 25 is 24 plus `decorative: true` on the type (stage #2826: the instance is a decorative
+// marking, a child like any marking and never a parent), additive in the version contract.
 // The zod here is the source of truth; `docs/spec.schema.json` mirrors it for those who do not
 // use TypeScript. No browser APIs: reusable by the MCP server.
 //
@@ -144,10 +146,11 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Value used before the product rename: import still accepts it. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Current format version (the one that the documentation and new examples use). */
-export const SPEC_FORMAT_VERSION = 24;
+export const SPEC_FORMAT_VERSION = 25;
 /** Versions accepted on import. */
 export const SPEC_FORMAT_VERSIONS = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+  25,
 ] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
@@ -532,6 +535,12 @@ export interface SpecAnnotationType {
    * canvas, outside the containment tree, and is drawn above everything. Absent = `false`.
    */
   floating?: boolean;
+  /**
+   * The type's instance is a **decorative** marking (`formatVersion` 25 only): a child like any
+   * marking, never a parent (a frame, a bracket or a divider drawn in its space). Not together with
+   * `floating` or `structural`, nor on an arrow-only type. Absent = `false`.
+   */
+  decorative?: boolean;
   /**
    * Where the annotation applies (`formatVersion` 7 only): `marking` (default), `arrow` or both.
    * An arrow-only type has no `component` or `floating`: the arrow has no component drawing.
@@ -1333,6 +1342,29 @@ function checkAppliesTo(
   }
 }
 
+/**
+ * `decorative: true` (`formatVersion` 25): the instance is a child that is never a parent, so it
+ * cannot be `floating` (outside the tree) or `structural` (a grouping type), nor sit on an
+ * arrow-only type (an arrow is not a marking).
+ */
+function checkDecorative(
+  type: {
+    decorative?: boolean;
+    floating?: boolean;
+    structural?: boolean;
+    appliesTo?: SpecAppliesTo[];
+  },
+  ctx: z.RefinementCtx,
+): void {
+  if (type.decorative !== true) return;
+  const add = (message: SpecMsg) => addSpecIssue(ctx, ['decorative'], message);
+  if (type.floating === true) add(specMsg('spec.decorativeFloating'));
+  if (type.structural === true) add(specMsg('spec.decorativeStructural'));
+  if (type.appliesTo !== undefined && !type.appliesTo.includes('marking')) {
+    add(specMsg('spec.arrowOnlyNoDecorative'));
+  }
+}
+
 const GROUPS_EMPTY = 'cannot be empty; remove the key or list at least one group';
 const ALLOWED_CHILD_SHAPE_MESSAGE =
   'must be a type id (text) or a clause { layer, groups }';
@@ -1553,6 +1585,7 @@ const annotationTypeShape = z
     doc: docShape.optional(),
     examples: z.array(exampleShape).optional(),
     floating: z.boolean().optional(),
+    decorative: z.boolean({ error: 'must be true or false' }).optional(),
     appliesTo: z
       .array(
         z.enum(SPEC_APPLIES_TO as [SpecAppliesTo, ...SpecAppliesTo[]], {
@@ -1580,6 +1613,7 @@ const annotationTypeShape = z
     checkNotices(type.notices, ctx, []);
     checkFields(type.fields, ctx, ['fields']);
     checkAppliesTo(type, ctx);
+    checkDecorative(type, ctx);
     checkChildRoles(type, ctx);
     checkTypeGroups(type.groups, ctx);
     checkSlotIds(type.slots, ctx);
@@ -1596,6 +1630,23 @@ const annotationTypeShape = z
       }
     }
   });
+
+/** Before v25, `decorative` on the type is an error at the exact path. */
+function checkNoDecorative(
+  layers: readonly { annotationTypes: readonly { decorative?: unknown }[] }[],
+  ctx: z.RefinementCtx,
+): void {
+  layers.forEach((layer, li) => {
+    layer.annotationTypes.forEach((type, ti) => {
+      if (type.decorative === undefined) return;
+      addSpecIssue(
+        ctx,
+        ['layers', li, 'annotationTypes', ti, 'decorative'],
+        onlyFormat(25),
+      );
+    });
+  });
+}
 
 /** Before v15, `structural` on the type is an error at the exact path. */
 function checkNoStructural(
@@ -2916,6 +2967,8 @@ export const specSchema = z
     if (spec.formatVersion < 15) checkNoStructural(spec.layers, ctx);
     // v24: `codeOnly` on a field. Before it, an error at the exact path.
     if (spec.formatVersion < 24) checkNoCodeOnly(spec.layers, ctx);
+    // v25: `decorative` on the type. Before it, an error at the exact path.
+    if (spec.formatVersion < 25) checkNoDecorative(spec.layers, ctx);
     // v11: clauses, `groups`, roles and external document. Before it, an error at the exact path.
     if (spec.formatVersion < 11) checkNoV11Keys(spec, ctx);
     // v6: `containers`. Before it, an error at the exact path.

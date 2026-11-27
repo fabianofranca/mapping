@@ -1,6 +1,7 @@
 import { useId } from 'preact/hooks';
 import { t } from '../i18n';
 import {
+  chosenContainerClassSets,
   containerClassIn,
   containerClassSets,
   effectiveDensity,
@@ -88,15 +89,24 @@ export function ContainerClassField({ image, disabled }: ContainerClassFieldProp
   const { store } = useEditor();
   const project = store.project.value;
   const sets = project ? containerClassSets(project) : [];
+  // A set id some specialization declares as chosen gets its `Select` (decision 4 of #2489), even when an
+  // earlier one declares it computed; only the ids nobody chooses keep their read-only line.
+  const chosen = new Map(
+    (project ? chosenContainerClassSets(project) : []).map((s) => [s.id, s] as const),
+  );
   return (
     <>
-      {sets.map((set) =>
-        isComputedSet(set) ? (
+      {sets.map((set) => {
+        const pick = chosen.get(set.id);
+        if (pick !== undefined) {
+          return (
+            <ChosenSetField key={set.id} image={image} set={pick} disabled={disabled} />
+          );
+        }
+        return isComputedSet(set) ? (
           <ComputedSetLine key={set.id} image={image} set={set} />
-        ) : (
-          <ChosenSetField key={set.id} image={image} set={set} disabled={disabled} />
-        ),
-      )}
+        ) : null;
+      })}
     </>
   );
 }

@@ -819,6 +819,15 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) =>
         model.setMarkingFloating(p, markingId, floating, rectOptions(p, markingId)),
       ),
+    /**
+     * Turns the decorative flag on or off: a decorative marking is a child by geometry like any
+     * marking and never a parent (turning it on releases its children). It is geometry: the lock
+     * prevents it both ways, and a floating marking cannot be decorative.
+     */
+    setMarkingDecorative: (markingId: string, decorative: boolean) =>
+      store.apply((p) =>
+        model.setMarkingDecorative(p, markingId, decorative, rectOptions(p, markingId)),
+      ),
     confirmMarkingReview: (markingId: string) =>
       store.apply((p) => model.confirmMarkingReview(p, markingId)),
     removeMarking: (markingId: string) =>

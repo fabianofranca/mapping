@@ -1,0 +1,68 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "colchete",
+  "name": "Bracket",
+  "description": "A bracket that fills the marking: an outline on three sides, open on the side the field names (right by default, like \"[\"). Solid or dashed, any width. Decorative: it never contains other markings.",
+  "size": {
+    "width": 16,
+    "height": 120
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "fill"
+  },
+  "preview": {
+    "cor": "#79747E",
+    "aberto": "direita"
+  },
+  "template": {
+    "type": "frame",
+    "name": "colchete",
+    "layout": {
+      "type": "none"
+    },
+    "stroke": {
+      "color": {
+        "$if": {
+          "$lte": [
+            {
+              "$field": "espessura",
+              "default": 1
+            },
+            0
+          ]
+        },
+        "then": "none",
+        "else": {
+          "$tokenNamed": {
+            "$field": "cor"
+          },
+          "default": "#79747E"
+        }
+      },
+      "width": {
+        "$field": "espessura",
+        "default": 1
+      },
+      "align": "inside",
+      "dash": {
+        "$switch": "estilo",
+        "cases": {
+          "tracejado": [6, 4]
+        },
+        "default": []
+      },
+      "sides": {
+        "$switch": "aberto",
+        "cases": {
+          "esquerda": ["right", "top", "bottom"],
+          "baixo": ["left", "top", "right"],
+          "cima": ["left", "bottom", "right"]
+        },
+        "default": ["left", "top", "bottom"]
+      }
+    },
+    "children": []
+  }
+}

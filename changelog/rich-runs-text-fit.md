@@ -1,4 +1,4 @@
-# Rich-text runs from a table, inline icons, baseline shift and text that shrinks to fit — [Não lançado] (épico `epic/rich-runs-text-fit`, PR #0, MCP 0.63.0 (minor), schema v24 unchanged, component formatVersion 4 unchanged)
+# Rich-text runs from a table, inline icons, baseline shift and text that shrinks to fit — [Não lançado] (épico `epic/rich-runs-text-fit`, PR #0, MCP 0.64.0 (minor), schema v24 unchanged, component formatVersion 4 unchanged)
 
 ## Adicionado
 

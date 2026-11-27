@@ -110,6 +110,9 @@ export const specMessages = {
   'spec.repeatedValues': 'repeated values',
   'spec.arrowOnlyNoComponent': 'an arrow-only type cannot have a component',
   'spec.arrowOnlyNoFloating': 'an arrow-only type cannot have floating',
+  'spec.arrowOnlyNoDecorative': 'an arrow-only type cannot have decorative',
+  'spec.decorativeFloating': 'a decorative type cannot also be floating',
+  'spec.decorativeStructural': 'a decorative type cannot also be structural',
   'spec.appliesToInvalid': '"{value}" is invalid; use "marking" or "arrow"',
   'spec.appliesToShape': 'must be "marking" or "arrow"',
   // Allowed children, documents, roles and groups

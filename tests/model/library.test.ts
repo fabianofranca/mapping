@@ -626,6 +626,66 @@ describe('validateLibrary: level 2 (consistency across files)', () => {
     });
   });
 
+  describe('root sizing (#2921)', () => {
+    const sized = (field: string) =>
+      patch(
+        patch(miniPackage(), 'components/mini-button.json', ['formatVersion'], 4),
+        'components/mini-button.json',
+        ['sizing'],
+        { width: { $field: field } },
+      );
+    const withField = (files: LibraryFile[], field: Record<string, unknown>) => {
+      const spec = JSON.parse(files.find((f) => f.path === SPEC)?.text ?? '{}') as {
+        layers: { annotationTypes: { fields: unknown[] }[] }[];
+      };
+      const fields = spec.layers[0]?.annotationTypes[0]?.fields ?? [];
+      return patch(files, SPEC, [...TYPE0, 'fields'], [...fields, field]);
+    };
+    const unusedKeys = (files: readonly LibraryFile[]) =>
+      validate(files)
+        .warnings.filter((w) => w.code === 'library.fieldUnused')
+        .map((w) => w.params?.key);
+
+    it('a field that only the root sizing reads is used: no library.fieldUnused', () => {
+      const files = withField(sized('share'), { key: 'share', type: 'number' });
+      expect(validate(files).errors).toEqual([]);
+      expect(unusedKeys(files)).not.toContain('share');
+    });
+
+    it('a field the root sizing cites and the type does not declare is an error at sizing.width.$field', () => {
+      expect(validate(sized('nope')).errors.map(brief)).toContainEqual([
+        'error',
+        'components/mini-button.json',
+        'sizing.width.$field',
+        'the drawing uses the field "nope", which the type "mini-button" does not declare',
+      ]);
+    });
+
+    it('a codeOnly field that the root sizing reads gives library.codeOnlyDrawn', () => {
+      let files = withField(sized('share'), {
+        key: 'share',
+        type: 'number',
+        codeOnly: true,
+      });
+      files = patch(files, SPEC, ['formatVersion'], 24);
+      files = patch(files, SPEC, ['origins'], undefined);
+      files = patch(
+        files,
+        SPEC,
+        [...TYPE0, 'examples'],
+        [
+          { name: 'Primary', values: { label: 'Save', variant: 'primary' } },
+          { name: 'Text', values: { label: 'Cancel', variant: 'text' } },
+        ],
+      );
+      const report = validate(files);
+      expect(report.errors).toEqual([]);
+      expect(
+        report.warnings.find((w) => w.code === 'library.codeOnlyDrawn')?.params?.key,
+      ).toBe('share');
+    });
+  });
+
   describe('codeOnly (specialization formatVersion 24)', () => {
     const fieldsAt = ['layers', 0, 'annotationTypes', 0, 'fields'] as const;
     /** The mini package at 24: from 22 on `origins` and a `system` + `file` example are gone (plain sources). */
