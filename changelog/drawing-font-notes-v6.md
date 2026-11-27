@@ -15,4 +15,5 @@
 - A family stack that is just `Mapping Mono` (no generic after it) now measures with the mono face in the server.
 - `docs/TESTING.md`, R12.47, R12.48, R25.26 and R39.16: the widths, the clipped box and the `approximate` values are recomputed for Mapping Sans and Mono.
 - The `dist/index.html` ceiling went up 80 KiB, from 2654208 to 2736128, by the budget rule; above the limits, `bug` #2895 for the owner to review
+- The `dist/index.html` ceiling went up another 16 KiB, from 2736128 to 2752512, by the budget rule; above the limits, `bug` #2908 for the owner to review
 - The `tabela` type of the notes library is removed. Version 6 migrates it into `nota` (`rename-type`, versions 1 to 5), so a table becomes a yellow note with the same title and rows. Existing projects only move with **Update to the built-in version** in the app, or `builtin` `notas` in `plan_library_update` and `update_specialization`; nothing changes on its own.
