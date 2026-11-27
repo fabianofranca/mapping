@@ -6,12 +6,8 @@ None. DS impact: none. The epic only changes the component format and its engine
 
 ## Sincronização
 
-Nothing to write to the **Mapping** artifact: the epic does not change a component, token or icon of the app.
+Sem impacto: no item in `## Pendências`, so nothing was written to the Mapping artifact.
 
 ## Ficou sem gravar
 
 None.
-
-## Sincronização
-
-Sem impacto: no item in `## Pendências`, so nothing was written to the Mapping artifact. The epic only changes the component format and its engine (`src/model/components/`), the MCP drawing and the documentation; no file of the epic is in the triggers of `docs/DESIGN-SYSTEM.md`.
