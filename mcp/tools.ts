@@ -841,6 +841,17 @@ export function registerTools(
         drawingMode: drawingModeArg,
         direction: directionArg,
         background: backgroundArg,
+        region: z
+          .object({
+            x: z.number(),
+            y: z.number(),
+            width: z.number().positive(),
+            height: z.number().positive(),
+          })
+          .optional()
+          .describe(
+            'Draws only this window of the container, in container pixels, at the asked `zoom` (with or without `proposal`/`operations`/`operationsFile`): a tall page is readable at `zoom` 2 or more. A region partly outside is clipped to the container (a `warning`, and the response `region` is the drawn one); one that does not touch the container is `region-outside-container` (the details carry the container size); output above the pixel limit is `image-too-large`.',
+          ),
         format: z.enum(['png', 'webp', 'jpeg']).optional().describe('Default png.'),
       },
       annotations: READ_ONLY,
