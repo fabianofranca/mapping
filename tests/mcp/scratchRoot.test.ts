@@ -36,6 +36,7 @@ let mcp: Connection;
 
 interface Plan {
   valid: boolean;
+  summary: string[];
   errors?: { index: number; op: string; code: string; message: string }[];
   created: { op: number; alias?: string; kind: string }[];
 }
@@ -106,6 +107,28 @@ describe('operationsFile from the scratch folder', () => {
       expect(plan.valid, JSON.stringify(plan)).toBe(true);
       expect(plan.created.map((c) => c.alias)).toEqual(['$screen']);
     }
+  });
+
+  it('plan_changes accepts the scratch folder name before the path, with the same result (#2926)', async () => {
+    const plan = async (operationsFile: string) =>
+      ok(await mcp.call<Plan>('plan_changes', { project: 'loja', operationsFile }));
+    const plain = await plan('batch.json');
+    const prefixed = await plan('scratch/batch.json');
+    expect(prefixed.valid, JSON.stringify(prefixed)).toBe(true);
+    // The new container's id is random, so compare what the plan says about the batch.
+    expect(prefixed.summary).toEqual(plain.summary);
+    expect(prefixed.created.map((c) => c.alias)).toEqual(
+      plain.created.map((c) => c.alias),
+    );
+    // The same prefixed name, but for a file that is not there, is still path-not-found.
+    const missing = await mcp.call('plan_changes', {
+      project: 'loja',
+      operationsFile: 'scratch/missing.json',
+    });
+    expect(errorOf(missing)).toMatchObject({
+      code: 'path-not-found',
+      message: expect.stringContaining('scratch/missing.json'),
+    });
   });
 
   it('a file in a root wins over a file with the same name in the scratch folder', async () => {
@@ -237,6 +260,23 @@ describe('images from the scratch folder', () => {
       );
       expect(plan.valid, JSON.stringify(plan.errors)).toBe(true);
     }
+  });
+
+  it('add_container accepts the scratch folder name before the `file` (#2926)', async () => {
+    const plan = ok(
+      await mcp.call<Plan>('plan_changes', {
+        project: 'loja',
+        operations: [
+          {
+            op: 'add_container',
+            as: '$photo',
+            file: 'scratch/shots/foto.png',
+            name: 'Prefixed',
+          },
+        ],
+      }),
+    );
+    expect(plan.valid, JSON.stringify(plan.errors)).toBe(true);
   });
 });
 

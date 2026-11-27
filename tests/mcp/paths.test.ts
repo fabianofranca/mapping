@@ -178,6 +178,65 @@ describe('Roots with scratch folders (input files)', () => {
     expect(await lonely.realScratch()).toEqual([null]);
   });
 
+  // Stage #2924 (#2926): a relative path may start with the folder's own name, the way an agent
+  // writes it in a workspace (`scratch/batch.json` next to `projects/`).
+  describe('a leading segment equal to the folder name', () => {
+    it('`scratch/<file>` is the file in the scratch folder, also in a subfolder', async () => {
+      mkdirSync(join(scratch, 'sub'));
+      writeFileSync(join(scratch, 'batch.json'), 'scratch');
+      writeFileSync(join(scratch, 'sub', 'b.json'), 'sub');
+      expect(await roots.resolveInputFile('scratch/batch.json')).toMatchObject({
+        real: join(scratch, 'batch.json'),
+        scratch: true,
+      });
+      expect(await roots.resolveInputFile('scratch/sub/b.json')).toMatchObject({
+        real: join(scratch, 'sub', 'b.json'),
+        scratch: true,
+      });
+    });
+
+    it('`<root name>/<file>` is the file in that root', async () => {
+      writeFileSync(join(root, 'b.json'), 'root');
+      expect(await roots.resolveInputFile('projects/b.json')).toMatchObject({
+        real: join(root, 'b.json'),
+        scratch: false,
+      });
+    });
+
+    it('the literal path still wins: `<root>/scratch/batch.json` before `<scratch>/batch.json`', async () => {
+      mkdirSync(join(root, 'scratch'));
+      writeFileSync(join(root, 'scratch', 'batch.json'), 'literal');
+      writeFileSync(join(scratch, 'batch.json'), 'stripped');
+      expect((await roots.resolveInputFile('scratch/batch.json')).real).toBe(
+        join(root, 'scratch', 'batch.json'),
+      );
+    });
+
+    it('a missing file is path-not-found with the path as given; the bare folder name is no file', async () => {
+      const error = await roots.resolveInputFile('scratch/missing.json').catch((e) => e);
+      expect(error).toMatchObject({
+        code: 'path-not-found',
+        message: 'path not found: scratch/missing.json',
+      });
+      expect(await code(roots.resolveInputFile('scratch'))).toBe('path-not-found');
+      // Another first segment is not stripped.
+      writeFileSync(join(scratch, 'batch.json'), 'scratch');
+      expect(await code(roots.resolveInputFile('other/batch.json'))).toBe(
+        'path-not-found',
+      );
+    });
+
+    it('a link that leaves both areas is still outside-roots', async () => {
+      const outside = join(base, 'outside');
+      mkdirSync(outside);
+      writeFileSync(join(outside, 'x.json'), 'x');
+      symlinkSync(join(outside, 'x.json'), join(scratch, 'x-link.json'));
+      expect(await code(roots.resolveInputFile('scratch/x-link.json'))).toBe(
+        'outside-roots',
+      );
+    });
+  });
+
   it('the scratch folder is read-only: no write or root path accepts it', async () => {
     writeFileSync(join(scratch, 'a.json'), '1');
     expect(await code(roots.resolveNew(join(scratch, 'new.json')))).toBe('outside-roots');

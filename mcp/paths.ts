@@ -90,6 +90,25 @@ function areaHoldsReal(area: Area, real: string): boolean {
   return area.reals.some((dir) => dir !== null && isWithin(dir, real));
 }
 
+/**
+ * The places a relative input file may be: every root and then every scratch folder joined to the
+ * input as written, and only then, again in the same order, those folders whose base name is the
+ * input's first segment, with that segment removed (`scratch/batch.json` in a workspace whose
+ * scratch folder is `scratch`, stage #2924). So a path that resolves as written resolves to the
+ * same file; the bare folder name (`scratch`) is not a file and is not stripped.
+ */
+function inputCandidates(input: string, areas: readonly Area[]): string[] {
+  const dirs = areas.flatMap((area) => area.dirs);
+  const literal = dirs.map((dir) => join(dir, input));
+  const [first, ...rest] = input.split(/[\\/]+/).filter((part) => part !== '');
+  if (first === undefined || rest.length === 0) return literal;
+  const stripped = join(...rest);
+  return [
+    ...literal,
+    ...dirs.filter((dir) => basename(dir) === first).map((dir) => join(dir, stripped)),
+  ];
+}
+
 function outsideRootsAndScratch(input: string): ToolError {
   return new ToolError(
     'outside-roots',
@@ -304,21 +323,19 @@ export class Roots {
 
   private async relativeInput(input: string, areas: readonly Area[]): Promise<InputFile> {
     let left = false;
-    for (const area of areas) {
-      for (const dir of area.dirs) {
-        let real: string;
-        try {
-          real = await realpath(join(dir, input));
-        } catch (error) {
-          if (isNotFound(error)) continue;
-          throw error;
-        }
-        // A link may lead into the other area: the real path decides, across all areas
-        // (as `absoluteInput` does).
-        const holder = areas.find((candidate) => areaHoldsReal(candidate, real));
-        if (holder !== undefined) return { real, scratch: holder.scratch };
-        left = true;
+    for (const candidate of inputCandidates(input, areas)) {
+      let real: string;
+      try {
+        real = await realpath(candidate);
+      } catch (error) {
+        if (isNotFound(error)) continue;
+        throw error;
       }
+      // A link may lead into the other area: the real path decides, across all areas
+      // (as `absoluteInput` does).
+      const holder = areas.find((area) => areaHoldsReal(area, real));
+      if (holder !== undefined) return { real, scratch: holder.scratch };
+      left = true;
     }
     if (left) throw outsideRootsAndScratch(input);
     throw new ToolError('path-not-found', `path not found: ${input}`, { path: input });
