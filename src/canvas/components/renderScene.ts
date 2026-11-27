@@ -246,7 +246,7 @@ class Renderer {
       container.add(shape);
     }
     // The inline icons of a rich text: groups of paths, after the text's own shapes.
-    container.add(...this.runIcons(node));
+    this.addRunIcons(node, container);
 
     if (hasChildren(node)) {
       let forward = shadows.length > 0 && !shadowOwner ? shadows : [];
@@ -498,7 +498,7 @@ class Renderer {
     for (const line of layout.lines) {
       for (const piece of line.pieces) {
         const run = runs[piece.run];
-        // An inline icon has no text: `runIcons` draws its paths.
+        // An inline icon has no text: `addRunIcons` draws its paths.
         if (!run || piece.inline) continue;
         const top = pieceTop(line, piece, run, shift);
         if (piece.chip) shapes.push(chipShape(piece, run, top));
@@ -519,11 +519,10 @@ class Renderer {
    * code as any group and moved to its piece's box, with the node's `verticalAlign` shift and the
    * run's `baselineShift`. Every shape answers for the text node (hit test and selection).
    */
-  private runIcons(node: SceneNode): Konva.Group[] {
-    if (node.type !== 'text' || !node.runs || !node.runLayout) return [];
+  private addRunIcons(node: SceneNode, container: Konva.Group): void {
+    if (node.type !== 'text' || !node.runs || !node.runLayout) return;
     const { runs } = node;
     const shift = richShift(node, node.runLayout);
-    const groups: Konva.Group[] = [];
     for (const line of node.runLayout.lines) {
       for (const piece of line.pieces) {
         const run = runs[piece.run];
@@ -534,10 +533,9 @@ class Renderer {
         });
         holder.add(this.render(run.icon));
         holder.find(() => true).forEach((n) => n.setAttr(SCENE_ID_ATTR, node.id));
-        groups.push(holder);
+        container.add(holder);
       }
     }
-    return groups;
   }
 
   /** Applies a fill to a shape; an image becomes the shape itself (`KonvaImage`). */
