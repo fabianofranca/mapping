@@ -5,6 +5,7 @@
 - The `fonts` of a library that a batch or proposal applies or updates measure and draw the text in the `render_container` and `render_marking` preview, before it is applied (#2928).
 - `measure_component` accepts `path` (a package folder) with `project`: it measures a working copy with the folder's own components and fonts, before `update_specialization` (#2928).
 - `render_container` accepts `region` (`x`, `y`, `width`, `height` in container pixels): it draws only that window at the asked `zoom`, with or without the preview arguments; a region outside the container is `region-outside-container` (#2928).
+- `render_container` accepts `compare` (the before side: the project as it is, a batch or a proposal; `compare.ref` for a container the call's side recreates) and returns the count of different pixels, the boxes of the changed regions in container pixels and a side-by-side crop of them; nothing is written (#2928).
 
 ## Alterado
 

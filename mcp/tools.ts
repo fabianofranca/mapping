@@ -15,6 +15,7 @@ import { ToolError } from './errors';
 import { DEFAULT_MAX_SIZE, MAX_MAX_SIZE, MIN_MAX_SIZE } from './image/compose';
 import type { ImageServer } from './imageServer';
 import { imageFile, markingImage, type ImageResult } from './imageTools';
+import { renderCompare } from './renderCompare';
 import { MAX_ZOOM, MIN_ZOOM, renderContainer, renderMarking } from './renderImage';
 import { findByCodeResult } from './findByCode';
 import { Refs, resolveItem } from './items';
@@ -852,13 +853,35 @@ export function registerTools(
           .describe(
             'Draws only this window of the container, in container pixels, at the asked `zoom` (with or without `proposal`/`operations`/`operationsFile`): a tall page is readable at `zoom` 2 or more. A region partly outside is clipped to the container (a `warning`, and the response `region` is the drawn one); one that does not touch the container is `region-outside-container` (the details carry the container size); output above the pixel limit is `image-too-large`.',
           ),
+        compare: z
+          .object({
+            ref: z
+              .string()
+              .optional()
+              .describe(
+                'The container on the before side (default: the call\'s `ref`): give it when the call\'s side recreates the container (`ref: "$new"`, `compare: { ref: "<old reference>" }`).',
+              ),
+            proposal: previewArgs.proposal,
+            ...batchOperationsArgs,
+          })
+          .optional()
+          .describe(
+            "Compares two drawings: this object describes the BEFORE side and the call's own `ref` and `proposal`/`operations`/`operationsFile` are the AFTER side. `compare: {}` is the project as it is (today); `compare.operations` or `compare.operationsFile` (one of them) a batch and `compare.proposal` an open proposal, with the rules of the preview arguments; both sides are in the same project (another one is `project-mismatch`) and use the call's `zoom`, `region`, `drawingMode`, `direction`, `background` and `format`. The response carries `compare` with `pixels` (the different output pixels, exact: any channel of RGBA, or a pixel that exists on one side only), `ratio`, `regions` (the boxes of the changed regions in container pixels, largest first, at most 20, `regionsOmitted` counts the rest), `sizeChanged` and `before`/`after` (each with `ref`, `alias`/`provisional`/`preview` as the preview returns them, `width`, `height` and, with `url`/`markdown`, that side's whole drawing). The `image` is the side-by-side crop of the regions (before on the left, after on the right, each region outlined in magenta); with no difference it is the after drawing. A crop above the pixel limit is `image-too-large` with the box that covers all the changes (call again with that `region`). An invalid batch is `invalid-batch` naming the side. Nothing is written.",
+          ),
         format: z.enum(['png', 'webp', 'jpeg']).optional().describe('Default png.'),
       },
       annotations: READ_ONLY,
     },
-    ({ ref, project, proposal, operations, operationsFile, ...options }) =>
+    ({ ref, project, proposal, operations, operationsFile, compare, ...options }) =>
       respondWithImage(async () => {
         const preview = { ref, project, proposal, operations, operationsFile };
+        if (compare !== undefined) {
+          const today = async (itemRef: string, name: string | undefined) => {
+            const { item, container } = await containerOf(itemRef, name);
+            return { refs: item.refs, container };
+          };
+          return renderCompare(roots, Date.now, today, preview, compare, options, images);
+        }
         if (hasPreview(preview)) {
           return previewContainer(roots, Date.now, preview, options, images);
         }
