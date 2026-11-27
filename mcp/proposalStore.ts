@@ -18,13 +18,17 @@ import {
   proposalDir,
   proposalFilePath,
   proposalImagePath,
+  EPSILON,
   changeImageFile,
+  imageCanvasRect,
   packageDirOf,
+  rectsOverlap,
   serializeProposal,
   type Change,
   type Proposal,
   type ProposalStatus,
   type ProjectContainer,
+  type Rect,
 } from '../src/model';
 import { ToolError } from './errors';
 import { Roots, hasParentSegment, resolveProjectFile, writeFileAtomic } from './paths';
@@ -173,16 +177,47 @@ export function reservedImages(p: Proposal, status: ProposalStatus = p.status): 
  * that can still be applied (the same rule as `reservedImages`). A new proposal counts them as
  * occupied space, so that its own containers do not land on the same place (they would block the
  * apply of the second). They are drawn as plain background containers: only the place matters.
+ * What a creation holds leaves out the containers that **the same proposal** deletes and has not
+ * applied (`deletedSpace`): the old container stays on disk, and in the batch's project, until the
+ * proposal is applied, so its own space is already taken by it (stage #2924).
  */
 export function reservedContainers(
   p: Proposal,
   status: ProposalStatus = p.status,
 ): ProjectContainer[] {
   if (status !== 'open' && status !== 'superseded') return [];
+  const deleted = deletedSpace(p);
   return p.changes.flatMap((c) => {
     const held =
       c.entity === 'image' && c.kind === 'create' && stillApplicable(p, c, status);
-    return held ? placeHolder(c.to) : [];
+    return held ? placeHolder(c.to, deleted) : [];
+  });
+}
+
+/** The canvas space of a container that a proposal deletes, and the page it is on. */
+interface DeletedSpace {
+  readonly pageId: string;
+  readonly rect: Rect;
+}
+
+/**
+ * The containers that the proposal deletes and has not applied, whatever their decision (a
+ * rejected or pending delete leaves the container on disk, so its space stays taken by the
+ * container itself). An old proposal without pages has `''` as the page of both sides.
+ */
+function deletedSpace(p: Proposal): DeletedSpace[] {
+  return p.changes.flatMap((c) => {
+    if (c.entity !== 'image' || c.kind !== 'remove' || Object.hasOwn(p.applied, c.id)) {
+      return [];
+    }
+    const from = c.from as Partial<ProjectContainer> | null;
+    if (from?.placement === undefined) return [];
+    return [
+      {
+        pageId: from.pageId ?? '',
+        rect: imageCanvasRect(from as ProjectContainer, from.placement),
+      },
+    ];
   });
 }
 
@@ -234,24 +269,60 @@ function stillApplicable(p: Proposal, c: Change, status: ProposalStatus): boolea
   return status === 'open' ? state !== 'rejected' : state === 'accepted';
 }
 
-/** The created container as a plain background container (only its place matters), or none. */
-function placeHolder(to: unknown): ProjectContainer[] {
+/**
+ * The created container as plain background containers (only its place matters): one, as it is,
+ * when it does not overlap what the proposal deletes on its page, otherwise one per piece of what
+ * is left (none when the deleted ones cover it all). The first piece keeps the creation's id (so
+ * the id check of `withReserved` works as before) and the others get `<id>~<n>`, from 2.
+ */
+function placeHolder(to: unknown, deleted: readonly DeletedSpace[]): ProjectContainer[] {
   const c = to as Partial<ProjectContainer> | null;
   if (c?.placement === undefined) return [];
-  return [
-    {
-      ...(c as ProjectContainer),
-      // Without a `pageId` the container is on the first page (the batch fills it in).
-      pageId: c.pageId ?? '',
-      name: null,
-      parentId: null,
-      markingColor: null,
-      locked: false,
-      source: null,
-      file: null,
-      background: '#FFFFFF',
-    },
+  // Without a `pageId` the container is on the first page (the batch fills it in).
+  const pageId = c.pageId ?? '';
+  const plain: ProjectContainer = {
+    ...(c as ProjectContainer),
+    pageId,
+    name: null,
+    parentId: null,
+    markingColor: null,
+    locked: false,
+    source: null,
+    file: null,
+    background: '#FFFFFF',
+  };
+  const rect = imageCanvasRect(plain, plain.placement);
+  const cuts = deleted.filter((d) => d.pageId === pageId && rectsOverlap(rect, d.rect));
+  if (cuts.length === 0) return [plain];
+  return cuts
+    .reduce<Rect[]>(
+      (pieces, cut) => pieces.flatMap((r) => subtractRect(r, cut.rect)),
+      [rect],
+    )
+    .map((piece, index) => ({
+      ...plain,
+      id: index === 0 ? plain.id : `${plain.id}~${index + 1}`,
+      width: piece.width,
+      height: piece.height,
+      placement: { x: piece.x, y: piece.y, scale: 1 },
+    }));
+}
+
+/** `piece` minus `cut`: up to four disjoint rectangles (pieces that only touch do not overlap). */
+function subtractRect(piece: Rect, cut: Rect): Rect[] {
+  if (!rectsOverlap(piece, cut)) return [piece];
+  const [pRight, pBottom] = [piece.x + piece.width, piece.y + piece.height];
+  const [cRight, cBottom] = [cut.x + cut.width, cut.y + cut.height];
+  // The band of the cut's rows inside `piece` is split to the left and right of the cut.
+  const [rowTop, rowBottom] = [Math.max(piece.y, cut.y), Math.min(pBottom, cBottom)];
+  const pieces: Rect[] = [
+    { x: piece.x, y: piece.y, width: piece.width, height: cut.y - piece.y },
+    { x: piece.x, y: cBottom, width: piece.width, height: pBottom - cBottom },
+    { x: piece.x, y: rowTop, width: cut.x - piece.x, height: rowBottom - rowTop },
+    { x: cRight, y: rowTop, width: pRight - cRight, height: rowBottom - rowTop },
   ];
+  // Float noise is not a place to hold: `rectsOverlap` already ignores up to `EPSILON`.
+  return pieces.filter((r) => r.width > EPSILON && r.height > EPSILON);
 }
 
 /**
