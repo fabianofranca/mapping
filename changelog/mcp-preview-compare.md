@@ -2,8 +2,8 @@
 
 ## Adicionado
 
-- As fontes (`fonts`) de uma biblioteca que um lote ou uma proposta aplica ou atualiza medem e desenham o texto no preview de `render_container` e `render_marking`, antes de aplicar (#2928).
+- The `fonts` of a library that a batch or proposal applies or updates measure and draw the text in the `render_container` and `render_marking` preview, before it is applied (#2928).
 
 ## Alterado
 
-- O aviso do preview "as fontes da biblioteca só contam depois de aplicada" saiu; uma fonte declarada que o pacote não traz dá um aviso com o caminho dela e é desenhada com a fonte embutida (#2928).
+- The preview warning "the library's fonts count only after it is applied" is gone; a declared font the package does not carry gives a warning with its path and is drawn with the embedded font (#2928).
