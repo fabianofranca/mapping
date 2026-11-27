@@ -3256,7 +3256,9 @@ echo "[$base,$(mk centered-row 20 20 300 60 row chip chip chip),$(mk end-column 
 cd "$W37"
 pos() { jq -c --arg t "$1" 'select(.title==$t)|.changes[]|select(.entity=="marking" and .kind=="create")|[.to.name,.to.rect.x,.to.rect.y,.to.rect.width,.to.rect.height]' "$S"/projects/arrange/proposals/*/proposal.json; }
 ```
+
 R37.25 to R37.30 (stage #2928) use the **Preview fonts** package (`REPO/tests/fixtures/preview-fonts/`, copied above) on `preview` and, from R37.28, a new copy of `full` (`npm run build:example` in `REPO` writes its `specs/`): **Settings** 360 × 800, its **Save** button 120 × 40 at (120, 620). R37.28 reads `SET` (**Settings**) and `SAVE` (**Save**'s annotation).
+
 ```bash
 cat > "$S/scratch/tags.json" <<'JSON'
 [{"op":"apply_specialization","file":"fonts"},{"op":"add_container","width":400,"height":80,"background":"#FFFFFF","as":"$tags"},
