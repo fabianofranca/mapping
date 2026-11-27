@@ -426,7 +426,7 @@ Also counted as a finding: noticeable slowness (more than a second to respond), 
 <!-- /roteiros -->
 <!-- roteiros: R37 -->
 
-- R37 uses the folder of its own `ws-preview` (two roots and `scratch/`, which the shell builds), copies of `REPO/tests/fixtures/accessibility/`, `REPO/tests/fixtures/arrange-slots/`, `REPO/tests/fixtures/preview-fonts/` and (R37.13, R37.28 to R37.30) `REPO/examples/full-example`, the shell, ImageMagick, `jq` and the MCP over stdio (section 6); no app. The steps follow in sequence (R37.5 to R37.8 use the batch of R37.3; R37.9 to R37.13 only `ws-preview`; R37.14 to R37.24 the batch files of their setup, and R37.18 and R37.19 read R37.17's proposal) and do not depend on any other script. Without the MCP, mark all the steps "not executed (no MCP)".
+- R37 uses its own `ws-preview` (two roots and `scratch/`, which the shell builds), copies of the `accessibility`, `arrange-slots` and `preview-fonts` fixtures (`REPO/tests/fixtures/`) and, in R37.13 and R37.28 to R37.30, of `REPO/examples/full-example`, the shell, ImageMagick, `jq` and the MCP over stdio (section 6); no app. The steps follow in sequence (R37.5 to R37.8 use the batch of R37.3; R37.18 and R37.19 read R37.17's proposal) and depend on no other script. Without the MCP, mark all the steps "not executed (no MCP)".
 
 <!-- /roteiros -->
 <!-- roteiros: R38 -->
