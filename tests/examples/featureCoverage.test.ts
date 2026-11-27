@@ -201,6 +201,10 @@ const MISSING_TODAY: string[] = [
   'component:root.screen',
   'component:stroke.scale',
   'spec:layers[].annotationTypes[].structural',
+  // `decorative` on the type (formatVersion 25, stage #2826, phase DM2): the distributed libraries do not
+  // get the feature in this phase; covered by tests/model/specDecorative.test.ts and
+  // tests/model/componentMarkings.test.ts.
+  'spec:layers[].annotationTypes[].decorative',
   // `accepts.annotations` (formatVersion 14, stage #679): the examples do not get the feature in this
   // stage (the script uses an inline specialization); covered by tests/model/specAcceptsAnnotations.
   'spec:layers[].annotationTypes[].fields[].accepts.annotations',
