@@ -457,3 +457,18 @@ describe('review fixes', () => {
     expect(u?.text).toBe('1');
   });
 });
+
+describe('the ellipsis of a node whose runs are all icons', () => {
+  it('is measured and drawn with the node font and color, never the icon run', () => {
+    const f = file([{ icon: 'check', size: 24, color: '#ff0000' }], {
+      width: 10,
+      font: { size: 14, ellipsis: true },
+    });
+    const { node } = build(f);
+    const dots = node.runLayout!.lines[0]!.pieces.find((p) => p.text === '…');
+    expect(dots).toBeDefined();
+    const run = node.runs![dots!.run]!;
+    expect(run.fontSize).toBe(14);
+    expect(run.color).toBe('#112233');
+  });
+});

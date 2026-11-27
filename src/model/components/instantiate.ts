@@ -1097,13 +1097,15 @@ function createEngine(
     const size = Math.max(0, num(run.size, font.size));
     const color = str(run.color, str(node.color, '#000000'));
     const shift = baselineShiftOf(run.baselineShift, size);
+    // The run has no text: only the `…` of a line made of icons alone is drawn with this style, so
+    // it takes the node's size and color, as `richRuns` measures it (the icon keeps its own).
     const scene: SceneTextRun = {
       text: '',
       fontFamily: font.family,
-      fontSize: size,
+      fontSize: font.size,
       fontWeight: font.weight,
       italic: font.italic,
-      color,
+      color: str(node.color, '#000000'),
       ...(shift === 0 ? {} : { baselineShift: shift }),
     };
     if (name === '') return { scene };

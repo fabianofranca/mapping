@@ -611,6 +611,15 @@ export const templatePtBR: {
   'model.component.expectedRuns': 'esperava lista não vazia de trechos',
   'model.component.textAndRuns': 'text e runs juntos: use um ou outro',
   'model.component.textAndIcon': 'text e icon juntos: use um ou outro',
+  'model.component.baselineShiftInvalid': 'esperava um número ou uma porcentagem ("33%")',
+  'model.component.runsTableInRepeat':
+    'uma tabela de runs não pode ficar dentro de um repeat',
+  'model.component.fitSizesRequired': 'obrigatório com fit "shrink"',
+  'model.component.fitSizesCount': 'esperava lista de 1 a {max} tamanhos',
+  'model.component.fitSizesOrder': 'esperava tamanhos do maior para o menor',
+  'model.component.fitSizesAboveSize':
+    'o primeiro tamanho deve ser menor que font.size ({size})',
+  'model.component.fitWithRuns': 'não combina com runs',
   'model.component.expectedNodeObject': 'esperava objeto (nó)',
   'model.component.nodeTypeUnknown': 'tipo de nó desconhecido: {type} (esperava {types})',
   'model.component.onlyFrameAccepts':

@@ -973,6 +973,10 @@ function checkFitSizes(font: Rec, path: string, out: Ctx): void {
     return typeof size === 'number' && typeof before === 'number' && size >= before;
   });
   if (rises) add(out, at, 'expected sizes from the largest to the smallest');
+  const size = font.size;
+  const first: unknown = list[0];
+  if (typeof size === 'number' && typeof first === 'number' && first >= size)
+    add(out, at, `the first size must be smaller than font.size (${size})`);
 }
 
 /** A literal `font.fit: "shrink"` on a node with `runs`: the rich text keeps its size (v4). */

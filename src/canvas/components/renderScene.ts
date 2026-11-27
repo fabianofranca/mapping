@@ -1004,7 +1004,6 @@ function runFill(color: string): string | undefined {
   return /^(none|transparent)$/i.test(color.trim()) ? undefined : color;
 }
 
-/** The background of an inline box: the whole box of the piece, with the run's radius. */
 /** The top of a piece: centered on its line, with the node's shift and the run's `baselineShift`. */
 function pieceTop(
   line: { readonly y: number; readonly height: number },
@@ -1015,6 +1014,7 @@ function pieceTop(
   return line.y + (line.height - piece.height) / 2 + shift - (run.baselineShift ?? 0);
 }
 
+/** The background of an inline box: the whole box of the piece, with the run's radius. */
 function chipShape(piece: RunPiece, run: SceneTextRun, top: number): KonvaRect {
   return new KonvaRect({
     x: piece.x,
