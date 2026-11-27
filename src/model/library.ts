@@ -203,13 +203,14 @@ function fieldReferences(
   node: unknown,
   path: string,
   out: Map<string, string> = new Map(),
+  runsItem = false,
 ): Map<string, string> {
   if (Array.isArray(node)) {
-    node.forEach((item, i) => fieldReferences(item, `${path}[${i}]`, out));
+    node.forEach((item, i) => fieldReferences(item, `${path}[${i}]`, out, runsItem));
     return out;
   }
   if (!isRecord(node)) return out;
-  const isRepeat = node.type === 'repeat' || isRunsTable(node);
+  const isRepeat = node.type === 'repeat' || (runsItem && isRunsTable(node));
   for (const [key, value] of Object.entries(node)) {
     const at = `${path}.${key}`;
     // `repeat`: the `template` reads columns of the row (see `repeatChecks`), not fields of the type.
@@ -228,7 +229,7 @@ function fieldReferences(
       if (!out.has(value[0]) && !isReservedFieldName(value[0]))
         out.set(value[0], `${at}[0]`);
     } else {
-      fieldReferences(value, at, out);
+      fieldReferences(value, at, out, node.type === 'text' && key === 'runs');
     }
   }
   return out;
@@ -282,18 +283,19 @@ function repeatNodes(
   node: unknown,
   path: string,
   out: { path: string; node: Record<string, unknown> }[] = [],
+  runsItem = false,
 ): { path: string; node: Record<string, unknown> }[] {
   if (Array.isArray(node)) {
-    node.forEach((item, i) => repeatNodes(item, `${path}[${i}]`, out));
+    node.forEach((item, i) => repeatNodes(item, `${path}[${i}]`, out, runsItem));
     return out;
   }
   if (!isRecord(node)) return out;
-  if (node.type === 'repeat' || isRunsTable(node)) {
+  if (node.type === 'repeat' || (runsItem && isRunsTable(node))) {
     out.push({ path, node });
     return out;
   }
   for (const [key, value] of Object.entries(node))
-    repeatNodes(value, `${path}.${key}`, out);
+    repeatNodes(value, `${path}.${key}`, out, node.type === 'text' && key === 'runs');
   return out;
 }
 

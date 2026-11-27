@@ -18,6 +18,7 @@ import {
   parseComponent,
   validateComponent,
 } from '../../../src/model/components/parseComponent';
+import { referencedFields } from '../../../src/model/components/expressions';
 import { expandRepeats, hasRepeat } from '../../../src/model/components/repeat';
 import { walk, type TextNode } from '../../../src/model/components/scene';
 
@@ -392,5 +393,14 @@ describe('layout of a runs table', () => {
       ['plain ', 400],
       ['bold', 700],
     ]);
+  });
+});
+
+describe('a runs table out of the `runs` list', () => {
+  it('a `let` object with field and template is not read as a runs table', () => {
+    const letNode = { let: { field: 'title', template: { $field: 'x' } } };
+    expect(
+      [...referencedFields({ type: 'frame', ...letNode, children: [] })].sort(),
+    ).toEqual(['x']);
   });
 });

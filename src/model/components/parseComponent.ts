@@ -2219,16 +2219,17 @@ function indexIssues(version: unknown, template: unknown): ComponentIssue[] {
     if (!v4) addIssue(out, at, V4_ONLY_MESSAGE);
     else if (!inRepeat) addIssue(out, at, '$index is only valid inside a repeat');
   };
-  const walk = (node: unknown, at: string, inRepeat: boolean): void => {
+  const walk = (node: unknown, at: string, inRepeat: boolean, runsItem = false): void => {
     if (Array.isArray(node))
-      return node.forEach((n, i) => walk(n, `${at}[${i}]`, inRepeat));
+      return node.forEach((n, i) => walk(n, `${at}[${i}]`, inRepeat, runsItem));
     if (!isRecord(node)) return;
     for (const [key, value] of Object.entries(node)) {
       const here = join(at, key);
       const cited = indexCitation(key, value);
       if (cited !== undefined) flag(`${here}${cited}`, inRepeat);
-      const rows = key === 'template' && (node.type === 'repeat' || isRunsTable(node));
-      walk(value, here, inRepeat || rows);
+      const rows =
+        key === 'template' && (node.type === 'repeat' || (runsItem && isRunsTable(node)));
+      walk(value, here, inRepeat || rows, node.type === 'text' && key === 'runs');
     }
   };
   walk(template, 'template', false);

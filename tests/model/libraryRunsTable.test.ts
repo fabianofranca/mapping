@@ -151,4 +151,14 @@ describe('validateLibrary with a runs table item', () => {
       'template.children[0].runs[1].template.text.$field',
     ]);
   });
+
+  it('a `let` variable named field/template is not a runs table', () => {
+    const comp = component();
+    (comp.template as Raw).let = {
+      field: 'title',
+      template: { $field: 'unused' },
+    };
+    const report = validate(comp);
+    expect(report.errors.map((e) => e.code)).not.toContain('library.repeatNotTable');
+  });
 });

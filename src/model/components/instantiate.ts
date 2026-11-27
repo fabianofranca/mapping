@@ -1168,11 +1168,11 @@ function createEngine(
     font: MeasureFont,
     ownerId: string = prefix,
   ): { scene: SceneTextRun[]; runs: RichRun[] } => {
-    // The expansion already replaced the runs tables with the rows' runs: only literal runs remain.
-    const literal = (node.runs ?? []).filter(
-      (run): run is TextRunTemplate => !isRunsTable(run),
-    );
-    const resolved = literal.map((run, i) => resolveRun(run, node, font, i, ownerId));
+    // `expandRepeats` already replaced every runs table with the rows' runs: it never gets here.
+    const resolved = (node.runs ?? []).map((run, i) => {
+      if (isRunsTable(run)) throw new Error('runs table not expanded');
+      return resolveRun(run, node, font, i, ownerId);
+    });
     const scene = resolved.map((r) => r.scene);
     const runs = resolved.map(({ scene: run, inline }): RichRun => ({
       text: run.text,

@@ -459,18 +459,20 @@ export function evaluateText(
 export function repeatInnerFields(
   node: unknown,
   out: Set<string> = new Set(),
+  runsItem = false,
 ): Set<string> {
   if (Array.isArray(node)) {
-    for (const item of node) repeatInnerFields(item, out);
+    for (const item of node) repeatInnerFields(item, out, runsItem);
     return out;
   }
   if (typeof node !== 'object' || node === null) return out;
   const record = node as Record<string, unknown>;
-  if (record.type === 'repeat' || isRunsTable(record)) {
+  if (record.type === 'repeat' || (runsItem && isRunsTable(record))) {
     referencedFields(record.template, out);
     return out;
   }
-  for (const value of Object.values(record)) repeatInnerFields(value, out);
+  for (const [key, value] of Object.entries(record))
+    repeatInnerFields(value, out, record.type === 'text' && key === 'runs');
   return out;
 }
 
@@ -478,15 +480,17 @@ export function repeatInnerFields(
 export function referencedFields(
   expr: unknown,
   out: Set<string> = new Set(),
+  runsItem = false,
 ): Set<string> {
   if (Array.isArray(expr)) {
-    for (const item of expr) referencedFields(item, out);
+    for (const item of expr) referencedFields(item, out, runsItem);
     return out;
   }
   if (typeof expr !== 'object' || expr === null) return out;
   const record = expr as Record<string, unknown>;
-  // A runs table item (`{ field, template }`) reads its `table` field and its `template` like a `repeat`.
-  const isRepeat = record.type === 'repeat' || isRunsTable(record);
+  // A runs table item (`{ field, template }`, only as an item of a text node's `runs`) reads its
+  // `table` field and its `template` like a `repeat`.
+  const isRepeat = record.type === 'repeat' || (runsItem && isRunsTable(record));
   for (const [key, value] of Object.entries(record)) {
     // `repeat`: counts the `table` field and the expressions of the node itself; the `template` reads the columns
     // of the row (`repeatInnerFields`), not the type's fields.
@@ -503,7 +507,7 @@ export function referencedFields(
     } else if (key === '$eq' && Array.isArray(value) && typeof value[0] === 'string') {
       if (!isReservedFieldName(value[0])) out.add(value[0]);
     } else {
-      referencedFields(value, out);
+      referencedFields(value, out, record.type === 'text' && key === 'runs');
     }
   }
   return out;
