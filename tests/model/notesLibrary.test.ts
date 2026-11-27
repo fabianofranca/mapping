@@ -980,15 +980,18 @@ describe('Decorative notes types: the specialization', () => {
         id,
       ).toBe(false);
       const estilo = typeOf(id)!.fields.find((f) => f.key === 'estilo')!;
-      expect(estilo.options).toEqual(['solido', 'tracejado']);
+      expect((estilo as { options?: string[] }).options).toEqual(['solido', 'tracejado']);
     }
-    expect(typeOf('colchete')!.fields[3]!.options).toEqual([
+    expect((typeOf('colchete')!.fields[3] as { options?: string[] }).options).toEqual([
       'direita',
       'esquerda',
       'baixo',
       'cima',
     ]);
-    expect(typeOf('linha')!.fields[3]!.options).toEqual(['horizontal', 'vertical']);
+    expect((typeOf('linha')!.fields[3] as { options?: string[] }).options).toEqual([
+      'horizontal',
+      'vertical',
+    ]);
     expect(typeOf('moldura')!.fields[4]!.label).toBe('Fill');
   });
 
