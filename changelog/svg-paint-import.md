@@ -1,0 +1,5 @@
+# SVG paint import: gradients and clips in `import_icons` — [Não lançado] (épico `epic/svg-paint-import`, PR #0, MCP 0.62.0, schema v24, unchanged)
+
+## Adicionado
+
+- `import_icons` converts the linear and radial gradients that Figma exports (#2847). A `fill="url(#id)"` on a `linearGradient` or `radialGradient` in `gradientUnits="userSpaceOnUse"`, with any `gradientTransform` (`matrix`, `translate`, `scale`, `rotate`, `skewX`, `skewY`), becomes the icon's gradient `fill`: a linear one writes `from` and `to` (exact under any affine transform), a radial one writes `center` and `radius` (only a circle converts: an elliptical one is an `errors` item that names the gradient and does not stop the other files). Stops keep their `stop-opacity` in the color alpha. The icons file goes up to `formatVersion` 4 when a written icon has a gradient. A gradient on a `stroke`, `href`, `spreadMethod` other than `pad`, a focal point and `objectBoundingBox` (until a later phase of the stage) are still `errors` items, named.

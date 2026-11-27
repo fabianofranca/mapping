@@ -351,11 +351,16 @@ function mergeIcons(
   return merge;
 }
 
+/** The icon writes a gradient `fill` or a `clip`: what needs a version 4 file. */
+const needsVersion4 = (icon: IconDef): boolean =>
+  icon.clip !== undefined ||
+  icon.paths.some((p) => typeof p.fill === 'object' && p.fill !== null);
+
 /**
- * The file's version after the import: 3 only when a written path has `evenodd`, 2 when `mirror`
- * meets a version 1 file; otherwise it stays (a new file starts at 1). Literal numbers, not
- * `ICONS_FORMAT_VERSION`: the tool never writes a gradient or a `clip` (version 4), so a file
- * that already is version 4 keeps it and the import alone never raises it past 3.
+ * The file's version after the import: 4 when a written icon has a gradient `fill` or a `clip`,
+ * 3 when a written path has `evenodd`, 2 when `mirror` meets a version 1 file; otherwise it stays
+ * (a new file starts at 1). Literal numbers, not `ICONS_FORMAT_VERSION`, so the rule does not move
+ * with the constant (stage #2847, decision 10).
  */
 function versionAfter(
   current: number,
@@ -363,6 +368,7 @@ function versionAfter(
   mirror: boolean,
 ): number {
   let version = current;
+  if (written.some(needsVersion4)) version = Math.max(version, 4);
   if (written.some((icon) => icon.paths.some((p) => p.fillRule === 'evenodd'))) {
     version = Math.max(version, 3);
   }

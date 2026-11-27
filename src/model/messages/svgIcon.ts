@@ -21,6 +21,8 @@ export const svgIconMessages = {
   'svgIcon.viewBoxOrigin':
     'unsupported in SVG: svg viewBox with an origin other than 0 0 ({value})',
   'svgIcon.invalidValue': 'invalid value in SVG: {element} {attribute}="{value}"',
+  'svgIcon.radialElliptical':
+    'unsupported in SVG: radialGradient {id} is an ellipse (only a circle converts)',
   'svgIcon.noSize': 'the SVG has no viewBox and no numeric width and height',
   'svgIcon.noShape': 'the SVG has no shape',
   'svgIcon.nameInvalid': 'the icon name "{name}" is invalid; use [a-z0-9][a-z0-9-_]*',

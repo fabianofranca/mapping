@@ -347,19 +347,14 @@ describe('svgToIcon: what it refuses', () => {
       'unsupported in SVG: path stroke-dasharray',
     ],
     [
-      'a gradient paint',
+      'a gradient paint with no definition (SG1: a url paint is a reference, so it is a missing id)',
       '<path fill="url(#g)" d="M0 0h4v4z"/>',
-      'unsupported in SVG: path fill',
+      'invalid value in SVG: path fill="url(#g)"',
     ],
     [
       'a url stroke',
       '<path stroke="url(#g)" d="M0 0h4v4z"/>',
       'unsupported in SVG: path stroke',
-    ],
-    [
-      'a gradient definition',
-      '<defs><linearGradient id="g"/></defs><path d="M0 0h4v4z"/>',
-      'unsupported in SVG: linearGradient',
     ],
     [
       'a filter attribute',

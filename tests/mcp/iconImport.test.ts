@@ -316,6 +316,75 @@ describe('import_icons: transparent is not a color', () => {
   });
 });
 
+describe('import_icons: gradients (stage #2847, SG1)', () => {
+  const paint = (name: string, to: string): string => {
+    cpSync(`${FIXTURES}/paint/${name}.svg`, join(root, to));
+    return to;
+  };
+
+  it('a gradient written into a formatVersion 3 file raises it to 4, and the file is accepted', async () => {
+    const lib = library((set) => {
+      set.formatVersion = 3;
+    });
+    const file = paint('gradient-linear', 'sg-linear.svg');
+    const result = ok(await mcp.call<Imported>('import_icons', { path: lib, svg: file }));
+    expect(result).toMatchObject({
+      formatVersion: 4,
+      added: ['sg-linear'],
+      written: true,
+    });
+    const after = readIcons(lib);
+    expect(after.formatVersion).toBe(4);
+    const validated = ok(await mcp.call<Validated>('validate_library', { path: lib }));
+    expect(validated.errors).toEqual([]);
+  });
+
+  it('a radial gradient raises a version 1 file straight to 4', async () => {
+    const lib = library((set) => {
+      set.formatVersion = 1;
+    });
+    const file = paint('gradient-radial', 'sg-radial.svg');
+    const result = ok(await mcp.call<Imported>('import_icons', { path: lib, svg: file }));
+    expect(result.formatVersion).toBe(4);
+    const path = readIcons(lib).icons['sg-radial']!.paths[0] as {
+      fill: { type: string; center: number[]; radius: number };
+    };
+    expect(path.fill).toMatchObject({ type: 'radial', center: [0.5, 0.5], radius: 10 });
+  });
+
+  it('an evenodd fixture alone still gives 3', async () => {
+    const lib = library((set) => {
+      set.formatVersion = 2;
+    });
+    const file = svgFile('sg-evenodd.svg', 'icon-figma-evenodd');
+    const result = ok(await mcp.call<Imported>('import_icons', { path: lib, svg: file }));
+    expect(result.formatVersion).toBe(3);
+  });
+
+  it('an elliptical radial gradient goes to errors and does not stop the other files', async () => {
+    const lib = library((set) => {
+      set.formatVersion = 3;
+    });
+    const dir = join(root, 'svgs-paint');
+    mkdirSync(dir, { recursive: true });
+    cpSync(`${FIXTURES}/paint/radial-ellipse.svg`, join(dir, 'radial-ellipse.svg'));
+    cpSync(`${FIXTURES}/paint/gradient-linear.svg`, join(dir, 'gradient-linear.svg'));
+    const result = ok(
+      await mcp.call<Imported>('import_icons', { path: lib, svg: 'svgs-paint' }),
+    );
+    expect(result.errors).toEqual([
+      {
+        file: 'radial-ellipse.svg',
+        message:
+          'unsupported in SVG: radialGradient paint0_radial_1_2 is an ellipse (only a circle converts)',
+      },
+    ]);
+    expect(result.added).toEqual(['gradient-linear']);
+    expect(result.formatVersion).toBe(4);
+    expect(Object.keys(readIcons(lib).icons)).not.toContain('radial-ellipse');
+  });
+});
+
 describe('import_icons: the icons file', () => {
   it('creates a declared but missing file, with format, version and the first icon viewBox', async () => {
     const lib = library();
