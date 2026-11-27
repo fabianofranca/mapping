@@ -42,6 +42,8 @@ export interface ParityCase {
   readonly width: number;
   /** The base direction of the text (absent = `ltr`; stage #2448). */
   readonly direction?: 'rtl';
+  /** A justified line in a box of this width (px; stage #2653): `width` is the box's, `starts` follow the justified layout. */
+  readonly boxWidth?: number;
   /** CSS weight (absent = 400). */
   readonly weight?: number;
   readonly italic?: boolean;
@@ -53,7 +55,7 @@ export interface ParityCase {
 
 /** The input of an extra case (the values come from the server). */
 export type ExtraCase = Pick<ParityCase, 'font' | 'text' | 'letterSpacing'> &
-  Partial<Pick<ParityCase, 'direction' | 'weight' | 'italic'>>;
+  Partial<Pick<ParityCase, 'direction' | 'weight' | 'italic' | 'boxWidth'>>;
 
 /**
  * The cases of stage #2448 (decision 10), on the `rtl` test font at size 100. They sit after the base cases in the
@@ -115,6 +117,28 @@ export const SLANTED_CASES: readonly ExtraCase[] = SLANTED_FONTS.flatMap((font) 
   { font, text: 'Hamburgefonstiv', letterSpacing: 0 },
   { font, text: 'Hamburgefonstiv', letterSpacing: 0, italic: true },
 ]);
+
+/**
+ * The justified-line cases (stage #2653, decision 6), after the slanted ones: the six texts Chromium reorders as a whole
+ * (the table of the stage's issue) on the `rtl` font in a box 1500 px wide, plus `Hello, world.` in `ltr` as the control.
+ */
+export const JUSTIFY_BOX_WIDTH = 1500;
+const justifyCase = (text: string, direction?: 'rtl'): ExtraCase => ({
+  font: 'rtl',
+  text,
+  letterSpacing: 0,
+  boxWidth: JUSTIFY_BOX_WIDTH,
+  ...(direction ? { direction } : {}),
+});
+export const JUSTIFY_CASES: readonly ExtraCase[] = [
+  justifyCase('Hello, world.', 'rtl'),
+  justifyCase('Pay the invoice.', 'rtl'),
+  justifyCase('אבג, דה.', 'rtl'),
+  justifyCase('אבג דה abc', 'rtl'),
+  justifyCase('abc אבג, דה def'),
+  justifyCase('abc, def אבג', 'rtl'),
+  justifyCase('Hello, world.'),
+];
 
 /** The ink of the weight cases is compared within this many px, as a difference to the upright 400 reference. */
 export const INK_TOLERANCE = 1;
@@ -240,7 +264,7 @@ export function parityFontBytes(): Record<
 export const parityKey = (
   c: Pick<
     ParityCase,
-    'font' | 'text' | 'letterSpacing' | 'direction' | 'weight' | 'italic'
+    'font' | 'text' | 'letterSpacing' | 'direction' | 'weight' | 'italic' | 'boxWidth'
   >,
 ) =>
-  `${c.font}|${c.letterSpacing}|${c.text}${c.direction === undefined ? '' : `|${c.direction}`}${c.weight === undefined ? '' : `|w${c.weight}`}${c.italic ? '|italic' : ''}`;
+  `${c.font}|${c.letterSpacing}|${c.text}${c.direction === undefined ? '' : `|${c.direction}`}${c.weight === undefined ? '' : `|w${c.weight}`}${c.italic ? '|italic' : ''}${c.boxWidth === undefined ? '' : `|j${c.boxWidth}`}`;

@@ -1,15 +1,18 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { textPolygons } from '../../mcp/image/glyphs';
+import { justifiedPieces } from '../../mcp/image/textLayout';
 import {
   createFontBook,
   createMeasurer,
+  textWidth,
   type FontBook,
 } from '../../mcp/image/textMeasurer';
 import type { Face } from '../../mcp/image/harfbuzz';
 import type { MeasureFont } from '../../src/model/components/instantiate';
 import {
   BIDI_CASES,
+  JUSTIFY_CASES,
   PARITY_FONTS,
   PARITY_SIZE,
   PARITY_SPACINGS,
@@ -80,7 +83,12 @@ function measured(): ParityCase[] {
     width: measure(c.text, fontOf(c)).width,
     ink: inkOf(book, c, fontOf(c)),
   }));
-  return [...base, ...extra, ...weights, ...variable, ...slanted];
+  const justified: ParityCase[] = JUSTIFY_CASES.map((c) => ({
+    ...c,
+    width: c.boxWidth!,
+    starts: justifiedStarts(book, c),
+  }));
+  return [...base, ...extra, ...weights, ...variable, ...slanted, ...justified];
 }
 
 const monoBuffer = (): ArrayBuffer => {
@@ -124,6 +132,65 @@ function startsOf(face: Face, c: ExtraCase): number[] {
     if (glyph === undefined) throw new Error(`no glyph for ${i} in ${c.text}`);
     return glyph.x;
   });
+}
+
+/**
+ * The left edge (px) of each code point of a justified line in logical order (stage #2653, decision 6): a letter is
+ * its piece's `x` plus the glyph's `x` in the piece (laid out in the run's direction); a space starts where its gap
+ * begins, at the right edge of the piece that precedes it on the screen (the one before it in its run, or the last of
+ * the runs before it). The cases have no two spaces in a row.
+ */
+function justifiedStarts(book: FontBook, c: ExtraCase): number[] {
+  const spec = (rtl: boolean) => ({
+    family: c.font,
+    size: PARITY_SIZE,
+    weight: c.weight ?? 400,
+    italic: c.italic ?? false,
+    letterSpacing: c.letterSpacing,
+    ...(rtl ? { direction: 'rtl' as const } : {}),
+  });
+  const runs = book.bidiRuns(c.text, c.direction ?? 'ltr');
+  const spaces = c.text.split(' ').length - 1;
+  const extra =
+    (c.boxWidth! - textWidth(book, c.text, spec(c.direction === 'rtl'))) / spaces;
+  const pieces = justifiedPieces(
+    c.text,
+    runs,
+    (text, rtl) => textWidth(book, text, spec(rtl)),
+    textWidth(book, ' ', spec(c.direction === 'rtl')),
+    extra,
+  );
+  const face = book.fontFor(c.font, c.weight ?? 400, c.italic ?? false);
+  const widthOf = (p: (typeof pieces)[number]) =>
+    textWidth(book, c.text.slice(p.start, p.end), spec(p.rtl));
+  const runOf = (i: number) => runs.findIndex((r) => r.start <= i && i < r.end);
+  const starts: number[] = [];
+  let at = 0;
+  for (const ch of c.text) {
+    const i = at;
+    at += ch.length;
+    const piece = pieces.find((p) => p.start <= i && i < p.end);
+    if (piece !== undefined) {
+      const text = c.text.slice(piece.start, piece.end);
+      const glyphs = face.positions(text, PARITY_SIZE, {
+        letterSpacing: c.letterSpacing,
+        ...(piece.rtl ? { direction: 'rtl' as const } : {}),
+      });
+      const glyph = glyphs.find((g) => g.cluster === i - piece.start);
+      if (glyph === undefined) throw new Error(`no glyph for ${i} in ${c.text}`);
+      starts.push(piece.x + glyph.x);
+      continue;
+    }
+    // A space: the piece before it on the screen, in its own run or in the last run before it.
+    const run = runs[runOf(i)]!;
+    const before = pieces.find(
+      (p) => runOf(p.start) === runOf(i) && (run.rtl ? p.start === i + 1 : p.end === i),
+    );
+    const previous = pieces.filter((p) => runOf(p.start) < runOf(i)).at(-1);
+    const left = before ?? previous;
+    starts.push(left === undefined ? 0 : left.x + widthOf(left));
+  }
+  return starts;
 }
 
 describe('shaping parity fixture (server side)', () => {
@@ -183,11 +250,11 @@ describe('shaping parity fixture (server side)', () => {
     expect(INK_TOLERANCE).toBe(1);
   });
 
-  it('the variable cases come last: #2652 at the 400 width, the axes read from the declared style', () => {
+  it('the variable cases come before the slanted and the justified ones: #2652 at the 400 width, the axes read from the declared style', () => {
     const fixture = JSON.parse(readFileSync(FIXTURE, 'utf8')) as ParityCase[];
     const tail = fixture.slice(
-      -(VARIABLE_CASES.length + SLANTED_CASES.length),
-      -SLANTED_CASES.length,
+      -(VARIABLE_CASES.length + SLANTED_CASES.length + JUSTIFY_CASES.length),
+      -(SLANTED_CASES.length + JUSTIFY_CASES.length),
     );
     expect(tail.map(parityKey)).toEqual(VARIABLE_CASES.map(parityKey));
     const get = (font: string, weight?: number, italic?: boolean) =>
@@ -217,9 +284,12 @@ describe('shaping parity fixture (server side)', () => {
     expect(get('vital', undefined, true).ink).toEqual(upright('vital').ink);
   });
 
-  it('the slanted cases come last: no skew on a file that already slants, the axis read at 0', () => {
+  it('the slanted cases come before the justified ones: no skew on a file that already slants, the axis read at 0', () => {
     const fixture = JSON.parse(readFileSync(FIXTURE, 'utf8')) as ParityCase[];
-    const tail = fixture.slice(-SLANTED_CASES.length);
+    const tail = fixture.slice(
+      -(SLANTED_CASES.length + JUSTIFY_CASES.length),
+      -JUSTIFY_CASES.length,
+    );
     expect(tail.map(parityKey)).toEqual(SLANTED_CASES.map(parityKey));
     const get = (font: string, italic?: boolean) =>
       tail.find((c) => c.font === font && c.italic === italic)!;
@@ -237,6 +307,28 @@ describe('shaping parity fixture (server side)', () => {
     expect(get('fsital').width).toBeCloseTo(plain.width, 6);
     // No skew: the italic ink is the upright ink, not the 0.25 lean of an upright file (`vslntn` leans over 5 px).
     expect(get('fsital', true).ink!.right - get('fsital').ink!.right).toBe(0);
+  });
+
+  it('the justified cases come last: each width is its box, and the words read as in Chromium', () => {
+    const fixture = JSON.parse(readFileSync(FIXTURE, 'utf8')) as ParityCase[];
+    const tail = fixture.slice(-JUSTIFY_CASES.length);
+    expect(tail.map(parityKey)).toEqual(JUSTIFY_CASES.map(parityKey));
+    expect(tail.every((c) => c.width === c.boxWidth)).toBe(true);
+    const get = (text: string, direction?: 'rtl') =>
+      tail.find((c) => c.text === text && c.direction === direction)!.starts!;
+    // `Hello, world.` in rtl: the period is the leftmost and the comma stays right of `Hello`; in ltr, the words in order.
+    const rtl = get('Hello, world.', 'rtl');
+    expect(rtl[12]).toBe(0);
+    expect(rtl[5]).toBeLessThan(rtl[6]!);
+    expect(rtl[0]).toBeLessThan(rtl[7]!);
+    const ltr = get('Hello, world.');
+    expect(ltr[0]).toBe(0);
+    expect(ltr[7]).toBeGreaterThan(ltr[5]!);
+    // `אבג דה abc` in rtl: `abc` at the left edge and the Hebrew words from right to left (`אבג` is the rightmost).
+    const mixed = get('אבג דה abc', 'rtl');
+    expect(mixed[7]).toBe(0);
+    expect(mixed[3]).toBeGreaterThan(mixed[4]!);
+    expect(mixed[0]).toBeGreaterThan(mixed[3]!);
   });
 
   it('the bidi cases come after the base cases, which keep their place', () => {

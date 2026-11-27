@@ -7,6 +7,10 @@
 // Stage #2448 (BD1, decision 10): the extra cases set `dir` on the span and read, for each code point, the left edge of
 // its `Range` rectangle against the span's: Chromium's own bidi reordering, within the same 0.1 px of the server.
 //
+// Stage #2653 (JB1, decision 6): the justified cases (`boxWidth`) are a `<div>` of that width with `text-align: justify` and
+// `text-align-last: justify`; the width is the box's, not measured again, and each code point's left edge comes from its
+// `Range`, which is Chromium's own reordering of a whole justified line.
+//
 // The app's `konvaMeasurer` is reported next to it, not asserted: it reads `measureText` without the canvas
 // `letterSpacing` and adds `spacing × length`, so it keeps `liga` when spaced (`ii` → `m`), and the canvas measures
 // the pairs around a space without kerning (`AV To Ty` is 3.6 px wider than in the DOM at size 100).
@@ -66,7 +70,27 @@ window.measureParity = async (fonts, cases, size) => {
       top: (top - baseline) / SCALE,
     };
   };
+  const justified = (c) => {
+    const div = document.body.appendChild(document.createElement('div'));
+    div.style.cssText = 'position:absolute;left:0;top:0;width:' + c.boxWidth + 'px;text-align:justify;text-align-last:justify;text-rendering:geometricPrecision;font:' + (c.italic ? 'italic ' : '') + (c.weight ?? 400) + ' ' + size + 'px Parity' + c.font + ';letter-spacing:' + c.letterSpacing + 'px';
+    if (c.direction) div.dir = c.direction;
+    div.textContent = c.text;
+    const left = div.getBoundingClientRect().left;
+    const node = div.firstChild;
+    const starts = [];
+    let at = 0;
+    for (const ch of c.text) {
+      const range = document.createRange();
+      range.setStart(node, at);
+      range.setEnd(node, at + ch.length);
+      starts.push(range.getBoundingClientRect().left - left);
+      at += ch.length;
+    }
+    div.remove();
+    return { width: c.boxWidth, starts };
+  };
   const dom = (c) => {
+    if (c.boxWidth !== undefined) return justified(c);
     const span = document.body.appendChild(document.createElement('span'));
     span.style.cssText = 'position:absolute;white-space:pre;text-rendering:geometricPrecision;font:' + (c.italic ? 'italic ' : '') + (c.weight ?? 400) + ' ' + size + 'px Parity' + c.font + ';letter-spacing:' + c.letterSpacing + 'px';
     if (c.direction) span.dir = c.direction;
@@ -89,7 +113,7 @@ window.measureParity = async (fonts, cases, size) => {
     span.remove();
     return { width, starts };
   };
-  const konva = (c) => konvaMeasurer(c.text, {
+  const konva = (c) => c.boxWidth !== undefined ? c.boxWidth : konvaMeasurer(c.text, {
     family: 'Parity' + c.font, size, weight: c.weight ?? 400, italic: c.italic ?? false, lineHeight: size * 1.2,
     letterSpacing: c.letterSpacing,
     ...(c.direction ? { direction: c.direction } : {}),

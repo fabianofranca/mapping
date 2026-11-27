@@ -14,8 +14,11 @@ import {
 import wasmBytes from 'wasm:harfbuzz';
 import { CAP_HEIGHT_RATIO } from '../../src/model/components/baseline';
 import { MEASURE_CACHE_LIMIT } from '../../src/model/components/measureCache';
-import { bidiRuns } from './bidi';
+import { bidiRuns, type BidiRun } from './bidi';
 import { fontSfnt } from './woff';
+
+// The only module that reaches `bidi.ts`: the font book hands the runs to `textLayout.ts` (stage #2653, decision 2).
+export { bidiRuns, type BidiRun };
 
 // HarfBuzz (WebAssembly) behind a synchronous face API: the shaping engine of the browser, for the server's measurer
 // and rasterizer. This is the only module that reaches the HarfBuzz runtime. The module is instantiated once, at
