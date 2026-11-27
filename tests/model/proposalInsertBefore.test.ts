@@ -361,3 +361,34 @@ describe('proposal v4: reading and writing', () => {
     expect(create?.insertBefore).toBe('Q');
   });
 });
+
+describe('proposal v4: a decorative marking is not a parent candidate in the ties', () => {
+  it('a created decorative frame of the same area as another candidate adds no tie', () => {
+    let base = addContainer(emptyProject(), {
+      id: 'C',
+      file: 'c.png',
+      width: 400,
+      height: 300,
+    });
+    base = createMarking(base, {
+      id: 'G',
+      containerId: 'C',
+      rect: rect(50, 0, 200, 200),
+    });
+    // F (decorative) and G have the same area and both contain X, but only G can be its parent.
+    let after = createMarking(base, {
+      id: 'F',
+      containerId: 'C',
+      rect: rect(0, 0, 200, 200),
+      decorative: true,
+    });
+    after = createMarking(after, {
+      id: 'X',
+      containerId: 'C',
+      rect: rect(60, 10, 40, 40),
+    });
+    after = reorderMarking(after, 'F', 1);
+    expect(after.markings.find((m) => m.id === 'X')?.parentId).toBe('G');
+    expectApplied(base, after);
+  });
+});

@@ -1,7 +1,7 @@
 import type { TokenSelection } from './components/tokens';
 import type { Spec } from './spec';
 
-// Types of the `mapping.json` (schema v24). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
+// Types of the `mapping.json` (schema v25). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
 // the operations always return a new project.
 
 export const SCHEMA_VERSION = 25;
