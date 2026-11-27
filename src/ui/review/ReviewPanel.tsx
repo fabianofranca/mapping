@@ -59,7 +59,8 @@ const has = (project: Project | null, sel: NonNullable<Selection>): boolean =>
 
 /**
  * Where the item is: in the project in view; otherwise, in the Proposed view, in the current one (removed) and,
- * in the Current view, in the preview (created); lastly, in the "how it would look" without the decisions (a
+ * in the Current view, in the preview (created); then, in the Proposed view, in the whole proposed project
+ * (an item on a page that is not open); lastly, in the "how it would look" without the decisions (a
  * rejected creation). `null` if it is nowhere (ReviewDetails shows the change).
  */
 function shownItem(
@@ -67,6 +68,7 @@ function shownItem(
   view: ReviewView,
   shown: Project | null,
   other: () => Project | null,
+  proposed: () => Project | null,
   full: () => Project | null,
 ): ShownItem | null {
   const at = (project: Project | null, away: ShownItem['away']): ShownItem | null =>
@@ -82,6 +84,7 @@ function shownItem(
   return (
     at(shown, null) ??
     at(other(), view === 'proposed' ? 'proposed' : 'current') ??
+    (view === 'proposed' ? at(proposed(), null) : null) ??
     at(full(), 'rejected')
   );
 }
@@ -117,6 +120,7 @@ export function ReviewPanel({ onGoToAnnotation }: ReviewPanelProps) {
         view,
         shown,
         () => (view === 'proposed' ? current : (d.preview.value?.project ?? null)),
+        () => d.proposedProject.value,
         () => d.fullPreview.value,
       )
     : null;
