@@ -228,3 +228,25 @@ describe('RT1: only the engine chooses', () => {
     expect(sizes.has(32)).toBe(true);
   });
 });
+
+describe('RT1: review findings', () => {
+  it('a measurer that clamps the width and returns no lines still shrinks', () => {
+    const measure: TextMeasurer = (value, font, maxWidth) => {
+      const full = approximateMeasurer(value, font, maxWidth);
+      return {
+        width: maxWidth === undefined ? full.width : Math.min(full.width, maxWidth),
+        height: full.height,
+      };
+    };
+    const font = { ...FIT, wrap: 'none' };
+    const { at } = build(host(text('v', VALUE, font)), 180, {}, measure);
+    expect(at('v').style.fontSize).toBe(32);
+  });
+
+  it('a `fitSizes` item that is numeric text counts, as `font.size` does', () => {
+    const font = { size: 41, fit: 'shrink', fitSizes: [{ $field: 'next' }] };
+    const { at, warnings } = build(host(text('v', VALUE, font)), 200, { next: '32' });
+    expect(warnings.filter((w) => w.includes('fitSizes'))).toEqual([]);
+    expect(at('v').style.fontSize).toBe(32);
+  });
+});

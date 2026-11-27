@@ -958,8 +958,10 @@ function createEngine(
     const sizes = [declaredSize(node)];
     for (const item of node.font?.fitSizes ?? []) {
       const value = ev<unknown>(item as Expr<unknown>, undefined);
+      // As `font.size`: a number, or text that reads as one.
+      const size = typeof value === 'number' ? value : parseFloat(String(value));
       const last = sizes[sizes.length - 1] as number;
-      if (typeof value === 'number' && value > 0 && value < last) sizes.push(value);
+      if (size > 0 && size < last) sizes.push(size);
       else invalidValue('font.fitSizes', value);
     }
     fitSizeMemo.set(node, sizes);
@@ -989,9 +991,10 @@ function createEngine(
     const measured = options.measure(plainText(node), free, limit);
     if (font.maxLines !== undefined && measuredLines(measured) > font.maxLines)
       return false;
+    // Without `lines` the measurer's width may be clamped to the limit: measure it free.
     const widest =
       measured.lines === undefined
-        ? measured.width
+        ? options.measure(plainText(node), free).width
         : widestWord(measured.lines, free, limit);
     return widest <= limit + WRAP_SLACK;
   };
