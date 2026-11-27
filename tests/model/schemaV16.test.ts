@@ -47,6 +47,7 @@ const canvasMarking = (id: string, extra: Partial<Marking> = {}): Marking => ({
   needsReview: false,
   locked: false,
   floating: false,
+  decorative: false,
   source: null,
   ...extra,
 });

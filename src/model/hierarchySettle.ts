@@ -138,7 +138,7 @@ export function enclosingAmong(
 ): string | null {
   const group: Entry[] = [];
   p.markings.forEach((m, i) => {
-    if (m.floating || m.containerId !== containerId) return;
+    if (m.floating || m.decorative || m.containerId !== containerId) return;
     if (containerId === null && pageId !== undefined && m.pageId !== pageId) return;
     group.push({ m, i });
   });
@@ -627,7 +627,7 @@ function settleFullSpaces(
 }
 
 /**
- * Parent of a container: the smallest canvas marking (not floating) that contains its rectangle.
+ * Parent of a container: the smallest canvas marking (not floating, not decorative) that contains its rectangle.
  */
 function settleContainerParents(
   list: readonly ProjectContainer[],
@@ -640,7 +640,7 @@ function settleContainerParents(
     // Only the canvas markings of the container's own page can contain it.
     const candidates = canvasIndexOf(c)
       .containing(rect, EPSILON)
-      .filter((e) => containsRectApprox(e.m.rect, rect));
+      .filter((e) => !e.m.decorative && containsRectApprox(e.m.rect, rect));
     const parentId = pickParent(candidates, c.parentId, rankOf);
     if (parentId === c.parentId) return c;
     changed = true;
@@ -683,7 +683,7 @@ function markingParent(
   const own = rankOf(m.id);
   const candidates = index
     .containing(m.rect)
-    .filter((c) => canContain(c.m.rect, rankOf(c.m.id), m.rect, own));
+    .filter((c) => !c.m.decorative && canContain(c.m.rect, rankOf(c.m.id), m.rect, own));
   return pickParent(candidates, m.parentId, rankOf);
 }
 

@@ -105,7 +105,8 @@ function waitsForParent(e: Entry, ids: ReadonlySet<string>, done: ReadonlySet<st
  * broken by the first one of the array. Total and cycle-free.
  */
 function chainOrder(bucket: readonly Entry[]): Entry[] {
-  const ids = new Set(bucket.map((e) => e.m.id));
+  // A decorative marking is never a parent: nothing waits for it (stage #2826).
+  const ids = new Set(bucket.filter((e) => !e.m.decorative).map((e) => e.m.id));
   const done = new Set<string>();
   const pending = [...bucket];
   const out: Entry[] = [];
@@ -191,7 +192,7 @@ export function referenceEnclosingAmong(
 ): string | null {
   const group: Entry[] = [];
   p.markings.forEach((m, i) => {
-    if (m.floating || m.containerId !== containerId) return;
+    if (m.floating || m.decorative || m.containerId !== containerId) return;
     if (containerId === null && pageId !== undefined && m.pageId !== pageId) return;
     group.push({ m, i });
   });
@@ -368,8 +369,9 @@ function referenceSettleGeometry(p: Project, options?: SettleOptions): Project {
   const markings = placed.map((m) => {
     const group = m.floating ? [] : (bySpace.get(spaceKey(m)) ?? []);
     const own = rankOf(m.id);
-    const candidates = group.filter((c) =>
-      canContain(c.m.rect, rankOf(c.m.id), m.rect, own),
+    // Stage #2826: a decorative marking is never a candidate parent.
+    const candidates = group.filter(
+      (c) => !c.m.decorative && canContain(c.m.rect, rankOf(c.m.id), m.rect, own),
     );
     const parentId = pickParent(candidates, m.parentId, rankOf);
     if (parentId === m.parentId) return m;
@@ -381,7 +383,9 @@ function referenceSettleGeometry(p: Project, options?: SettleOptions): Project {
   const containers = p.containers.map((c) => {
     const rect = imageCanvasRect(c, c.placement);
     const canvasGroup = bySpace.get(`\0page:${c.pageId}`) ?? [];
-    const candidates = canvasGroup.filter((e) => containsRectApprox(e.m.rect, rect));
+    const candidates = canvasGroup.filter(
+      (e) => !e.m.decorative && containsRectApprox(e.m.rect, rect),
+    );
     const parentId = pickParent(candidates, c.parentId, rankOf);
     if (parentId === c.parentId) return c;
     changed = true;

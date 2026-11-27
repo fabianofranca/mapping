@@ -68,6 +68,7 @@ export function mk(
     needsReview: false,
     locked: false,
     floating: false,
+    decorative: false,
     source: null,
     ...extra,
   };

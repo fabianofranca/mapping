@@ -38,7 +38,8 @@ function waitsForParent(e: Entry, ids: ReadonlySet<string>, done: ReadonlySet<st
  * broken by the first one in the array. Total and cycle-free.
  */
 function chainOrder(bucket: readonly Entry[]): Entry[] {
-  const ids = new Set(bucket.map((e) => e.m.id));
+  // A decorative marking is never a parent: nothing waits for it.
+  const ids = new Set(bucket.filter((e) => !e.m.decorative).map((e) => e.m.id));
   const done = new Set<string>();
   const pending = [...bucket];
   const out: Entry[] = [];

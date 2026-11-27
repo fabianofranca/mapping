@@ -145,6 +145,7 @@ export const enUS = {
   'marking.error.rect-outside-parent': 'The marking must stay inside its parent marking.',
   'marking.error.invalid-parent': 'That marking cannot be the parent.',
   'marking.error.invalid-space': 'Only a canvas marking can be floating.',
+  'marking.error.decorative-floating': 'A floating marking cannot be decorative.',
   'marking.error.not-fittable':
     'Only a component whose size depends on its content (hug) and that has no markings inside can be fitted to its content.',
   'marking.error.not-arrangeable':
@@ -467,11 +468,14 @@ export const enUS = {
   'invariant.rect-outside-parent': "outside the parent's rectangle",
   'invariant.hierarchy-cycle': 'cycle in the hierarchy',
   'invariant.container-parent-missing': "container's parent marking does not exist",
-  'invariant.container-parent-not-canvas': "container's parent is not a canvas marking",
+  'invariant.container-parent-not-canvas':
+    "container's parent is not a canvas marking, or is floating or decorative",
   'invariant.container-outside-parent': 'container outside its parent marking',
   'invariant.floating-in-container':
     'floating marking inside a container or another marking',
   'invariant.parent-floating': 'parent is a floating marking',
+  'invariant.parent-decorative': 'parent is a decorative marking',
+  'invariant.decorative-floating': 'marking is both decorative and floating',
   'invariant.arrow-endpoint-missing': 'arrow end does not exist (not a marking)',
   'invariant.arrow-self': 'arrow connected to itself',
   'invariant.anchor-missing': 'anchor points to a marking that does not exist',
@@ -514,6 +518,7 @@ export const enUS = {
   'repair.created': 'a page is created',
   'repair.page-set': 'goes to the first page',
   'repair.page-cleared': 'the page is cleared (the container decides)',
+  'repair.decorative-cleared': 'the decorative flag is turned off (it stays floating)',
   'error.invalid-zip': 'The file is not a valid zip.',
   'error.missing-mapping': 'The zip has no mapping.json.',
   'error.not-found': 'Project not found.',

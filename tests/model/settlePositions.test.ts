@@ -26,6 +26,7 @@ function mk(id: string, x: number, size: number, containerId: string): Marking {
     needsReview: false,
     locked: false,
     floating: false,
+    decorative: false,
     source: null,
   };
 }

@@ -654,6 +654,7 @@ function initialValues(
     needsReview: false,
     locked: false,
     floating: false,
+    decorative: false,
     source: null,
   };
   let next: Project = { ...p, markings: [...p.markings, scratch] };

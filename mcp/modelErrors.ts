@@ -38,6 +38,7 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'rect-outside-parent': 'the rectangle leaves the parent marking',
   'invalid-space':
     'invalid space: only the canvas marking can be floating, and it has no container',
+  'decorative-floating': 'a floating marking cannot be decorative, and a decorative one cannot be floating',
   'invalid-parent':
     'invalid parent: it must be in the same container, contain the rectangle and not be a descendant',
   'invalid-annotation-parent':
