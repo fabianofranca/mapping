@@ -1,4 +1,4 @@
-# One drawing font, a token named by a field value and notes library v6 — [Não lançado] (épico `epic/drawing-font-notes-v6`, PR #2898, MCP 0.61.0, schema v24 unchanged)
+# One drawing font, a token named by a field value and notes library v6 — 2026-11-27 (épico `epic/drawing-font-notes-v6`, PR #2898, MCP 0.61.0, schema v24 unchanged)
 
 ## Adicionado
 

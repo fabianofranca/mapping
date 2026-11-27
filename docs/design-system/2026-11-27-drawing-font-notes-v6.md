@@ -1,4 +1,4 @@
-# One drawing font, a token named by a field value and notes library v6 — [Não lançado] (épico `epic/drawing-font-notes-v6`)
+# One drawing font, a token named by a field value and notes library v6 — 2026-11-27 (épico `epic/drawing-font-notes-v6`)
 
 ## Pendências
 
@@ -6,8 +6,8 @@ None so far. FN1 (the drawing font) crosses its "Toca em:" with the triggers of 
 
 ## Sincronização
 
-Written by the epic closing.
+Sem impacto: no pending item came out of this epic. The drawing font registers the Mapping faces for the drawn component text only, no token, screen, component or icon of the app changed, and the notes library v6 lives in its own component, outside the app's theme. Nothing was written to the **Mapping** artifact.
 
 ## Ficou sem gravar
 
-Written by the epic closing.
+Nothing. There was nothing to write, so no item was left behind.
