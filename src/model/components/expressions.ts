@@ -2,6 +2,7 @@
  * Component engine (Library stage): evaluation of the template expressions against the values of the
  * annotation's fields (`componentFormat.ts`). Pure functions, no DOM.
  */
+import { literalOfKind, type NamedPositionKind, type NamedTokenLookup } from './tokens';
 import type {
   BoolExpr,
   Condition,
@@ -272,6 +273,7 @@ const EXPR_KEYS = [
   '$size',
   '$lines',
   '$provided',
+  '$tokenNamed',
 ];
 
 function isExprObject(value: unknown): value is Record<string, unknown> {
@@ -284,7 +286,12 @@ function isExprObject(value: unknown): value is Record<string, unknown> {
  * without `default`, `$if` without `else`, `$switch` with no case and no `default`). The result type is not
  * checked here: the literals come from the file validated by `parseComponent`.
  */
-export function evaluate<T>(expr: Expr<T>, values: FieldValues, fallback: T): T {
+export function evaluate<T>(
+  expr: Expr<T>,
+  values: FieldValues,
+  fallback: T,
+  ctx?: EvalContext,
+): T {
   if (!isExprObject(expr)) return expr as T;
   if ('$field' in expr) {
     const value = values[expr.$field as string];
@@ -294,8 +301,8 @@ export function evaluate<T>(expr: Expr<T>, values: FieldValues, fallback: T): T 
   }
   if ('$if' in expr) {
     const e = expr as { $if: Condition; then: Expr<T>; else?: Expr<T> };
-    if (evaluateCondition(e.$if, values)) return evaluate(e.then, values, fallback);
-    return e.else === undefined ? fallback : evaluate(e.else, values, fallback);
+    if (evaluateCondition(e.$if, values)) return evaluate(e.then, values, fallback, ctx);
+    return e.else === undefined ? fallback : evaluate(e.else, values, fallback, ctx);
   }
   if ('$switch' in expr) {
     const e = expr as {
@@ -307,15 +314,60 @@ export function evaluate<T>(expr: Expr<T>, values: FieldValues, fallback: T): T 
     const name = String(key);
     const chosen =
       !isEmpty(key) && Object.hasOwn(e.cases, name) ? e.cases[name] : undefined;
-    if (chosen !== undefined) return evaluate(chosen, values, fallback);
-    return e.default === undefined ? fallback : evaluate(e.default, values, fallback);
+    if (chosen !== undefined) return evaluate(chosen, values, fallback, ctx);
+    return e.default === undefined
+      ? fallback
+      : evaluate(e.default, values, fallback, ctx);
   }
   if ('$provided' in expr) {
     const e = expr as { $provided: string; default?: Expr<T> };
     const value = values[providedKey(e.$provided)];
     if (!isEmpty(value)) return value as unknown as T;
-    return e.default === undefined ? fallback : evaluate(e.default, values, fallback);
+    return e.default === undefined
+      ? fallback
+      : evaluate(e.default, values, fallback, ctx);
   }
+  if ('$tokenNamed' in expr) return evaluateTokenNamed<T>(expr, values, fallback, ctx);
+  return evaluateComputed(expr, values, fallback);
+}
+
+/** What `evaluate` needs beyond the field values: the position's kind and where a named token is looked up. */
+export interface EvalContext {
+  /** The kind of the position being evaluated (a color by default). */
+  readonly kind?: NamedPositionKind;
+  /** The tokens `$tokenNamed` reads; without it only a literal of the kind or the `default` applies. */
+  readonly tokenNamed?: NamedTokenLookup;
+}
+
+/**
+ * `{ "$tokenNamed": <name>, "default": … }`: the token the name points to, else the name itself when it is a
+ * literal of the position's kind, else the `default` (an expression), else the place's `fallback`.
+ */
+function evaluateTokenNamed<T>(
+  expr: object,
+  values: FieldValues,
+  fallback: T,
+  ctx: EvalContext | undefined,
+): T {
+  const e = expr as { $tokenNamed: Expr<string>; default?: Expr<T> };
+  const found = namedTokenValue(
+    evaluate<unknown>(e.$tokenNamed as Expr<unknown>, values, ''),
+    ctx,
+  );
+  if (found !== undefined) return found as unknown as T;
+  return e.default === undefined ? fallback : evaluate(e.default, values, fallback, ctx);
+}
+
+/** The token a name points to, else the name itself when it is a literal of the position's kind; none otherwise. */
+function namedTokenValue(raw: unknown, ctx: EvalContext | undefined): string | undefined {
+  const name = raw === null || raw === undefined ? '' : String(raw).trim();
+  if (name === '') return undefined;
+  const kind = ctx?.kind ?? 'color';
+  return ctx?.tokenNamed?.(name, kind) ?? literalOfKind(name, kind);
+}
+
+/** `$rows`, `$size`, `$lines`, the numeric operations and `$concat`: what needs no context. */
+function evaluateComputed<T>(expr: object, values: FieldValues, fallback: T): T {
   if ('$rows' in expr || '$size' in expr || '$lines' in expr) {
     const n = evaluateCount(expr as Record<string, unknown>, values);
     return (n === undefined ? fallback : n) as T;

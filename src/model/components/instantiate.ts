@@ -114,6 +114,7 @@ import {
   referencedFields,
   sizeKey,
   toNumber,
+  type EvalContext,
   type ProvidedValues,
 } from './expressions';
 import {
@@ -147,7 +148,9 @@ import { WRAP_SLACK } from './textWrap';
 import {
   applyTokens,
   defaultFontFamily,
+  ownNamedLookup,
   resolveTokens,
+  type NamedTokenLookup,
   type ResolvedTokens,
 } from './tokens';
 import {
@@ -301,6 +304,12 @@ export interface InstantiateOptions {
    */
   readonly provided?: ProvidedValues;
   /**
+   * Where `$tokenNamed` looks a token up by name (v4): the project's applied libraries in the space's
+   * drawing selection (`projectNamedLookup`). Absent = the component's own library (its `tokenTables`, in
+   * `tokens`) and the built-ins.
+   */
+  readonly tokenNamed?: NamedTokenLookup;
+  /**
    * Reading direction of the instance (v4; default `ltr`): in `rtl` the rows, the grids, the
    * `start`/`end` positions and the default `font.align` mirror, and the `mirror` nodes flip. The
    * final position stays physical (x from the left): see "Reading direction" in `docs/COMPONENT-FORMAT.md`.
@@ -385,6 +394,7 @@ const nestedKey = (
     memoId(memo, options.icons),
     nestingDepthOf(options),
     options.direction ?? 'ltr',
+    memoId(memo, options.tokenNamed),
     JSON.stringify(options.provided ?? null),
     JSON.stringify(options.container ?? null),
     JSON.stringify(values),
@@ -690,6 +700,19 @@ interface ResolvedAnchors {
 // Instantiation
 // ---------------------------------------------------------------------------------------
 
+/** What `evaluate` needs to read a `$tokenNamed` in a color position and in a font-family one. */
+function namedContexts(
+  options: InstantiateOptions,
+  original: ComponentFile,
+  tokens: ResolvedTokens,
+): { colorContext: EvalContext; familyContext: EvalContext } {
+  const tokenNamed = options.tokenNamed ?? ownNamedLookup(tokens, original.tokenTables);
+  return {
+    colorContext: { kind: 'color', tokenNamed },
+    familyContext: { kind: 'family', tokenNamed },
+  };
+}
+
 /** The inherited values as reserved engine fields (`$provided:<name>`), where `$provided` reads them. */
 function providedFields(
   provided: ProvidedValues | undefined,
@@ -787,8 +810,11 @@ function createEngine(
 
   // --- expression evaluation ------------------------------------------------------------
 
+  // `$tokenNamed`: the project's lookup, or the own library's declared tokens and then the built-ins.
+  const { colorContext, familyContext } = namedContexts(options, original, tokens);
+
   const ev = <T>(expr: Expr<T> | undefined, fallback: T): T =>
-    expr === undefined ? fallback : evaluate(expr, values, fallback);
+    expr === undefined ? fallback : evaluate(expr, values, fallback, colorContext);
 
   const num = (expr: Expr<number> | undefined, fallback: number): number => {
     const value = ev<unknown>(expr as Expr<unknown> | undefined, fallback);
@@ -796,8 +822,15 @@ function createEngine(
     return Number.isFinite(n) ? n : fallback;
   };
 
-  const str = (expr: Expr<string> | undefined, fallback: string): string => {
-    const value = ev<unknown>(expr as Expr<unknown> | undefined, fallback);
+  const str = (
+    expr: Expr<string> | undefined,
+    fallback: string,
+    context: EvalContext = colorContext,
+  ): string => {
+    const value =
+      expr === undefined
+        ? fallback
+        : evaluate<unknown>(expr as Expr<unknown>, values, fallback, context);
     return value === null || value === undefined ? fallback : String(value);
   };
 
@@ -883,7 +916,7 @@ function createEngine(
     const lh = num(font.lineHeight, 1.2);
     return {
       ...textWrapping(font),
-      family: str(font.family, defaultFontFamily(tokens)),
+      family: str(font.family, defaultFontFamily(tokens), familyContext),
       size,
       weight: num(font.weight, 400),
       italic: bool(font.italic, false),
@@ -918,7 +951,7 @@ function createEngine(
     return {
       // A literal text counts as is, even whitespace only (the gap between runs); an empty field's falls back.
       text: typeof run.text === 'string' ? run.text : evaluateText(run.text, values, ''),
-      fontFamily: str(run.family, font.family),
+      fontFamily: str(run.family, font.family, familyContext),
       fontSize: Math.max(0, num(run.size, font.size)),
       fontWeight: num(run.weight, font.weight),
       italic: bool(run.italic, font.italic),
@@ -1625,6 +1658,7 @@ function createEngine(
       tokens,
       ...(icons === undefined ? {} : { icons }),
       provided: extendProvided(options.provided ?? {}, componentProvides(node)),
+      ...(options.tokenNamed === undefined ? {} : { tokenNamed: options.tokenNamed }),
       direction: dirOf(node),
       ...(options.container === undefined ? {} : { container: options.container }),
       nestingDepth: componentDepth + 1,

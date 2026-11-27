@@ -143,6 +143,7 @@ const EXPR_OPS: readonly string[] = [
   '$size',
   '$lines',
   '$provided',
+  '$tokenNamed',
   ...NUMERIC_OP_NAMES,
 ];
 const CONDITION_OPS: readonly string[] = [
@@ -510,6 +511,28 @@ function checkTokenExpr(value: Rec, path: string, check: Check, out: Ctx): void 
 }
 
 /**
+ * `$tokenNamed` (v4): a token named by a field value. Only where a color or a font family `$token` is valid
+ * (not in a `provide` or a `component` value, whose kind is only known to the library); the name is a text
+ * expression and nothing is checked against the library (the name is data).
+ */
+function checkTokenNamedExpr(value: Rec, path: string, check: Check, out: Ctx): void {
+  const kind = check.tokenKind;
+  const kindOk =
+    (kind === 'color' || kind === 'family') &&
+    check.anyTokenKind !== true &&
+    check !== checkProvided;
+  if (!kindOk)
+    return add(
+      out,
+      path,
+      '$tokenNamed is only valid where a color or font family is expected',
+    );
+  checkKeys(value, ['$tokenNamed', 'default'], path, out);
+  checkExpr(value.$tokenNamed, join(path, '$tokenNamed'), checkTextOrNumber, out);
+  if ('default' in value) checkExpr(value.default, join(path, 'default'), check, out);
+}
+
+/**
  * `over` of a `$token` (v4): only in a color position; the name of a color token (collected as
  * a color reference, so the library rejects the unknown name) or a literal color.
  */
@@ -640,6 +663,8 @@ function checkExpr(value: unknown, path: string, check: Check, out: Ctx): void {
         add(out, at, 'expected the name of the provided color (non-empty text)');
       if ('default' in value) checkExpr(value.default, join(path, 'default'), check, out);
       return;
+    case '$tokenNamed':
+      return checkTokenNamedExpr(value, path, check, out);
     case '$concat':
       checkKeys(value, ['$concat'], path, out);
       if (!Array.isArray(value.$concat)) return add(out, at, 'expected a list of parts');
@@ -1960,6 +1985,7 @@ function isV4OnlyOp(key: string): boolean {
     key === '$size' ||
     key === '$lines' ||
     key === '$provided' ||
+    key === '$tokenNamed' ||
     key === '$direction' ||
     (COMPARISON_OPS as readonly string[]).includes(key)
   );

@@ -123,6 +123,8 @@ In the text: `container` says which container the crop is from (`ref`, `file`, `
 
 **You never write the project.** Every change (the first import, an update, a fix) reaches the user as a **proposal**, a kind of pull request inside the tool: they see the project as it would become, accept or reject at any level (proposal, container, item or change), leave notes on what they rejected and apply what they accepted. Only the app writes the `mapping.json`.
 
+A field can also name a token of the project: a type whose component reads `$tokenNamed` takes the token's name as the field's value (`cor: on-surface`, `familia: font-mono`), looked up in any applied library and in the marking's drawing mode; a name that resolves to nothing draws the default, so check the render.
+
 ### The flow
 
 1. **Read the project** (`get_project`, `list_markings`, `get_marking`, `get_specialization`). In re-exports, look for what already exists with `find_by_source` (see "Re-exports").

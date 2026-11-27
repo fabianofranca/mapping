@@ -100,6 +100,14 @@ export type Expr<T> =
    * it, `default` applies (an expression); without `default`, the place's default.
    */
   | { readonly $provided: string; readonly default?: Expr<T> }
+  /**
+   * A token named by a field value (v4): the inner text expression gives a token name, looked up in the
+   * applied libraries (the own one first, then the others in order, then `font-sans`/`font-mono`) among
+   * those of the position's kind (a color or a font family). Without such a token, a text that is itself a
+   * color or a family stack is used as is; otherwise `default` applies (an expression), and without it the
+   * place's default. Only where a color or font-family `$token` is valid.
+   */
+  | { readonly $tokenNamed: Expr<string>; readonly default?: Expr<T> }
   /** Text only: concatenates the parts (numbers become text). */
   | { readonly $concat: readonly Expr<string | number>[] }
   /**
