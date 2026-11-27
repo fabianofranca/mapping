@@ -809,5 +809,13 @@ export function ownNamedLookup(
   table: ResolvedTokens,
   tables: TokenTables | undefined,
 ): NamedTokenLookup {
-  return chainNamedLookups([declaredNamedLookup(table, tables), builtinNamedLookup()]);
+  const builtinsOfTable: NamedTokenLookup = (name, kind) =>
+    BUILTIN_TOKENS.includes(name) && Object.hasOwn(table, name)
+      ? valueOfKind(table[name], kind)
+      : undefined;
+  return chainNamedLookups([
+    declaredNamedLookup(table, tables),
+    builtinsOfTable,
+    builtinNamedLookup(),
+  ]);
 }

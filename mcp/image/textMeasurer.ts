@@ -30,6 +30,8 @@ export { textWidth };
 
 /** Weight from which the bold font kicks in. */
 const BOLD_FROM = 600;
+/** The built-in drawing font names (Mapping Sans/Mono), which the app and the viewer register. */
+const DRAWING_FONT_NAME = /^mapping (sans|mono)$/i;
 /** Families that ask for the embedded monospaced font. */
 const MONO_FAMILY =
   /^(monospace|ui-monospace|mono|courier|courier new|consolas|menlo|monaco|sf mono|cascadia mono|cascadia code|source code pro|fira code|jetbrains mono|roboto mono|dejavu sans mono|liberation mono|mapping mono)$/i;
@@ -198,7 +200,8 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
             slant: italic && !hit.italic && !hit.font.slanted ? LIBRARY_SLANT : 0,
           },
         };
-      if (MONO_FAMILY.test(name)) break;
+      // The drawing font ends the stack like a mono name: the browser draws it, so a later library family is not used.
+      if (MONO_FAMILY.test(name) || DRAWING_FONT_NAME.test(name)) break;
     }
     return {
       face: embeddedOf(family, weight),
