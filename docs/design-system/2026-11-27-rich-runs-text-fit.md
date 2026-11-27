@@ -1,4 +1,4 @@
-# Rich-text runs from a table, inline icons, baseline shift and text that shrinks to fit — [Não lançado] (épico `epic/rich-runs-text-fit`)
+# Rich-text runs from a table, inline icons, baseline shift and text that shrinks to fit — 2026-11-27 (épico `epic/rich-runs-text-fit`)
 
 ## Pendências
 
@@ -11,3 +11,7 @@ Nothing to write to the **Mapping** artifact: the epic does not change a compone
 ## Ficou sem gravar
 
 None.
+
+## Sincronização
+
+Sem impacto: no item in `## Pendências`, so nothing was written to the Mapping artifact. The epic only changes the component format and its engine (`src/model/components/`), the MCP drawing and the documentation; no file of the epic is in the triggers of `docs/DESIGN-SYSTEM.md`.
