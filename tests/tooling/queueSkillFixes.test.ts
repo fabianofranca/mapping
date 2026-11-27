@@ -232,4 +232,23 @@ describe('implementar-fila: `mesclar=auto` through the coordinator lineage (#303
     expect(message).toContain('`mesclar=auto` only if the owner wrote it');
     expect(message).toContain('this session got it by this same copy rule');
   });
+
+  it('"Merge" counts an inherited `mesclar=auto` too, not only the owner\'s own call', () => {
+    const merge = section(skill, '## Merge');
+    expect(merge).toContain(
+      '**With `mesclar=auto`** (written by the owner in the call, or inherited',
+    );
+    expect(merge).toContain('copy rule of "Session switch"');
+  });
+
+  it('an inherited `mesclar=auto` counts only when `anterior=` is the registered predecessor', () => {
+    expect(bullet).toContain(
+      '`anterior=` is the coordinator that `painel.py roles` shows as registered',
+    );
+    expect(bullet).toContain('otherwise the flag is ignored');
+  });
+
+  it('the successor message drops `mesclar=auto` once the owner told the session to stop', () => {
+    expect(message).toContain('never after the owner told this session to stop');
+  });
 });
