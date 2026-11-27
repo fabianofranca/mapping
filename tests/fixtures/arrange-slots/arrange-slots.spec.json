@@ -1,0 +1,52 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 25,
+  "id": "arrange",
+  "name": "Arrange slots",
+  "version": 1,
+  "layers": [
+    {
+      "id": "arrange",
+      "name": "Arrange",
+      "color": "#6750A4",
+      "annotationTypes": [
+        {
+          "id": "centered-row",
+          "name": "Centered row",
+          "component": "components/centered-row.json",
+          "fields": []
+        },
+        {
+          "id": "end-column",
+          "name": "End column",
+          "component": "components/end-column.json",
+          "fields": []
+        },
+        {
+          "id": "spread-row",
+          "name": "Spread row",
+          "component": "components/spread-row.json",
+          "fields": []
+        },
+        {
+          "id": "centered-box",
+          "name": "Centered box",
+          "component": "components/centered-box.json",
+          "fields": []
+        },
+        {
+          "id": "chip",
+          "name": "Chip",
+          "component": "components/chip.json",
+          "fields": []
+        },
+        {
+          "id": "grow-chip",
+          "name": "Grow chip",
+          "component": "components/grow-chip.json",
+          "fields": []
+        }
+      ]
+    }
+  ]
+}

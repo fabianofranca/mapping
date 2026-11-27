@@ -1,0 +1,32 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "centered-box",
+  "name": "Centered box",
+  "size": {
+    "width": 200,
+    "height": 120
+  },
+  "template": {
+    "type": "frame",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "slot",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "none",
+          "justify": "center",
+          "align": "center"
+        }
+      }
+    ]
+  }
+}

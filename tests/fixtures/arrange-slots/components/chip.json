@@ -1,0 +1,17 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "chip",
+  "name": "Chip",
+  "size": {
+    "width": 60,
+    "height": 24
+  },
+  "template": {
+    "type": "frame",
+    "layout": {
+      "type": "none"
+    },
+    "fill": "#6750A4"
+  }
+}
