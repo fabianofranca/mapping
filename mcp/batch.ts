@@ -1318,7 +1318,7 @@ class Batch {
    * `create_marking`: the marking and, if requested, the typed annotation. When the type has a component
    * (in the catalog read when loading the project), the `rect` may be missing (the component's initial
    * size) and the `minSize` applies; the annotation is created as in the app's palette (`preview`), with the
-   * `values` on top. The server never arranges: the rectangles are the ones the agent provided.
+   * `values` on top. `create_marking` places but does not arrange: the rectangles are the ones the agent provided (`arrange_marking` arranges).
    */
   /** `update_project`: the project's drawing mode and reading direction. */
   /** `add_page`: a new page at the end of the tabs; `as` names it in the following operations. */
