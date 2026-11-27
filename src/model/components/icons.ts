@@ -1,4 +1,5 @@
 import { isRecord } from '../isRecord';
+import { isRunsTable } from './componentFormat';
 import type { ModelMessageTemplateCode } from '../messages';
 import { componentCodeForText, iconsFileCodeForText } from '../messages/textLookup';
 import { isFormatColor } from './tokens';
@@ -495,9 +496,16 @@ export function iconNodes(template: unknown, path = 'template'): IconNodeRef[] {
   if (template.type === 'icon')
     out.push({ path: join(path, 'name'), name: template.name });
   if (template.type === 'text' && Array.isArray(template.runs))
-    template.runs.forEach((run: unknown, i) => {
+    template.runs.forEach((item: unknown, i) => {
+      // A runs table item (`{ field, template }`) carries its run in `template`.
+      const at = `${join(path, 'runs')}[${i}]`;
+      const table = isRunsTable(item);
+      const run = table ? item.template : item;
       if (isRecord(run) && 'icon' in run)
-        out.push({ path: `${join(path, 'runs')}[${i}].icon`, name: run.icon });
+        out.push({
+          path: join(table ? join(at, 'template') : at, 'icon'),
+          name: run.icon,
+        });
     });
   if (Array.isArray(template.children))
     template.children.forEach((child: unknown, i) =>

@@ -2667,6 +2667,28 @@
         }
       }
     },
+    "runs_table": {
+      "description": "formatVersion 4. A runs item that comes from a table field: one run per row of the field, between the fixed runs. The template is ONE run (text or icon) that reads the row's columns with $field ($index is the row index); a column shadows a type field of the same name. An empty table gives no run. Not valid inside the template of a repeat.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "template"],
+      "properties": {
+        "field": {
+          "description": "The key of a table field of the type.",
+          "type": "string"
+        },
+        "template": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/run"
+            },
+            {
+              "$ref": "#/$defs/icon_run"
+            }
+          ]
+        }
+      }
+    },
     "icon_run": {
       "description": "formatVersion 4. An icon of the library's set inside the rich-text line (runs): an unbreakable box centered on the line like the chip, size tall (default the node's font size) and size × viewBox width / viewBox height wide. color defaults to the node's color. text and the other run keys are not valid on it.",
       "type": "object",
@@ -3156,7 +3178,7 @@
           "$ref": "#/$defs/expr_textOrNumber"
         },
         "runs": {
-          "description": "formatVersion 4. Non-empty list of stretches with their own style, or icon runs ({ \"icon\": … }), in place of text.",
+          "description": "formatVersion 4. Non-empty list of stretches with their own style, icon runs ({ \"icon\": … }) or runs tables ({ \"field\", \"template\" }, one run per row of a table field), in place of text.",
           "type": "array",
           "minItems": 1,
           "items": {
@@ -3166,6 +3188,9 @@
               },
               {
                 "$ref": "#/$defs/icon_run"
+              },
+              {
+                "$ref": "#/$defs/runs_table"
               }
             ]
           }

@@ -10,6 +10,7 @@ import type {
   FieldValue,
   FieldValues,
 } from './componentFormat';
+import { isRunsTable } from './componentFormat';
 
 /** Numeric operations (format 4): the key and the arity (list of `min` or more, or fixed). */
 export const NUMERIC_OPS: Readonly<
@@ -465,7 +466,7 @@ export function repeatInnerFields(
   }
   if (typeof node !== 'object' || node === null) return out;
   const record = node as Record<string, unknown>;
-  if (record.type === 'repeat') {
+  if (record.type === 'repeat' || isRunsTable(record)) {
     referencedFields(record.template, out);
     return out;
   }
@@ -484,7 +485,8 @@ export function referencedFields(
   }
   if (typeof expr !== 'object' || expr === null) return out;
   const record = expr as Record<string, unknown>;
-  const isRepeat = record.type === 'repeat';
+  // A runs table item (`{ field, template }`) reads its `table` field and its `template` like a `repeat`.
+  const isRepeat = record.type === 'repeat' || isRunsTable(record);
   for (const [key, value] of Object.entries(record)) {
     // `repeat`: counts the `table` field and the expressions of the node itself; the `template` reads the columns
     // of the row (`repeatInnerFields`), not the type's fields.

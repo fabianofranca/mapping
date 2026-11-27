@@ -1,4 +1,5 @@
 import type { ComponentFile } from './components/componentFormat';
+import { isRunsTable } from './components/componentFormat';
 import { componentSlots, slotKey } from './components/slots';
 import { resolvePath, type TextFile } from './components/library';
 import {
@@ -208,7 +209,7 @@ function fieldReferences(
     return out;
   }
   if (!isRecord(node)) return out;
-  const isRepeat = node.type === 'repeat';
+  const isRepeat = node.type === 'repeat' || isRunsTable(node);
   for (const [key, value] of Object.entries(node)) {
     const at = `${path}.${key}`;
     // `repeat`: the `template` reads columns of the row (see `repeatChecks`), not fields of the type.
@@ -276,7 +277,7 @@ function rowsReferences(
   return out;
 }
 
-/** The `repeat` nodes of the template's JSON, with each one's path (nested ones do not exist). */
+/** The `repeat` nodes (and the `runs` table items, `{ field, template }`) of the template's JSON, with each one's path (nested ones do not exist). */
 function repeatNodes(
   node: unknown,
   path: string,
@@ -287,7 +288,7 @@ function repeatNodes(
     return out;
   }
   if (!isRecord(node)) return out;
-  if (node.type === 'repeat') {
+  if (node.type === 'repeat' || isRunsTable(node)) {
     out.push({ path, node });
     return out;
   }

@@ -92,7 +92,7 @@ import type {
   TextTemplate,
 } from './componentFormat';
 import type { Box } from './box';
-import { STROKE_SIDES } from './componentFormat';
+import { STROKE_SIDES, isRunsTable } from './componentFormat';
 import { clipBoxOf } from './clipBox';
 import { arcPath } from './arc';
 import { clampGrayscale, grayscaleNode } from './grayscale';
@@ -1168,9 +1168,11 @@ function createEngine(
     font: MeasureFont,
     ownerId: string = prefix,
   ): { scene: SceneTextRun[]; runs: RichRun[] } => {
-    const resolved = (node.runs ?? []).map((run, i) =>
-      resolveRun(run, node, font, i, ownerId),
+    // The expansion already replaced the runs tables with the rows' runs: only literal runs remain.
+    const literal = (node.runs ?? []).filter(
+      (run): run is TextRunTemplate => !isRunsTable(run),
     );
+    const resolved = literal.map((run, i) => resolveRun(run, node, font, i, ownerId));
     const scene = resolved.map((r) => r.scene);
     const runs = resolved.map(({ scene: run, inline }): RichRun => ({
       text: run.text,

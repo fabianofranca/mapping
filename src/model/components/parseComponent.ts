@@ -16,6 +16,7 @@ import {
   ANCHOR_ALIGNS,
   ANCHOR_SIDES,
   STROKE_SIDES,
+  isRunsTable,
   type ComponentFile,
 } from './componentFormat';
 import { checkRemoteImageUrl } from '../remoteImages';
@@ -1267,10 +1268,23 @@ function checkRun(value: unknown, path: string, out: Ctx): void {
   if ('italic' in value) checkBoolExpr(value.italic, join(path, 'italic'), out);
 }
 
+/** A runs table item (v4): `{ field, template }`, `field` the key of a `table` field and `template` ONE run. */
+function checkRunsTable(value: Rec, path: string, out: Ctx): void {
+  checkKeys(value, ['field', 'template'], path, out);
+  if ('field' in value) checkString(value.field, join(path, 'field'), out);
+  else add(out, join(path, 'field'), 'required field');
+  if ('template' in value) checkRun(value.template, join(path, 'template'), out);
+  else add(out, join(path, 'template'), 'required field');
+}
+
 function checkRuns(value: unknown, path: string, out: Ctx): void {
   if (!Array.isArray(value) || value.length === 0)
     return add(out, path, 'expected a non-empty list of runs');
-  value.forEach((run: unknown, i) => checkRun(run, `${path}[${i}]`, out));
+  value.forEach((item: unknown, i) =>
+    isRunsTable(item)
+      ? checkRunsTable(item as unknown as Rec, `${path}[${i}]`, out)
+      : checkRun(item, `${path}[${i}]`, out),
+  );
 }
 
 /** `text` node: `text` or `runs` (one of the two), plus `font` and `color`. */
@@ -1717,6 +1731,22 @@ function checkRepeat(value: Rec, path: string, out: Ctx): void {
   for (const nested of forbiddenInRepeat(template, at)) {
     add(out, nested.path, `${nested.type} is not allowed inside a repeat`);
   }
+  for (const table of runsTablesInRepeat(template, at))
+    add(out, table, 'a runs table cannot be inside a repeat');
+}
+
+/** The runs tables of the text nodes in a row's template (not entering a nested `repeat`). */
+function runsTablesInRepeat(node: unknown, path: string, found: string[] = []): string[] {
+  if (!isRecord(node) || node.type === 'repeat') return found;
+  if (node.type === 'text' && Array.isArray(node.runs))
+    node.runs.forEach((item: unknown, i) => {
+      if (isRunsTable(item)) found.push(`${join(path, 'runs')}[${i}]`);
+    });
+  if (Array.isArray(node.children))
+    node.children.forEach((child: unknown, i) =>
+      runsTablesInRepeat(child, `${join(path, 'children')}[${i}]`, found),
+    );
+  return found;
 }
 
 /**
@@ -2033,8 +2063,12 @@ function paddingSpacingVersionIssues(
     if (!isRecord(node)) return;
     if (isRecord(node.layout)) items(node.layout.padding, join(at, 'layout.padding'));
     if (Array.isArray(node.runs))
-      node.runs.forEach((run: unknown, i) => {
-        if (isRecord(run)) items(run.padding, `${join(at, 'runs')}[${i}].padding`);
+      node.runs.forEach((item: unknown, i) => {
+        const base = `${join(at, 'runs')}[${i}]`;
+        const table = isRunsTable(item);
+        const run = table ? item.template : item;
+        if (isRecord(run))
+          items(run.padding, `${table ? join(base, 'template') : base}.padding`);
       });
     if (isRecord(node.font) && 'letterSpacing' in node.font)
       percents(node.font.letterSpacing, join(at, 'font.letterSpacing'));
@@ -2193,7 +2227,8 @@ function indexIssues(version: unknown, template: unknown): ComponentIssue[] {
       const here = join(at, key);
       const cited = indexCitation(key, value);
       if (cited !== undefined) flag(`${here}${cited}`, inRepeat);
-      walk(value, here, inRepeat || (node.type === 'repeat' && key === 'template'));
+      const rows = key === 'template' && (node.type === 'repeat' || isRunsTable(node));
+      walk(value, here, inRepeat || rows);
     }
   };
   walk(template, 'template', false);
@@ -2903,9 +2938,12 @@ function nodeColorWarnings(
   if (isRecord(node.stroke))
     out.push(...colorWarning(node.stroke.color, join(path, 'stroke.color')));
   if (Array.isArray(node.runs))
-    node.runs.forEach((run: unknown, i) => {
+    node.runs.forEach((item: unknown, i) => {
+      const table = isRunsTable(item);
+      const run = table ? (item as { template: unknown }).template : item;
       if (!isRecord(run)) return;
-      const at = `${join(path, 'runs')}[${i}]`;
+      const base = `${join(path, 'runs')}[${i}]`;
+      const at = table ? join(base, 'template') : base;
       out.push(
         ...colorWarning(run.color, join(at, 'color')),
         ...colorWarning(run.background, join(at, 'background')),
@@ -2924,9 +2962,14 @@ function collectWarnings(node: unknown, path: string): ComponentIssue[] {
   const out: ComponentIssue[] = nodeColorWarnings(node, path);
   out.push(...familyWarning(node.font, join(path, 'font')));
   if (Array.isArray(node.runs))
-    node.runs.forEach((run: unknown, i) =>
-      out.push(...familyWarning(run, `${join(path, 'runs')}[${i}]`)),
-    );
+    node.runs.forEach((item: unknown, i) => {
+      const at = `${join(path, 'runs')}[${i}]`;
+      out.push(
+        ...(isRunsTable(item)
+          ? familyWarning(item.template, join(at, 'template'))
+          : familyWarning(item, at)),
+      );
+    });
   const children = Array.isArray(node.children) ? node.children : [];
   children.forEach((child: unknown, i) =>
     out.push(...collectWarnings(child, `${join(path, 'children')}[${i}]`)),
