@@ -484,7 +484,7 @@ function drawnWithSlots(
   containerId: string | null,
 ): ReturnType<typeof componentForDrawing> | null {
   if (mc === null) return null;
-  const drawn = componentForDrawing(p, mc.component, containerId);
+  const drawn = componentForDrawing(p, mc.component, containerId, mc.specId);
   return drawn === null || componentSlots(drawn.component).length === 0 ? null : drawn;
 }
 
@@ -714,7 +714,7 @@ function wantedSize(
   // Component with a slot and an axis that follows the content: the content is the children, which do not
   // exist yet (born at `size`; Arrange adjusts it after they come in). With no such axis (the Material 3
   // top app bar's height by `style`) nothing depends on them and the component is measured as always.
-  const drawn = componentForDrawing(p, component, args.containerId);
+  const drawn = componentForDrawing(p, component, args.containerId, args.specId);
   const reserved = {
     anchor: args.instanceAnchor,
     direction: drawn.direction,

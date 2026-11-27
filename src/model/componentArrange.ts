@@ -190,7 +190,7 @@ function containerOf(
   const marking = projectIndex(p).markings.get(markingId);
   if (marking === undefined) return null;
   const drawn = {
-    ...componentForDrawing(p, mc.component, marking.containerId),
+    ...componentForDrawing(p, mc.component, marking.containerId, mc.specId),
     anchor: measuringAnchor(p, marking, mc.component),
   };
   const templates = componentSlots(drawn.component);
@@ -287,7 +287,10 @@ function kidWeight(
   if (main === undefined || mc === null || mc.component.weight === undefined)
     return { messages: [] };
   const values = drawingValues(p, mc.annotation, mc.type).values;
-  const drawn = { ...componentForDrawing(p, mc.component, kid.containerId), anchor };
+  const drawn = {
+    ...componentForDrawing(p, mc.component, kid.containerId, mc.specId),
+    anchor,
+  };
   const resolved = resolveWeight(mc.component, values, drawn.tokens, drawn);
   if (resolved.weight === undefined) return { messages: resolved.messages };
   const limits = resolveWeightLimits(mc.component, values, main, drawn.tokens, drawn);
@@ -605,7 +608,7 @@ export function arrangeMarking(
       if (mc === null || mc.component.sizing === undefined) continue;
       const values = drawingValues(p, mc.annotation, mc.type).values;
       const drawn = {
-        ...componentForDrawing(p, mc.component, kid.containerId),
+        ...componentForDrawing(p, mc.component, kid.containerId, mc.specId),
         anchor: anchorOf(kid.id),
       };
       const sizing = resolveSizing(mc.component, values, drawn.tokens, drawn);
@@ -635,7 +638,7 @@ export function arrangeMarking(
     if (mc === null) return undefined;
     const values = drawingValues(p, mc.annotation, mc.type).values;
     const drawn = {
-      ...componentForDrawing(p, mc.component, kid.containerId),
+      ...componentForDrawing(p, mc.component, kid.containerId, mc.specId),
       anchor: anchorOf(kid.id),
     };
     return instantiate(drawn.component, values, rects.get(kid.id) as Rect, {
@@ -864,7 +867,7 @@ function fitTargetOf(
   const hasKids = (projectIndex(p).children.get(marking.id)?.length ?? 0) > 0;
   if (hasKids && componentSlots(mc.component).length > 0) return null;
   const values = drawingValues(p, mc.annotation, mc.type).values;
-  const drawn = componentForDrawing(p, mc.component, marking.containerId);
+  const drawn = componentForDrawing(p, mc.component, marking.containerId, mc.specId);
   const anchor = measuringAnchor(p, marking, mc.component);
   const followed = followedAxes(
     resolveSizing(mc.component, values, drawn.tokens, {

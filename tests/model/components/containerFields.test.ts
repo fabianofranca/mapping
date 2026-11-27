@@ -28,6 +28,7 @@ import { setContainerClass } from '../../../src/model';
 import { validateLibrary } from '../../../src/model/library';
 import {
   CX_COMPONENTS,
+  CX_SPEC_ID,
   CX_SPEC_JSON,
   PADDING_BY_WINDOW,
   cxCatalog,
@@ -67,7 +68,7 @@ function barWidth(file: ComponentFile, container?: InstanceContainer): number {
 describe('the values a container gives the instance', () => {
   it('$container.width and .height are in units: 1080 px at density 3 is 360', () => {
     const p = cxProject();
-    const given = containerValues(p, 'I1');
+    const given = containerValues(p, 'I1', CX_SPEC_ID);
     expect(given).toMatchObject({ width: 360, height: 1600 / 3 });
     expect(containerFieldValues(given)).toMatchObject({
       '$container.width': 360,
@@ -77,26 +78,26 @@ describe('the values a container gives the instance', () => {
 
   it('carries the effective classes: computed by the width in units and chosen by the container', () => {
     const p = setContainerClass(cxProject(), 'I2', 'platform', 'web');
-    expect(containerValues(p, 'I1')?.classes).toEqual({ window: 'compact' });
-    expect(containerValues(p, 'I2')?.classes).toEqual({
+    expect(containerValues(p, 'I1', CX_SPEC_ID)?.classes).toEqual({ window: 'compact' });
+    expect(containerValues(p, 'I2', CX_SPEC_ID)?.classes).toEqual({
       window: 'expanded',
       platform: 'web',
     });
-    expect(containerFieldValues(containerValues(p, 'I2'))).toMatchObject({
+    expect(containerFieldValues(containerValues(p, 'I2', CX_SPEC_ID))).toMatchObject({
       '$container.window': 'expanded',
       '$container.platform': 'web',
     });
   });
 
   it('a chosen set without a choice gives no field', () => {
-    const fields = containerFieldValues(containerValues(cxProject(), 'I1'));
+    const fields = containerFieldValues(containerValues(cxProject(), 'I1', CX_SPEC_ID));
     expect(Object.keys(fields)).not.toContain('$container.platform');
   });
 
   it('is empty on the canvas and for an unknown container', () => {
     const p = cxProject();
-    expect(containerValues(p, null)).toBeUndefined();
-    expect(containerValues(p, 'nope')).toBeUndefined();
+    expect(containerValues(p, null, CX_SPEC_ID)).toBeUndefined();
+    expect(containerValues(p, 'nope', CX_SPEC_ID)).toBeUndefined();
     expect(containerFieldValues(undefined)).toEqual({});
   });
 });

@@ -226,9 +226,10 @@ export function readContainerOf(
   p: Project,
   component: ComponentFile,
   containerId: string | null,
+  specId: string,
 ): InstanceContainer | undefined {
   return readsContainer(component)
-    ? readContainer(component, containerValues(p, containerId))
+    ? readContainer(component, containerValues(p, containerId, specId))
     : undefined;
 }
 
@@ -244,6 +245,7 @@ export function componentForDrawing(
   p: Project,
   component: ComponentFile,
   containerId: string | null,
+  specId: string,
 ): {
   readonly component: ComponentFile;
   readonly tokens: ResolvedTokens | undefined;
@@ -262,7 +264,7 @@ export function componentForDrawing(
     tokenNamed: projectNamedLookup(p, component, containerId),
     direction: effectiveDirection(p, containerId),
     // Only a component that reads `$container.*` pays for the container's size and classes.
-    container: readContainerOf(p, component, containerId),
+    container: readContainerOf(p, component, containerId, specId),
   };
 }
 
