@@ -1,4 +1,4 @@
-# `mesclar=auto` through the coordinator lineage — [Não lançado] (épico `epic/mesclar-auto-successor`, PR #3037, MCP unchanged, schema v24)
+# `mesclar=auto` through the coordinator lineage — 2026-11-27 (épico `epic/mesclar-auto-successor`, PR #3037, MCP unchanged, schema v24)
 
 ## Corrigido
 
