@@ -2,10 +2,16 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { ProjectContainer } from '../../src/model';
+import { imageCanvasRect, rectsOverlap, type ProjectContainer } from '../../src/model';
 import { Roots } from '../../mcp/paths';
 import { openPreview } from '../../mcp/renderPreview';
-import { ok, propose, readProposal } from './proposalSupport';
+import {
+  acceptAllAndApply,
+  ok,
+  propose,
+  readProject,
+  readProposal,
+} from './proposalSupport';
 import { PNG_1X1, connect, type Connection } from './workspace';
 
 // Stage #2523: `plan_changes` and the batch-only preview (`render_container` / `render_marking`
@@ -43,8 +49,8 @@ async function plan(operations: unknown[]): Promise<Plan> {
 }
 
 /** The place of the container a proposal creates (its `to` in the `image` create change). */
-function placementOf(id: string): unknown {
-  const change = readProposal(dir(), id).changes.find(
+function placementOf(id: string, projectDir = dir()): unknown {
+  const change = readProposal(projectDir, id).changes.find(
     (c) => c.entity === 'image' && c.kind === 'create',
   );
   return (change!.to as unknown as ProjectContainer).placement;
@@ -112,5 +118,84 @@ describe('the batch-only preview reserves the space of the open proposals (#2523
     ok(await mcp.call('withdraw_proposal', { ref: second.proposal.ref }));
     ok(await mcp.call('withdraw_proposal', { ref: holder.proposal.ref }));
     expect(await previewPlacement('Space C')).toEqual(held);
+  });
+});
+
+// Stage #2924: a container that the same open proposal deletes does not hold its replacement's
+// place a second time, so a batch that does not touch that spot is valid. The old container
+// exists until the proposal is applied, so nothing new is placed on it either.
+describe('an open proposal that replaces a container (#2924)', () => {
+  interface Result extends Plan {
+    invariantIssues?: string[];
+    errors?: unknown[];
+  }
+
+  it('a batch on another page is valid, and nothing new lands on the replaced spot', async () => {
+    ok(await mcp.call('create_project', { path: 'swap', name: 'Swap' }));
+    const swapDir = join(root, 'swap');
+    const first = await propose(mcp, 'swap', [
+      { op: 'add_container', name: 'A', width: 360, height: 800, background: '#FFFFFF' },
+    ]);
+    acceptAllAndApply(swapDir, first.proposal.id);
+    const old = readProject(swapDir).containers.find((c) => c.name === 'A')!;
+    const oldRect = imageCanvasRect(old, old.placement);
+
+    // P1 deletes A and creates B of the same size centered on A (it stays open).
+    const swap = await propose(mcp, 'swap', [
+      { op: 'delete_container', container: first.created[0]!.ref },
+      {
+        op: 'add_container',
+        name: 'B',
+        width: 360,
+        height: 800,
+        background: '#FFFFFF',
+        center: {
+          x: oldRect.x + oldRect.width / 2,
+          y: oldRect.y + oldRect.height / 2,
+        },
+      },
+    ]);
+    const held = placementOf(swap.proposal.id, swapDir) as ProjectContainer['placement'];
+    expect(held).toEqual(old.placement);
+
+    const onNewPage = [
+      { op: 'add_page', name: 'Extra', as: '$p' },
+      { op: 'add_container', width: 100, height: 100, background: '#FFFFFF', page: '$p' },
+    ];
+    // On the same page, a new container asked for the same spot goes elsewhere: not on A (which
+    // exists until P1 is applied) and not on B (the place P1 holds).
+    const third = await propose(mcp, 'swap', [
+      {
+        op: 'add_container',
+        name: 'C',
+        width: 100,
+        height: 100,
+        background: '#FFFFFF',
+        center: {
+          x: oldRect.x + oldRect.width / 2,
+          y: oldRect.y + oldRect.height / 2,
+        },
+      },
+    ]);
+    expect(third.proposed, JSON.stringify(third)).toBe(true);
+    const placed = placementOf(
+      third.proposal.id,
+      swapDir,
+    ) as ProjectContainer['placement'];
+    const thirdRect = imageCanvasRect({ width: 100, height: 100 }, placed);
+    expect(rectsOverlap(thirdRect, oldRect)).toBe(false);
+
+    const planned = ok(
+      await mcp.call<Result>('plan_changes', { project: 'swap', operations: onNewPage }),
+    );
+    expect(planned.errors).toBeUndefined();
+    expect(planned.invariantIssues).toBeUndefined();
+    expect(planned.valid).toBe(true);
+    const extra = await propose(mcp, 'swap', onNewPage);
+    expect(extra.proposed).toBe(true);
+
+    for (const item of [extra, third, swap]) {
+      ok(await mcp.call('withdraw_proposal', { ref: item.proposal.ref }));
+    }
   });
 });

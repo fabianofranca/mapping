@@ -1,4 +1,4 @@
-// Notes library v6 (stage #2825, FN3): the `tabela` type moved into `nota`. Every older version
+// Notes library v7 (DM5 of #2826 kept the v6 migrations, now to 7) from v6 (stage #2825, FN3): the `tabela` type moved into `nota`. Every older version
 // declares the migration (`rename-type`), and updating a project turns each table into a yellow note
 // with the same title and rows, in one undo entry.
 import { readFileSync } from 'node:fs';
@@ -32,6 +32,7 @@ function load(text: string): Spec {
 const fixture = (name: string) => readFileSync(join(__dirname, 'fixtures', name), 'utf8');
 
 const current = load(NOTES_FILES.get(NOTES_SPEC_FILE) ?? '');
+const v6 = load(fixture('notas-v6.spec.json'));
 const v5 = load(fixture('notas-v5.spec.json'));
 const v4 = load(fixture('notas-v4.spec.json'));
 
@@ -53,21 +54,22 @@ const HISTORY: readonly [number, Spec][] = [
   [3, { ...without(v4, 3) }],
   [4, v4],
   [5, v5],
+  [6, v6],
 ];
 
-describe('the migrations of the notes library v6', () => {
-  it('declares one 1..5 → 6 entry each, with the single step rename-type tabela → nota', () => {
-    expect(current.version).toBe(6);
+describe('the migrations of the notes library v7', () => {
+  it('declares one 1..5 → 7 entry each, with the single step rename-type tabela → nota', () => {
+    expect(current.version).toBe(7);
     expect(current.migrations).toEqual(
       [1, 2, 3, 4, 5].map((from) => ({
         from,
-        to: 6,
+        to: 7,
         steps: [{ op: 'rename-type', from: 'tabela', to: 'nota' }],
       })),
     );
   });
 
-  it.each(HISTORY)('version %i: no missing migration to version 6', (version, spec) => {
+  it.each(HISTORY)('version %i: no missing migration to version 7', (version, spec) => {
     expect(spec.version).toBe(version);
     expect(missingMigrations(spec, current)).toEqual([]);
   });
@@ -127,7 +129,7 @@ describe.each([
 
   it('turns the table into a note with the same title and rows, and leaves the note alone', () => {
     const after = updateSpecialization(before, current, { newId: () => 'X' });
-    expect(after.specializations[0]).toMatchObject({ id: NOTES_ID, version: 6 });
+    expect(after.specializations[0]).toMatchObject({ id: NOTES_ID, version: 7 });
     const table = after.annotations.find((a) => a.id === 'AT1')!;
     expect(table.type).toEqual({ specId: NOTES_ID, typeId: 'nota' });
     const was = before.annotations.find((a) => a.id === 'AT1')!;

@@ -196,3 +196,15 @@ describe('root clip (A3)', () => {
     expect(root.clipBox).toBeUndefined();
   });
 });
+
+describe('stroke width 0 and negative (#2920)', () => {
+  it.each([0, -2])('stroke.width %i gives a scene stroke of width 0', (width) => {
+    const root = run({
+      type: 'frame',
+      children: [
+        { type: 'rect', width: 100, height: 40, stroke: { color: '#000', width } },
+      ],
+    });
+    expect(root.children[0]?.stroke).toMatchObject({ width: 0 });
+  });
+});

@@ -312,3 +312,14 @@ export function parseXml(input: string): XmlResult {
   }
   return finish(state);
 }
+
+/** The `name: value` declarations of a `style` attribute (an invalid one is dropped, as CSS does). */
+export function styleDeclarations(text: string): [string, string][] {
+  const out: [string, string][] = [];
+  for (const part of text.split(';')) {
+    const colon = part.indexOf(':');
+    if (colon > 0)
+      out.push([part.slice(0, colon).trim().toLowerCase(), part.slice(colon + 1)]);
+  }
+  return out;
+}

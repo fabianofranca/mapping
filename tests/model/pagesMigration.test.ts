@@ -34,6 +34,7 @@ function withCanvasMarking(): Project {
         needsReview: false,
         locked: false,
         floating: false,
+        decorative: false,
         source: null,
       },
     ],

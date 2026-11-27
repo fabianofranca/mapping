@@ -98,10 +98,10 @@ describe('session with packages applied in memory (stagedPackages)', () => {
     expect(onDisk.sort()).toEqual(
       [
         SPEC_FILE,
-        `${DIR}/components/nota.json`,
-        `${DIR}/components/texto.json`,
-        `${DIR}/docs/nota.md`,
-        `${DIR}/docs/texto.md`,
+        ...['colchete', 'linha', 'moldura', 'nota', 'texto'].flatMap((id) => [
+          `${DIR}/components/${id}.json`,
+          `${DIR}/docs/${id}.md`,
+        ]),
       ].sort(),
     );
     // The package files go in before the mapping.json that cites them.
@@ -157,7 +157,7 @@ describe('session with packages applied in memory (stagedPackages)', () => {
     session = opened.session;
     session.actions.renameProject('Renamed');
     await session.flush();
-    expect((await opened.storage.listSpecDir(DIR)).length).toBe(5);
+    expect((await opened.storage.listSpecDir(DIR)).length).toBe(11);
 
     expect(session.actions.removeSpecialization('notas', 'convert').ok).toBe(true);
     await settle();
@@ -171,7 +171,7 @@ describe('session with packages applied in memory (stagedPackages)', () => {
     session.store.undo();
     await vi.advanceTimersByTimeAsync(300);
     await settle();
-    expect((await opened.storage.listSpecDir(DIR)).length).toBe(5);
+    expect((await opened.storage.listSpecDir(DIR)).length).toBe(11);
   });
 
   it('removing before the first write leaves neither folder nor specialization on disk', async () => {

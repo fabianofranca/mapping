@@ -262,6 +262,9 @@ export const templatePtBR: {
   'model.spec.repeatedValues': 'valores repetidos',
   'model.spec.arrowOnlyNoComponent': 'um tipo só de seta não pode ter component',
   'model.spec.arrowOnlyNoFloating': 'um tipo só de seta não pode ter floating',
+  'model.spec.arrowOnlyNoDecorative': 'um tipo só de seta não pode ter decorative',
+  'model.spec.decorativeFloating': 'um tipo decorative não pode ser também floating',
+  'model.spec.decorativeStructural': 'um tipo decorative não pode ser também structural',
   'model.spec.appliesToInvalid': '"{value}" inválido; use "marking" ou "arrow"',
   'model.spec.appliesToShape': 'deve ser "marking" ou "arrow"',
   'model.spec.groupsEmpty': 'não pode ser vazio; tire a chave ou liste ao menos um grupo',
@@ -737,6 +740,13 @@ export const templatePtBR: {
   'model.svgIcon.viewBoxOrigin':
     'sem suporte no SVG: viewBox do svg com origem diferente de 0 0 ({value})',
   'model.svgIcon.invalidValue': 'valor inválido no SVG: {element} {attribute}="{value}"',
+  'model.svgIcon.radialElliptical':
+    'sem suporte no SVG: radialGradient {id} é uma elipse (só um círculo converte)',
+  'model.svgIcon.clipShapes': 'sem suporte no SVG: clipPath {id} com mais de uma forma',
+  'model.svgIcon.clipNested':
+    'sem suporte no SVG: um clip-path dentro de outro clip-path ({id})',
+  'model.svgIcon.clipPartial':
+    'sem suporte no SVG: o clip-path {id} cobre só parte do ícone',
   'model.svgIcon.noSize': 'o SVG não tem viewBox nem width e height numéricos',
   'model.svgIcon.noShape': 'o SVG não tem nenhuma forma',
   'model.svgIcon.nameInvalid':

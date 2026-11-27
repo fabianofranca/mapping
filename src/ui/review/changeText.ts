@@ -318,6 +318,7 @@ const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
   'marking.rect': 'review.field.rect',
   'marking.space': 'review.field.space',
   'marking.floating': 'review.field.floating',
+  'marking.decorative': 'review.field.decorative',
   'marking.containerId': 'review.field.image',
   'marking.locked': 'review.field.locked',
   'marking.source': 'review.field.source',

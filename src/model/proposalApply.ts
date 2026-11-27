@@ -145,6 +145,10 @@ function decode(entity: ChangeEntity, value: JsonValue): Entity {
   if (entity === 'annotation' && isRecord(value) && !('parentRole' in value)) {
     return { ...value, parentRole: null } as unknown as Entity;
   }
+  // Schema v25: a marking without `decorative` (a proposal from before it) reads as `false`.
+  if (entity === 'marking' && isRecord(value) && !('decorative' in value)) {
+    return { ...value, decorative: false } as unknown as Entity;
+  }
   if (entity === 'specialization' && isRecord(value)) {
     return {
       id: value.id as string,

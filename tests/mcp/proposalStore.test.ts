@@ -15,10 +15,14 @@ import {
   addLayer,
   buildProposal,
   createProject,
+  imageCanvasRect,
   parseProposalText,
+  rectsOverlap,
   proposalFilePath,
   serializeProposal,
   type Proposal,
+  type ProjectContainer,
+  type Rect,
 } from '../../src/model';
 import { ToolError } from '../../mcp/errors';
 import { Roots } from '../../mcp/paths';
@@ -26,6 +30,7 @@ import {
   listStored,
   newProposalReserve,
   newProposalReserveAt,
+  reservedContainers,
   reservedImages,
   reviseStored,
   updateStored,
@@ -221,6 +226,157 @@ describe('reservedImages', () => {
     for (const status of ['applied', 'withdrawn', 'rejected'] as const) {
       expect(reservedImages({ ...withImages(), status })).toEqual([]);
     }
+  });
+});
+
+// Stage #2924: the canvas space that a held creation takes leaves out the containers that the same
+// proposal deletes (they are replaced, and a stand-in over them would block every other batch).
+describe('reservedContainers leaves out the containers the proposal deletes (#2924)', () => {
+  const PAGE = 'pg';
+  const box = (
+    id: string,
+    rect: Rect,
+    extra: Partial<ProjectContainer> = {},
+  ): ProjectContainer => ({
+    id,
+    name: null,
+    file: null,
+    width: rect.width,
+    height: rect.height,
+    placement: { x: rect.x, y: rect.y, scale: 1 },
+    parentId: null,
+    pageId: PAGE,
+    markingColor: null,
+    locked: false,
+    source: null,
+    background: '#FFFFFF',
+    ...extra,
+  });
+
+  /** A proposal that deletes `deleted` and creates `created` (the diff of two projects). */
+  function swap(
+    deleted: readonly ProjectContainer[],
+    created: readonly ProjectContainer[],
+    id = 'swap',
+  ): Proposal {
+    const empty = createProject({
+      name: 'P',
+      now: NOW,
+      firstLayer: { id: 'L1', name: 'Layer 1', color: '#D32F2F' },
+    });
+    return buildProposal(
+      { ...empty, containers: [...deleted] },
+      { ...empty, containers: [...created] },
+      { id, title: 'Swap', createdAt: NOW },
+    );
+  }
+
+  const A: Rect = { x: 100, y: 100, width: 100, height: 100 };
+  const stored = (proposal: Proposal) => ({ id: proposal.id, proposal, text: '' });
+  const rectOf = (c: ProjectContainer) => imageCanvasRect(c, c.placement);
+  const area = (r: Rect) => r.width * r.height;
+  const changeOfDeleted = (p: Proposal, id: string) =>
+    p.changes.find(
+      (c) => c.entity === 'image' && c.kind === 'remove' && c.entityId === id,
+    )!;
+
+  it('a creation entirely inside the deleted container holds nothing', () => {
+    const proposal = swap(
+      [box('A', A)],
+      [box('B', { x: 110, y: 120, width: 50, height: 40 })],
+    );
+    expect(reservedContainers(proposal)).toEqual([]);
+    // The same place, and a deleted one that is scaled: its canvas rectangle is what counts.
+    expect(reservedContainers(swap([box('A', A)], [box('B', A)]))).toEqual([]);
+    const scaled = box('A', { x: 0, y: 0, width: 50, height: 50 });
+    const proposalScaled = swap(
+      [{ ...scaled, placement: { x: 0, y: 0, scale: 2 } }],
+      [box('B', { x: 10, y: 10, width: 60, height: 60 })],
+    );
+    expect(reservedContainers(proposalScaled)).toEqual([]);
+  });
+
+  it('a larger creation holds only what is outside the deleted one, in disjoint pieces', () => {
+    const big: Rect = { x: 50, y: 50, width: 200, height: 200 };
+    const held = reservedContainers(swap([box('A', A)], [box('B', big)]));
+    expect(held.length).toBeGreaterThan(1);
+    expect(held.length).toBeLessThanOrEqual(4);
+    const rects = held.map(rectOf);
+    expect(rects.reduce((sum, r) => sum + area(r), 0)).toBe(area(big) - area(A));
+    rects.forEach((r, i) => {
+      expect(rectsOverlap(r, A)).toBe(false);
+      rects.slice(i + 1).forEach((other) => expect(rectsOverlap(r, other)).toBe(false));
+    });
+    // Plain background containers on the creation's page; the first keeps the id, the others `~n`.
+    expect(held.map((c) => c.id)).toEqual([
+      'B',
+      ...held.slice(1).map((_, i) => `B~${i + 2}`),
+    ]);
+    for (const c of held) {
+      expect(c).toMatchObject({
+        name: null,
+        parentId: null,
+        file: null,
+        background: '#FFFFFF',
+        pageId: PAGE,
+      });
+      expect(c.placement.scale).toBe(1);
+    }
+  });
+
+  it('a partial overlap holds the rest of the creation', () => {
+    const half: Rect = { x: 150, y: 150, width: 100, height: 100 };
+    const held = reservedContainers(swap([box('A', A)], [box('B', half)]));
+    expect(held.reduce((sum, c) => sum + area(rectOf(c)), 0)).toBe(7500);
+    held.forEach((c) => expect(rectsOverlap(rectOf(c), A)).toBe(false));
+  });
+
+  it('a creation that only touches the deleted one, or is away from it, keeps its single stand-in', () => {
+    const beside: Rect = { x: 200, y: 100, width: 100, height: 100 };
+    const away: Rect = { x: 500, y: 500, width: 80, height: 60 };
+    for (const rect of [beside, away]) {
+      const held = reservedContainers(swap([box('A', A)], [box('B', rect)]));
+      expect(held.map((c) => [c.id, rectOf(c)])).toEqual([['B', rect]]);
+    }
+  });
+
+  it('a creation that sticks out of the deleted one by float noise holds no sliver', () => {
+    // The rectangles overlap (more than EPSILON), but 1e-9 of width is not a place to hold.
+    const noisy = swap([box('A', A)], [box('B', { ...A, width: A.width + 1e-9 })]);
+    expect(reservedContainers(noisy)).toEqual([]);
+  });
+
+  it('a delete already applied, or on another page, subtracts nothing', () => {
+    const proposal = swap([box('A', A)], [box('B', A)]);
+    const del = changeOfDeleted(proposal, 'A');
+    const applied = { ...proposal, applied: { [del.id]: { at: NOW } } };
+    expect(reservedContainers(applied).map((c) => [c.id, rectOf(c)])).toEqual([['B', A]]);
+
+    const elsewhere = swap([box('A', A, { pageId: 'other' })], [box('B', A)]);
+    expect(reservedContainers(elsewhere).map((c) => [c.id, rectOf(c)])).toEqual([
+      ['B', A],
+    ]);
+  });
+
+  it('a delete counts whatever its decision (the container stays on disk until applied)', () => {
+    const proposal = swap([box('A', A)], [box('B', A)]);
+    const del = changeOfDeleted(proposal, 'A');
+    for (const state of ['accepted', 'rejected'] as const) {
+      const decided = { ...proposal, decisions: { [del.id]: { state, at: NOW } } };
+      expect(reservedContainers(decided)).toEqual([]);
+    }
+  });
+
+  it('the delete of another proposal subtracts nothing', () => {
+    const deleting = swap([box('A', A)], [], 'deleting');
+    const creating = swap([], [box('B', A)], 'creating');
+    const reserve = newProposalReserve([stored(deleting), stored(creating)], null);
+    expect(reserve.reservedContainers.map((c) => [c.id, rectOf(c)])).toEqual([['B', A]]);
+    // And the same proposal does subtract it.
+    expect(
+      newProposalReserve([stored(swap([box('A', A)], [box('B', A)]))], null)
+        .reservedContainers,
+    ).toEqual([]);
   });
 });
 

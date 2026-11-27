@@ -62,7 +62,7 @@ afterAll(async () => {
 });
 
 /** A project folder with `SPEC` applied (the container classes need a declaring specialization). */
-function newProject(spec: Spec = SPEC): { name: string; dir: string } {
+function newProject(spec: Spec = SPEC, ...more: Spec[]): { name: string; dir: string } {
   const name = `classes-${++counter}`;
   const dir = join(root, 'projetos', name);
   let p = createProject({
@@ -71,7 +71,7 @@ function newProject(spec: Spec = SPEC): { name: string; dir: string } {
     firstLayer: { id: 'l1', name: 'Layer 1', color: '#D32F2F' },
     firstPage: { id: 'pg1', name: 'Page 1' },
   });
-  p = applySpecialization(p, spec);
+  for (const each of [spec, ...more]) p = applySpecialization(p, each);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
   for (const [file, content] of specFiles(p)) {
@@ -200,6 +200,41 @@ describe('classes in add_container and update_container', () => {
       }
     },
   );
+
+  it('a set computed by the first specialization and chosen by the second can be chosen (decision 5 of #2489)', async () => {
+    const chooser: Spec = {
+      ...SPEC,
+      id: 'chooser',
+      name: 'Chooser',
+      containerClasses: [
+        {
+          id: 'window',
+          name: 'Window (chosen)',
+          classes: [
+            { id: 'phone', name: 'Phone' },
+            { id: 'tablet', name: 'Tablet' },
+          ],
+        },
+      ],
+    };
+    const { name, dir } = newProject(SPEC, chooser);
+    const saved = await apply(name, dir, [{ ...box, classes: { window: 'tablet' } }]);
+    expect(saved.saved.containers[0]!.classes).toEqual({ window: 'tablet' });
+
+    const accepted = await plan(name, [
+      { ...box, classes: { window: 'phone' } },
+      { op: 'update_container', container: '$c', classes: { window: 'tablet' } },
+    ]);
+    expect(accepted.valid).toBe(true);
+
+    // A class no chosen declaration lists (`compact` belongs to the computed one) is refused, and the
+    // refusal lists the chosen set.
+    const bad = await plan(name, [{ ...box, classes: { window: 'compact' } }]);
+    expect(bad.valid).toBe(false);
+    const error = bad.errors.at(-1)!;
+    expect(error.message).toContain('"compact" is not a class of the set "window"');
+    expect(error.chosenSets!.map((c) => c.id)).toContain('window');
+  });
 
   it('a value that is not a map of text is refused by the tool schema', async () => {
     const { name } = newProject();

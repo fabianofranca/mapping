@@ -52,6 +52,7 @@ function mk(id: string, containerId: string | null, r: Rect): Marking {
     needsReview: false,
     locked: false,
     floating: false,
+    decorative: false,
     source: null,
   };
 }

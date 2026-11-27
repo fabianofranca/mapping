@@ -13,6 +13,7 @@ const marking = (id: string, parentId: string | null, containerId: string | null
   needsReview: false,
   locked: false,
   floating: false,
+  decorative: false,
   source: null,
 });
 const container = (id: string, parentId: string | null) => ({

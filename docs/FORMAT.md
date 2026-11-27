@@ -1,4 +1,4 @@
-# Format of `mapping.json` (schema v24)
+# Format of `mapping.json` (schema v25)
 
 The project is a folder (or a zip with the same content) with `mapping.json`, `images/` (the containers' image files) and,
 if any specializations are applied, `specs/` (and, if there are change proposals, `proposals/`). All the markings' coordinates are
@@ -34,7 +34,7 @@ per project). The `backups/` folder is not part of the project: the exported zip
 
 ```json
 {
-  "schemaVersion": 24,
+  "schemaVersion": 25,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -133,7 +133,7 @@ see below); `background` (`null`, a `#RRGGBB` color or, since v24, `{ "$token": 
 computed by the app since v13); `pageId` (v21: the page of a canvas marking; `null` inside a container); `name` (`string` or `null`);
 `rect` (`{ x, y, width, height }`, **whole pixels of the container's original image**, `x`/`y` ≥ 0; in the canvas marking,
 **whole canvas units**, `x`/`y` may be negative);
-`needsReview` (boolean, for the interface only); `locked` (boolean, v5: see below); `floating` (boolean, v13: see below);
+`needsReview` (boolean, for the interface only); `locked` (boolean, v5: see below); `floating` (boolean, v13: see below); `decorative` (boolean, v25, optional: see "Fields of v25");
 `source` (`null` or source, v8: see below); `anchor` (v20, optional: the anchor; `align` has the corner values since v22; see "Fields of v20" and "Fields of v22").
 
 **`arrows[]`** (v13): `id` (in the same space as the markings' ids); `from` and `to` (marking ids, different); `fromSide` and `toSide`
@@ -154,6 +154,7 @@ lists the problems and repairs what has a mechanical repair (see "Inconsistent f
 file on read.
 
 - Unique ids in each collection; unique `file` among the images that have a file; unique `file` of the specializations.
+- Decorative marking (v25): a marking is never both `decorative` and `floating` (`decorative-floating`), and no marking or container has a decorative one as parent (`parent-decorative`; for a container, `container-parent-not-canvas`).
 - Container (v12): `file` is `null` if, and only if, `background` is a color or, since v24, a token (`{ "$token": "brand-surface" }`) (`container-content`). A container with a file keeps `background: null` (`container-has-file`).
 - Every marking has a null `containerId` (canvas marking, v13) or one of an existing container; `parentId`, if any, is an existing marking.
 - `rect`: integers, width and height **≥ 1 px** (on opening, any marking is valid from 1 px; below that it is `rect-too-small`; gestures and MCP require 8 px on a regular marking, see "Fields of v18"); in the container marking, **entirely inside** the image (`0 ≤ x`,
@@ -207,6 +208,8 @@ dialog offers **Repair and open**:
 | Nonexistent `parentId` or cycle in the marking hierarchy                                                                                                                       | The marking (in a cycle, each one in the cycle) becomes a root of its space.                |
 | Floating marking inside a container or with a parent (v13)                                                                                                                     | Goes to the canvas, with the `rect` converted, and is left without a parent.                |
 | Parent of a floating marking; container parent that is nonexistent, not on the canvas or that does not contain it (v13)                                                        | The `parentId` becomes `null`.                                                              |
+| Parent of a decorative marking, or a container whose parent is decorative (v25)                                                                                                | The `parentId` becomes `null`; the next geometry operation settles it.                      |
+| Marking that is both decorative and floating (v25)                                                                                                                             | `decorative` is turned off (the repair reports `decorative-cleared`).                       |
 | Overlapping images                                                                                                                                                             | The one with the higher index goes to the right of the earlier ones' box.                   |
 | Perspective with a root item that is nonexistent, not a root or repeated; nonexistent hidden layer (v16)                                                                       | The item (the second, if repeated) or the layer leaves the perspective.                     |
 | Perspective with a repeated `id` (v16)                                                                                                                                         | The first keeps the id; the others get a new id.                                            |
@@ -721,6 +724,7 @@ decided by the tool, from the rectangles, and written to the JSON. Whoever reads
   the canvas marking is the **exception**, and the image crop does not apply to it.
 - **`floating`.** The floating marking always has `containerId: null` and `parentId: null`, and no other marking
   or container has a floating one as parent. It can sit on top of a screen without becoming its child.
+- **`decorative`** (v25). A decorative marking is a **child** like any other, but is **never a parent**; see "Fields of v25".
 - **`parentId` is derived.** No person or agent chooses it: the app recomputes it at the end of every operation
   that touches geometry (draw, move, resize, move or resize the image, delete, apply a
   proposal). Reading the file, migrating and opening do **not** recompute it.
@@ -732,8 +736,8 @@ decided by the tool, from the rectangles, and written to the JSON. Whoever reads
 1. **Inside = fully contained.** A rectangle is inside another when it is entirely within it (touching the
    edge counts). Partial overlap is no relation at all; there is no tolerance in the format (the app's interaction
    has one, see `docs/ARCHITECTURE.md`).
-2. **Marking's parent** = the **smallest** marking in the **same space** (the same container, or the canvas) that
-   contains it. In ties, **the current relation holds** and the array order only decides the new tie:
+2. **Marking's parent** = the **smallest** **non-decorative** marking in the **same space** (the same container, or the canvas) that
+   contains it (a decorative marking is never a candidate, v25). In ties, **the current relation holds** and the array order only decides the new tie:
    - **Equal rectangles** (same space, same rectangle): if one is the parent of the other, it stays so, even if a
      reordering put it later in the array. Within each group of equal rectangles the order (from outside to
      inside) is total and cycle-free: it is the topological ordering of the current `parentId`s within the group (the parent before the
@@ -745,7 +749,7 @@ decided by the tool, from the rectangles, and written to the JSON. Whoever reads
      comes last wins (in array order, with the groups of equal rectangles in the order above).
    - Reordering siblings (the **Order** in Details, `move_marking`, the proposal's `position`) never changes parents, not even in the
      next settle.
-3. **Container's parent** = the **smallest** **canvas** marking (non-floating) that contains its rectangle on the
+3. **Container's parent** = the **smallest** **canvas** marking (non-floating, non-decorative) that contains its rectangle on the
    canvas (`placement` × size × scale; since that rectangle can be decimal, the comparison has a tiny rounding tolerance). A container inside a container does not exist. A tie follows rule 2: among candidates of the same area, the container's current `parentId` stays if it is one of them (from each group of equal rectangles only the inner one counts); otherwise the one that comes last wins.
 4. **Space change.** A container marking whose rectangle, on the canvas, no longer fits in the container becomes
    a canvas marking (and the reverse, when it fits entirely in a container): the `containerId` changes and the `rect` is
@@ -757,13 +761,13 @@ decided by the tool, from the rectangles, and written to the JSON. Whoever reads
    same space, with their descendants) scales as a whole around its top-left corner, so a plain area keeps its text as a
    child and a multiple selection keeps its layout. A set with no component marking, or with `k` = 1, keeps the
    size on screen as before. This is a rule of the tool; the file only stores the result.
-5. **Floating outside the tree.** The floating marking is never a parent or a child, of a marking or of a container.
+5. **Floating outside the tree.** The floating marking is never a parent or a child, of a marking or of a container. The **decorative** marking (v25) is only half outside: it has a parent like any marking, but is never one.
 6. A marking has **only one parent**; groups that cross without containing one another generate no relation.
 
 **New invariants** (they become opening errors, see "Validity rules"; the codes appear in the list of
 problems): `container-parent-missing` (nonexistent container parent), `container-parent-not-canvas` (the container's parent
-is not a canvas marking, or is floating), `container-outside-parent` (the container's parent
-does not contain it), `floating-in-container` (floating with a container or parent) and `parent-floating` (floating parent).
+is not a canvas marking, or is floating or decorative), `container-outside-parent` (the container's parent
+does not contain it), `floating-in-container` (floating with a container or parent) `parent-floating` (floating parent), and, since v25, `parent-decorative` (a decorative parent) and `decorative-floating` (both flags).
 The old ones remain, now per space: `parent-other-image` (parent in another space) and `rect-outside-parent`.
 The file is validated only by the **consistency** of the declared `parentId` (it exists, is in the right space and contains); the
 choice of the smallest marking is not an invariant, and it is the app that redoes it on the next geometry operation.
@@ -786,7 +790,7 @@ is born in the migration.
 `floating: true` (specialization `formatVersion` 7, see [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Floating type"):
 when an instance of the type is added, the app writes the marking with `containerId: null`, `parentId: null` and
 `floating: true`, on the canvas. The app ships a library like that embedded, the **notes** one (`libraries/notas/`, id
-`notas`, version 6: layer "Notes", type `nota` with the fields `titulo`, `texto`, `linhas` (a key-and-value table drawn by a `repeat`), `textoDepois` and `cor` (six colors; the table type of versions 1 to 5 became part of the note), and type `texto` with `texto`, `tamanho`, `peso`, `familia`, `alinhamento`, `cor` (a color token name or `#RRGGBB`) and `largura`: plain text that is **not floating**, so it lives on the canvas or inside a container, by geometry, like any marking), and **applies it by default**:
+`notas`, version 7: layer "Notes", type `nota` with the fields `titulo`, `texto`, `linhas` (a key-and-value table drawn by a `repeat`), `textoDepois` and `cor` (six colors; the table type of versions 1 to 5 became part of the note), and type `texto` with `texto`, `tamanho`, `peso`, `familia`, `alinhamento`, `cor` (a color token name or `#RRGGBB`) and `largura`: plain text that is **not floating**, so it lives on the canvas or inside a container, by geometry, like any marking; and, since version 7, the three **decorative** types `moldura` (Frame: an outline, solid or dashed, and an optional fill), `colchete` (Bracket) and `linha` (Line), each with `cor`, `espessura` and `estilo`, which draw in their space and are never a parent, see `decorative` above), and **applies it by default**:
 
 - a **new** project (folder or on this device) is born with it, with the copy in `specs/notas/` and the entry in
   `specializations[]`;
@@ -1227,6 +1231,7 @@ v23 adds the container's **classes**, the choice that a specialization's **chose
 - **`containers[].classes`** (object, optional): `set id → class id`, e.g. `{ "platform": "android", "formFactor": "tablet" }`. Absent, `null` and `{}` mean no choice, and a read project never holds an empty map; the writer leaves the key out. It is written after `density`. The same key goes on a container of a proposal (see [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md), `formatVersion` 11).
 - **Shape of the ids:** every set id and every class id must match `[a-z0-9-]+`; outside that, reading the file fails with a schema error, and the model's `setContainerClass` and the MCP refuse the write with the error code `container-class`. The model does **not** check the choice against the specializations: a set or a class that no applied specialization declares is **kept** (the specialization may be removed or updated later, and the choice comes back when it is declared again); `undeclaredContainerClasses` lists them, but no screen shows them yet. A choice stored in a **computed** set also counts as undeclared and is ignored. The MCP is stricter when writing (`invalid-arguments` with the chosen sets and their classes).
 - **Effective classes of a container:** the stored choice of the chosen sets plus the class each computed set gives for the container's size in units. The union of the sets is by set id (the first declaration gives the name and the kind; chosen sets merge their classes by id, in order of appearance; a computed set keeps the thresholds of its first declaration).
+- **A choice is declared when some specialization declares the set as chosen:** a stored choice in a set id that at least one applied specialization declares as chosen (with a class one of those declarations lists) is declared, even if an earlier specialization declares the same id as computed; Diagnostics lists the others as undeclared. The effective classes above stay the union (the first declaration wins), but a component reads the classes of its own specialization.
 - **Nothing else changes:** the marking, the layer and the annotation do not carry classes, and the specialization keeps its own format.
 
 An earlier app rejects the v23 file as a "newer version" (read-only), instead of discarding the classes when writing.
@@ -1256,6 +1261,22 @@ An earlier app rejects the v24 file as a "newer version" (read-only), instead of
 
 A string `s` in the project's or a container's `drawingMode` becomes `{ "mode": s }`; nothing else changes (no mode is created, an absent one stays absent). The background token adds **no migration**: every `#RRGGBB` background stays valid and unchanged; a v24 file only holds a `{ "$token": … }` background when an agent wrote one. As in every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
 
+## Fields of v25 (decorative marking)
+
+v25 adds the **decorative** marking: a marking that dresses a screen (a frame, a bracket, a line) and must not take other markings in as children.
+
+- **`markings[].decorative`** (boolean, optional): absent reads as `false`. The writer writes it **only when `true`**, right after `floating`.
+- **Space and parent.** A decorative marking takes its space by geometry like any non-floating marking, and has a parent like any marking: the **smallest non-decorative** marking of its space that contains it (same ties as before).
+- **Never a parent.** A decorative marking is not a candidate parent for a marking, for a container (a container's parent is a canvas marking that is neither floating nor decorative), for the free-placement parent or an obstacle, or for what a wrap encloses. With equal rectangles a non-decorative marking may be the decorative one's parent; two decorative markings with equal rectangles are never each other's parent. The parents of the non-decorative markings and containers are the same as in the same project without the decorative markings.
+- **Not floating.** A marking is never both `decorative` and `floating` (`decorative-floating`); the model refuses to set the second flag on a marking that has the first, with the same code.
+- **New invariants:** `parent-decorative` (a marking's parent is decorative; the repair sets `parentId` to `null` and the next geometry operation settles it) and `decorative-floating` (the repair turns `decorative` off and reports `decorative-cleared`). A container whose parent is decorative falls under `container-parent-not-canvas`.
+- **Order.** A marking **created** decorative is put first among its siblings, so it is drawn below them; turning the flag on later does not reorder.
+- **Why the version changes:** an earlier app would silently drop the unknown key when writing; with the new version it opens the file read-only instead.
+
+### Migration v24 → v25
+
+Only `schemaVersion` changes to 25; no data is altered and nothing is settled. As in every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
+
 ## Migration
 
 v1 files are migrated on opening: every image gets `name: null` and every annotation gets
@@ -1266,7 +1287,7 @@ image and each marking. v5 files get `revision: 0`. v6 files get `platformRepos:
 v7 files get `source: null` on each image and each marking. v8 files lose the values of the
 `codeRef` fields, by the type declared in the specialization copy (see "Fields of v9"). v9 files
 get `background: null` on each image (see "Fields of v10"). v10 files lose the `urlTemplate` of
-each `platformRepos` entry, and an entry that only had it goes away (see "Fields of v11"). v11 files swap `images` for `containers` and `imageId` for `containerId` (see "Fields of v12"). v12 files lose `inherit` from each annotation and gain `floating: false` on each marking, `parentId: null` on each container and `arrows: []` at the root (see "Fields of v13"). v13 files gain `parentRole: null` on each annotation and `docRepos: {}` at the root (see "Fields of v14"). v14 files only get the number bumped (see "Fields of v15"). v15 files gain `project.id` (a new UUID), `perspectives: []` and `arrivals: []` (see "Fields of v16"). v16 files only get the number bumped (see "Fields of v17"). v17 files only get the number bumped (see "Fields of v18"). v18 files only get the number bumped (see "Fields of v19"). v19 files only get the number bumped (see "Fields of v20"). v20 files gain `pages` (one page) and the `pageId` of each container and canvas marking (see "Fields of v21"). v21 files only get the number bumped (see "Fields of v22"). v22 files only get the number bumped (see "Fields of v23"). v23 files turn the string `drawingMode` of the project and of each container into the map `{ "mode": <string> }` (see "Fields of v24"). On save, the
-file becomes v24 (and, in folder mode, the original goes first to `backups/`, as in any
+each `platformRepos` entry, and an entry that only had it goes away (see "Fields of v11"). v11 files swap `images` for `containers` and `imageId` for `containerId` (see "Fields of v12"). v12 files lose `inherit` from each annotation and gain `floating: false` on each marking, `parentId: null` on each container and `arrows: []` at the root (see "Fields of v13"). v13 files gain `parentRole: null` on each annotation and `docRepos: {}` at the root (see "Fields of v14"). v14 files only get the number bumped (see "Fields of v15"). v15 files gain `project.id` (a new UUID), `perspectives: []` and `arrivals: []` (see "Fields of v16"). v16 files only get the number bumped (see "Fields of v17"). v17 files only get the number bumped (see "Fields of v18"). v18 files only get the number bumped (see "Fields of v19"). v19 files only get the number bumped (see "Fields of v20"). v20 files gain `pages` (one page) and the `pageId` of each container and canvas marking (see "Fields of v21"). v21 files only get the number bumped (see "Fields of v22"). v22 files only get the number bumped (see "Fields of v23"). v23 files turn the string `drawingMode` of the project and of each container into the map `{ "mode": <string> }` (see "Fields of v24"). v24 files only get the number bumped (see "Fields of v25"). On save, the
+file becomes v25 (and, in folder mode, the original goes first to `backups/`, as in any
 migration).
 Files of a newer version open read-only.
