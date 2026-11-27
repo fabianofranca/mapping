@@ -22,7 +22,11 @@ import { listMarkings } from './markingList';
 import { modelToolError } from './modelErrors';
 import { findPerspective, perspectiveDetail } from './perspectives';
 import { operationSchema } from './operations';
-import { resolveOperations, resolveOptionalOperations } from './operationsFile';
+import {
+  MAX_WRITE_OPERATIONS,
+  resolveOperations,
+  resolveOptionalOperations,
+} from './operationsFile';
 import {
   drawableMarking,
   hasPreview,
@@ -177,7 +181,7 @@ const batchOperationsArgs = {
     .string()
     .optional()
     .describe(
-      'Path of a `.json` with the list of operations (the same as `operations`), for batches too large for the call (a measured screen has hundreds). Inside a root or the scratch folder (`--scratch`, read-only: the place for temporary batches): relative (roots first, then the scratch folder) or absolute inside one of them; anywhere else it is `outside-roots`, invalid JSON is `invalid-arguments` with the position. Both together, or neither, is `invalid-arguments`.',
+      'Path of a `.json` with the list of operations (the same as `operations`), for batches too large for the call (a measured screen has hundreds); up to 5,000 operations in `plan_changes`, `render_container` and `render_marking`, up to 1,000 in `propose_changes` and `revise_proposal` (the inline `operations` are always at most 1,000: to plan two proposals together, join the two lists in one file, in order, and plan it). Inside a root or the scratch folder (`--scratch`, read-only: the place for temporary batches): relative (roots first, then the scratch folder) or absolute inside one of them; anywhere else it is `outside-roots`, invalid JSON is `invalid-arguments` with the position. Both together, or neither, is `invalid-arguments`.',
     ),
 };
 
@@ -884,7 +888,7 @@ export function registerTools(
     {
       description:
         'Preview of a batch of changes: validates against the Mapping rules and returns whether it is valid, the errors per operation, a readable summary, the counts, the new pending items (`issues`), the new specialization notices (`notices.new`: one entry per notice that the created or changed annotations come to have, `{ type, kind, message, key?, column?, annotations }`, with `annotations` the number of annotations of the batch it affects; a notice blocks nothing), the references of the items that will be created and how many changes the user would have to review. It does NOT write anything (not even a proposal). ' +
-        'The operations are applied in order; a created item can be cited in the following ones by its `as` alias (e.g. "$door"). Locked items cannot be moved, resized or deleted. The rectangle does not follow the content on its own: after changing a value that alters it (text, a field that turns a part on or off) in a component whose `sizing` is `hug` or an expression, include `fit_marking` on the same marking. A marking with `anchor` (`create_marking`/`update_marking`) is only linked to the target: to snap it against the target (after anchoring it or changing its size) include `snap_to_anchor`; moving the target already carries the anchored ones along. To send the change to the user, use propose_changes (the agent never writes the project directly).',
+        'The operations are applied in order; a created item can be cited in the following ones by its `as` alias (e.g. "$door"). Locked items cannot be moved, resized or deleted. The rectangle does not follow the content on its own: after changing a value that alters it (text, a field that turns a part on or off) in a component whose `sizing` is `hug` or an expression, include `fit_marking` on the same marking (a component with a slot and children: `arrange_marking` on the outermost parent). A marking with `anchor` (`create_marking`/`update_marking`) is only linked to the target: to snap it against the target (after anchoring it or changing its size) include `snap_to_anchor`; moving the target already carries the anchored ones along. `op` (in `created` and `warnings`), `index` (in `errors`) and the numbers of `summary` are the 0-based position of the operation in the batch. Each created marking or container comes in `created` with its final place (`parent`, and `container` for a marking), and `membership` is always present (`[]` when nothing that existed changes place). To send the change to the user, use propose_changes (the agent never writes the project directly).',
       inputSchema: {
         project: projectArg,
         ...batchOperationsArgs,
@@ -959,10 +963,11 @@ export function registerTools(
       respond(async () =>
         proposals.propose({
           ...args,
-          operations: await resolveOperations(roots, {
-            operations: inline,
-            operationsFile,
-          }),
+          operations: await resolveOperations(
+            roots,
+            { operations: inline, operationsFile },
+            MAX_WRITE_OPERATIONS,
+          ),
         }),
       ),
   );
@@ -1000,10 +1005,11 @@ export function registerTools(
       respond(async () =>
         proposals.revise(ref, project, {
           ...args,
-          operations: await resolveOptionalOperations(roots, {
-            operations,
-            operationsFile,
-          }),
+          operations: await resolveOptionalOperations(
+            roots,
+            { operations, operationsFile },
+            MAX_WRITE_OPERATIONS,
+          ),
         }),
       ),
   );
