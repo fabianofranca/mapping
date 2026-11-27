@@ -56,7 +56,9 @@ const iconsFile = (): IconsFile =>
 
 function listDisk(dir: string, top = dir): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
-    e.isDirectory() ? listDisk(join(dir, e.name), top) : [relative(top, join(dir, e.name))],
+    e.isDirectory()
+      ? listDisk(join(dir, e.name), top)
+      : [relative(top, join(dir, e.name))],
   );
 }
 
