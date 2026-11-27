@@ -1536,6 +1536,8 @@ Example, an invoice with the month in bold and a red chip at the end of the line
 }
 ```
 
+The width measured for rich text is the width the line breaking sums (each word and each run of spaces measured apart), so a `hug` text is drawn on the lines it was measured with.
+
 **What belongs to the node and what to the run.** The node gives the base: the `font` and the `color`. The run overrides only `weight`, `italic`, `family`, `size`, `decoration` and `color`. `lineHeight`, `letterSpacing`, `align`, `verticalAlign`, `wrap`, `ellipsis` and `maxLines` are **the node's only** and apply to all runs (they do not exist on the run: unknown key).
 
 **Line wrapping.** The runs wrap **as a single text, by word**, and not one run per line:
