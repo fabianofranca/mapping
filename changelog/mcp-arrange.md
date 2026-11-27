@@ -4,6 +4,7 @@
 
 - MCP `arrange_marking` batch operation (`plan_changes`, `propose_changes`, `revise_proposal` and the `render_container`/`render_marking` preview): the app's **Arrange** on a component marking with a slot. It arranges the children and the nested components with a slot by the slot's layout (`justify` `center`/`end`/`space-*`, the aligned `none` slot, `wrap`, grid, `reverse`, the root `weight`) and fits a `hug` parent, with exactly the app's rectangles. Create the parent and its children with `inside`, then call it once on the outermost parent.
 - MCP `plan_changes`, `propose_changes` and `revise_proposal`: each `created` marking comes with its final `parent` and `container`, and each created container with its `parent`.
+- MCP `plan_changes`, `render_container` and `render_marking`: an `operationsFile` batch of up to 5,000 operations (two large proposals can be planned together by joining their lists in one file); `propose_changes` and `revise_proposal` keep 1,000 from a file, with a message that names both limits.
 
 ## Alterado
 

@@ -22,7 +22,11 @@ import { listMarkings } from './markingList';
 import { modelToolError } from './modelErrors';
 import { findPerspective, perspectiveDetail } from './perspectives';
 import { operationSchema } from './operations';
-import { resolveOperations, resolveOptionalOperations } from './operationsFile';
+import {
+  MAX_WRITE_OPERATIONS,
+  resolveOperations,
+  resolveOptionalOperations,
+} from './operationsFile';
 import {
   drawableMarking,
   hasPreview,
@@ -177,7 +181,7 @@ const batchOperationsArgs = {
     .string()
     .optional()
     .describe(
-      'Path of a `.json` with the list of operations (the same as `operations`), for batches too large for the call (a measured screen has hundreds). Inside a root or the scratch folder (`--scratch`, read-only: the place for temporary batches): relative (roots first, then the scratch folder) or absolute inside one of them; anywhere else it is `outside-roots`, invalid JSON is `invalid-arguments` with the position. Both together, or neither, is `invalid-arguments`.',
+      'Path of a `.json` with the list of operations (the same as `operations`), for batches too large for the call (a measured screen has hundreds); up to 5,000 operations in `plan_changes`, `render_container` and `render_marking`, up to 1,000 in `propose_changes` and `revise_proposal` (the inline `operations` are always at most 1,000: to plan two proposals together, join the two lists in one file, in order, and plan it). Inside a root or the scratch folder (`--scratch`, read-only: the place for temporary batches): relative (roots first, then the scratch folder) or absolute inside one of them; anywhere else it is `outside-roots`, invalid JSON is `invalid-arguments` with the position. Both together, or neither, is `invalid-arguments`.',
     ),
 };
 
@@ -959,10 +963,11 @@ export function registerTools(
       respond(async () =>
         proposals.propose({
           ...args,
-          operations: await resolveOperations(roots, {
-            operations: inline,
-            operationsFile,
-          }),
+          operations: await resolveOperations(
+            roots,
+            { operations: inline, operationsFile },
+            MAX_WRITE_OPERATIONS,
+          ),
         }),
       ),
   );
@@ -1000,10 +1005,11 @@ export function registerTools(
       respond(async () =>
         proposals.revise(ref, project, {
           ...args,
-          operations: await resolveOptionalOperations(roots, {
-            operations,
-            operationsFile,
-          }),
+          operations: await resolveOptionalOperations(
+            roots,
+            { operations, operationsFile },
+            MAX_WRITE_OPERATIONS,
+          ),
         }),
       ),
   );
