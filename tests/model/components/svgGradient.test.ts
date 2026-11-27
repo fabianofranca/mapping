@@ -273,10 +273,9 @@ describe('what a gradient refuses', () => {
     ],
     ['href', `${at} ${USER} href="#other"`, 'linearGradient href'],
     ['xlink:href', `${at} ${USER} xlink:href="#other"`, 'linearGradient href'],
-    ['an absent gradientUnits (until SG2)', at, 'linearGradient gradientUnits'],
     [
-      'objectBoundingBox (until SG2)',
-      `${at} gradientUnits="objectBoundingBox"`,
+      'a gradientUnits that is neither of the two',
+      `${at} gradientUnits="bogus"`,
       'linearGradient gradientUnits',
     ],
     [
@@ -344,8 +343,8 @@ describe('what a gradient refuses', () => {
     });
   });
 
-  it('an absent gradientUnits on a radial gradient names the radial element', () => {
-    expect(problemsOf(radial(`cx="12" cy="12" r="5"`))).toEqual([
+  it('a gradientUnits that is neither of the two on a radial gradient names the radial element', () => {
+    expect(problemsOf(radial(`cx="12" cy="12" r="5" gradientUnits="bogus"`))).toEqual([
       'unsupported in SVG: radialGradient gradientUnits',
     ]);
   });
@@ -520,5 +519,140 @@ describe('the color rule with a gradient', () => {
     );
     const result = svgToIcon(text);
     expect(result.ok && result.icon.paths[0]?.fill).toBe(true);
+  });
+});
+
+// SG2 (decision 6): `objectBoundingBox`, the default, with the exact box of each path.
+describe('a gradient in objectBoundingBox', () => {
+  /** A 24 x 24 file with one gradient on a path `d` (the box is the path's, not the viewBox's). */
+  function onPath(d: string, gradient: string, attrs: string): string {
+    return svg(
+      `<path fill="url(#g)" d="${d}"/><defs><${gradient} id="g" ${attrs}>${RED_BLUE}</${gradient}></defs>`,
+    );
+  }
+  const WIDE = 'M4 4h16v8H4z';
+
+  it('fractions run across the box, with no gradientUnits', () => {
+    expect(fillOf(onPath(WIDE, 'linearGradient', 'x1="0" y1="0" x2="1" y2="0"'))).toEqual(
+      {
+        type: 'linear',
+        from: [4, 4],
+        to: [20, 4],
+        stops: STOPS,
+      },
+    );
+  });
+
+  it('the diagonal keeps the isolines along the box diagonal (decision 4)', () => {
+    expect(fillOf(onPath(WIDE, 'linearGradient', 'x1="0" y1="0" x2="1" y2="1"'))).toEqual(
+      {
+        type: 'linear',
+        from: [4, 4],
+        to: [10.4, 16.8],
+        stops: STOPS,
+      },
+    );
+  });
+
+  it('percentages are the same as fractions', () => {
+    const percent = fillOf(onPath(WIDE, 'linearGradient', 'x2="100%" y2="0%"'));
+    expect(percent).toEqual(
+      fillOf(onPath(WIDE, 'linearGradient', 'x1="0" y1="0" x2="1" y2="0"')),
+    );
+    expect(percent).toMatchObject({ from: [4, 4], to: [20, 4] });
+  });
+
+  it('the defaults are the horizontal run of the box', () => {
+    expect(fillOf(onPath(WIDE, 'linearGradient', ''))).toMatchObject({
+      from: [4, 4],
+      to: [20, 4],
+    });
+  });
+
+  it('an explicit objectBoundingBox is the same as the default', () => {
+    expect(
+      fillOf(onPath(WIDE, 'linearGradient', 'gradientUnits="objectBoundingBox"')),
+    ).toEqual(fillOf(onPath(WIDE, 'linearGradient', '')));
+  });
+
+  it('a radial gradient with the defaults on a square is a circle of half the side', () => {
+    expect(fillOf(onPath('M8 8h8v8H8z', 'radialGradient', ''))).toEqual({
+      type: 'radial',
+      center: [0.5, 0.5],
+      radius: 4,
+      stops: STOPS,
+    });
+  });
+
+  it('a radial gradient on a box that is not square is an ellipse, named', () => {
+    expect(problemsOf(onPath(WIDE, 'radialGradient', ''))).toEqual([
+      'unsupported in SVG: radialGradient g is an ellipse (only a circle converts)',
+    ]);
+  });
+
+  it('a gradientTransform composes after the box (M = B · gradientTransform)', () => {
+    // On the box x 4..20, y 4..12 the unit square is (4, 4) + (16, 8); a translate of 0.25
+    // in box units then moves the points by 4 in x and 2 in y.
+    const fill = fillOf(
+      onPath(
+        WIDE,
+        'linearGradient',
+        'x1="0" y1="0" x2="1" y2="0" gradientTransform="translate(0.25 0.25)"',
+      ),
+    );
+    expect(fill).toMatchObject({ from: [8, 6], to: [24, 6] });
+  });
+
+  it('a radial that the transform makes a circle on a wide box converts', () => {
+    // scale(0.5 1) on the unit square then the box (16 x 8) is a uniform 8: a circle of radius 4.
+    const fill = fillOf(
+      onPath(WIDE, 'radialGradient', 'gradientTransform="scale(0.5 1)"'),
+    );
+    expect(fill).toMatchObject({ type: 'radial', radius: 4 });
+  });
+
+  it('one gradient on a group takes the box of each path', () => {
+    const text = svg(
+      `<g fill="url(#g)"><path d="M0 0h8v8H0z"/><path d="M12 0h12v8H12z"/></g>` +
+        `<defs><linearGradient id="g">${RED_BLUE}</linearGradient></defs>`,
+    );
+    const result = svgToIcon(text);
+    if (!result.ok) throw new Error(result.problems.map((p) => p.text).join('; '));
+    expect(result.icon.paths.map((path) => path.fill)).toEqual([
+      expect.objectContaining({ from: [0, 0], to: [8, 0] }),
+      expect.objectContaining({ from: [12, 0], to: [24, 0] }),
+    ]);
+  });
+
+  it('a box with no width or no height is named, never drawn wrong', () => {
+    expect(problemsOf(onPath('M2 6h20', 'linearGradient', ''))).toEqual([
+      'unsupported in SVG: linearGradient gradientUnits',
+    ]);
+    expect(problemsOf(onPath('M6 2v20', 'radialGradient', ''))).toEqual([
+      'unsupported in SVG: radialGradient gradientUnits',
+    ]);
+  });
+
+  it('a path whose data is not valid is named', () => {
+    expect(problemsOf(onPath('M2 2L', 'linearGradient', ''))).toEqual([
+      'invalid value in SVG: path d="M2 2L"',
+    ]);
+  });
+
+  it('the userSpaceOnUse gradient does not look at the box', () => {
+    expect(fillOf(onPath('M2 6h20', 'linearGradient', `x2="24" ${USER}`))).toMatchObject({
+      from: [0, 0],
+      to: [24, 0],
+    });
+  });
+
+  it('the Sketch-style fixture, with percentages and no gradientUnits', () => {
+    const result = svgToIcon(fixture('gradient-bbox.svg'), { file: 'gradient-bbox.svg' });
+    if (!result.ok) throw new Error(result.problems.map((p) => p.text).join('; '));
+    expect(result.icon.paths[0]?.fill).toMatchObject({
+      type: 'linear',
+      from: [3, 3],
+      to: [21, 3],
+    });
   });
 });
