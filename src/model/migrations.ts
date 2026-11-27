@@ -404,6 +404,14 @@ function modeMap(text: string): { mode: string } | undefined {
   return /^[a-z0-9][a-z0-9-]*$/.test(text) ? { mode: text } : undefined;
 }
 
+/**
+ * v24 → v25 (decorative marking): only the version changes. `markings[].decorative` is optional (absent
+ * reads as `false`) and is written only when `true`; the new version exists so that an earlier app
+ * opens a file with a decorative marking read-only, instead of dropping the key when writing. It
+ * settles nothing.
+ */
+export const migrateFrom24To25: Migration = (data) => data;
+
 /** Migration registry: the key is the source version. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -429,6 +437,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [21, migrateFrom21To22],
   [22, migrateFrom22To23],
   [23, migrateFrom23To24],
+  [24, migrateFrom24To25],
 ]);
 
 export type MigrationResult =

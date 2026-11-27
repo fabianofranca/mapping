@@ -63,6 +63,13 @@ export function equalRectRanks(
   const buckets = new Map<string, Entry[]>();
   for (const e of group) {
     ranks.set(e.m.id, e.i);
+    // A decorative marking is never a parent: it stays out of the buckets, so the others rank as if it
+    // were not there, and it ranks after every other marking, so an equal rectangle always contains it
+    // whatever its place among the siblings (stage #2826).
+    if (e.m.decorative) {
+      ranks.set(e.m.id, Infinity);
+      continue;
+    }
     const key = rectKey(e.m.rect);
     const bucket = buckets.get(key);
     if (bucket) bucket.push(e);

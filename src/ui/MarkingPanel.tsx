@@ -249,16 +249,40 @@ export function MarkingPanel({
           {/* Any marking can become floating: leaves the container, moves to the canvas (decision 10). */}
           <Property
             label={t('marking.floating')}
-            hint={t('marking.floatingHint')}
+            hint={
+              marking.decorative
+                ? t('marking.floatingDisabledHint')
+                : t('marking.floatingHint')
+            }
             mark={ext?.mark(marking.id, 'floating')}
             below={ext?.below(marking.id, 'floating')}
           >
             <Choice
               checked={marking.floating}
               label={t('marking.floating')}
-              disabled={readOnly}
+              disabled={readOnly || marking.decorative}
               onChange={(e) =>
                 report(actions.setMarkingFloating(marking.id, e.currentTarget.checked))
+              }
+            />
+          </Property>
+          {/* A decorative marking is a child like any other and never a parent (stage #2826). */}
+          <Property
+            label={t('marking.decorative')}
+            hint={
+              marking.floating
+                ? t('marking.decorativeDisabledHint')
+                : t('marking.decorativeHint')
+            }
+            mark={ext?.mark(marking.id, 'decorative')}
+            below={ext?.below(marking.id, 'decorative')}
+          >
+            <Choice
+              checked={marking.decorative}
+              label={t('marking.decorative')}
+              disabled={readOnly || marking.floating}
+              onChange={(e) =>
+                report(actions.setMarkingDecorative(marking.id, e.currentTarget.checked))
               }
             />
           </Property>

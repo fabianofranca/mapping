@@ -298,10 +298,16 @@ The stage `epic/format-plugins` lets a specialization (`formatVersion` 20) carry
 - **Errors.** New code `format-not-found` (an unknown `<specId>/<formatId>`; `details.formats` lists the available ones). The plugin errors `plugin-failed`, `plugin-timeout`, `plugin-limit` and `plugin-output-invalid` come from the executor (`details.path` is the path inside the result for `plugin-output-invalid`). An operation of the result that the model refuses is the batch's usual error with `details.path` = `operations[i].result[j]` and `details.resultOp` = the operation's name. No error brings the server down and nothing is written.
 - **Update the MCP first:** an earlier version does not know `export_format` or `import_format` (`unknown operation`) and does not run the plugins in `validate_library`.
 
-### Change in 0.61.1 — a justified line is reordered as a whole (stage #2653)
+### Decorative markings (schema v25, stage #2826, 0.62.0)
 
-- **Justified lines in the PNG** (JB1): `render_marking` and `render_container` lay out a justified line (`align: justify`) that is `rtl`, or that holds a code unit at or above U+0590, the way Chromium's DOM does. The line is reordered once by the Unicode bidirectional algorithm with the node's direction as the base; each word is laid out in the direction of the run it sits in, so a comma or period at the edge of a word stays on the side the DOM puts it (`Hello, world.` in `rtl` draws the period at the left edge and the comma on the right of `Hello`); the words of a right-to-left run go from right to left (`אבג דה` puts `אבג` at the right edge); and every space gets the same share of the slack. An `ltr` line with no code unit at or above U+0590 is drawn exactly as before. The app's canvas does not change (see `docs/COMPONENT-FORMAT.md`, "Known limits").
-- **No tool, parameter, error code, schema or format change.** Only the pixels of those justified lines change.
+A marking can be **decorative**: a child like any marking that is never a parent (a frame, bracket or divider drawn over a region without owning it). The tools read and write the flag; the model decides the containment (`settleHierarchy`), so the server computes nothing.
+
+- **`create_marking.decorative`** (boolean, optional). Absent, the marking takes the `annotation` type's `decorative` (`false` without a type); `true` makes any marking decorative, `false` makes an instance of a decorative type an ordinary marking. A marking created decorative is put first among its siblings (drawn below them). `true` on a floating type fails with `decorative-floating`.
+- **`update_marking.decorative`** turns the flag on (its children go to the next parent) or off (it takes what it fully contains). It does not reorder the marking, requires unlocked geometry (`locked`) and fails with `decorative-floating` on a floating marking. The step's summary says `decorative` or `stop being decorative`.
+- **Reads.** `get_marking` and the `list_markings` rows carry `decorative`; `list_markings` gains the `decorative` filter (`true` or `false`, the same as `floating`).
+- **`wrap_items`** takes a decorative marking like any other member.
+- **Proposals.** A proposal that creates or changes a decorative marking is written at proposal `formatVersion` 13 (only then; a proposal that never touches the flag keeps its version).
+- **Compatibility.** A server earlier than 0.62.0 does not know schema v25: it opens a project that holds the flag as read-only (`read-only`).
 
 ### Change in 0.61.0 — one built-in drawing font (stage #2825)
 

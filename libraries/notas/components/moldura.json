@@ -1,0 +1,69 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "moldura",
+  "name": "Frame",
+  "description": "A rectangular frame that fills the marking: an outline on the four sides (solid or dashed, any width, with an optional corner radius) and an optional fill. Decorative: it never contains other markings.",
+  "size": {
+    "width": 160,
+    "height": 120
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "fill"
+  },
+  "preview": {
+    "cor": "#79747E",
+    "estilo": "tracejado"
+  },
+  "template": {
+    "type": "frame",
+    "name": "moldura",
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": {
+      "$field": "raio",
+      "default": 0
+    },
+    "fill": {
+      "$tokenNamed": {
+        "$field": "fundo"
+      },
+      "default": "none"
+    },
+    "stroke": {
+      "color": {
+        "$if": {
+          "$lte": [
+            {
+              "$field": "espessura",
+              "default": 1
+            },
+            0
+          ]
+        },
+        "then": "none",
+        "else": {
+          "$tokenNamed": {
+            "$field": "cor"
+          },
+          "default": "#79747E"
+        }
+      },
+      "width": {
+        "$field": "espessura",
+        "default": 1
+      },
+      "align": "inside",
+      "dash": {
+        "$switch": "estilo",
+        "cases": {
+          "tracejado": [6, 4]
+        },
+        "default": []
+      }
+    },
+    "children": []
+  }
+}

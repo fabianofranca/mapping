@@ -34,7 +34,7 @@ test('new project → image → marking → annotation → zip with the mapping.
   await page.getByLabel('Value').press('Enter');
 
   const { mapping, files } = await exportMapping(page);
-  expect(mapping.schemaVersion).toBe(24);
+  expect(mapping.schemaVersion).toBe(25);
   expect(files).toContain('images/tela.webp');
   expect(mapping.containers).toHaveLength(1);
   expect(mapping.containers[0]).toMatchObject({
@@ -107,7 +107,7 @@ test('SDUI example → Input with `data` pointing to a free tuple', async ({ pag
   expect(mapping.specializations).toEqual(
     // The notes library comes already applied in every new project (ME3).
     [
-      { id: 'notas', version: 6 },
+      { id: 'notas', version: 7 },
       { id: 'sdui', version: 4 },
     ].map((s) => expect.objectContaining(s)),
   );
@@ -143,7 +143,7 @@ test('desktop: tool windows open, resize and are remembered', async ({ page }) =
   await createProject(page, 'Windows');
 
   // Status bar and breadcrumbs with no selection.
-  await expect(page.getByText('schema v24')).toBeVisible();
+  await expect(page.getByText('schema v25')).toBeVisible();
   await expect(page.locator('.crumbs')).toContainText('Nothing selected');
 
   // Tree and Details open by default; the List opens from the strip.

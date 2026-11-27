@@ -4,10 +4,13 @@ import {
   applySpecialization,
   addComponentMarking,
   addContainer,
+  addTypedAnnotation,
   componentPlacement,
   componentSize,
   moveContainer,
   componentTypes,
+  loadSpecComponents,
+  parseSpec,
   placementFitsSlot,
   setContainerDrawingMode,
   setFieldValue,
@@ -653,6 +656,9 @@ describe('floating type (notes library)', () => {
     expect(types.map((t) => [t.typeId, t.floating])).toEqual([
       ['nota', true],
       ['texto', false],
+      ['moldura', false],
+      ['colchete', false],
+      ['linha', false],
     ]);
     expect(componentTypes(componentProject(), catalog).every((t) => !t.floating)).toBe(
       true,
@@ -1179,5 +1185,142 @@ describe("preview: 'required' fills only the required fields without a default (
     expect(required).toEqual(all);
     const rect = componentPlacement(m3(), m3Catalog, args, approximateMeasurer);
     expect({ width: rect.width, height: rect.height }).toEqual(required);
+  });
+});
+
+describe('decorative type (stage #2826, DM2)', () => {
+  const DECO_SPEC_ID = 'deco';
+  const DECO_FILE = 'specs/deco/deco.spec.json';
+  const components: Record<string, unknown> = {
+    text: COMPONENTS.text,
+    frame: { ...COMPONENTS.text, id: 'frame', name: 'frame' },
+  };
+  const parsed = parseSpec({
+    format: 'mapping-spec',
+    formatVersion: 25,
+    id: DECO_SPEC_ID,
+    name: 'Deco',
+    version: 1,
+    layers: [
+      {
+        id: 'ui',
+        name: 'Interface',
+        color: '#6750A4',
+        annotationTypes: [
+          {
+            id: 'text',
+            name: 'Text',
+            component: 'components/text.json',
+            fields: [{ key: 'label', type: 'string', default: 'Hello' }],
+          },
+          {
+            id: 'frame',
+            name: 'Frame',
+            decorative: true,
+            component: 'components/frame.json',
+            fields: [{ key: 'label', type: 'string', default: 'Frame' }],
+          },
+        ],
+      },
+    ],
+  });
+  if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+  const loaded = loadSpecComponents(parsed.spec, DECO_FILE, 1, (path) => {
+    const id = /components\/(.+)\.json$/.exec(path)?.[1];
+    return id === undefined || components[id] === undefined
+      ? undefined
+      : JSON.stringify(components[id]);
+  });
+  if (loaded.problems.length > 0) throw new Error(loaded.problems.join('\n'));
+  const decoCatalog: ComponentCatalog = new Map([[DECO_SPEC_ID, loaded]]);
+  const base = addContainer(
+    applySpecialization(emptyProject(), parsed.spec, {
+      newId: () => 'LD',
+      packageSpecName: 'deco.spec.json',
+    }),
+    { id: 'I1', file: 'images/screen.png', width: 1000, height: 800 },
+  );
+  const addDeco = (
+    p: Project,
+    id: string,
+    typeId: string,
+    extra: Partial<NewComponentArgs> = {},
+  ): Project =>
+    addComponentMarking(
+      p,
+      decoCatalog,
+      {
+        markingId: id,
+        annotationId: `A_${id}`,
+        containerId: 'I1',
+        parentId: null,
+        specId: DECO_SPEC_ID,
+        typeId,
+        ...extra,
+      },
+      approximateMeasurer,
+    );
+  const AROUND = { x: 100, y: 100, width: 400, height: 300 };
+
+  it('componentTypes exposes decorative', () => {
+    expect(
+      componentTypes(base, decoCatalog).map((t) => [t.typeId, t.decorative]),
+    ).toEqual([
+      ['text', false],
+      ['frame', true],
+    ]);
+    expect(componentTypes(componentProject(), catalog).every((t) => !t.decorative)).toBe(
+      true,
+    );
+  });
+
+  it('an instance of the decorative type is born decorative and first among its siblings', () => {
+    let p = addDeco(base, 'T1', 'text', {
+      rect: { x: 150, y: 150, width: 100, height: 40 },
+    });
+    p = addDeco(p, 'F1', 'frame', { rect: AROUND });
+    expect(marking(p, 'F1')).toMatchObject({ decorative: true, floating: false });
+    const order = p.markings.map((m) => m.id);
+    expect(order.indexOf('F1')).toBeLessThan(order.indexOf('T1'));
+    // A child like any marking, never a parent: the sample it surrounds is not its child.
+    expect(marking(p, 'T1').parentId).toBeNull();
+    expectValid(p);
+  });
+
+  it('decorative overrides the type: false makes an instance of the decorative type ordinary, true makes an ordinary one decorative', () => {
+    let p = addDeco(base, 'T1', 'text', {
+      rect: { x: 150, y: 150, width: 100, height: 40 },
+    });
+    p = addDeco(p, 'F1', 'frame', { rect: AROUND, decorative: false });
+    expect(marking(p, 'F1').decorative).toBe(false);
+    expect(marking(p, 'T1').parentId).toBe('F1');
+    p = addDeco(p, 'T2', 'text', {
+      rect: { x: 600, y: 600, width: 100, height: 40 },
+      decorative: true,
+    });
+    expect(marking(p, 'T2').decorative).toBe(true);
+    expect(p.markings.filter((m) => m.parentId === null)[0]!.id).toBe('T2');
+  });
+
+  it('an instance of an ordinary type is not decorative and is born last', () => {
+    let p = addDeco(base, 'T1', 'text', {
+      rect: { x: 150, y: 150, width: 100, height: 40 },
+    });
+    p = addDeco(p, 'T2', 'text', { rect: { x: 600, y: 150, width: 100, height: 40 } });
+    expect(marking(p, 'T2').decorative).toBe(false);
+    expect(p.markings.map((m) => m.id)).toEqual(['T1', 'T2']);
+  });
+
+  it('adding an annotation of the type to an existing marking does not change its flag', () => {
+    let p = addDeco(base, 'T1', 'text', {
+      rect: { x: 150, y: 150, width: 100, height: 40 },
+    });
+    p = addTypedAnnotation(p, {
+      id: 'A_extra',
+      markingId: 'T1',
+      layerId: 'LD',
+      type: { specId: DECO_SPEC_ID, typeId: 'frame' },
+    });
+    expect(marking(p, 'T1').decorative).toBe(false);
   });
 });
