@@ -4,6 +4,7 @@ import { isRecord } from './isRecord';
 import { updateById } from './project';
 import { projectIndex } from './projectIndex';
 import { addSpecIssue, specMsg, type SpecMsg } from './specIssueCode';
+import { getSpec } from './specLookup';
 import type { Project, ProjectContainer, ProjectSpecialization } from './types';
 import type { z } from 'zod';
 
@@ -178,15 +179,73 @@ export function effectiveContainerClasses(
 }
 
 /**
+ * The classes a container has in the sets ONE specialization declares, set id → class id (decision 1 of
+ * #2489; decision 4 of #1901: a component's `$container.<set>` and a type's `appliesIn` read the set of
+ * their own specialization): each declaration resolved by `containerClassIn` (a computed set by its own
+ * thresholds, a chosen set by the stored choice when that declaration lists the class). `{}` for a canvas
+ * marking (`null`), an unknown container, an unknown specialization or one without `containerClasses`.
+ */
+export function specContainerClasses(
+  p: Project,
+  containerId: string | null,
+  specId: string,
+): Record<string, string> {
+  const container =
+    containerId === null ? undefined : projectIndex(p).containers.get(containerId);
+  const sets = getSpec(p, specId)?.containerClasses;
+  if (container === undefined || sets === undefined) return {};
+  const result: Record<string, string> = {};
+  for (const set of sets) {
+    const found = containerClassIn(p, container, set)?.id;
+    if (found !== undefined) result[set.id] = found;
+  }
+  return result;
+}
+
+const chosenBySpecializations = new WeakMap<
+  readonly ProjectSpecialization[],
+  SpecContainerClassSet[]
+>();
+
+/**
+ * The **chosen** sets of every applied specialization, merged by set id in order of appearance (decision
+ * 3 of #2489): the first chosen declaration gives the name, the classes merge by id, and a computed
+ * declaration of the same id is ignored (decision 4 of #1901: the stored choice is shared by every
+ * specialization that declares a chosen set with that id). Memoized by the `specializations` list.
+ */
+export function chosenContainerClassSets(
+  p: Pick<Project, 'specializations'>,
+): SpecContainerClassSet[] {
+  const known = chosenBySpecializations.get(p.specializations);
+  if (known !== undefined) return known;
+  const merged = new Map<string, SpecContainerClassSet>();
+  for (const { spec } of p.specializations) {
+    for (const set of spec?.containerClasses ?? []) {
+      if (isComputedSet(set)) continue;
+      const prior = merged.get(set.id);
+      merged.set(
+        set.id,
+        prior === undefined
+          ? { ...set, classes: [...set.classes] }
+          : { ...prior, classes: mergeClasses(prior.classes, set.classes) },
+      );
+    }
+  }
+  const sets = [...merged.values()];
+  chosenBySpecializations.set(p.specializations, sets);
+  return sets;
+}
+
+/**
  * The stored choices that no applied specialization declares as chosen (a set nobody declares, a
  * computed set or a class the set does not have): they are kept in the file, give no class and
  * Diagnostics lists them.
  */
 export function undeclaredContainerClasses(p: Project): UndeclaredContainerClass[] {
   const chosen = new Map(
-    containerClassSets(p)
-      .filter((s) => !isComputedSet(s))
-      .map((s) => [s.id, new Set(s.classes.map((c) => c.id))] as const),
+    chosenContainerClassSets(p).map(
+      (s) => [s.id, new Set(s.classes.map((c) => c.id))] as const,
+    ),
   );
   return p.containers.flatMap((c) =>
     Object.entries(c.classes ?? {})
