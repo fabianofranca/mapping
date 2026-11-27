@@ -148,6 +148,14 @@ function inDisplayOrder(
   return result;
 }
 
+/** The `floating` and `decorative` filters: `undefined` keeps both kinds. */
+function matchesFlags(marking: Marking, filters: MarkingFilters): boolean {
+  return (
+    (filters.floating === undefined || marking.floating === filters.floating) &&
+    (filters.decorative === undefined || marking.decorative === filters.decorative)
+  );
+}
+
 export function listMarkings(
   refs: Refs,
   filters: MarkingFilters,
@@ -199,12 +207,7 @@ export function listMarkings(
     (marking) => pageId === null || index.pageOf.get(marking.id) === pageId,
   );
   const matching = inScope.filter((marking) => {
-    if (filters.floating !== undefined && marking.floating !== filters.floating) {
-      return false;
-    }
-    if (filters.decorative !== undefined && marking.decorative !== filters.decorative) {
-      return false;
-    }
+    if (!matchesFlags(marking, filters)) return false;
     let candidates = index.annotationsByMarking.get(marking.id) ?? [];
     if (byAnnotation) {
       candidates = candidates.filter(
