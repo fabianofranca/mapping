@@ -335,6 +335,12 @@ export interface SceneTextRun {
   readonly padding?: readonly [number, number];
   /** Moves the whole piece up (px; negative goes down); the drawing only, never the measurement. */
   readonly baselineShift?: number;
+  /**
+   * An icon run: the icon's paths in the run's color, at the origin of its box (the piece in
+   * `runLayout` gives the box and where it goes; `text` is empty). An unknown name has no `icon`
+   * and leaves its box empty.
+   */
+  readonly icon?: GroupNode;
 }
 
 export interface TextNode extends NodeBase {

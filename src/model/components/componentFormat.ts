@@ -534,8 +534,9 @@ export interface EllipseTemplate extends TemplateNodeBase {
  * box (the "chip"): an unbreakable block with `padding` (a number for both axes or `[vertical,
  * horizontal]`) and corner `radius`. `padding` and `radius` without `background` have no effect.
  */
-export interface TextRunTemplate {
+export interface TextRunText {
   readonly text: Expr<string | number>;
+  readonly icon?: undefined;
   readonly weight?: Expr<number>;
   readonly italic?: BoolExpr;
   readonly color?: Expr<Color>;
@@ -552,6 +553,24 @@ export interface TextRunTemplate {
    */
   readonly baselineShift?: Expr<number | string>;
 }
+
+/**
+ * An icon run (`{ "icon": "<name>" }`, v4): an icon of the library's set inside the line, an
+ * unbreakable box centered on the line like the chip. `color` defaults to the node's `color`;
+ * `size` is the icon's height in px (default: the node's font size) and the width is
+ * `size × viewBox width / viewBox height`. Any other run key is not valid on it.
+ */
+export interface IconRunTemplate {
+  readonly icon: Expr<string>;
+  readonly text?: undefined;
+  readonly color?: Expr<Color>;
+  readonly size?: Expr<number>;
+  /** As in the text run; a percentage is of the icon's `size`. */
+  readonly baselineShift?: Expr<number | string>;
+}
+
+/** A run of rich text: a text run or an icon run. */
+export type TextRunTemplate = TextRunText | IconRunTemplate;
 
 /**
  * Text of the node: `text` (a single style) **or** `runs` (runs with their own style, only in

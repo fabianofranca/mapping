@@ -1226,9 +1226,28 @@ const checkBaselineShift = tokenCheck('number', (v, p, out) => {
   add(out, p, 'expected a number or a percentage ("33%")');
 });
 
-/** A `runs` run: `text` required and the style, each key with a literal or expression. */
+/** Keys of an icon run (`runs[i]` with `icon`). */
+const ICON_RUN_KEYS = ['icon', 'color', 'size', 'baselineShift'];
+
+/** An icon run: `icon` (text or expression), `color`, `size` and `baselineShift`; no other run key. */
+function checkIconRun(value: Rec, path: string, out: Ctx): void {
+  if ('text' in value)
+    return add(out, path, 'text and icon together: use one or the other');
+  checkKeys(value, ICON_RUN_KEYS, path, out);
+  const specs: Record<string, Check> = {
+    icon: checkString,
+    color: checkColor,
+    size: checkNumber,
+    baselineShift: checkBaselineShift,
+  };
+  for (const [key, check] of Object.entries(specs))
+    if (key in value) checkExpr(value[key], join(path, key), check, out);
+}
+
+/** A `runs` run: `text` required and the style, each key with a literal or expression; or an icon run. */
 function checkRun(value: unknown, path: string, out: Ctx): void {
   if (!isRecord(value)) return add(out, path, 'expected an object (run)');
+  if ('icon' in value) return checkIconRun(value, path, out);
   checkKeys(value, RUN_KEYS, path, out);
   if (!('text' in value)) add(out, join(path, 'text'), 'required field');
   const specs: Record<string, Check> = {

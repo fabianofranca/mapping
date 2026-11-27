@@ -71,6 +71,7 @@ import type {
   FrameTemplate,
   LayoutSpec,
   GradientSpec,
+  IconRunTemplate,
   IconTemplate,
   LayoutAlign,
   LayoutJustify,
@@ -87,6 +88,7 @@ import type {
   StrokeSpec,
   TemplateNode,
   TextRunTemplate,
+  TextRunText,
   TextTemplate,
 } from './componentFormat';
 import type { Box } from './box';
@@ -98,6 +100,7 @@ import {
   DEFAULT_ICON_VIEWBOX,
   resolveIcon,
   type IconClip,
+  type IconDef,
   type IconGradient,
   type IconPath,
   type IconSet,
@@ -189,6 +192,7 @@ import {
 import {
   type CornerRadius,
   type FrameNode,
+  type GroupNode,
   type ClipPath,
   type Matrix,
   type GradientStop,
@@ -580,6 +584,12 @@ export function normalizePadding(
   }
   const [top = 0, right = 0, bottom = 0, left = 0] = padding;
   return { top, right, bottom, left };
+}
+
+/** A resolved run: the scene's, and the box of an inline icon (`inline`) for the layout. */
+interface ResolvedRun {
+  readonly scene: SceneTextRun;
+  readonly inline?: { readonly width: number; readonly height: number };
 }
 
 type Axis = 'w' | 'h';
@@ -1062,11 +1072,55 @@ function createEngine(
   // --- rich text (runs) ------------------------------------------------------------------
 
   /** `[vertical, horizontal]` padding of a chip (number = both axes). */
-  const runPadding = (run: TextRunTemplate): readonly [number, number] => {
+  const runPadding = (run: TextRunText): readonly [number, number] => {
     const value = ev<unknown>(run.padding as Expr<unknown> | undefined, 0);
     const clean = (n: unknown): number => Math.max(0, num(n as Expr<number>, 0));
     if (Array.isArray(value)) return [clean(value[0]), clean(value[1])];
     return [clean(value), clean(value)];
+  };
+
+  /**
+   * The resolved icon run: the box (`size` tall, `size × viewBox width / height` wide) and the
+   * group of its paths. An unknown name keeps an empty box of `size × size` (`engine.iconUnknown`);
+   * an empty name gives no piece.
+   */
+  const resolveIconRun = (
+    run: IconRunTemplate,
+    node: TextTemplate,
+    font: MeasureFont,
+    index: number,
+  ): ResolvedRun => {
+    const name = str(run.icon, '');
+    const size = Math.max(0, num(run.size, font.size));
+    const color = str(run.color, str(node.color, '#000000'));
+    const shift = baselineShiftOf(run.baselineShift, size);
+    const scene: SceneTextRun = {
+      text: '',
+      fontFamily: font.family,
+      fontSize: size,
+      fontWeight: font.weight,
+      italic: font.italic,
+      color,
+      ...(shift === 0 ? {} : { baselineShift: shift }),
+    };
+    if (name === '') return { scene };
+    const found = resolveIcon(icons, name);
+    if (found === undefined) {
+      warn('engine.iconUnknown', { name });
+      return { scene, inline: { width: size, height: size } };
+    }
+    const [vbW, vbH] = found.viewBox;
+    const width = vbH > 0 ? (size * vbW) / vbH : size;
+    const mirror = dirOf(node) === 'rtl' && found.def.mirror === true;
+    const icon = iconGroup(found, {
+      id: `${prefix}/run-icon-${index}`,
+      name,
+      w: width,
+      h: size,
+      color,
+      mirror,
+    });
+    return { scene: { ...scene, icon }, inline: { width, height: size } };
   };
 
   /** The resolved style of a run: what it declares over the node's `font` and `color`. */
@@ -1074,7 +1128,9 @@ function createEngine(
     run: TextRunTemplate,
     node: TextTemplate,
     font: MeasureFont,
-  ): SceneTextRun => {
+    index: number,
+  ): ResolvedRun => {
+    if (run.icon !== undefined) return resolveIconRun(run, node, font, index);
     const decoration = oneOf(
       run.decoration ?? node.font?.decoration,
       ['none', 'underline', 'line-through'],
@@ -1083,7 +1139,7 @@ function createEngine(
     const background = str(run.background, 'none');
     const fontSize = Math.max(0, num(run.size, font.size));
     const shift = baselineShiftOf(run.baselineShift, fontSize);
-    return {
+    const scene: SceneTextRun = {
       // A literal text counts as is, even whitespace only (the gap between runs); an empty field's falls back.
       text: typeof run.text === 'string' ? run.text : evaluateText(run.text, values, ''),
       fontFamily: str(run.family, font.family, familyContext),
@@ -1101,6 +1157,7 @@ function createEngine(
             padding: runPadding(run),
           }),
     };
+    return { scene };
   };
 
   /** The node's runs, in the scene's form and the layout's (the same list, index by index). */
@@ -1108,8 +1165,9 @@ function createEngine(
     node: TextTemplate,
     font: MeasureFont,
   ): { scene: SceneTextRun[]; runs: RichRun[] } => {
-    const scene = (node.runs ?? []).map((run) => resolveRun(run, node, font));
-    const runs = scene.map((run): RichRun => ({
+    const resolved = (node.runs ?? []).map((run, i) => resolveRun(run, node, font, i));
+    const scene = resolved.map((r) => r.scene);
+    const runs = resolved.map(({ scene: run, inline }): RichRun => ({
       text: run.text,
       font: {
         family: run.fontFamily,
@@ -1120,6 +1178,7 @@ function createEngine(
         letterSpacing: font.letterSpacing,
       },
       ...(run.padding ? { chip: { padding: run.padding } } : {}),
+      ...(inline ? { inline } : {}),
     }));
     return { scene, runs };
   };
@@ -3582,6 +3641,58 @@ function createEngine(
       ? undefined
       : { d: clip.d, fillRule: clip.fillRule ?? 'nonzero', transform: matrix };
 
+  /** The paths of an icon scaled from its `viewBox` to the box (flipped inside it when `mirror`), and its clip. */
+  const iconPaths = (
+    found: { def: IconDef; viewBox: readonly [number, number] },
+    id: string,
+    w: number,
+    h: number,
+    color: string,
+    strokeWidth: number | undefined,
+    mirror: boolean,
+  ): { children: PathNode[]; clipPath: ClipPath | undefined } => {
+    const [vbW, vbH] = found.viewBox;
+    const sx = vbW > 0 ? w / vbW : 1;
+    const sy = vbH > 0 ? h / vbH : 1;
+    const matrix: Matrix = mirror ? [-sx, 0, 0, sy, w, 0] : [sx, 0, 0, sy, 0, 0];
+    const children = found.def.paths.map((iconPath, i) => ({
+      ...iconPathNode(iconPath, `${id}/${i}`, found.viewBox, color, strokeWidth),
+      transform: matrix,
+    }));
+    return { children, clipPath: iconClipPath(found.def.clip, matrix) };
+  };
+
+  /** The group of an icon run: the icon at the origin of its box (the drawers move it to the piece). */
+  const iconGroup = (
+    found: { def: IconDef; viewBox: readonly [number, number] },
+    at: {
+      id: string;
+      name: string;
+      w: number;
+      h: number;
+      color: string;
+      mirror: boolean;
+    },
+  ): GroupNode => {
+    const { children, clipPath } = iconPaths(
+      found,
+      at.id,
+      at.w,
+      at.h,
+      at.color,
+      undefined,
+      at.mirror,
+    );
+    return {
+      ...baseNode({ id: at.id, name: at.name }),
+      width: at.w,
+      height: at.h,
+      type: 'group',
+      children,
+      ...(clipPath ? { clipPath } : {}),
+    };
+  };
+
   /** The icon becomes a group with one path per stroke, scaled from the `viewBox` to the node's box. */
   const buildIcon = (
     node: IconTemplate,
@@ -3608,12 +3719,7 @@ function createEngine(
       node.strokeWidth === undefined ? undefined : Math.max(0, num(node.strokeWidth, 1));
     // The node's `mirror` (or, absent, the icon's in the set): in `rtl` the paths flip inside the box.
     const mirror = dirOf(node) === 'rtl' && bool(node.mirror, found.def.mirror === true);
-    const matrix: Matrix = mirror ? [-sx, 0, 0, sy, w, 0] : [sx, 0, 0, sy, 0, 0];
-    const children = found.def.paths.map((iconPath, i) => ({
-      ...iconPathNode(iconPath, `${id}/${i}`, found.viewBox, color, strokeWidth),
-      transform: matrix,
-    }));
-    const clipPath = iconClipPath(found.def.clip, matrix);
+    const { children, clipPath } = iconPaths(found, id, w, h, color, strokeWidth, mirror);
     return { ...base, type: 'group', children, ...(clipPath ? { clipPath } : {}) };
   };
 

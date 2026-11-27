@@ -1520,7 +1520,7 @@ A component's height can depend on **how many lines** the text occupies: the sna
 
 In `formatVersion` 4, the `text` node accepts `runs` **in place of** `text`: a non-empty list of **runs**, each with its own style, which wrap together as a single text. It serves for bold or color in the middle of a sentence and for the "chip" (a box with a background inside the line, like the `overdue` label of an invoice). Use `runs` instead of replacing the label with spaces and drawing the chip on top with another node: the chip follows the text when it wraps or changes width.
 
-Each run is an object with `text` (required) and the keys below. All accept an expression, and the run's `text` accepts `$field`, `$concat` and the others, evaluated like the node's `text` (a number becomes text, empty becomes empty text).
+Each run is an object with `text` (required) and the keys below, or an **icon run** (`{ "icon": … }`, see "Icon run" below). All accept an expression, and the run's `text` accepts `$field`, `$concat` and the others, evaluated like the node's `text` (a number becomes text, empty becomes empty text).
 
 | Key             | Values                                                                                                                               | Effect                                                                                               |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
@@ -1577,6 +1577,33 @@ Example, an invoice with the month in bold and a red chip at the end of the line
 }
 ```
 
+**Icon run.** A run with `icon` in place of `text` puts an icon of the library's set (`icons` of the specialization) inside the line. It accepts only these keys, each literal or an expression:
+
+| Key             | Values                                                   | Effect                                                                                                      |
+| --------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `icon`          | the icon's name in the set, or an expression             | The icon. Required.                                                                                         |
+| `color`         | CSS color                                                | Paints the icon's paths; default: the node's `color`.                                                       |
+| `size`          | number (px)                                              | The icon's **height**; the width is `size × viewBox width / viewBox height`. Default: the node's font size. |
+| `baselineShift` | number (px), or a signed percentage of the icon's `size` | Moves the icon up (positive) or down. **The drawing only**, as in a text run.                               |
+
+The icon is an **unbreakable box**, like the chip, **centered vertically on the line**: it never breaks inside, its edges are wrapping opportunities, and one that does not fit in the rest of the line goes whole to the line below (larger than the whole line, it stays alone and exceeds the width). The line is as tall as the greatest of the node's `lineHeight` and the icon's `size`. With `ellipsis`, the icon comes out whole, never cut. In `rtl`, the pieces of the line run right to left and the icon takes the set's `mirror`, like the `icon` node. The run's `text` is empty, so the node's `text` is the concatenation of its text runs.
+
+An **unknown name** keeps an empty box of `size × size` and warns `unknown icon: <name>`; a name that evaluates to **empty text** gives no piece and no warning, like an empty text run. A literal name (or a literal inside `$if`/`$switch`) that is not in the set is a `validate_library` error at `…runs[i].icon`, and an `enum` option read by the name that is not in the set warns, with the same codes as the `icon` node. `text` or any other text-run key (`weight`, `italic`, `family`, `decoration`, `background`, `radius`, `padding`) on an icon run is an error (see "Validation"). An icon of the set can be in the line; a component still cannot. An app or MCP from before this stage refuses the key with `unknown key: icon`.
+
+```json
+{
+  "type": "text",
+  "name": "status",
+  "width": "fill",
+  "font": { "size": 14, "lineHeight": 22 },
+  "runs": [
+    { "icon": "check", "size": 16, "color": "#0a7a3d", "baselineShift": "-10%" },
+    { "text": " Paid on " },
+    { "text": { "$field": "date" }, "weight": 700 }
+  ]
+}
+```
+
 **What belongs to the node and what to the run.** The node gives the base: the `font` and the `color`. The run overrides only `weight`, `italic`, `family`, `size`, `decoration` and `color`. `lineHeight`, `letterSpacing`, `align`, `verticalAlign`, `wrap`, `ellipsis` and `maxLines` are **the node's only** and apply to all runs (they do not exist on the run: unknown key).
 
 **Line wrapping.** The runs wrap **as a single text, by word**, and not one run per line:
@@ -1585,7 +1612,7 @@ Example, an invoice with the month in bold and a red chip at the end of the line
 - `\n` in a run without a background breaks the line; in a chip it becomes a space.
 - A space at the start of the line is **discarded** in a run without a background and **kept** in a chip (the chip draws the whole text, with the leading space inside the padding). A space at the end of the line does not count toward the width.
 
-**The chip.** It is an unbreakable atom: the width is the text's plus 2·h (the horizontal `padding`) and the height is the run's line height plus 2·v (the vertical). If it does not fit in the rest of the line, it goes **whole** to the line below; if it is larger than the whole line, it stays alone on the line and exceeds the width (it never breaks inside). A library component inside the line does not exist: the chip is a run, not a node.
+**The chip.** It is an unbreakable atom: the width is the text's plus 2·h (the horizontal `padding`) and the height is the run's line height plus 2·v (the vertical). If it does not fit in the rest of the line, it goes **whole** to the line below; if it is larger than the whole line, it stays alone on the line and exceeds the width (it never breaks inside). A library component inside the line does not exist: the chip is a run, not a node (an icon of the set can be in the line as an icon run, below).
 
 **Line height.** A run's line height is the node's `lineHeight` times the run's size over the node's size (a run with `size` 21 in a node of 14 and `lineHeight` 20 has a line of 30). Each line has the greatest height among the node's and its pieces'; the chip counts with the vertical padding (a chip with `padding` `[2, 6]` on a line of 20 makes the line 24). The pieces are **vertically centered** on the line, not aligned by the baseline (see "Known limits").
 
@@ -1631,6 +1658,7 @@ Whoever reads a warning ending in **`(approximate)`** (the library validator's d
 - **`scale` and `filter` (`formatVersion` 4):** in a version lower than 4 they are `only allowed with formatVersion 4`, at the key's path (`scale` or `filter`). The other problems: a negative literal `scale` (`scale: expected a number greater than or equal to 0`) and any other key inside `filter` (`filter: unknown key: blur`). An invalid value that comes from an expression only warns at draw time (`invalid value in scale: <value>`, `invalid value in filter.grayscale: <value>`).
 - **`startAngle` and `sweepAngle` (`formatVersion` 4):** only on `ellipse` (`unknown key: sweepAngle` on another node) and, in a version lower than 4, `only allowed with formatVersion 4`, at the key's path. A literal that is not a number is `expected a number`.
 - **Baseline shift (`runs[i].baselineShift`, `formatVersion` 4):** a value that is not a number nor a signed percentage is `template.children[0].runs[0].baselineShift: expected a number or a percentage ("33%")`. In a version lower than 4 the whole `runs` is `only allowed with formatVersion 4`, at the `runs` path. From an expression, an invalid value is not a parse error: the drawing takes 0 and the engine warns `invalid value in baselineShift`.
+- **Icon run (`runs[i].icon`, `formatVersion` 4):** `text` together with `icon` is `template.children[0].runs[0]: text and icon together: use one or the other`; any other text-run key on an icon run (`weight`, `italic`, `family`, `decoration`, `background`, `radius`, `padding`) is `template.children[0].runs[0].weight: unknown key: weight`; an `icon` that is not text is `template.children[0].runs[0].icon: expected text`. In a version lower than 4 the whole `runs` is `only allowed with formatVersion 4`, at the `runs` path. From an expression, an unknown name is not a parse error: the box stays empty and the engine warns `unknown icon: <name>`. In `validate_library`, a literal name outside the set is `the icon "<name>" does not exist in the icon set (<path>)` at `…runs[i].icon`, and an `enum` option read by the name that is not in the set is a warning, as for the `icon` node.
 - **Shrink to fit (`font.fit` and `font.fitSizes`, `formatVersion` 4):** in a version lower than 4 they are `only allowed with formatVersion 4`, at the key's path (`template.children[0].font.fit`, `template.children[0].font.fitSizes`). The other problems: a literal `fit: "shrink"` without `fitSizes` is `font.fitSizes: required with fit "shrink"`; a literal list that does not go from the largest to the smallest is `font.fitSizes: expected sizes from the largest to the smallest`; a `fitSizes` that is not a list of 1 to 8 items is `font.fitSizes: expected a list of 1 to 8 sizes`; an item that is not a number greater than 0 (or a number expression) is `font.fitSizes[i]: expected a number greater than 0`; a literal `fit: "shrink"` on a node with `runs` is `font.fit: does not combine with runs`. Warnings: a candidate that is not greater than 0, or not smaller than the previous one kept, is skipped with `invalid value in font.fitSizes: <value>`; a `fit` that comes from an expression on a node with `runs` keeps `font.size` with `invalid value in font.fit: shrink`. An app or MCP from before this stage refuses both keys with `unknown key: fit` / `unknown key: fitSizes`.
 - **Colors (warnings only).** The colors the format writes are `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb()`/`rgba()` and `hsl()`/`hsla()` (hue in `deg`, `grad`, `rad` or `turn`), plus `none` and `transparent`; one reader (`parseFormatColor` in `src/model/components/tokens.ts`) serves the engine (token `alpha`/`over`, the filter) and the MCP PNG, so `hsl()` is painted in the PNG like in the app. A **literal** that is not one of them (`"banana"`, `red`) is the warning `component.colorUnknown` at its path (`template.fill`, `template.fill.stops[1].color`, `template.stroke.color`, `…color` of a `text` or `icon`, `…shadow.color` and `…shadow[1].color`, a run's `…runs[0].color` and `…runs[0].background`): `not a color of the format: "red" (use #rrggbb, rgb(), hsl(), transparent or none)`. Nothing is refused. A value inside an expression (`$switch`, `$if`, `$field`, `$token`) and the value of a token are not checked. The app and the viewer still draw a named color; the MCP PNG does not paint it.
 - `parseComponentText(text)` reads the JSON text (invalid JSON becomes a problem with an empty path) and `validateComponent(json)` returns only the `string[]` list.
