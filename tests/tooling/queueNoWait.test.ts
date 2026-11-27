@@ -96,21 +96,19 @@ describe('implementar-fila: the End checks the queue bug rows (decision 6)', () 
 });
 
 describe('detalhar-backlog: Depende de only for a real dependency (#2968)', () => {
-  const step4 = between(
-    detail,
-    '4. Add to the body the line',
-    '   Every issue you create',
-  );
+  const step4 = between(detail, '4. Add to the body the line', 'Every issue you create');
 
   it('lists only what must be on main for a reason other than a file in common', () => {
     expect(step4).toContain('real dependency');
     expect(step4).toContain('code, behavior, a helper or a decision');
     expect(step4).toContain("owner's order");
-    expect(step4).not.toContain('**mandatory**');
+    expect(step4).not.toMatch(
+      /mandatory|must depend|depends on the one that already exists/i,
+    );
   });
 
   it('a file in common goes in the Overlap section and the panel comparison holds the stages apart', () => {
-    expect(step4).toContain('Overlap with other stages');
+    expect(step4).toContain('"Overlap with other stages"');
     expect(step4).toContain('**not a dependency**');
     expect(step4).toContain('`toca=`');
     expect(step4).toContain('early start');
@@ -121,6 +119,9 @@ describe('detalhar-backlog: Depende de only for a real dependency (#2968)', () =
     expect(step4).toContain('`ready` or `in-progress`');
     expect(step4).toContain('file in common');
     expect(step4).toContain('mcp/version.ts');
+  });
+
+  it('the MCP version is still chosen at the epic closing', () => {
     expect(detail).not.toContain('fixed when the epic starts');
     expect(detail).toContain('chosen at the epic closing');
   });
@@ -132,6 +133,9 @@ describe('detalhar-backlog: Depende de only for a real dependency (#2968)', () =
     expect(pronta).toContain('do not add `Depende de`');
     expect(pronta).toContain('file in common');
     expect(pronta).toContain('cycle');
+    expect(pronta).toContain(
+      'uses code, a helper or a decision that the earlier one creates',
+    );
     expect(pronta).not.toContain('add `Depende de` to the one that comes later');
   });
 });
