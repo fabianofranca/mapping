@@ -20,7 +20,10 @@ function setup(anchorTop: number, panelHeight: number) {
     ({ top: anchorTop, bottom: anchorTop + 18, left: 100, right: 118 }) as DOMRect;
   const panel = document.createElement('div');
   Object.defineProperty(panel, 'offsetWidth', { value: 300 });
-  Object.defineProperty(panel, 'offsetHeight', { value: panelHeight });
+  Object.defineProperty(panel, 'offsetHeight', {
+    value: panelHeight,
+    configurable: true,
+  });
   return { host, panel };
 }
 const top = (el: HTMLElement) => Number.parseFloat(el.style.top);
@@ -60,5 +63,28 @@ describe('place', () => {
     const { host, panel } = setup(100, 200);
     place(host, panel, 'start', { top: 60 });
     expect(top(panel)).toBe(122);
+  });
+
+  it('without a limit, a panel taller than both sides opens with a maximum height and scrolling', () => {
+    // Anchor at 60: below 700 - 8 - 82 = 610; above 60 - 4 - 8 = 48.
+    const { host, panel } = setup(60, 900);
+    place(host, panel, 'start');
+    expect(panel.style.maxHeight).toBe('610px');
+    expect(panel.style.overflowY).toBe('auto');
+    expect(top(panel)).toBe(82);
+    expect(top(panel) + Number.parseFloat(panel.style.maxHeight)).toBeLessThanOrEqual(
+      692,
+    );
+  });
+
+  it('a second place() of the same panel clears the maximum height and the scrolling', () => {
+    const { host, panel } = setup(60, 900);
+    panel.style.maxHeight = '610px';
+    panel.style.overflowY = 'auto';
+    Object.defineProperty(panel, 'offsetHeight', { value: 200, configurable: true });
+    place(host, panel, 'start');
+    expect(panel.style.maxHeight).toBe('');
+    expect(panel.style.overflowY).toBe('');
+    expect(top(panel)).toBe(82);
   });
 });
