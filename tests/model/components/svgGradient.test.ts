@@ -143,6 +143,11 @@ describe('a radial gradient in userSpaceOnUse', () => {
     );
   });
 
+  it('a radius that rounds to 0 paints the last stop color, never radius 0 (the file needs > 0)', () => {
+    const text = radial(`cx="12" cy="12" r="0.0000001" ${USER}`);
+    expect(fillOf(text, { colors: 'keep' })).toBe('#0000ff');
+  });
+
   it('the ellipse message is translated', () => {
     const result = svgToIcon(
       radial(`cx="0" cy="0" r="1" ${USER} gradientTransform="scale(4 2)"`),

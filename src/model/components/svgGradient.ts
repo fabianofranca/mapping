@@ -350,7 +350,11 @@ function radialPaint(
     env.problems.add(unsupportedAttribute(gradient.name, 'cx'));
     return undefined;
   }
-  return gradientOf({ type: 'radial', center: placed, radius: round(r * scale), stops });
+  // A radius that rounds to 0 draws nothing but the last color, as `r = 0` does (the file needs > 0).
+  const radius = round(r * scale);
+  return radius > 0
+    ? gradientOf({ type: 'radial', center: placed, radius, stops })
+    : flat(stops);
 }
 
 // ---------------------------------------------------------------------------------------------
