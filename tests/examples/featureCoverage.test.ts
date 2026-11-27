@@ -124,9 +124,6 @@ const MISSING_TODAY: string[] = [
   // Component layout v4 (stage #747, CF2): the distributed libraries do not migrate to
   // format 4 in this stage ('Out' decision of #747); covered by
   // tests/model/components/layoutFidelity.test.ts, layoutV4Parse.test.ts and by script R25.
-  // Literal `font.family`: the last Material 3 component that used it migrated (stage #833, M5) and
-  // inherits Roboto from the `font-sans` token; covered by tests/model/components/ and by script R25.
-  'component:font.family',
   // `font.verticalAlign: "middle"`: Material 3 moved the labels and numbers to `cap-middle` (stage #896,
   // FX6, decision 23); `middle` is still covered by tests/e2e/textMetrics.spec.ts and by script R25.
   'component:font.verticalAlign=middle',

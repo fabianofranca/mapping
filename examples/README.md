@@ -16,16 +16,16 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 ### `libraries/notas/`
 
-**What it is.** Loose notes on the canvas: the text sticky note (**Note**) and the key-value table (**Table**). Two types, both floating.
+**What it is.** Loose notes on the canvas: the sticky **Note** (title, text, an optional key-value table and a closing text, in six colors) and the plain **Text**. The note is floating; the text is not.
 
 **How to open.** It ships with the app and is applied by itself to every new project. To see the design and the documentation without a project: **Open library** on the home screen and pick the folder. With a project open: **Catalog** (`Ctrl+Shift+9`), **Components** tab, **Notes** library; in the **Palette** tab, **Add**.
 
 **What you can see.**
 
-- The floating marking: the note and the table sit on top of everything, belong to no screen and do not move with it (`floating` on both types).
-- The note (`nota`): fields `titulo` and `texto` (required), a yellow card with a shadow.
-- The table (`tabela`): a `linhas` field of the table type (columns `chave` and `valor`) drawn row by row by the `repeat` node, with the `preview` already in table form.
-- One document per type (`docs/nota.md`, `docs/tabela.md`) and one named example on each type.
+- The floating marking: the note sits on top of everything, belongs to no screen and does not move with it (`floating` on the `nota` type).
+- The note (`nota`): fields `titulo`, `texto`, `linhas` (a table of the `chave` and `valor` columns, drawn row by row by the `repeat` node), `textoDepois` and `cor` (`yellow`, `blue`, `green`, `pink`, `orange`, `gray`), a card with a shadow. A part with no value takes no room, so a note with only rows is a table.
+- The text (`texto`, not floating): `familia` (a font token of an applied library or a family stack), `alinhamento` (`start`, `center`, `end`) and `cor` by token name or `#RRGGBB`, read by `$tokenNamed`.
+- One document per type (`docs/nota.md`, `docs/texto.md`) and one named example on each type.
 - Simple sizing: `size`, `minSize` and `sizing` with `fill`; conditions with `$has` to hide the empty title.
 
 **Scripts.** R10.8, R11.5, R12.13 to R12.16.
@@ -365,7 +365,7 @@ When one exists, the example is from `libraries/`. The features of the file form
 | `number`                                                                          | `surface.tonalElevation` (`material3-compose`); `endpoint.timeoutMs` (`data-model.json`)                                  |
 | `date`                                                                            | `class.reviewedAt` (`data-model.json`); `since` column of `endpoint.params` (`sdui-backend`)                              |
 | `enum` and boolean as `enum`                                                      | `button.enabled` and `button.style` (`material3-compose`); class visibility (`kotlin`)                                    |
-| `table`                                                                           | Table: `linhas` (`notas`); Properties and Functions (`kotlin`); `action.parameters` (`sdui.json`)                         |
+| `table`                                                                           | Note: `linhas` (`notas`); Properties and Functions (`kotlin`); `action.parameters` (`sdui.json`)                          |
 | `ref` and `accepts`                                                               | `outer` and **Mapped type** (`kotlin`); `input.data` with `free` (`sdui.json`)                                            |
 | Tags (`tags`) and `rowLabel`                                                      | Properties with `data-field` and `kotlin-property` (`kotlin`); `class.attributes` (`data-model.json`)                     |
 | `suggestions`                                                                     | **Type** column of Properties (`kotlin`); icon fields (`material3-compose`)                                               |
@@ -383,7 +383,7 @@ When one exists, the example is from `libraries/`. The features of the file form
 | `tokens` as named values (`$value` wrapper, alias) and `$tokens` in `suggestions` | The `events` group (`analytics`)                                                                                          |
 | `accessibility.variants` (role per case)                                          | `sdui-button` `mode` `link` (`sdui-backend`)                                                                              |
 | `fonts`                                                                           | Roboto 400 and 500 as `.woff2` (`material3-compose`)                                                                      |
-| Floating type (`floating`)                                                        | Note and Table (`notas`); Event (`analytics`)                                                                             |
+| Floating type (`floating`)                                                        | Note (`notas`); Event (`analytics`)                                                                                       |
 | `appliesTo`                                                                       | Transition, arrow only (`analytics`); Endpoint, marking only (`sdui-backend`)                                             |
 | `component`, `doc` and `examples` (library package)                               | All the folders in `libraries/` and `analytics`                                                                           |
 | `sources` (plain data for a plugin) and a file format with components             | `sdui-backend`                                                                                                            |
@@ -404,7 +404,7 @@ When one exists, the example is from `libraries/`. The features of the file form
 | `path`                                                                | Icons of the Button, the Checkbox, the Chip and others (`material3-compose`)                                                                      |
 | `image`                                                               | Image, Card, List item and Carousel (`material3-compose`)                                                                                         |
 | `slot`                                                                | Box, Column, Row, Scaffold and others (`material3-compose`)                                                                                       |
-| `repeat`                                                              | Table (`notas`); Properties (`kotlin`); Event (`analytics`); Navigation bar, Tabs and Carousel (`material3-compose`)                              |
+| `repeat`                                                              | Note (`notas`); Properties (`kotlin`); Event (`analytics`); Navigation bar, Tabs and Carousel (`material3-compose`)                               |
 | Layout `row`, `column` and `none`                                     | `row` and `column` in all libraries; `none` in the Box (`material3-compose`)                                                                      |
 | `gap`, `padding` (number, pair and four sides)                        | Number in all; pair and four sides (`material3-compose`)                                                                                          |
 | `align` and `justify`                                                 | `align` `start`, `center` and `stretch`; `justify` `start`, `center`, `end` and `space-between` (`material3-compose`: Tabs, Alert dialog, Slider) |

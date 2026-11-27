@@ -1,9 +1,9 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 2,
   "id": "nota",
   "name": "Note",
-  "description": "Yellow sticky note with an optional bold title and the text, which wraps.",
+  "description": "Sticky note in one of six colors (yellow by default) with an optional bold title, a text, rows of key and value and a text after the rows; each part is hidden while it is empty.",
   "size": {
     "width": 240,
     "height": 120
@@ -29,7 +29,17 @@
       "padding": 12
     },
     "cornerRadius": 2,
-    "fill": "#FFF1A8",
+    "fill": {
+      "$switch": "cor",
+      "cases": {
+        "blue": "#D6E8FF",
+        "green": "#D7F5DC",
+        "pink": "#FFD9E8",
+        "orange": "#FFE0C2",
+        "gray": "#E9EAEC"
+      },
+      "default": "#FFF1A8"
+    },
     "shadow": {
       "color": "rgba(0, 0, 0, 0.25)",
       "x": 0,
@@ -48,7 +58,17 @@
           "weight": 700,
           "lineHeight": 20
         },
-        "color": "#3B3200",
+        "color": {
+          "$switch": "cor",
+          "cases": {
+            "blue": "#0B2E59",
+            "green": "#0E3B17",
+            "pink": "#5A0F2E",
+            "orange": "#5A2A00",
+            "gray": "#26282B"
+          },
+          "default": "#3B3200"
+        },
         "visible": {
           "$has": "titulo"
         },
@@ -65,7 +85,113 @@
           "weight": 400,
           "lineHeight": 18
         },
-        "color": "#3B3200",
+        "color": {
+          "$switch": "cor",
+          "cases": {
+            "blue": "#0B2E59",
+            "green": "#0E3B17",
+            "pink": "#5A0F2E",
+            "orange": "#5A2A00",
+            "gray": "#26282B"
+          },
+          "default": "#3B3200"
+        },
+        "visible": {
+          "$has": "texto"
+        },
+        "width": "fill"
+      },
+      {
+        "type": "repeat",
+        "name": "rows",
+        "field": "linhas",
+        "direction": "column",
+        "gap": 4,
+        "template": {
+          "type": "frame",
+          "name": "row",
+          "layout": {
+            "type": "row",
+            "gap": 12
+          },
+          "children": [
+            {
+              "type": "text",
+              "name": "key",
+              "text": {
+                "$field": "chave"
+              },
+              "font": {
+                "size": 12,
+                "weight": 600,
+                "lineHeight": 16
+              },
+              "color": {
+                "$switch": "cor",
+                "cases": {
+                  "blue": "#0B2E59",
+                  "green": "#0E3B17",
+                  "pink": "#5A0F2E",
+                  "orange": "#5A2A00",
+                  "gray": "#26282B"
+                },
+                "default": "#3B3200"
+              },
+              "width": "hug"
+            },
+            {
+              "type": "text",
+              "name": "value",
+              "text": {
+                "$field": "valor"
+              },
+              "font": {
+                "size": 12,
+                "weight": 400,
+                "lineHeight": 16,
+                "align": "right"
+              },
+              "color": {
+                "$switch": "cor",
+                "cases": {
+                  "blue": "#0B2E59",
+                  "green": "#0E3B17",
+                  "pink": "#5A0F2E",
+                  "orange": "#5A2A00",
+                  "gray": "#26282B"
+                },
+                "default": "#3B3200"
+              },
+              "width": "fill"
+            }
+          ]
+        }
+      },
+      {
+        "type": "text",
+        "name": "text-after",
+        "text": {
+          "$field": "textoDepois"
+        },
+        "font": {
+          "size": 13,
+          "weight": 400,
+          "lineHeight": 18
+        },
+        "color": {
+          "$switch": "cor",
+          "cases": {
+            "blue": "#0B2E59",
+            "green": "#0E3B17",
+            "pink": "#5A0F2E",
+            "orange": "#5A2A00",
+            "gray": "#26282B"
+          },
+          "default": "#3B3200"
+        },
+        "visible": {
+          "$has": "textoDepois"
+        },
         "width": "fill"
       }
     ]
