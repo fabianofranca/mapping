@@ -171,9 +171,10 @@ describe('proposal with the decorative field', () => {
 
   it('a whole marking without the key reads as false when applied', () => {
     const proposal = build(withSamples, withPlainFrame);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json = JSON.parse(serializeProposal(proposal)) as Record<string, any>;
-    const create = (json.changes as Record<string, any>[]).find(
+    const json = JSON.parse(serializeProposal(proposal)) as {
+      changes: { entity: string; kind: string; to: unknown }[];
+    };
+    const create = json.changes.find(
       (c) => c.entity === 'marking' && c.kind === 'create',
     );
     expect(create?.to).not.toHaveProperty('decorative');
