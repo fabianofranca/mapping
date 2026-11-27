@@ -1,4 +1,4 @@
-# `Depende de` only for a real dependency — [Não lançado] (épico `epic/depende-de-real`, PR #2983, MCP unchanged, schema v24)
+# `Depende de` only for a real dependency — 2026-11-27 (épico `epic/depende-de-real`, PR #2983, MCP unchanged, schema v24)
 
 ## Alterado
 
