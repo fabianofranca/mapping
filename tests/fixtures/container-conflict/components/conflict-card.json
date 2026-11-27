@@ -1,0 +1,25 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "conflict-card",
+  "name": "Conflict card",
+  "description": "A card whose background reads the container's window class: narrow red, wide blue, no class grey.",
+  "size": { "width": 120, "height": 48 },
+  "template": {
+    "type": "frame",
+    "layout": { "type": "none" },
+    "children": [
+      {
+        "type": "rect",
+        "name": "background",
+        "width": 120,
+        "height": 48,
+        "fill": {
+          "$switch": "$container.window",
+          "cases": { "narrow": "#D32F2F", "wide": "#1976D2" },
+          "default": "#9E9E9E"
+        }
+      }
+    ]
+  }
+}

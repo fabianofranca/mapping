@@ -147,7 +147,7 @@ export function measureComponentSize(
   const { project, annotation } = scratchProject(p, args);
   const type = findSpecType(project, { specId: args.specId, typeId: args.typeId })!.type;
   const { values, warnings } = drawingValues(project, annotation, type);
-  const drawn = componentForDrawing(project, component, args.containerId);
+  const drawn = componentForDrawing(project, component, args.containerId, args.specId);
   const base = baseSize(component, args.size);
   const fitted = fitComponentSize(
     drawn.component,

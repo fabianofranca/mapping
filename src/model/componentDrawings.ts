@@ -1200,7 +1200,7 @@ export function createDrawingCache(): DrawingCache {
       const density = effectiveDensity(p, marking.containerId);
       const direction = effectiveDirection(p, marking.containerId);
       const anchor = anchorOfMarking(marking, markingsById);
-      const container = readContainerOf(p, mc.component, marking.containerId);
+      const container = readContainerOf(p, mc.component, marking.containerId, mc.specId);
       const specTokens = readsTokenNamed(mc.component) ? allSpecTokens : NO_SPEC_TOKENS;
       const before = entries.get(marking.id);
       if (

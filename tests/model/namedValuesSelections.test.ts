@@ -137,17 +137,22 @@ describe('a tokens.axes library draws with its tokens', () => {
 
   it('componentForDrawing picks the table of the stored selection', () => {
     const p = sampleProject();
-    const light = componentForDrawing(p, component, null);
+    const light = componentForDrawing(p, component, null, 'spec');
     expect(light.tokens?.primary).toBe('#111111');
     const dark = componentForDrawing(
       setProjectDrawingMode(p, { theme: 'dark' }),
       component,
       null,
+      'spec',
     );
     expect(dark.tokens?.primary).toBe('#222222');
     expect(
-      componentForDrawing(setProjectDrawingMode(p, { theme: 'dark' }), component, null)
-        .tokens,
+      componentForDrawing(
+        setProjectDrawingMode(p, { theme: 'dark' }),
+        component,
+        null,
+        'spec',
+      ).tokens,
     ).toBe(dark.tokens);
   });
 
