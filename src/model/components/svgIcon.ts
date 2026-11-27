@@ -3,12 +3,14 @@ import type { ModelMessage } from '../modelMessage';
 import {
   ICON_NAME_PATTERN,
   type IconCap,
+  type IconClip,
   type IconDef,
   type IconFillRule,
   type IconGradient,
   type IconJoin,
   type IconPath,
 } from './icons';
+import { ClipResolver } from './svgClip';
 import { convertGradient, isGradientElement } from './svgGradient';
 import {
   invalidValue,
@@ -33,13 +35,14 @@ import { parseXml, styleDeclarations, type XmlElement } from './svgXml';
  * inherited from `g` and `svg`) into `fill`, `fillRule`, `stroke`, `width`, `cap` and `join`, and
  * applies the color rule (a single color follows the `icon` node; several are kept as written).
  * A `fill="url(#id)"` that points at a linear or radial gradient becomes the icon's gradient
- * `fill` (`svgGradient.ts`, stage #2847).
+ * `fill` (`svgGradient.ts`, stage #2847), and a `clip-path` to a `clipPath` of one shape becomes the
+ * icon's `clip` (`svgClip.ts`; Figma's full-`viewBox` wrapper is dropped).
  *
  * What it does not support is an error that names it (`unsupported in SVG: <element>
  * <attribute>`), never a silent loss: `transform`, a gradient on a `stroke`, the gradients that
  * `svgGradient.ts` refuses (`href`, `spreadMethod`, a focal point, an ellipse), `mask`, `filter`,
- * any clip other than the full-`viewBox` one that Figma wraps its icons in, `use`, `text`,
- * `image`, opacity below 1, `stroke-dasharray`, a `viewBox` with an origin other than `0 0`, and
+ * the clips that `svgClip.ts` refuses (several shapes, nested, over only part of the icon), `use`,
+ * `text`, `image`, opacity below 1, `stroke-dasharray`, a `viewBox` with an origin other than `0 0`, and
  * units other than px.
  *
  * Pure functions, no DOM: it runs in Node (the `import_icons` tool) and in the browser.
@@ -376,53 +379,6 @@ function boxOf(root: XmlElement, problems: Problems): Box | undefined {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Figma's wrapper: a `clip-path` on a `g` whose `<clipPath>` is a `rect` covering the `viewBox`
-
-const CLIP_RECT_ATTRIBUTES = ['x', 'y', 'width', 'height', 'fill', 'id'];
-
-function coversBox(rect: XmlElement, box: Box): boolean {
-  const at = (name: string, fallback: number): number | undefined => {
-    const value = rect.attributes.get(name);
-    const n = value === undefined ? fallback : parseLength(value);
-    return typeof n === 'number' ? n : undefined;
-  };
-  return (
-    rect.name === 'rect' &&
-    [...rect.attributes.keys()].every((name) => CLIP_RECT_ATTRIBUTES.includes(name)) &&
-    at('x', 0) === 0 &&
-    at('y', 0) === 0 &&
-    at('width', NaN) === box[0] &&
-    at('height', NaN) === box[1]
-  );
-}
-
-function isFullClip(clip: XmlElement, box: Box): boolean {
-  const [rect] = clip.children;
-  return (
-    clip.children.length === 1 &&
-    rect !== undefined &&
-    rect.children.length === 0 &&
-    [...clip.attributes.keys()].every((name) => name === 'id') &&
-    coversBox(rect, box)
-  );
-}
-
-/** The ids of the `<clipPath>`s of the file that are the full-`viewBox` clip. */
-function fullClipIds(
-  element: XmlElement,
-  box: Box,
-  ids = new Set<string>(),
-): Set<string> {
-  const id = element.attributes.get('id');
-  if (element.name === 'clipPath' && id !== undefined && isFullClip(element, box))
-    ids.add(id);
-  for (const child of element.children) fullClipIds(child, box, ids);
-  return ids;
-}
-
-const CLIP_REFERENCE = /^url\(\s*['"]?#([^'")\s]+)['"]?\s*\)$/;
-
-// ---------------------------------------------------------------------------------------------
 // The walk
 
 interface Shape {
@@ -430,11 +386,13 @@ interface Shape {
   /** The fill with its `url(#id)` resolved. */
   readonly fill: Paint;
   readonly style: Style;
+  /** The non-trivial clip ids on its ancestors and on itself, outermost first. */
+  readonly clips: readonly string[];
 }
 
 interface Walk {
   readonly box: Box;
-  readonly clips: ReadonlySet<string>;
+  readonly clips: ClipResolver;
   /** Every element of the file with an `id` (the first one wins): what a `url(#id)` points at. */
   readonly ids: ReadonlyMap<string, XmlElement>;
   readonly shapes: Shape[];
@@ -451,25 +409,36 @@ function collectIds(
   return ids;
 }
 
-/** `<defs>` holds the full-`viewBox` clips and the gradients (read where a paint points at them); anything else in it is named. */
+/** Gradients and clips are definitions wherever they are: read where something points at them, never drawn. */
+const isDefinition = (name: string): boolean =>
+  isGradientElement(name) || name === 'clipPath';
+
+/** `<defs>` holds the definitions; anything else in it is named. */
 function visitDefs(walk: Walk, defs: XmlElement): void {
   checkAttributes(defs, [], walk.problems);
   for (const child of defs.children)
-    if (isGradientElement(child.name)) continue;
-    else if (child.name !== 'clipPath') walk.problems.add(unsupportedElement(child.name));
-    else if (!isFullClip(child, walk.box))
-      walk.problems.add(unsupportedElement('clipPath'));
+    if (!isDefinition(child.name)) walk.problems.add(unsupportedElement(child.name));
 }
 
-function visitGroup(walk: Walk, group: XmlElement, inherited: Style): void {
+/** The clip ids down to this element: the chain so far plus the element's own non-trivial clip. */
+function chainOf(
+  walk: Walk,
+  element: XmlElement,
+  clips: readonly string[],
+): readonly string[] {
+  const id = walk.clips.reference(element);
+  return id === undefined ? clips : [...clips, id];
+}
+
+function visitGroup(
+  walk: Walk,
+  group: XmlElement,
+  inherited: Style,
+  clips: readonly string[],
+): void {
   checkAttributes(group, ['clip-path'], walk.problems);
-  const clip = group.attributes.get('clip-path');
-  if (clip !== undefined) {
-    const id = CLIP_REFERENCE.exec(clip.trim())?.[1];
-    if (id === undefined || !walk.clips.has(id))
-      walk.problems.add(unsupportedAttribute('g', 'clip-path'));
-  }
-  visitChildren(walk, group, styleOf(group, inherited, walk.problems));
+  const chain = chainOf(walk, group, clips);
+  visitChildren(walk, group, styleOf(group, inherited, walk.problems), chain);
 }
 
 /** The `d` of a `path`; `undefined` after reporting that it is missing or blank. */
@@ -496,12 +465,21 @@ function shapeData(walk: Walk, element: XmlElement): string | undefined {
 const dataOf = (walk: Walk, element: XmlElement): string | undefined =>
   element.name === 'path' ? pathData(walk, element) : shapeData(walk, element);
 
-function visitShape(walk: Walk, element: XmlElement, inherited: Style): void {
+function visitShape(
+  walk: Walk,
+  element: XmlElement,
+  inherited: Style,
+  clips: readonly string[],
+): void {
   checkAttributes(
     element,
-    element.name === 'path' ? ['d'] : (SHAPE_ATTRIBUTES[element.name] ?? []),
+    [
+      'clip-path',
+      ...(element.name === 'path' ? ['d'] : (SHAPE_ATTRIBUTES[element.name] ?? [])),
+    ],
     walk.problems,
   );
+  const chain = chainOf(walk, element, clips);
   const style = styleOf(element, inherited, walk.problems);
   const d = dataOf(walk, element);
   if (d === undefined) return;
@@ -510,7 +488,7 @@ function visitShape(walk: Walk, element: XmlElement, inherited: Style): void {
   if (fill === undefined) return;
   // Neither fill nor stroke: the shape draws nothing, so it is not an icon path.
   if (fill.kind !== 'none' || style.stroke.kind !== 'none')
-    walk.shapes.push({ d, fill, style });
+    walk.shapes.push({ d, fill, style, clips: chain });
 }
 
 /** The paint a gradient definition makes: the gradient, or the color it reduces to. */
@@ -546,17 +524,27 @@ function resolveFill(
   return undefined;
 }
 
-function visit(walk: Walk, element: XmlElement, inherited: Style): void {
-  if (SILENT_ELEMENTS.has(element.name) || isGradientElement(element.name)) return;
+function visit(
+  walk: Walk,
+  element: XmlElement,
+  inherited: Style,
+  clips: readonly string[],
+): void {
+  if (SILENT_ELEMENTS.has(element.name) || isDefinition(element.name)) return;
   if (element.name === 'defs') visitDefs(walk, element);
-  else if (element.name === 'g') visitGroup(walk, element, inherited);
+  else if (element.name === 'g') visitGroup(walk, element, inherited, clips);
   else if (element.name === 'path' || isBasicShape(element.name))
-    visitShape(walk, element, inherited);
+    visitShape(walk, element, inherited, clips);
   else walk.problems.add(unsupportedElement(element.name));
 }
 
-function visitChildren(walk: Walk, parent: XmlElement, style: Style): void {
-  for (const child of parent.children) visit(walk, child, style);
+function visitChildren(
+  walk: Walk,
+  parent: XmlElement,
+  style: Style,
+  clips: readonly string[],
+): void {
+  for (const child of parent.children) visit(walk, child, style, clips);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -623,34 +611,44 @@ const failed = (problems: Problems): SvgIconResult => ({
 });
 
 /** The icon entry of the shapes found: the color rule applied and the `viewBox` written or omitted. */
-function buildIcon(walk: Walk, options: SvgIconOptions): IconDef {
+function buildIcon(
+  walk: Walk,
+  clip: IconClip | undefined,
+  options: SvgIconOptions,
+): IconDef {
   const paint = paintResolver(walk.shapes, options.colors ?? 'auto');
   const { box } = walk;
   const sameBox =
     options.defaultViewBox?.[0] === box[0] && options.defaultViewBox[1] === box[1];
   return {
     ...(sameBox ? {} : { viewBox: box }),
+    ...(clip === undefined ? {} : { clip }),
     ...(options.mirror === true ? { mirror: true } : {}),
     paths: walk.shapes.map((shape) => iconPath(shape, paint)),
   };
 }
 
-/** Reads the root: the box and the walk over its children; `undefined` with the problems reported. */
-function walkRoot(root: XmlElement, problems: Problems): Walk | undefined {
+/** Reads the root: the box, the walk over its children and the icon's clip; `undefined` with the problems reported. */
+function walkRoot(
+  root: XmlElement,
+  problems: Problems,
+): { readonly walk: Walk; readonly clip: IconClip | undefined } | undefined {
   const box = boxOf(root, problems);
   checkAttributes(root, ['width', 'height', 'viewBox'], problems);
   if (box === undefined) return undefined;
+  const ids = collectIds(root);
   const walk: Walk = {
     box,
-    clips: fullClipIds(root, box),
-    ids: collectIds(root),
+    clips: new ClipResolver({ box, ids, problems }),
+    ids,
     shapes: [],
     problems,
   };
-  visitChildren(walk, root, styleOf(root, DEFAULT_STYLE, problems));
+  visitChildren(walk, root, styleOf(root, DEFAULT_STYLE, problems), []);
+  const clip = walk.clips.settle(walk.shapes.map((shape) => shape.clips));
   if (problems.size === 0 && walk.shapes.length === 0)
     problems.add(templateMessage('svgIcon.noShape'));
-  return walk;
+  return { walk, clip };
 }
 
 /** Converts the text of an SVG file into an icon entry; never throws. */
@@ -662,8 +660,9 @@ export function svgToIcon(text: string, options: SvgIconOptions = {}): SvgIconRe
   const name = nameOf(options, problems);
   if (root.name !== 'svg')
     problems.add(templateMessage('svgIcon.notSvg', { element: root.name }));
-  const walk = root.name === 'svg' ? walkRoot(root, problems) : undefined;
-  if (walk === undefined || problems.size > 0) return failed(problems);
-  const icon = buildIcon(walk, options);
+  const walked = root.name === 'svg' ? walkRoot(root, problems) : undefined;
+  if (walked === undefined || problems.size > 0) return failed(problems);
+  const { walk, clip } = walked;
+  const icon = buildIcon(walk, clip, options);
   return { ok: true, ...(name === undefined ? {} : { name }), icon, viewBox: walk.box };
 }
