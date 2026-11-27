@@ -182,6 +182,11 @@ beforeAll(async () => {
       title: 'Seed',
       operations: [
         {
+          op: 'update_container',
+          container: `mapping://telas/i/${TALL.slice(0, 8)}`,
+          name: 'Home',
+        },
+        {
           op: 'create_marking',
           container: `mapping://telas/i/${TALL.slice(0, 8)}`,
           rect: RECT,
@@ -376,6 +381,33 @@ describe('a container the batch recreates', () => {
     const region = error.region as PixelRect;
     expect(region.width).toBeGreaterThan(0);
     expect(region.y + region.height).toBeGreaterThanOrEqual(900);
+  });
+});
+
+describe('a deleted container (the same-name rule of the not-found)', () => {
+  it('names the container created with the same name, not the other ones on the page', async () => {
+    const screen = (as: string, name: string) => ({
+      op: 'add_container',
+      as,
+      width: 100,
+      height: 100,
+      background: '#FFFFFF',
+      name,
+    });
+    const error = errorOf(
+      await call('render_container', {
+        project: 'telas',
+        ref: container,
+        operations: [
+          { op: 'delete_container', container },
+          screen('$other', 'Other'),
+          screen('$home', 'Home'),
+        ],
+      }),
+    );
+    expect(error.code).toBe('not-found');
+    expect(error.deletedBy).toBe('batch');
+    expect(error.replacedBy).toEqual(['$home']);
   });
 });
 
