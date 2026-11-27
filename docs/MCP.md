@@ -298,6 +298,12 @@ The stage `epic/format-plugins` lets a specialization (`formatVersion` 20) carry
 - **Errors.** New code `format-not-found` (an unknown `<specId>/<formatId>`; `details.formats` lists the available ones). The plugin errors `plugin-failed`, `plugin-timeout`, `plugin-limit` and `plugin-output-invalid` come from the executor (`details.path` is the path inside the result for `plugin-output-invalid`). An operation of the result that the model refuses is the batch's usual error with `details.path` = `operations[i].result[j]` and `details.resultOp` = the operation's name. No error brings the server down and nothing is written.
 - **Update the MCP first:** an earlier version does not know `export_format` or `import_format` (`unknown operation`) and does not run the plugins in `validate_library`.
 
+### Change in 0.61.2 — a `hug` rich text fits its lines; sizing-only fields count as used (stage #2925)
+
+- **`hug` text with `runs`:** the measured width is the widest line counting the larger of the merged pieces and the segments the line breaking summed, so a `hug` text is no longer measured narrower than the lines it is drawn on.
+- **`validate_library`:** a field read only by the root `sizing` no longer gets the warning `not used by the drawing`; a field the type does not declare, cited in `sizing`, is an error at its `sizing` path (as in the root `weight`). An MCP before 0.61.2 still warns about a sizing-only field and does not flag an undeclared one.
+- **No tool, parameter, error code, schema or format change.**
+
 ### Change in 0.61.1 — a justified line is reordered as a whole (stage #2653)
 
 - **Justified lines in the PNG** (JB1): `render_marking` and `render_container` lay out a justified line (`align: justify`) that is `rtl`, or that holds a code unit at or above U+0590, the way Chromium's DOM does. The line is reordered once by the Unicode bidirectional algorithm with the node's direction as the base; each word is laid out in the direction of the run it sits in, so a comma or period at the edge of a word stays on the side the DOM puts it (`Hello, world.` in `rtl` draws the period at the left edge and the comma on the right of `Hello`); the words of a right-to-left run go from right to left (`אבג דה` puts `אבג` at the right edge); and every space gets the same share of the slack. An `ltr` line with no code unit at or above U+0590 is drawn exactly as before. The app's canvas does not change (see `docs/COMPONENT-FORMAT.md`, "Known limits").

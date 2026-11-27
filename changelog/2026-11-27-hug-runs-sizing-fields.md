@@ -1,4 +1,4 @@
-# A `hug` text with `runs` fits its measured lines — [Não lançado] (épico `epic/hug-runs-sizing-fields`, PR #3000, MCP 0.61.2, schema v24)
+# A `hug` text with `runs` fits its measured lines — 2026-11-27 (épico `epic/hug-runs-sizing-fields`, PR #3008, MCP 0.61.2, schema v24)
 
 ## Corrigido
 

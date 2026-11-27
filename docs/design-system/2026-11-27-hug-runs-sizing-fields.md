@@ -1,4 +1,4 @@
-# A `hug` text with `runs` fits its measured lines — [Não lançado] (épico `epic/hug-runs-sizing-fields`)
+# A `hug` text with `runs` fits its measured lines — 2026-11-27 (épico `epic/hug-runs-sizing-fields`)
 
 ## Pendências
 
@@ -6,7 +6,7 @@ None. DS impact: none. The epic changes the model's measurement of rich text, th
 
 ## Sincronização
 
-Nothing to write to the **Mapping** artifact: the epic does not change a component, token or icon of the app.
+Sem impacto on the Claude Design Mapping artifact: the epic changes the model's rich text measurement, the root `sizing` validation and the format docs; no component, token or icon changes.
 
 ## Ficou sem gravar
 
