@@ -291,6 +291,18 @@ export interface FontSpec {
   readonly ellipsis?: BoolExpr;
   /** Maximum lines (integer ≥ 1); the last takes the `…` (with `ellipsis`) or is cut. v4 only. */
   readonly maxLines?: Expr<number>;
+  /**
+   * `shrink` takes the first size of `size`, then `fitSizes`, that fits the text's width (no line
+   * wider than the box and, with `maxLines`, within it); `none` (the default) keeps `size`.
+   * A literal `shrink` does not combine with `runs`. formatVersion 4 only.
+   */
+  readonly fit?: Expr<'none' | 'shrink'>;
+  /**
+   * The sizes `fit: "shrink"` may take after `size`, from the largest to the smallest (1 to 8
+   * items: a number greater than 0, or a number expression). No effect without `fit: "shrink"`.
+   * formatVersion 4 only.
+   */
+  readonly fitSizes?: readonly Expr<number>[];
 }
 
 // ---------------------------------------------------------------------------------------

@@ -910,9 +910,13 @@ function createEngine(
     return 0;
   };
 
-  const textFont = (node: TextTemplate): MeasureFont => {
+  /** The node's declared `font.size` (px ≥ 0). */
+  const declaredSize = (node: TextTemplate): number =>
+    Math.max(0, num(node.font?.size, 14));
+
+  /** The node's font at `size`: the size drives a multiple `lineHeight` and a `%` `letterSpacing`. */
+  const fontAt = (node: TextTemplate, size: number): MeasureFont => {
     const font: FontSpec = node.font ?? {};
-    const size = Math.max(0, num(font.size, 14));
     const lh = num(font.lineHeight, 1.2);
     return {
       ...textWrapping(font),
@@ -925,6 +929,117 @@ function createEngine(
       ...(dirOf(node) === 'rtl' ? { direction: 'rtl' as const } : {}),
     };
   };
+
+  /** The node's font at its declared size (`font.size`), before any `fit`. */
+  const textFont = (node: TextTemplate): MeasureFont => fontAt(node, declaredSize(node));
+
+  // --- text that shrinks to fit (`font.fit`, decisions 2 and 3 of #2916) --------------------
+
+  /** `font.fit`: `shrink` only on plain text (with `runs` an expression's `shrink` is an invalid value). */
+  const fitMode = (node: TextTemplate): 'none' | 'shrink' => {
+    if (node.font?.fit === undefined) return 'none';
+    const mode = checked(node.font.fit, ['none', 'shrink'], 'none', 'font.fit');
+    if (mode === 'shrink' && node.runs !== undefined) {
+      invalidValue('font.fit', mode);
+      return 'none';
+    }
+    return mode;
+  };
+
+  const fitSizeMemo = new Map<TextTemplate, readonly number[]>();
+
+  /**
+   * The candidate sizes, from the largest: `font.size`, then each `fitSizes` item that is greater
+   * than 0 and smaller than the last one kept (another is skipped with `engine.invalidValue`).
+   */
+  const fitSizesOf = (node: TextTemplate): readonly number[] => {
+    const known = fitSizeMemo.get(node);
+    if (known !== undefined) return known;
+    const sizes = [declaredSize(node)];
+    for (const item of node.font?.fitSizes ?? []) {
+      const value = ev<unknown>(item as Expr<unknown>, undefined);
+      // As `font.size`: a number, or text that reads as one.
+      const size = typeof value === 'number' ? value : parseFloat(String(value));
+      const last = sizes[sizes.length - 1] as number;
+      if (size > 0 && size < last) sizes.push(size);
+      else invalidValue('font.fitSizes', value);
+    }
+    fitSizeMemo.set(node, sizes);
+    return sizes;
+  };
+
+  /**
+   * The width the text is laid out in: the given one or, for a `hug`/`max-content` text, its
+   * `maxWidth`. A text with no width limit has none (and keeps `font.size`).
+   */
+  const fitLimit = (
+    node: TextTemplate,
+    maxWidth: number | undefined,
+  ): number | undefined => {
+    if (maxWidth !== undefined) return maxWidth;
+    const spec = specOf(node, 'w');
+    if (spec !== 'hug' && spec !== 'max-content') return undefined;
+    const { max } = limitOf(node, 'w');
+    return Number.isFinite(max) ? max : undefined;
+  };
+
+  /** Does the text fit `limit` at `font`: no line wider than the box and, with `maxLines`, within it? */
+  const fitsWidth = (node: TextTemplate, font: MeasureFont, limit: number): boolean => {
+    const free: MeasureFont = { ...font };
+    delete free.maxLines;
+    delete free.ellipsis;
+    const measured = options.measure(plainText(node), free, limit);
+    if (font.maxLines !== undefined && measuredLines(measured) > font.maxLines)
+      return false;
+    // Without `lines` the measurer's width may be clamped to the limit: measure it free.
+    const widest =
+      measured.lines === undefined
+        ? options.measure(plainText(node), free).width
+        : widestWord(measured.lines, free, limit);
+    return widest <= limit + WRAP_SLACK;
+  };
+
+  /** The first candidate font that fits `limit`; with none, the smallest. */
+  const chooseFitFont = (node: TextTemplate, limit: number): MeasureFont => {
+    const sizes = fitSizesOf(node);
+    for (const size of sizes) {
+      const font = fontAt(node, size);
+      if (fitsWidth(node, font, limit)) return font;
+    }
+    return fontAt(node, smallest(sizes));
+  };
+
+  const fitMemo = new Map<TextTemplate, Map<number, MeasureFont>>();
+
+  /**
+   * The font the text is laid out and drawn with in a box of width `maxWidth`: `font.size`, or
+   * with `fit: "shrink"` the first of its sizes that fits (memoized per node and width).
+   */
+  const fittedFont = (node: TextTemplate, maxWidth?: number): MeasureFont => {
+    if (fitMode(node) !== 'shrink') return textFont(node);
+    const limit = fitLimit(node, maxWidth);
+    if (limit === undefined || limit <= EPS) return textFont(node);
+    let byLimit = fitMemo.get(node);
+    if (byLimit === undefined) {
+      byLimit = new Map();
+      fitMemo.set(node, byLimit);
+    }
+    let font = byLimit.get(limit);
+    if (font === undefined) {
+      font = chooseFitFont(node, limit);
+      byLimit.set(limit, font);
+    }
+    return font;
+  };
+
+  const smallest = (sizes: readonly number[]): number =>
+    sizes[sizes.length - 1] as number;
+
+  /** The font of the text's `min-content`: the smallest size `fit: "shrink"` may take. */
+  const smallestFont = (node: TextTemplate): MeasureFont =>
+    fitMode(node) === 'shrink'
+      ? fontAt(node, smallest(fitSizesOf(node)))
+      : textFont(node);
 
   // --- rich text (runs) ------------------------------------------------------------------
 
@@ -1058,7 +1173,7 @@ function createEngine(
     if (maxWidth !== undefined && maxWidth <= EPS)
       warn('engine.textZeroWidth', { name: nodeName(node) });
     return remembered(node, maxWidth, () => {
-      const font = textFont(node);
+      const font = fittedFont(node, maxWidth);
       if (node.runs === undefined)
         return options.measure(plainText(node), font, maxWidth);
       const rich = richRuns(node, font);
@@ -1107,7 +1222,7 @@ function createEngine(
   /** Height and baselines (first and last) of the node's text, at the top of the box. */
   const baselinesOf = (node: TextTemplate, maxWidth?: number): TextBaselines => {
     if (node.runs !== undefined) return richBaselines(node, maxWidth);
-    const font = textFont(node);
+    const font = fittedFont(node, maxWidth);
     const m = remembered(node, maxWidth, () =>
       options.measure(plainText(node), font, maxWidth),
     );
@@ -1873,8 +1988,11 @@ function createEngine(
    * cache (`withMeasureMemo`).
    */
   const plainMinContent = (node: TextTemplate): number => {
-    const styled = textFont(node);
-    if (styled.wrap === 'none') return measureText(node).width;
+    const styled = smallestFont(node);
+    if (styled.wrap === 'none')
+      return fitMode(node) === 'shrink'
+        ? options.measure(plainText(node), styled).width
+        : measureText(node).width;
     // The font without the box's cut (`maxLines`, `ellipsis`): each word is measured whole.
     const font: MeasureFont = { ...styled, maxLines: undefined, ellipsis: undefined };
     return plainText(node)
@@ -1886,9 +2004,15 @@ function createEngine(
       );
   };
 
+  /** The widest unwrapped line, at `font.size` (a `fit` text only shrinks inside the box it gets). */
+  const maxContentWidth = (node: TextTemplate): number =>
+    fitMode(node) === 'shrink'
+      ? options.measure(plainText(node), textFont(node)).width
+      : measureText(node).width;
+
   /** The text's intrinsic width: `max-content` the widest unwrapped line, `min-content` the widest word. */
   const textIntrinsic = (node: TextTemplate, mode: IntrinsicSize): number => {
-    if (mode === 'max-content') return measureText(node).width;
+    if (mode === 'max-content') return maxContentWidth(node);
     if (node.runs === undefined) return plainMinContent(node);
     const font = textFont(node);
     return minContentRuns(
@@ -3634,7 +3758,7 @@ function createEngine(
     w: number,
     h: number,
   ): SceneNode => {
-    const font = textFont(node);
+    const font = fittedFont(node, w);
     const style = textStyleOf(node, font, baselineTopOf(node, w));
     const { text, extra } = textContent(node, font, w, h);
     const color = str(node.color, '#000000');
