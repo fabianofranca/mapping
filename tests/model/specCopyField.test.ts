@@ -89,7 +89,7 @@ function expectIssue(spec: Json, path: string, message: string): void {
 
 describe('formatVersion 19: the version number', () => {
   it('is no longer the current version, but still an accepted one', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(N + 5);
+    expect(SPEC_FORMAT_VERSION).toBe(N + 6);
     expect(SPEC_FORMAT_VERSIONS).toContain(N);
   });
 });

@@ -304,3 +304,72 @@ describe('the menu item: a hug width and a `fill` label (decision 6 of #2164)', 
     }
   });
 });
+
+describe('maxWidth { "$size": "width" } on a hug text (#2920)', () => {
+  const hugText = (): ComponentFile =>
+    ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'c',
+      name: 'C',
+      size: { width: 300, height: 40 },
+      template: {
+        type: 'frame',
+        layout: { type: 'column', align: 'start' },
+        children: [
+          {
+            type: 'text',
+            text: { $field: 'msg' },
+            width: 'hug',
+            height: 'hug',
+            maxWidth: { $size: 'width' },
+            font: { size: 10, lineHeight: 12 },
+          },
+        ],
+      },
+    }) as unknown as ComponentFile;
+  const textOf = (msg: string, width: number) => {
+    const scene = instantiate(
+      hugText(),
+      { msg },
+      { x: 0, y: 0, width, height: 40 },
+      { measure: approximateMeasurer },
+    );
+    return (scene.root as unknown as { children: { width: number; height: number }[] })
+      .children[0];
+  };
+
+  it('a short text keeps its content width and a long one wraps at the instance width', () => {
+    const short = textOf('Ok', 120);
+    const long = textOf(`${LINE} ${LINE} ${LINE}`, 120);
+    expect(short?.width).toBeLessThan(120);
+    expect(long?.width).toBeLessThanOrEqual(120);
+    expect(long?.height).toBeGreaterThan(12);
+    expect(textOf('Ok', 300)?.width).toBe(short?.width);
+  });
+});
+
+describe('maxWidth { "$size": "width" } while fitting (#2920)', () => {
+  it('on the open (hug) axis being measured, $size does not limit: the limit is absent', () => {
+    const c = component(
+      { width: 'hug' },
+      {
+        layout: { type: 'row' },
+        children: [
+          {
+            type: 'text',
+            text: { $field: 'msg' },
+            width: 'hug',
+            height: 'hug',
+            maxWidth: { $size: 'width' },
+            font: { size: 10, lineHeight: 12 },
+          },
+        ],
+      },
+    );
+    const long = fit(c, { msg: `${LINE} ${LINE} ${LINE} ${LINE}` });
+    const short = fit(c, { msg: 'Ok' });
+    expect(long?.width).toBeGreaterThan(200);
+    expect(short?.width).toBeLessThan(long?.width ?? 0);
+  });
+});

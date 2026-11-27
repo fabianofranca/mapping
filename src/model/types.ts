@@ -1,10 +1,10 @@
 import type { TokenSelection } from './components/tokens';
 import type { Spec } from './spec';
 
-// Types of the `mapping.json` (schema v24). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
+// Types of the `mapping.json` (schema v25). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
 // the operations always return a new project.
 
-export const SCHEMA_VERSION = 24;
+export const SCHEMA_VERSION = 25;
 /** Drawing mode (v24): axis → entry of the specializations' `tokens` (the same shape as a token selection). */
 export type DrawingModeMap = TokenSelection;
 
@@ -184,6 +184,12 @@ export interface Marking {
    * above everything.
    */
   readonly floating: boolean;
+  /**
+   * Decorative (v25): draws something in its space (a frame, a bracket, a divider) and takes
+   * part in containment as a child like any marking, but is never the parent of a marking or of
+   * a container. Never together with `floating`. Absent reads as `false`.
+   */
+  readonly decorative: boolean;
   /** Identity in the source system (v8); `null` = no source. */
   readonly source: ExternalSource | null;
   /**

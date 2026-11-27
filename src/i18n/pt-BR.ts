@@ -127,6 +127,12 @@ export const ptBR: Dictionary = {
   'marking.container': 'Container',
   'marking.floating': 'Flutuante',
   'marking.floatingHint': 'Fica acima de tudo e não pertence a ninguém',
+  'marking.floatingDisabledHint':
+    'Desligue Decorativa antes: uma marcação não pode ser as duas',
+  'marking.decorative': 'Decorativa',
+  'marking.decorativeHint': 'Nunca contém outras marcações',
+  'marking.decorativeDisabledHint':
+    'Desligue Flutuante antes: uma marcação não pode ser as duas',
   'marking.deleteContainersStay':
     '{containers} container(s) dentro dela ficam no canvas.',
   'canvas.name': 'Canvas',
@@ -144,6 +150,8 @@ export const ptBR: Dictionary = {
   'marking.error.rect-outside-parent': 'A marcação precisa ficar dentro da marcação pai.',
   'marking.error.invalid-parent': 'Essa marcação não pode ser a pai.',
   'marking.error.invalid-space': 'Só uma marcação do canvas pode ser flutuante.',
+  'marking.error.decorative-floating':
+    'Uma marcação não pode ser flutuante e decorativa ao mesmo tempo.',
   'marking.error.not-fittable':
     'Só é possível ajustar ao conteúdo um componente cujo tamanho depende do conteúdo (hug) e que não tem marcações dentro.',
   'marking.error.not-arrangeable':
@@ -467,11 +475,13 @@ export const ptBR: Dictionary = {
   'invariant.hierarchy-cycle': 'ciclo na hierarquia',
   'invariant.container-parent-missing': 'marcação pai do container inexistente',
   'invariant.container-parent-not-canvas':
-    'pai do container não é uma marcação do canvas',
+    'pai do container não é uma marcação do canvas, ou é flutuante ou decorativa',
   'invariant.container-outside-parent': 'container fora da marcação pai',
   'invariant.floating-in-container':
     'marcação flutuante dentro de um container ou de outra marcação',
   'invariant.parent-floating': 'pai é uma marcação flutuante',
+  'invariant.parent-decorative': 'pai é uma marcação decorativa',
+  'invariant.decorative-floating': 'marcação decorativa e flutuante ao mesmo tempo',
   'invariant.arrow-endpoint-missing': 'ponta da seta inexistente (não é uma marcação)',
   'invariant.arrow-self': 'seta ligada a ela mesma',
   'invariant.anchor-missing': 'âncora aponta para uma marcação que não existe',
@@ -514,6 +524,7 @@ export const ptBR: Dictionary = {
   'repair.created': 'uma página é criada',
   'repair.page-set': 'vai para a primeira página',
   'repair.page-cleared': 'a página é limpa (quem decide é o container)',
+  'repair.decorative-cleared': 'a marcação decorativa é desligada (continua flutuante)',
   'error.invalid-zip': 'O arquivo não é um zip válido.',
   'error.missing-mapping': 'O zip não contém um mapping.json.',
   'error.not-found': 'Projeto não encontrado.',
