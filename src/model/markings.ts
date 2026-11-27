@@ -109,8 +109,12 @@ export interface NewMarkingArgs {
   readonly pageId?: string;
 }
 
-/** A floating marking or one with a `pageId` lives only on the canvas; the page has to exist. */
+/**
+ * A floating marking or one with a `pageId` lives only on the canvas; the page has to exist. A
+ * floating marking cannot be decorative.
+ */
 function checkNewMarkingSpace(p: Project, args: NewMarkingArgs, floating: boolean): void {
+  if (floating && args.decorative) fail('decorative-floating', args.id);
   const onCanvas = args.containerId === null;
   if ((floating || args.pageId !== undefined) && !onCanvas)
     fail('invalid-space', args.id);
@@ -131,8 +135,7 @@ export function createMarking(
   // Markings, arrows and containers share the id space.
   if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   const floating = args.floating ?? false;
-  const decorative = args.decorative ?? false;
-  if (floating && decorative) fail('decorative-floating', args.id);
+  const decorative = Boolean(args.decorative);
   checkNewMarkingSpace(p, args, floating);
   const container =
     args.containerId === null ? null : findById(p.containers, args.containerId);
@@ -164,7 +167,12 @@ export function createMarking(
     args.id,
     options,
   );
-  return decorative ? reorderMarking(created, args.id, 0) : created;
+  return bornFirstIf(created, args.id, decorative);
+}
+
+/** A decorative marking is born first among its siblings, so it is drawn below them. */
+function bornFirstIf(p: Project, id: string, decorative: boolean): Project {
+  return decorative ? reorderMarking(p, id, 0) : p;
 }
 
 export function renameMarking(
