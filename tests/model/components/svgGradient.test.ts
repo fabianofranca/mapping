@@ -149,9 +149,11 @@ describe('a radial gradient in userSpaceOnUse', () => {
     );
     if (result.ok) throw new Error('expected a refusal');
     const [problem] = result.problems;
+    // portuguese-guard:begin the object of the test is the pt-BR rendering of the model message
     expect(problem && ptBRText(problem)).toBe(
       'sem suporte no SVG: radialGradient g é uma elipse (só um círculo converte)',
     );
+    // portuguese-guard:end
   });
 });
 
