@@ -128,6 +128,10 @@ export const enUS = {
   'marking.container': 'Container',
   'marking.floating': 'Floating',
   'marking.floatingHint': 'Stays above everything and belongs to nothing',
+  'marking.floatingDisabledHint': 'Turn off Decorative first: a marking cannot be both',
+  'marking.decorative': 'Decorative',
+  'marking.decorativeHint': 'Never contains other markings',
+  'marking.decorativeDisabledHint': 'Turn off Floating first: a marking cannot be both',
   'marking.deleteContainersStay':
     '{containers} container(s) inside it stay on the canvas.',
   'canvas.name': 'Canvas',

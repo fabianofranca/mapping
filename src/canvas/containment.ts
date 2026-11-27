@@ -123,7 +123,7 @@ export interface Absorption {
 
 /**
  * Items that a space's marking can absorb: the markings of the same space (minus the
- * floating ones and those in `exclude`: itself and its ancestors) and, on the canvas (`containerId`
+ * floating and decorative ones (a decorative marking is never a parent) and those in `exclude`: itself and its ancestors) and, on the canvas (`containerId`
  * null), also the containers (rectangle on the canvas). Those that already contain the rectangle
  * are left out in
  * `absorbInto`, which sees them at the moment.
@@ -135,7 +135,8 @@ export function absorbCandidates(
 ): AbsorbCandidate[] {
   const out: AbsorbCandidate[] = [];
   for (const m of project.markings) {
-    if (m.containerId !== containerId || m.floating || exclude.has(m.id)) continue;
+    if (m.containerId !== containerId || m.floating || m.decorative || exclude.has(m.id))
+      continue;
     out.push({ kind: 'marking', id: m.id, rect: m.rect });
   }
   if (containerId === null) {
