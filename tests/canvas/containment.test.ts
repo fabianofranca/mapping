@@ -269,3 +269,23 @@ describe('absorbCandidates', () => {
     expect(container?.rect).toEqual({ x: 1100, y: 0, width: 250, height: 250 });
   });
 });
+
+describe('absorbCandidates: decorative markings (stage #2826 DM4)', () => {
+  it('a decorative marking is never an absorption target', () => {
+    let p = twoContainers();
+    p = createMarking(p, {
+      id: 'D',
+      containerId: 'A',
+      rect: { x: 100, y: 100, width: 50, height: 50 },
+      decorative: true,
+    });
+    p = createMarking(p, {
+      id: 'N',
+      containerId: 'A',
+      rect: { x: 300, y: 100, width: 50, height: 50 },
+    });
+    const ids = absorbCandidates(p, 'A', new Set()).map((c) => c.id);
+    expect(ids).toContain('N');
+    expect(ids).not.toContain('D');
+  });
+});

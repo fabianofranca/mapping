@@ -17,6 +17,7 @@ import { parseSpecText, type Spec } from './spec';
 import {
   SCHEMA_VERSION,
   type DrawingModeMap,
+  type Marking,
   type MarkingAnchor,
   type Project,
   type ProjectFile,
@@ -38,6 +39,28 @@ function canonicalAnchor(a: MarkingAnchor): MarkingAnchor {
       ? {}
       : { offset: { main: a.offset.main, cross: a.offset.cross } }),
   };
+}
+
+/**
+ * The marking with the keys always in the same order. `decorative` is written only when `true`,
+ * right after `floating` (absent reads as `false`), so the object is typed as the marking it reads
+ * back as.
+ */
+function canonicalMarking(m: Marking): Marking {
+  return {
+    id: m.id,
+    containerId: m.containerId,
+    parentId: m.parentId,
+    pageId: m.pageId,
+    name: m.name,
+    rect: { x: m.rect.x, y: m.rect.y, width: m.rect.width, height: m.rect.height },
+    needsReview: m.needsReview,
+    locked: m.locked,
+    floating: m.floating,
+    ...(m.decorative ? { decorative: true } : {}),
+    source: m.source && { system: m.source.system, id: m.source.id, url: m.source.url },
+    ...(m.anchor == null ? {} : { anchor: canonicalAnchor(m.anchor) }),
+  } as Marking;
 }
 
 /**
@@ -106,19 +129,7 @@ export function serialize(p: Project): string {
         ? {}
         : { classes: { ...i.classes } }),
     })),
-    markings: p.markings.map((m) => ({
-      id: m.id,
-      containerId: m.containerId,
-      parentId: m.parentId,
-      pageId: m.pageId,
-      name: m.name,
-      rect: { x: m.rect.x, y: m.rect.y, width: m.rect.width, height: m.rect.height },
-      needsReview: m.needsReview,
-      locked: m.locked,
-      floating: m.floating,
-      source: m.source && { system: m.source.system, id: m.source.id, url: m.source.url },
-      ...(m.anchor == null ? {} : { anchor: canonicalAnchor(m.anchor) }),
-    })),
+    markings: p.markings.map(canonicalMarking),
     arrows: p.arrows.map((a) => ({
       id: a.id,
       from: a.from,

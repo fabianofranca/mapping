@@ -10,6 +10,7 @@ import {
   setBackgroundContainer,
   setContainerDensity,
   setMarkingAnchor,
+  setMarkingDecorative,
   snapToAnchor,
   setContainerDirection,
   setProjectDirection,
@@ -487,5 +488,41 @@ describe('changeTitle and changeSummary: the background token (stage #1900, NV4,
     if (!change) throw new Error('no creation');
     const names = { current: emptyProject(), preview: null, proposal };
     expect(changeSummary(names, change)).toContain(t('image.containerUntitled'));
+  });
+});
+
+describe('changeTitle and changeSummary: the marking decorative field (stage #2826, DM2)', () => {
+  beforeEach(() => {
+    locale.value = 'en-US';
+  });
+  const base = createMarking(
+    addBackgroundContainer(emptyProject(), {
+      id: 'c1',
+      width: 400,
+      height: 400,
+      background: '#FFFFFF',
+    }),
+    { id: 'F', containerId: 'c1', rect: { x: 10, y: 10, width: 300, height: 200 } },
+  );
+  const textOf = (before: typeof base, after: typeof base) => {
+    const proposal = propose(before, after);
+    const change = proposal.changes.find((c) => c.field === 'decorative');
+    if (!change) throw new Error('no decorative change');
+    const names = { current: before, preview: null, proposal };
+    return `${changeTitle(names, change)}: ${changeSummary(names, change)}`;
+  };
+
+  it('turning it on shows "Decorative: no → yes" and off shows the way back', () => {
+    const decorative = setMarkingDecorative(base, 'F', true);
+    expect(textOf(base, decorative)).toBe('Decorative: no → yes');
+    expect(textOf(decorative, base)).toBe('Decorative: yes → no');
+  });
+
+  it('in pt-BR the label is "Decorativa"', () => {
+    locale.value = 'pt-BR';
+    // pt-BR kept: the Portuguese field and values are the object of this assertion
+    expect(textOf(base, setMarkingDecorative(base, 'F', true))).toBe(
+      'Decorativa: não → sim',
+    );
   });
 });

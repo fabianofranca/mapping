@@ -95,20 +95,48 @@ describe('implementar-fila: the End checks the queue bug rows (decision 6)', () 
   });
 });
 
-describe('detalhar-backlog: Depende de (decision 7)', () => {
-  it('requires Depende de on the ready and in-progress ones with a file in common', () => {
-    expect(detail).toContain('`ready` or `in-progress`');
-    expect(detail).toContain('file in common');
-    expect(detail).toContain('mcp/version.ts');
+describe('detalhar-backlog: Depende de only for a real dependency (#2968)', () => {
+  const step4 = between(detail, '4. Add to the body the line', 'Every issue you create');
+
+  it('lists only what must be on main for a reason other than a file in common', () => {
+    expect(step4).toContain('real dependency');
+    expect(step4).toContain('code, behavior, a helper or a decision');
+    expect(step4).toContain("owner's order");
+    expect(step4).not.toMatch(
+      /mandatory|must depend|depends on the one that already exists/i,
+    );
+  });
+
+  it('a file in common goes in the Overlap section and the panel comparison holds the stages apart', () => {
+    expect(step4).toContain('"Overlap with other stages"');
+    expect(step4).toContain('**not a dependency**');
+    expect(step4).toContain('`toca=`');
+    expect(step4).toContain('early start');
+    expect(step4).toContain('If X changes that structure, it must keep Y working');
+  });
+
+  it('still describes the file in common as the painel.py comparison (the Overlap cites it)', () => {
+    expect(step4).toContain('`ready` or `in-progress`');
+    expect(step4).toContain('file in common');
+    expect(step4).toContain('mcp/version.ts');
+  });
+
+  it('the MCP version is still chosen at the epic closing', () => {
     expect(detail).not.toContain('fixed when the epic starts');
     expect(detail).toContain('chosen at the epic closing');
   });
 
-  it("the coordinator compares the round's ready ones when receiving each PRONTA", () => {
+  it("the coordinator no longer adds Depende de between the round's ready ones for a file in common", () => {
     const during = section(detail, '## 4. During');
-    expect(during).toContain('Sobreposição');
-    expect(during).toContain('Depende de');
-    expect(during).toContain('ORDEM');
+    const pronta = between(during, '- **`PRONTA #n`**', 'Then **archive');
+    expect(pronta).toContain('Sobreposição');
+    expect(pronta).toContain('do not add `Depende de`');
+    expect(pronta).toContain('file in common');
+    expect(pronta).toContain('cycle');
+    expect(pronta).toContain(
+      'uses code, a helper or a decision that the earlier one creates',
+    );
+    expect(pronta).not.toContain('add `Depende de` to the one that comes later');
   });
 });
 
@@ -131,7 +159,7 @@ describe('docs: process and messages (decision 8)', () => {
 
   it('the FLOW cites the news of the queue and of the detailing', () => {
     expect(flow).toContain('MCP version at closing');
-    expect(flow).toContain('`Depende de` covers the `ready` and `in-progress` ones');
+    expect(flow).toContain('`Depende de` lists only a real dependency');
     const fix = section(flow, '## Fix phase');
     expect(fix).toContain('depende de #N');
     expect(fix).toContain('`ready` `bug`');

@@ -74,6 +74,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
         needsReview: false,
         locked: false,
         floating: false,
+        decorative: false,
         source: null,
       });
       for (let c = 0; c < 4; c++) {
@@ -92,6 +93,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
           needsReview: false,
           locked: false,
           floating: false,
+          decorative: false,
           source: null,
         });
       }

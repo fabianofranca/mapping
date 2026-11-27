@@ -127,6 +127,13 @@ function equalRectRanks(group: readonly Entry[], ranks: Map<string, number>): vo
   const buckets = new Map<string, Entry[]>();
   for (const e of group) {
     ranks.set(e.m.id, e.i);
+    // A decorative marking is never a parent: it stays out of the buckets, so the others rank as if it
+    // were not there, and it ranks after every other marking, so an equal rectangle always contains it
+    // whatever its place among the siblings (stage #2826).
+    if (e.m.decorative) {
+      ranks.set(e.m.id, Infinity);
+      continue;
+    }
     const key = rectKey(e.m.rect);
     const bucket = buckets.get(key);
     if (bucket) bucket.push(e);
@@ -191,7 +198,7 @@ export function referenceEnclosingAmong(
 ): string | null {
   const group: Entry[] = [];
   p.markings.forEach((m, i) => {
-    if (m.floating || m.containerId !== containerId) return;
+    if (m.floating || m.decorative || m.containerId !== containerId) return;
     if (containerId === null && pageId !== undefined && m.pageId !== pageId) return;
     group.push({ m, i });
   });
@@ -368,8 +375,9 @@ function referenceSettleGeometry(p: Project, options?: SettleOptions): Project {
   const markings = placed.map((m) => {
     const group = m.floating ? [] : (bySpace.get(spaceKey(m)) ?? []);
     const own = rankOf(m.id);
-    const candidates = group.filter((c) =>
-      canContain(c.m.rect, rankOf(c.m.id), m.rect, own),
+    // Stage #2826: a decorative marking is never a candidate parent.
+    const candidates = group.filter(
+      (c) => !c.m.decorative && canContain(c.m.rect, rankOf(c.m.id), m.rect, own),
     );
     const parentId = pickParent(candidates, m.parentId, rankOf);
     if (parentId === m.parentId) return m;
@@ -381,7 +389,9 @@ function referenceSettleGeometry(p: Project, options?: SettleOptions): Project {
   const containers = p.containers.map((c) => {
     const rect = imageCanvasRect(c, c.placement);
     const canvasGroup = bySpace.get(`\0page:${c.pageId}`) ?? [];
-    const candidates = canvasGroup.filter((e) => containsRectApprox(e.m.rect, rect));
+    const candidates = canvasGroup.filter(
+      (e) => !e.m.decorative && containsRectApprox(e.m.rect, rect),
+    );
     const parentId = pickParent(candidates, c.parentId, rankOf);
     if (parentId === c.parentId) return c;
     changed = true;

@@ -32,6 +32,7 @@ import {
   moveMarking,
   placeFloatingNear,
   renameMarking,
+  setMarkingDecorative,
   setMarkingFloating,
   setMarkingRect,
   setMarkingSpace,
@@ -195,6 +196,11 @@ export interface CreateMarkingArgs {
   readonly name?: string | null | undefined;
   readonly page?: string | undefined;
   readonly source?: Parameters<typeof toExternalSource>[0] | undefined;
+  /**
+   * Decorative (a child that is never a parent, born at the back). Absent: the annotation type's value
+   * (`false` without a type).
+   */
+  readonly decorative?: boolean | undefined;
   readonly annotation?:
     | {
         readonly type: string;
@@ -832,6 +838,7 @@ function createComponentMarking(
           rect,
           name: args.name ?? null,
           preview: 'required',
+          ...(args.decorative === undefined ? {} : { decorative: args.decorative }),
           ...(target.anchor === null ? {} : { anchor: target.anchor }),
         },
         ctx.measurer,
@@ -879,6 +886,11 @@ function fillAnnotation(
   return project;
 }
 
+/** The type declares `decorative` (`false` without a type): the value a marking created with it takes. */
+function typeIsDecorative(p: Project, typeRef: AnnotationTypeRef | null): boolean {
+  return typeRef !== null && findSpecType(p, typeRef)?.type.decorative === true;
+}
+
 /** The part of `create_marking` without a component: a plain marking and, with a type, its typed annotation. */
 function createPlainMarking(
   ctx: MarkingContext,
@@ -892,6 +904,7 @@ function createPlainMarking(
     ...(target.pageId === undefined ? {} : { pageId: target.pageId }),
     rect: args.rect!,
     name: args.name ?? null,
+    decorative: args.decorative ?? typeIsDecorative(p, target.typeRef),
   });
   if (target.anchor !== null) {
     project = setNewMarkingAnchor(project, target.markingId, target.anchor);
@@ -1007,6 +1020,7 @@ export interface UpdateMarkingArgs {
   readonly source?: Parameters<typeof toExternalSource>[0] | undefined;
   readonly move?: { readonly dx: number; readonly dy: number } | undefined;
   readonly floating?: boolean | undefined;
+  readonly decorative?: boolean | undefined;
   /** The new container (`null`: the canvas); it needs `rect` in the new space's pixels. */
   readonly container?: string | null | undefined;
   readonly rect?: Rect | undefined;
@@ -1137,6 +1151,22 @@ function applyMoves(
   return project;
 }
 
+/** `decorative`: turns the flag on or off (the settle releases or adopts the children). */
+function applyDecorative(
+  ctx: MarkingContext,
+  p: Project,
+  id: string,
+  decorative: boolean | undefined,
+  changes: string[],
+): Project {
+  if (decorative === undefined) return p;
+  const project = setMarkingDecorative(p, id, decorative, {
+    minSizeOf: minSizeOfAll(ctx, p),
+  });
+  if (project !== p) changes.push(decorative ? 'decorative' : 'stop being decorative');
+  return project;
+}
+
 /** `anchor`: sets the anchor (`null` removes it). */
 function applyAnchor(
   ctx: MarkingContext,
@@ -1156,7 +1186,7 @@ function applyAnchor(
 }
 
 /**
- * `update_marking`: name, source, move, floating, container and rectangle, anchor, lock and review of one
+ * `update_marking`: name, source, move, floating, decorative, container and rectangle, anchor, lock and review of one
  * marking, in that order. Returns the project and what changed (the caller writes the step's description).
  */
 export function updateBatchMarking(
@@ -1168,7 +1198,15 @@ export function updateBatchMarking(
   const label = ctx.refs.markingLabel(p, id);
   const changes: string[] = [];
   let project = applyFlags(p, id, args, changes, 'before');
+  // Turning the flag off goes first (a decorative marking cannot become floating); turning it on goes
+  // after `floating: false` (a floating one cannot become decorative).
+  if (args.decorative === false) {
+    project = applyDecorative(ctx, project, id, false, changes);
+  }
   project = applyMoves(ctx, project, id, args, changes);
+  if (args.decorative === true) {
+    project = applyDecorative(ctx, project, id, true, changes);
+  }
   if (args.container !== undefined) {
     const moved = changeSpace(ctx, project, id, args, label);
     project = moved.project;

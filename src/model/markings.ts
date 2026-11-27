@@ -98,14 +98,23 @@ export interface NewMarkingArgs {
   /** Floating (v13): only on the canvas (`containerId` null); default `false`. */
   readonly floating?: boolean;
   /**
+   * Decorative (v25): a child like any marking, never a parent; born first among its siblings (drawn
+   * below them). Default `false`; together with `floating` it fails with `decorative-floating`.
+   */
+  readonly decorative?: boolean;
+  /**
    * Page of a canvas marking (v21; default: the first page). A container marking has no page
    * of its own (`pageId: null`): passing one with a `containerId` fails with `invalid-space`.
    */
   readonly pageId?: string;
 }
 
-/** A floating marking or one with a `pageId` lives only on the canvas; the page has to exist. */
+/**
+ * A floating marking or one with a `pageId` lives only on the canvas; the page has to exist. A
+ * floating marking cannot be decorative.
+ */
 function checkNewMarkingSpace(p: Project, args: NewMarkingArgs, floating: boolean): void {
+  if (floating && args.decorative) fail('decorative-floating', args.id);
   const onCanvas = args.containerId === null;
   if ((floating || args.pageId !== undefined) && !onCanvas)
     fail('invalid-space', args.id);
@@ -126,6 +135,7 @@ export function createMarking(
   // Markings, arrows and containers share the id space.
   if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   const floating = args.floating ?? false;
+  const decorative = Boolean(args.decorative);
   checkNewMarkingSpace(p, args, floating);
   const container =
     args.containerId === null ? null : findById(p.containers, args.containerId);
@@ -148,9 +158,21 @@ export function createMarking(
     needsReview: false,
     locked: false,
     floating,
+    decorative,
     source: null,
   };
-  return settled(p, { ...p, markings: [...p.markings, marking] }, args.id, options);
+  const created = settled(
+    p,
+    { ...p, markings: [...p.markings, marking] },
+    args.id,
+    options,
+  );
+  return bornFirstIf(created, args.id, decorative);
+}
+
+/** A decorative marking is born first among its siblings, so it is drawn below them. */
+function bornFirstIf(p: Project, id: string, decorative: boolean): Project {
+  return decorative ? reorderMarking(p, id, 0) : p;
 }
 
 export function renameMarking(
@@ -394,6 +416,7 @@ export function setMarkingFloating(
 ): Project {
   const marking = findById(p.markings, markingId);
   if (marking.floating === floating) return p;
+  if (floating && marking.decorative) fail('decorative-floating', markingId);
   requireUnlocked(canEditMarkingGeometry(p, markingId));
   const next: Marking = floating
     ? floatedMarking(p, marking, options)
@@ -405,6 +428,31 @@ export function setMarkingFloating(
   return settled(
     p,
     moved ? clearArrowRoutes(base, new Set([markingId])) : base,
+    markingId,
+    options,
+  );
+}
+
+/**
+ * Turns the decorative flag on or off (v25): a decorative marking is a child like any marking and
+ * never a parent. Turning on releases its children to the next parent; turning off lets it take
+ * what it fully contains (the settle decides both). It does not reorder the marking. It is
+ * geometry: the lock prevents it in both directions (a locked parent turned decorative would
+ * drop the lock its children inherit). A floating marking cannot be decorative.
+ */
+export function setMarkingDecorative(
+  p: Project,
+  markingId: string,
+  decorative: boolean,
+  options?: RectOptions,
+): Project {
+  const marking = findById(p.markings, markingId);
+  if (marking.decorative === decorative) return p;
+  if (decorative && marking.floating) fail('decorative-floating', markingId);
+  requireUnlocked(canEditMarkingGeometry(p, markingId));
+  return settled(
+    p,
+    { ...p, markings: updateById(p.markings, markingId, (m) => ({ ...m, decorative })) },
     markingId,
     options,
   );
