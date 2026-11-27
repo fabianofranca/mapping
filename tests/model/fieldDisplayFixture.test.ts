@@ -1,4 +1,4 @@
-// The `field-display` fixture (stage #2918, FG4, decision 11): the package that script R51 copies.
+// The `field-display` fixture (stage #2918, FG4, decision 11): the package that script R52 copies.
 // It validates with no error and no warning, the `scroll` slot resolves without `scroll`, and
 // `fieldDisplay` of `decorated-text` gives the counts that the script expects.
 import { readdirSync, readFileSync } from 'node:fs';
@@ -57,7 +57,7 @@ describe('the field-display fixture', () => {
     expect(items!.accepts).toBeUndefined();
   });
 
-  it('fieldDisplay of decorated-text gives the counts of R51', () => {
+  it('fieldDisplay of decorated-text gives the counts of R52', () => {
     const type = report.spec!.layers[0]!.annotationTypes.find(
       (t) => t.id === 'decorated-text',
     )!;

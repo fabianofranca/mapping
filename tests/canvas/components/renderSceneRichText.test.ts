@@ -6,6 +6,7 @@ import { installFakeCanvas } from '../harness';
 import { canvasFontFamily } from '../../../src/model/components/fontFamily';
 import { renderScene } from '../../../src/canvas/components/renderScene';
 import { WRAP_SLACK } from '../../../src/model/components/textWrap';
+import type { IconSet } from '../../../src/model/components/icons';
 import type {
   ComponentFile,
   FieldValues,
@@ -244,5 +245,127 @@ describe('rich text in Konva: reading direction (R2, #1107)', () => {
     const { texts } = drawn(scene);
     for (const t of texts) expect(t.direction()).not.toBe('rtl');
     expect(texts[0]!.x()).toBeLessThan(texts[1]!.x());
+  });
+});
+
+describe('baselineShift (RT2)', () => {
+  const runs = (shift: unknown) => [
+    { text: 'x' },
+    {
+      text: 'up',
+      ...(shift === undefined ? {} : { baselineShift: shift }),
+      ...CHIP,
+    },
+  ];
+
+  it('the text of a shifted piece sits `shift` px higher than without it', () => {
+    const base = drawn(build({ runs: runs(undefined) }).scene);
+    const moved = drawn(build({ runs: runs(4) }).scene);
+    expect(moved.texts[0]?.y()).toBe(base.texts[0]?.y());
+    expect((base.texts[1]?.y() ?? 0) - (moved.texts[1]?.y() ?? 0)).toBeCloseTo(4, 10);
+  });
+
+  it("a shifted chip's background moves with its text", () => {
+    const base = drawn(build({ runs: runs(undefined) }).scene);
+    const moved = drawn(build({ runs: runs('50%') }).scene);
+    // 50% of the 10 px font
+    expect((base.rects[0]?.y() ?? 0) - (moved.rects[0]?.y() ?? 0)).toBeCloseTo(5, 10);
+    expect(moved.rects[0]?.height()).toBe(base.rects[0]?.height());
+  });
+
+  it('a negative shift goes down', () => {
+    const base = drawn(build({ runs: runs(undefined) }).scene);
+    const moved = drawn(build({ runs: runs(-3) }).scene);
+    expect((moved.texts[1]?.y() ?? 0) - (base.texts[1]?.y() ?? 0)).toBeCloseTo(3, 10);
+  });
+});
+
+// RT4 of #2916: the inline icon run is drawn as the icon's path shapes, at the piece's box.
+describe('inline icon run (RT4)', () => {
+  const ICONS: IconSet = {
+    viewBox: [24, 24],
+    icons: {
+      box: { paths: [{ d: 'M4 4h16v16H4z', fill: true }] },
+      check: { paths: [{ d: 'M5 12l5 5L20 7', stroke: true, width: 2 }] },
+    },
+  };
+
+  function buildIcons(node: Record<string, unknown>): { scene: Scene; text: TextNode } {
+    const { root } = instantiate(
+      file(node),
+      {},
+      { x: 0, y: 0, width: 100, height: 60 },
+      { measure: approximateMeasurer, icons: ICONS },
+    );
+    const text = [...walk(root)].find((n): n is TextNode => n.type === 'text');
+    if (!text) throw new Error('no text node');
+    return { scene: { root, warnings: [] }, text };
+  }
+
+  const origin = (shape: Konva.Shape): { x: number; y: number } =>
+    shape.getAbsoluteTransform().point({ x: 0, y: 0 });
+
+  it('an icon piece becomes the icon path, in the run color, at the piece box', () => {
+    const { scene, text } = buildIcons({
+      runs: [{ text: 'ab ' }, { icon: 'box', size: 20, color: '#ff0000' }],
+    });
+    const paths = renderScene(scene).root.find('Path') as Konva.Path[];
+    expect(paths).toHaveLength(1);
+    const piece = text.runLayout!.lines[0]!.pieces[1]!;
+    const line = text.runLayout!.lines[0]!;
+    expect(paths[0]!.fill()).toBe('#ff0000');
+    expect(paths[0]!.data()).toBe('M4 4h16v16H4z');
+    const at = origin(paths[0]!);
+    expect(at.x).toBeCloseTo(piece.x, 6);
+    expect(at.y).toBeCloseTo(line.y + (line.height - piece.height) / 2, 6);
+  });
+
+  it('a stroke icon keeps its stroke color', () => {
+    const { scene } = buildIcons({ runs: [{ icon: 'check', color: '#00aa00' }] });
+    const path = (renderScene(scene).root.find('Path') as Konva.Path[])[0]!;
+    expect(path.stroke()).toBe('#00aa00');
+  });
+
+  it('the icon takes the node verticalAlign shift and the run baselineShift', () => {
+    const { scene, text } = buildIcons({
+      font: { size: 10, lineHeight: 12, verticalAlign: 'middle' },
+      runs: [{ text: 'ab ' }, { icon: 'box', size: 20, baselineShift: 3 }],
+    });
+    const layout = text.runLayout!;
+    const piece = layout.lines[0]!.pieces[1]!;
+    const shift = (60 - layout.height) / 2;
+    const path = (renderScene(scene).root.find('Path') as Konva.Path[])[0]!;
+    expect(origin(path).y).toBeCloseTo(
+      layout.lines[0]!.y + (layout.lines[0]!.height - piece.height) / 2 + shift - 3,
+      6,
+    );
+  });
+
+  it('a chip and the text pieces around the icon do not move', () => {
+    const runs = [{ text: 'ab ' }, { icon: 'box', size: 20 }, { text: 'cd', ...CHIP }];
+    const { scene, text } = buildIcons({ runs });
+    const { texts, rects } = drawn(scene);
+    const pieces = text.runLayout!.lines[0]!.pieces;
+    expect(texts.map((t) => t.text())).toEqual(['ab ', 'cd']);
+    expect(texts[0]!.x()).toBeCloseTo(pieces[0]!.x, 6);
+    expect(texts[1]!.x()).toBeCloseTo(pieces[2]!.x + 4, 6);
+    expect(rects).toHaveLength(1);
+    expect(rects[0]!.x()).toBeCloseTo(pieces[2]!.x, 6);
+  });
+
+  it('a text whose only run is an icon still draws it', () => {
+    const { scene } = buildIcons({ runs: [{ icon: 'box' }] });
+    expect(renderScene(scene).root.find('Path')).toHaveLength(1);
+  });
+
+  it('an unknown icon name draws nothing and does not fail', () => {
+    const { scene } = buildIcons({ runs: [{ text: 'a' }, { icon: 'nope' }] });
+    expect(renderScene(scene).root.find('Path')).toHaveLength(0);
+  });
+
+  it('the icon shapes answer for the text node (hit test)', () => {
+    const { scene, text } = buildIcons({ runs: [{ icon: 'box' }] });
+    const path = (renderScene(scene).root.find('Path') as Konva.Path[])[0]!;
+    expect(path.getAttr('sceneId')).toBe(text.id);
   });
 });

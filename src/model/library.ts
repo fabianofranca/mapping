@@ -1,4 +1,5 @@
 import type { ComponentFile } from './components/componentFormat';
+import { isRowsNode, isRunsKey } from './components/componentFormat';
 import { componentSlots, slotKey } from './components/slots';
 import { resolvePath, type TextFile } from './components/library';
 import {
@@ -202,13 +203,14 @@ function fieldReferences(
   node: unknown,
   path: string,
   out: Map<string, string> = new Map(),
+  runsItem = false,
 ): Map<string, string> {
   if (Array.isArray(node)) {
-    node.forEach((item, i) => fieldReferences(item, `${path}[${i}]`, out));
+    node.forEach((item, i) => fieldReferences(item, `${path}[${i}]`, out, runsItem));
     return out;
   }
   if (!isRecord(node)) return out;
-  const isRepeat = node.type === 'repeat';
+  const isRepeat = isRowsNode(node, runsItem);
   for (const [key, value] of Object.entries(node)) {
     const at = `${path}.${key}`;
     // `repeat`: the `template` reads columns of the row (see `repeatChecks`), not fields of the type.
@@ -227,7 +229,7 @@ function fieldReferences(
       if (!out.has(value[0]) && !isReservedFieldName(value[0]))
         out.set(value[0], `${at}[0]`);
     } else {
-      fieldReferences(value, at, out);
+      fieldReferences(value, at, out, isRunsKey(node, key));
     }
   }
   return out;
@@ -276,23 +278,24 @@ function rowsReferences(
   return out;
 }
 
-/** The `repeat` nodes of the template's JSON, with each one's path (nested ones do not exist). */
+/** The `repeat` nodes (and the `runs` table items, `{ field, template }`) of the template's JSON, with each one's path (nested ones do not exist). */
 function repeatNodes(
   node: unknown,
   path: string,
   out: { path: string; node: Record<string, unknown> }[] = [],
+  runsItem = false,
 ): { path: string; node: Record<string, unknown> }[] {
   if (Array.isArray(node)) {
-    node.forEach((item, i) => repeatNodes(item, `${path}[${i}]`, out));
+    node.forEach((item, i) => repeatNodes(item, `${path}[${i}]`, out, runsItem));
     return out;
   }
   if (!isRecord(node)) return out;
-  if (node.type === 'repeat') {
+  if (isRowsNode(node, runsItem)) {
     out.push({ path, node });
     return out;
   }
   for (const [key, value] of Object.entries(node))
-    repeatNodes(value, `${path}.${key}`, out);
+    repeatNodes(value, `${path}.${key}`, out, isRunsKey(node, key));
   return out;
 }
 
