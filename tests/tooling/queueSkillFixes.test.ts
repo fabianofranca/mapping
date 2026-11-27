@@ -204,3 +204,32 @@ describe('implementar-fila: a `painel/` change reaches a running coordinator (#2
     );
   });
 });
+
+describe('implementar-fila: `mesclar=auto` through the coordinator lineage (#3035)', () => {
+  const args = section(skill, '## Arguments');
+  const bullet = between(args, '- **Merge into `main`.**', '- `modelo=tabela`');
+  const oldSession = between(skill, '**In the old session:**', '**In the new session**');
+  const message = oldSession.slice(oldSession.indexOf('- message:'));
+
+  it('"Arguments" counts `mesclar=auto` in a successor call created under "Session switch"', () => {
+    expect(bullet).toContain('copy rule of "Session switch"');
+    expect(bullet).toContain('registered predecessor');
+  });
+
+  it('"Arguments" still never lets a relayed message turn it on', () => {
+    expect(bullet).toContain('any other message written by a session');
+    expect(bullet).toContain('never counts');
+    expect(bullet).toContain('Never add `mesclar=auto` on your own');
+  });
+
+  it('"Arguments" no longer says it counts only in the owner\'s own call (it contradicted the copy rule)', () => {
+    expect(bullet).not.toContain(
+      'only counts when the owner themself writes it in the message that calls the skill.',
+    );
+  });
+
+  it('the successor message copies it when the owner wrote it or this session got it by the same rule', () => {
+    expect(message).toContain('`mesclar=auto` only if the owner wrote it');
+    expect(message).toContain('this session got it by this same copy rule');
+  });
+});
