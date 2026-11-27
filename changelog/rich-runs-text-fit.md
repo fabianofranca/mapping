@@ -8,3 +8,7 @@
 - The app, the viewer and the MCP's PNG draw the inline icon of a rich-text run (#2916).
 - Rich-text runs can come from a `table` field: a `runs` item `{ "field", "template" }` gives one run per row, mixed with fixed runs (#2916).
 - The test library `tests/fixtures/rich-runs/` (a Decorated text and a Money value) and the test script R51, which checks rich text from a table, inline icons, baseline shift and text that shrinks to fit, in the app and in the MCP's PNG (#2916).
+
+## Alterado
+
+- Teto do `dist/index.html` subiu 16 KiB, de 2768896 para 2785280, pela regra do orçamento; acima dos limites, `bug` #3051 para o dono revisar.
