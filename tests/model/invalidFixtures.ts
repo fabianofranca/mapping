@@ -52,6 +52,7 @@ const extraMarking = (p: Project, marking: Partial<Marking>): Project => ({
       needsReview: false,
       locked: false,
       floating: false,
+      decorative: false,
       source: null,
       ...marking,
     },

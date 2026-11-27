@@ -196,8 +196,8 @@ export function localParents(
   const patches: Entry[] = [];
   entries.forEach((d, k) => {
     const own = rankOf(d.m.id);
-    const valid = (candidates[k] as Entry[]).filter((c) =>
-      canContain(c.m.rect, rankOf(c.m.id), d.m.rect, own),
+    const valid = (candidates[k] as Entry[]).filter(
+      (c) => !c.m.decorative && canContain(c.m.rect, rankOf(c.m.id), d.m.rect, own),
     );
     const parentId = pickParent(valid, d.m.parentId, rankOf);
     if (parentId !== d.m.parentId) patches.push({ m: { ...d.m, parentId }, i: d.i });

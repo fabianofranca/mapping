@@ -46,7 +46,7 @@ function containingIds(
 ): Set<string> {
   const ids = new Set<string>();
   for (const m of p.markings) {
-    if (m.floating || m.containerId !== containerId) continue;
+    if (m.floating || m.decorative || m.containerId !== containerId) continue;
     if (containerId === null && m.pageId !== pageId) continue;
     if (containsRect(m.rect, rect) && !sameRect(m.rect, rect)) ids.add(m.id);
   }
@@ -120,7 +120,9 @@ function isLevelObstacle(
   pageId: string | null,
   excluded: ReadonlySet<string>,
 ): boolean {
-  if (m.floating || m.containerId !== containerId || excluded.has(m.id)) return false;
+  if (m.floating || m.decorative || m.containerId !== containerId || excluded.has(m.id)) {
+    return false;
+  }
   return containerId !== null || m.pageId === pageId;
 }
 

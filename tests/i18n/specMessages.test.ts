@@ -529,6 +529,30 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
     'spec.structuralNoComponent',
     (s) => ((type(s).structural = true), (type(s).component = 'components/a.json')),
   ],
+  [
+    'spec.decorativeFloating',
+    (s) => (
+      (s.formatVersion = 25),
+      (type(s).decorative = true),
+      (type(s).floating = true)
+    ),
+  ],
+  [
+    'spec.decorativeStructural',
+    (s) => (
+      (s.formatVersion = 25),
+      (type(s).decorative = true),
+      (type(s).structural = true)
+    ),
+  ],
+  [
+    'spec.arrowOnlyNoDecorative',
+    (s) => (
+      (s.formatVersion = 25),
+      (type(s).appliesTo = ['arrow']),
+      (type(s).decorative = true)
+    ),
+  ],
   ['spec.labelFieldNotString', (s) => (type(s).labelField = 'zz')],
   ['spec.onlyFormat', (s) => ((s.formatVersion = 14), (type(s).structural = true))],
   [

@@ -82,7 +82,7 @@ describe('create_project with the notes library', () => {
     expect(project.issues.total).toBe(0);
   });
 
-  it('get_specialization returns notas: formatVersion 7, the floating note and the plain text', async () => {
+  it('get_specialization returns notas: formatVersion 25, the floating note and the plain text', async () => {
     const data = ok(
       await mcp.call<{
         id: string;
@@ -97,9 +97,15 @@ describe('create_project with the notes library', () => {
       }>('get_specialization', { project: 'with-notes', specId: 'notas' }),
     );
     expect(data).toMatchObject({ id: 'notas', file: 'specs/notas/notas.spec.json' });
-    expect(data.spec.formatVersion).toBe(7);
+    expect(data.spec.formatVersion).toBe(25);
     const types = data.spec.layers.flatMap((l) => l.annotationTypes);
-    expect(types.map((t) => t.id)).toEqual(['nota', 'texto']);
+    expect(types.map((t) => t.id)).toEqual([
+      'nota',
+      'texto',
+      'moldura',
+      'colchete',
+      'linha',
+    ]);
     expect(types[0]).toMatchObject({
       floating: true,
       component: 'components/nota.json',
@@ -190,7 +196,13 @@ describe('the Text type of the notes library through the MCP', () => {
       }>('get_specialization', { project: name, specId: 'notas' }),
     );
     const types = data.spec.layers.flatMap((l) => l.annotationTypes);
-    expect(types.map((t) => t.id)).toEqual(['nota', 'texto']);
+    expect(types.map((t) => t.id)).toEqual([
+      'nota',
+      'texto',
+      'moldura',
+      'colchete',
+      'linha',
+    ]);
     expect(types.find((t) => t.id === 'texto')?.floating).toBeUndefined();
   });
 

@@ -149,6 +149,7 @@ export function markingRow(refs: Refs, marking: Marking): Json {
     space: marking.containerId === null ? 'canvas' : 'container',
     effectiveDrawingMode: effectiveModeOf(refs.project, marking.containerId),
     floating: marking.floating,
+    decorative: marking.decorative,
     parent: marking.parentId === null ? null : refs.ref('m', marking.parentId),
     rect: rectOf(marking),
     // Position among the siblings (0 = first, drawn at the bottom).
@@ -450,6 +451,7 @@ export async function markingView(
     container: image ? containerSummary(refs, image) : null,
     space: marking.containerId === null ? 'canvas' : 'container',
     floating: marking.floating,
+    decorative: marking.decorative,
     ...rootInfo(refs, marking.id),
     rect: rectOf(marking),
     // Position among the siblings (same parent and same space) and how many there are: `index` 0 = the first,
