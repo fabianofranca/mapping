@@ -6,11 +6,13 @@ import {
   unsupportedAttribute,
   unsupportedElement,
 } from './svgProblems';
+import { pathBounds } from './svgPathBounds';
 import { parseLength, parseNumber } from './svgShapes';
 import {
   applyToPoint,
   IDENTITY,
   invertLinear,
+  multiply,
   parseTransform,
   type Matrix,
   type Point,
@@ -23,9 +25,13 @@ import { styleDeclarations, type XmlElement } from './svgXml';
  * `userSpaceOnUse` with `gradientTransform` applied. `svgIcon.ts` finds the definition a
  * `fill="url(#id)"` points at and calls `convertGradient`.
  *
+ * `objectBoundingBox` (the default when `gradientUnits` is absent) is measured against the exact
+ * box of the path that uses the gradient (`svgPathBounds.ts`, decision 6): `M = B·gradientTransform`
+ * with `B = translate(bx, by)·scale(bw, bh)`.
+ *
  * Whatever the file format cannot say is an error that names it, never a silent loss: `href`, a
- * `spreadMethod` other than `pad`, a focal point, an elliptical radial gradient. `objectBoundingBox`
- * (and an absent `gradientUnits`) is refused until the box is supported (phase SG2).
+ * `spreadMethod` other than `pad`, a focal point, an elliptical radial gradient, a path with no
+ * area.
  *
  * Pure functions, no DOM.
  */
@@ -38,6 +44,8 @@ export type GradientPaint =
 export interface GradientEnv {
   /** The `viewBox` size: what a percentage is of. */
   readonly box: readonly [number, number];
+  /** The path data of the shape that uses the gradient: its box is what `objectBoundingBox` measures. */
+  readonly d: string;
   /** Where the problems go (the conversion adds none when it succeeds). */
   readonly problems: Problems;
   /** `svgIcon.ts`'s color parser: `#rrggbb`, `#rrggbbaa` or `undefined`. */
@@ -165,14 +173,53 @@ function checkAttributes(
     else if (!isKnown(name, own))
       env.problems.add(unsupportedAttribute(gradient.name, name));
   }
-  if (gradient.attributes.get('gradientUnits')?.trim() !== 'userSpaceOnUse')
-    env.problems.add(unsupportedAttribute(gradient.name, 'gradientUnits'));
 }
 
 const COMMON = ['id', 'class', 'gradientUnits', 'gradientTransform', 'spreadMethod'];
 
 const isKnown = (name: string, own: readonly string[]): boolean =>
   COMMON.includes(name) || own.includes(name) || isXmlns(name);
+
+/**
+ * What the coordinates of a gradient are measured in: `w` and `h` are what 100% is along each axis,
+ * `measure` what 100% is of a radius, and `base` the matrix that takes them to `viewBox` units.
+ */
+interface Space {
+  readonly w: number;
+  readonly h: number;
+  readonly measure: number;
+  readonly base: Matrix;
+}
+
+/** The space of a gradient's `gradientUnits`; `undefined` after reporting what it cannot say. */
+function spaceOf(gradient: XmlElement, env: GradientEnv): Space | undefined {
+  const units = gradient.attributes.get('gradientUnits')?.trim() ?? 'objectBoundingBox';
+  if (units === 'userSpaceOnUse') {
+    const [w, h] = env.box;
+    return { w, h, measure: Math.sqrt((w * w + h * h) / 2), base: IDENTITY };
+  }
+  if (units !== 'objectBoundingBox') {
+    env.problems.add(unsupportedAttribute(gradient.name, 'gradientUnits'));
+    return undefined;
+  }
+  return boxSpace(gradient, env);
+}
+
+/** The unit square placed on the box of the path: `translate(bx, by)·scale(bw, bh)`. */
+function boxSpace(gradient: XmlElement, env: GradientEnv): Space | undefined {
+  const bounds = pathBounds(env.d);
+  if (bounds === undefined) {
+    env.problems.add(invalidValue('path', 'd', env.d));
+    return undefined;
+  }
+  // SVG ignores the gradient on a box with no area, and the converter says so.
+  if (bounds.width === 0 || bounds.height === 0) {
+    env.problems.add(unsupportedAttribute(gradient.name, 'gradientUnits'));
+    return undefined;
+  }
+  const { x, y, width, height } = bounds;
+  return { w: 1, h: 1, measure: 1, base: [width, 0, 0, height, x, y] };
+}
 
 /** `gradientTransform` as a matrix with an invertible linear part; `undefined` after reporting it. */
 function transformOf(gradient: XmlElement, env: GradientEnv): Matrix | undefined {
@@ -182,6 +229,17 @@ function transformOf(gradient: XmlElement, env: GradientEnv): Matrix | undefined
   if (matrix !== undefined && invertLinear(matrix) !== undefined) return matrix;
   env.problems.add(invalidValue(gradient.name, 'gradientTransform', text));
   return undefined;
+}
+
+/** The total transform `M = base·gradientTransform`; `undefined` after reporting what is wrong. */
+function totalOf(
+  gradient: XmlElement,
+  env: GradientEnv,
+): { matrix: Matrix; space: Space } | undefined {
+  const space = spaceOf(gradient, env);
+  const transform = transformOf(gradient, env);
+  if (space === undefined || transform === undefined) return undefined;
+  return { matrix: multiply(space.base, transform), space };
 }
 
 /** A coordinate attribute in user units; `fallback` (a percentage text) when absent. */
@@ -234,8 +292,8 @@ function convertLinear(
   env: GradientEnv,
 ): GradientPaint | undefined {
   checkAttributes(gradient, LINEAR_ATTRIBUTES, env);
-  const matrix = transformOf(gradient, env);
-  const [w, h] = env.box;
+  const total = totalOf(gradient, env);
+  const { w, h } = total?.space ?? { w: 1, h: 1 };
   const p1: Point = [
     coordinate(gradient, 'x1', '0%', w, env),
     coordinate(gradient, 'y1', '0%', h, env),
@@ -244,7 +302,8 @@ function convertLinear(
     coordinate(gradient, 'x2', '100%', w, env),
     coordinate(gradient, 'y2', '0%', h, env),
   ];
-  if (matrix === undefined) return undefined;
+  if (total === undefined) return undefined;
+  const { matrix } = total;
   if (stops.length < 2 || (p1[0] === p2[0] && p1[1] === p2[1])) return flat(stops);
   const { from, to } = linearPoints(matrix, p1, p2);
   return gradientOf({
@@ -276,18 +335,18 @@ function circleScale(matrix: Matrix): number | undefined {
 function checkFocus(
   gradient: XmlElement,
   center: Point,
-  size: { readonly box: readonly [number, number]; readonly r: number },
+  space: Space,
   env: GradientEnv,
 ): void {
   const at = (name: string, fallback: number, percent: number): number | undefined => {
     const text = gradient.attributes.get(name);
     return text === undefined ? fallback : parseCoordinate(text, percent);
   };
-  if (at('fx', center[0], size.box[0]) !== center[0])
+  if (at('fx', center[0], space.w) !== center[0])
     env.problems.add(unsupportedAttribute(gradient.name, 'fx'));
-  if (at('fy', center[1], size.box[1]) !== center[1])
+  if (at('fy', center[1], space.h) !== center[1])
     env.problems.add(unsupportedAttribute(gradient.name, 'fy'));
-  if (at('fr', 0, size.r) !== 0)
+  if (at('fr', 0, space.measure) !== 0)
     env.problems.add(unsupportedAttribute(gradient.name, 'fr'));
 }
 
@@ -308,20 +367,20 @@ function convertRadial(
   env: GradientEnv,
 ): GradientPaint | undefined {
   checkAttributes(gradient, RADIAL_ATTRIBUTES, env);
-  const matrix = transformOf(gradient, env);
-  const [w, h] = env.box;
-  const measure = Math.sqrt((w * w + h * h) / 2);
+  const total = totalOf(gradient, env);
+  const space = total?.space ?? { w: 1, h: 1, measure: 1, base: IDENTITY };
   const center: Point = [
-    coordinate(gradient, 'cx', '50%', w, env),
-    coordinate(gradient, 'cy', '50%', h, env),
+    coordinate(gradient, 'cx', '50%', space.w, env),
+    coordinate(gradient, 'cy', '50%', space.h, env),
   ];
-  const r = coordinate(gradient, 'r', '50%', measure, env);
-  checkFocus(gradient, center, { box: env.box, r: measure }, env);
+  const r = coordinate(gradient, 'r', '50%', space.measure, env);
+  checkFocus(gradient, center, space, env);
   if (r < 0)
     env.problems.add(
       invalidValue(gradient.name, 'r', gradient.attributes.get('r') ?? ''),
     );
-  if (matrix === undefined || r < 0) return undefined;
+  if (total === undefined || r < 0) return undefined;
+  const { matrix } = total;
   if (stops.length < 2 || r === 0) return flat(stops);
   return radialPaint(gradient, { matrix, center, r, stops }, env);
 }

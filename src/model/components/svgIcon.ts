@@ -506,7 +506,7 @@ function visitShape(walk: Walk, element: XmlElement, inherited: Style): void {
   const d = dataOf(walk, element);
   if (d === undefined) return;
   // A line has no area, so its fill is nothing (and does not count as the default black).
-  const fill = element.name === 'line' ? NONE : resolveFill(walk, element, style.fill);
+  const fill = element.name === 'line' ? NONE : resolveFill(walk, element, style.fill, d);
   if (fill === undefined) return;
   // Neither fill nor stroke: the shape draws nothing, so it is not an icon path.
   if (fill.kind !== 'none' || style.stroke.kind !== 'none')
@@ -514,9 +514,10 @@ function visitShape(walk: Walk, element: XmlElement, inherited: Style): void {
 }
 
 /** The paint a gradient definition makes: the gradient, or the color it reduces to. */
-function gradientPaint(walk: Walk, definition: XmlElement): Paint | undefined {
+function gradientPaint(walk: Walk, definition: XmlElement, d: string): Paint | undefined {
   const converted = convertGradient(definition, {
     box: walk.box,
+    d,
     problems: walk.problems,
     normalizeColor,
   });
@@ -534,12 +535,13 @@ function resolveFill(
   walk: Walk,
   element: XmlElement,
   fill: SolidPaint | PaintRef,
+  d: string,
 ): Paint | undefined {
   if (fill.kind !== 'ref') return fill;
   const target = walk.ids.get(fill.id);
   if (target === undefined && fill.fallback !== undefined) return fill.fallback;
   if (target !== undefined && isGradientElement(target.name))
-    return gradientPaint(walk, target);
+    return gradientPaint(walk, target, d);
   walk.problems.add(invalidValue(element.name, 'fill', `url(#${fill.id})`));
   return undefined;
 }
