@@ -34,7 +34,7 @@ per project). The `backups/` folder is not part of the project: the exported zip
 
 ```json
 {
-  "schemaVersion": 24,
+  "schemaVersion": 25,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
