@@ -178,13 +178,7 @@ function justifiedInk(
   const spaces = line.split(' ').length - 1;
   const spaceWidth = textWidth(book, ' ', spec);
   const extra = (nodeWidth - textWidth(book, line, spec)) / spaces;
-  const ltrSpec: FontSpec = {
-    family: spec.family,
-    size: spec.size,
-    weight: spec.weight,
-    italic: spec.italic,
-    letterSpacing: spec.letterSpacing,
-  };
+  const ltrSpec: FontSpec = { ...spec, direction: undefined };
   const specOf = (rtl: boolean): FontSpec =>
     rtl ? { ...ltrSpec, direction: 'rtl' } : ltrSpec;
   const pieces = justifiedPieces(
