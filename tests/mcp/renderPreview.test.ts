@@ -659,3 +659,84 @@ describe('without preview arguments', () => {
     expect(reply.json.provisional).toBeUndefined();
   });
 });
+
+describe('the reference of a deleted container (#2934)', () => {
+  const OLD = 'mapping://telas/i/bbbbbbbb';
+  const OLD_MARKING = 'mapping://telas/m/aaaaaaaa';
+  const REPLACE = (extra: Record<string, unknown> = {}) => ({
+    op: 'add_container',
+    name: 'Photo v2',
+    width: 200,
+    height: 100,
+    background: '#FFFFFF',
+    ...extra,
+  });
+  const DELETE = { op: 'delete_container', container: OLD };
+
+  it('a batch that deletes and recreates names the alias and replace_container', async () => {
+    const reply = await call('render_container', {
+      project: 'telas',
+      ref: OLD,
+      operations: [DELETE, REPLACE({ as: '$v2' })],
+    });
+    const error = errorOf(reply) as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    expect(error.code).toBe('not-found');
+    expect(error.message).toContain('deleted by the batch');
+    expect(error).toMatchObject({ deletedBy: 'batch', replacedBy: ['$v2'] });
+    expect(JSON.stringify(error)).toContain('replace_container');
+    expect(JSON.stringify(error)).toContain('$v2');
+  });
+
+  it('a replacement created without `as` is left out and the hint asks for an `as`', async () => {
+    const error = errorOf(
+      await call('render_container', {
+        project: 'telas',
+        ref: OLD,
+        operations: [DELETE, REPLACE()],
+      }),
+    ) as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    expect(error.code).toBe('not-found');
+    expect(error.deletedBy).toBe('batch');
+    expect(error.replacedBy).toBeUndefined();
+    expect(JSON.stringify(error)).toContain('`as`');
+  });
+
+  it('a proposal that deletes and recreates names the final reference', async () => {
+    const p = await propose([DELETE, REPLACE()]);
+    const error = errorOf(
+      await call('render_container', { ref: OLD, proposal: p.ref }),
+    ) as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    expect(error.code).toBe('not-found');
+    expect(error.message).toContain('deleted by the proposal');
+    expect(error).toMatchObject({
+      deletedBy: 'proposal',
+      replacedBy: [p.container],
+    });
+  });
+
+  it('a marking of the deleted container says it was deleted, with no replacedBy', async () => {
+    const error = errorOf(
+      await call('render_marking', {
+        project: 'telas',
+        ref: OLD_MARKING,
+        operations: [DELETE, REPLACE({ as: '$v2' })],
+      }),
+    ) as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    expect(error.code).toBe('not-found');
+    expect(error.deletedBy).toBe('batch');
+    expect(error.replacedBy).toBeUndefined();
+  });
+
+  it('a reference that never existed keeps the plain message', async () => {
+    const error = errorOf(
+      await call('render_container', {
+        project: 'telas',
+        ref: 'mapping://telas/i/99999999',
+        operations: [REPLACE({ as: '$v2' })],
+      }),
+    ) as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    expect(error.code).toBe('not-found');
+    expect(error.deletedBy).toBeUndefined();
+    expect(error.message).not.toContain('deleted');
+  });
+});

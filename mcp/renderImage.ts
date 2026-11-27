@@ -37,6 +37,8 @@ export interface RenderOptions {
   readonly background?: 'image' | 'none';
   /** Margin around the marking, in container pixels (`render_marking` only). */
   readonly padding?: number;
+  /** A window of the container, in container pixels (`render_container` only; clipped to the container). */
+  readonly region?: PixelRect;
   readonly format?: ImageFormat;
 }
 
@@ -244,7 +246,41 @@ export async function renderMarking(
   };
 }
 
-/** `render_container`: the drawing of the components of the whole container. */
+/**
+ * The window `render_container` draws: the whole container, or the asked `region` clipped to it
+ * (with a warning when it was clipped); a region that does not touch the container is refused.
+ */
+function containerRegion(
+  container: ProjectContainer,
+  asked: PixelRect | undefined,
+): { region: PixelRect; warning?: string } {
+  const whole = { x: 0, y: 0, width: container.width, height: container.height };
+  if (asked === undefined) return { region: whole };
+  const region = clampRect(asked, container);
+  if (!region) {
+    throw new ToolError(
+      'region-outside-container',
+      'the region does not touch the container: nothing to draw',
+      {
+        region: rectJson(asked),
+        container: { width: container.width, height: container.height },
+      },
+    );
+  }
+  const clipped =
+    region.x !== asked.x ||
+    region.y !== asked.y ||
+    region.width !== asked.width ||
+    region.height !== asked.height;
+  return clipped
+    ? {
+        region,
+        warning: `the region was clipped to the container (${container.width} × ${container.height})`,
+      }
+    : { region };
+}
+
+/** `render_container`: the drawing of the components of the container (all of it, or a `region`). */
 export async function renderContainer(
   roots: Roots,
   refs: Refs,
@@ -253,7 +289,7 @@ export async function renderContainer(
   images: ImageServer | null = null,
   source?: ImageSource,
 ): Promise<ImageResult> {
-  const region = { x: 0, y: 0, width: container.width, height: container.height };
+  const { region, warning } = containerRegion(container, options.region);
   const result = await renderRegion(
     roots,
     refs,
@@ -264,8 +300,13 @@ export async function renderContainer(
     images,
     source,
   );
+  const warnings = [result.json.warning, warning].filter((w) => w !== undefined);
   return {
-    json: { ref: refs.ref('i', container.id), ...result.json },
+    json: {
+      ref: refs.ref('i', container.id),
+      ...result.json,
+      ...(warnings.length === 0 ? {} : { warning: warnings.join('; ') }),
+    },
     image: result.image,
   };
 }

@@ -72,6 +72,8 @@ interface Previewed {
   /** The project the batch started from (disk, or the proposal's whole proposed state): what is not here is provisional. */
   readonly before: Project;
   readonly aliases: Aliases;
+  /** The project on disk, before the proposal or the batch (where a deleted item is still found). */
+  readonly onDisk: Project;
   readonly source: ImageSource;
   readonly operations: number | undefined;
   readonly proposal: string | undefined;
@@ -260,6 +262,7 @@ async function previewProposal(
     refs: new Refs(drawn.loaded),
     before: proposed,
     aliases: new Map(),
+    onDisk: loaded.project,
     source: imageSourceOf(roots, location, stored.id, new Map()),
     operations: undefined,
     proposal: resolved.refs.ref(stored.id),
@@ -323,6 +326,7 @@ async function previewBatch(
     refs: drawn.loaded === prepared.refs.loaded ? prepared.refs : new Refs(drawn.loaded),
     before: result.before,
     aliases: result.aliases,
+    onDisk: prepared.loaded.project,
     source: imageSourceOf(roots, location, resolved?.stored.id, result.imageFiles),
     operations: batch.length,
     proposal: resolved?.refs.ref(resolved.stored.id),
@@ -368,6 +372,71 @@ function aliasTarget(aliases: Aliases, alias: string, kind: ItemKind): string {
   return target.id;
 }
 
+/** A short note on how the previewed project got rid of an item: who deleted it, and the project it was in. */
+function deletion(
+  preview: Previewed,
+  kind: ItemKind,
+  code: string,
+): { by: 'batch' | 'proposal'; from: Project; id: string } | undefined {
+  const starts: [Project, 'batch' | 'proposal'][] = [[preview.before, 'batch']];
+  if (preview.onDisk !== preview.before) starts.push([preview.onDisk, 'proposal']);
+  for (const [from, by] of starts) {
+    const found = matchShortCode(from, kind, code);
+    if (found.length === 1) return { by, from, id: found[0]!.id };
+  }
+  return undefined;
+}
+
+/** How the preview cites a container it creates: its `$alias`, or the final reference of a proposal's. */
+function citationOf(preview: Previewed, id: string, before: Project): string | undefined {
+  for (const [alias, target] of preview.aliases) {
+    if (target.id === id) return alias;
+  }
+  return projectIndex(before).containers.has(id) ? preview.refs.ref('i', id) : undefined;
+}
+
+/** The containers the preview creates in place of the deleted one: same name, else the same page. */
+function replacements(preview: Previewed, from: Project, deleted: string): string[] {
+  const gone = projectIndex(from).containers.get(deleted);
+  if (gone === undefined) return [];
+  const known = projectIndex(from).containers;
+  const created = preview.refs.project.containers.filter((c) => !known.has(c.id));
+  const named = created.filter((c) => c.name !== null && c.name === gone.name);
+  const chosen =
+    named.length > 0 ? named : created.filter((c) => c.pageId === gone.pageId);
+  return chosen
+    .map((c) => citationOf(preview, c.id, preview.before))
+    .filter((c): c is string => c !== undefined);
+}
+
+/** The `not-found` of a reference the preview no longer has: names who deleted it and what replaces it. */
+function notFound(
+  preview: Previewed,
+  ref: string,
+  kind: ItemKind,
+  code: string,
+): ToolError {
+  const base = `${KIND_NOT_FOUND[kind]}: ${ref}`;
+  const gone = deletion(preview, kind, code);
+  if (gone === undefined) return new ToolError('not-found', base, { ref });
+  const by = gone.by;
+  const message = `${kind === 'i' ? 'container' : 'marking'} deleted by the ${by}: ${ref}`;
+  if (kind !== 'i') {
+    return new ToolError('not-found', message, { ref, deletedBy: by });
+  }
+  const replacedBy = replacements(preview, gone.from, gone.id);
+  const hint =
+    replacedBy.length > 0
+      ? `cite the container created in its place (${replacedBy.join(', ')}); to change only the image and keep the container and its code, use \`replace_container\` (it keeps the size)`
+      : 'the container the batch creates in its place has no `as`: give it an `as` and cite its `$alias`; to change only the image and keep the container and its code, use `replace_container` (it keeps the size)';
+  return new ToolError('not-found', message, {
+    ref,
+    deletedBy: by,
+    ...(replacedBy.length > 0 ? { replacedBy } : {}),
+    hint,
+  });
+}
+
 /** The item a reference cites in the previewed project (an existing item's or a proposal's final reference). */
 function citedItem(preview: Previewed, ref: string, kind: ItemKind): string {
   const parsed = parseRef(ref);
@@ -385,9 +454,7 @@ function citedItem(preview: Previewed, ref: string, kind: ItemKind): string {
     );
   }
   const found = matchShortCode(preview.refs.project, kind, parsed.code);
-  if (found.length === 0) {
-    throw new ToolError('not-found', `${KIND_NOT_FOUND[kind]}: ${ref}`, { ref });
-  }
+  if (found.length === 0) throw notFound(preview, ref, kind, parsed.code);
   if (found.length > 1) {
     throw new ToolError(
       'ambiguous-ref',
