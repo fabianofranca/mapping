@@ -17,7 +17,7 @@ import {
 } from '../../src/model/bundledLibrary';
 import { validateLibrary } from '../../src/model/library';
 import { createProject } from '../../src/model/project';
-import { parseSpecText } from '../../src/model/spec';
+import { parseSpecText, SPEC_FORMAT_VERSION } from '../../src/model/spec';
 import { ModelError } from '../../src/model/errors';
 import {
   addTableRow,
@@ -68,6 +68,20 @@ function expectCode(fn: () => unknown, code: string): void {
   throw new Error(`expected error ${code}`);
 }
 
+/** The package files other than the specialization, sorted. */
+const PACKAGE_FILES = [
+  'components/colchete.json',
+  'components/linha.json',
+  'components/moldura.json',
+  'components/nota.json',
+  'components/texto.json',
+  'docs/colchete.md',
+  'docs/linha.md',
+  'docs/moldura.md',
+  'docs/nota.md',
+  'docs/texto.md',
+];
+
 const project = () =>
   createProject({
     name: 'P',
@@ -96,19 +110,20 @@ describe('package libraries/notas', () => {
     // The `minSize` (160 × 96) fits the `preview` and the example with short text.
     expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
-    expect(report.summary).toMatchObject({ level: 3, types: 2, components: 2, docs: 2 });
+    expect(report.summary).toMatchObject({ level: 3, types: 5, components: 5, docs: 5 });
   });
 
-  it('the specialization is formatVersion 7, version 6, with the floating note and the plain text, a component each', () => {
+  it('the specialization has the floating note first, a component each', () => {
     const parsed = parseSpecText(NOTES_FILES.get(NOTES_SPEC_FILE) ?? '');
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.spec.formatVersion).toBe(7);
     expect(parsed.spec.id).toBe('notas');
-    expect(parsed.spec.version).toBe(6);
     const [layer] = parsed.spec.layers;
     expect(layer?.name).toBe('Notes');
-    expect(layer?.annotationTypes.map((t) => t.id)).toEqual(['nota', 'texto']);
+    expect(layer?.annotationTypes.map((t) => t.id).slice(0, 2)).toEqual([
+      'nota',
+      'texto',
+    ]);
     const [type] = layer?.annotationTypes ?? [];
     expect(type).toMatchObject({
       id: 'nota',
@@ -168,7 +183,7 @@ describe('applyBundledLibrary', () => {
     expect(applied.project.specializations).toEqual([
       expect.objectContaining({
         id: 'notas',
-        version: 6,
+        version: 7,
         file: 'specs/notas/notas.spec.json',
       }),
     ]);
@@ -177,12 +192,7 @@ describe('applyBundledLibrary', () => {
       specId: 'notas',
       layerId: 'notas',
     });
-    expect([...applied.packageFiles.keys()].sort()).toEqual([
-      'components/nota.json',
-      'components/texto.json',
-      'docs/nota.md',
-      'docs/texto.md',
-    ]);
+    expect([...applied.packageFiles.keys()].sort()).toEqual(PACKAGE_FILES);
   });
 
   it('applying twice fails like any library', () => {
@@ -193,16 +203,12 @@ describe('applyBundledLibrary', () => {
   it('bundledLibraryDiskFiles gives every file with the project path', () => {
     const { project: applied } = applyBundledLibrary(project(), NOTES_LIBRARY);
     const files = bundledLibraryDiskFiles(applied, NOTES_LIBRARY);
-    expect([...files.keys()].sort()).toEqual([
-      'specs/notas/components/nota.json',
-      'specs/notas/components/texto.json',
-      'specs/notas/docs/nota.md',
-      'specs/notas/docs/texto.md',
-      'specs/notas/notas.spec.json',
-    ]);
+    expect([...files.keys()].sort()).toEqual(
+      ['notas.spec.json', ...PACKAGE_FILES].sort().map((f) => `specs/notas/${f}`),
+    );
     expect(JSON.parse(files.get('specs/notas/notas.spec.json') ?? '{}')).toMatchObject({
       id: 'notas',
-      formatVersion: 7,
+      formatVersion: SPEC_FORMAT_VERSION,
     });
   });
 
@@ -235,7 +241,7 @@ function notesV2(): Spec {
   return parsed.spec;
 }
 
-describe('update of the notes library from version 1 to 6', () => {
+describe('update of the notes library from version 1 to 7', () => {
   function withV1(): Project {
     let p = applySpecialization(project(), notesV1(), { newId: () => 'LN' });
     p = createMarking(p, {
@@ -253,7 +259,7 @@ describe('update of the notes library from version 1 to 6', () => {
     return setFieldValue(p, 'AN1', 'texto', 'A version 1 note');
   }
 
-  it('v6 breaks nothing for a v1 project: no missing migration, no loss, no new layer, no pending item', () => {
+  it('v7 breaks nothing for a v1 project: no missing migration, no loss, no new layer, no pending item', () => {
     const p = withV1();
     expect(checkSpecApply(p, notesV2())).toBe('update');
     const impact = specializationUpdateImpact(p, notesV2());
@@ -275,7 +281,7 @@ describe('update of the notes library from version 1 to 6', () => {
   it('updates: the version goes up and the note stays as it was', () => {
     const p = withV1();
     const next = updateSpecialization(p, notesV2(), { newId: () => 'X' });
-    expect(next.specializations[0]).toMatchObject({ id: NOTES_ID, version: 6 });
+    expect(next.specializations[0]).toMatchObject({ id: NOTES_ID, version: 7 });
     expect(next.layers.map((l) => l.id)).toEqual(p.layers.map((l) => l.id));
     expect(next.annotations.find((a) => a.id === 'AN1')).toEqual(
       p.annotations.find((a) => a.id === 'AN1'),
@@ -537,14 +543,10 @@ describe('Catalog with the Note', () => {
 // The Text type: plain text, a non-floating type with a component.
 
 describe('Texto type: the specialization', () => {
-  it('the package lists the 5 files of the folder', () => {
-    expect([...NOTES_FILES.keys()].sort()).toEqual([
-      'components/nota.json',
-      'components/texto.json',
-      'docs/nota.md',
-      'docs/texto.md',
-      'notas.spec.json',
-    ]);
+  it('the package lists the 11 files of the folder', () => {
+    expect([...NOTES_FILES.keys()].sort()).toEqual(
+      ['notas.spec.json', ...PACKAGE_FILES].sort(),
+    );
   });
 
   it('is not floating, its label is the text, and the fields and options are those of the decision', () => {
@@ -918,5 +920,321 @@ describe('Texto type: the space', () => {
     const { placement } = p.containers.find((c) => c.id === 'I1')!;
     const moved = moveContainer(p, 'I1', placement.x + 300, placement.y + 200);
     expect(get(moved, 'X1')).toMatchObject({ containerId: 'I1', rect });
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// Frame, Bracket and Line: the decorative types (stage #2826, decision 11).
+
+describe('Decorative notes types: the specialization', () => {
+  const layerTypes = () => notesV2().layers[0]!.annotationTypes;
+  const typeOf = (id: string) => layerTypes().find((t) => t.id === id);
+
+  it('the package lists the 11 files of the folder and validates with no error and no warning', () => {
+    const files = [...NOTES_FILES].map(([path, text]) => ({ path, text }));
+    const report = validateLibrary({ files, specPath: NOTES_SPEC_FILE });
+    expect(report.errors).toEqual([]);
+    expect(report.warnings).toEqual([]);
+    expect(report.summary).toMatchObject({ level: 3, types: 5, components: 5, docs: 5 });
+    for (const id of ['moldura', 'colchete', 'linha']) {
+      expect(NOTES_FILES.has(`components/${id}.json`), id).toBe(true);
+      expect(NOTES_FILES.has(`docs/${id}.md`), id).toBe(true);
+    }
+  });
+
+  it('is version 7 at the stage formatVersion, with the three types after the text', () => {
+    const spec = notesV2();
+    expect(spec.version).toBe(7);
+    expect(spec.formatVersion).toBe(SPEC_FORMAT_VERSION);
+    expect(layerTypes().map((t) => t.id)).toEqual([
+      'nota',
+      'texto',
+      'moldura',
+      'colchete',
+      'linha',
+    ]);
+  });
+
+  it('the three types are decorative, not floating and have no code', () => {
+    for (const id of ['moldura', 'colchete', 'linha']) {
+      const type = typeOf(id)!;
+      expect(type.decorative, id).toBe(true);
+      expect(type.floating, id).toBeFalsy();
+      expect(type.code, id).toBeUndefined();
+      expect(type.component, id).toBe(`components/${id}.json`);
+      expect(type.doc, id).toBe(`docs/${id}.md`);
+      expect(type.examples?.length, id).toBe(1);
+    }
+    expect(typeOf('nota')!.decorative).toBeFalsy();
+    expect(typeOf('texto')!.decorative).toBeFalsy();
+  });
+
+  it('the fields, in order, none required', () => {
+    const keys = (id: string) => typeOf(id)!.fields.map((f) => f.key);
+    expect(keys('moldura')).toEqual(['cor', 'espessura', 'estilo', 'raio', 'fundo']);
+    expect(keys('colchete')).toEqual(['cor', 'espessura', 'estilo', 'aberto']);
+    expect(keys('linha')).toEqual(['cor', 'espessura', 'estilo', 'orientacao']);
+    for (const id of ['moldura', 'colchete', 'linha']) {
+      expect(
+        typeOf(id)!.fields.some((f) => f.required),
+        id,
+      ).toBe(false);
+      const estilo = typeOf(id)!.fields.find((f) => f.key === 'estilo')!;
+      expect(estilo.options).toEqual(['solido', 'tracejado']);
+    }
+    expect(typeOf('colchete')!.fields[3]!.options).toEqual([
+      'direita',
+      'esquerda',
+      'baixo',
+      'cima',
+    ]);
+    expect(typeOf('linha')!.fields[3]!.options).toEqual(['horizontal', 'vertical']);
+    expect(typeOf('moldura')!.fields[4]!.label).toBe('Fill');
+  });
+
+  it('the default sizes are 160 × 120, 16 × 120 and 160 × 8', () => {
+    const catalog = notesCatalog();
+    const size = (id: string) => catalog.get(NOTES_ID)!.byType.get(id)!.size;
+    expect(size('moldura')).toEqual({ width: 160, height: 120 });
+    expect(size('colchete')).toEqual({ width: 16, height: 120 });
+    expect(size('linha')).toEqual({ width: 160, height: 8 });
+  });
+
+  it('the update from version 6 is additive: three added types, nothing else', () => {
+    const parsed = parseSpecText(
+      readFileSync(join(__dirname, 'fixtures', 'notas-v6.spec.json'), 'utf8'),
+    );
+    if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+    let p = applySpecialization(project(), parsed.spec, { newId: () => 'LN' });
+    p = createMarking(p, {
+      id: 'T1',
+      containerId: null,
+      rect: { x: 0, y: 0, width: 120, height: 20 },
+    });
+    p = addTypedAnnotation(p, {
+      id: 'AT1',
+      markingId: 'T1',
+      layerId: 'LN',
+      type: { specId: NOTES_ID, typeId: 'texto' },
+    });
+    expect(checkSpecApply(p, notesV2())).toBe('update');
+    const impact = specializationUpdateImpact(p, notesV2());
+    expect(impact).toMatchObject({
+      refused: false,
+      comparable: true,
+      brokenRefs: 0,
+      converted: 0,
+      deleted: 0,
+    });
+    expect(impact.missingMigrations).toEqual([]);
+    expect(impact.losses).toEqual([]);
+    expect(impact.pending).toEqual([]);
+    expect(impact.changes.filter((c) => c.code === 'added-type')).toHaveLength(3);
+    const next = updateSpecialization(p, notesV2(), { newId: () => 'X' });
+    expect(next.specializations[0]).toMatchObject({ id: NOTES_ID, version: 7 });
+    expect(next.annotations).toEqual(p.annotations);
+    expect(next.markings).toEqual(p.markings);
+  });
+});
+
+describe('Decorative notes types: the drawing', () => {
+  const catalog = notesCatalog();
+  const BOX = { x: 0, y: 0, width: 160, height: 120 };
+  const comp = (id: string) => catalog.get(NOTES_ID)!.byType.get(id)!;
+  const emptyFields = {
+    moldura: { cor: null, espessura: null, estilo: null, raio: null, fundo: null },
+    colchete: { cor: null, espessura: null, estilo: null, aberto: null },
+    linha: { cor: null, espessura: null, estilo: null, orientacao: null },
+  } as const;
+
+  function draw(
+    id: keyof typeof emptyFields,
+    values: Record<string, unknown> = {},
+    box = BOX,
+    tokens?: Project,
+  ) {
+    const component = comp(id);
+    const { root, warnings } = instantiate(
+      component,
+      { ...emptyFields[id], ...values } as never,
+      box,
+      {
+        measure: approximateMeasurer,
+        ...(tokens ? { tokenNamed: projectNamedLookup(tokens, component, null) } : {}),
+      },
+    );
+    expect(warnings).toEqual([]);
+    return root;
+  }
+
+  /** The stroke's color: `none` when there is no stroke or it has no paint. */
+  const strokeColor = (node: FrameNode): string => {
+    const paint = node.stroke?.paints[0];
+    return paint?.type === 'solid' ? paint.color : 'none';
+  };
+
+  /** Every frame of the scene, root first. */
+  function frames(node: SceneNode): FrameNode[] {
+    if (node.type !== 'frame') return [];
+    return [node, ...node.children.flatMap(frames)];
+  }
+
+  it('the Frame with empty fields: a stroke of 1 on the four sides, #79747E, solid, no fill', () => {
+    const root = draw('moldura');
+    expect(root.fills).toEqual([]);
+    expect(strokeColor(root)).toBe('#79747E');
+    expect(root.stroke).toMatchObject({ width: 1, align: 'inside' });
+    expect(root.stroke?.sides).toBeUndefined();
+    expect(root.stroke?.dash ?? []).toEqual([]);
+    expect(root.cornerRadius).toBe(0);
+    expect([root.width, root.height]).toEqual([160, 120]);
+  });
+
+  it('the Frame draws what the fields say: color, width, dash and corner radius', () => {
+    const root = draw('moldura', {
+      cor: '#FF0000',
+      espessura: 3,
+      estilo: 'tracejado',
+      raio: 8,
+    });
+    expect(strokeColor(root)).toBe('#FF0000');
+    expect(root.stroke).toMatchObject({ width: 3, dash: [6, 4] });
+    expect(root.cornerRadius).toBe(8);
+  });
+
+  it('the Frame fill: a #RRGGBB fills the box; with no value or an unknown name there is no fill', () => {
+    expect(draw('moldura', { fundo: '#E8F0FE' }).fills).toEqual([
+      { type: 'solid', color: '#E8F0FE' },
+    ]);
+    expect(draw('moldura', { fundo: 'banana' }).fills).toEqual([]);
+    expect(draw('moldura', { fundo: '' }).fills).toEqual([]);
+  });
+
+  it('the Frame fill and color name a color token of an applied library', () => {
+    const base = notesProject();
+    const p: Project = {
+      ...base,
+      specializations: [
+        ...base.specializations,
+        {
+          id: 'theme',
+          spec: {
+            layers: [],
+            types: [],
+            tokens: { values: { surface: '#102030', line: '#405060' } },
+          },
+        } as never,
+      ],
+    };
+    const root = draw('moldura', { fundo: 'surface', cor: 'line' }, BOX, p);
+    expect(root.fills).toEqual([{ type: 'solid', color: '#102030' }]);
+    expect(strokeColor(root)).toBe('#405060');
+  });
+
+  it('espessura 0 draws no outline: the stroke color is none, not a width of 0', () => {
+    const root = draw('moldura', { fundo: '#E8F0FE', espessura: 0 });
+    expect(root.fills).toEqual([{ type: 'solid', color: '#E8F0FE' }]);
+    expect(strokeColor(root)).toBe('none');
+  });
+
+  it('the Bracket with empty fields opens to the right: left, top and bottom', () => {
+    const box = { x: 0, y: 0, width: 16, height: 120 };
+    const root = draw('colchete', {}, box);
+    expect(strokeColor(root)).toBe('#79747E');
+    expect(root.stroke?.width).toBe(1);
+    expect([...(root.stroke?.sides ?? [])].sort()).toEqual(['bottom', 'left', 'top']);
+  });
+
+  it.each([
+    ['direita', ['bottom', 'left', 'top']],
+    ['esquerda', ['bottom', 'right', 'top']],
+    ['baixo', ['left', 'right', 'top']],
+    ['cima', ['bottom', 'left', 'right']],
+  ])('the Bracket aberto %s strokes %j', (aberto, sides) => {
+    const root = draw('colchete', { aberto }, { x: 0, y: 0, width: 16, height: 120 });
+    expect([...(root.stroke?.sides ?? [])].sort()).toEqual(sides);
+  });
+
+  it('the Bracket is dashed with tracejado and has no outline at espessura 0', () => {
+    const box = { x: 0, y: 0, width: 16, height: 120 };
+    expect(draw('colchete', { estilo: 'tracejado' }, box).stroke?.dash).toEqual([6, 4]);
+    expect(strokeColor(draw('colchete', { espessura: 0 }, box))).toBe('none');
+  });
+
+  /** The line node: the one frame with a stroke, other than the root. */
+  function lineOf(root: FrameNode): FrameNode {
+    const withStroke = frames(root).filter(
+      (f) => f !== root && strokeColor(f) !== 'none',
+    );
+    expect(withStroke).toHaveLength(1);
+    return withStroke[0]!;
+  }
+
+  it('the Line with empty fields is horizontal: along the whole width, through the middle', () => {
+    const box = { x: 0, y: 0, width: 160, height: 8 };
+    const line = lineOf(draw('linha', {}, box));
+    expect(line.width).toBe(160);
+    expect(line.height).toBe(1);
+    expect(line.transform[5] + line.height / 2).toBeCloseTo(4, 0);
+    expect(strokeColor(line)).toBe('#79747E');
+    expect(line.stroke?.width).toBe(1);
+  });
+
+  it('the Line vertical goes along the whole height, through the middle', () => {
+    const box = { x: 0, y: 0, width: 8, height: 120 };
+    const line = lineOf(draw('linha', { orientacao: 'vertical' }, box));
+    expect(line.height).toBe(120);
+    expect(line.width).toBe(1);
+    expect(line.transform[4] + line.width / 2).toBeCloseTo(4, 0);
+  });
+
+  it('the Line is dashed with tracejado, thicker with espessura and absent at 0', () => {
+    const box = { x: 0, y: 0, width: 160, height: 8 };
+    const dashed = lineOf(draw('linha', { estilo: 'tracejado', espessura: 2 }, box));
+    expect(dashed.stroke).toMatchObject({ width: 2, dash: [6, 4] });
+    const none = frames(draw('linha', { espessura: 0 }, box)).filter(
+      (f) => strokeColor(f) !== 'none',
+    );
+    expect(none).toEqual([]);
+  });
+
+  it('every decorative type draws with empty fields and no warning in the Catalog', () => {
+    const entry = notesCatalog().get(NOTES_ID)!;
+    for (const id of ['moldura', 'colchete', 'linha']) {
+      expect(entry.byType.has(id), id).toBe(true);
+    }
+  });
+});
+
+describe('Decorative notes types: the markings they create', () => {
+  const catalog = notesCatalog();
+
+  it('adding a Frame, a Bracket and a Line creates decorative, non-floating markings at the back', () => {
+    let p = notesProject();
+    p = createMarking(p, {
+      id: 'S1',
+      containerId: 'I1',
+      rect: { x: 100, y: 100, width: 50, height: 50 },
+    });
+    for (const [i, id] of ['moldura', 'colchete', 'linha'].entries()) {
+      p = addComponentMarking(
+        p,
+        catalog,
+        {
+          markingId: `D${i}`,
+          annotationId: `AD${i}`,
+          containerId: 'I1',
+          parentId: null,
+          specId: NOTES_ID,
+          typeId: id,
+          rect: { x: 50, y: 50 + i * 200, width: 300, height: 100 },
+          values: {},
+        },
+        approximateMeasurer,
+      );
+      const m = p.markings.find((x) => x.id === `D${i}`)!;
+      expect(m.decorative, id).toBe(true);
+      expect(m.floating ?? false, id).toBe(false);
+    }
   });
 });

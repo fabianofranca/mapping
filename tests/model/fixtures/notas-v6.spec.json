@@ -1,0 +1,206 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 7,
+  "id": "notas",
+  "name": "Notes",
+  "version": 6,
+  "description": "Notes on the canvas: floating sticky notes in six colors, with a title, free text, a table of key and value rows and a text after the rows (any of them can be left out), to comment on a screen, record a business rule, list the data of an event or leave a message for whoever reads the mapping; and plain text, loose on the canvas or inside a container, for labels, titles and captions, with its own size, weight, color, font family and alignment. Version 6 folds the old Table type into the note.",
+  "layers": [
+    {
+      "id": "notas",
+      "name": "Notes",
+      "color": "#F5C400",
+      "annotationTypes": [
+        {
+          "id": "nota",
+          "name": "Note",
+          "description": "Loose comment on the canvas (this screen is for X, a business rule, the properties of an event). It can carry a title, a text, a table of key and value rows and a text after the rows; each part is drawn only when filled. It belongs to no screen: it sits on top of everything and neither carries nor is carried by what is underneath. The relation to a screen or an element is an arrow.",
+          "labelField": "titulo",
+          "floating": true,
+          "component": "components/nota.json",
+          "doc": "docs/nota.md",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "Title",
+              "type": "string",
+              "description": "Short summary of the note; shown in bold at the top of the sticky note. Can be left empty."
+            },
+            {
+              "key": "texto",
+              "label": "Text",
+              "type": "string",
+              "description": "The comment itself, drawn under the title and above the rows. Accepts multiple lines: Shift+Enter breaks the line (Enter confirms while the field is a single line; in the multi-line area, Enter also inserts a line). Can be left empty."
+            },
+            {
+              "key": "linhas",
+              "label": "Rows",
+              "type": "table",
+              "description": "One row per record: the key on the left and the value on the right (the properties of an event, the parameters of a call). The order of the rows is the drawing order.",
+              "columns": [
+                {
+                  "key": "chave",
+                  "label": "Key",
+                  "type": "string",
+                  "required": true,
+                  "description": "The name of the data item (a property, a parameter)."
+                },
+                {
+                  "key": "valor",
+                  "label": "Value",
+                  "type": "string",
+                  "description": "The value or its description."
+                }
+              ]
+            },
+            {
+              "key": "textoDepois",
+              "label": "Text after",
+              "type": "string",
+              "description": "A second text, drawn under the rows (a remark about the table, a source). Accepts multiple lines. Can be left empty."
+            },
+            {
+              "key": "cor",
+              "label": "Color",
+              "type": "enum",
+              "options": ["yellow", "blue", "green", "pink", "orange", "gray"],
+              "description": "Color of the sticky note: the fill and the text color go together. Empty draws yellow."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Business rule",
+              "values": {
+                "titulo": "Limit",
+                "texto": "Only sign up with an approved limit."
+              }
+            }
+          ]
+        },
+        {
+          "id": "texto",
+          "name": "Text",
+          "description": "Plain text with no frame: a label, a title or a caption, loose on the canvas or inside a container, with optional size, weight, color, font family and alignment. Where it lives is decided by geometry, as for any marking; inside a container it follows the container. Turn Floating on to put it above everything.",
+          "labelField": "texto",
+          "component": "components/texto.json",
+          "doc": "docs/texto.md",
+          "fields": [
+            {
+              "key": "texto",
+              "label": "Text",
+              "type": "string",
+              "required": true,
+              "description": "The text itself. Accepts multiple lines: Shift+Enter breaks the line."
+            },
+            {
+              "key": "tamanho",
+              "label": "Size",
+              "type": "number",
+              "description": "Font size in the component's units (multiplied by the container's density). Empty draws 14."
+            },
+            {
+              "key": "peso",
+              "label": "Weight",
+              "type": "enum",
+              "options": ["regular", "medium", "semibold", "bold"],
+              "description": "Font weight. Empty draws regular."
+            },
+            {
+              "key": "cor",
+              "label": "Color",
+              "type": "string",
+              "description": "Text color: the name of a color token of an applied library (such as on-surface) or a literal color as #RRGGBB. A name that no applied library declares and that is not a color draws #1F1F1F, like an empty value."
+            },
+            {
+              "key": "largura",
+              "label": "Width",
+              "type": "enum",
+              "options": ["auto", "fixa"],
+              "description": "auto: the box follows the text and a line breaks only where one was typed. fixa: the text wraps at the marking's width and only the height follows. Empty draws auto."
+            },
+            {
+              "key": "familia",
+              "label": "Family",
+              "type": "string",
+              "description": "Font family: the name of a font-family token of an applied library (such as font-mono) or a family or CSS stack (such as Roboto Mono). Empty draws font-sans."
+            },
+            {
+              "key": "alinhamento",
+              "label": "Alignment",
+              "type": "enum",
+              "options": ["start", "center", "end"],
+              "description": "Horizontal alignment of the lines inside the box: start, center or end. It shows when the box is wider than the text, as with a fixed width. Empty is start."
+            }
+          ],
+          "examples": [
+            {
+              "name": "Column label",
+              "values": {
+                "texto": "enabled",
+                "tamanho": 12,
+                "cor": "#49454F"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "migrations": [
+    {
+      "from": 1,
+      "to": 6,
+      "steps": [
+        {
+          "op": "rename-type",
+          "from": "tabela",
+          "to": "nota"
+        }
+      ]
+    },
+    {
+      "from": 2,
+      "to": 6,
+      "steps": [
+        {
+          "op": "rename-type",
+          "from": "tabela",
+          "to": "nota"
+        }
+      ]
+    },
+    {
+      "from": 3,
+      "to": 6,
+      "steps": [
+        {
+          "op": "rename-type",
+          "from": "tabela",
+          "to": "nota"
+        }
+      ]
+    },
+    {
+      "from": 4,
+      "to": 6,
+      "steps": [
+        {
+          "op": "rename-type",
+          "from": "tabela",
+          "to": "nota"
+        }
+      ]
+    },
+    {
+      "from": 5,
+      "to": 6,
+      "steps": [
+        {
+          "op": "rename-type",
+          "from": "tabela",
+          "to": "nota"
+        }
+      ]
+    }
+  ]
+}
