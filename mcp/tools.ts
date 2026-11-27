@@ -400,7 +400,7 @@ export function registerTools(
           .boolean()
           .optional()
           .describe(
-            'Only the decorative ones (`true`: frames, brackets and dividers, children that are never a parent) or only the non-decorative ones (`false`).',
+            'Only the decorative ones (`true`: frames, brackets and dividers, children that are never a parent) or only the non-decorative ones (`false`). Like the other filters it scans the containers; add `canvas: true` to find the decorative markings on the canvas.',
           ),
         layer: z
           .string()

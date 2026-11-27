@@ -1163,7 +1163,7 @@ function applyDecorative(
   const project = setMarkingDecorative(p, id, decorative, {
     minSizeOf: minSizeOfAll(ctx, p),
   });
-  changes.push(decorative ? 'decorative' : 'stop being decorative');
+  if (project !== p) changes.push(decorative ? 'decorative' : 'stop being decorative');
   return project;
 }
 
@@ -1198,8 +1198,15 @@ export function updateBatchMarking(
   const label = ctx.refs.markingLabel(p, id);
   const changes: string[] = [];
   let project = applyFlags(p, id, args, changes, 'before');
+  // Turning the flag off goes first (a decorative marking cannot become floating); turning it on goes
+  // after `floating: false` (a floating one cannot become decorative).
+  if (args.decorative === false) {
+    project = applyDecorative(ctx, project, id, false, changes);
+  }
   project = applyMoves(ctx, project, id, args, changes);
-  project = applyDecorative(ctx, project, id, args.decorative, changes);
+  if (args.decorative === true) {
+    project = applyDecorative(ctx, project, id, true, changes);
+  }
   if (args.container !== undefined) {
     const moved = changeSpace(ctx, project, id, args, label);
     project = moved.project;

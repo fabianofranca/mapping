@@ -293,6 +293,32 @@ describe('update_marking.decorative', () => {
   });
 });
 
+describe('update_marking.decorative: order and no-ops', () => {
+  it('decorative: false together with floating: true on a decorative marking is valid (the flag goes first)', async () => {
+    const created = await apply([
+      {
+        op: 'create_marking',
+        rect: rect(-6000, -6000, 100, 80),
+        name: 'CanvasDecor',
+        decorative: true,
+      },
+    ]);
+    const id = byName(created, 'CanvasDecor').id;
+    const result = await plan([
+      { op: 'update_marking', marking: id, decorative: false, floating: true },
+    ]);
+    expect(result.valid, JSON.stringify(result.errors)).toBe(true);
+  });
+
+  it('the flag it already has changes nothing and the summary says so', async () => {
+    const id = byName(readProject(dir), 'CanvasDecor').id;
+    const same = await plan([{ op: 'update_marking', marking: id, decorative: true }]);
+    expect(same.valid).toBe(true);
+    expect(same.summary.join('\n')).toMatch(/nothing/);
+    expect(same.summary.join('\n')).not.toMatch(/: decorative/);
+  });
+});
+
 describe('list_markings', () => {
   it('the rows carry decorative and the filter keeps the decorative ones or the others', async () => {
     await apply([
