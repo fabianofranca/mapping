@@ -252,6 +252,27 @@ const FLOATING_EXCERPT = `{
   ]
 }`;
 
+/** Excerpt of a v25 specialization: the decorative type (`decorative`). */
+const DECORATIVE_EXCERPT = `{
+  "formatVersion": 25,
+  "layers": [
+    {
+      "id": "notas",
+      "name": "Notes",
+      "color": "#F5C400",
+      "annotationTypes": [
+        {
+          "id": "moldura",
+          "name": "Frame",
+          "decorative": true,
+          "component": "components/moldura.json",
+          "fields": [{ "key": "cor", "label": "Color", "type": "string" }]
+        }
+      ]
+    }
+  ]
+}`;
+
 /** Excerpt of a v7 specialization: the type applied to the arrow (`appliesTo`). */
 const APPLIES_TO_EXCERPT = `{
   "id": "deep-link",
@@ -793,6 +814,8 @@ const PT_BR_SAMPLE_TEXT: readonly (readonly [string, string])[] = [
   ['"label": "Text"', '"label": "Texto"'],
   ['"Note"', '"Nota"'],
   ['"Notes"', '"Notas"'],
+  ['"Frame"', '"Moldura"'],
+  ['"label": "Color"', '"label": "Cor"'],
   ['"Data"', '"Dados"'],
   ['"Navigation"', '"Navegação"'],
   ['"Click"', '"Clique"'],
@@ -872,6 +895,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 22 makes sources plain data: the plugin of a file format (fileFormats) replaces origins. origins at the root and system with file on a type example are refused (only allowed up to formatVersion 21); path on a field or column source and slot and ignore on a type source are valid for any system, as data the plugins read (the core checks only the shape); a field or column source needs name or path; no system is executable. Only a specialization that declares formatVersion 22 gets these rules; versions 1 to 21 are still accepted unchanged.',
           'formatVersion 23 adds named values to tokens: axes (several independent mode axes), aliases ({ "$token": "name" }), composite values (an object of named fields), per-axis values ({ "$axis": "theme", … }) and the { "$value": … } wrapper with $description, $group and $notices; and, in suggestions, the { "$tokens": "<group>" } item that expands to the text values of a group of tokens (sections "Design tokens" and "Text suggestions"). Only a specialization that declares formatVersion 23 gets these rules; versions 1 to 22 are still accepted unchanged, and a library of 15 to 22 moves to 23 without changes.',
           'formatVersion 24 adds codeOnly: true on a field (key of the type), a deliberately non-visual property (a mask or a keyboard type that only the code uses). The library validator does not warn that the drawing leaves it out (a field the drawing does not use) and warns if the drawing uses it. Versions 1 to 23 are still accepted unchanged; adding or removing codeOnly is additive in the version contract.',
+          'formatVersion 25 adds decorative: true on the annotation type, whose instance is a decorative marking: it draws something in its own space (a frame, a bracket, a divider) and is a child like any marking, never a parent (section "Decorative type"). Versions 1 to 24 are still accepted unchanged; adding or removing decorative is additive in the version contract.',
           'formatVersion 24 also adds the add-field migration step: a field that a library had removed and brings back (with a new meaning) is declared with remove-field in one migration and add-field in a later one, so each version is checked against its own fields. It covers no break and moves no value. Versions 1 to 23 are still accepted unchanged.',
           'formatVersion 4 adds the library: components that draw the types, documents, examples, fonts, executable origins and the version contract (sections "Library: the package", "Version contract" and "Library validation").',
           'formatVersion 5 is 4 plus repo on the platforms: the library repository on each platform, where the link and the revision of the file of each symbol come from (section "Platforms and code").',
@@ -891,7 +915,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 24), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), containerClasses and documents (from version 21), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 25), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), containerClasses and documents (from version 21), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -947,6 +971,10 @@ const enUS: readonly HelpSection[] = [
           {
             term: 'floating',
             text: 'Optional (formatVersion 7). Defaults to false. The instance is a floating marking (section "Floating type").',
+          },
+          {
+            term: 'decorative',
+            text: 'Optional (formatVersion 25). Defaults to false. The instance is a decorative marking: a child like any marking, never a parent (section "Decorative type"). Not together with floating or structural, and not on an arrow-only type.',
           },
           {
             term: 'appliesTo',
@@ -1389,6 +1417,34 @@ const enUS: readonly HelpSection[] = [
     ],
   },
   {
+    id: 'decorative',
+    title: 'Decorative type',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'formatVersion 25 lets an annotation type be decorative (decorative: true). The instance of a decorative type is a decorative marking: it draws something in its own space (inside a container, in the container pixels and moving with it, or on the canvas), takes part in containment as a child like any marking and is never a parent, neither of a marking nor of a container. A frame around a grid of samples does not swallow them: clicking a sample selects the sample, and clicking the empty part of the frame selects the frame.',
+      },
+      {
+        kind: 'p',
+        text: 'A marking created from a decorative type is born decorative and at the back (first among its siblings, so it is drawn below them); after that the order follows Details like any marking. Adding an annotation of the type to an existing marking does not change its decorative flag. A decorative type without a component is valid: it gives a bare outlined marking.',
+      },
+      {
+        kind: 'p',
+        text: 'Use decorative for frames, brackets and divider lines of a documentation page; never for interface components. It is an error together with floating: true, together with structural: true and on an arrow-only type, at the path of decorative.',
+      },
+      { kind: 'code', code: DECORATIVE_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'decorative',
+            text: 'Boolean, optional; defaults to false. From formatVersion 25 on only: in an earlier version the error is only allowed with formatVersion 25, at the type path.',
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: 'applies-to',
     title: 'What the type applies to',
     blocks: [
@@ -1751,7 +1807,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 to 24), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 to 25), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types, in another layer (from formatVersion 13, also in the owner’s own layer);',
           'every type with requiresOwner: true appears in the allowedChildren of some type (in formatVersion 11, in the resolved set of children of some owner: by id, by whole layer or by group);',
@@ -1771,6 +1827,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 11, children by layer and group: version 11 only (before it the error is only allowed with formatVersion 11, at the exact path); each allowedChildren item is a type id or a strict { layer, groups } clause (any other property is an error, and so is an empty groups); errors: a layer that is not a layer of the specialization or is the owner’s own before formatVersion 13 (children must be in another layer) and a group that does not exist in the clause’s layer; requiresOwner is checked against the resolved set; layer groups with a non-empty id unique in the layer and a non-empty name; type groups non-empty, without repetition and only from its own layer; warnings: 20 ids or more in text in the same allowedChildren and a group no type uses;',
           'formatVersion 23, named values in tokens: axes, aliases, composites, per-axis values and the $value wrapper only in version 23 (before it tokens.axes is only allowed with formatVersion 23 and modes stays required); modes and axes together are use modes or axes, not both; the axis, alias, composite and wrapper rules and their messages are in "Design tokens";',
           'formatVersion 23, { "$tokens": "<group>" } in suggestions: version 23 only (before it the error is only allowed with formatVersion 23, at the item path); only on a string field or column; no token in group "x" and the token "<name>" of group "x" is not fixed text; the list that results from the expansion follows the rules of suggestions (up to 200);',
+          'formatVersion 25, decorative on the type: version 25 only (before it the error is only allowed with formatVersion 25, at the type path); a boolean; true together with floating: true, with structural: true or on an arrow-only type is an error, at the path of decorative;',
           'formatVersion 24, codeOnly on a field: version 24 only (before it the error is only allowed with formatVersion 24); a boolean; on a table column the error is only valid on a field, not on a table column;',
           'formatVersion 24, add-field step in migrations: version 24 only (before it the error is only allowed with formatVersion 24, at migrations[i].steps[j].op); strict keys type, field; type is a type of this version and field is a field or a table.column of it; each version is checked against its own fields (rebuilt from the file by undoing the later migrations), so a remove-field of a field that a later add-field brings back is valid; a remove-field of X followed by add-field of X in the same migration is valid; warning: an add-field of a field that the previous version already had (library.fieldAlreadyInVersion);',
           'formatVersion 22, plain sources: origins at the root and system with file on a type example are refused (only allowed up to formatVersion 21, at the key); path on a field or column source is valid for any system, with valid syntax and no [*]; slot and ignore on a type source are valid for any system (slot still needs the component slot at the package level, ignore has no repeats); a field or column source needs name or path; no system is executable;',
@@ -1845,6 +1902,7 @@ const ptBR: readonly HelpSection[] = [
           'A formatVersion 22 torna as sources dados simples: o plugin de um formato de arquivo (fileFormats) substitui as origins. origins na raiz e system com file num exemplo do tipo são recusados (só é permitido até a formatVersion 21); path numa origem de campo ou coluna e slot e ignore numa origem de tipo valem para qualquer system, como dados que os plugins leem (o núcleo só confere a forma); uma origem de campo ou coluna precisa de name ou path; nenhum system é executável. Só a especialização que declara a formatVersion 22 recebe essas regras; as versões 1 a 21 continuam aceitas sem mudança.',
           'A formatVersion 23 acrescenta valores com nome aos tokens: axes (vários eixos de modo independentes), aliases ({ "$token": "nome" }), valores compostos (um objeto de campos com nome), valores por eixo ({ "$axis": "theme", … }) e o envoltório { "$value": … } com $description, $group e $notices; e, em suggestions, o item { "$tokens": "<grupo>" }, que se expande nos textos dos tokens de um grupo (seções "Tokens de design" e "Sugestões de texto"). Só a especialização que declara a formatVersion 23 recebe essas regras; as versões 1 a 22 continuam aceitas sem mudança, e uma biblioteca de 15 a 22 passa para a 23 sem alterações.',
           'A formatVersion 24 acrescenta codeOnly: true em um campo (chave do tipo), uma propriedade deliberadamente não visual (uma máscara ou um tipo de teclado que só o código usa). O validador da biblioteca não avisa que o desenho deixa o campo de fora (campo que o desenho não usa) e avisa se o desenho o usa. As versões 1 a 23 continuam aceitas sem mudança; acrescentar ou remover codeOnly é aditivo no contrato de versão.',
+          'A formatVersion 25 acrescenta decorative: true no tipo de anotação, cuja instância é uma marcação decorativa: ela desenha algo no próprio espaço (uma moldura, um colchete, um divisor) e é filha como qualquer marcação, nunca pai (seção "Tipo decorativo"). As versões 1 a 24 continuam aceitas sem mudança; acrescentar ou remover decorative é aditivo no contrato de versão.',
           'A formatVersion 24 também acrescenta o passo de migração add-field: um campo que a biblioteca tinha removido e traz de volta (com outro significado) é declarado com remove-field em uma migração e add-field em outra posterior, e cada versão é conferida com os seus próprios campos. Ele não cobre nenhuma quebra e não move valor. As versões 1 a 23 continuam aceitas.',
           'A formatVersion 4 acrescenta a biblioteca: componentes que desenham os tipos, documentos, exemplos, fontes, origens executáveis e o contrato de versão (seções "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca").',
           'A formatVersion 5 é a 4 mais o repo nas plataformas: o repositório da biblioteca em cada plataforma, de onde vêm o link e a revisão do arquivo de cada symbol (seção "Plataformas e code").',
@@ -1864,7 +1922,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 24), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), containerClasses e documents (a partir da versão 21), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 25), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), containerClasses e documents (a partir da versão 21), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -1917,6 +1975,10 @@ const ptBR: readonly HelpSection[] = [
           {
             term: 'floating',
             text: 'Opcional (formatVersion 7). Padrão false. A instância é uma marcação flutuante (seção "Tipo flutuante").',
+          },
+          {
+            term: 'decorative',
+            text: 'Opcional (formatVersion 25). Padrão false. A instância é uma marcação decorativa: filha como qualquer marcação, nunca pai (seção "Tipo decorativo"). Não junto com floating ou structural, nem em um tipo só de seta.',
           },
           {
             term: 'appliesTo',
@@ -2359,6 +2421,34 @@ const ptBR: readonly HelpSection[] = [
     ],
   },
   {
+    id: 'decorative',
+    title: 'Tipo decorativo',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'A formatVersion 25 deixa um tipo de anotação ser decorativo (decorative: true). A instância de um tipo decorativo é uma marcação decorativa: ela desenha algo no próprio espaço (dentro de um container, nos pixels do container e movendo-se com ele, ou no canvas), entra na contenção como filha, como qualquer marcação, e nunca é pai, nem de uma marcação nem de um container. Uma moldura em volta de uma grade de amostras não as engole: clicar numa amostra seleciona a amostra, e clicar na parte vazia da moldura seleciona a moldura.',
+      },
+      {
+        kind: 'p',
+        text: 'Uma marcação criada a partir de um tipo decorativo nasce decorativa e atrás (primeira entre as irmãs, então é desenhada abaixo delas); depois a ordem segue os Detalhes como em qualquer marcação. Acrescentar uma anotação do tipo a uma marcação existente não muda o marcador decorativo dela. Um tipo decorativo sem component é válido: dá uma marcação só com contorno.',
+      },
+      {
+        kind: 'p',
+        text: 'Use decorative para molduras, colchetes e linhas divisórias de uma página de documentação; nunca para componentes de interface. É erro junto com floating: true, junto com structural: true e em um tipo só de seta, no caminho de decorative.',
+      },
+      { kind: 'code', code: inPtBR(DECORATIVE_EXCERPT) },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'decorative',
+            text: 'Booleano, opcional; o padrão é false. Só a partir da formatVersion 25: numa versão anterior o erro é só é permitido com formatVersion 25, no caminho do tipo.',
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: 'applies-to',
     title: 'Onde o tipo se aplica',
     blocks: [
@@ -2721,7 +2811,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 a 24), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 a 25), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes, em outra camada (a partir da formatVersion 13, também na camada do próprio dono);',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo (na formatVersion 11, no conjunto resolvido dos filhos de algum dono: por id, por camada inteira ou por grupo);',
@@ -2741,6 +2831,7 @@ const ptBR: readonly HelpSection[] = [
           'formatVersion 11, filhos por camada e grupo: só na versão 11 (antes dela o erro é só é permitido com formatVersion 11, no caminho exato); cada item de allowedChildren é um id de tipo ou uma cláusula { layer, groups } estrita (outra propriedade é erro, e groups vazio também); erros: layer que não é camada da especialização ou é a do próprio dono antes da formatVersion 13 (filhos devem estar em outra camada) e grupo inexistente na camada da cláusula; requiresOwner conferido no conjunto resolvido; groups da camada com id não vazio e único na camada e name não vazio; groups do tipo não vazio, sem repetição e só da própria camada; avisos: 20 ids ou mais em texto no mesmo allowedChildren e grupo que nenhum tipo usa;',
           'formatVersion 23, valores com nome em tokens: axes, aliases, compostos, valores por eixo e o envoltório $value só na versão 23 (antes dela tokens.axes é only allowed with formatVersion 23 e modes continua obrigatório); modes e axes juntos são use modes or axes, not both; as regras de eixo, alias, composto e envoltório e as mensagens estão em "Tokens de design";',
           'formatVersion 23, { "$tokens": "<grupo>" } em suggestions: só na versão 23 (antes dela o erro é only allowed with formatVersion 23, no caminho do item); só em campo ou coluna string; no token in group "x" e the token "<name>" of group "x" is not fixed text; a lista que resulta da expansão segue as regras de suggestions (até 200);',
+          'formatVersion 25, decorative no tipo: só na versão 25 (antes dela o erro é só é permitido com formatVersion 25, no caminho do tipo); um booleano; true junto com floating: true, com structural: true ou em um tipo só de seta é erro, no caminho de decorative;',
           'formatVersion 24, codeOnly em um campo: só na versão 24 (antes dela o erro é só é permitido com formatVersion 24); um booleano; em coluna de table o erro é só é válido em um campo, não em uma coluna de table;',
           'formatVersion 24, passo add-field em migrations: só na versão 24 (antes dela o erro é só é permitido com formatVersion 24, em migrations[i].steps[j].op); chaves estritas type e field; type é tipo desta versão e field é campo ou table.coluna dele; cada versão é conferida com os seus próprios campos (reconstruídos a partir do arquivo desfazendo as migrações seguintes), então um remove-field de um campo que um add-field posterior traz de volta é válido; um remove-field de X seguido de add-field de X na mesma migração é válido; aviso: um add-field de um campo que a versão anterior já tinha (library.fieldAlreadyInVersion);',
           'formatVersion 22, sources simples: origins na raiz e system com file num exemplo do tipo são recusados (só é permitido até a formatVersion 21, na chave); path numa origem de campo ou coluna vale para qualquer system, com sintaxe válida e sem [*]; slot e ignore numa origem de tipo valem para qualquer system (o slot ainda exige o slot do componente no nível do pacote, o ignore não tem repetição); uma origem de campo ou coluna precisa de name ou path; nenhum system é executável;',

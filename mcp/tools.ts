@@ -366,7 +366,7 @@ export function registerTools(
     'list_markings',
     {
       description:
-        "Lists markings in compact rows (reference, path, `space` (`container` or `canvas`), `floating`, rectangle in container pixels (on the canvas, in canvas units), lock, annotations, `effectiveDrawingMode`: the drawing mode that applies in the marking's space, a map with every declared axis). Without `container` or `canvas`, lists the markings of the containers. The filters combine; those for layer, type and incomplete apply to the same own annotation of the marking (inherited ones do not count). `page` (id or name; see `pages` in get_project) keeps only the markings on that page: the canvas ones of the page and those of its containers.",
+        "Lists markings in compact rows (reference, path, `space` (`container` or `canvas`), `floating`, `decorative` (a child that is never a parent), rectangle in container pixels (on the canvas, in canvas units), lock, annotations, `effectiveDrawingMode`: the drawing mode that applies in the marking's space, a map with every declared axis). Without `container` or `canvas`, lists the markings of the containers. The filters combine; those for layer, type and incomplete apply to the same own annotation of the marking (inherited ones do not count). `page` (id or name; see `pages` in get_project) keeps only the markings on that page: the canvas ones of the page and those of its containers.",
       inputSchema: {
         project: projectArg,
         page: z
@@ -395,6 +395,12 @@ export function registerTools(
           .optional()
           .describe(
             'Only the floating ones (`true`, which live on the canvas) or only the non-floating ones (`false`).',
+          ),
+        decorative: z
+          .boolean()
+          .optional()
+          .describe(
+            'Only the decorative ones (`true`: frames, brackets and dividers, children that are never a parent) or only the non-decorative ones (`false`). Like the other filters it scans the containers; add `canvas: true` to find the decorative markings on the canvas.',
           ),
         layer: z
           .string()
@@ -445,7 +451,7 @@ export function registerTools(
     'get_marking',
     {
       description:
-        'Everything about a marking (or an arrow): path (for a canvas marking it starts with "Canvas"), container (`null` on the canvas), `space` (`container` or `canvas`), `floating`, rectangle (container pixels; on the canvas, canvas units), lock, children, `members` (the markings and containers that have this marking as their parent, by geometry), `arrows` (the arrows attached to it), `anchor` (the marking this one is anchored to, with `to` as a reference, `side`, `align` and `offset` when declared; `null` without an anchor) and `anchoredBy` (the references of the markings anchored to this one), annotations per layer (own and inherited, with the origin), link tree, resolved outgoing references (`refs`, each with a 0-based `row` and the `column` of a cell, or `null` for a field; `field` is the 1-based text to read), backlinks (`backlinks`: one entry per source annotation, with `fields`) and pending items. ' +
+        'Everything about a marking (or an arrow): path (for a canvas marking it starts with "Canvas"), container (`null` on the canvas), `space` (`container` or `canvas`), `floating`, `decorative` (a child that is never a parent: it has no members), rectangle (container pixels; on the canvas, canvas units), lock, children, `members` (the markings and containers that have this marking as their parent, by geometry), `arrows` (the arrows attached to it), `anchor` (the marking this one is anchored to, with `to` as a reference, `side`, `align` and `offset` when declared; `null` without an anchor) and `anchoredBy` (the references of the markings anchored to this one), annotations per layer (own and inherited, with the origin), link tree, resolved outgoing references (`refs`, each with a 0-based `row` and the `column` of a cell, or `null` for a field; `field` is the 1-based text to read), backlinks (`backlinks`: one entry per source annotation, with `fields`) and pending items. ' +
         "On typed annotations, `code` carries the type's instantiation code per platform: `symbol` (what you call to create an instance), `definition` (the file that defines the `symbol`, to read the signature: `path`, `url` and `ref` of the specialization's `repo`, `localFile` relative to the client's working directory and `exists` per the project's local clone; `null` without `path`), `params`, `values` and `notes`. The server only checks whether the file exists: it never reads code.",
       inputSchema: {
         ref: refArg,

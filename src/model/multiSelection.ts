@@ -919,6 +919,7 @@ export function wrapItems(
     needsReview: false,
     locked: false,
     floating: false,
+    decorative: false,
     source: null,
   };
   const list = [...p.markings];
