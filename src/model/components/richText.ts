@@ -27,6 +27,8 @@
  *   last text piece (in the middle of a run if needed; a chip leaves whole) until the line plus
  *   the `…` fits, and the `…` uses the font of the last piece that remained.
  * - `align` applies per line, against the box width (when there is one).
+ * - `RunLayout.width` (the measured width) is the widest line counting the larger of the merged
+ *   pieces and the segments the line breaking summed, so a box of that width keeps the same lines.
  * - `direction: 'rtl'` reverses the order of the pieces within the line (the first at the right edge).
  *
  * Pure functions, no DOM. The positions (`x`, `y`) are relative to the corner of the text box,
@@ -364,7 +366,8 @@ function buildLayout(
     });
     const result: RunLine = { y, height, width, pieces };
     y += height;
-    widest = Math.max(widest, width);
+    // The breaker counted the segments measured apart; a box this wide must hold the same line.
+    widest = Math.max(widest, width, sumWidths(line));
     return result;
   });
   return { width: widest, height: y, lines: out };
