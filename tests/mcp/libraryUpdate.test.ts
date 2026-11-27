@@ -845,7 +845,7 @@ describe('propose_changes with the package folder', () => {
   });
 });
 
-// `builtin` (stage #2081, TX2): the notes library at version 4 moves to the built-in version 6
+// `builtin` (stage #2081, TX2): the notes library at version 4 moves to the built-in version 7
 // (FN3: version 5 added nothing to the table, version 6 folded it into the note).
 describe('builtin: update to the built-in version of the notes library', () => {
   const name = 'projetos/notes-v4';
@@ -887,7 +887,7 @@ describe('builtin: update to the built-in version of the notes library', () => {
     downgradeToV4();
   });
 
-  it('plan_library_update with builtin: update from 4 to 6, not additive, builtin in the response', async () => {
+  it('plan_library_update with builtin: update from 4 to 7, not additive, builtin in the response', async () => {
     const plan = ok(
       await mcp.call<Plan & { builtin?: string; path?: string }>('plan_library_update', {
         project: name,
@@ -896,7 +896,7 @@ describe('builtin: update to the built-in version of the notes library', () => {
     );
     expect(plan.decision).toBe('update');
     expect(plan.from).toBe(4);
-    expect(plan.to).toBe(6);
+    expect(plan.to).toBe(7);
     expect(plan.additive).toBe(false);
     expect(plan.builtin).toBe('notas');
     expect(plan.path).toBeUndefined();
@@ -904,7 +904,7 @@ describe('builtin: update to the built-in version of the notes library', () => {
     expect(plan.hint).toContain('builtin');
   });
 
-  it('plan_library_update with builtin on a v5 project: from 5 to 6, not additive, lists the rename-type step', async () => {
+  it('plan_library_update with builtin on a v5 project: from 5 to 7, not additive, lists the rename-type step', async () => {
     const v5 = 'projetos/notes-v5';
     ok(await mcp.call('create_project', { path: v5, name: 'Notes v5' }));
     const previous = dir;
@@ -919,7 +919,7 @@ describe('builtin: update to the built-in version of the notes library', () => {
     );
     expect(plan.decision).toBe('update');
     expect(plan.from).toBe(5);
-    expect(plan.to).toBe(6);
+    expect(plan.to).toBe(7);
     expect(plan.additive).toBe(false);
     expect(plan.validation.valid).toBe(true);
     expect(plan.missingMigrations ?? []).toEqual([]);
@@ -946,9 +946,9 @@ describe('builtin: update to the built-in version of the notes library', () => {
       },
     ]);
     expect(result.proposed, JSON.stringify(result)).toBe(true);
-    expect(result.summary[0]).toMatch(/Update the specialization "notas" to v6/);
+    expect(result.summary[0]).toMatch(/Update the specialization "notas" to v7/);
     expect(result.files.packages).toEqual([
-      expect.objectContaining({ files: 5 }) as unknown,
+      expect.objectContaining({ files: 11 }) as unknown,
     ]);
     const id = result.proposal.id;
     const proposal = readProposal(dir, id);
@@ -963,7 +963,7 @@ describe('builtin: update to the built-in version of the notes library', () => {
     const applied = applyAccepted(readProject(dir), readProposal(dir, id), NOW);
     if (!applied.ok) throw new Error(JSON.stringify(applied.issues));
     expect(applied.project.specializations.find((s) => s.id === 'notas')?.version).toBe(
-      6,
+      7,
     );
     expect(applied.packages).toHaveLength(1);
     expect(readdirSync(join(dir, applied.packages[0]!.from)).sort()).toEqual([
@@ -973,7 +973,7 @@ describe('builtin: update to the built-in version of the notes library', () => {
     ]);
     expect(
       readdirSync(join(dir, applied.packages[0]!.from, 'components')).sort(),
-    ).toEqual(['nota.json', 'texto.json']);
+    ).toEqual(['colchete.json', 'linha.json', 'moldura.json', 'nota.json', 'texto.json']);
   });
 
   it('builtin with path/file, neither, or an unknown id: invalid-arguments listing notas', async () => {
