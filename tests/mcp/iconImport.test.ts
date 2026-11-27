@@ -385,6 +385,47 @@ describe('import_icons: gradients (stage #2847, SG1)', () => {
   });
 });
 
+describe('import_icons: clips (stage #2847, SG3)', () => {
+  const paint = (name: string, to: string): string => {
+    cpSync(`${FIXTURES}/paint/${name}.svg`, join(root, to));
+    return to;
+  };
+
+  it('a circular clip into a formatVersion 3 file raises it to 4, and the file is accepted', async () => {
+    const lib = library((set) => {
+      set.formatVersion = 3;
+    });
+    const file = paint('clip-circle', 'sg-clip.svg');
+    const result = ok(await mcp.call<Imported>('import_icons', { path: lib, svg: file }));
+    expect(result).toMatchObject({ formatVersion: 4, added: ['sg-clip'], written: true });
+    const icon = readIcons(lib).icons['sg-clip'] as { clip?: { d: string } };
+    expect(icon.clip?.d).toMatch(/^M24 12A12 12/);
+    const validated = ok(await mcp.call<Validated>('validate_library', { path: lib }));
+    expect(validated.errors).toEqual([]);
+  });
+
+  it('nested clips go to errors, named, and do not stop the other files', async () => {
+    const lib = library((set) => {
+      set.formatVersion = 3;
+    });
+    const dir = join(root, 'svgs-clip');
+    mkdirSync(dir, { recursive: true });
+    cpSync(`${FIXTURES}/paint/clip-nested.svg`, join(dir, 'clip-nested.svg'));
+    cpSync(`${FIXTURES}/paint/clip-circle.svg`, join(dir, 'clip-circle.svg'));
+    const result = ok(
+      await mcp.call<Imported>('import_icons', { path: lib, svg: 'svgs-clip' }),
+    );
+    expect(result.errors).toEqual([
+      {
+        file: 'clip-nested.svg',
+        message: 'unsupported in SVG: a clip-path inside another clip-path (clip1_1_2)',
+      },
+    ]);
+    expect(result.added).toEqual(['clip-circle']);
+    expect(Object.keys(readIcons(lib).icons)).not.toContain('clip-nested');
+  });
+});
+
 describe('import_icons: the icons file', () => {
   it('creates a declared but missing file, with format, version and the first icon viewBox', async () => {
     const lib = library();
