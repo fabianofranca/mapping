@@ -1,4 +1,4 @@
-# Container classes: own set in the drawing, chosen sets across specializations — [Não lançado] (épico `epic/container-class-reads`, PR #0, MCP 0.61.2, schema v24)
+# Container classes: own set in the drawing, chosen sets across specializations — 2026-11-27 (épico `epic/container-class-reads`, PR #2997, MCP 0.62.2, schema v25)
 
 Schema unchanged.
 
