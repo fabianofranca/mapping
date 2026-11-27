@@ -1341,7 +1341,7 @@ describe('model messages in the app language (MB3)', () => {
   });
 });
 
-// Update to the built-in version (stage #2081, TX2): the notes library at version 4 moves to 6.
+// Update to the built-in version (stage #2081, TX2): the notes library at version 4 moves to 7.
 describe('SpecsDialog: update to the built-in version', () => {
   const v4Text = readFileSync(
     join(process.cwd(), 'tests', 'model', 'fixtures', 'notas-v4.spec.json'),
@@ -1352,7 +1352,7 @@ describe('SpecsDialog: update to the built-in version', () => {
     if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
     return applySpecialization(emptyProject(), parsed.spec, { newId: () => 'LN' });
   };
-  const BUTTON = 'Update to the built-in version (v6)';
+  const BUTTON = 'Update to the built-in version (v7)';
   const setupBundled = (project: Project, readOnly = false) => {
     const harness: Harness = createHarness(project, readOnly);
     const view = renderLive(harness, (p) => (
@@ -1370,11 +1370,11 @@ describe('SpecsDialog: update to the built-in version', () => {
     const { harness, user } = setupBundled(v4Project());
     await user.click(screen.getByRole('button', { name: BUTTON }));
     const dialog = await dialogTitled('Package "Notes"', 30_000);
-    expect(within(dialog).getByText('From version 4 to 6.')).toBeTruthy();
+    expect(within(dialog).getByText('From version 4 to 7.')).toBeTruthy();
     await user.click(within(dialog).getByRole('button', { name: 'Update' }));
-    await screen.findByText(/updated to version 6/);
+    await screen.findByText(/updated to version 7/);
     const entry = harness.project().specializations[0];
-    expect(entry?.version).toBe(6);
+    expect(entry?.version).toBe(7);
     expect(
       entry?.spec?.layers.flatMap((l) => l.annotationTypes.map((x) => x.id)),
     ).toContain('texto');
@@ -1382,7 +1382,7 @@ describe('SpecsDialog: update to the built-in version', () => {
     expect(harness.project().specializations[0]?.version).toBe(4);
   }, 120_000);
 
-  it('at v6 and on another specialization the button does not exist', () => {
+  it('at v7 and on another specialization the button does not exist', () => {
     const applied = applyBundledLibrary(emptyProject(), NOTES_LIBRARY).project;
     setupBundled(applied);
     expect(screen.queryByRole('button', { name: BUTTON })).toBeNull();
