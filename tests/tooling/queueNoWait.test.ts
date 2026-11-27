@@ -155,7 +155,7 @@ describe('docs: process and messages (decision 8)', () => {
 
   it('the FLOW cites the news of the queue and of the detailing', () => {
     expect(flow).toContain('MCP version at closing');
-    expect(flow).toContain('`Depende de` covers the `ready` and `in-progress` ones');
+    expect(flow).toContain('`Depende de` lists only a real dependency');
     const fix = section(flow, '## Fix phase');
     expect(fix).toContain('depende de #N');
     expect(fix).toContain('`ready` `bug`');
