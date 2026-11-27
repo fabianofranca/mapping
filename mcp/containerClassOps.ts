@@ -1,4 +1,5 @@
 import {
+  chosenContainerClassSets,
   containerClassSets,
   isComputedSet,
   setContainerClass,
@@ -14,13 +15,11 @@ import { ToolError } from './errors';
 
 /** What a refusal lists: the chosen sets of the applied specializations and their classes. */
 function chosenSets(p: Project): Record<string, unknown>[] {
-  return containerClassSets(p)
-    .filter((s) => !isComputedSet(s))
-    .map((s) => ({
-      id: s.id,
-      name: s.name,
-      classes: s.classes.map((c) => ({ id: c.id, name: c.name })),
-    }));
+  return chosenContainerClassSets(p).map((s) => ({
+    id: s.id,
+    name: s.name,
+    classes: s.classes.map((c) => ({ id: c.id, name: c.name })),
+  }));
 }
 
 function refuse(p: Project, set: string, why: string): never {
@@ -29,7 +28,19 @@ function refuse(p: Project, set: string, why: string): never {
   });
 }
 
+// Order of decision 5 of #2489: a set some specialization declares as chosen is checked against the
+// chosen declarations (even when an earlier one computes the same id); a set declared only as computed
+// keeps the `is computed by` message; anything else is undeclared.
 function checkChoice(p: Project, set: string, classId: string): void {
+  const chosen: SpecContainerClassSet | undefined = chosenContainerClassSets(p).find(
+    (s) => s.id === set,
+  );
+  if (chosen !== undefined) {
+    if (!chosen.classes.some((c) => c.id === classId)) {
+      refuse(p, set, `"${classId}" is not a class of the set "${set}"`);
+    }
+    return;
+  }
   const known: SpecContainerClassSet | undefined = containerClassSets(p).find(
     (s) => s.id === set,
   );
@@ -41,8 +52,6 @@ function checkChoice(p: Project, set: string, classId: string): void {
       set,
       `the set "${set}" is computed by ${known.by}: it follows the container's size and is not chosen`,
     );
-  } else if (!known.classes.some((c) => c.id === classId)) {
-    refuse(p, set, `"${classId}" is not a class of the set "${set}"`);
   }
 }
 
