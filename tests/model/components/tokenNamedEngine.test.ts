@@ -1,7 +1,7 @@
 // FN2: `$tokenNamed` — evaluation (`evaluate`) and the drawing (`instantiate`): the order of the lookup,
 // the kind of each position, literals and defaults.
 import { describe, expect, it } from 'vitest';
-import type { ComponentFile } from '../../../src/model/components/componentFormat';
+import type { ComponentFile, Expr } from '../../../src/model/components/componentFormat';
 import { evaluate, referencedFields } from '../../../src/model/components/expressions';
 import {
   approximateMeasurer,
@@ -84,6 +84,15 @@ describe('evaluate: $tokenNamed with a lookup', () => {
     expect(
       evaluate({ $tokenNamed: { $field: 'cor' } }, {}, 'fb', { tokenNamed: lookup }),
     ).toBe('fb');
+  });
+
+  it('a $tokenNamed in the default of an empty $field is evaluated, not returned as an object', () => {
+    const viaDefault: Expr<string> = { $field: 'cor', default: { $tokenNamed: 'brand' } };
+    expect(evaluate(viaDefault, {}, '', { tokenNamed: lookup })).toBe('#abcdef');
+    expect(evaluate(viaDefault, { cor: '#010101' }, '', { tokenNamed: lookup })).toBe(
+      '#010101',
+    );
+    expect(evaluate({ $field: 'cor', default: '#222222' }, {}, '')).toBe('#222222');
   });
 
   it('a literal color is used as is; an unresolved text of the wrong kind gives the default', () => {

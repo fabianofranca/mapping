@@ -8,6 +8,7 @@ import {
   componentForDrawing,
   createDrawingCache,
   drawOptions,
+  readsTokenNamed,
   loadSpecComponents,
   setContainerDrawingMode,
   type ComponentCatalog,
@@ -197,5 +198,26 @@ describe('the drawing of a marking reads the other libraries in its space mode',
   it('a name nobody declares draws the default', () => {
     const none: Project = componentProject();
     expect(JSON.stringify(drawn(none))).toContain('#ff00ff');
+  });
+});
+
+describe('which components the drawing cache keys on the libraries tokens', () => {
+  const withTemplate = (template: Record<string, unknown>): ComponentFile =>
+    ({ ...component(OWN), template }) as unknown as ComponentFile;
+
+  it('a component that reads $tokenNamed, itself or through a nested component, does', () => {
+    expect(readsTokenNamed(component(OWN))).toBe(false);
+    expect(
+      readsTokenNamed(withTemplate({ type: 'frame', fill: { $tokenNamed: 'brand' } })),
+    ).toBe(true);
+    // The nested file is not in the outer one's text: a `component` node counts.
+    expect(
+      readsTokenNamed(
+        withTemplate({
+          type: 'frame',
+          children: [{ type: 'component', component: 'chip', values: {} }],
+        }),
+      ),
+    ).toBe(true);
   });
 });

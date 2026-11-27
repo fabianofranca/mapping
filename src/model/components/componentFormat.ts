@@ -87,7 +87,7 @@ export type BoolExpr = Expr<boolean> | Condition;
 /** Expression that produces a value of type `T` (or the literal). */
 export type Expr<T> =
   | T
-  | { readonly $field: string; readonly default?: T }
+  | { readonly $field: string; readonly default?: Expr<T> }
   | { readonly $if: Condition; readonly then: Expr<T>; readonly else?: Expr<T> }
   | {
       readonly $switch: string;

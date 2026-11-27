@@ -975,11 +975,15 @@ function slotFacts(
 const NO_SPEC_TOKENS: readonly (SpecTokens | undefined)[] = [];
 const tokenNamedUse = new WeakMap<ComponentFile, boolean>();
 
-/** Does the component read a token by name? Only then do other libraries' tokens change its drawing. */
-function usesTokenNamed(component: ComponentFile): boolean {
+/**
+ * Does the drawing of the component depend on other libraries' tokens? When it reads `$tokenNamed` itself, or
+ * has a `component` node (the nested file is not in its text and receives the same lookup).
+ */
+export function readsTokenNamed(component: ComponentFile): boolean {
   let used = tokenNamedUse.get(component);
   if (used === undefined) {
-    used = JSON.stringify(component).includes('"$tokenNamed"');
+    const text = JSON.stringify(component.template);
+    used = text.includes('"$tokenNamed"') || text.includes('"type":"component"');
     tokenNamedUse.set(component, used);
   }
   return used;
@@ -1197,7 +1201,7 @@ export function createDrawingCache(): DrawingCache {
       const direction = effectiveDirection(p, marking.containerId);
       const anchor = anchorOfMarking(marking, markingsById);
       const container = readContainerOf(p, mc.component, marking.containerId);
-      const specTokens = usesTokenNamed(mc.component) ? allSpecTokens : NO_SPEC_TOKENS;
+      const specTokens = readsTokenNamed(mc.component) ? allSpecTokens : NO_SPEC_TOKENS;
       const before = entries.get(marking.id);
       if (
         before !== undefined &&

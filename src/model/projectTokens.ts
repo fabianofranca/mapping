@@ -41,6 +41,19 @@ export function projectNamedLookup(
   component: ComponentFile,
   containerId: string | null,
 ): NamedTokenLookup {
+  // Built on the first read: most components never read a token by name.
+  let chain: NamedTokenLookup | undefined;
+  return (name, kind) => {
+    chain ??= buildLookup(p, component, containerId);
+    return chain(name, kind);
+  };
+}
+
+function buildLookup(
+  p: Project,
+  component: ComponentFile,
+  containerId: string | null,
+): NamedTokenLookup {
   const mode = effectiveDrawingMode(p, containerId);
   const own = component.tokenTables;
   const lookups: NamedTokenLookup[] = [];

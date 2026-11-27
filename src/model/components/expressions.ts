@@ -295,8 +295,13 @@ export function evaluate<T>(
   if (!isExprObject(expr)) return expr as T;
   if ('$field' in expr) {
     const value = values[expr.$field as string];
-    if (isEmpty(value))
-      return ('default' in expr ? (expr.default as T) : undefined) ?? fallback;
+    if (isEmpty(value)) {
+      const fallbackExpr = 'default' in expr ? (expr.default as Expr<T>) : undefined;
+      // The default is an expression too: a `$tokenNamed` in it needs the context (`$token` was applied before).
+      return fallbackExpr === undefined
+        ? fallback
+        : (evaluate(fallbackExpr, values, fallback, ctx) ?? fallback);
+    }
     return value as unknown as T;
   }
   if ('$if' in expr) {
