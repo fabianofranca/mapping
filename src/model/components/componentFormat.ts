@@ -573,13 +573,52 @@ export interface IconRunTemplate {
 export type TextRunTemplate = TextRunText | IconRunTemplate;
 
 /**
+ * A `runs` item that comes from a `table` field of the type (v4): `{ "field", "template" }` gives
+ * one run per row, between the fixed runs, with the words of the `repeat` node. The `template` is
+ * ONE run (text or icon) that reads the row's columns with `$field`, `$index` being the row's
+ * index. The expansion (`expandRepeats`) replaces the item with the rows' runs before the engine,
+ * which only sees literal runs. It does not combine with `count`, and it is not valid inside the
+ * `template` of a `repeat`.
+ */
+export interface RunsTableTemplate {
+  readonly field: string;
+  readonly template: TextRunTemplate;
+}
+
+/** An item of `runs`: a run or a runs table (`field` + `template`). */
+export type TextRunItem = TextRunTemplate | RunsTableTemplate;
+
+/** Is the key `runs` of this node the list of a text node's runs (where the runs tables live)? */
+export function isRunsKey(node: Record<string, unknown>, key: string): boolean {
+  return node.type === 'text' && key === 'runs';
+}
+
+/** A node that repeats rows of a `table` field: a `repeat`, or a runs table as an item of `runs`. */
+export function isRowsNode(node: Record<string, unknown>, runsItem: boolean): boolean {
+  return node.type === 'repeat' || (runsItem && isRunsTable(node));
+}
+
+/** Is the `runs` item a runs table (`{ field, template }`) and not a run? */
+export function isRunsTable(item: unknown): item is RunsTableTemplate {
+  return (
+    typeof item === 'object' &&
+    item !== null &&
+    !Array.isArray(item) &&
+    ('field' in item || 'template' in item) &&
+    !('type' in item) &&
+    !('text' in item) &&
+    !('icon' in item)
+  );
+}
+
+/**
  * Text of the node: `text` (a single style) **or** `runs` (runs with their own style, only in
  * `formatVersion` 4); both together are not valid, and one of them is required.
  */
 export interface TextTemplate extends TemplateNodeBase {
   readonly type: 'text';
   readonly text?: Expr<string | number>;
-  readonly runs?: readonly TextRunTemplate[];
+  readonly runs?: readonly TextRunItem[];
   readonly font?: FontSpec;
   /** Text color (the node's `fill`). Default: `#000000`. */
   readonly color?: Expr<Color>;

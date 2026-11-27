@@ -6,3 +6,4 @@
 - A rich-text run can move up or down with `baselineShift` (px or a percentage of its size), for `sub` and `sup`; the measurement does not change (#2916).
 - A rich-text run can be an icon of the library's set (`{ "icon": … }`), an unbreakable box centered on the line (#2916).
 - The app, the viewer and the MCP's PNG draw the inline icon of a rich-text run (#2916).
+- Rich-text runs can come from a `table` field: a `runs` item `{ "field", "template" }` gives one run per row, mixed with fixed runs (#2916).
