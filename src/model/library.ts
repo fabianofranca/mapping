@@ -1,5 +1,5 @@
 import type { ComponentFile } from './components/componentFormat';
-import { isRunsTable } from './components/componentFormat';
+import { isRowsNode, isRunsKey } from './components/componentFormat';
 import { componentSlots, slotKey } from './components/slots';
 import { resolvePath, type TextFile } from './components/library';
 import {
@@ -210,7 +210,7 @@ function fieldReferences(
     return out;
   }
   if (!isRecord(node)) return out;
-  const isRepeat = node.type === 'repeat' || (runsItem && isRunsTable(node));
+  const isRepeat = isRowsNode(node, runsItem);
   for (const [key, value] of Object.entries(node)) {
     const at = `${path}.${key}`;
     // `repeat`: the `template` reads columns of the row (see `repeatChecks`), not fields of the type.
@@ -229,7 +229,7 @@ function fieldReferences(
       if (!out.has(value[0]) && !isReservedFieldName(value[0]))
         out.set(value[0], `${at}[0]`);
     } else {
-      fieldReferences(value, at, out, node.type === 'text' && key === 'runs');
+      fieldReferences(value, at, out, isRunsKey(node, key));
     }
   }
   return out;
@@ -290,12 +290,12 @@ function repeatNodes(
     return out;
   }
   if (!isRecord(node)) return out;
-  if (node.type === 'repeat' || (runsItem && isRunsTable(node))) {
+  if (isRowsNode(node, runsItem)) {
     out.push({ path, node });
     return out;
   }
   for (const [key, value] of Object.entries(node))
-    repeatNodes(value, `${path}.${key}`, out, node.type === 'text' && key === 'runs');
+    repeatNodes(value, `${path}.${key}`, out, isRunsKey(node, key));
   return out;
 }
 

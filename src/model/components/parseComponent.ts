@@ -16,6 +16,8 @@ import {
   ANCHOR_ALIGNS,
   ANCHOR_SIDES,
   STROKE_SIDES,
+  isRowsNode,
+  isRunsKey,
   isRunsTable,
   type ComponentFile,
 } from './componentFormat';
@@ -2227,9 +2229,8 @@ function indexIssues(version: unknown, template: unknown): ComponentIssue[] {
       const here = join(at, key);
       const cited = indexCitation(key, value);
       if (cited !== undefined) flag(`${here}${cited}`, inRepeat);
-      const rows =
-        key === 'template' && (node.type === 'repeat' || (runsItem && isRunsTable(node)));
-      walk(value, here, inRepeat || rows, node.type === 'text' && key === 'runs');
+      const rows = key === 'template' && isRowsNode(node, runsItem);
+      walk(value, here, inRepeat || rows, isRunsKey(node, key));
     }
   };
   walk(template, 'template', false);

@@ -588,6 +588,16 @@ export interface RunsTableTemplate {
 /** An item of `runs`: a run or a runs table (`field` + `template`). */
 export type TextRunItem = TextRunTemplate | RunsTableTemplate;
 
+/** Is the key `runs` of this node the list of a text node's runs (where the runs tables live)? */
+export function isRunsKey(node: Record<string, unknown>, key: string): boolean {
+  return node.type === 'text' && key === 'runs';
+}
+
+/** A node that repeats rows of a `table` field: a `repeat`, or a runs table as an item of `runs`. */
+export function isRowsNode(node: Record<string, unknown>, runsItem: boolean): boolean {
+  return node.type === 'repeat' || (runsItem && isRunsTable(node));
+}
+
 /** Is the `runs` item a runs table (`{ field, template }`) and not a run? */
 export function isRunsTable(item: unknown): item is RunsTableTemplate {
   return (
