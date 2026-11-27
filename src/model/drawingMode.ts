@@ -9,6 +9,7 @@ import type { AnchorSide, ComponentFile } from './components/componentFormat';
 import {
   applyTokens,
   tokenAxes,
+  type NamedTokenLookup,
   type ResolvedTokens,
   type SpecTokens,
 } from './components/tokens';
@@ -17,6 +18,7 @@ import { effectiveDirection } from './direction';
 import { fail } from './errors';
 import { updateById } from './project';
 import { projectIndex } from './projectIndex';
+import { projectNamedLookup } from './projectTokens';
 import { DRAWING_NAME_PATTERN } from './schema';
 import type { DrawingModeMap, Marking, Project, ReadingDirection, Rect } from './types';
 
@@ -245,6 +247,7 @@ export function componentForDrawing(
 ): {
   readonly component: ComponentFile;
   readonly tokens: ResolvedTokens | undefined;
+  readonly tokenNamed: NamedTokenLookup;
   readonly direction: ReadingDirection;
   readonly container: InstanceContainer | undefined;
 } {
@@ -255,6 +258,8 @@ export function componentForDrawing(
   return {
     component: tokens === undefined ? component : applyTokens(component, tokens),
     tokens,
+    // `$tokenNamed` reads the project's applied libraries in this space's selection (decision 10 of #2825).
+    tokenNamed: projectNamedLookup(p, component, containerId),
     direction: effectiveDirection(p, containerId),
     // Only a component that reads `$container.*` pays for the container's size and classes.
     container: readContainerOf(p, component, containerId),
@@ -318,17 +323,20 @@ export function measuringAnchor(
  */
 export function drawOptions(drawn: {
   readonly tokens: ResolvedTokens | undefined;
+  readonly tokenNamed?: NamedTokenLookup | undefined;
   readonly direction: ReadingDirection;
   readonly anchor?: InstanceAnchor | undefined;
   readonly container?: InstanceContainer | undefined;
 }): {
   tokens?: ResolvedTokens;
+  tokenNamed?: NamedTokenLookup;
   direction?: 'rtl';
   anchor?: InstanceAnchor;
   container?: InstanceContainer;
 } {
   return {
     ...(drawn.tokens === undefined ? {} : { tokens: drawn.tokens }),
+    ...(drawn.tokenNamed === undefined ? {} : { tokenNamed: drawn.tokenNamed }),
     ...(drawn.direction === 'rtl' ? { direction: 'rtl' as const } : {}),
     ...(drawn.anchor === undefined ? {} : { anchor: drawn.anchor }),
     ...(drawn.container === undefined ? {} : { container: drawn.container }),

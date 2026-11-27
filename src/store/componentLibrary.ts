@@ -12,7 +12,6 @@ import {
   type Spec,
   type SpecComponents,
 } from '../model';
-import { readHostFonts } from '../canvas/theme';
 import { resolvePath, type LoadedFont } from '../model/components/library';
 import { createFontRegistry, type FontRegistry, type FontStatus } from '../storage/fonts';
 import { createPackageImages, type PackageImages } from '../storage/packageImages';
@@ -129,9 +128,7 @@ export async function readSpecComponents(
     const text = contents[i];
     if (text !== null && text !== undefined) texts.set(path, text);
   });
-  return loadSpecComponents(spec, specFile, version, (path) => texts.get(path), {
-    fonts: readHostFonts(),
-  });
+  return loadSpecComponents(spec, specFile, version, (path) => texts.get(path));
 }
 
 /** Empty entry with the reason: without it, each project edit would try to read again. */

@@ -17,7 +17,7 @@ import type { Library } from '../src/model/components/library';
 import type { HostFonts } from '../src/model/components/tokens';
 import type { TextMeasurer } from '../src/model/components/instantiate';
 import type { Screen } from '../src/model/components/screen';
-import { viewerHostFonts } from './hostFonts';
+import { loadViewerFonts, viewerHostFonts } from './hostFonts';
 import {
   VIEWER_POLICY_NAME,
   disposeFormatSandbox as disposeViewerSandbox,
@@ -113,6 +113,8 @@ export async function screenFromFormat(
   text: string,
   options: FormatScreenOptions,
 ): Promise<FormatScreenResult> {
+  // The boxes are sized with the Mapping faces the viewer draws with: they must be loaded before the measuring.
+  await loadViewerFonts();
   const result = await formatScreens(library, text, {
     ...options,
     fonts: options.fonts ?? viewerHostFonts(),

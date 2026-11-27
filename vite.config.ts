@@ -5,6 +5,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 import { execSync } from 'node:child_process';
 import type { BuildChannel } from './pwa/build';
 import { contentSecurityPolicy, serviceWorker } from './pwa/buildPlugins';
+import { drawingFontModules } from './pwa/fontModules.mjs';
 import { tokensCss } from './pwa/tokensCss';
 import { resolveBuildId } from './src/utils/build';
 import { fontBytes, harfbuzzModule, wasmBytes } from './tests/support/mcpVitePlugins';
@@ -72,6 +73,7 @@ const base = {
   define: { __BUILD_ID__: JSON.stringify(buildId) },
   plugins: [
     tokensCss(),
+    drawingFontModules(),
     preact(),
     viteSingleFile(),
     contentSecurityPolicy(),
@@ -214,7 +216,8 @@ export default defineConfig({
         // use the app's tokens.
         extends: false,
         base: './',
-        plugins: [],
+        // The viewer registers the drawing font (`drawing-font:*`), so this project serves those modules too.
+        plugins: [drawingFontModules()],
         oxc: { jsx: { runtime: 'automatic', importSource: 'react' } },
         test: {
           name: 'viewer-react',

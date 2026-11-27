@@ -99,10 +99,8 @@ describe('session with packages applied in memory (stagedPackages)', () => {
       [
         SPEC_FILE,
         `${DIR}/components/nota.json`,
-        `${DIR}/components/tabela.json`,
         `${DIR}/components/texto.json`,
         `${DIR}/docs/nota.md`,
-        `${DIR}/docs/tabela.md`,
         `${DIR}/docs/texto.md`,
       ].sort(),
     );
@@ -159,7 +157,7 @@ describe('session with packages applied in memory (stagedPackages)', () => {
     session = opened.session;
     session.actions.renameProject('Renamed');
     await session.flush();
-    expect((await opened.storage.listSpecDir(DIR)).length).toBe(7);
+    expect((await opened.storage.listSpecDir(DIR)).length).toBe(5);
 
     expect(session.actions.removeSpecialization('notas', 'convert').ok).toBe(true);
     await settle();
@@ -173,7 +171,7 @@ describe('session with packages applied in memory (stagedPackages)', () => {
     session.store.undo();
     await vi.advanceTimersByTimeAsync(300);
     await settle();
-    expect((await opened.storage.listSpecDir(DIR)).length).toBe(7);
+    expect((await opened.storage.listSpecDir(DIR)).length).toBe(5);
   });
 
   it('removing before the first write leaves neither folder nor specialization on disk', async () => {

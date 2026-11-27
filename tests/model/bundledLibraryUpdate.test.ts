@@ -27,21 +27,21 @@ function v4Project(): Project {
 }
 
 describe('bundledLibraryUpdate', () => {
-  it('update: notes at version 4 move to 5 with the spec and the package files', () => {
+  it('update: notes at version 4 move to 6 with the spec and the package files', () => {
     const result = bundledLibraryUpdate(v4Project(), NOTES_LIBRARY);
     if (result.decision !== 'update') throw new Error(result.decision);
     expect(result.from).toBe(4);
-    expect(result.to).toBe(5);
-    expect(result.spec.version).toBe(5);
+    expect(result.to).toBe(6);
+    expect(result.spec.version).toBe(6);
     expect(result.packageFiles.has(NOTES_SPEC_FILE)).toBe(false);
     expect(result.packageFiles.has('components/texto.json')).toBe(true);
   });
 
-  it('not-newer: the library applied at version 5 changes nothing', () => {
+  it('not-newer: the library applied at version 6 changes nothing', () => {
     const { project } = applyBundledLibrary(emptyProject(), NOTES_LIBRARY);
     expect(bundledLibraryUpdate(project, NOTES_LIBRARY)).toEqual({
       decision: 'not-newer',
-      from: 5,
+      from: 6,
     });
   });
 
@@ -71,7 +71,7 @@ describe('bundledLibraryUpdate', () => {
     if (result.decision !== 'update') throw new Error(result.decision);
     const updated = updateSpecialization(p, result.spec);
     const entry = getSpecialization(updated, NOTES_ID);
-    expect(entry?.version).toBe(5);
+    expect(entry?.version).toBe(6);
     const types = entry?.spec?.layers.flatMap((l) => l.annotationTypes.map((t) => t.id));
     expect(types).toContain('texto');
     expect(updated.annotations).toHaveLength(p.annotations.length);

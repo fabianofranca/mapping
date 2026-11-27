@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "texto",
   "name": "Text",
-  "description": "Plain text with no background, border or shadow: a label, a title or a caption. Size, weight and color are optional; the width follows the text (auto) or is the marking's, wrapping the lines (fixa).",
+  "description": "Plain text with no background, border or shadow: a label, a title or a caption. Size, weight, color, font family and alignment are optional; the width follows the text (auto) or is the marking's, wrapping the lines (fixa). The color and the family may name a token of an applied library.",
   "size": {
     "width": 120,
     "height": 20
@@ -62,10 +62,28 @@
               "fixa": "word"
             },
             "default": "none"
+          },
+          "family": {
+            "$tokenNamed": {
+              "$field": "familia"
+            },
+            "default": {
+              "$token": "font-sans"
+            }
+          },
+          "align": {
+            "$switch": "alinhamento",
+            "cases": {
+              "center": "center",
+              "end": "end"
+            },
+            "default": "start"
           }
         },
         "color": {
-          "$field": "cor",
+          "$tokenNamed": {
+            "$field": "cor"
+          },
           "default": "#1F1F1F"
         }
       }

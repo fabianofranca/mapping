@@ -1,0 +1,428 @@
+{
+  "families": {
+    "sans": "\"Mapping Sans\", sans-serif",
+    "mono": "\"Mapping Mono\", monospace"
+  },
+  "cases": [
+    {
+      "family": "sans",
+      "size": 12,
+      "weight": 400,
+      "text": "Hamburger",
+      "width": 60.0234375
+    },
+    {
+      "family": "sans",
+      "size": 12,
+      "weight": 400,
+      "text": "Confirm",
+      "width": 42.005859375
+    },
+    {
+      "family": "sans",
+      "size": 12,
+      "weight": 400,
+      "text": "illumination",
+      "width": 60.029296875
+    },
+    {
+      "family": "sans",
+      "size": 12,
+      "weight": 400,
+      "text": "WWW",
+      "width": 33.978515625
+    },
+    {
+      "family": "sans",
+      "size": 12,
+      "weight": 400,
+      "text": "Total 1.234,56",
+      "width": 75.392578125
+    },
+    {
+      "family": "sans",
+      "size": 12,
+      "weight": 700,
+      "text": "Hamburger",
+      "width": 64.013671875
+    },
+    {
+      "family": "sans",
+      "size": 12,
+      "weight": 700,
+      "text": "Confirm",
+      "width": 45.99609375
+    },
+    {
+      "family": "sans",
+      "size": 12,
+      "weight": 700,
+      "text": "illumination",
+      "width": 67.330078125
+    },
+    {
+      "family": "sans",
+      "size": 12,
+      "weight": 700,
+      "text": "WWW",
+      "width": 33.978515625
+    },
+    {
+      "family": "sans",
+      "size": 12,
+      "weight": 700,
+      "text": "Total 1.234,56",
+      "width": 77.818359375
+    },
+    {
+      "family": "sans",
+      "size": 14,
+      "weight": 400,
+      "text": "Hamburger",
+      "width": 70.02734375
+    },
+    {
+      "family": "sans",
+      "size": 14,
+      "weight": 400,
+      "text": "Confirm",
+      "width": 49.0068359375
+    },
+    {
+      "family": "sans",
+      "size": 14,
+      "weight": 400,
+      "text": "illumination",
+      "width": 70.0341796875
+    },
+    {
+      "family": "sans",
+      "size": 14,
+      "weight": 400,
+      "text": "WWW",
+      "width": 39.6416015625
+    },
+    {
+      "family": "sans",
+      "size": 14,
+      "weight": 400,
+      "text": "Total 1.234,56",
+      "width": 87.9580078125
+    },
+    {
+      "family": "sans",
+      "size": 14,
+      "weight": 700,
+      "text": "Hamburger",
+      "width": 74.6826171875
+    },
+    {
+      "family": "sans",
+      "size": 14,
+      "weight": 700,
+      "text": "Confirm",
+      "width": 53.662109375
+    },
+    {
+      "family": "sans",
+      "size": 14,
+      "weight": 700,
+      "text": "illumination",
+      "width": 78.5517578125
+    },
+    {
+      "family": "sans",
+      "size": 14,
+      "weight": 700,
+      "text": "WWW",
+      "width": 39.6416015625
+    },
+    {
+      "family": "sans",
+      "size": 14,
+      "weight": 700,
+      "text": "Total 1.234,56",
+      "width": 90.7880859375
+    },
+    {
+      "family": "sans",
+      "size": 20,
+      "weight": 400,
+      "text": "Hamburger",
+      "width": 100.0390625
+    },
+    {
+      "family": "sans",
+      "size": 20,
+      "weight": 400,
+      "text": "Confirm",
+      "width": 70.009765625
+    },
+    {
+      "family": "sans",
+      "size": 20,
+      "weight": 400,
+      "text": "illumination",
+      "width": 100.048828125
+    },
+    {
+      "family": "sans",
+      "size": 20,
+      "weight": 400,
+      "text": "WWW",
+      "width": 56.630859375
+    },
+    {
+      "family": "sans",
+      "size": 20,
+      "weight": 400,
+      "text": "Total 1.234,56",
+      "width": 125.654296875
+    },
+    {
+      "family": "sans",
+      "size": 20,
+      "weight": 700,
+      "text": "Hamburger",
+      "width": 106.689453125
+    },
+    {
+      "family": "sans",
+      "size": 20,
+      "weight": 700,
+      "text": "Confirm",
+      "width": 76.66015625
+    },
+    {
+      "family": "sans",
+      "size": 20,
+      "weight": 700,
+      "text": "illumination",
+      "width": 112.216796875
+    },
+    {
+      "family": "sans",
+      "size": 20,
+      "weight": 700,
+      "text": "WWW",
+      "width": 56.630859375
+    },
+    {
+      "family": "sans",
+      "size": 20,
+      "weight": 700,
+      "text": "Total 1.234,56",
+      "width": 129.697265625
+    },
+    {
+      "family": "mono",
+      "size": 12,
+      "weight": 400,
+      "text": "Hamburger",
+      "width": 64.810546875
+    },
+    {
+      "family": "mono",
+      "size": 12,
+      "weight": 400,
+      "text": "Confirm",
+      "width": 50.408203125
+    },
+    {
+      "family": "mono",
+      "size": 12,
+      "weight": 400,
+      "text": "illumination",
+      "width": 86.4140625
+    },
+    {
+      "family": "mono",
+      "size": 12,
+      "weight": 400,
+      "text": "WWW",
+      "width": 21.603515625
+    },
+    {
+      "family": "mono",
+      "size": 12,
+      "weight": 400,
+      "text": "Total 1.234,56",
+      "width": 100.81640625
+    },
+    {
+      "family": "mono",
+      "size": 12,
+      "weight": 700,
+      "text": "Hamburger",
+      "width": 64.810546875
+    },
+    {
+      "family": "mono",
+      "size": 12,
+      "weight": 700,
+      "text": "Confirm",
+      "width": 50.408203125
+    },
+    {
+      "family": "mono",
+      "size": 12,
+      "weight": 700,
+      "text": "illumination",
+      "width": 86.4140625
+    },
+    {
+      "family": "mono",
+      "size": 12,
+      "weight": 700,
+      "text": "WWW",
+      "width": 21.603515625
+    },
+    {
+      "family": "mono",
+      "size": 12,
+      "weight": 700,
+      "text": "Total 1.234,56",
+      "width": 100.81640625
+    },
+    {
+      "family": "mono",
+      "size": 14,
+      "weight": 400,
+      "text": "Hamburger",
+      "width": 75.6123046875
+    },
+    {
+      "family": "mono",
+      "size": 14,
+      "weight": 400,
+      "text": "Confirm",
+      "width": 58.8095703125
+    },
+    {
+      "family": "mono",
+      "size": 14,
+      "weight": 400,
+      "text": "illumination",
+      "width": 100.81640625
+    },
+    {
+      "family": "mono",
+      "size": 14,
+      "weight": 400,
+      "text": "WWW",
+      "width": 25.2041015625
+    },
+    {
+      "family": "mono",
+      "size": 14,
+      "weight": 400,
+      "text": "Total 1.234,56",
+      "width": 117.619140625
+    },
+    {
+      "family": "mono",
+      "size": 14,
+      "weight": 700,
+      "text": "Hamburger",
+      "width": 75.6123046875
+    },
+    {
+      "family": "mono",
+      "size": 14,
+      "weight": 700,
+      "text": "Confirm",
+      "width": 58.8095703125
+    },
+    {
+      "family": "mono",
+      "size": 14,
+      "weight": 700,
+      "text": "illumination",
+      "width": 100.81640625
+    },
+    {
+      "family": "mono",
+      "size": 14,
+      "weight": 700,
+      "text": "WWW",
+      "width": 25.2041015625
+    },
+    {
+      "family": "mono",
+      "size": 14,
+      "weight": 700,
+      "text": "Total 1.234,56",
+      "width": 117.619140625
+    },
+    {
+      "family": "mono",
+      "size": 20,
+      "weight": 400,
+      "text": "Hamburger",
+      "width": 108.017578125
+    },
+    {
+      "family": "mono",
+      "size": 20,
+      "weight": 400,
+      "text": "Confirm",
+      "width": 84.013671875
+    },
+    {
+      "family": "mono",
+      "size": 20,
+      "weight": 400,
+      "text": "illumination",
+      "width": 144.0234375
+    },
+    {
+      "family": "mono",
+      "size": 20,
+      "weight": 400,
+      "text": "WWW",
+      "width": 36.005859375
+    },
+    {
+      "family": "mono",
+      "size": 20,
+      "weight": 400,
+      "text": "Total 1.234,56",
+      "width": 168.02734375
+    },
+    {
+      "family": "mono",
+      "size": 20,
+      "weight": 700,
+      "text": "Hamburger",
+      "width": 108.017578125
+    },
+    {
+      "family": "mono",
+      "size": 20,
+      "weight": 700,
+      "text": "Confirm",
+      "width": 84.013671875
+    },
+    {
+      "family": "mono",
+      "size": 20,
+      "weight": 700,
+      "text": "illumination",
+      "width": 144.0234375
+    },
+    {
+      "family": "mono",
+      "size": 20,
+      "weight": 700,
+      "text": "WWW",
+      "width": 36.005859375
+    },
+    {
+      "family": "mono",
+      "size": 20,
+      "weight": 700,
+      "text": "Total 1.234,56",
+      "width": 168.02734375
+    }
+  ]
+}

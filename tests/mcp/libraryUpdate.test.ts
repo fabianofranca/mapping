@@ -845,27 +845,41 @@ describe('propose_changes with the package folder', () => {
   });
 });
 
-// `builtin` (stage #2081, TX2): the notes library at version 4 moves to the built-in version 5.
+// `builtin` (stage #2081, TX2): the notes library at version 4 moves to the built-in version 6
+// (FN3: version 5 added nothing to the table, version 6 folded it into the note).
 describe('builtin: update to the built-in version of the notes library', () => {
   const name = 'projetos/notes-v4';
   let dir: string;
+  const fixtures = join('tests', 'model', 'fixtures');
 
-  /** Writes the v4 copy over a project created with the notes library (version 5). */
-  function downgradeToV4(): void {
+  /** Writes the old copy (`spec`, and the table files it still had) over a project created with the current notes library. */
+  function downgradeTo(spec: string, version: number, withText: boolean): void {
     const notes = join(dir, 'specs', 'notas');
     writeFileSync(
       join(notes, 'notas.spec.json'),
-      readFileSync(join('tests', 'model', 'fixtures', 'notas-v4.spec.json'), 'utf8'),
+      readFileSync(join(fixtures, spec), 'utf8'),
     );
-    rmSync(join(notes, 'components', 'texto.json'));
-    rmSync(join(notes, 'docs', 'texto.md'));
+    writeFileSync(
+      join(notes, 'components', 'tabela.json'),
+      readFileSync(join(fixtures, 'notas-tabela', 'tabela.json'), 'utf8'),
+    );
+    writeFileSync(
+      join(notes, 'docs', 'tabela.md'),
+      readFileSync(join(fixtures, 'notas-tabela', 'tabela.md'), 'utf8'),
+    );
+    if (!withText) {
+      rmSync(join(notes, 'components', 'texto.json'));
+      rmSync(join(notes, 'docs', 'texto.md'));
+    }
     const file = join(dir, 'mapping.json');
     const project = JSON.parse(readFileSync(file, 'utf8')) as {
       specializations: { id: string; version: number }[];
     };
-    for (const s of project.specializations) if (s.id === 'notas') s.version = 4;
+    for (const s of project.specializations) if (s.id === 'notas') s.version = version;
     writeFileSync(file, JSON.stringify(project, null, 2));
   }
+
+  const downgradeToV4 = () => downgradeTo('notas-v4.spec.json', 4, false);
 
   beforeAll(async () => {
     ok(await mcp.call('create_project', { path: name, name: 'Notes v4' }));
@@ -873,7 +887,7 @@ describe('builtin: update to the built-in version of the notes library', () => {
     downgradeToV4();
   });
 
-  it('plan_library_update with builtin: update from 4 to 5, additive, builtin in the response', async () => {
+  it('plan_library_update with builtin: update from 4 to 6, not additive, builtin in the response', async () => {
     const plan = ok(
       await mcp.call<Plan & { builtin?: string; path?: string }>('plan_library_update', {
         project: name,
@@ -882,12 +896,36 @@ describe('builtin: update to the built-in version of the notes library', () => {
     );
     expect(plan.decision).toBe('update');
     expect(plan.from).toBe(4);
-    expect(plan.to).toBe(5);
-    expect(plan.additive).toBe(true);
+    expect(plan.to).toBe(6);
+    expect(plan.additive).toBe(false);
     expect(plan.builtin).toBe('notas');
     expect(plan.path).toBeUndefined();
     expect(plan.validation.valid).toBe(true);
     expect(plan.hint).toContain('builtin');
+  });
+
+  it('plan_library_update with builtin on a v5 project: from 5 to 6, not additive, lists the rename-type step', async () => {
+    const v5 = 'projetos/notes-v5';
+    ok(await mcp.call('create_project', { path: v5, name: 'Notes v5' }));
+    const previous = dir;
+    dir = join(root, v5);
+    downgradeTo('notas-v5.spec.json', 5, true);
+    dir = previous;
+    const plan = ok(
+      await mcp.call<Plan & { builtin?: string }>('plan_library_update', {
+        project: v5,
+        builtin: 'notas',
+      }),
+    );
+    expect(plan.decision).toBe('update');
+    expect(plan.from).toBe(5);
+    expect(plan.to).toBe(6);
+    expect(plan.additive).toBe(false);
+    expect(plan.validation.valid).toBe(true);
+    expect(plan.missingMigrations ?? []).toEqual([]);
+    expect(plan.steps?.map((s) => s.step)).toEqual([
+      expect.objectContaining({ op: 'rename-type', from: 'tabela', to: 'nota' }),
+    ]);
   });
 
   it('propose_changes: update_specialization builtin and create_marking notas/texto in the same batch', async () => {
@@ -908,9 +946,9 @@ describe('builtin: update to the built-in version of the notes library', () => {
       },
     ]);
     expect(result.proposed, JSON.stringify(result)).toBe(true);
-    expect(result.summary[0]).toMatch(/Update the specialization "notas" to v5/);
+    expect(result.summary[0]).toMatch(/Update the specialization "notas" to v6/);
     expect(result.files.packages).toEqual([
-      expect.objectContaining({ files: 7 }) as unknown,
+      expect.objectContaining({ files: 5 }) as unknown,
     ]);
     const id = result.proposal.id;
     const proposal = readProposal(dir, id);
@@ -925,7 +963,7 @@ describe('builtin: update to the built-in version of the notes library', () => {
     const applied = applyAccepted(readProject(dir), readProposal(dir, id), NOW);
     if (!applied.ok) throw new Error(JSON.stringify(applied.issues));
     expect(applied.project.specializations.find((s) => s.id === 'notas')?.version).toBe(
-      5,
+      6,
     );
     expect(applied.packages).toHaveLength(1);
     expect(readdirSync(join(dir, applied.packages[0]!.from)).sort()).toEqual([
@@ -935,7 +973,7 @@ describe('builtin: update to the built-in version of the notes library', () => {
     ]);
     expect(
       readdirSync(join(dir, applied.packages[0]!.from, 'components')).sort(),
-    ).toEqual(['nota.json', 'tabela.json', 'texto.json']);
+    ).toEqual(['nota.json', 'texto.json']);
   });
 
   it('builtin with path/file, neither, or an unknown id: invalid-arguments listing notas', async () => {

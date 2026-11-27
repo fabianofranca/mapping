@@ -25,8 +25,9 @@
  * passed to `loadLibrary` (`Library.images`), decoded with `createImageBitmap`; on by default, with
  * no URL and no network. Without bytes, or if the decode fails, the placeholder.
  *
- * Fonts belong to the host: after a font loads, call `redraw()` to re-measure the texts. The
- * module does not register fonts and, by default, makes no network request.
+ * Fonts: the built-in Mapping Sans and Mono are registered by the viewer itself (from bytes embedded in the bundle),
+ * and the texts are drawn again when they load. A library font belongs to the host: after it loads, call `redraw()`
+ * to re-measure the texts. By default, the module makes no network request.
  *
  * Remote images (the component's `image` node): off by default. With `remoteImages: true`, the
  * URL must pass the policy (only `https:`, no local network) and the origin must pass the host's
@@ -53,7 +54,7 @@ import {
   type TokenSelection,
 } from '../src/model/components/tokens';
 import { tokenValue } from '../src/theme/tokens';
-import { viewerHostFonts } from './hostFonts';
+import { loadViewerFonts, viewerFontsLoaded, viewerHostFonts } from './hostFonts';
 import type { TextMeasurer } from '../src/model/components/instantiate';
 import type { Box, Screen } from '../src/model/components/screen';
 import { type SourceResult, screenFromSource } from '../src/model/components/origin';
@@ -117,8 +118,9 @@ export interface ViewerOptions {
   readonly measure?: TextMeasurer;
   /**
    * Default font of the texts without `family` (the `font-sans`/`font-mono` built into the tokens).
-   * Default: the app's token stack (`--font-sans`/`--font-mono`), the same as the app. A
-   * specialization that redefines `font-sans` in its `tokens` wins.
+   * Default: the embedded Mapping Sans and Mapping Mono, the same as the app and the MCP, which the viewer
+   * registers in the document on the first `createViewer` (and redraws when they load). A specialization that
+   * redefines `font-sans` in its `tokens` wins.
    */
   readonly fonts?: HostFonts;
   /** How the screen fits the container: `'contain'` (default, with `padding` margin) or a fixed scale. */
@@ -543,6 +545,17 @@ export function createViewer(
 
   resolveScreen();
   if (library !== undefined || screen !== undefined) sync(false);
+
+  // The built-in faces register on the first viewer of the document; that viewer measures and draws again once they
+  // are loaded. A viewer created after they were loaded has nothing to redraw (and the host's `onSource` and
+  // `onWarnings` fire once, not twice), and neither has one with nothing to draw.
+  if (!viewerFontsLoaded()) {
+    void loadViewerFonts().then(() => {
+      if (disposed || (library === undefined && screen === undefined)) return;
+      resolveScreen();
+      sync(true);
+    });
+  }
 
   return {
     update(input) {

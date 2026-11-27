@@ -27,7 +27,7 @@ import {
   type ResolvedAxis,
   type ResolvedSizing,
 } from './components/sizing';
-import type { ResolvedTokens } from './components/tokens';
+import type { NamedTokenLookup, ResolvedTokens } from './components/tokens';
 import {
   approximateMeasurer,
   instantiate,
@@ -112,6 +112,7 @@ interface Container {
   readonly component: ComponentFile;
   /** Token table of the drawing mode (the same one the `component` already carries applied). */
   readonly tokens: ResolvedTokens | undefined;
+  readonly tokenNamed?: NamedTokenLookup | undefined;
   /** Effective reading direction of the marking's space (`rtl` mirrors the row and the grid). */
   readonly direction: ReadingDirection;
   /** The container's `$container.*` context, when the component reads it (`componentForDrawing`). */
@@ -213,6 +214,7 @@ function containerOf(
     id: markingId,
     component: drawn.component,
     tokens: drawn.tokens,
+    tokenNamed: drawn.tokenNamed,
     direction: drawn.direction,
     container: drawn.container,
     values,
@@ -834,6 +836,7 @@ interface FitTarget {
   readonly marking: Marking;
   readonly component: ComponentFile;
   readonly tokens: ResolvedTokens | undefined;
+  readonly tokenNamed?: NamedTokenLookup | undefined;
   readonly direction: ReadingDirection;
   /** The container's `$container.*` context, when the component reads it. */
   readonly container: InstanceContainer | undefined;
@@ -875,6 +878,7 @@ function fitTargetOf(
     marking,
     component: drawn.component,
     tokens: drawn.tokens,
+    tokenNamed: drawn.tokenNamed,
     direction: drawn.direction,
     container: drawn.container,
     anchor,

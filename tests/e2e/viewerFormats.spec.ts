@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { build } from 'esbuild';
+import { drawingFontEsbuild } from '../../pwa/fontModules.mjs';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
 // Stage #2059 (VF2): the `mapping-viewer/formats` entry runs a specialization's format plugin in a sandbox
@@ -115,6 +116,8 @@ test.beforeAll(async () => {
     minify: true,
     legalComments: 'none',
     logLevel: 'silent',
+    // The viewer registers the drawing font: its bytes come from the `drawing-font:*` modules.
+    plugins: [drawingFontEsbuild],
   });
   bundle = out.outputFiles[0]!.text;
   bundleHash = `'sha256-${createHash('sha256').update(bundle, 'utf8').digest('base64')}'`;

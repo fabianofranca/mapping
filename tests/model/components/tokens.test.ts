@@ -239,8 +239,28 @@ describe('default font of the host', () => {
     );
   });
 
-  it('without a host the default is sans-serif', () => {
-    expect(new Set(families(textFile()))).toEqual(new Set(['sans-serif']));
+  // Stage #2825, decision 2: the built-in fonts are the embedded Mapping Sans and Mapping Mono.
+  it('without a host the default is "Mapping Sans", sans-serif', () => {
+    expect(new Set(families(textFile()))).toEqual(
+      new Set(['"Mapping Sans", sans-serif']),
+    );
+    expect(resolveTokens(undefined, {})['font-sans']).toBe('"Mapping Sans", sans-serif');
+  });
+
+  it('without a host font-mono is "Mapping Mono", monospace', () => {
+    const file = textFile({ family: { $token: 'font-mono' } });
+    expect(new Set(families(file))).toEqual(new Set(['"Mapping Mono", monospace']));
+    expect(resolveTokens(undefined, {})['font-mono']).toBe('"Mapping Mono", monospace');
+  });
+
+  it('a library value still wins over the Mapping defaults', () => {
+    const spec = {
+      modes: ['m'],
+      values: { 'font-sans': 'Spec Sans', 'font-mono': 'Spec Mono' },
+    };
+    const tokens = resolveTokens(spec, {});
+    expect(tokens['font-sans']).toBe('Spec Sans');
+    expect(tokens['font-mono']).toBe('Spec Mono');
   });
 
   it('width regression: text without family measures with the theme font', () => {

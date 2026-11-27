@@ -1,13 +1,7 @@
-import {
-  colorOverWhite,
-  createTokenTables,
-  tokenKind,
-  type SpecTokens,
-  type TokenSelection,
-  type TokenTables,
-} from './components/tokens';
+import { colorOverWhite, tokenKind, type TokenSelection } from './components/tokens';
 import { effectiveDrawingMode } from './drawingMode';
 import { projectIndex } from './projectIndex';
+import { tokenTablesOf } from './projectTokens';
 import type { ContainerBackground, ContainerBackgroundToken, Project } from './types';
 
 // Background of a container without a file by token (stage #1900, NV4). Pure, no DOM: the canvas, the
@@ -32,21 +26,8 @@ interface Cache {
 }
 
 const caches = new WeakMap<Project, Cache>();
-/** Token tables by the `spec.tokens` object, so they survive the new `Project` objects of a gesture. */
-const tablesByTokens = new WeakMap<object, TokenTables>();
-
 function isColor(value: unknown): value is string {
   return typeof value === 'string' && tokenKind(value) === 'color';
-}
-
-function tablesOf(tokens: SpecTokens | undefined): TokenTables | undefined {
-  if (tokens === undefined) return undefined;
-  let tables = tablesByTokens.get(tokens);
-  if (tables === undefined) {
-    tables = createTokenTables(tokens, {});
-    tablesByTokens.set(tokens, tables);
-  }
-  return tables;
 }
 
 function cacheOf(p: Project): Cache {
@@ -65,7 +46,7 @@ export function colorTokenNames(p: Project): readonly string[] {
     const names: string[] = [];
     for (const s of p.specializations) {
       for (const [name, value] of Object.entries(
-        tablesOf(s.spec?.tokens)?.get(undefined) ?? {},
+        tokenTablesOf(s.spec?.tokens)?.get(undefined) ?? {},
       )) {
         if (isColor(value) && !names.includes(name)) names.push(name);
       }
@@ -83,7 +64,7 @@ export function resolveBackground(
 ): string {
   if (!isBackgroundToken(background)) return background.toUpperCase();
   for (const s of p.specializations) {
-    const value = tablesOf(s.spec?.tokens)?.get(selection)[background.$token];
+    const value = tokenTablesOf(s.spec?.tokens)?.get(selection)[background.$token];
     if (isColor(value)) return colorOverWhite(value) ?? FALLBACK;
   }
   return FALLBACK;

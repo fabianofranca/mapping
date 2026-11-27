@@ -314,6 +314,7 @@ export function tokenSlotCatalog(): ComponentCatalog {
       template: { ...component.template, children } as typeof component.template,
       resolvedTokens: light,
       tokenTables: {
+        declared: () => true,
         get: (selection) =>
           typeof selection === 'object' && selection.mode === 'dark' ? dark : light,
       },

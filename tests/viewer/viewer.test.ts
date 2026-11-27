@@ -678,9 +678,10 @@ describe('default font of the viewer (CF5)', () => {
     return seen;
   }
 
-  it('without the option uses the --font-sans stack of the app tokens, not a fixed font', () => {
+  it('without the option uses the embedded Mapping Sans, not the app UI stack or a fixed font', () => {
     const seen = families();
-    expect(seen.has(tokenValue('font-sans', 'light'))).toBe(true);
+    expect(seen.has('"Mapping Sans", sans-serif')).toBe(true);
+    expect(seen.has(tokenValue('font-sans', 'light'))).toBe(false);
     expect(seen.has('Inter')).toBe(false);
   });
 
