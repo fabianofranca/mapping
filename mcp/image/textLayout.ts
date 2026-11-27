@@ -324,7 +324,8 @@ function richInk(node: TextNode, layout: RunLayout, book: FontBook): TextInk {
     for (const piece of line.pieces) {
       const run = runs[piece.run];
       if (run === undefined) continue;
-      const top = line.y + (line.height - piece.height) / 2 + shift;
+      const top =
+        line.y + (line.height - piece.height) / 2 + shift - (run.baselineShift ?? 0);
       pieceInk(book, piece, run, top, out, node.style.direction);
     }
   }

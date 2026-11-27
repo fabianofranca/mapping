@@ -1205,6 +1205,7 @@ const RUN_KEYS = [
   'background',
   'radius',
   'padding',
+  'baselineShift',
 ];
 
 /** `runs[i].padding`: a number (both axes) or `[vertical, horizontal]`, non-negative. */
@@ -1216,6 +1217,13 @@ const checkRunPadding = tokenCheck('number', (v, p, out) => {
     p,
     'expected a number or a list [vertical, horizontal] of numbers (greater than or equal to 0)',
   );
+});
+
+/** `runs[i].baselineShift`: px (a number) or a signed percentage of the run's size (`"33%"`, v4). */
+const checkBaselineShift = tokenCheck('number', (v, p, out) => {
+  if (isFiniteNumber(v)) return;
+  if (typeof v === 'string' && SIGNED_PERCENT_PATTERN.test(v)) return;
+  add(out, p, 'expected a number or a percentage ("33%")');
 });
 
 /** A `runs` run: `text` required and the style, each key with a literal or expression. */
@@ -1233,6 +1241,7 @@ function checkRun(value: unknown, path: string, out: Ctx): void {
     background: checkColor,
     radius: checkNonNegative,
     padding: checkRunPadding,
+    baselineShift: checkBaselineShift,
   };
   for (const [key, check] of Object.entries(specs))
     if (key in value) checkExpr(value[key], join(path, key), check, out);

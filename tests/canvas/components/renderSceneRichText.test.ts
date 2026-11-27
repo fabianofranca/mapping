@@ -246,3 +246,35 @@ describe('rich text in Konva: reading direction (R2, #1107)', () => {
     expect(texts[0]!.x()).toBeLessThan(texts[1]!.x());
   });
 });
+
+describe('baselineShift (RT2)', () => {
+  const runs = (shift: unknown) => [
+    { text: 'x' },
+    {
+      text: 'up',
+      ...(shift === undefined ? {} : { baselineShift: shift }),
+      ...CHIP,
+    },
+  ];
+
+  it('the text of a shifted piece sits `shift` px higher than without it', () => {
+    const base = drawn(build({ runs: runs(undefined) }).scene);
+    const moved = drawn(build({ runs: runs(4) }).scene);
+    expect(moved.texts[0]?.y()).toBe(base.texts[0]?.y());
+    expect((base.texts[1]?.y() ?? 0) - (moved.texts[1]?.y() ?? 0)).toBeCloseTo(4, 10);
+  });
+
+  it("a shifted chip's background moves with its text", () => {
+    const base = drawn(build({ runs: runs(undefined) }).scene);
+    const moved = drawn(build({ runs: runs('50%') }).scene);
+    // 50% of the 10 px font
+    expect((base.rects[0]?.y() ?? 0) - (moved.rects[0]?.y() ?? 0)).toBeCloseTo(5, 10);
+    expect(moved.rects[0]?.height()).toBe(base.rects[0]?.height());
+  });
+
+  it('a negative shift goes down', () => {
+    const base = drawn(build({ runs: runs(undefined) }).scene);
+    const moved = drawn(build({ runs: runs(-3) }).scene);
+    expect((moved.texts[1]?.y() ?? 0) - (base.texts[1]?.y() ?? 0)).toBeCloseTo(3, 10);
+  });
+});

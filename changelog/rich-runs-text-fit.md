@@ -3,3 +3,4 @@
 ## Adicionado
 
 - A text can shrink its font to fit its width: `font.fit: "shrink"` with the sizes it may take (`fitSizes`) (#2917).
+- A rich-text run can move up or down with `baselineShift` (px or a percentage of its size), for `sub` and `sup`; the measurement does not change (#2916).
