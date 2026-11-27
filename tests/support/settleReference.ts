@@ -105,8 +105,7 @@ function waitsForParent(e: Entry, ids: ReadonlySet<string>, done: ReadonlySet<st
  * broken by the first one of the array. Total and cycle-free.
  */
 function chainOrder(bucket: readonly Entry[]): Entry[] {
-  // A decorative marking is never a parent: nothing waits for it (stage #2826).
-  const ids = new Set(bucket.filter((e) => !e.m.decorative).map((e) => e.m.id));
+  const ids = new Set(bucket.map((e) => e.m.id));
   const done = new Set<string>();
   const pending = [...bucket];
   const out: Entry[] = [];
@@ -128,6 +127,9 @@ function equalRectRanks(group: readonly Entry[], ranks: Map<string, number>): vo
   const buckets = new Map<string, Entry[]>();
   for (const e of group) {
     ranks.set(e.m.id, e.i);
+    // A decorative marking is never a parent: it keeps its index and stays out of the buckets, so the
+    // others rank as if it were not there (stage #2826).
+    if (e.m.decorative) continue;
     const key = rectKey(e.m.rect);
     const bucket = buckets.get(key);
     if (bucket) bucket.push(e);
