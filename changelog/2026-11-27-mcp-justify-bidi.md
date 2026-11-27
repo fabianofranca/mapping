@@ -1,4 +1,4 @@
-# Justified bidi line in the MCP is reordered as a whole — [Não lançado] (épico `epic/mcp-justify-bidi`, PR #2923, MCP 0.61.1, schema v24, unchanged)
+# Justified bidi line in the MCP is reordered as a whole — 2026-11-27 (épico `epic/mcp-justify-bidi`, PR #2923, MCP 0.61.1, schema v24, unchanged)
 
 ## Corrigido
 
