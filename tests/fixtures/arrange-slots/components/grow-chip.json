@@ -1,0 +1,18 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "grow-chip",
+  "name": "Grow chip",
+  "size": {
+    "width": 60,
+    "height": 24
+  },
+  "weight": 1,
+  "template": {
+    "type": "frame",
+    "layout": {
+      "type": "none"
+    },
+    "fill": "#7D5260"
+  }
+}

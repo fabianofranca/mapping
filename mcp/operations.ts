@@ -700,6 +700,12 @@ export const operationSchema = z.discriminatedUnion('op', [
     ),
   }),
   z.object({
+    op: z.literal('arrange_marking'),
+    marking: item('Marking').describe(
+      "A component marking with a slot (row, column, grid or an aligned `none` slot) that holds children: the app's **Arrange**. It recomputes the rectangles of the children by the slot's layout (`justify` `center`/`end`/`space-*`, `align`, the aligned `none` slot of a Box, `wrap`, grid, `reverse`, the root `weight`) and fits a `hug` parent, with exactly the app's rectangles (the same model function), and it arranges the whole subtree: the nested components with a slot too, the deepest first. What would go past the parent or the image is clamped, with a warning in the step's `notes`. `create_marking` with `inside` only places a child at the start of the slot (after the last one) and ignores `justify`, so: create the parent, create each child with `inside`, then call `arrange_marking` **once**, on the outermost parent, after the last child. A marking with no children in a slot (or with no slot) is not arranged by this operation: use `fit_marking` for a slotless component that hugs its content; a marking that is anchored (see `update_marking`) also needs `snap_to_anchor` after it. The summary gives how many markings of the subtree moved or were resized (or says that nothing changed). It fails with `not-found`, `not-arrangeable` (not a component with a slot that holds children to arrange) and `locked` (locked geometry that would change).",
+    ),
+  }),
+  z.object({
     op: z.literal('snap_to_anchor'),
     marking: item('Marking').describe(
       "A marking with `anchor` (see `update_marking`). It is snapped to the anchor: the rectangle comes from the `side`, the `align` and the `offset` (what the anchor does not specify comes from the `anchor` at the component's root; its `offset` is in units × `density`), with the size the marking already has (use `fit_marking` first so the size follows the content). Clamped inside the container, with a warning when that was needed. Call it after changing the marking's size or anchoring it: nothing snaps by itself (only moving the anchor takes the anchored markings along). When it snaps, the marking's children and the markings anchored to it (with their children and anchored ones) move by the same offset. The summary gives the rectangle before and after (or says that nothing changed). It fails with `not-anchored` (no anchor) and `locked` (locked geometry that would change).",
