@@ -1,0 +1,36 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "spread-row",
+  "name": "Spread row",
+  "size": {
+    "width": 200,
+    "height": 80
+  },
+  "template": {
+    "type": "frame",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "slot",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "row",
+          "wrap": "wrap",
+          "lineGap": 8,
+          "padding": 8,
+          "gap": 8,
+          "justify": "space-between",
+          "align": "start"
+        }
+      }
+    ]
+  }
+}

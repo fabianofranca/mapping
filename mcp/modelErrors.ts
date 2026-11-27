@@ -80,7 +80,7 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
     'invalid localPath: a path relative to the project folder (e.g. ../..), not absolute',
   'invalid-source': 'invalid source: provide a non-empty system and id (url is optional)',
   'not-arrangeable':
-    'the marking is not a container with a row or column layout and children to arrange',
+    'the marking is not a component with a slot (row, column, grid or aligned layout) that holds children to arrange',
   'not-fittable':
     "the marking has no axis that depends on its content (the component's sizing must be hug or an expression), or it is a component with children in the slot",
   'anchor-missing': 'the anchor points to a marking that does not exist',
@@ -117,6 +117,8 @@ export const MODEL_ERROR_HINTS: Readonly<Partial<Record<ModelErrorCode, string>>
   'rect-too-small': RECT_TOO_SMALL_HINT,
   'not-fittable':
     'only a component marking with `sizing` `hug` or by expression (see `get_component`) and with no markings in the slot fits its content; the others do not need `fit_marking`',
+  'not-arrangeable':
+    'a component marking with no children in the slot fits its content with `fit_marking`; a plain marking has nothing to arrange',
   'not-anchored':
     'the marking needs an anchor: write `anchor` with `update_marking` (or `create_marking`) before `snap_to_anchor`',
   'anchor-missing':

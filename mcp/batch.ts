@@ -64,6 +64,7 @@ import {
   normalizeId,
   effectiveDensity,
   componentMinSize,
+  arrangeMarking,
   fitMarking,
   snapToAnchor,
   markingAnchorDefaults,
@@ -383,6 +384,30 @@ function withoutSpec(catalog: ComponentCatalog, specId: string): ComponentCatalo
   const next = new Map(catalog);
   next.delete(specId);
   return next;
+}
+
+/** How many markings of the subtree of `rootId` (in `before`) have another rectangle in `after`. */
+function changedInSubtree(
+  before: ReturnType<typeof projectIndex>,
+  after: ReturnType<typeof projectIndex>,
+  rootId: string,
+): number {
+  const sameRect = (a: Rect | undefined, b: Rect | undefined): boolean =>
+    a === b ||
+    (a !== undefined &&
+      b !== undefined &&
+      a.x === b.x &&
+      a.y === b.y &&
+      a.width === b.width &&
+      a.height === b.height);
+  let changed = 0;
+  const pending = [rootId];
+  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
+    if (!sameRect(before.markings.get(id)?.rect, after.markings.get(id)?.rect))
+      changed += 1;
+    for (const child of before.children.get(id) ?? []) pending.push(child.id);
+  }
+  return changed;
 }
 
 /**
@@ -1219,6 +1244,8 @@ class Batch {
       }
       case 'fit_marking':
         return this.fitMarkingOp(op, p);
+      case 'arrange_marking':
+        return this.arrangeMarkingOp(op, p);
       case 'snap_to_anchor':
         return this.snapToAnchorOp(op, p);
       case 'update_marking': {
@@ -1670,6 +1697,39 @@ class Batch {
     return {
       project,
       description: `Fit the marking "${label}" to its content: ${rectText(before)} → ${rectText(after)}`,
+    };
+  }
+
+  /**
+   * `arrange_marking`: the model's `arrangeMarking` (the one the app's Arrange calls on a component with a
+   * slot), with the batch's catalog and text measurer, so the rectangles are the app's. It arranges the whole
+   * subtree; the summary counts the markings of the subtree whose rectangle changed and the model's warnings
+   * (what did not fit, what was clamped) go to the step's `notes`.
+   */
+  private arrangeMarkingOp(
+    op: Extract<Operation, { op: 'arrange_marking' }>,
+    p: Project,
+  ): Step {
+    const id = this.item(op.marking, 'm');
+    this.requireNotArrow(id, 'update_arrow');
+    const label = this.markingLabel(p, id);
+    const before = projectIndex(p);
+    if (!before.markings.has(id)) throw new ModelError('not-found', id);
+    const { project, warnings } = arrangeMarking(p, this.catalog, id, this.measurer, {
+      minSizeOf: this.minSizeOf(p),
+    });
+    const notes = warnings.map((w) => w.text);
+    if (project === p) {
+      return {
+        project,
+        ...(notes.length > 0 ? { notes } : {}),
+        description: `The marking "${label}" is already arranged: nothing changes`,
+      };
+    }
+    return {
+      project,
+      ...(notes.length > 0 ? { notes } : {}),
+      description: `Arrange the marking "${label}": ${changedInSubtree(before, projectIndex(project), id)} marking(s) moved or resized`,
     };
   }
 
