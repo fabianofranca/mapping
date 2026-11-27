@@ -498,6 +498,31 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
   ['spec.appliesToInvalid', (s) => (type(s).appliesTo = ['x'])],
   ['spec.appliesToShape', (s) => (type(s).appliesTo = [3])],
   ['spec.allowedChildShape', (s) => (type(s).allowedChildren = [3])],
+  [
+    'spec.slotAcceptShape',
+    (s) => ((s.formatVersion = 26), (type(s).slots = [{ id: 'a', accepts: [3] }])),
+  ],
+  [
+    'spec.exceptEmpty',
+    (s) => (
+      (s.formatVersion = 26),
+      (type(s).slots = [{ id: 'a', accepts: [{ layer: 'l', except: [] }] }])
+    ),
+  ],
+  [
+    'spec.exceptList',
+    (s) => (
+      (s.formatVersion = 26),
+      (type(s).slots = [{ id: 'a', accepts: [{ layer: 'l', except: 3 }] }])
+    ),
+  ],
+  [
+    'spec.exceptNotInClause',
+    (s) => (
+      (s.formatVersion = 26),
+      (type(s).slots = [{ id: 'a', accepts: [{ layer: 'l', except: ['nope'] }] }])
+    ),
+  ],
   ['spec.groupsEmpty', (s) => (type(s).allowedChildren = [{ layer: 'l', groups: [] }])],
   ['spec.unknownKeys', (s) => (type(s).allowedChildren = [{ layer: 'l', zz: 1 }])],
   ['spec.groupsList', (s) => (type(s).allowedChildren = [{ layer: 'l', groups: 3 }])],

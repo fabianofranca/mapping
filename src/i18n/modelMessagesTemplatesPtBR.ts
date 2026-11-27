@@ -271,6 +271,11 @@ export const templatePtBR: {
   'model.spec.groupsList': 'deve ser uma lista de ids de grupo',
   'model.spec.allowedChildShape':
     'deve ser um id de tipo (texto) ou uma cláusula { layer, groups }',
+  'model.spec.slotAcceptShape':
+    'deve ser um id de tipo (texto) ou uma cláusula { layer, groups, except }',
+  'model.spec.exceptEmpty': 'não pode ser vazio; tire a chave ou liste ao menos um tipo',
+  'model.spec.exceptList': 'deve ser uma lista de ids de tipo',
+  'model.spec.exceptNotInClause': 'o tipo "{typeId}" não é coberto por esta cláusula',
   'model.spec.docShape': 'deve ser texto (arquivo do pacote) ou um objeto { repo, path }',
   'model.spec.docPathInvalid':
     'caminho inválido: use um caminho relativo à raiz do repositório, com "/", sem "." nem ".." e sem unidade (ex: components/button.md)',
