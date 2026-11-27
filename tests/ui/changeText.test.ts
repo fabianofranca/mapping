@@ -518,11 +518,11 @@ describe('changeTitle and changeSummary: the marking decorative field (stage #28
     expect(textOf(decorative, base)).toBe('Decorative: yes → no');
   });
 
-  it('in pt-BR the label is "Decorativo"', () => {
+  it('in pt-BR the label is "Decorativa"', () => {
     locale.value = 'pt-BR';
     // pt-BR kept: the Portuguese field and values are the object of this assertion
     expect(textOf(base, setMarkingDecorative(base, 'F', true))).toBe(
-      'Decorativo: não → sim',
+      'Decorativa: não → sim',
     );
   });
 });

@@ -524,7 +524,7 @@ export const ptBR: Dictionary = {
   'repair.created': 'uma página é criada',
   'repair.page-set': 'vai para a primeira página',
   'repair.page-cleared': 'a página é limpa (quem decide é o container)',
-  'repair.decorative-cleared': 'a marca decorativa é desligada (continua flutuante)',
+  'repair.decorative-cleared': 'a marcação decorativa é desligada (continua flutuante)',
   'error.invalid-zip': 'O arquivo não é um zip válido.',
   'error.missing-mapping': 'O zip não contém um mapping.json.',
   'error.not-found': 'Projeto não encontrado.',

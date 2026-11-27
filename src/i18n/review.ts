@@ -770,7 +770,7 @@ export const reviewPtBR: Record<keyof typeof reviewEnUS, string> = {
   'review.field.image': 'Imagem',
   'review.field.space': 'Espaço',
   'review.field.floating': 'Flutuante',
-  'review.field.decorative': 'Decorativo',
+  'review.field.decorative': 'Decorativa',
   'review.field.locked': 'Trava',
   'review.field.source': 'Origem',
   'review.field.file': 'Arquivo da imagem',
