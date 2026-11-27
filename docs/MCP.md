@@ -319,6 +319,7 @@ A marking can be **decorative**: a child like any marking that is never a parent
 - **The place of each created item.** In `plan_changes`, `propose_changes` and `revise_proposal`, a `created` entry of a marking carries `parent` and `container`, and one of a container `parent`, with the final references (`null` = none or canvas), read after the whole batch. Arrows, annotations, layers and pages keep their entry.
 - **`membership` always present** in `plan_changes` and `propose_changes` (`[]` when nothing that already existed changes place).
 - **The index is 0-based:** `created[].op`, `warnings[].op`, `errors[].index` and the numbers of `summary` (documented, no number changes).
+- **File batches of up to 5,000 operations in the read-only tools.** An `operationsFile` can hold up to 5,000 operations in `plan_changes`, `render_container` and `render_marking` (two large proposals can be planned together: join the two lists in one file, in order, e.g. `jq -s add p1.json p2.json > both.json`). `propose_changes` and `revise_proposal` keep 1,000 from a file: over it is `invalid-arguments`, and the message names the count and both limits. A file over 5,000 is `invalid-arguments` in every tool. The inline `operations` stay at 1,000, and the 32 MiB file limit does not change. When `plan_changes` plans more than 1,000 operations, its `hint` says that `propose_changes` takes at most 1,000 and the batch must be split.
 
 ### Change in 0.61.0 — one built-in drawing font (stage #2825)
 

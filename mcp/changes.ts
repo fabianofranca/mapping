@@ -375,6 +375,18 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
   };
 }
 
+/** The `hint` of a valid plan; a batch of more than 1,000 operations (a file) cannot be proposed whole. */
+function planHint(changes: number, operations: number): string {
+  if (changes === 0) {
+    return 'the operations change nothing in the project: there is nothing to propose';
+  }
+  const sent =
+    'nothing was written; for the user to review and apply it, send the same batch with propose_changes';
+  return operations > 1000
+    ? `${sent}, which takes at most 1,000 operations (this batch has ${operations.toLocaleString('en-US')}): split the batch and propose each part on its own`
+    : sent;
+}
+
 /** `plan_changes`: validates and summarizes the batch without writing anything (not even a proposal). */
 export async function planChanges(
   roots: Roots,
@@ -398,9 +410,6 @@ export async function planChanges(
   return {
     ...report,
     reviewChanges: proposed.length,
-    hint:
-      proposed.length === 0
-        ? 'the operations change nothing in the project: there is nothing to propose'
-        : 'nothing was written; for the user to review and apply it, send the same batch with propose_changes',
+    hint: planHint(proposed.length, operations.length),
   };
 }
