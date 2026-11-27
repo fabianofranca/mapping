@@ -15,6 +15,7 @@ import {
   type Project,
 } from '../../../src/model';
 import { locale } from '../../../src/store/settings';
+import { ReviewPanel } from '../../../src/ui/review/ReviewPanel';
 import { ReviewHeader } from '../../../src/ui/review/ReviewHeader';
 import { ReviewLevels } from '../../../src/ui/review/ReviewLevels';
 import { changeOf, propose } from '../../model/proposalFixtures';
@@ -210,5 +211,37 @@ describe('the invalid set of a group that changes page', () => {
       box.getByText('Anchored B would be anchored to Anchor A on another page.'),
     ).toBeTruthy();
     expect(box.queryByText(/would end up|would join items/)).toBeNull();
+  });
+});
+
+describe('Details of a creation on a page that is not open', () => {
+  const rejectedText =
+    'The creation was rejected: showing what the proposal would create.';
+
+  it('an undecided creation is never labelled rejected; a rejected one is', async () => {
+    const base = pagesProject();
+    const after = addContainer(base, {
+      id: 'I9',
+      file: 'images/new.jpg',
+      width: 500,
+      height: 500,
+      pageId: 'PG2',
+    });
+    const { h, proposal } = await openWith(base, after);
+    renderInEditor(h, <ReviewPanel onGoToAnnotation={() => undefined} />);
+    act(() => {
+      h.session.page.open('PG1');
+    });
+    const created = changeOf(proposal, 'image', 'I9');
+    act(() => h.review.select({ level: 'change', id: created.id }));
+    act(() => {
+      h.ui.selection.value = { kind: 'image', id: 'I9' };
+    });
+    // Undecided: the item is on PG2, which is not the page open.
+    expect(screen.queryByText(rejectedText)).toBeNull();
+    await act(async () => {
+      await h.review.decide({ level: 'change', id: created.id }, 'rejected');
+    });
+    expect(screen.getByText(rejectedText)).toBeTruthy();
   });
 });

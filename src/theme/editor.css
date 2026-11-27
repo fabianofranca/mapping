@@ -957,6 +957,37 @@
   padding: var(--space-1);
 }
 
+/* Many items (stage #2897): the panel's maximum height (from `place()`) bounds the column, the
+   list scrolls and the actions stay pinned below it. */
+.page-picker .popover,
+.perspective-picker .popover {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-list,
+.perspective-list {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.page-list > [role='listbox'],
+.perspective-list > [role='listbox'] {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.page-picker .page-actions,
+.perspective-picker .perspective-actions {
+  flex: none;
+}
+
+/* The scrolling list would clip the global outside ring: the rows get it inset */
+.page-list [role='option']:focus-visible,
+.perspective-list [role='option']:focus-visible {
+  outline-offset: calc(-1 * var(--space-0-5));
+}
+
 .page-list {
   display: flex;
   flex-direction: column;
