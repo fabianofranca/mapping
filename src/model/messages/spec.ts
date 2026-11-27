@@ -119,6 +119,11 @@ export const specMessages = {
   'spec.groupsEmpty': 'cannot be empty; remove the key or list at least one group',
   'spec.groupsList': 'must be a list of group ids',
   'spec.allowedChildShape': 'must be a type id (text) or a clause { layer, groups }',
+  'spec.slotAcceptShape':
+    'must be a type id (text) or a clause { layer, groups, except }',
+  'spec.exceptEmpty': 'cannot be empty; remove the key or list at least one type',
+  'spec.exceptList': 'must be a list of type ids',
+  'spec.exceptNotInClause': 'the type "{typeId}" is not covered by this clause',
   'spec.docShape': 'must be text (a package file) or an object { repo, path }',
   'spec.docPathInvalid':
     'invalid path: use a path relative to the repository root, with "/", without "." or ".." and without a drive (e.g. components/button.md)',

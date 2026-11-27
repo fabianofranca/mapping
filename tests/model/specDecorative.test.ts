@@ -48,9 +48,9 @@ const issuesOf = (value: Json) => {
 };
 
 describe('formatVersion 25: decorative on the type', () => {
-  it('the current version is 25 and 25 is the last in the list', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(25);
-    expect(SPEC_FORMAT_VERSIONS.at(-1)).toBe(25);
+  it('25 is in the list and is no longer the current version', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(26);
+    expect(SPEC_FORMAT_VERSIONS).toContain(25);
   });
 
   it('decorative: true is valid in 25 and is kept in the parsed type', () => {

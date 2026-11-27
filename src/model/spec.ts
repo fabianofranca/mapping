@@ -146,11 +146,11 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Value used before the product rename: import still accepts it. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Current format version (the one that the documentation and new examples use). */
-export const SPEC_FORMAT_VERSION = 25;
+export const SPEC_FORMAT_VERSION = 26;
 /** Versions accepted on import. */
 export const SPEC_FORMAT_VERSIONS = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-  25,
+  25, 26,
 ] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
@@ -445,6 +445,19 @@ export interface SpecChildClause {
 /** `allowedChildren` item: a type's id or a layer and groups clause. */
 export type SpecAllowedChild = string | SpecChildClause;
 
+/**
+ * A clause of a slot's `accepts` (`formatVersion` 26 only for `except`): the types the clause covers
+ * minus the `except` ids. Only a slot's `accepts` takes it; `allowedChildren` and `accepts.annotations`
+ * keep the strict `SpecChildClause`.
+ */
+export interface SpecSlotClause extends SpecChildClause {
+  /** Type ids the clause covers (its layer and, with `groups`, one of its groups) that it leaves out. */
+  except?: string[];
+}
+
+/** An item of a slot's `accepts`: a type's id or a `{ layer, groups?, except? }` clause. */
+export type SpecSlotAccept = string | SpecSlotClause;
+
 /** Group of types of a layer (`formatVersion` 11 only): groups the types under a heading. */
 export interface SpecLayerGroup {
   /** Unique within the layer. */
@@ -493,8 +506,8 @@ export interface SpecSlot {
   /** Shown name; absent = the slot's `label`, else its `id`. */
   name?: string;
   description?: string;
-  /** Type ids and layer and group clauses, like `allowedChildren`; absent = any type. */
-  accepts?: SpecAllowedChild[];
+  /** Type ids and layer and group clauses, like `allowedChildren` (plus `except`, from 26); absent = any type. */
+  accepts?: SpecSlotAccept[];
   /** Number of children the slot holds, an integer >= 1; absent = no limit. */
   max?: number;
 }
@@ -1366,8 +1379,12 @@ function checkDecorative(
 }
 
 const GROUPS_EMPTY = 'cannot be empty; remove the key or list at least one group';
+const EXCEPT_EMPTY = 'cannot be empty; remove the key or list at least one type';
+const EXCEPT_LIST = 'must be a list of type ids';
 const ALLOWED_CHILD_SHAPE_MESSAGE =
   'must be a type id (text) or a clause { layer, groups }';
+const SLOT_ACCEPT_SHAPE_MESSAGE =
+  'must be a type id (text) or a clause { layer, groups, except }';
 const DOC_SHAPE_MESSAGE = 'must be text (a package file) or an object { repo, path }';
 
 /** Required, non-empty text (the messages of the new v11 objects). */
@@ -1394,26 +1411,57 @@ function forwardIssues(
     forwardIssue(ctx, issue, [], true, KNOWN_SPEC_MSGS);
 }
 
-/** An `allowedChildren` item: a type's id or a `{ layer, groups? }` clause. */
-function checkAllowedChild(value: unknown, ctx: z.RefinementCtx): void {
+/** A slot's `accepts` clause (`formatVersion` 26 adds `except`): strict like `childClauseShape`. */
+const slotClauseShape = z
+  .object({
+    layer: requiredText,
+    groups: z.array(nonEmpty, { error: 'must be a list of group ids' }).optional(),
+    except: z.array(nonEmpty, { error: EXCEPT_LIST }).optional(),
+  })
+  .strict();
+
+/** An item of a list of type ids and clauses: a type's id or a clause read by `shape`. */
+function checkClauseItem(
+  value: unknown,
+  ctx: z.RefinementCtx,
+  shape: typeof childClauseShape | typeof slotClauseShape,
+  shapeMessage: string,
+): void {
   if (typeof value === 'string') {
     if (value === '') ctx.addIssue({ code: 'custom', message: 'cannot be empty' });
     return;
   }
   if (!isRecord(value)) {
-    ctx.addIssue({ code: 'custom', message: ALLOWED_CHILD_SHAPE_MESSAGE });
+    ctx.addIssue({ code: 'custom', message: shapeMessage });
     return;
   }
-  const parsed = childClauseShape.safeParse(value, REPORT_INPUT);
+  const parsed = shape.safeParse(value, REPORT_INPUT);
   forwardIssues(parsed, ctx);
-  if (parsed.success && parsed.data.groups?.length === 0) {
+  if (!parsed.success) return;
+  const { groups, except } = parsed.data as { groups?: string[]; except?: string[] };
+  if (groups?.length === 0) {
     ctx.addIssue({ code: 'custom', path: ['groups'], message: GROUPS_EMPTY });
   }
+  if (except?.length === 0) {
+    ctx.addIssue({ code: 'custom', path: ['except'], message: EXCEPT_EMPTY });
+  }
+}
+
+/** An `allowedChildren` item: a type's id or a `{ layer, groups? }` clause. */
+function checkAllowedChild(value: unknown, ctx: z.RefinementCtx): void {
+  checkClauseItem(value, ctx, childClauseShape, ALLOWED_CHILD_SHAPE_MESSAGE);
 }
 
 const allowedChildShape = z
   .custom<SpecAllowedChild>()
   .superRefine((value: unknown, ctx) => checkAllowedChild(value, ctx));
+
+/** An item of a slot's `accepts`: a type's id or a `{ layer, groups?, except? }` clause. */
+const slotAcceptShape = z
+  .custom<SpecSlotAccept>()
+  .superRefine((value: unknown, ctx) =>
+    checkClauseItem(value, ctx, slotClauseShape, SLOT_ACCEPT_SHAPE_MESSAGE),
+  );
 
 /** Why the `path` does not work as the `.md` file of a repository; `undefined` if it works. */
 function docPathProblem(path: string): SpecMsg | undefined {
@@ -1536,7 +1584,7 @@ const slotShape = z
     name: nonEmpty.optional(),
     description: z.string().optional(),
     accepts: z
-      .array(allowedChildShape)
+      .array(slotAcceptShape)
       .refine(
         (a) => a.length > 0,
         'cannot be empty; remove the key or list at least one item',
@@ -2694,10 +2742,62 @@ function checkSlotKeys(
         else if (isRecord(item) && typeof item.layer === 'string') {
           const clause: SpecChildClause = { ...item, layer: item.layer };
           checkChildClause(clause, li, layers, itemPath, add, true);
+          checkSlotExcept(item, itemPath, spec, add);
         }
       });
     });
   });
+}
+
+/** First `formatVersion` of `except` in a slot's `accepts` clause. */
+export const SLOT_EXCEPT_VERSION = 26;
+
+/**
+ * `except` of a slot's `accepts` clause (v26): before it, an error at the key; from it, each id is
+ * unique and a type that the clause covers (its layer and, with `groups`, one of its groups). A
+ * clause whose layer does not exist already has its own error.
+ */
+function checkSlotExcept(
+  clause: Readonly<Record<string, unknown>>,
+  clausePath: (string | number)[],
+  spec: { formatVersion: number; layers: readonly V11Layer[] },
+  add: IssueAdder,
+): void {
+  const { except } = clause;
+  if (except === undefined) return;
+  const path = [...clausePath, 'except'];
+  if (spec.formatVersion < SLOT_EXCEPT_VERSION) {
+    add(path, onlyFormat(SLOT_EXCEPT_VERSION));
+    return;
+  }
+  if (!Array.isArray(except)) return;
+  const covered = coveredByClause(clause, spec.layers);
+  const seen = new Set<unknown>();
+  except.forEach((id, ei) => {
+    if (typeof id !== 'string') return;
+    if (seen.has(id)) add([...path, ei], specMsg('spec.idRepeated', { id }));
+    seen.add(id);
+    if (covered !== undefined && !covered.has(id)) {
+      add([...path, ei], specMsg('spec.exceptNotInClause', { typeId: id }));
+    }
+  });
+}
+
+/** Ids of the types a clause covers (`undefined` when its layer does not exist). */
+function coveredByClause(
+  clause: Readonly<Record<string, unknown>>,
+  layers: readonly V11Layer[],
+): Set<string> | undefined {
+  const layer = layers.find((l) => l.id === clause.layer);
+  if (layer === undefined) return undefined;
+  const wanted = Array.isArray(clause.groups) ? new Set<unknown>(clause.groups) : null;
+  const ids = new Set<string>();
+  for (const type of layer.annotationTypes) {
+    if (wanted === null || (type.groups ?? []).some((g) => wanted.has(g))) {
+      ids.add(type.id);
+    }
+  }
+  return ids;
 }
 
 /** v11: unique group ids in the layer and the type's `groups` only with groups of its own layer. */

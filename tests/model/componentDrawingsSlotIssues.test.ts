@@ -115,6 +115,31 @@ describe('ComponentDrawing.slotIssues', () => {
     ]);
   });
 
+  it('a child of a type the slot clause excepts gets slot-not-accepted (formatVersion 26, `except`)', () => {
+    // Both slots take the whole `ui` layer except `pin`: a `rounded-bar` fits, a `pin` fits nowhere.
+    const excepting = specOf((raw) => {
+      raw.formatVersion = 26;
+      for (const slot of raw.layers[0].annotationTypes[0].slots)
+        slot.accepts = [{ layer: 'ui', except: ['pin'] }];
+    });
+    const cat = catalogOf(excepting);
+    let p = bar(excepting, cat);
+    p = add(p, cat, 'R', 'rounded-bar', {
+      parentId: 'B',
+      slot: 'actions',
+      rect: { x: 400, y: 108, width: 30, height: 30 },
+    });
+    p = add(p, cat, 'P', 'pin', { parentId: 'B', slot: 'actions' });
+    expect(draw(p, cat).get('B')!.slotIssues).toEqual([
+      {
+        annotationId: 'A_P',
+        code: 'slot-not-accepted',
+        slot: { id: 'actions', name: 'Actions' },
+        owner: 'Bar',
+      },
+    ]);
+  });
+
   it('a child beyond the `max` of the slot gets slot-full, with the max', () => {
     // `navigationIcon` takes 1 pin; the second one (in the order of the siblings) is the extra.
     let p = bar();

@@ -72,6 +72,11 @@ const PENDING_AFTER_REMOVAL: string[] = [];
  * ('Out' decision of #486); the feature is covered by tests/model/specV10.test.ts and by script R18.
  */
 const MISSING_TODAY: string[] = [
+  // `except` in a slot's `accepts` clause (formatVersion 26, stage #2918, FG1; decision 11): the stage adds no
+  // example package (each one needs its `examples/README.md` section, held by #1905), so the key has no example
+  // today; #2951 brings a real one. Covered by tests/model/specSlotExcept.test.ts and, for the app, by
+  // tests/fixtures/field-display/ and script R50.
+  'spec:layers[].annotationTypes[].slots[].accepts[].except',
   // `$tokens` in a table column's `suggestions` (formatVersion 23, stage #1900, NV1): `examples/libraries/analytics`
   // covers `$tokens` on fields (`event.name`, `transition.event`) only; the column case is covered by
   // tests/model/namedValuesSuggestions.test.ts.
