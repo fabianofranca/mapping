@@ -8,7 +8,7 @@
 
 ## Sincronização
 
-Gravado no artefato **Mapping** em 2026-11-27: versão 116 (one write, index last with `lastChange`, no file deleted).
+Versão 116 of the **Mapping** artifact (one write, index last with `lastChange`, no file deleted).
 
 - **DM4:** `MarkingPanel` guide and preview. The Details section now lists **Decorativa** (`Choice` with a `HelpTip` hint) under Flutuante, with `ext?.mark`/`ext?.below` for the review; the guide records that the two rows disable each other and that the hint of the disabled one says why (`marking.floatingDisabledHint`, `marking.decorativeDisabledHint`). The preview gets the new row in every Details card (disabled in the Floating and read-only cards) and a new card, "Decorativa (caixa marcada)".
 - **DM5:** `CatalogWindow` guide and preview: Frame, Bracket and Line entries in the Palette tab (under the Notas library, button "Adicionar na tela X", since they are not floating). `ComponentDrawing` guide and preview: five new cards for the three drawings (dashed Frame, filled Frame without outline as a background surface, Bracket open to the right, horizontal Line, dashed vertical Line) and a guide paragraph with the neutral gray outline `#79747E`.
