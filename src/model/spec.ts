@@ -79,7 +79,7 @@ function onlyUpTo(version: number): SpecMsg {
 /** The first `formatVersion` where `sources` are plain data and `origins` is refused. */
 const PLAIN_SOURCES_VERSION = 22;
 
-// Specialization format (`formatVersion` 1 to 25), see docs/SPEC-FORMAT.md. Version 2 adds
+// Specialization format (`formatVersion` 1 to 26), see docs/SPEC-FORMAT.md. Version 2 adds
 // `platforms` and `code`; version 1 is 2 without platforms and without `code`; version 3 is 2 plus
 // `sources` (external origins on types and fields, including `table` columns); version 4 is 3
 // plus the library: the package (the specialization's folder) with `component`, `doc` and
@@ -133,7 +133,9 @@ const PLAIN_SOURCES_VERSION = 22;
 // `codeOnly: true` on a top-level field (stage #2829: a deliberately non-visual property, which
 // silences the library validator's `library.fieldUnused`), additive in the version contract;
 // version 25 is 24 plus `decorative: true` on the type (stage #2826: the instance is a decorative
-// marking, a child like any marking and never a parent), additive in the version contract.
+// marking, a child like any marking and never a parent), additive in the version contract;
+// version 26 is 25 plus `except` in a slot's `accepts` clause (stage #2918: the clause's types
+// minus the listed ids), additive in the version contract.
 // The zod here is the source of truth; `docs/spec.schema.json` mirrors it for those who do not
 // use TypeScript. No browser APIs: reusable by the MCP server.
 //
@@ -2775,7 +2777,10 @@ function checkSlotExcept(
   const seen = new Set<unknown>();
   except.forEach((id, ei) => {
     if (typeof id !== 'string') return;
-    if (seen.has(id)) add([...path, ei], specMsg('spec.idRepeated', { id }));
+    if (seen.has(id)) {
+      add([...path, ei], specMsg('spec.idRepeated', { id }));
+      return;
+    }
     seen.add(id);
     if (covered !== undefined && !covered.has(id)) {
       add([...path, ei], specMsg('spec.exceptNotInClause', { typeId: id }));

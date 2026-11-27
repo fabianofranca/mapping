@@ -207,6 +207,13 @@ describe('formatVersion 26: except in a slot clause', () => {
     );
   });
 
+  it('a repeated id that is also not covered is reported once at the repeat', () => {
+    const found = issuesOf(spec([{ layer: 'actions', except: ['nope', 'nope'] }])).filter(
+      (i) => i.path === `${SLOT}.accepts[0].except[1]`,
+    );
+    expect(found.map((i) => i.message)).toEqual(['id "nope" repeated']);
+  });
+
   it('a type that does not exist is an error at the item', () => {
     const found = issuesOf(spec([{ layer: 'actions', except: ['nope'] }]));
     expect(found).toContainEqual(
