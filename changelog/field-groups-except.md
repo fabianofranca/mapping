@@ -10,3 +10,4 @@
 ## Alterado
 
 - The `dist/index.html` ceiling went up 16 KiB, from 2768896 to 2785280, by the budget rule; above the limits, `bug` #3059 for the owner to review
+- The `dist/index.html` ceiling went up 16 KiB, from 2785280 to 2801664, by the budget rule; above the limits, `bug` #3066 for the owner to review
