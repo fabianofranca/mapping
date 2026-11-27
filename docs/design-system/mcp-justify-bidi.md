@@ -1,4 +1,4 @@
-# Justified bidi line in the MCP is reordered as a whole — épico `epic/mcp-justify-bidi`
+# Justified bidi line in the MCP is reordered as a whole — [Não lançado] (épico `epic/mcp-justify-bidi`)
 
 ## Pendências
 
