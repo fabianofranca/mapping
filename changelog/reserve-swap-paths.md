@@ -1,4 +1,4 @@
-# Reserve swap and scratch paths — [Não lançado] (épico `epic/reserve-swap-paths`, MCP 0.61.2, schema v24)
+# Reserve swap and scratch paths — [Não lançado] (épico `epic/reserve-swap-paths`, PR #0, MCP 0.61.2, schema v24)
 
 ## Corrigido
 
