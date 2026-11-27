@@ -932,8 +932,9 @@ function checkFont(value: unknown, path: string, out: Ctx): void {
     wrap: oneOf(['word', 'none']),
     ellipsis: checkBoolean,
     maxLines: checkPositiveInteger,
+    fit: oneOf(['none', 'shrink']),
   };
-  checkKeys(value, ['$token', ...Object.keys(specs)], path, out);
+  checkKeys(value, ['$token', 'fitSizes', ...Object.keys(specs)], path, out);
   if ('$token' in value) checkWholeToken(value, path, 'font', out);
   for (const [key, check] of Object.entries(specs)) {
     if (!(key in value)) continue;
@@ -941,6 +942,41 @@ function checkFont(value: unknown, path: string, out: Ctx): void {
       checkBoolExpr(value[key], join(path, key), out);
     else checkExpr(value[key], join(path, key), check, out);
   }
+  checkFitSizes(value, path, out);
+}
+
+/** The most sizes `font.fitSizes` may list. */
+const MAX_FIT_SIZES = 8;
+
+/**
+ * `font.fitSizes` (v4): a list of 1 to 8 sizes, each a number greater than 0 or a number
+ * expression; the literal ones go from the largest to the smallest. A literal `fit: "shrink"`
+ * requires the list.
+ */
+function checkFitSizes(font: Rec, path: string, out: Ctx): void {
+  const at = join(path, 'fitSizes');
+  if (!('fitSizes' in font)) {
+    if (font.fit === 'shrink') add(out, at, 'required with fit "shrink"');
+    return;
+  }
+  const list = font.fitSizes;
+  if (!Array.isArray(list) || list.length < 1 || list.length > MAX_FIT_SIZES)
+    return add(out, at, `expected a list of 1 to ${MAX_FIT_SIZES} sizes`);
+  list.forEach((item: unknown, i) =>
+    checkExpr(item, `${at}[${i}]`, checkPositiveNumber, out),
+  );
+  const rises = list.some((size: unknown, i) => {
+    const before: unknown = list[i - 1];
+    return typeof size === 'number' && typeof before === 'number' && size >= before;
+  });
+  if (rises) add(out, at, 'expected sizes from the largest to the smallest');
+}
+
+/** A literal `font.fit: "shrink"` on a node with `runs`: the rich text keeps its size (v4). */
+function checkFitWithRuns(node: Rec, path: string, out: Ctx): void {
+  const font = node.font;
+  if (isRecord(font) && font.fit === 'shrink')
+    add(out, join(join(path, 'font'), 'fit'), 'does not combine with runs');
 }
 
 /**
@@ -1216,7 +1252,10 @@ function checkTextNode(value: Rec, path: string, out: Ctx): void {
   if (hasText && hasRuns) add(out, path, 'text and runs together: use one or the other');
   else if (!hasText && !hasRuns) add(out, join(path, 'text'), 'required field');
   if (hasText) checkExpr(value.text, join(path, 'text'), checkTextOrNumber, out);
-  if (hasRuns) checkRuns(value.runs, join(path, 'runs'), out);
+  if (hasRuns) {
+    checkRuns(value.runs, join(path, 'runs'), out);
+    checkFitWithRuns(value, path, out);
+  }
   if ('font' in value) checkFont(value.font, join(path, 'font'), out);
   if ('color' in value) checkExpr(value.color, join(path, 'color'), checkColor, out);
   if ('baselinePadding' in value)
@@ -1696,6 +1735,8 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['font', 'wrap'],
   ['font', 'ellipsis'],
   ['font', 'maxLines'],
+  ['font', 'fit'],
+  ['font', 'fitSizes'],
   ['baselinePadding'],
   ...WRAP_KEYS.map((key): readonly string[] => ['layout', key]),
   ...WRAP_KEYS.map((key): readonly string[] => [key]),
