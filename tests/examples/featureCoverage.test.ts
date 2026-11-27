@@ -170,6 +170,13 @@ const MISSING_TODAY: string[] = [
   'component:run.background',
   'component:run.radius',
   'component:run.padding',
+  // Rich runs and text that shrinks to fit (stage #2916, RT1 to RT6): `font.fit`, `font.fitSizes`, the icon run
+  // (`run.icon`) and `run.baselineShift`. No distributed library adopts them in this stage; covered by
+  // `tests/fixtures/rich-runs/`, tests/model/richRunsFixture.test.ts, the RT unit tests and by script R51.
+  'component:font.fit',
+  'component:font.fitSizes',
+  'component:run.icon',
+  'component:run.baselineShift',
   // Tokens (formatVersion 15, stage #747, CF5): the `tokens` root already has an example in the Material 3 library
   // (stage #833, M1); `$token` in the components of the other libraries does not yet. Covered by
   // tests/model/specTokens.test.ts, tests/model/components/tokens.test.ts, libraryTokens.test.ts and

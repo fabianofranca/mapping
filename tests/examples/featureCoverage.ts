@@ -407,6 +407,8 @@ const FONT_KEYS = [
   'wrap',
   'ellipsis',
   'maxLines',
+  'fit',
+  'fitSizes',
 ] as const;
 /** Chaves de um trecho de texto rico (`runs[]`, formatVersion 4). */
 const RUN_KEYS = [
@@ -420,6 +422,8 @@ const RUN_KEYS = [
   'background',
   'radius',
   'padding',
+  'icon',
+  'baselineShift',
 ] as const;
 const ENUM_VALUES = {
   'layout.type': ['none', 'row', 'column'],
