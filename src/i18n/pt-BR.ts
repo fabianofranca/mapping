@@ -127,6 +127,12 @@ export const ptBR: Dictionary = {
   'marking.container': 'Container',
   'marking.floating': 'Flutuante',
   'marking.floatingHint': 'Fica acima de tudo e não pertence a ninguém',
+  'marking.floatingDisabledHint':
+    'Desligue Decorativa antes: uma marcação não pode ser as duas',
+  'marking.decorative': 'Decorativa',
+  'marking.decorativeHint': 'Nunca contém outras marcações',
+  'marking.decorativeDisabledHint':
+    'Desligue Flutuante antes: uma marcação não pode ser as duas',
   'marking.deleteContainersStay':
     '{containers} container(s) dentro dela ficam no canvas.',
   'canvas.name': 'Canvas',
