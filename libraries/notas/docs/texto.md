@@ -7,8 +7,10 @@ Plain text on the canvas or inside a container: no background, no border and no 
 - **Text** (required): the content. Accepts multiple lines: Shift+Enter breaks the line.
 - **Size** (optional): the font size, in the units of the component. Empty draws **14**. In a container with a density, the size is multiplied by it, as for any component.
 - **Weight** (optional): `regular` (400), `medium` (500), `semibold` (600) or `bold` (700). Empty draws `regular`.
-- **Color** (optional): free text; write it as `#RRGGBB`. Empty draws `#1F1F1F`. The library does not check the value: the drawing receives it as it is, so a text that is not a color (such as `banana`) is handed to the drawing unchanged and does not become the default color.
+- **Color** (optional): the name of a **color token** of an applied library (such as `on-surface`, so the text follows the theme) or a literal color as `#RRGGBB`. Empty draws `#1F1F1F`. A name that no applied library declares and that is not a color (such as `banana`) draws `#1F1F1F` too.
 - **Width** (optional): the width mode, see below. Empty draws `auto`.
+- **Family** (optional): the font family. Write the name of a **font-family token** of an applied library (such as `font-mono`, the embedded Mapping Mono) or a family or CSS stack (such as `Roboto Mono`). Empty draws `font-sans`, the embedded Mapping Sans.
+- **Alignment** (optional): `start`, `center` or `end`, the side the lines gather at inside the box. It shows when the box is wider than the text, so `center` with `largura` `fixa` centers every line. Empty is `start`.
 
 ## The two width modes
 
@@ -37,4 +39,4 @@ As a marking that is not floating, a text becomes the parent of what its rectang
 
 ## For the agent
 
-Read the text with `get_marking`: the content and the options are in the values of the `texto` annotation (`texto`, `tamanho`, `peso`, `cor` and `largura`), and `floating` is `false` unless it was turned on. This is the mapping's **own** text, a label or a title of the design page: for the text the screen really has, use the text type of the screen's library.
+Read the text with `get_marking`: the content and the options are in the values of the `texto` annotation (`texto`, `tamanho`, `peso`, `cor`, `largura`, `familia` and `alinhamento`), and `floating` is `false` unless it was turned on. This is the mapping's **own** text, a label or a title of the design page: for the text the screen really has, use the text type of the screen's library.

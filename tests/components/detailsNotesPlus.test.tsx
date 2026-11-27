@@ -10,7 +10,7 @@ import { notesProject, withNoteInstance } from '../model/notesFixtures';
 import { createHarness, renderLive, type Harness } from './harness';
 
 // The + of the Notes layer in the Details (stage #1280, decisions 4 to 6).
-// Names of the bundled notes library (layer 'Notes', types 'Note' and 'Table'), asserted by the test
+// Names of the bundled notes library (layer 'Notes', types 'Note' and 'Text'), asserted by the test
 
 beforeEach(() => {
   locale.value = 'en-US';
@@ -52,7 +52,7 @@ const plusOfNotes = () =>
   screen.getByRole('button', { name: t('annotation.addIn', { layer: 'Notes' }) });
 
 describe('+ of the Notes layer', () => {
-  it('on a plain marking it offers only Text (Note and Table are floating)', async () => {
+  it('on a plain marking it offers only Text (the Note is floating)', async () => {
     const harness = createHarness(plainMarking());
     const user = renderPanel(harness, 'M1');
     await user.click(plusOfNotes());
@@ -60,7 +60,6 @@ describe('+ of the Notes layer', () => {
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByRole('button', { name: /^Text/ })).toBeTruthy();
     expect(within(dialog).queryByRole('button', { name: /^Note/ })).toBeNull();
-    expect(within(dialog).queryByRole('button', { name: /^Table/ })).toBeNull();
   });
 
   it('on an arrow, it says that no type applies to arrows', async () => {
@@ -76,6 +75,8 @@ describe('+ of the Notes layer', () => {
     const user = renderPanel(harness, 'N1');
     await user.click(plusOfNotes());
     expect(screen.queryByText(emptyMessage())).toBeNull();
-    expect(screen.getByRole('button', { name: /Table/ })).toBeTruthy();
+    expect(
+      within(screen.getByRole('dialog')).getByRole('button', { name: /^Note/ }),
+    ).toBeTruthy();
   });
 });

@@ -82,7 +82,7 @@ describe('create_project with the notes library', () => {
     expect(project.issues.total).toBe(0);
   });
 
-  it('get_specialization returns notas: formatVersion 7, the floating note and table and the plain text', async () => {
+  it('get_specialization returns notas: formatVersion 7, the floating note and the plain text', async () => {
     const data = ok(
       await mcp.call<{
         id: string;
@@ -99,7 +99,7 @@ describe('create_project with the notes library', () => {
     expect(data).toMatchObject({ id: 'notas', file: 'specs/notas/notas.spec.json' });
     expect(data.spec.formatVersion).toBe(7);
     const types = data.spec.layers.flatMap((l) => l.annotationTypes);
-    expect(types.map((t) => t.id)).toEqual(['nota', 'tabela', 'texto']);
+    expect(types.map((t) => t.id)).toEqual(['nota', 'texto']);
     expect(types[0]).toMatchObject({
       floating: true,
       component: 'components/nota.json',
@@ -183,14 +183,14 @@ describe('the Text type of the notes library through the MCP', () => {
     acceptAllAndApply(dir, proposed.proposal.id);
   });
 
-  it('lists the three types in the notes layer', async () => {
+  it('lists the two types in the notes layer', async () => {
     const data = ok(
       await mcp.call<{
         spec: { layers: { annotationTypes: { id: string; floating?: boolean }[] }[] };
       }>('get_specialization', { project: name, specId: 'notas' }),
     );
     const types = data.spec.layers.flatMap((l) => l.annotationTypes);
-    expect(types.map((t) => t.id)).toEqual(['nota', 'tabela', 'texto']);
+    expect(types.map((t) => t.id)).toEqual(['nota', 'texto']);
     expect(types.find((t) => t.id === 'texto')?.floating).toBeUndefined();
   });
 

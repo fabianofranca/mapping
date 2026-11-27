@@ -32,6 +32,7 @@ import {
   moveContainer,
   moveMarking,
   setContainerDensity,
+  setContainerDrawingMode,
   setFieldValue,
   setTableCell,
   specializationUpdateImpact,
@@ -43,6 +44,7 @@ import { approximateMeasurer, instantiate } from '../../src/model/components/ins
 import { fitComponentSize } from '../../src/model/components/sizing';
 import type { FrameNode, SceneNode, TextNode } from '../../src/model/components/scene';
 import { buildCatalog, drawEntry, findEntry } from '../../src/model/catalog';
+import { projectNamedLookup } from '../../src/model/projectTokens';
 import { notesCatalog, notesProject } from './notesFixtures';
 
 const ROOT = join(__dirname, '../../libraries/notas');
@@ -94,56 +96,66 @@ describe('package libraries/notas', () => {
     // The `minSize` (160 × 96) fits the `preview` and the example with short text.
     expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
-    expect(report.summary).toMatchObject({ level: 3, types: 3, components: 3, docs: 3 });
+    expect(report.summary).toMatchObject({ level: 3, types: 2, components: 2, docs: 2 });
   });
 
-  it('the specialization is formatVersion 7, version 5, with the floating note and table, the plain text and a component each', () => {
+  it('the specialization is formatVersion 7, version 6, with the floating note and the plain text, a component each', () => {
     const parsed = parseSpecText(NOTES_FILES.get(NOTES_SPEC_FILE) ?? '');
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.spec.formatVersion).toBe(7);
     expect(parsed.spec.id).toBe('notas');
-    expect(parsed.spec.version).toBe(5);
+    expect(parsed.spec.version).toBe(6);
     const [layer] = parsed.spec.layers;
     expect(layer?.name).toBe('Notes');
-    const [type, table] = layer?.annotationTypes ?? [];
+    expect(layer?.annotationTypes.map((t) => t.id)).toEqual(['nota', 'texto']);
+    const [type] = layer?.annotationTypes ?? [];
     expect(type).toMatchObject({
       id: 'nota',
       floating: true,
       labelField: 'titulo',
       component: 'components/nota.json',
+      doc: 'docs/nota.md',
     });
-    const text = type?.fields.find((f) => f.key === 'texto');
-    expect(text).toMatchObject({ type: 'string', required: true });
-    expect(table).toMatchObject({
-      id: 'tabela',
-      floating: true,
-      labelField: 'titulo',
-      component: 'components/tabela.json',
-      doc: 'docs/tabela.md',
+  });
+
+  it('the note fields, in order: titulo, texto, linhas, textoDepois, cor; none required', () => {
+    const type = notesV2().layers[0]!.annotationTypes.find((t) => t.id === 'nota')!;
+    expect(type.fields.map((f) => f.key)).toEqual([
+      'titulo',
+      'texto',
+      'linhas',
+      'textoDepois',
+      'cor',
+    ]);
+    for (const field of type.fields) expect(field.required, field.key).toBeUndefined();
+    const field = (key: string) => type.fields.find((f) => f.key === key)!;
+    expect(field('textoDepois')).toMatchObject({ type: 'string', label: 'Text after' });
+    expect(field('cor')).toMatchObject({
+      type: 'enum',
+      label: 'Color',
+      options: ['yellow', 'blue', 'green', 'pink', 'orange', 'gray'],
     });
-    const rows = table?.fields.find((f) => f.key === 'linhas');
-    expect(rows?.type === 'table' && rows.columns).toMatchObject([
+    expect('default' in field('cor')).toBe(false);
+    const rows = field('linhas');
+    expect(rows.type === 'table' && rows.columns).toMatchObject([
       { key: 'chave', type: 'string', required: true },
       { key: 'valor', type: 'string' },
     ]);
   });
 
-  it('the table component is formatVersion 2, uses repeat and has 2 to 3 rows in the preview', () => {
-    const component = JSON.parse(NOTES_FILES.get('components/tabela.json') ?? '{}') as {
+  it('the note component is formatVersion 2 (repeat) and the table type, component and document are gone', () => {
+    const component = JSON.parse(NOTES_FILES.get('components/nota.json') ?? '{}') as {
       formatVersion: number;
-      preview: { linhas: unknown[] };
-      template: { children: { type: string; field?: string }[] };
     };
     expect(component.formatVersion).toBe(2);
-    expect(component.preview.linhas.length).toBeGreaterThanOrEqual(2);
-    expect(component.preview.linhas.length).toBeLessThanOrEqual(3);
-    expect(component.template.children.map((c) => c.type)).toEqual(['text', 'repeat']);
-    expect(component.template.children[1]?.field).toBe('linhas');
+    expect(NOTES_FILES.has('components/tabela.json')).toBe(false);
+    expect(NOTES_FILES.has('docs/tabela.md')).toBe(false);
   });
 
-  it('the table document says the link to the target is an arrow', () => {
-    expect(NOTES_FILES.get('docs/tabela.md')).toMatch(/arrow/);
+  it('the note document says the table goes beside a screen and is linked by an arrow', () => {
+    expect(NOTES_FILES.get('docs/nota.md')).toMatch(/arrow/);
+    expect(NOTES_FILES.get('docs/nota.md')).toMatch(/Rows/);
   });
 });
 
@@ -156,7 +168,7 @@ describe('applyBundledLibrary', () => {
     expect(applied.project.specializations).toEqual([
       expect.objectContaining({
         id: 'notas',
-        version: 5,
+        version: 6,
         file: 'specs/notas/notas.spec.json',
       }),
     ]);
@@ -167,10 +179,8 @@ describe('applyBundledLibrary', () => {
     });
     expect([...applied.packageFiles.keys()].sort()).toEqual([
       'components/nota.json',
-      'components/tabela.json',
       'components/texto.json',
       'docs/nota.md',
-      'docs/tabela.md',
       'docs/texto.md',
     ]);
   });
@@ -185,10 +195,8 @@ describe('applyBundledLibrary', () => {
     const files = bundledLibraryDiskFiles(applied, NOTES_LIBRARY);
     expect([...files.keys()].sort()).toEqual([
       'specs/notas/components/nota.json',
-      'specs/notas/components/tabela.json',
       'specs/notas/components/texto.json',
       'specs/notas/docs/nota.md',
-      'specs/notas/docs/tabela.md',
       'specs/notas/docs/texto.md',
       'specs/notas/notas.spec.json',
     ]);
@@ -204,11 +212,13 @@ describe('applyBundledLibrary', () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// The B4 update takes a project from version 1 to 2 (additive: one new type, no migration).
+// The update of an old copy (version 1) takes the project to the current version.
 
-/** The version 1 specialization: the current one without the Tabela (and `version: 1`). */
+const v5Text = readFileSync(join(__dirname, 'fixtures', 'notas-v5.spec.json'), 'utf8');
+
+/** The version 1 specialization: version 5 without the table and the text (and `version: 1`). */
 function notesV1(): Spec {
-  const parsed = parseSpecText(NOTES_FILES.get(NOTES_SPEC_FILE) ?? '');
+  const parsed = parseSpecText(v5Text);
   if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
   const layers = parsed.spec.layers.map((layer) => ({
     ...layer,
@@ -225,7 +235,7 @@ function notesV2(): Spec {
   return parsed.spec;
 }
 
-describe('update of the notes library from version 1 to 2', () => {
+describe('update of the notes library from version 1 to 6', () => {
   function withV1(): Project {
     let p = applySpecialization(project(), notesV1(), { newId: () => 'LN' });
     p = createMarking(p, {
@@ -243,19 +253,17 @@ describe('update of the notes library from version 1 to 2', () => {
     return setFieldValue(p, 'AN1', 'texto', 'A version 1 note');
   }
 
-  it('v2 is an additive update: no break, no loss, no new layer, no new pending item', () => {
+  it('v6 breaks nothing for a v1 project: no missing migration, no loss, no new layer, no pending item', () => {
     const p = withV1();
     expect(checkSpecApply(p, notesV2())).toBe('update');
     const impact = specializationUpdateImpact(p, notesV2());
     expect(impact).toMatchObject({
-      additive: true,
       refused: false,
       comparable: true,
       brokenRefs: 0,
       converted: 0,
       deleted: 0,
     });
-    expect(impact.breaking).toEqual([]);
     expect(impact.missingMigrations).toEqual([]);
     expect(impact.addedLayers).toEqual([]);
     expect(impact.freedLayers).toEqual([]);
@@ -264,45 +272,48 @@ describe('update of the notes library from version 1 to 2', () => {
     expect(impact.changes.map((c) => c.code)).toContain('added-type');
   });
 
-  it('updates: the version goes up, the note stays as it was and the Tabela starts to exist', () => {
+  it('updates: the version goes up and the note stays as it was', () => {
     const p = withV1();
     const next = updateSpecialization(p, notesV2(), { newId: () => 'X' });
-    expect(next.specializations[0]).toMatchObject({ id: NOTES_ID, version: 5 });
+    expect(next.specializations[0]).toMatchObject({ id: NOTES_ID, version: 6 });
     expect(next.layers.map((l) => l.id)).toEqual(p.layers.map((l) => l.id));
     expect(next.annotations.find((a) => a.id === 'AN1')).toEqual(
       p.annotations.find((a) => a.id === 'AN1'),
     );
-    // The Tabela can now be created in the Notas layer that v1 had created.
-    let q = createMarking(next, {
-      id: 'T1',
-      containerId: null,
-      rect: { x: 300, y: 0, width: 240, height: 120 },
-      floating: true,
-    });
-    q = addTypedAnnotation(q, {
-      id: 'AT1',
-      markingId: 'T1',
-      layerId: 'LN',
-      type: { specId: NOTES_ID, typeId: 'tabela' },
-    });
-    expect(getAnnotationIssues(q, 'AT1')).toEqual([]);
   });
 });
 
 // ---------------------------------------------------------------------------------------------
-// The Tabela: the annotation and the drawing (the component's `repeat`).
+// The Note: the annotation and the drawing (colors, rows, the order of the parts).
 
-describe('Tabela type', () => {
+const NOTE_BOX = { x: 0, y: 0, width: 240, height: 200 };
+const NOTE_COLORS = {
+  yellow: ['#FFF1A8', '#3B3200'],
+  blue: ['#D6E8FF', '#0B2E59'],
+  green: ['#D7F5DC', '#0E3B17'],
+  pink: ['#FFD9E8', '#5A0F2E'],
+  orange: ['#FFE0C2', '#5A2A00'],
+  gray: ['#E9EAEC', '#26282B'],
+} as const;
+
+describe('Note type', () => {
   const catalog = notesCatalog();
-  const component = catalog.get(NOTES_ID)?.byType.get('tabela');
-  const type = notesV2().layers[0]!.annotationTypes.find((t) => t.id === 'tabela')!;
+  const component = catalog.get(NOTES_ID)!.byType.get('nota')!;
+  const type = notesV2().layers[0]!.annotationTypes.find((t) => t.id === 'nota')!;
 
-  function tableProject(): Project {
+  // As the app hands the values: every field present, empty ones null.
+  const empty = { titulo: null, texto: null, linhas: null, textoDepois: null, cor: null };
+  const draw = (values: Record<string, unknown>) =>
+    instantiate(component, { ...empty, ...values } as never, NOTE_BOX, {
+      measure: approximateMeasurer,
+    });
+
+  function noteProject(): Project {
     let p = notesProject();
     p = createMarking(p, {
       id: 'T1',
       containerId: null,
-      rect: { x: 0, y: 0, width: 240, height: 140 },
+      rect: { x: 0, y: 0, width: 240, height: 200 },
       floating: true,
     });
     const layer = p.layers.find((l) => l.spec?.specId === NOTES_ID)!.id;
@@ -310,7 +321,7 @@ describe('Tabela type', () => {
       id: 'AT1',
       markingId: 'T1',
       layerId: layer,
-      type: { specId: NOTES_ID, typeId: 'tabela' },
+      type: { specId: NOTES_ID, typeId: 'nota' },
     });
     p = setFieldValue(p, 'AT1', 'titulo', 'checkout_started');
     for (const [id, key, value] of [
@@ -324,11 +335,12 @@ describe('Tabela type', () => {
     return p;
   }
 
-  it('the catalog finds the Tabela component', () => {
-    expect(component?.formatVersion).toBe(2);
+  it('the catalog finds the Note component at formatVersion 2', () => {
+    expect(component.formatVersion).toBe(2);
+    expect(catalog.get(NOTES_ID)?.byType.has('tabela')).toBe(false);
   });
 
-  it('the annotation starts with no rows and the key is required', () => {
+  it('an empty note is valid; a row with no key is the only issue', () => {
     let p = notesProject();
     p = createMarking(p, {
       id: 'T1',
@@ -341,7 +353,7 @@ describe('Tabela type', () => {
       id: 'AT1',
       markingId: 'T1',
       layerId: layer,
-      type: { specId: NOTES_ID, typeId: 'tabela' },
+      type: { specId: NOTES_ID, typeId: 'nota' },
     });
     expect(getAnnotationIssues(p, 'AT1')).toEqual([]);
     p = addTableRow(p, 'AT1', 'linhas', 'R1');
@@ -351,19 +363,14 @@ describe('Tabela type', () => {
   });
 
   it('draws the title and one row per record, key on the left and value on the right', () => {
-    const p = tableProject();
+    const p = noteProject();
     const annotation = p.annotations.find((a) => a.id === 'AT1')!;
     const { values } = drawingValues(p, annotation, type);
     expect(values.linhas).toEqual([
       { chave: 'source', valor: 'cart' },
       { chave: 'total', valor: '149.90' },
     ]);
-    const { root, warnings } = instantiate(
-      component!,
-      values,
-      { x: 0, y: 0, width: 240, height: 140 },
-      { measure: approximateMeasurer },
-    );
+    const { root, warnings } = draw(values);
     expect(warnings).toEqual([]);
     const texts = collectTexts(root);
     expect(texts.map((t) => t.text)).toEqual([
@@ -382,26 +389,90 @@ describe('Tabela type', () => {
     expect(value1!.node.style.align).toBe('right');
   });
 
-  it('with no rows draws only the title', () => {
-    const p = tableProject();
-    const empty: Project = {
-      ...p,
-      annotations: p.annotations.map((a) =>
-        a.id === 'AT1' ? { ...a, values: { ...a.values, linhas: [] } } : a,
-      ),
-    };
-    const { values } = drawingValues(
-      empty,
-      empty.annotations.find((a) => a.id === 'AT1')!,
-      type,
-    );
-    const { root } = instantiate(
-      component!,
-      values,
-      { x: 0, y: 0, width: 240, height: 140 },
-      { measure: approximateMeasurer },
-    );
+  it('with no rows and no texts draws only the title', () => {
+    const { root } = draw({ titulo: 'checkout_started', linhas: [] });
     expect(collectTexts(root).map((t) => t.text)).toEqual(['checkout_started']);
+  });
+
+  it('with only rows draws neither the title nor the two texts', () => {
+    const { root, warnings } = draw({
+      linhas: [
+        { chave: 'source', valor: 'cart' },
+        { chave: 'items', valor: '3' },
+      ],
+    });
+    expect(warnings).toEqual([]);
+    expect(collectTexts(root).map((t) => t.text)).toEqual([
+      'source',
+      'cart',
+      'items',
+      '3',
+    ]);
+  });
+
+  it('the order is title, text, rows, text after', () => {
+    const { root } = draw({
+      titulo: 'Title',
+      texto: 'Before',
+      linhas: [{ chave: 'k', valor: 'v' }],
+      textoDepois: 'After',
+    });
+    const texts = collectTexts(root);
+    expect(texts.map((t) => t.text)).toEqual(['Title', 'Before', 'k', 'v', 'After']);
+    const ys = texts.map((t) => t.y);
+    expect(ys[1]).toBeGreaterThan(ys[0]!);
+    expect(ys[2]).toBeGreaterThan(ys[1]!);
+    expect(ys[4]).toBeGreaterThan(ys[2]!);
+  });
+
+  it('text and text after alone: each is drawn when it has a value', () => {
+    expect(collectTexts(draw({ texto: 'Only text' }).root).map((t) => t.text)).toEqual([
+      'Only text',
+    ]);
+    expect(
+      collectTexts(draw({ textoDepois: 'Only after' }).root).map((t) => t.text),
+    ).toEqual(['Only after']);
+  });
+
+  it.each(Object.entries(NOTE_COLORS))(
+    '%s: the fill and every text use the pair of the decision',
+    (cor, [fill, text]) => {
+      const { root } = draw({
+        cor,
+        titulo: 'T',
+        texto: 'x',
+        linhas: [{ chave: 'k', valor: 'v' }],
+        textoDepois: 'y',
+      });
+      expect(root.fills).toEqual([{ type: 'solid', color: fill }]);
+      const texts = collectTexts(root);
+      expect(texts).toHaveLength(5);
+      for (const t of texts)
+        expect(t.node.fills, t.text).toEqual([{ type: 'solid', color: text }]);
+    },
+  );
+
+  it('an empty color draws yellow, and the field has no default', () => {
+    const { root } = draw({ titulo: 'T', texto: 'x' });
+    expect(root.fills).toEqual([{ type: 'solid', color: '#FFF1A8' }]);
+    expect(collectTexts(root)[0]!.node.fills).toEqual([
+      { type: 'solid', color: '#3B3200' },
+    ]);
+    const field = type.fields.find((f) => f.key === 'cor')!;
+    expect('default' in field).toBe(false);
+  });
+
+  it('the color is the same in every drawing mode', () => {
+    for (const mode of ['light', 'dark']) {
+      let p = setContainerDrawingMode(noteProject(), 'I1', { mode });
+      p = setFieldValue(p, 'AT1', 'cor', 'blue');
+      const { values } = drawingValues(
+        p,
+        p.annotations.find((a) => a.id === 'AT1')!,
+        type,
+      );
+      expect(draw(values).root.fills).toEqual([{ type: 'solid', color: '#D6E8FF' }]);
+    }
   });
 });
 
@@ -425,26 +496,31 @@ function collectTexts(root: FrameNode): PlacedText[] {
   return out;
 }
 
-describe('Catalog with the Tabela', () => {
+describe('Catalog with the Note', () => {
   const files = [...NOTES_FILES].map(([path, text]) => ({ path, text }));
   const catalog = buildCatalog(files);
-  const entry = findEntry(catalog, 'tabela')!;
+  const entry = findEntry(catalog, 'nota')!;
 
-  it('the preview reaches the Catalog with the rows (each with _id for the playground form)', () => {
+  it('the preview stays the title and the text', () => {
     expect(catalog.report.errors).toEqual([]);
-    expect(entry.component?.formatVersion).toBe(2);
-    expect(entry.previewValues?.linhas).toEqual([
-      { _id: 'preview-1', chave: 'source', valor: 'cart' },
-      { _id: 'preview-2', chave: 'items', valor: '3' },
-      { _id: 'preview-3', chave: 'total', valor: '149.90' },
-    ]);
+    expect(entry.previewValues).toMatchObject({
+      titulo: 'Title',
+      texto: 'Write your comment here.',
+      linhas: null,
+      textoDepois: null,
+      cor: null,
+    });
+    expect(findEntry(catalog, 'tabela')).toBeUndefined();
+  });
+
+  it('the fields reach the Catalog with the rows column', () => {
     expect(entry.fields.find((f) => f.key === 'linhas')).toMatchObject({
       type: 'table',
       columns: [{ key: 'chave' }, { key: 'valor' }],
     });
   });
 
-  it('draws the Tabela preview with one row per record', () => {
+  it('draws the Note preview with no warning', () => {
     const drawing = drawEntry(entry, entry.previewValues ?? {}, approximateMeasurer);
     expect(drawing?.warnings).toEqual([]);
     const texts: string[] = [];
@@ -453,35 +529,19 @@ describe('Catalog with the Tabela', () => {
       if (node.type === 'frame') node.children.forEach(visit);
     };
     if (drawing) visit(drawing.root);
-    expect(texts).toEqual([
-      'checkout_started',
-      'source',
-      'cart',
-      'items',
-      '3',
-      'total',
-      '149.90',
-    ]);
-  });
-
-  it('the Nota still has no rows in the preview', () => {
-    expect(findEntry(catalog, 'nota')?.previewValues?.texto).toBe(
-      'Write your comment here.',
-    );
+    expect(texts).toEqual(['Title', 'Write your comment here.']);
   });
 });
 
 // ---------------------------------------------------------------------------------------------
-// The Text type (version 5): plain text, a non-floating type with a component.
+// The Text type: plain text, a non-floating type with a component.
 
 describe('Texto type: the specialization', () => {
-  it('the package lists the 7 files of the folder', () => {
+  it('the package lists the 5 files of the folder', () => {
     expect([...NOTES_FILES.keys()].sort()).toEqual([
       'components/nota.json',
-      'components/tabela.json',
       'components/texto.json',
       'docs/nota.md',
-      'docs/tabela.md',
       'docs/texto.md',
       'notas.spec.json',
     ]);
@@ -503,12 +563,14 @@ describe('Texto type: the specialization', () => {
       'peso',
       'cor',
       'largura',
+      'familia',
+      'alinhamento',
     ]);
     const field = (key: string) => type.fields.find((f) => f.key === key)!;
     expect(field('texto')).toMatchObject({ type: 'string', required: true });
     expect(field('tamanho')).toMatchObject({ type: 'number' });
     expect(field('cor')).toMatchObject({ type: 'string' });
-    for (const key of ['tamanho', 'peso', 'cor', 'largura']) {
+    for (const key of ['tamanho', 'peso', 'cor', 'largura', 'familia', 'alinhamento']) {
       expect(field(key).required, key).toBeUndefined();
       expect('default' in field(key), key).toBe(false);
     }
@@ -517,6 +579,10 @@ describe('Texto type: the specialization', () => {
     expect(options('peso')).toEqual(['regular', 'medium', 'semibold', 'bold']);
     expect(field('largura').type).toBe('enum');
     expect(options('largura')).toEqual(['auto', 'fixa']);
+    expect(field('familia')).toMatchObject({ type: 'string', label: 'Family' });
+    expect(field('alinhamento')).toMatchObject({ type: 'enum', label: 'Alignment' });
+    expect(options('alinhamento')).toEqual(['start', 'center', 'end']);
+    expect(field('cor').description).not.toMatch(/not checked/);
     expect(type.examples).toEqual([
       {
         name: 'Column label',
@@ -666,9 +732,94 @@ describe('Texto type: the drawing and the fit', () => {
     expect(node.style.wrap).toBeUndefined();
   });
 
-  it('a value that is not a color: the library does not check it and the drawing gets it as it is', () => {
-    const node = drawnText({ texto: 'Odd', cor: 'banana' });
-    expect(node.fills).toEqual([{ type: 'solid', color: 'banana' }]);
+  it('with no library token of that name: a literal color is used as is, a name that resolves to nothing draws #1F1F1F', () => {
+    expect(drawnText({ texto: 'Odd', cor: '#FF0000' }).fills).toEqual([
+      { type: 'solid', color: '#FF0000' },
+    ]);
+    expect(drawnText({ texto: 'Odd', cor: 'banana' }).fills).toEqual([
+      { type: 'solid', color: '#1F1F1F' },
+    ]);
+  });
+
+  /** The text drawn with the notes project plus a library that declares tokens. */
+  function withTokens(values: Record<string, string>): TextNode {
+    const base = notesProject();
+    const p: Project = {
+      ...base,
+      specializations: [
+        ...base.specializations,
+        {
+          id: 'theme',
+          spec: {
+            layers: [],
+            types: [],
+            tokens: {
+              values: {
+                'on-surface': '#102030',
+                'font-brand': '"Brand Sans", sans-serif',
+              },
+            },
+          },
+        } as never,
+      ],
+    };
+    const all = {
+      tamanho: null,
+      peso: null,
+      cor: null,
+      largura: null,
+      familia: null,
+      alinhamento: null,
+    };
+    const { root, warnings } = instantiate(
+      component,
+      { ...all, ...values } as never,
+      { x: 0, y: 0, width: 200, height: 40 },
+      {
+        measure: approximateMeasurer,
+        tokenNamed: projectNamedLookup(p, component, null),
+      },
+    );
+    expect(warnings).toEqual([]);
+    return collectTexts(root)[0]!.node;
+  }
+
+  it('cor names a color token of an applied library: on-surface draws its value', () => {
+    expect(withTokens({ texto: 'T', cor: 'on-surface' }).fills).toEqual([
+      { type: 'solid', color: '#102030' },
+    ]);
+    expect(withTokens({ texto: 'T', cor: '#FF0000' }).fills).toEqual([
+      { type: 'solid', color: '#FF0000' },
+    ]);
+    expect(withTokens({ texto: 'T', cor: 'banana' }).fills).toEqual([
+      { type: 'solid', color: '#1F1F1F' },
+    ]);
+  });
+
+  it('familia: empty draws font-sans, font-mono the embedded mono, a token of a library its value and a stack as it is', () => {
+    expect(withTokens({ texto: 'T' }).style.fontFamily).toBe(
+      drawnText({ texto: 'T' }).style.fontFamily,
+    );
+    expect(withTokens({ texto: 'T', familia: 'font-mono' }).style.fontFamily).toBe(
+      '"Mapping Mono", monospace',
+    );
+    expect(withTokens({ texto: 'T', familia: 'font-brand' }).style.fontFamily).toBe(
+      '"Brand Sans", sans-serif',
+    );
+    expect(withTokens({ texto: 'T', familia: 'Roboto Mono' }).style.fontFamily).toMatch(
+      /Roboto Mono/,
+    );
+    expect(withTokens({ texto: 'T', familia: 'font-sans' }).style.fontFamily).toBe(
+      withTokens({ texto: 'T' }).style.fontFamily,
+    );
+  });
+
+  it('alinhamento: center with a fixed width centers the lines; end goes right and start left', () => {
+    const fixed = { texto: 'Centered', largura: 'fixa' };
+    expect(drawnText({ ...fixed, alinhamento: 'center' }).style.align).toBe('center');
+    expect(drawnText({ ...fixed, alinhamento: 'end' }).style.align).toBe('right');
+    expect(drawnText({ ...fixed, alinhamento: 'start' }).style.align).toBe('left');
+    expect(drawnText({ ...fixed }).style.align).toBe('left');
   });
 
   it('density 2 doubles the font size, as for any component', () => {
