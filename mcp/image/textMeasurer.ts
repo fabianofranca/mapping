@@ -6,7 +6,13 @@ import {
   textWidth,
   type Synthesis,
 } from './glyphs';
-import { loadFace, type DeclaredFace, type Face } from './harfbuzz';
+import {
+  bidiRuns,
+  loadFace,
+  type BidiRun,
+  type DeclaredFace,
+  type Face,
+} from './harfbuzz';
 import monoBold from 'font:mono-bold';
 import mono from 'font:mono';
 import sansBold from 'font:sans-bold';
@@ -133,6 +139,11 @@ export interface FontBook {
   isLibraryFamily(family: string): boolean;
   /** Whether any library font (`fonts`) was read; otherwise everything is measured with the embedded one. */
   readonly hasLibraryFonts: boolean;
+  /**
+   * The directional runs of the one-line `text` with `direction` as the base, in visual order (UAX #9; stage #2653,
+   * decision 2). `textLayout.ts` asks the book because only `harfbuzz.ts` may reach the bidi module.
+   */
+  bidiRuns(text: string, direction: 'ltr' | 'rtl'): readonly BidiRun[];
 }
 
 /**
@@ -219,6 +230,7 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
   };
   return {
     hasLibraryFonts: candidates.length > 0,
+    bidiRuns: (text, direction) => bidiRuns(text, direction),
     isLibraryFamily(family) {
       const first = stopName(family);
       return first !== undefined && hasFamily(first);
