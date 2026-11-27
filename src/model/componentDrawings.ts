@@ -972,12 +972,45 @@ function slotFacts(
   };
 }
 
-/** Are the specializations' tokens the same objects, in the same order? */
+const NO_SPEC_TOKENS: readonly (SpecTokens | undefined)[] = [];
+const tokenNamedUse = new WeakMap<ComponentFile, boolean>();
+
+/** Does the component read a token by name? Only then do other libraries' tokens change its drawing. */
+function usesTokenNamed(component: ComponentFile): boolean {
+  let used = tokenNamedUse.get(component);
+  if (used === undefined) {
+    used = JSON.stringify(component).includes('"$tokenNamed"');
+    tokenNamedUse.set(component, used);
+  }
+  return used;
+}
+
+const specTokensKeys = new WeakMap<SpecTokens, string>();
+
+/** The content of a specialization's tokens as text, computed once per object. */
+function specTokensKey(tokens: SpecTokens): string {
+  let key = specTokensKeys.get(tokens);
+  if (key === undefined) {
+    key = JSON.stringify(tokens);
+    specTokensKeys.set(tokens, key);
+  }
+  return key;
+}
+
+function sameTokensOf(a: SpecTokens | undefined, b: SpecTokens | undefined): boolean {
+  if (a === b) return true;
+  return a !== undefined && b !== undefined && specTokensKey(a) === specTokensKey(b);
+}
+
+/**
+ * Are the specializations' tokens the same, in the same order? By content: the Proposed view reads the
+ * project again, with new objects for specializations that did not change, and must not redraw them.
+ */
 function sameSpecTokens(
   a: readonly (SpecTokens | undefined)[],
   b: readonly (SpecTokens | undefined)[],
 ): boolean {
-  return a.length === b.length && a.every((tokens, i) => tokens === b[i]);
+  return a.length === b.length && a.every((tokens, i) => sameTokensOf(tokens, b[i]));
 }
 
 function draw(input: DrawInput): Drawn {
@@ -1101,7 +1134,7 @@ export function createDrawingCache(): DrawingCache {
     }
 
     const { children, markings: markingsById } = projectIndex(p);
-    const specTokens = p.specializations.map((s) => s.spec?.tokens);
+    const allSpecTokens = p.specializations.map((s) => s.spec?.tokens);
     const next = new Map<string, Entry>();
     const drawings = new Map<string, ComponentDrawing>();
     const components = new Map<string, MarkingComponent | null>();
@@ -1164,6 +1197,7 @@ export function createDrawingCache(): DrawingCache {
       const direction = effectiveDirection(p, marking.containerId);
       const anchor = anchorOfMarking(marking, markingsById);
       const container = readContainerOf(p, mc.component, marking.containerId);
+      const specTokens = usesTokenNamed(mc.component) ? allSpecTokens : NO_SPEC_TOKENS;
       const before = entries.get(marking.id);
       if (
         before !== undefined &&

@@ -178,6 +178,10 @@ const MISSING_TODAY: string[] = [
   // tests/model/specTokens.test.ts, tests/model/components/tokens.test.ts, libraryTokens.test.ts and
   // by script R25.
   'component:expr.$token',
+  // `$tokenNamed` (stage #2825, FN2): a token named by a field value; no distributed library uses it yet. Covered by
+  // tests/model/components/tokenNamedParse.test.ts, tokenNamedEngine.test.ts, tests/model/projectTokens.test.ts
+  // and tests/mcp/tokenNamed.test.ts.
+  'component:expr.$tokenNamed',
   // Icons (formatVersion 15, stage #747, CF7): the `icons` root and the `icon` node already have an example in the
   // Material 3 library (stage #833, M1); `icon.name`/`strokeWidth` do not yet. Covered by
   // tests/model/components/icons.test.ts, libraryIcons.test.ts, tests/mcp/libraryIcons.test.ts and
