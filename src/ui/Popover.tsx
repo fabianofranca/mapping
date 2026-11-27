@@ -87,8 +87,9 @@ function placeLimited(
 }
 
 /**
- * Positions the panel below the button, or above if it does not fit, always inside the window.
- * `limit`: the panel also does not invade the area above it (the review bar).
+ * Positions the panel below the button, or above if it does not fit, always inside the window;
+ * a panel taller than both sides gets a maximum height and scrolls inside. `limit`: the panel
+ * also does not invade the area above it (the review bar).
  */
 export function place(
   host: HTMLElement,
@@ -96,10 +97,8 @@ export function place(
   align: 'start' | 'end',
   limit?: PlaceLimit | null,
 ): void {
-  if (limit) {
-    panel.style.maxHeight = '';
-    panel.style.overflowY = '';
-  }
+  panel.style.maxHeight = '';
+  panel.style.overflowY = '';
   const anchor = host.getBoundingClientRect();
   const width = panel.offsetWidth;
   const height = panel.offsetHeight;
@@ -109,12 +108,7 @@ export function place(
   };
   const wanted = align === 'end' ? anchor.right - width : anchor.left;
   const left = Math.max(EDGE, Math.min(wanted, viewport.width - width - EDGE));
-  const below = anchor.bottom + GAP;
-  const top = limit
-    ? placeLimited(panel, anchor, height, limit.top, viewport.height)
-    : below + height <= viewport.height - EDGE
-      ? below
-      : Math.max(EDGE, anchor.top - GAP - height);
+  const top = placeLimited(panel, anchor, height, limit?.top ?? 0, viewport.height);
   panel.style.left = `${left}px`;
   panel.style.top = `${top}px`;
 }
@@ -178,7 +172,12 @@ export function Popover({
 
   useLayoutEffect(() => {
     const at = anchorEl();
-    if (open && at && panel.current) place(at, panel.current, align, limit?.());
+    if (!open || !at || !panel.current) return;
+    place(at, panel.current, align, limit?.());
+    // The focused row (a picker's selected one) is in view once the panel has its maximum height.
+    const active = document.activeElement;
+    if (active && panel.current.contains(active))
+      active.scrollIntoView({ block: 'nearest' });
     // `limit` is read at every positioning, it is not a dependency.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, align]);

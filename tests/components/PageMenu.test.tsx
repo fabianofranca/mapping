@@ -69,6 +69,24 @@ describe('PageMenu', () => {
     expect(session.page.rootCounts.value.get(second)).toBe(1);
   });
 
+  it('with many pages, opening the menu scrolls the selected (last) row into view', async () => {
+    const extra = Array.from({ length: 29 }, (_, i) => `Extra ${String(i + 1)}`);
+    const { harness, ids, session } = await setupPages(extra);
+    session.page.open(ids[ids.length - 1] as string);
+    renderLive(harness, () => (
+      <PageMenu dialogs={{ show: vi.fn() } as unknown as EditorDialogs} />
+    ));
+    const spy = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const user = userEvent.setup();
+    await user.click(trigger('Extra 29'));
+    const selected = screen
+      .getAllByRole('option')
+      .find((o) => o.getAttribute('aria-selected') === 'true') as HTMLElement;
+    expect(selected.getAttribute('data-name')).toBe('Extra 29');
+    expect(spy.mock.contexts).toContain(selected);
+    spy.mockRestore();
+  });
+
   it('choosing a row opens the page and closes the list', async () => {
     const { session, second } = await setup();
     const user = userEvent.setup();
