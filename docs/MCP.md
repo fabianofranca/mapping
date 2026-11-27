@@ -298,6 +298,17 @@ The stage `epic/format-plugins` lets a specialization (`formatVersion` 20) carry
 - **Errors.** New code `format-not-found` (an unknown `<specId>/<formatId>`; `details.formats` lists the available ones). The plugin errors `plugin-failed`, `plugin-timeout`, `plugin-limit` and `plugin-output-invalid` come from the executor (`details.path` is the path inside the result for `plugin-output-invalid`). An operation of the result that the model refuses is the batch's usual error with `details.path` = `operations[i].result[j]` and `details.resultOp` = the operation's name. No error brings the server down and nothing is written.
 - **Update the MCP first:** an earlier version does not know `export_format` or `import_format` (`unknown operation`) and does not run the plugins in `validate_library`.
 
+### Decorative markings (schema v25, stage #2826, 0.62.0)
+
+A marking can be **decorative**: a child like any marking that is never a parent (a frame, bracket or divider drawn over a region without owning it). The tools read and write the flag; the model decides the containment (`settleHierarchy`), so the server computes nothing.
+
+- **`create_marking.decorative`** (boolean, optional). Absent, the marking takes the `annotation` type's `decorative` (`false` without a type); `true` makes any marking decorative, `false` makes an instance of a decorative type an ordinary marking. A marking created decorative is put first among its siblings (drawn below them). `true` on a floating type fails with `decorative-floating`.
+- **`update_marking.decorative`** turns the flag on (its children go to the next parent) or off (it takes what it fully contains). It does not reorder the marking, requires unlocked geometry (`locked`) and fails with `decorative-floating` on a floating marking. The step's summary says `decorative` or `stop being decorative`.
+- **Reads.** `get_marking` and the `list_markings` rows carry `decorative`; `list_markings` gains the `decorative` filter (`true` or `false`, the same as `floating`).
+- **`wrap_items`** takes a decorative marking like any other member.
+- **Proposals.** A proposal that creates or changes a decorative marking is written at proposal `formatVersion` 13 (only then; a proposal that never touches the flag keeps its version).
+- **Compatibility.** A server earlier than 0.62.0 does not know schema v25: it opens a project that holds the flag as read-only (`read-only`).
+
 ### Change in 0.61.0 — one built-in drawing font (stage #2825)
 
 The built-in `font-sans` and `font-mono` are now `"Mapping Sans", sans-serif` and `"Mapping Mono", monospace`, the faces the server already measures and draws with. The app canvas, the Catalog, the library preview and the viewer register the same embedded faces, so the default font is the same everywhere. The schema and the formats do not change; no new tool.

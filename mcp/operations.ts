@@ -569,6 +569,12 @@ export const operationSchema = z.discriminatedUnion('op', [
       ),
     name: name.optional(),
     source: externalSource.optional(),
+    decorative: z
+      .boolean()
+      .optional()
+      .describe(
+        "Decorative marking (a frame, bracket or divider of a documentation page): a child like any marking that is never a parent, so what it covers stays outside it (its parent is the smallest non-decorative marking that contains it). Created decorative, it is put first among its siblings (drawn below them). Absent: the `annotation` type's `decorative` (`false` without a type or when the type does not declare it); `false` makes an instance of a decorative type an ordinary marking. `true` on a floating annotation type fails with `decorative-floating`.",
+      ),
     anchor: anchorShape
       .optional()
       .describe(
@@ -669,7 +675,7 @@ export const operationSchema = z.discriminatedUnion('op', [
       .array(item('Marking or container'))
       .min(1)
       .describe(
-        "Markings and containers to wrap (reference, id or alias; the same as the app's Wrap). Notes (floating) and arrows are ignored with a warning; if nothing goes in, the operation fails with `invalid-parent`.",
+        "Markings and containers to wrap (reference, id or alias; the same as the app's Wrap). Decorative markings go in like any marking (they become children of the new one). Notes (floating) and arrows are ignored with a warning; if nothing goes in, the operation fails with `invalid-parent`.",
       ),
     name: name
       .optional()
@@ -726,6 +732,12 @@ export const operationSchema = z.discriminatedUnion('op', [
       .optional()
       .describe(
         '`true` makes the marking floating (a comment over the canvas): it leaves the container and moves to the canvas, with the `rect` converted. `false` stops it being floating (the container that fully contains it receives it). Requires unlocked geometry.',
+      ),
+    decorative: z
+      .boolean()
+      .optional()
+      .describe(
+        '`true` makes the marking decorative: a child like any marking that is never a parent, so its children go to the next parent (the smallest non-decorative marking that contains them). `false` makes it an ordinary marking again (it takes what it fully contains). It does not reorder the marking (use `move_marking`). Requires unlocked geometry (`locked`); a floating marking cannot be decorative (`decorative-floating`), nor a decorative one floating.',
       ),
     move: z
       .object({ dx: int, dy: int })
