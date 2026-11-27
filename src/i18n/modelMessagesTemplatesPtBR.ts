@@ -216,7 +216,6 @@ export const templatePtBR: {
     'o token "{name}" do grupo "{group}" não é texto fixo',
   'model.spec.columnTypeNotAllowed':
     '"{type}" não é permitido dentro de table; use "string", "number", "date", "enum" ou "ref"',
-  'model.spec.codeOnlyColumn': 'só é válido em um campo, não em uma coluna de table',
   'model.spec.optionsRequired': 'obrigatório e não vazio em enum',
   'model.spec.optionsBlank': 'opções não podem ser vazias',
   'model.spec.optionsRepeated': 'opções repetidas',
@@ -276,6 +275,20 @@ export const templatePtBR: {
   'model.spec.exceptEmpty': 'não pode ser vazio; tire a chave ou liste ao menos um tipo',
   'model.spec.exceptList': 'deve ser uma lista de ids de tipo',
   'model.spec.exceptNotInClause': 'o tipo "{typeId}" não é coberto por esta cláusula',
+  'model.spec.fieldGroupUnknown':
+    'o grupo de campos "{group}" não está declarado em fieldGroups',
+  'model.spec.fieldGroupEmpty': 'o grupo de campos "{group}" não tem campo',
+  'model.spec.fieldGroupIdInvalid': 'id de grupo de campos inválido; use [a-z0-9-]+',
+  'model.spec.topLevelOnly': 'só é válido em um campo, não em uma coluna de table',
+  'model.spec.visibleWhenUnknownField': 'o campo "{key}" não existe no tipo',
+  'model.spec.visibleWhenSelf':
+    'o visibleWhen de um campo não pode citar o próprio campo',
+  'model.spec.visibleWhenOwnGroup':
+    'o visibleWhen de um grupo não pode citar um campo do grupo: {key}',
+  'model.spec.visibleWhenFieldType':
+    'visibleWhen só cita campos enum, string ou number: "{key}" é {type}',
+  'model.spec.visibleWhenRequired':
+    'um campo obrigatório não pode ficar oculto: tire required ou visibleWhen',
   'model.spec.docShape': 'deve ser texto (arquivo do pacote) ou um objeto { repo, path }',
   'model.spec.docPathInvalid':
     'caminho inválido: use um caminho relativo à raiz do repositório, com "/", sem "." nem ".." e sem unidade (ex: components/button.md)',

@@ -65,6 +65,13 @@ export {
   type SpecTypeAccessibility,
   type TouchTargetMode,
 } from './specAccessibility';
+import {
+  checkFieldDisplay,
+  fieldGroupShape,
+  visibleWhenShape,
+  type SpecFieldGroup,
+  type SpecVisibleWhen,
+} from './specFieldDisplay';
 
 /** "only allowed with formatVersion N" (the Ns with no catalog message of their own), with the code. */
 function onlyFormat(version: number): SpecMsg {
@@ -135,7 +142,9 @@ const PLAIN_SOURCES_VERSION = 22;
 // version 25 is 24 plus `decorative: true` on the type (stage #2826: the instance is a decorative
 // marking, a child like any marking and never a parent), additive in the version contract;
 // version 26 is 25 plus `except` in a slot's `accepts` clause (stage #2918: the clause's types
-// minus the listed ids), additive in the version contract.
+// minus the listed ids), additive in the version contract, and, still in version 26, `fieldGroups` on
+// the type and `group` and `visibleWhen` on a top-level field (stage #2918, FG2: field groups and
+// conditional display in Details, see `specFieldDisplay.ts`), outside the version contract.
 // The zod here is the source of truth; `docs/spec.schema.json` mirrors it for those who do not
 // use TypeScript. No browser APIs: reusable by the MCP server.
 //
@@ -399,6 +408,10 @@ interface SpecFieldBase {
    * validator does not warn that the drawing leaves it out, and warns if the drawing uses it.
    */
   codeOnly?: boolean;
+  /** A group of the type's `fieldGroups` (`formatVersion` 26, top-level fields only). */
+  group?: string;
+  /** The field shows in Details only while the condition holds (`formatVersion` 26, top-level fields only). */
+  visibleWhen?: SpecVisibleWhen;
   /** Notices of the field or column (`formatVersion` 10 only). */
   notices?: SpecNotice[];
 }
@@ -529,6 +542,8 @@ export interface SpecAnnotationType {
   /** Label of the role in the UI; absent = "Role" (`formatVersion` 11 only, with `childRoles`). */
   childRolesLabel?: string;
   fields: SpecField[];
+  /** Groups of fields shown as subheadings in Details (`formatVersion` 26 only). */
+  fieldGroups?: SpecFieldGroup[];
   /** The component's slots with what they accept (`formatVersion` 17 only). */
   slots?: SpecSlot[];
   /** Role, accessible label, touch target and parts (`formatVersion` 18 only). */
@@ -826,6 +841,10 @@ const fieldShape = z
     notices: noticesShape.optional(),
     // `formatVersion` 24, top-level fields only (a column is an error, the version a gate in `checkNoCodeOnly`).
     codeOnly: z.boolean().optional(),
+    // `formatVersion` 26, top-level fields only (a column is an error in `checkField`, the version a gate
+    // in `checkFieldDisplay`).
+    group: z.string().optional(),
+    visibleWhen: visibleWhenShape.optional(),
   })
   .strict();
 
@@ -987,7 +1006,12 @@ function checkField(
   });
 
   if (column && field.codeOnly !== undefined) {
-    add('codeOnly', specMsg('spec.codeOnlyColumn'));
+    add('codeOnly', specMsg('spec.topLevelOnly'));
+  }
+  if (column) {
+    for (const sub of ['group', 'visibleWhen'] as const) {
+      if (field[sub] !== undefined) add(sub, specMsg('spec.topLevelOnly'));
+    }
   }
   if (type === 'table' && column) return;
   if (column && field.tags !== undefined) {
@@ -1626,6 +1650,8 @@ const annotationTypeShape = z
     childRoles: z.array(childRoleShape).optional(),
     childRolesLabel: nonEmpty.optional(),
     fields: z.array(fieldShape),
+    // `formatVersion` 26 only (`checkFieldDisplay`).
+    fieldGroups: z.array(fieldGroupShape).optional(),
     slots: z.array(slotShape).optional(),
     // `formatVersion` 18 only (`checkAccessibilityKeys`).
     accessibility: typeAccessibilityShape.optional(),
@@ -3152,6 +3178,7 @@ export const specSchema = z
     checkAcceptsAnnotations(spec, typeLayer, ctx);
     checkSlotKeys(spec, typeLayer, ctx);
     checkAccessibilityKeys(spec, ctx);
+    checkFieldDisplay(spec, ctx);
     checkFileFormats(spec, ctx);
     checkContainerClasses(spec, ctx);
     checkContainerBackgrounds(spec, ctx);
