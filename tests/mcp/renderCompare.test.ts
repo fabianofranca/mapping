@@ -367,20 +367,23 @@ describe('a container the batch recreates', () => {
     expect(error.side).toBe('before');
   });
 
-  it('a side-by-side above the pixel limit is `image-too-large` with the union box', async () => {
-    const error = errorOf(
-      await call('render_container', {
-        project: 'telas',
-        ref: '$v2',
-        operations: recreate(),
-        compare: { ref: container },
-        zoom: 8,
-      }),
-    );
+  it('a side-by-side above the pixel limit is `image-too-large` with the union box and a zoom that fits', async () => {
+    const args = {
+      project: 'telas',
+      ref: '$v2',
+      operations: recreate(),
+      compare: { ref: container },
+    };
+    const error = errorOf(await call('render_container', { ...args, zoom: 8 }));
     expect(error.code).toBe('image-too-large');
     const region = error.region as PixelRect;
     expect(region.width).toBeGreaterThan(0);
     expect(region.y + region.height).toBeGreaterThanOrEqual(900);
+    // The advice works: at the zoom the details give, the same compare is drawn.
+    const fits = error.fittingZoom as number;
+    expect(fits).toBeLessThan(8);
+    const again = ok(await call('render_container', { ...args, zoom: fits }));
+    expect(again.json.compare.pixels).toBeGreaterThan(0);
   });
 });
 
@@ -409,6 +412,79 @@ describe('a deleted container (the same-name rule of the not-found)', () => {
     expect(error.deletedBy).toBe('batch');
     expect(error.replacedBy).toEqual(['$home']);
   });
+});
+
+describe('the response and its limits', () => {
+  it('carries the after side fields at the top level too', async () => {
+    const reply = ok(
+      await call('render_container', {
+        project: 'telas',
+        ref: '$v2',
+        operations: [
+          {
+            op: 'add_container',
+            as: '$v2',
+            width: 100,
+            height: 100,
+            background: '#FFFFFF',
+          },
+        ],
+        compare: { ref: container },
+      }),
+    );
+    expect(reply.json.alias).toBe('$v2');
+    expect(reply.json.provisional).toBe(true);
+    expect(reply.json.preview).toMatchObject({ operations: 1 });
+    expect(reply.json.container.ref).toBe(reply.json.ref);
+  });
+
+  it('says a region clipped on both sides once', async () => {
+    const reply = ok(
+      await compareCall({
+        operations: [setLabel('World')],
+        compare: {},
+        region: { x: 0, y: 0, width: 9999, height: 9999 },
+      }),
+    );
+    const warning = reply.json.warning as string;
+    expect(warning.match(/clipped to the container/g)).toHaveLength(1);
+  });
+
+  it('a webp crop wider than the codec allows is `image-too-large`, not `encode-failed`', async () => {
+    const wide = (label: string) => [
+      {
+        op: 'add_container',
+        as: '$wide',
+        width: 9000,
+        height: 600,
+        background: '#FFFFFF',
+      },
+      ...[0, 8800].map((x) => ({
+        op: 'create_marking',
+        container: '$wide',
+        rect: { x, y: 100, width: 128, height: 48 },
+        annotation: { type: 'lib/tag', values: { label } },
+      })),
+    ];
+    const args = {
+      project: 'telas',
+      ref: '$wide',
+      operations: wide('B'),
+      compare: { operations: wide('A') },
+    };
+    const error = errorOf(await call('render_container', { ...args, format: 'webp' }));
+    expect(error.code).toBe('image-too-large');
+    const png = ok(await call('render_container', args));
+    expect(png.json.compare.pixels).toBeGreaterThan(0);
+    const fits = ok(
+      await call('render_container', {
+        ...args,
+        format: 'webp',
+        zoom: error.fittingZoom as number,
+      }),
+    );
+    expect(fits.json.format).toBe('webp');
+  }, 60_000);
 });
 
 describe('region', () => {

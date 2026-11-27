@@ -16,7 +16,13 @@ import type { ImageResult, ImageSource } from './imageTools';
 import type { Refs } from './items';
 import type { Operation } from './operations';
 import type { Roots } from './paths';
-import { drawContainer, type DrawnContainer, type RenderOptions } from './renderImage';
+import {
+  drawContainer,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  type DrawnContainer,
+  type RenderOptions,
+} from './renderImage';
 import {
   hasPreview,
   openContainerSide,
@@ -103,11 +109,50 @@ function requireSameProject(before: Side, after: Side): void {
   );
 }
 
-/** The warnings of one side, each named by the side. */
-function warningsOf(side: SideName, opened: Side, drawn: DrawnContainer): string[] {
-  return [opened.warning, drawn.json.warning, drawn.warning]
-    .filter((w): w is string => typeof w === 'string' && w !== '')
-    .map((w) => `${side} side: ${w}`);
+/** The warnings of both sides: the same text on both is said once, the others are named by their side. */
+function warningsOf(
+  opened: Record<SideName, Side>,
+  drawn: Record<SideName, DrawnContainer>,
+): string[] {
+  const of = (side: SideName) =>
+    [opened[side].warning, drawn[side].json.warning, drawn[side].warning].filter(
+      (w): w is string => typeof w === 'string' && w !== '',
+    );
+  const [before, after] = [of('before'), of('after')];
+  const both = before.filter((w) => after.includes(w));
+  return [
+    ...both,
+    ...before.filter((w) => !both.includes(w)).map((w) => `before side: ${w}`),
+    ...after.filter((w) => !both.includes(w)).map((w) => `after side: ${w}`),
+  ];
+}
+
+/** WebP cannot encode a side above 16,383 pixels. */
+const WEBP_MAX_SIDE = 16383;
+
+/** The side-by-side crop size of a union box at a zoom: two halves and the gap. */
+const cropSize = (union: PixelRect, zoom: number) => ({
+  width: Math.ceil(union.width * zoom) * 2 + DIFF_GAP,
+  height: Math.ceil(union.height * zoom),
+});
+
+/** The largest zoom (two decimals) at which the crop of `union` fits the limits of `format`, or the minimum zoom. */
+function fittingZoom(union: PixelRect, format: ImageFormat): number {
+  const side = format === 'webp' ? WEBP_MAX_SIDE : Infinity;
+  for (
+    let zoom = MAX_ZOOM;
+    zoom > MIN_ZOOM;
+    zoom = Math.round((zoom - 0.01) * 100) / 100
+  ) {
+    const size = cropSize(union, zoom);
+    if (
+      size.width * size.height <= MAX_PIXELS &&
+      Math.max(size.width, size.height) <= side
+    ) {
+      return zoom;
+    }
+  }
+  return MIN_ZOOM;
 }
 
 /** The side-by-side of the changes, or the after drawing when nothing differs. */
@@ -121,13 +166,14 @@ function composedImage(
 ): { raster: Raster; region: PixelRect } {
   const union = unionRegion(diff.boxes, diff.area, geometry);
   if (union === null) return { raster: after, region: fallback };
-  const width = Math.ceil(union.width * geometry.zoom) * 2 + DIFF_GAP;
-  const height = Math.ceil(union.height * geometry.zoom);
-  if (width * height > MAX_PIXELS) {
+  const size = cropSize(union, geometry.zoom);
+  const tooWide = format === 'webp' && Math.max(size.width, size.height) > WEBP_MAX_SIDE;
+  if (size.width * size.height > MAX_PIXELS || tooWide) {
+    const fits = fittingZoom(union, format);
     throw new ToolError(
       'image-too-large',
-      `the side-by-side of the changes has too many pixels (${width}×${height}; maximum ${MAX_PIXELS}): reduce the zoom, or call again with \`region\` over part of the changes (the details carry the box that covers all of them)`,
-      { width, height, zoom: geometry.zoom, region: rectJson(union) },
+      `the side-by-side of the changes is too large (${size.width}×${size.height}; maximum ${MAX_PIXELS} pixels${format === 'webp' ? `, ${WEBP_MAX_SIDE} per side in webp` : ''}): call again with \`zoom\` ${fits} or lower, or with a \`region\` that is a part of the one in the details (the box that covers all the changes)`,
+      { ...size, zoom: geometry.zoom, fittingZoom: fits, region: rectJson(union) },
     );
   }
   return sideBySide(before, after, diff, geometry, format === 'jpeg')!;
@@ -220,13 +266,15 @@ export async function renderCompare(
     format,
   );
   const bytes = await encodeImage(image.raster, format);
-  const warnings = [
-    ...warningsOf('before', opened.before, drawn.before),
-    ...warningsOf('after', opened.after, drawn.after),
-  ];
+  const warnings = warningsOf(opened, drawn);
   return {
     json: {
       ref: opened.after.refs.ref('i', opened.after.container.id),
+      ...opened.after.fields,
+      container: {
+        ref: opened.after.refs.ref('i', opened.after.container.id),
+        file: opened.after.container.file,
+      },
       format,
       width: image.raster.width,
       height: image.raster.height,
