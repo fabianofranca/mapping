@@ -144,7 +144,8 @@ export const ptBR: Dictionary = {
   'marking.error.rect-outside-parent': 'A marcação precisa ficar dentro da marcação pai.',
   'marking.error.invalid-parent': 'Essa marcação não pode ser a pai.',
   'marking.error.invalid-space': 'Só uma marcação do canvas pode ser flutuante.',
-  'marking.error.decorative-floating': 'Uma marcação flutuante não pode ser decorativa.',
+  'marking.error.decorative-floating':
+    'Uma marcação não pode ser flutuante e decorativa ao mesmo tempo.',
   'marking.error.not-fittable':
     'Só é possível ajustar ao conteúdo um componente cujo tamanho depende do conteúdo (hug) e que não tem marcações dentro.',
   'marking.error.not-arrangeable':

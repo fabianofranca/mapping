@@ -385,4 +385,24 @@ describe('decorative: operations', () => {
     expect(marking(moved, 'F').rect.x).toBe(100);
     expect(removeMarking(p, 'C').markings.some((m) => m.id === 'F')).toBe(false);
   });
+
+  it('a decorative marking born first keeps an equal-rectangle parent and the result stays settled', () => {
+    let p = addContainer(emptyProject(), {
+      id: 'I1',
+      file: 'images/a.png',
+      width: 1000,
+      height: 1000,
+    });
+    p = createMarking(p, { id: 'K', containerId: 'I1', rect: r(100, 100, 100, 100) });
+    p = createMarking(p, { id: 'X', containerId: 'I1', rect: r(50, 50, 300, 300) });
+    p = createMarking(p, {
+      id: 'D',
+      containerId: 'I1',
+      rect: r(50, 50, 300, 300),
+      decorative: true,
+    });
+    expect(p.markings[0]?.id).toBe('D');
+    expect(parentOf(p, 'D')).toBe('X');
+    expect(settle(p)).toBe(p);
+  });
 });

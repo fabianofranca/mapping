@@ -145,7 +145,8 @@ export const enUS = {
   'marking.error.rect-outside-parent': 'The marking must stay inside its parent marking.',
   'marking.error.invalid-parent': 'That marking cannot be the parent.',
   'marking.error.invalid-space': 'Only a canvas marking can be floating.',
-  'marking.error.decorative-floating': 'A floating marking cannot be decorative.',
+  'marking.error.decorative-floating':
+    'A marking cannot be both floating and decorative.',
   'marking.error.not-fittable':
     'Only a component whose size depends on its content (hug) and that has no markings inside can be fitted to its content.',
   'marking.error.not-arrangeable':
