@@ -894,7 +894,13 @@ function checkInner(
     add(out, path, 'only valid on frame, rect, ellipse, path and icon');
 }
 
-const INNER_SHADOW_TYPES: readonly string[] = ['frame', 'rect', 'ellipse', 'path', 'icon'];
+const INNER_SHADOW_TYPES: readonly string[] = [
+  'frame',
+  'rect',
+  'ellipse',
+  'path',
+  'icon',
+];
 
 /** `shadow`: one shadow or, in v4, a list of 1 to 4 (the version is checked separately). */
 function checkShadow(value: unknown, path: string, out: Ctx, nodeType?: string): void {
