@@ -62,17 +62,13 @@ describe('A1: $token in shadow.x, shadow.y and shadow.blur', () => {
     }
   });
 
-  it('only $token: another expression in x is still an error', () => {
-    expect(
+  it('another expression in x is valid too (DG1), and a bad literal is still an error', () => {
+    const shadow = (x: unknown) =>
       validateComponent(
-        withChild({
-          type: 'rect',
-          width: 10,
-          height: 10,
-          shadow: { color: '#000', x: { $field: 'dx' } },
-        }),
-      ),
-    ).toEqual(['template.children[0].shadow.x: expected a number']);
+        withChild({ type: 'rect', width: 10, height: 10, shadow: { color: '#000', x } }),
+      );
+    expect(shadow({ $field: 'dx' })).toEqual([]);
+    expect(shadow('wide')).toEqual(['template.children[0].shadow.x: expected a number']);
   });
 
   it('the literal keeps applying in any version', () => {
@@ -112,7 +108,7 @@ describe('A2: $token in each item of the cornerRadius list', () => {
     ]);
   });
 
-  it('the list still has 4 items and each item is a number ≥ 0 or $token', () => {
+  it('the list still has 4 items and each item is a number ≥ 0, a $token or an expression', () => {
     const bad = (cornerRadius: unknown) =>
       validateComponent(withChild({ type: 'rect', width: 1, height: 1, cornerRadius }));
     expect(bad([t('a'), 1, 2])).toEqual([
@@ -121,7 +117,10 @@ describe('A2: $token in each item of the cornerRadius list', () => {
     expect(bad([t('a'), -1, 0, 0])).toEqual([
       'template.children[0].cornerRadius: expected a number greater than or equal to 0 or a list of 4 numbers',
     ]);
-    expect(bad([t('a'), { $field: 'x' }, 0, 0]).length).toBeGreaterThan(0);
+    expect(bad([t('a'), { $field: 'x' }, 0, 0])).toEqual([]);
+    expect(bad([t('a'), 'wide', 0, 0])).toEqual([
+      'template.children[0].cornerRadius: expected a number greater than or equal to 0 or a list of 4 numbers',
+    ]);
   });
 });
 

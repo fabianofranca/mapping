@@ -1,0 +1,42 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "signal",
+  "name": "Signal",
+  "description": "A round indicator with a ring icon on top. The outer shadow of the base ellipse takes its y and blur from the size field (s, m or l), each one a $switch.",
+  "size": { "width": 96, "height": 96 },
+  "preview": { "size": "m" },
+  "template": {
+    "type": "frame",
+    "name": "signal",
+    "layout": { "type": "none" },
+    "children": [
+      {
+        "type": "ellipse",
+        "name": "base",
+        "width": 40,
+        "height": 40,
+        "fill": "#2563EB",
+        "anchors": { "centerX": true, "centerY": true },
+        "shadow": {
+          "color": "#00000066",
+          "x": 0,
+          "y": { "$switch": "size", "cases": { "s": 2, "m": 4, "l": 8 }, "default": 4 },
+          "blur": {
+            "$switch": "size",
+            "cases": { "s": 4, "m": 8, "l": 16 },
+            "default": 8
+          }
+        }
+      },
+      {
+        "type": "icon",
+        "name": "signal",
+        "width": 24,
+        "height": 24,
+        "color": "#FFFFFF",
+        "anchors": { "centerX": true, "centerY": true }
+      }
+    ]
+  }
+}
