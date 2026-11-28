@@ -168,6 +168,43 @@ describe('derived.issues: slot-not-accepted and slot-full', () => {
   });
 });
 
+/** The bar with the pin `P1` storing a slot (`slot`) the bar may or may not have (stage #3087, `slot-missing`). */
+function barStoring(slot: string): Project {
+  const p = crowdedBar();
+  return { ...p, markings: p.markings.map((m) => (m.id === 'P1' ? { ...m, slot } : m)) };
+}
+
+describe('derived.issues: slot-missing (stored slot the component lacks)', () => {
+  it('lists it on the annotation of the child, with the stored slot and the owner, and counts it as incomplete', () => {
+    const { derived } = setup(barStoring('gone'));
+    expect(derived.issues.value.get('A_P1')).toEqual([
+      { code: 'slot-missing', slot: { id: 'gone', name: 'gone' }, owner: 'Bar' },
+    ]);
+    expect(derived.incompleteMarkings.value.has('P1')).toBe(true);
+    expect(derived.incompleteList.value.length).toBeGreaterThan(0);
+  });
+
+  it('the pending item has a text that names the slot and the owner', () => {
+    const { derived, store } = setup(barStoring('gone'));
+    const p = store.project.value as Project;
+    const issue = derived.issues.value.get('A_P1')![0]!;
+    const text = issueMessage(
+      p,
+      p.annotations.find((a) => a.id === 'A_P1')!,
+      issue,
+    );
+    expect(text).toContain('gone');
+    expect(text).toContain('Bar');
+  });
+
+  it('a stored slot the bar has gives no slot-missing, and goes away when the slot is fixed', () => {
+    const { derived, store } = setup(barStoring('gone'));
+    expect(derived.issues.value.has('A_P1')).toBe(true);
+    store.load(barStoring('actions'));
+    expect(derived.issues.value.has('A_P1')).toBe(false);
+  });
+});
+
 describe('derived.inactiveFields: the default-content fields of a slot that has content', () => {
   it('maps each field of a filled slot, by annotation, to the slot name', () => {
     const { derived } = setup();

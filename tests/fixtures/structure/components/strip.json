@@ -1,0 +1,23 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "strip",
+  "name": "Strip",
+  "description": "A 200 × 60 row with one slot that clips: what lies past its right edge is drawn cut.",
+  "size": { "width": 200, "height": 60 },
+  "template": {
+    "type": "frame",
+    "layout": { "type": "none" },
+    "fill": "#FEF7FF",
+    "children": [
+      {
+        "type": "slot",
+        "id": "items",
+        "name": "items",
+        "clip": true,
+        "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+        "layout": { "type": "row", "gap": 4, "padding": 4, "align": "center" }
+      }
+    ]
+  }
+}

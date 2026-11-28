@@ -175,12 +175,18 @@ export interface ComponentDrawing {
   readonly anchor?: DrawingAnchor;
 }
 
-/** A child that a slot does not accept (`slot-not-accepted`) or that goes past its `max` (`slot-full`). */
+/**
+ * A child that a slot does not accept (`slot-not-accepted`), that goes past its `max` (`slot-full`), that is in a slot
+ * hidden by `visible` (`slot-hidden`) or whose stored slot the component does not have (`slot-missing`).
+ */
 export interface DrawingSlotIssue {
   /** The child's annotation that has the component (the one the cache draws). */
   readonly annotationId: string;
-  readonly code: 'slot-not-accepted' | 'slot-full' | 'slot-hidden';
-  /** The slot the geometry put the child in (`name`: the type's, else the label, else the `id`). */
+  readonly code: 'slot-not-accepted' | 'slot-full' | 'slot-hidden' | 'slot-missing';
+  /**
+   * The slot the child is in (`name`: the type's, else the label, else the `id`); with `slot-missing`, the stored one
+   * the component lacks (`name` is the `id`: nothing names it).
+   */
   readonly slot: { readonly id: string; readonly name: string };
   /** The name of this marking's type (the owner of the slot). */
   readonly owner: string;
@@ -323,6 +329,7 @@ function sameKids(a: readonly DrawKid[], b: readonly DrawKid[]): boolean {
       return (
         kid.id === other.id &&
         kid.typeId === other.typeId &&
+        kid.slot === other.slot &&
         kid.annotationId === other.annotationId &&
         sameRect(kid.rect, other.rect)
       );
@@ -889,6 +896,25 @@ function slotIssuesOf(
   return out.length === 0 ? NO_ISSUES : out;
 }
 
+/** The `slot-missing` of each child that stores a slot in a component that has no slot. */
+function missingSlotIssues(
+  mc: MarkingComponent,
+  kids: readonly DrawKid[],
+): readonly DrawingSlotIssue[] {
+  return kids.flatMap((kid): DrawingSlotIssue[] =>
+    kid.slot === undefined || kid.annotationId === undefined
+      ? []
+      : [
+          {
+            annotationId: kid.annotationId,
+            code: 'slot-missing',
+            slot: { id: kid.slot, name: kid.slot },
+            owner: mc.type.name,
+          },
+        ],
+  );
+}
+
 interface DrawInput {
   readonly mc: MarkingComponent;
   readonly markingId: string;
@@ -972,7 +998,11 @@ function slotFacts(
   root: FrameNode,
   space: UnitSpace,
 ): SlotFacts {
-  if (plan === undefined) return NO_FACTS;
+  if (plan === undefined)
+    // The kids of a component with no slot are the ones that store one: each has nowhere to be.
+    return input.kids.length === 0
+      ? NO_FACTS
+      : { ...NO_FACTS, slotIssues: missingSlotIssues(input.mc, input.kids) };
   const { mc, kids, slotDefs } = input;
   return {
     slots: drawnSlots(mc.component, root, space, plan),
@@ -1087,7 +1117,10 @@ function draw(input: DrawInput): Drawn {
   };
 }
 
-const NO_KIDS: readonly DrawKid[] = [];
+const NO_CHILDREN: readonly Marking[] = [];
+
+/** Does the child store the slot it is in (`Marking.slot`)? */
+const stores = (child: Marking): boolean => child.slot !== undefined;
 
 /** The previous clips and shapes of a slot when they equal the new ones (stable identity). */
 function stableSlotClips(
@@ -1194,15 +1227,17 @@ export function createDrawingCache(): DrawingCache {
         mc.type,
         { ...DEFAULT_LABEL_TEXTS, untitled },
       );
-      const kids =
-        screen || componentSlots(mc.component).length === 0
-          ? NO_KIDS
-          : (children.get(marking.id) ?? []).map((c) => ({
-              id: c.id,
-              rect: c.rect,
-              typeId: componentOf(c.id)?.type.id,
-              annotationId: componentOf(c.id)?.annotation.id,
-            }));
+      // A component with no slot has no assignment, but a child that stores a slot gets `slot-missing`.
+      const own = screen ? NO_CHILDREN : (children.get(marking.id) ?? NO_CHILDREN);
+      const kids = (
+        componentSlots(mc.component).length === 0 ? own.filter(stores) : own
+      ).map((c) => ({
+        id: c.id,
+        rect: c.rect,
+        typeId: componentOf(c.id)?.type.id,
+        slot: c.slot,
+        annotationId: componentOf(c.id)?.annotation.id,
+      }));
       // The slots of the type decide which child goes where, so they are an input of the drawing; only
       // a marking with children has an assignment.
       const slotDefs =

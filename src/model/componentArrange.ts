@@ -128,8 +128,8 @@ interface Container {
 }
 
 /**
- * The children by slot, by the geometry (`assignSlots`, decision 4): the component drawn with the slots
- * empty gives the boxes. A component with a single slot takes every child with no probe.
+ * The children by slot (`assignSlots`, decision 4): the stored slot of each, else the geometry; the component drawn
+ * with the slots empty gives the boxes. A component with a single slot takes every child with no probe.
  */
 function kidsBySlot(
   p: Project,
@@ -169,6 +169,7 @@ function kidsBySlot(
       id: kid.id,
       rect: kid.rect,
       typeId: markingComponent(p, catalog, kid.id)?.type.id,
+      slot: kid.slot,
     })),
   );
   const byId = new Map(kids.map((kid) => [kid.id, kid]));
@@ -784,28 +785,18 @@ export function arrangeMarking(
     );
   }
 
-  // Invariants: whole numbers and inside the parent (or the container). The root shrinks, the others
-  // are pushed inside and only shrink if they are larger than the parent. With no parent, the limit
-  // is the container (container marking) or none (canvas marking).
+  // Invariants: whole numbers and inside the image. The root shrinks, the others are pushed inside and only
+  // shrink if they are larger than the image. The parent's rectangle does not limit a child (the stored
+  // structure, decision 11 of #3087): a child the layout puts past its slot's edge stays there, drawn cut by
+  // the slot's `clip`. A canvas marking has no image: nothing limits it.
   for (const id of topDownIds) {
     const marking = index.markings.get(id) as Marking;
     const rect = rects.get(id) as Rect;
-    const isRoot = id === markingId;
-    let outer: Rect;
-    let where: string;
-    if (marking.parentId !== null) {
-      outer = isRoot
-        ? (index.markings.get(marking.parentId) as Marking).rect
-        : (rects.get(marking.parentId) as Rect);
-      where = labelOf(marking.parentId);
-    } else if (marking.containerId === null) {
-      continue; // Canvas marking with no parent: nothing limits it.
-    } else {
-      const container = index.containers.get(marking.containerId);
-      outer = imagePixelRect(container ?? { width: 0, height: 0 });
-      where = container?.name ?? marking.containerId;
-    }
-    const fixed = clampRect(rect, outer, isRoot ? 'shrink' : 'push');
+    if (marking.containerId === null) continue;
+    const container = index.containers.get(marking.containerId);
+    const outer = imagePixelRect(container ?? { width: 0, height: 0 });
+    const where = container?.name ?? marking.containerId;
+    const fixed = clampRect(rect, outer, id === markingId ? 'shrink' : 'push');
     if (sameRect(rect, fixed)) continue;
     rects.set(id, fixed);
     translate(id, fixed.x - rect.x, fixed.y - rect.y);

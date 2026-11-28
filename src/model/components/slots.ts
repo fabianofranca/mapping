@@ -152,16 +152,23 @@ export interface SlotInput {
   readonly grows?: boolean | undefined;
 }
 
-/** A child marking of the instance: its rectangle and the type of its component annotation (none: no type). */
+/**
+ * A child marking of the instance: its rectangle, the type of its component annotation (none: no type) and the slot
+ * it is stored in (`Marking.slot`, stage #3087; absent: the geometry decides).
+ */
 export interface SlotChild {
   readonly id: string;
   readonly rect: SlotRect;
   readonly typeId?: string | undefined;
+  readonly slot?: string | undefined;
 }
 
-/** The child that no slot accepts, the one beyond the slot's `max` and the one in a slot hidden by `visible`. */
+/**
+ * The child that no slot accepts, the one beyond the slot's `max`, the one in a slot hidden by `visible` and the one
+ * whose stored slot the component does not have (`slot-missing`: `slotId` is the stored one; the child went by geometry).
+ */
 export interface SlotIssue {
-  readonly code: 'slot-not-accepted' | 'slot-full' | 'slot-hidden';
+  readonly code: 'slot-not-accepted' | 'slot-full' | 'slot-hidden' | 'slot-missing';
   readonly childId: string;
   readonly slotId: string;
   /** `slot-full` only: the slot's `max`. */
@@ -287,9 +294,11 @@ function candidates(
 }
 
 /**
- * In which slot each child is (decision 4): by geometry, with the type as a filter. For each child,
- * in the first non-empty order of candidates (`candidates`), the slot of greatest intersection with
- * its rectangle, or the nearest one when none touches it, or the first of the template on a tie.
+ * In which slot each child is (decision 4): the one it is stored in (`SlotChild.slot`), else by geometry, with the
+ * type as a filter. For each child with no stored slot, in the first non-empty order of candidates (`candidates`),
+ * the slot of greatest intersection with its rectangle, or the nearest one when none touches it, or the first of
+ * the template on a tie. A stored slot the component lacks is ignored (the child goes by geometry) and reported as
+ * `slot-missing`; a stored child never grows a slot that hugs its children (its rectangle does not define it).
  * `max` does not change the assignment: the children beyond it, in the order given (the siblings'),
  * get `slot-full`. A slot hidden by `visible` (`hidden`) is still a candidate with the box it would have
  * if visible, and its children get `slot-hidden`. With a single slot the result is
@@ -310,6 +319,12 @@ export function assignSlots(
     .map((child, index) => ({ child, index, gap: gapToSlots(child.rect, candidatesOf) }))
     .sort((a, b) => a.gap - b.gap || a.index - b.index);
   for (const { child } of order) {
+    const stored = storedSlot(child, candidatesOf);
+    if (stored !== undefined) {
+      slotOf.set(child.id, stored.id);
+      if (!takes(stored, child.typeId)) notAccepted.add(child.id);
+      continue;
+    }
     const options = candidates(current, child.typeId);
     const chosen = closest(child.rect, options.slots);
     if (chosen === undefined) {
@@ -340,6 +355,18 @@ export function assignSlots(
   };
 }
 
+/** The slot the child is stored in, when the component has it. */
+function storedSlot(
+  child: SlotChild,
+  slots: readonly SlotInput[],
+): SlotInput | undefined {
+  return child.slot === undefined ? undefined : slots.find((s) => s.id === child.slot);
+}
+
+/** Does the slot take the type? The one without `accepts` takes everything; one with it takes only what it lists. */
+const takes = (slot: SlotInput, typeId: string | undefined): boolean =>
+  slot.accepts === undefined || acceptsExplicitly(slot, typeId);
+
 /** The smallest gap between a rectangle and any slot (the order in which `assignSlots` takes the children). */
 function gapToSlots(rect: SlotRect, slots: readonly SlotInput[]): number {
   return slots.reduce((least, slot) => Math.min(least, gap(slot.box, rect)), Infinity);
@@ -356,8 +383,11 @@ function slotIssues(
   const hidden = new Set(
     slots.filter((slot) => slot.hidden === true).map((slot) => slot.id),
   );
+  const known = new Set(slots.map((slot) => slot.id));
   const out: SlotIssue[] = [];
   for (const child of children) {
+    if (child.slot !== undefined && !known.has(child.slot))
+      out.push({ code: 'slot-missing', childId: child.id, slotId: child.slot });
     const slotId = slotOf.get(child.id);
     if (slotId === undefined) continue;
     if (notAccepted.has(child.id))

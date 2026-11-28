@@ -1,0 +1,38 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 17,
+  "id": "structure",
+  "name": "Stored structure",
+  "version": 1,
+  "layers": [
+    {
+      "id": "structure",
+      "name": "Structure",
+      "color": "#6750A4",
+      "annotationTypes": [
+        {
+          "id": "panel",
+          "name": "Panel",
+          "component": "components/panel.json",
+          "fields": [],
+          "slots": [
+            { "id": "left", "name": "Left" },
+            { "id": "right", "name": "Right" }
+          ]
+        },
+        {
+          "id": "strip",
+          "name": "Strip",
+          "component": "components/strip.json",
+          "fields": []
+        },
+        {
+          "id": "tile",
+          "name": "Tile",
+          "component": "components/tile.json",
+          "fields": []
+        }
+      ]
+    }
+  ]
+}

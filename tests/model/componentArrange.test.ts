@@ -6,7 +6,6 @@ import {
   applySpecialization,
   approximateMeasurer,
   arrangeMarking,
-  modelMessage,
   canArrange,
   canFit,
   createMarking,
@@ -260,16 +259,11 @@ describe('arrangeMarking: hug', () => {
     expect(warnings.map((w) => w.text)).toContain(
       'Row: content is larger than the container',
     );
-    // The third would go past 400: it is pushed inside the container, with a warning.
-    expect(rectOf(project, 'T3')).toEqual(box(300, 100, 100, 40));
-    expect(warnings.map((w) => w.text)).toContain('T3: does not fit in Row');
-    expect(warnings).toContainEqual(
-      modelMessage(
-        'arrange.outside',
-        { label: 'T3', where: 'Row' },
-        'T3: does not fit in Row',
-      ),
-    );
+    // The third goes past 400, the row's right edge: it stays there, still the row's child (only the image
+    // limits a child, decision 11 of #3087), and the slot's clip cuts what passes.
+    expect(rectOf(project, 'T3')).toEqual(box(316, 100, 100, 40));
+    expect(marking(project, 'T3').parentId).toBe('C');
+    expect(warnings.map((w) => w.text)).not.toContain('T3: does not fit in Row');
     expectValid(project);
   });
 
@@ -284,11 +278,11 @@ describe('arrangeMarking: hug', () => {
     expect(rectOf(project, 'T1')).toEqual(box(900, 100, 100, 40));
     expect(rectOf(project, 'T2')).toEqual(box(900, 100, 100, 40));
     expect(warnings.map((w) => w.text)).toContain('Row: does not fit in I1');
-    expect(warnings.map((w) => w.text)).toContain('T2: does not fit in Row');
+    expect(warnings.map((w) => w.text)).toContain('T2: does not fit in I1');
     expectValid(project);
   });
 
-  it('a container that would grow past its parent is clamped to the parent', () => {
+  it('a container that would grow past its parent is not clamped to the parent (only the image limits it)', () => {
     let p = add(componentProject(), 'Outer', 'box', box(100, 100, 150, 100), null, {
       name: 'Parent',
     });
@@ -298,8 +292,9 @@ describe('arrangeMarking: hug', () => {
     p = add(p, 'T2', 'text', box(100, 110, 100, 40), 'C');
     expect(marking(p, 'T2').parentId).toBe('C');
     const { project, warnings } = arrange(p, 'C');
-    expect(rectOf(project, 'C')).toEqual(box(100, 100, 150, 40));
-    expect(warnings.map((w) => w.text)).toContain('Row: does not fit in Parent');
+    expect(rectOf(project, 'C')).toEqual(box(100, 100, 208, 40));
+    expect(marking(project, 'C').parentId).toBe('Outer');
+    expect(warnings.map((w) => w.text)).not.toContain('Row: does not fit in Parent');
     expectValid(project);
   });
 });

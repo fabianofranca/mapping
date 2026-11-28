@@ -364,6 +364,7 @@ function sceneOfSlots(
       id: kid.id,
       rect: kid.rect,
       typeId: markingComponent(p, catalog, kid.id)?.type.id,
+      slot: kid.slot,
     })),
   );
   return {
@@ -1296,8 +1297,9 @@ function namedSlotsOf(p: Project, catalog: ComponentCatalog, parent: Marking): s
 }
 
 /**
- * Reads the slot the geometry gives a child of a materialized parent (today's assignment, `assignSlots`): only a
- * parent with several slots has one to read; `undefined` otherwise. The structure operations write it
+ * Reads the slot a child of a materialized parent is in (`assignSlots`: the stored one, else the one the geometry
+ * gives; a child with no stored slot reads today's assignment): only a parent with several slots has one to read;
+ * `undefined` otherwise. The structure operations write it
  * along with the parent when the catalog is at hand (stage #3087, decision 2).
  */
 export function slotReader(catalog: ComponentCatalog, measure: TextMeasurer): SlotReader {
