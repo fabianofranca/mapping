@@ -432,6 +432,14 @@ The stage `epic/format-plugins-app` raises the specialization format to **`forma
 
 The stage `epic/container-context` starts with `formatVersion` 21 of the specialization: `containerClasses` at the root (named sets of classes, computed from a container's size with `by` and `below`, or chosen per container), `classes` on a ready-made size of `containers` and `appliesIn` on a type. No tool, operation or argument is new; `get_specialization` returns the keys as they are and `validate_specialization` and `validate_library` accept and check them (the error paths are in `docs/SPEC-FORMAT.md`, "Container classes (`formatVersion` 21)"). The three keys are outside the version contract. **Update the MCP first:** an earlier version refuses a specialization of `formatVersion` 21.
 
+### Variants of a screen (schema v26, stage #2034)
+
+Proposal `formatVersion` 14. No tool is new.
+
+- **Operations.** `add_container` and `update_container` accept `variantOf`: a container reference, id or `$name` of the batch. It runs the model's `linkVariant` (two groups merge); in `update_container`, `variantOf: null` runs `unlinkVariant`. The same container or one already in the group is `invalid-arguments` with `variantError` (`variant-self`, `variant-already-linked`) next to the message; an unknown reference is `not-found`. The raw group id is never an argument.
+- **Reading.** `get_container` returns `variants` (`[{ ref, name, page: { id, name }, effectiveClasses }]`, empty without a link) and `missingTypes` (`[{ type, name, variants: [ref…] }]`: the annotation types on a marking of another variant and on none of this container, skipping the types whose `appliesIn` excludes its class). `get_project` adds `variants: [ref…]` only to the containers that have them. `missingTypes` is informative: it is not a pending item.
+- **Proposal.** A proposal that carries a `variantGroup` is written in `formatVersion` 14; an earlier app or MCP rejects it. **Update the MCP first.**
+
 ### Container classes in the project (stage #1901, 0.56.0)
 
 Schema v23 and proposal `formatVersion` 11: a container stores the classes of the specialization's **chosen** sets (`containerClasses` without `by`). No tool is new.
