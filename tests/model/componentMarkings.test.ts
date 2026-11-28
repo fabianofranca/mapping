@@ -464,21 +464,24 @@ describe('addComponentMarking', () => {
     expect(marking(p, 'M2').parentId).toBe('C');
   });
 
-  it('the stored parent is the one the geometry gives, never the requested one', () => {
+  it('the stored parent is the one requested; without one, the rect gives it once (stage #3087)', () => {
     let p = add(componentProject(), 'C', 'box', {
       rect: { x: 400, y: 300, width: 300, height: 200 },
     });
-    // No parent requested, but the image center falls inside C: C is the parent.
+    // No parent and no rect: free placement skips the materialized C, so it lands outside it, with no parent.
     p = add(p, 'M1', 'text');
-    expect(marking(p, 'M1').parentId).toBe('C');
-    // C requested as the placement target; the instance falls inside D (inside C): D is the parent.
+    expect(marking(p, 'M1').parentId).toBeNull();
     p = add(p, 'D', 'box', { rect: { x: 420, y: 320, width: 100, height: 100 } });
     expect(marking(p, 'D').parentId).toBe('C');
+    // C requested as the target; the instance falls inside D, but the requested C is the one stored.
     p = add(p, 'M2', 'text', {
       parentId: 'C',
       rect: { x: 430, y: 330, width: 60, height: 30 },
     });
-    expect(marking(p, 'M2').parentId).toBe('D');
+    expect(marking(p, 'M2').parentId).toBe('C');
+    // Without a parent, the rect gives the smallest marking around it: D.
+    p = add(p, 'M3', 'text', { rect: { x: 425, y: 390, width: 60, height: 24 } });
+    expect(marking(p, 'M3').parentId).toBe('D');
     expectValid(p);
   });
 
@@ -1288,11 +1291,13 @@ describe('decorative type (stage #2826, DM2)', () => {
   });
 
   it('decorative overrides the type: false makes an instance of the decorative type ordinary, true makes an ordinary one decorative', () => {
-    let p = addDeco(base, 'T1', 'text', {
+    let p = addDeco(base, 'F1', 'frame', { rect: AROUND, decorative: false });
+    expect(marking(p, 'F1').decorative).toBe(false);
+    // Not decorative, so it can be a stored parent (a decorative one never is).
+    p = addDeco(p, 'T1', 'text', {
+      parentId: 'F1',
       rect: { x: 150, y: 150, width: 100, height: 40 },
     });
-    p = addDeco(p, 'F1', 'frame', { rect: AROUND, decorative: false });
-    expect(marking(p, 'F1').decorative).toBe(false);
     expect(marking(p, 'T1').parentId).toBe('F1');
     p = addDeco(p, 'T2', 'text', {
       rect: { x: 600, y: 600, width: 100, height: 40 },

@@ -1,4 +1,4 @@
-# Format of `mapping.json` (schema v26)
+# Format of `mapping.json` (schema v27)
 
 The project is a folder (or a zip with the same content) with `mapping.json`, `images/` (the containers' image files) and,
 if any specializations are applied, `specs/` (and, if there are change proposals, `proposals/`). All the markings' coordinates are
@@ -129,8 +129,8 @@ in the project; `null` in the container without a file, v10: see below); `width`
 see below); `background` (`null`, a `#RRGGBB` color or, since v24, `{ "$token": "<name>" }`; v10: the background of the container without a file; see "Fields of v24");
 `drawingMode` (v18, optional: the drawing mode that the container pins, a map axis → entry since v24; see "Fields of v18" and "Fields of v24"); `direction` (v20, optional: the reading direction that the container pins, `ltr` or `rtl`; see "Fields of v20"); `density` (v19, optional: image pixels per component unit; see "Fields of v19"). `classes` (v23, optional: the container classes the container is in, a map `set id → class id` of the chosen sets; see "Fields of v23"). `variantGroup` (v26, optional: the group of containers that are variants of the same screen; see "Fields of v26").
 
-**`markings[]`**: `id`; `containerId` (v12; formerly `imageId`; `null` in the canvas marking, v13); `parentId` (parent marking or `null`,
-computed by the app since v13); `pageId` (v21: the page of a canvas marking; `null` inside a container); `name` (`string` or `null`);
+**`markings[]`**: `id`; `containerId` (v12; formerly `imageId`; `null` in the canvas marking, v13); `parentId` (parent marking or `null`;
+computed by the app since v13, stored for a materialized marking since v27); `slot` (v27, optional: the slot of the parent that holds the marking; see "Fields of v27"); `pageId` (v21: the page of a canvas marking; `null` inside a container); `name` (`string` or `null`);
 `rect` (`{ x, y, width, height }`, **whole pixels of the container's original image**, `x`/`y` ≥ 0; in the canvas marking,
 **whole canvas units**, `x`/`y` may be negative);
 `needsReview` (boolean, for the interface only); `locked` (boolean, v5: see below); `floating` (boolean, v13: see below); `decorative` (boolean, v25, optional: see "Fields of v25");
@@ -156,6 +156,7 @@ file on read.
 - Unique ids in each collection; unique `file` among the images that have a file; unique `file` of the specializations.
 - Decorative marking (v25): a marking is never both `decorative` and `floating` (`decorative-floating`), and no marking or container has a decorative one as parent (`parent-decorative`; for a container, `container-parent-not-canvas`).
 - Container (v12): `file` is `null` if, and only if, `background` is a color or, since v24, a token (`{ "$token": "brand-surface" }`) (`container-content`). A container with a file keeps `background: null` (`container-has-file`).
+- Slot (v27): a `slot` is only on a materialized marking whose parent is a materialized marking (`slot-without-parent` otherwise: on an observation marking, on a loose one, or on one whose parent is an observation marking).
 - Every marking has a null `containerId` (canvas marking, v13) or one of an existing container; `parentId`, if any, is an existing marking.
 - `rect`: integers, width and height **≥ 1 px** (on opening, any marking is valid from 1 px; below that it is `rect-too-small`; gestures and MCP require 8 px on a regular marking, see "Fields of v18"); in the container marking, **entirely inside** the image (`0 ≤ x`,
   `x + width ≤ image width`; same for `y`); in the canvas marking, no position limit.
@@ -209,6 +210,7 @@ dialog offers **Repair and open**:
 | Floating marking inside a container or with a parent (v13)                                                                                                                     | Goes to the canvas, with the `rect` converted, and is left without a parent.                |
 | Parent of a floating marking; container parent that is nonexistent, not on the canvas or that does not contain it (v13)                                                        | The `parentId` becomes `null`.                                                              |
 | Parent of a decorative marking, or a container whose parent is decorative (v25)                                                                                                | The `parentId` becomes `null`; the next geometry operation settles it.                      |
+| `slot` on an observation marking, on a loose one, or on one whose parent is an observation marking (v27)                                                                       | The `slot` is removed (the repair reports `slot-cleared`).                       |
 | Marking that is both decorative and floating (v25)                                                                                                                             | `decorative` is turned off (the repair reports `decorative-cleared`).                       |
 | Overlapping images                                                                                                                                                             | The one with the higher index goes to the right of the earlier ones' box.                   |
 | Perspective with a root item that is nonexistent, not a root or repeated; nonexistent hidden layer (v16)                                                                       | The item (the second, if repeated) or the layer leaves the perspective.                     |
@@ -725,9 +727,9 @@ decided by the tool, from the rectangles, and written to the JSON. Whoever reads
 - **`floating`.** The floating marking always has `containerId: null` and `parentId: null`, and no other marking
   or container has a floating one as parent. It can sit on top of a screen without becoming its child.
 - **`decorative`** (v25). A decorative marking is a **child** like any other, but is **never a parent**; see "Fields of v25".
-- **`parentId` is derived.** No person or agent chooses it: the app recomputes it at the end of every operation
+- **`parentId` is derived** for an **observation** marking (the ones that are not materialized, see "Fields of v27"). No person or agent chooses it: the app recomputes it at the end of every operation
   that touches geometry (draw, move, resize, move or resize the image, delete, apply a
-  proposal). Reading the file, migrating and opening do **not** recompute it.
+  proposal). Reading the file, migrating and opening do **not** recompute it. A **materialized** marking keeps the `parentId` that is stored (v27).
 - **Members are not written.** The members of a marking are the markings and containers whose `parentId` is its
   `id`; derive them by grouping by `parentId`. There is no list of children in the JSON.
 
@@ -736,8 +738,8 @@ decided by the tool, from the rectangles, and written to the JSON. Whoever reads
 1. **Inside = fully contained.** A rectangle is inside another when it is entirely within it (touching the
    edge counts). Partial overlap is no relation at all; there is no tolerance in the format (the app's interaction
    has one, see `docs/ARCHITECTURE.md`).
-2. **Marking's parent** = the **smallest** **non-decorative** marking in the **same space** (the same container, or the canvas) that
-   contains it (a decorative marking is never a candidate, v25). In ties, **the current relation holds** and the array order only decides the new tie:
+2. **Marking's parent** (an observation marking; a materialized one keeps its stored parent, v27) = the **smallest** **non-decorative** **observation** marking in the **same space** (the same container, or the canvas) that
+   contains it (a decorative marking is never a candidate, v25; a materialized marking is never a candidate, v27). In ties, **the current relation holds** and the array order only decides the new tie:
    - **Equal rectangles** (same space, same rectangle): if one is the parent of the other, it stays so, even if a
      reordering put it later in the array. Within each group of equal rectangles the order (from outside to
      inside) is total and cycle-free: it is the topological ordering of the current `parentId`s within the group (the parent before the
@@ -749,7 +751,7 @@ decided by the tool, from the rectangles, and written to the JSON. Whoever reads
      comes last wins (in array order, with the groups of equal rectangles in the order above).
    - Reordering siblings (the **Order** in Details, `move_marking`, the proposal's `position`) never changes parents, not even in the
      next settle.
-3. **Container's parent** = the **smallest** **canvas** marking (non-floating, non-decorative) that contains its rectangle on the
+3. **Container's parent** = the **smallest** **canvas** marking (non-floating, non-decorative, non-materialized) that contains its rectangle on the
    canvas (`placement` × size × scale; since that rectangle can be decimal, the comparison has a tiny rounding tolerance). A container inside a container does not exist. A tie follows rule 2: among candidates of the same area, the container's current `parentId` stays if it is one of them (from each group of equal rectangles only the inner one counts); otherwise the one that comes last wins.
 4. **Space change.** A container marking whose rectangle, on the canvas, no longer fits in the container becomes
    a canvas marking (and the reverse, when it fits entirely in a container): the `containerId` changes and the `rect` is
@@ -1293,6 +1295,22 @@ v26 links containers that are the same screen in different sizes (for instance c
 
 Only `schemaVersion` changes to 26; no data is altered. As in every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
 
+## Fields of v27 (stored structure)
+
+v27 stores the structure of a **materialized** marking: its parent and the slot of the parent that holds it. Until v26 the parent of every marking was derived from the geometry; a marking that draws a component (a card, a row, a screen bar) holds its children in slots, and a child sits in a slot because someone put it there, not because the rectangles overlap.
+
+- **Nature.** A marking is **materialized** when one of its own annotations is typed with an annotation type that declares a `component` (see [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md)); every other marking is an **observation** marking. Only the applied specialization decides; no file is read. Floating and decorative are flags on top of the nature. Removing the annotation turns a marking back into an observation marking.
+- **`markings[].slot`** (string, optional): the slot of the parent that holds the marking, written right after `parentId` and only when set. Absent means no slot (a component with a single slot never stores it). It is only valid on a materialized marking whose parent is a materialized marking (`slot-without-parent`).
+- **An observation marking's parent** is still derived: the smallest **observation** marking of its space that contains it, never a materialized one. A bare marking drawn inside a card has, as parent, the observation marking around the card (or none), not the card.
+- **A materialized marking's parent** is the stored `parentId` (an observation marking or a materialized one). The settle never recomputes it and never looks at the rectangle: a child may cross the edge of its parent or leave it (`rect-outside-parent` is not reported for it). The settle only drops an **invalid** stored parent to `null`, keeping the `rect` and removing the `slot`. A parent is invalid when it does not exist, is the marking itself, is in another container or page, is floating or decorative, or is part of a cycle (every marking in the cycle becomes loose).
+- **Space.** A materialized child lives in its parent's space and travels with it when the parent changes space (the set keeps its units, see "Fields of v13 (containment)", rule 4).
+- **A container's parent** is never a materialized canvas marking.
+- **Why the version changes:** an earlier app would silently drop the unknown `slot` key when writing; with the new version it opens the file read-only instead.
+
+### Migration v26 → v27
+
+Only `schemaVersion` changes to 27; no data is altered and nothing is settled. As in every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
+
 ## Migration
 
 v1 files are migrated on opening: every image gets `name: null` and every annotation gets
@@ -1303,7 +1321,7 @@ image and each marking. v5 files get `revision: 0`. v6 files get `platformRepos:
 v7 files get `source: null` on each image and each marking. v8 files lose the values of the
 `codeRef` fields, by the type declared in the specialization copy (see "Fields of v9"). v9 files
 get `background: null` on each image (see "Fields of v10"). v10 files lose the `urlTemplate` of
-each `platformRepos` entry, and an entry that only had it goes away (see "Fields of v11"). v11 files swap `images` for `containers` and `imageId` for `containerId` (see "Fields of v12"). v12 files lose `inherit` from each annotation and gain `floating: false` on each marking, `parentId: null` on each container and `arrows: []` at the root (see "Fields of v13"). v13 files gain `parentRole: null` on each annotation and `docRepos: {}` at the root (see "Fields of v14"). v14 files only get the number bumped (see "Fields of v15"). v15 files gain `project.id` (a new UUID), `perspectives: []` and `arrivals: []` (see "Fields of v16"). v16 files only get the number bumped (see "Fields of v17"). v17 files only get the number bumped (see "Fields of v18"). v18 files only get the number bumped (see "Fields of v19"). v19 files only get the number bumped (see "Fields of v20"). v20 files gain `pages` (one page) and the `pageId` of each container and canvas marking (see "Fields of v21"). v21 files only get the number bumped (see "Fields of v22"). v22 files only get the number bumped (see "Fields of v23"). v23 files turn the string `drawingMode` of the project and of each container into the map `{ "mode": <string> }` (see "Fields of v24"). v24 files only get the number bumped (see "Fields of v25"). v25 files only get the number bumped (see "Fields of v26"). On save, the
-file becomes v26 (and, in folder mode, the original goes first to `backups/`, as in any
+each `platformRepos` entry, and an entry that only had it goes away (see "Fields of v11"). v11 files swap `images` for `containers` and `imageId` for `containerId` (see "Fields of v12"). v12 files lose `inherit` from each annotation and gain `floating: false` on each marking, `parentId: null` on each container and `arrows: []` at the root (see "Fields of v13"). v13 files gain `parentRole: null` on each annotation and `docRepos: {}` at the root (see "Fields of v14"). v14 files only get the number bumped (see "Fields of v15"). v15 files gain `project.id` (a new UUID), `perspectives: []` and `arrivals: []` (see "Fields of v16"). v16 files only get the number bumped (see "Fields of v17"). v17 files only get the number bumped (see "Fields of v18"). v18 files only get the number bumped (see "Fields of v19"). v19 files only get the number bumped (see "Fields of v20"). v20 files gain `pages` (one page) and the `pageId` of each container and canvas marking (see "Fields of v21"). v21 files only get the number bumped (see "Fields of v22"). v22 files only get the number bumped (see "Fields of v23"). v23 files turn the string `drawingMode` of the project and of each container into the map `{ "mode": <string> }` (see "Fields of v24"). v24 files only get the number bumped (see "Fields of v25"). v25 files only get the number bumped (see "Fields of v26"). v26 files only get the number bumped (see "Fields of v27"). On save, the
+file becomes v27 (and, in folder mode, the original goes first to `backups/`, as in any
 migration).
 Files of a newer version open read-only.

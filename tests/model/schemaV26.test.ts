@@ -38,8 +38,8 @@ function grouped(group = 'g'): Raw {
 }
 
 describe('schema v26', () => {
-  it('the current version is 26 and the registry has the v25 → v26 migration', () => {
-    expect(SCHEMA_VERSION).toBe(26);
+  it('the version is at least 26 and the registry has the v25 → v26 migration', () => {
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(26);
     expect(migrations.get(25)).toBe(migrateFrom25To26);
   });
 
@@ -50,9 +50,12 @@ describe('schema v26', () => {
 
   it('a v25 file migrates with only the number changed', () => {
     const raw = { ...rawOf(sampleProject()), schemaVersion: 25 };
-    expect(migrate(raw, 25)).toEqual({ ok: true, data: { ...raw, schemaVersion: 26 } });
+    expect(migrate(raw, 25)).toEqual({
+      ok: true,
+      data: { ...raw, schemaVersion: SCHEMA_VERSION },
+    });
     const migrated = opened(raw);
-    expect(migrated.schemaVersion).toBe(26);
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
     expect(migrated.containers.every((c) => c.variantGroup === undefined)).toBe(true);
   });
 

@@ -62,6 +62,7 @@ import {
   placementLevel,
 } from './freePlacement';
 import { childrenOf } from './hierarchy';
+import { settleFrom } from './hierarchySettle';
 import { createMarking, placeFloatingNear, type FloatingNearTarget } from './markings';
 import { findById } from './project';
 import { projectIndex } from './projectIndex';
@@ -70,6 +71,7 @@ import type { SpecAnnotationType } from './spec';
 import { findSpecType, projectLayerFor } from './specLookup';
 import { addTypedAnnotation, setFieldValue } from './typed';
 import type {
+  Annotation,
   Marking,
   MarkingAnchor,
   Project,
@@ -1283,11 +1285,47 @@ export function componentAnchoredPlacement(
   return { rect, warnings: [outsideWarning(label, where)] };
 }
 
+const NO_ANNOTATIONS: readonly Annotation[] = [];
+
+/**
+ * The parent the geometry gives to the new marking, as if no marking were materialized (the rule up to
+ * v26): the clipped settle of the project without annotations. Read once, at creation.
+ */
+function geometricParent(before: Project, created: Project, id: string): string | null {
+  const settled = settleFrom(
+    { ...before, annotations: NO_ANNOTATIONS },
+    { ...created, annotations: NO_ANNOTATIONS },
+  );
+  return settled.markings.find((m) => m.id === id)?.parentId ?? null;
+}
+
+/**
+ * The new component marking is materialized, so the settle no longer picks its parent (stage #3087):
+ * the parent the caller named is stored (checked above: same space, around the rect); without one, it takes
+ * once the parent the geometry gives, like before (the creation rule, decision 7).
+ */
+function storeParent(
+  p: Project,
+  created: Project,
+  markingId: string,
+  parentId: string | null,
+): Project {
+  const parent = parentId ?? geometricParent(p, created, markingId);
+  if (parent === null) return created;
+  const next = {
+    ...created,
+    markings: created.markings.map((m) =>
+      m.id === markingId ? { ...m, parentId: parent } : m,
+    ),
+  };
+  return settleFrom(created, next);
+}
+
 /**
  * Creates the marking and the typed annotation that draws it, in a single operation (the store makes one
  * undo entry). `parentId` is the target component with a slot where the instance is positioned;
- * the stored parent is what the settle decides by geometry (`createMarking` settles), never the
- * request. The annotation goes in the project layer that came from the layer of the
+ * the new marking is materialized, so the parent the caller names is the one stored (the settle
+ * no longer picks it by geometry, stage #3087). The annotation goes in the project layer that came from the layer of the
  * type's specialization, with the component's `preview` in the fields that `args.values` does not
  * specify and the values of `args.values` on top (`table` and `ref` fields stay at the `default`). The component's minimum
  * size applies from the creation.
@@ -1384,6 +1422,7 @@ export function addComponentMarking(
     layerId: layer.id,
     type: { specId: args.specId, typeId: args.typeId },
   });
+  next = storeParent(p, next, args.markingId, args.parentId);
 
   next = applyPreview(
     next,

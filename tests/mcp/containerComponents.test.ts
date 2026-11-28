@@ -163,7 +163,7 @@ describe('create_marking with annotation', () => {
     op: 'create_marking',
     as: '$btn',
     container: '$screen',
-    parent: '$row',
+    inside: '$row',
     annotation: { type: 'material3/m3-button', values: { label: 'Sign in' } },
   } as const;
 

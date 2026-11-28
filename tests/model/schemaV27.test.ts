@@ -9,8 +9,10 @@ import {
   migrateFrom26To27,
   migrations,
   serialize,
+  specFiles,
   type Project,
 } from '../../src/model';
+import { r, raw as rawMarking, structureProject } from '../support/structureFixtures';
 import { sampleProject } from './fixtures';
 
 type Raw = Record<string, unknown>;
@@ -55,9 +57,21 @@ describe('schema v27', () => {
   });
 
   it('`slot` round-trips and is written right after `parentId`', () => {
-    const raw = rawOf(sampleProject());
-    second(raw).slot = 'left';
-    const p = opened(raw);
+    const stored = structureProject(
+      [
+        rawMarking('card', r(10, 10, 300, 300)),
+        rawMarking('kid', r(20, 20, 50, 50), { parentId: 'card', slot: 'left' }),
+      ],
+      ['card', 'kid'],
+    );
+    // The nature comes from the applied specializations, which the storage reads from `specs/`.
+    const result = deserialize(
+      JSON.stringify(rawOf(stored)),
+      migrations,
+      specFiles(stored),
+    );
+    if (!result.ok) throw new Error(JSON.stringify(result.error));
+    const p = result.project;
     expect(p.markings[1]?.slot).toBe('left');
     const written = second(rawOf(p));
     expect(written.slot).toBe('left');
