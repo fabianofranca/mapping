@@ -12,4 +12,5 @@
 
 ## Alterado
 
+- The ceiling of `dist/index.html` went up 16 KiB, from 2801664 to 2818048, by the budget rule; above the limits, `bug` #3103 for the owner to review.
 - The project schema is v26: a v25 project opens migrated with nothing else changed, the original goes to `backups/` before the first write, and an earlier app opens the new file read-only (#2034).
