@@ -75,12 +75,12 @@ const MISSING_TODAY: string[] = [
   // `except` in a slot's `accepts` clause (formatVersion 26, stage #2918, FG1; decision 11): the stage adds no
   // example package (each one needs its `examples/README.md` section, held by #1905), so the key has no example
   // today; #2951 brings a real one. Covered by tests/model/specSlotExcept.test.ts and, for the app, by
-  // tests/fixtures/field-display/ and script R51.
+  // tests/fixtures/field-display/ and script R52.
   'spec:layers[].annotationTypes[].slots[].accepts[].except',
   // `fieldGroups`, `group` and `visibleWhen` (formatVersion 26, stage #2918, FG2; decision 11): no example package
   // either (each one needs its `examples/README.md` section, held by #1905); #2951 brings a real one. Covered by
   // tests/model/specFieldDisplay.test.ts and tests/model/fieldDisplay.test.ts and, for the app, by
-  // tests/fixtures/field-display/ and script R51.
+  // tests/fixtures/field-display/ and script R52.
   'spec:layers[].annotationTypes[].fieldGroups',
   'spec:layers[].annotationTypes[].fieldGroups[].description',
   'spec:layers[].annotationTypes[].fieldGroups[].id',
@@ -188,6 +188,13 @@ const MISSING_TODAY: string[] = [
   'component:run.background',
   'component:run.radius',
   'component:run.padding',
+  // Rich runs and text that shrinks to fit (stage #2916, RT1 to RT6): `font.fit`, `font.fitSizes`, the icon run
+  // (`run.icon`) and `run.baselineShift`. No distributed library adopts them in this stage; covered by
+  // `tests/fixtures/rich-runs/`, tests/model/richRunsFixture.test.ts, the RT unit tests and by script R51.
+  'component:font.fit',
+  'component:font.fitSizes',
+  'component:run.icon',
+  'component:run.baselineShift',
   // Tokens (formatVersion 15, stage #747, CF5): the `tokens` root already has an example in the Material 3 library
   // (stage #833, M1); `$token` in the components of the other libraries does not yet. Covered by
   // tests/model/specTokens.test.ts, tests/model/components/tokens.test.ts, libraryTokens.test.ts and

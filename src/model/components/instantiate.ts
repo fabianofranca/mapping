@@ -71,6 +71,7 @@ import type {
   FrameTemplate,
   LayoutSpec,
   GradientSpec,
+  IconRunTemplate,
   IconTemplate,
   LayoutAlign,
   LayoutJustify,
@@ -87,10 +88,11 @@ import type {
   StrokeSpec,
   TemplateNode,
   TextRunTemplate,
+  TextRunText,
   TextTemplate,
 } from './componentFormat';
 import type { Box } from './box';
-import { STROKE_SIDES } from './componentFormat';
+import { STROKE_SIDES, isRunsTable } from './componentFormat';
 import { clipBoxOf } from './clipBox';
 import { arcPath } from './arc';
 import { clampGrayscale, grayscaleNode } from './grayscale';
@@ -98,6 +100,7 @@ import {
   DEFAULT_ICON_VIEWBOX,
   resolveIcon,
   type IconClip,
+  type IconDef,
   type IconGradient,
   type IconPath,
   type IconSet,
@@ -189,6 +192,7 @@ import {
 import {
   type CornerRadius,
   type FrameNode,
+  type GroupNode,
   type ClipPath,
   type Matrix,
   type GradientStop,
@@ -582,6 +586,12 @@ export function normalizePadding(
   return { top, right, bottom, left };
 }
 
+/** A resolved run: the scene's, and the box of an inline icon (`inline`) for the layout. */
+interface ResolvedRun {
+  readonly scene: SceneTextRun;
+  readonly inline?: { readonly width: number; readonly height: number };
+}
+
 type Axis = 'w' | 'h';
 
 interface Kid {
@@ -910,9 +920,31 @@ function createEngine(
     return 0;
   };
 
-  const textFont = (node: TextTemplate): MeasureFont => {
+  /**
+   * A run's `baselineShift` in px: a number, numeric text or a signed percentage of the run's size
+   * (`"33%"` of 12 is 3.96). Another value is an invalid value: the warning and 0.
+   */
+  const baselineShiftOf = (
+    expr: TextRunTemplate['baselineShift'],
+    size: number,
+  ): number => {
+    const value = ev<unknown>(expr as Expr<unknown> | undefined, 0);
+    if (value === undefined || value === null || value === '') return 0;
+    if (typeof value === 'string' && PERCENT_TEXT.test(value))
+      return (parseFloat(value) / 100) * size;
+    const n = typeof value === 'number' ? value : Number(value);
+    if (Number.isFinite(n)) return n;
+    invalidValue('baselineShift', value);
+    return 0;
+  };
+
+  /** The node's declared `font.size` (px ≥ 0). */
+  const declaredSize = (node: TextTemplate): number =>
+    Math.max(0, num(node.font?.size, 14));
+
+  /** The node's font at `size`: the size drives a multiple `lineHeight` and a `%` `letterSpacing`. */
+  const fontAt = (node: TextTemplate, size: number): MeasureFont => {
     const font: FontSpec = node.font ?? {};
-    const size = Math.max(0, num(font.size, 14));
     const lh = num(font.lineHeight, 1.2);
     return {
       ...textWrapping(font),
@@ -926,14 +958,174 @@ function createEngine(
     };
   };
 
+  /** The node's font at its declared size (`font.size`), before any `fit`. */
+  const textFont = (node: TextTemplate): MeasureFont => fontAt(node, declaredSize(node));
+
+  // --- text that shrinks to fit (`font.fit`, decisions 2 and 3 of #2916) --------------------
+
+  /** `font.fit`: `shrink` only on plain text (with `runs` an expression's `shrink` is an invalid value). */
+  const fitMode = (node: TextTemplate): 'none' | 'shrink' => {
+    if (node.font?.fit === undefined) return 'none';
+    const mode = checked(node.font.fit, ['none', 'shrink'], 'none', 'font.fit');
+    if (mode === 'shrink' && node.runs !== undefined) {
+      invalidValue('font.fit', mode);
+      return 'none';
+    }
+    return mode;
+  };
+
+  const fitSizeMemo = new Map<TextTemplate, readonly number[]>();
+
+  /**
+   * The candidate sizes, from the largest: `font.size`, then each `fitSizes` item that is greater
+   * than 0 and smaller than the last one kept (another is skipped with `engine.invalidValue`).
+   */
+  const fitSizesOf = (node: TextTemplate): readonly number[] => {
+    const known = fitSizeMemo.get(node);
+    if (known !== undefined) return known;
+    const sizes = [declaredSize(node)];
+    for (const item of node.font?.fitSizes ?? []) {
+      const value = ev<unknown>(item as Expr<unknown>, undefined);
+      // As `font.size`: a number, or text that reads as one.
+      const size = typeof value === 'number' ? value : parseFloat(String(value));
+      const last = sizes[sizes.length - 1] as number;
+      if (size > 0 && size < last) sizes.push(size);
+      else invalidValue('font.fitSizes', value);
+    }
+    fitSizeMemo.set(node, sizes);
+    return sizes;
+  };
+
+  /**
+   * The width the text is laid out in: the given one or, for a `hug`/`max-content` text, its
+   * `maxWidth`. A text with no width limit has none (and keeps `font.size`).
+   */
+  const fitLimit = (
+    node: TextTemplate,
+    maxWidth: number | undefined,
+  ): number | undefined => {
+    if (maxWidth !== undefined) return maxWidth;
+    const spec = specOf(node, 'w');
+    if (spec !== 'hug' && spec !== 'max-content') return undefined;
+    const { max } = limitOf(node, 'w');
+    return Number.isFinite(max) ? max : undefined;
+  };
+
+  /** Does the text fit `limit` at `font`: no line wider than the box and, with `maxLines`, within it? */
+  const fitsWidth = (node: TextTemplate, font: MeasureFont, limit: number): boolean => {
+    const free: MeasureFont = { ...font };
+    delete free.maxLines;
+    delete free.ellipsis;
+    const measured = options.measure(plainText(node), free, limit);
+    if (font.maxLines !== undefined && measuredLines(measured) > font.maxLines)
+      return false;
+    // Without `lines` the measurer's width may be clamped to the limit: measure it free. With
+    // `wrap: none` its `lines` may be cut at the limit (Konva keeps only what fits), so the width
+    // is the whole text's, measured free as well.
+    const widest =
+      measured.lines === undefined || font.wrap === 'none'
+        ? options.measure(plainText(node), free).width
+        : widestWord(measured.lines, free, limit);
+    return widest <= limit + WRAP_SLACK;
+  };
+
+  /** The first candidate font that fits `limit`; with none, the smallest. */
+  const chooseFitFont = (node: TextTemplate, limit: number): MeasureFont => {
+    const sizes = fitSizesOf(node);
+    for (const size of sizes) {
+      const font = fontAt(node, size);
+      if (fitsWidth(node, font, limit)) return font;
+    }
+    return fontAt(node, smallest(sizes));
+  };
+
+  const fitMemo = new Map<TextTemplate, Map<number, MeasureFont>>();
+
+  /**
+   * The font the text is laid out and drawn with in a box of width `maxWidth`: `font.size`, or
+   * with `fit: "shrink"` the first of its sizes that fits (memoized per node and width).
+   */
+  const fittedFont = (node: TextTemplate, maxWidth?: number): MeasureFont => {
+    if (fitMode(node) !== 'shrink') return textFont(node);
+    const limit = fitLimit(node, maxWidth);
+    if (limit === undefined || limit <= EPS) return textFont(node);
+    let byLimit = fitMemo.get(node);
+    if (byLimit === undefined) {
+      byLimit = new Map();
+      fitMemo.set(node, byLimit);
+    }
+    let font = byLimit.get(limit);
+    if (font === undefined) {
+      font = chooseFitFont(node, limit);
+      byLimit.set(limit, font);
+    }
+    return font;
+  };
+
+  const smallest = (sizes: readonly number[]): number =>
+    sizes[sizes.length - 1] as number;
+
+  /** The font of the text's `min-content`: the smallest size `fit: "shrink"` may take. */
+  const smallestFont = (node: TextTemplate): MeasureFont =>
+    fitMode(node) === 'shrink'
+      ? fontAt(node, smallest(fitSizesOf(node)))
+      : textFont(node);
+
   // --- rich text (runs) ------------------------------------------------------------------
 
   /** `[vertical, horizontal]` padding of a chip (number = both axes). */
-  const runPadding = (run: TextRunTemplate): readonly [number, number] => {
+  const runPadding = (run: TextRunText): readonly [number, number] => {
     const value = ev<unknown>(run.padding as Expr<unknown> | undefined, 0);
     const clean = (n: unknown): number => Math.max(0, num(n as Expr<number>, 0));
     if (Array.isArray(value)) return [clean(value[0]), clean(value[1])];
     return [clean(value), clean(value)];
+  };
+
+  /**
+   * The resolved icon run: the box (`size` tall, `size × viewBox width / height` wide) and the
+   * group of its paths. An unknown name keeps an empty box of `size × size` (`engine.iconUnknown`);
+   * an empty name gives no piece.
+   */
+  const resolveIconRun = (
+    run: IconRunTemplate,
+    node: TextTemplate,
+    font: MeasureFont,
+    index: number,
+    ownerId: string,
+  ): ResolvedRun => {
+    const name = str(run.icon, '');
+    const size = Math.max(0, num(run.size, font.size));
+    const color = str(run.color, str(node.color, '#000000'));
+    const shift = baselineShiftOf(run.baselineShift, size);
+    // The run has no text: only the `…` of a line made of icons alone is drawn with this style, so
+    // it takes the node's size and color, as `richRuns` measures it (the icon keeps its own).
+    const scene: SceneTextRun = {
+      text: '',
+      fontFamily: font.family,
+      fontSize: font.size,
+      fontWeight: font.weight,
+      italic: font.italic,
+      color: str(node.color, '#000000'),
+      ...(shift === 0 ? {} : { baselineShift: shift }),
+    };
+    if (name === '') return { scene };
+    const found = resolveIcon(icons, name);
+    if (found === undefined) {
+      warn('engine.iconUnknown', { name });
+      return { scene, inline: { width: size, height: size } };
+    }
+    const [vbW, vbH] = found.viewBox;
+    const width = vbH > 0 ? (size * vbW) / vbH : size;
+    const mirror = dirOf(node) === 'rtl' && found.def.mirror === true;
+    const icon = iconGroup(found, {
+      id: `${ownerId}/run-icon-${index}`,
+      name,
+      w: width,
+      h: size,
+      color,
+      mirror,
+    });
+    return { scene: { ...scene, icon }, inline: { width, height: size } };
   };
 
   /** The resolved style of a run: what it declares over the node's `font` and `color`. */
@@ -941,22 +1133,28 @@ function createEngine(
     run: TextRunTemplate,
     node: TextTemplate,
     font: MeasureFont,
-  ): SceneTextRun => {
+    index: number,
+    ownerId: string,
+  ): ResolvedRun => {
+    if (run.icon !== undefined) return resolveIconRun(run, node, font, index, ownerId);
     const decoration = oneOf(
       run.decoration ?? node.font?.decoration,
       ['none', 'underline', 'line-through'],
       'none',
     );
     const background = str(run.background, 'none');
-    return {
+    const fontSize = Math.max(0, num(run.size, font.size));
+    const shift = baselineShiftOf(run.baselineShift, fontSize);
+    const scene: SceneTextRun = {
       // A literal text counts as is, even whitespace only (the gap between runs); an empty field's falls back.
       text: typeof run.text === 'string' ? run.text : evaluateText(run.text, values, ''),
       fontFamily: str(run.family, font.family, familyContext),
-      fontSize: Math.max(0, num(run.size, font.size)),
+      fontSize,
       fontWeight: num(run.weight, font.weight),
       italic: bool(run.italic, font.italic),
       color: str(run.color, str(node.color, '#000000')),
       ...(decoration === 'none' ? {} : { decoration }),
+      ...(shift === 0 ? {} : { baselineShift: shift }),
       ...(isNone(background)
         ? {}
         : {
@@ -965,25 +1163,34 @@ function createEngine(
             padding: runPadding(run),
           }),
     };
+    return { scene };
   };
 
   /** The node's runs, in the scene's form and the layout's (the same list, index by index). */
   const richRuns = (
     node: TextTemplate,
     font: MeasureFont,
+    ownerId: string = prefix,
   ): { scene: SceneTextRun[]; runs: RichRun[] } => {
-    const scene = (node.runs ?? []).map((run) => resolveRun(run, node, font));
-    const runs = scene.map((run): RichRun => ({
+    // `expandRepeats` already replaced every runs table with the rows' runs: it never gets here.
+    const resolved = (node.runs ?? []).map((run, i) => {
+      if (isRunsTable(run)) throw new Error('runs table not expanded');
+      return resolveRun(run, node, font, i, ownerId);
+    });
+    const scene = resolved.map((r) => r.scene);
+    const runs = resolved.map(({ scene: run, inline }): RichRun => ({
       text: run.text,
       font: {
         family: run.fontFamily,
-        size: run.fontSize,
+        // An icon's font is the node's: the `…` after it is measured and drawn in the text's size.
+        size: inline ? font.size : run.fontSize,
         weight: run.fontWeight,
         italic: run.italic,
         lineHeight: font.lineHeight,
         letterSpacing: font.letterSpacing,
       },
       ...(run.padding ? { chip: { padding: run.padding } } : {}),
+      ...(inline ? { inline } : {}),
     }));
     return { scene, runs };
   };
@@ -1058,7 +1265,7 @@ function createEngine(
     if (maxWidth !== undefined && maxWidth <= EPS)
       warn('engine.textZeroWidth', { name: nodeName(node) });
     return remembered(node, maxWidth, () => {
-      const font = textFont(node);
+      const font = fittedFont(node, maxWidth);
       if (node.runs === undefined)
         return options.measure(plainText(node), font, maxWidth);
       const rich = richRuns(node, font);
@@ -1107,7 +1314,7 @@ function createEngine(
   /** Height and baselines (first and last) of the node's text, at the top of the box. */
   const baselinesOf = (node: TextTemplate, maxWidth?: number): TextBaselines => {
     if (node.runs !== undefined) return richBaselines(node, maxWidth);
-    const font = textFont(node);
+    const font = fittedFont(node, maxWidth);
     const m = remembered(node, maxWidth, () =>
       options.measure(plainText(node), font, maxWidth),
     );
@@ -1873,8 +2080,11 @@ function createEngine(
    * cache (`withMeasureMemo`).
    */
   const plainMinContent = (node: TextTemplate): number => {
-    const styled = textFont(node);
-    if (styled.wrap === 'none') return measureText(node).width;
+    const styled = smallestFont(node);
+    if (styled.wrap === 'none')
+      return fitMode(node) === 'shrink'
+        ? options.measure(plainText(node), styled).width
+        : measureText(node).width;
     // The font without the box's cut (`maxLines`, `ellipsis`): each word is measured whole.
     const font: MeasureFont = { ...styled, maxLines: undefined, ellipsis: undefined };
     return plainText(node)
@@ -1886,9 +2096,15 @@ function createEngine(
       );
   };
 
+  /** The widest unwrapped line, at `font.size` (a `fit` text only shrinks inside the box it gets). */
+  const maxContentWidth = (node: TextTemplate): number =>
+    fitMode(node) === 'shrink'
+      ? options.measure(plainText(node), textFont(node)).width
+      : measureText(node).width;
+
   /** The text's intrinsic width: `max-content` the widest unwrapped line, `min-content` the widest word. */
   const textIntrinsic = (node: TextTemplate, mode: IntrinsicSize): number => {
-    if (mode === 'max-content') return measureText(node).width;
+    if (mode === 'max-content') return maxContentWidth(node);
     if (node.runs === undefined) return plainMinContent(node);
     const font = textFont(node);
     return minContentRuns(
@@ -3437,6 +3653,58 @@ function createEngine(
       ? undefined
       : { d: clip.d, fillRule: clip.fillRule ?? 'nonzero', transform: matrix };
 
+  /** The paths of an icon scaled from its `viewBox` to the box (flipped inside it when `mirror`), and its clip. */
+  const iconPaths = (
+    found: { def: IconDef; viewBox: readonly [number, number] },
+    id: string,
+    w: number,
+    h: number,
+    color: string,
+    strokeWidth: number | undefined,
+    mirror: boolean,
+  ): { children: PathNode[]; clipPath: ClipPath | undefined } => {
+    const [vbW, vbH] = found.viewBox;
+    const sx = vbW > 0 ? w / vbW : 1;
+    const sy = vbH > 0 ? h / vbH : 1;
+    const matrix: Matrix = mirror ? [-sx, 0, 0, sy, w, 0] : [sx, 0, 0, sy, 0, 0];
+    const children = found.def.paths.map((iconPath, i) => ({
+      ...iconPathNode(iconPath, `${id}/${i}`, found.viewBox, color, strokeWidth),
+      transform: matrix,
+    }));
+    return { children, clipPath: iconClipPath(found.def.clip, matrix) };
+  };
+
+  /** The group of an icon run: the icon at the origin of its box (the drawers move it to the piece). */
+  const iconGroup = (
+    found: { def: IconDef; viewBox: readonly [number, number] },
+    at: {
+      id: string;
+      name: string;
+      w: number;
+      h: number;
+      color: string;
+      mirror: boolean;
+    },
+  ): GroupNode => {
+    const { children, clipPath } = iconPaths(
+      found,
+      at.id,
+      at.w,
+      at.h,
+      at.color,
+      undefined,
+      at.mirror,
+    );
+    return {
+      ...baseNode({ id: at.id, name: at.name }),
+      width: at.w,
+      height: at.h,
+      type: 'group',
+      children,
+      ...(clipPath ? { clipPath } : {}),
+    };
+  };
+
   /** The icon becomes a group with one path per stroke, scaled from the `viewBox` to the node's box. */
   const buildIcon = (
     node: IconTemplate,
@@ -3463,12 +3731,7 @@ function createEngine(
       node.strokeWidth === undefined ? undefined : Math.max(0, num(node.strokeWidth, 1));
     // The node's `mirror` (or, absent, the icon's in the set): in `rtl` the paths flip inside the box.
     const mirror = dirOf(node) === 'rtl' && bool(node.mirror, found.def.mirror === true);
-    const matrix: Matrix = mirror ? [-sx, 0, 0, sy, w, 0] : [sx, 0, 0, sy, 0, 0];
-    const children = found.def.paths.map((iconPath, i) => ({
-      ...iconPathNode(iconPath, `${id}/${i}`, found.viewBox, color, strokeWidth),
-      transform: matrix,
-    }));
-    const clipPath = iconClipPath(found.def.clip, matrix);
+    const { children, clipPath } = iconPaths(found, id, w, h, color, strokeWidth, mirror);
     return { ...base, type: 'group', children, ...(clipPath ? { clipPath } : {}) };
   };
 
@@ -3545,6 +3808,7 @@ function createEngine(
   /** The scene's text and, with `runs`, the resolved runs and their layout in the box. */
   const textContent = (
     node: TextTemplate,
+    id: string,
     font: MeasureFont,
     w: number,
     h: number,
@@ -3558,12 +3822,13 @@ function createEngine(
       if (cited) recordLines(node, text === '' ? 0 : measuredLines(measured()));
       return { text, extra: {} };
     }
-    const rich = richRuns(node, font);
+    const rich = richRuns(node, font, id);
     const runLayout = layoutRuns(rich.runs, richBase(node, font), options.measure, w);
     warnTextTooTall(node, runLayout.height, font, w, h);
     warnTextTooWide(node, runLayout.width, font, w);
     const text = rich.scene.map((run) => run.text).join('');
-    if (cited) recordLines(node, text === '' ? 0 : runLayout.lines.length);
+    const hasBox = rich.runs.some((run) => run.inline !== undefined);
+    if (cited) recordLines(node, text === '' && !hasBox ? 0 : runLayout.lines.length);
     return { text, extra: { runs: rich.scene, runLayout } };
   };
 
@@ -3634,9 +3899,9 @@ function createEngine(
     w: number,
     h: number,
   ): SceneNode => {
-    const font = textFont(node);
+    const font = fittedFont(node, w);
     const style = textStyleOf(node, font, baselineTopOf(node, w));
-    const { text, extra } = textContent(node, font, w, h);
+    const { text, extra } = textContent(node, id, font, w, h);
     const color = str(node.color, '#000000');
     const stroke = strokeOf(node.stroke, 'inside', 1);
     const result: TextNode = {

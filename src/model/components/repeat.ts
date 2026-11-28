@@ -21,6 +21,10 @@
  *   the parent's) and each row is `fill`, so the rows split the axis equally minus the `gap`s.
  *   An explicit value (px, `hug`, `%`, or `fill` itself) in the `repeat`/`template` counts as
  *   written.
+ *
+ * A `text` node's `runs` item `{ "field", "template" }` (`formatVersion` 4) is expanded the same
+ * way: one scoped copy of its `template` (a run) per row, in place of the item, with the same
+ * `$r<n>_<i>:` scope, so that the engine only sees literal runs.
  */
 import type {
   ComponentFile,
@@ -31,8 +35,12 @@ import type {
   FrameTemplate,
   LayoutSpec,
   RepeatTemplate,
+  RunsTableTemplate,
   TemplateNode,
+  TextRunItem,
+  TextRunTemplate,
 } from './componentFormat';
+import { isRunsTable } from './componentFormat';
 import { templateMessage } from '../messages';
 import { textsOf } from '../messages/collector';
 import type { ModelMessage } from '../modelMessage';
@@ -124,6 +132,7 @@ function rowSize(
 /** Does the template have any `repeat` node? */
 export function hasRepeat(node: TemplateNode): boolean {
   if (node.type === 'repeat') return true;
+  if (node.type === 'text') return (node.runs ?? []).some(isRunsTable);
   return node.type === 'frame' && (node.children ?? []).some(hasRepeat);
 }
 
@@ -282,12 +291,11 @@ export function expandRepeats(
     );
   };
 
-  /** The `repeat`'s rows: the list of a `table` field or, by `count`, one per index. */
-  const rowsFor = (
-    node: RepeatTemplate,
+  /** The rows of a `table` field (a `repeat` or a runs table) and their columns. */
+  const tableRows = (
+    field: string,
+    template: unknown,
   ): { rows: readonly FieldRow[]; columns: Set<string> } => {
-    if (node.count !== undefined) return { rows: countRows(node), columns: new Set() };
-    const field = node.field ?? '';
     if (!(field in values))
       messages.push(templateMessage('engine.fieldMissing', { key: field }));
     const rows = rowsOf(values[field]);
@@ -296,10 +304,39 @@ export function expandRepeats(
     // "field not provided".
     const columns = new Set(columnsOf(rows));
     if (rows.length > 0) {
-      for (const key of referencedFields(node.template))
+      for (const key of referencedFields(template))
         if (!(key in values)) columns.add(key);
     }
     return { rows, columns };
+  };
+
+  /** The `repeat`'s rows: the list of a `table` field or, by `count`, one per index. */
+  const rowsFor = (
+    node: RepeatTemplate,
+  ): { rows: readonly FieldRow[]; columns: Set<string> } =>
+    node.count !== undefined
+      ? { rows: countRows(node), columns: new Set() }
+      : tableRows(node.field ?? '', node.template);
+
+  /** A runs table item: one scoped copy of its `template` (a run) per row of the field. */
+  const expandRunsTable = (item: RunsTableTemplate): TextRunTemplate[] => {
+    const n = counter++;
+    const { rows, columns } = tableRows(item.field, item.template);
+    columns.add(INDEX_FIELD);
+    return rows.map((row, i): TextRunTemplate => {
+      const scope = `$r${n}_${i}`;
+      for (const name of columns)
+        extra[`${scope}:${name}`] = name === INDEX_FIELD ? i : (row[name] ?? null);
+      return scoped(item.template, columns, scope, new Set()) as TextRunTemplate;
+    });
+  };
+
+  const expandRuns = (node: TemplateNode): TemplateNode => {
+    if (node.type !== 'text' || !(node.runs ?? []).some(isRunsTable)) return node;
+    const runs = (node.runs ?? []).flatMap((item: TextRunItem): readonly TextRunItem[] =>
+      isRunsTable(item) ? expandRunsTable(item) : [item],
+    );
+    return { ...node, runs };
   };
 
   const expandRepeat = (node: RepeatTemplate): FrameTemplate => {
@@ -334,6 +371,7 @@ export function expandRepeats(
 
   function expand(node: TemplateNode): TemplateNode {
     if (node.type === 'repeat') return expandRepeat(node);
+    if (node.type === 'text') return expandRuns(node);
     if (node.type !== 'frame' || node.children === undefined) return node;
     return { ...node, children: node.children.map(expand) };
   }

@@ -291,6 +291,18 @@ export interface FontSpec {
   readonly ellipsis?: BoolExpr;
   /** Maximum lines (integer ≥ 1); the last takes the `…` (with `ellipsis`) or is cut. v4 only. */
   readonly maxLines?: Expr<number>;
+  /**
+   * `shrink` takes the first size of `size`, then `fitSizes`, that fits the text's width (no line
+   * wider than the box and, with `maxLines`, within it); `none` (the default) keeps `size`.
+   * A literal `shrink` does not combine with `runs`. formatVersion 4 only.
+   */
+  readonly fit?: Expr<'none' | 'shrink'>;
+  /**
+   * The sizes `fit: "shrink"` may take after `size`, from the largest to the smallest (1 to 8
+   * items: a number greater than 0, or a number expression). No effect without `fit: "shrink"`.
+   * formatVersion 4 only.
+   */
+  readonly fitSizes?: readonly Expr<number>[];
 }
 
 // ---------------------------------------------------------------------------------------
@@ -522,8 +534,9 @@ export interface EllipseTemplate extends TemplateNodeBase {
  * box (the "chip"): an unbreakable block with `padding` (a number for both axes or `[vertical,
  * horizontal]`) and corner `radius`. `padding` and `radius` without `background` have no effect.
  */
-export interface TextRunTemplate {
+export interface TextRunText {
   readonly text: Expr<string | number>;
+  readonly icon?: undefined;
   readonly weight?: Expr<number>;
   readonly italic?: BoolExpr;
   readonly color?: Expr<Color>;
@@ -534,6 +547,68 @@ export interface TextRunTemplate {
   readonly background?: Expr<Color>;
   readonly radius?: Expr<number>;
   readonly padding?: Expr<number | readonly [Expr<number>, Expr<number>]>;
+  /**
+   * Moves the run up (positive) or down, for `sub` and `sup` (v4): px, or a signed percentage of
+   * the run's size (`"33%"`). The drawing only: the measurement does not change.
+   */
+  readonly baselineShift?: Expr<number | string>;
+}
+
+/**
+ * An icon run (`{ "icon": "<name>" }`, v4): an icon of the library's set inside the line, an
+ * unbreakable box centered on the line like the chip. `color` defaults to the node's `color`;
+ * `size` is the icon's height in px (default: the node's font size) and the width is
+ * `size × viewBox width / viewBox height`. Any other run key is not valid on it.
+ */
+export interface IconRunTemplate {
+  readonly icon: Expr<string>;
+  readonly text?: undefined;
+  readonly color?: Expr<Color>;
+  readonly size?: Expr<number>;
+  /** As in the text run; a percentage is of the icon's `size`. */
+  readonly baselineShift?: Expr<number | string>;
+}
+
+/** A run of rich text: a text run or an icon run. */
+export type TextRunTemplate = TextRunText | IconRunTemplate;
+
+/**
+ * A `runs` item that comes from a `table` field of the type (v4): `{ "field", "template" }` gives
+ * one run per row, between the fixed runs, with the words of the `repeat` node. The `template` is
+ * ONE run (text or icon) that reads the row's columns with `$field`, `$index` being the row's
+ * index. The expansion (`expandRepeats`) replaces the item with the rows' runs before the engine,
+ * which only sees literal runs. It does not combine with `count`, and it is not valid inside the
+ * `template` of a `repeat`.
+ */
+export interface RunsTableTemplate {
+  readonly field: string;
+  readonly template: TextRunTemplate;
+}
+
+/** An item of `runs`: a run or a runs table (`field` + `template`). */
+export type TextRunItem = TextRunTemplate | RunsTableTemplate;
+
+/** Is the key `runs` of this node the list of a text node's runs (where the runs tables live)? */
+export function isRunsKey(node: Record<string, unknown>, key: string): boolean {
+  return node.type === 'text' && key === 'runs';
+}
+
+/** A node that repeats rows of a `table` field: a `repeat`, or a runs table as an item of `runs`. */
+export function isRowsNode(node: Record<string, unknown>, runsItem: boolean): boolean {
+  return node.type === 'repeat' || (runsItem && isRunsTable(node));
+}
+
+/** Is the `runs` item a runs table (`{ field, template }`) and not a run? */
+export function isRunsTable(item: unknown): item is RunsTableTemplate {
+  return (
+    typeof item === 'object' &&
+    item !== null &&
+    !Array.isArray(item) &&
+    ('field' in item || 'template' in item) &&
+    !('type' in item) &&
+    !('text' in item) &&
+    !('icon' in item)
+  );
 }
 
 /**
@@ -543,7 +618,7 @@ export interface TextRunTemplate {
 export interface TextTemplate extends TemplateNodeBase {
   readonly type: 'text';
   readonly text?: Expr<string | number>;
-  readonly runs?: readonly TextRunTemplate[];
+  readonly runs?: readonly TextRunItem[];
   readonly font?: FontSpec;
   /** Text color (the node's `fill`). Default: `#000000`. */
   readonly color?: Expr<Color>;
