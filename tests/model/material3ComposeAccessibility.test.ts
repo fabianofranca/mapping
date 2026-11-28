@@ -24,8 +24,7 @@ import { emptyProject } from './fixtures';
 import { idGen, layerOf } from './specFixtures';
 import { files, spec, text, typeOf, types } from '../support/material3Library';
 
-/** The two roadmap issues that this phase creates (decision 11; `impact: low`). */
-const OVERLAP_ROADMAP = 1998;
+/** The role-by-case roadmap issue (decision 11; `impact: low`). */
 const ROLE_BY_CASE_ROADMAP = 1999;
 
 type Expected = { role: string; label?: string[]; required?: false };
@@ -436,14 +435,15 @@ describe('Material 3 (Compose): the Fidelity cites the Compose and the roadmap i
   });
 
   it.each(EXPANDED)(
-    '%s: the Fidelity cites the minimumInteractiveComponentSize line and the overlap roadmap',
+    '%s: the Fidelity cites the minimumInteractiveComponentSize line and the overlap audit',
     (id) => {
       const f = fidelity(id);
       expect(f, id).toMatch(/touchTarget/);
       expect(f, id).toMatch(/expanded/);
       expect(f, `${id}: cites a Kotlin line`).toMatch(/\.kt`? \(lines? \d+/);
-      expect(f, `${id}: overlap not audited`).toMatch(/overlap/i);
-      expect(f, `${id}: roadmap`).toContain(`#${OVERLAP_ROADMAP}`);
+      expect(f, `${id}: overlap audited`).toMatch(/overlap/i);
+      expect(f, `${id}: audit code`).toContain('`touch-target-overlap`');
+      expect(f, `${id}: no roadmap`).not.toContain('#1998');
     },
   );
 
