@@ -394,7 +394,10 @@ describe('the component feature list forgot nothing from the code', () => {
 
   it('common node keys (with `type`) and the repeat ones', () => {
     expect(['type', ...BASE_KEYS].sort()).toEqual(constList('BASE_KEYS').sort());
-    const rejected = constList('REPEAT_REJECTED_KEYS');
+    const rejected = [
+      ...constList('REPEAT_REJECTED_KEYS'),
+      ...constList('REPEAT_REJECTED_BASE_KEYS'),
+    ];
     expect([...REPEAT_BASE_KEYS].sort()).toEqual(
       BASE_KEYS.filter((k) => !rejected.includes(k)).sort(),
     );

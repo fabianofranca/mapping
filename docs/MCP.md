@@ -309,6 +309,13 @@ A marking can be **decorative**: a child like any marking that is never a parent
 - **Proposals.** A proposal that creates or changes a decorative marking is written at proposal `formatVersion` 13 (only then; a proposal that never touches the flag keeps its version).
 - **Compatibility.** A server earlier than 0.62.0 does not know schema v25: it opens a project that holds the flag as read-only (`read-only`).
 
+### Change in 0.70.0 — intended overflow and absolute children (stage #2913)
+
+- **`overflow: "intended"` on a component node and `childOverflow: "intended"` on a slot** (component `formatVersion` 4, no raise). `validate_library` accepts both keys and every drawing, measurement and pending item of the MCP follows them: a node flagged `overflow: "intended"` does not make the parent's `content larger than the box: <frame>` check fail (a sibling that really overflows still does, with its own shortfall), and a slot with `childOverflow` does not count its child markings past the box. `render_*`, `measure_component`, `fit_marking`, the fit and `plan_changes` (`issues.new` `component-overflow`) see no overflow from either key; layout, `hug` and the drawing do not change.
+- **The one reader is `validate_library`.** Level 3 reports each flagged overflow as the warning `overflow intended: <frame>` once per case (for example `type "top-bar", the default values, initial size 360×44: overflow intended: bar (approximate)`). It is a note, not a defect, and it needs no fix.
+- **`position: "absolute"` on a component node** (component `formatVersion` 4, no raise). A child of a `row`, `column` or `grid` leaves the flow: every drawing, measurement and pending item of the MCP (`render_*`, `measure_component`, `fit_marking`, the fit, `plan_changes`) places it like a child of a `none` frame of the parent's whole box, and the parent's size, `hug` and baseline ignore it. `validate_library` accepts the key (`expected one of: absolute` for another value, `not valid on the root` on the template root and on a `repeat`'s `template`).
+- **Update the MCP first.** An earlier MCP or app refuses the keys with `unknown key: overflow`, `unknown key: childOverflow` or `unknown key: position` at their paths, and in a `formatVersion` 1 to 3 file they are `only allowed with formatVersion 4`. See [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Intended overflow".
+
 ### Change in 0.68.0 — `import_icons` inputs (stage #2931)
 
 `import_icons` reads its `svg` from a scratch folder too and can import a file with a `filter`. The icons file, specialization, component, project schema, proposal, comment and signature formats do not change.
