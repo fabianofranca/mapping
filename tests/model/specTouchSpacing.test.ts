@@ -9,6 +9,7 @@ import {
   SPEC_FORMAT_VERSION,
   SPEC_FORMAT_VERSIONS,
   parseSpec,
+  typeAccessibility,
 } from '../../src/model';
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -196,5 +197,23 @@ describe('formatVersion 27: touchTarget.spacing', () => {
         }),
       ).success,
     ).toBe(false);
+  });
+
+  it('typeAccessibility shows spacing as declared, and is unchanged without the key', () => {
+    const resolved = (raw: Json) => {
+      const r = parseSpec(raw);
+      if (!r.ok) throw new Error('invalid');
+      return typeAccessibility(r.spec, r.spec.layers[0]!.annotationTypes[0]!);
+    };
+    expect(resolved(spec())?.touchTarget).toEqual(SPACED);
+    const none = spec((x) => {
+      delete type(x).spacing;
+      delete root(x).spacing;
+    });
+    expect(resolved(none)?.touchTarget).toEqual({
+      width: 24,
+      height: 24,
+      mode: 'visual',
+    });
   });
 });

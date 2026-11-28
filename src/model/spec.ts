@@ -87,7 +87,7 @@ function onlyUpTo(version: number): SpecMsg {
 /** The first `formatVersion` where `sources` are plain data and `origins` is refused. */
 const PLAIN_SOURCES_VERSION = 22;
 
-// Specialization format (`formatVersion` 1 to 26), see docs/SPEC-FORMAT.md. Version 2 adds
+// Specialization format (`formatVersion` 1 to 27), see docs/SPEC-FORMAT.md. Version 2 adds
 // `platforms` and `code`; version 1 is 2 without platforms and without `code`; version 3 is 2 plus
 // `sources` (external origins on types and fields, including `table` columns); version 4 is 3
 // plus the library: the package (the specialization's folder) with `component`, `doc` and
