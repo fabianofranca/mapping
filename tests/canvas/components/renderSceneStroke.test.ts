@@ -9,6 +9,7 @@ import {
   type Stroke,
   baseNode,
 } from '../../../src/model/components/scene';
+import { sideStrokes } from '../../../src/model/components/strokeSides';
 
 beforeAll(() => installFakeCanvas());
 
@@ -54,12 +55,35 @@ describe('stroke per side (sides)', () => {
     expect(line.stroke()).toBe('#112233');
   });
 
-  it('with cornerRadius and ["top"] the stroke is straight, without an arc at the corner', () => {
-    const shapes = shapesOf(
-      root({ cornerRadius: 8, stroke: stroke({ sides: ['top'], align: 'inside' }) }),
-    );
+  it('with cornerRadius and ["top"] the stroke is the model band, filled: it follows the arcs', () => {
+    const scene = root({
+      cornerRadius: 8,
+      stroke: stroke({ sides: ['top'], align: 'inside' }),
+    });
+    const shapes = shapesOf(scene);
     expect(shapes.map((s) => s.className)).toEqual(['Line']);
+    const line = shapes[0] as Konva.Line;
+    const { bands } = sideStrokes(
+      stroke({ sides: ['top'], align: 'inside' }),
+      100,
+      40,
+      8,
+    );
+    expect(line.closed()).toBe(true);
+    expect(line.points()).toEqual(bands[0]!.flatMap((p) => [p.x, p.y]));
+    expect(line.fill()).toBe('#112233');
+    expect(line.strokeEnabled()).toBe(false);
+  });
+
+  it('with cornerRadius and dash the sides stay straight', () => {
+    const shapes = shapesOf(
+      root({
+        cornerRadius: 8,
+        stroke: stroke({ sides: ['top'], align: 'inside', dash: [4, 2] }),
+      }),
+    );
     expect((shapes[0] as Konva.Line).points()).toEqual([0, 1, 100, 1]);
+    expect(shapes[0]?.dash()).toEqual([4, 2]);
   });
 
   it('two sides are two lines, with the stroke cap and join', () => {
@@ -71,6 +95,28 @@ describe('stroke per side (sides)', () => {
       [100, 0, 100, 40],
     ]);
     expect(shapes[0]?.lineCap()).toBe('square');
+  });
+});
+
+describe('stroke.cornerRadius', () => {
+  it('draws the ring on its own radius: 4 outside and 2 inside on a radius-0 box', () => {
+    const shapes = shapesOf(
+      root({
+        stroke: stroke({ align: 'inside', offset: 2, cornerRadius: 4 }),
+      }),
+    );
+    const ring = shapes[0] as Konva.Rect;
+    // The center line: 4 on the outer edge minus half the width.
+    expect(ring.cornerRadius()).toBe(3);
+    expect(ring.x()).toBe(-1);
+    expect(ring.width()).toBe(102);
+  });
+
+  it('without it the radius is the node radius plus the offset', () => {
+    const shapes = shapesOf(
+      root({ cornerRadius: 6, stroke: stroke({ align: 'inside', offset: 2 }) }),
+    );
+    expect((shapes[0] as Konva.Rect).cornerRadius()).toBe(7);
   });
 });
 

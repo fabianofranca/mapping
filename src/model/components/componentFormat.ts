@@ -219,6 +219,14 @@ export interface StrokeSpec {
   /** Only these sides have a stroke (v4, on `frame` and `rect`); absent = all four. */
   readonly sides?: Expr<readonly StrokeSide[]>;
   /**
+   * The radius of the outline the stroke is drawn on (v4, on `frame` and `rect`): the same forms
+   * as the node's `cornerRadius`. It replaces "the node's radius plus `offset`", and `align` is
+   * relative to it: an inside stroke has `cornerRadius` outside and `cornerRadius - width` inside.
+   * It applies to the whole outline, to `sides` and to `gap`; the fill, the clip and the shadows
+   * keep the node's radius.
+   */
+  readonly cornerRadius?: Expr<number | readonly [Radius, Radius, Radius, Radius]>;
+  /**
    * Stroke width (v4, literal): `true` (default) scales with the zoom; `false` keeps the width
    * in screen pixels, at any zoom.
    */

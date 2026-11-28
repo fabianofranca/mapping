@@ -1,0 +1,27 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "divider",
+  "name": "Divider",
+  "description": "A 200 × 16 pill (radius 8) whose bottom edge is a 2 px stroke on the bottom side only. The stroke follows the two bottom arcs and tapers to 0 where the arcs meet the straight sides, like a CSS border-bottom on a rounded box. The elevated field turns the stroke on or off.",
+  "size": { "width": 200, "height": 16 },
+  "preview": { "elevated": "true" },
+  "template": {
+    "type": "frame",
+    "name": "divider",
+    "layout": { "type": "none" },
+    "cornerRadius": 8,
+    "fill": "#F3F4F6",
+    "stroke": {
+      "color": {
+        "$if": { "$eq": ["elevated", "true"] },
+        "then": "#1F2937",
+        "else": "none"
+      },
+      "width": 2,
+      "align": "inside",
+      "sides": ["bottom"]
+    },
+    "children": []
+  }
+}

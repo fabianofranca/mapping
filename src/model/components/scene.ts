@@ -159,6 +159,12 @@ export interface Stroke {
    * relative to that outline. With `sides`, it only applies to the requested sides.
    */
   readonly offset?: number;
+  /**
+   * The radius of the outline the stroke is drawn on (`frame` and `rect`; absent = the node's
+   * radius plus `offset`). `align` is relative to it: an inside stroke has `r` outside and
+   * `r - width` inside. The fill, the clip and the shadows keep the node's radius.
+   */
+  readonly cornerRadius?: CornerRadius;
   readonly cap?: 'butt' | 'round' | 'square';
   readonly join?: 'miter' | 'round' | 'bevel';
   /** `false`: the width is in screen pixels, at any zoom; absent = scales with the zoom. */
