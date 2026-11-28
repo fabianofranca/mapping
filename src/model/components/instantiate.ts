@@ -76,6 +76,7 @@ import type {
   LayoutAlign,
   LayoutJustify,
   LayoutWrap,
+  ImageFit,
   ImageTemplate,
   IntrinsicSize,
   EllipseTemplate,
@@ -92,7 +93,7 @@ import type {
   TextTemplate,
 } from './componentFormat';
 import type { Box } from './box';
-import { STROKE_SIDES, isRunsTable } from './componentFormat';
+import { IMAGE_FITS_V4, STROKE_SIDES, isRunsTable } from './componentFormat';
 import { clipBoxOf } from './clipBox';
 import { arcPath } from './arc';
 import { clampGrayscale, grayscaleNode } from './grayscale';
@@ -3432,8 +3433,15 @@ function createEngine(
       ...(dash ? { dash } : {}),
       ...(offset > 0 ? { offset: offset / scale } : {}),
       ...strokeStyleOf(spec),
+      ...strokeRadiusOf(spec),
     };
   };
+
+  /** `stroke.cornerRadius` (format 4, only `frame` and `rect`): the outline's radius, resolved like the node's. */
+  const strokeRadiusOf = (spec: StrokeSpec): Pick<Stroke, 'cornerRadius'> =>
+    spec.cornerRadius === undefined
+      ? {}
+      : { cornerRadius: radiusValue(spec.cornerRadius as Expr<unknown>) };
 
   /** `stroke.dash` (list, or an expression returning the list): invalid = no dashing, with a warning. */
   const dashOf = (expr: StrokeSpec['dash']): readonly number[] | undefined => {
@@ -3490,19 +3498,29 @@ function createEngine(
     return sides.length > 0 && sides.length < STROKE_SIDES.length ? sides : undefined;
   };
 
+  /** A shadow number: no value is `fallback`; text or another non-number is `fallback` with a warning. */
+  const shadowNumber = (expr: Expr<number> | undefined, label: string): number => {
+    const value = ev<unknown>(expr as Expr<unknown> | undefined, undefined);
+    if (value === undefined || value === null || value === '') return 0;
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n)) invalidValue(label, value);
+    return Number.isFinite(n) ? n : 0;
+  };
+
   /** One shadow of the list (or the only one): color `none` gives no shadow; `spread` only enters when it is not 0 and `inner` when it is true. */
   const shadowOf = (shadow: ShadowSpec, scale: number): Shadow[] => {
     const color = str(shadow.color, 'none');
     if (isNone(color)) return [];
-    const blur = num(shadow.blur as Expr<number> | undefined, 0);
+    const blur = shadowNumber(shadow.blur as Expr<number> | undefined, 'shadow.blur');
     if (blur < 0) invalidValue('shadow.blur', blur);
-    const spread = num(shadow.spread as Expr<number> | undefined, 0) / scale;
+    const spread =
+      shadowNumber(shadow.spread as Expr<number> | undefined, 'shadow.spread') / scale;
     return [
       {
         color,
         offset: {
-          x: num(shadow.x as Expr<number> | undefined, 0) / scale,
-          y: num(shadow.y as Expr<number> | undefined, 0) / scale,
+          x: shadowNumber(shadow.x as Expr<number> | undefined, 'shadow.x') / scale,
+          y: shadowNumber(shadow.y as Expr<number> | undefined, 'shadow.y') / scale,
         },
         blur: Math.max(0, blur) / scale,
         ...(spread !== 0 ? { spread } : {}),
@@ -3562,14 +3580,27 @@ function createEngine(
       }),
     );
 
-  const radiusOf = (node: TemplateNode): CornerRadius => {
-    const value = ev<unknown>(node.cornerRadius as Expr<unknown> | undefined, 0);
+  /** One corner radius: no value is 0; a negative or non-numeric value is 0 with a warning. */
+  const radiusItem = (value: unknown): number => {
+    if (value === undefined || value === null || value === '') return 0;
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n) || n < 0) invalidValue('cornerRadius', value);
+    return Number.isFinite(n) ? Math.max(0, n) : 0;
+  };
+
+  const radiusOf = (node: TemplateNode): CornerRadius =>
+    radiusValue(node.cornerRadius as Expr<unknown> | undefined);
+
+  /** A corner radius expression (a number, or a list of 4 items, each one an expression too). */
+  const radiusValue = (expr: Expr<unknown> | undefined): CornerRadius => {
+    const value = ev<unknown>(expr, 0);
     if (Array.isArray(value) && value.length === 4) {
-      const [a, b, c, d] = value.map((v) => Math.max(0, Number(v) || 0));
+      const [a, b, c, d] = value.map((item) =>
+        radiusItem(ev<unknown>(item as Expr<unknown>, 0)),
+      );
       return [a ?? 0, b ?? 0, c ?? 0, d ?? 0];
     }
-    const n = Number(value);
-    return Number.isFinite(n) ? Math.max(0, n) : 0;
+    return radiusItem(value);
   };
 
   // --- node assembly --------------------------------------------------------------------
@@ -3579,6 +3610,15 @@ function createEngine(
     const degrees = num(node.rotation, 0);
     return degrees === 0 ? {} : { rotation: degrees };
   };
+
+  /**
+   * `overlay: true` on the scene node, only at the top level of a component with no `screen`: inside a
+   * `component` node (nesting depth > 0) or in a `screen` component there are no child markings to go above.
+   */
+  const overlayOf = (node: TemplateNode): { overlay?: true } =>
+    node.overlay === true && componentDepth === 0 && original.screen === undefined
+      ? { overlay: true }
+      : {};
 
   /** The evaluated `scale`; with no value or 1 the node does not scale, an invalid one (negative, not a number) is 1 with a warning. */
   const scaleOf = (node: TemplateNode): { scale?: number } => {
@@ -3590,6 +3630,19 @@ function createEngine(
       return {};
     }
     return n === 1 ? {} : { scale: n };
+  };
+
+  /** The evaluated `backdropBlur` of a frame or rect; 0, absent or invalid (negative, not a number, with a warning) is omitted. */
+  const backdropBlurOf = (node: TemplateNode): { backdropBlur?: number } => {
+    if (node.type !== 'frame' && node.type !== 'rect') return {};
+    const value = ev<unknown>(node.backdropBlur as Expr<unknown> | undefined, undefined);
+    if (value === undefined || value === null || value === '') return {};
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n) || n < 0) {
+      invalidValue('backdropBlur', value);
+      return {};
+    }
+    return n === 0 ? {} : { backdropBlur: n };
   };
 
   /** The inner root's own `scale` times the `component` node's: they compose by multiplying. */
@@ -3628,6 +3681,7 @@ function createEngine(
     transform: translate(x, y),
     ...rotationOf(node),
     ...scaleOf(node),
+    ...overlayOf(node),
     width: w,
     height: h,
     fills: fillsOf(node.fill, w, h),
@@ -3656,6 +3710,7 @@ function createEngine(
     });
     const base = {
       ...common(frame, `${prefix}/${path}`, x, y, w, h),
+      ...backdropBlurOf(frame),
       ...(stroke ? { stroke } : {}),
       type: 'frame' as const,
       clip: bool(frame.clip, isRoot),
@@ -4061,6 +4116,12 @@ function createEngine(
    * does not download the image or apply the URL policy (whoever draws decides); the layout does
    * not depend on it.
    */
+  const IMAGE_FITS: readonly ImageFit[] = ['cover', 'contain', 'fill', ...IMAGE_FITS_V4];
+
+  /** The image's fit: no value is `cover`; a value outside the fits is `cover` with a warning. */
+  const fitOf = (node: ImageTemplate): ImageFit =>
+    checked(node.fit, IMAGE_FITS, 'cover', 'image.fit');
+
   const buildImage = (
     node: ImageTemplate,
     id: string,
@@ -4082,7 +4143,7 @@ function createEngine(
     const base = common(node, id, x, y, w, h);
     return {
       ...base,
-      fills: [...base.fills, { type: 'image', fit: node.fit ?? 'cover', ...source }],
+      fills: [...base.fills, { type: 'image', fit: fitOf(node), ...source }],
       ...(stroke ? { stroke } : {}),
       type: 'rect',
       cornerRadius: radiusOf(node),
@@ -4129,6 +4190,7 @@ function createEngine(
       opacity: root.opacity * Math.min(1, Math.max(0, num(node.opacity, 1))),
       ...(rotation === 0 ? {} : { rotation }),
       ...(scale === 1 ? {} : { scale }),
+      ...overlayOf(node),
     };
   };
 
@@ -4253,6 +4315,7 @@ function createEngine(
         registerGap(node, id, stroke);
         return {
           ...common(node, id, x, y, w, h),
+          ...backdropBlurOf(node),
           ...(stroke ? { stroke } : {}),
           type: 'rect',
           cornerRadius: radiusOf(node),

@@ -8,11 +8,12 @@
  * from the target of a Konva event.
  */
 import {
-  growRadius,
-  sideSegments,
+  sideStrokes,
   spreadRadius,
   strokeAlignInset,
+  strokeRadius,
 } from '../../model/components/strokeSides';
+import { splitOverlay } from '../../model/components/overlay';
 import { gapOutlines } from '../../model/components/strokeGaps';
 import {
   CUT_REACH,
@@ -33,9 +34,11 @@ import { Shape as KonvaShape } from 'konva/lib/Shape';
 import { Text as KonvaText, type TextConfig } from 'konva/lib/shapes/Text';
 import {
   type CornerRadius,
+  type FrameNode,
   type Matrix,
   type Paint,
   type Point,
+  type RectNode,
   type Scene,
   type SceneNode,
   type SceneTextRun,
@@ -100,10 +103,18 @@ export interface RenderOptions {
    * Draws the placeholder outline of a `slot` (default `true`; the product layer uses `false`).
    */
   readonly showSlots?: boolean;
+  /**
+   * `overlay` nodes (format 4): by default a lone root draws its base and then its overlay in one group (the
+   * `root` of the result). `'apart'` returns the overlay in its own group (`RenderResult.overlay`) for the layer
+   * that draws it after the child markings.
+   */
+  readonly overlay?: 'apart';
 }
 
 export interface RenderResult {
   readonly root: Konva.Group;
+  /** With `overlay: 'apart'` and flagged nodes: their group (it keeps the root's transform; `root` is only the base). */
+  readonly overlay?: Konva.Group;
   /** Konva container of each scene node, by id. */
   readonly byId: ReadonlyMap<string, Konva.Group>;
   /** Approximations made while drawing (besides the converter's), with code and parameters. */
@@ -134,6 +145,8 @@ export const SCENE_ID_ATTR = 'sceneId';
 const HIT_ONLY_ATTR = 'hitOnly';
 /** Marks the shadow-only shape of an inner shadow: it never owns an outer shadow. */
 const INNER_SHADOW_ATTR = 'innerShadow';
+/** The shape that blurs what is under a node (`backdropBlur`): it paints no fill, so it never owns the shadow. */
+const BACKDROP_ATTR = 'backdropBlur';
 
 interface Box {
   readonly width: number;
@@ -158,9 +171,28 @@ class Renderer {
     return [...this.warned.values()];
   }
 
+  private contextFilter: boolean | undefined;
+
+  /** Does the 2D context support `filter`? Probed once per render. */
+  private hasContextFilter(): boolean {
+    this.contextFilter ??= probeContextFilter();
+    return this.contextFilter;
+  }
+
   private warn(code: RenderWarningCode, params?: RenderWarning['params']): void {
     const key = params ? `${code}|${JSON.stringify(params)}` : code;
     if (!this.warned.has(key)) this.warned.set(key, params ? { code, params } : { code });
+  }
+
+  /**
+   * The overlay's root: a copy of the base root's chain of ancestors, so its ids repeat the base's; the
+   * base keeps them in `byId` (only the flagged nodes, which exist nowhere else, are new).
+   */
+  renderOverlay(node: SceneNode): Konva.Group {
+    const known = new Map(this.byId);
+    const group = this.render(node);
+    for (const [id, base] of known) this.byId.set(id, base);
+    return group;
   }
 
   render(node: SceneNode, pendingShadows: readonly Shadow[] = []): Konva.Group {
@@ -178,14 +210,14 @@ class Renderer {
     // (e.g. `filter` on a group that wraps the shape) passes the shadow to the first descendant
     // shape.
     const shadows = this.outerShadows([...pendingShadows, ...node.effects]);
-    const boxed =
-      node.type === 'frame' || node.type === 'rect' || node.type === 'ellipse';
-    const innerShadows = boxed ? node.effects.filter((s) => s.inner) : [];
-    // An inner shadow that no frame, rect or ellipse can draw (a scene from another source, or one
-    // handed down by a group): ignored, with a warning.
+    const innerShadows = drawsInnerShadow(node)
+      ? node.effects.filter((s) => s.inner)
+      : [];
+    // An inner shadow that no frame, rect, ellipse, path or icon can draw (a scene from another
+    // source, or one handed down by a group): ignored, with a warning.
     if (
       pendingShadows.some((s) => s.inner) ||
-      (!boxed && node.effects.some((s) => s.inner))
+      (!drawsInnerShadow(node) && node.effects.some((s) => s.inner))
     )
       this.warn('inner-shadow');
 
@@ -224,12 +256,19 @@ class Renderer {
       });
     }
 
-    const shapes = this.shapesOf(node, innerShadows);
+    // An icon's inner shadow lies over its glyphs: its shapes come after the children.
+    const overChildren = node.type === 'group';
+    const shapes = this.shapesOf(node, overChildren ? [] : innerShadows);
     // The invisible clickable area of a transparent frame does not paint, and the inner shadow's
     // shapes only carry their own shadow: neither owns the outer shadow.
     const shadowOwner =
       shadows.length > 0
-        ? shapes.find((s) => !s.getAttr(HIT_ONLY_ATTR) && !s.getAttr(INNER_SHADOW_ATTR))
+        ? shapes.find(
+            (s) =>
+              !s.getAttr(HIT_ONLY_ATTR) &&
+              !s.getAttr(INNER_SHADOW_ATTR) &&
+              !s.getAttr(BACKDROP_ATTR),
+          )
         : undefined;
     // Several shadows (or `spread`) on a rectangle or ellipse: one shadow-only shape per shadow,
     // below the node's shapes, the last of the list first (the first stays on top).
@@ -275,6 +314,12 @@ class Renderer {
         this.warn('empty-group-shadow');
       }
     }
+    if (overChildren) {
+      for (const shape of innerShadowShapes(node, innerShadows)) {
+        shape.setAttr(SCENE_ID_ATTR, node.id);
+        container.add(shape);
+      }
+    }
 
     const [first] = shadows;
     if (first && shadowOwner && !casters) {
@@ -282,6 +327,28 @@ class Renderer {
       if (shadows.length > 1 || (first.spread ?? 0) !== 0) this.warn('extra-shadows');
     }
     return container;
+  }
+
+  /**
+   * The blur of what is under the node (`backdropBlur`): one shape below the fills. Without `filter` on the
+   * 2D context it draws nothing and warns (the fills still draw).
+   */
+  private backdropShapes(node: FrameNode | RectNode): Konva.Shape[] {
+    const blur = node.backdropBlur ?? 0;
+    if (!(blur > 0)) return [];
+    if (!this.hasContextFilter()) {
+      this.warn('backdrop-blur-unsupported');
+      return [];
+    }
+    const shape = new KonvaShape({
+      width: node.width,
+      height: node.height,
+      listening: false,
+      sceneFunc: (ctx) =>
+        blurBackdrop(ctx._context, node.width, node.height, node.cornerRadius, blur),
+    });
+    shape.setAttr(BACKDROP_ATTR, true);
+    return [shape];
   }
 
   private hitOnly(shape: Konva.Shape): Konva.Shape {
@@ -301,6 +368,7 @@ class Renderer {
     switch (node.type) {
       case 'frame':
       case 'rect': {
+        shapes.push(...this.backdropShapes(node));
         for (const paint of node.fills) {
           const config = {
             width: node.width,
@@ -317,7 +385,8 @@ class Renderer {
         }
         shapes.push(...innerShadowShapes(node, innerShadows));
         if (node.stroke) {
-          if (node.stroke.sides) shapes.push(...this.sideStrokes(node.stroke, box));
+          if (node.stroke.sides)
+            shapes.push(...this.sideStrokes(node.stroke, box, node.cornerRadius));
           else {
             const gapped = this.gapStrokes(node.stroke, box, node.cornerRadius);
             shapes.push(
@@ -382,6 +451,7 @@ class Renderer {
           const shape = new KonvaPath({ data: node.d, fillRule: node.fillRule });
           shapes.push(...this.fillShape(shape, paint, box));
         }
+        shapes.push(...innerShadowShapes(node, innerShadows));
         if (node.stroke) {
           const shape = new KonvaPath({ data: node.d });
           this.applyStroke(shape, node.stroke, 'path');
@@ -789,15 +859,29 @@ class Renderer {
   }
 
   /**
-   * `stroke.sides`: one straight line per requested side (no arc at the corner, even with a
-   * radius).
+   * `stroke.sides`: a straight line per requested side where no rounded corner is involved (and
+   * with `dash`); otherwise the model's band polygons, filled, which follow the corner arcs and
+   * taper next to a side that is not requested.
    */
-  private sideStrokes(stroke: Stroke, box: Box): Konva.Shape[] {
-    return sideSegments(stroke, box.width, box.height).map((seg) => {
+  private sideStrokes(stroke: Stroke, box: Box, radius: CornerRadius): Konva.Shape[] {
+    const { lines, bands } = sideStrokes(stroke, box.width, box.height, radius);
+    const shapes: Konva.Shape[] = lines.map((seg) => {
       const line = new KonvaLine({ points: [seg.x1, seg.y1, seg.x2, seg.y2] });
       this.applyStroke(line, stroke, 'line', true);
       return line;
     });
+    const [paint, ...rest] = stroke.paints;
+    if (bands.length > 0 && rest.length > 0) this.warn('stroke-extra-paints');
+    if (paint)
+      for (const band of bands) {
+        const shape = new KonvaLine({
+          points: band.flatMap((p) => [p.x, p.y]),
+          closed: true,
+          strokeEnabled: false,
+        });
+        shapes.push(...this.fillShape(shape, paint, box));
+      }
+    return shapes;
   }
 
   /** `stroke.gap`: the outline with each corner's radius, in open lines that skip the gaps. */
@@ -820,7 +904,7 @@ class Renderer {
       y: inset,
       width: Math.max(0, box.width - inset * 2),
       height: Math.max(0, box.height - inset * 2),
-      cornerRadius: konvaRadius(shrinkRadius(growRadius(radius, offset), align)),
+      cornerRadius: konvaRadius(shrinkRadius(strokeRadius(stroke, radius), align)),
     });
     // Konva reads gradient points from the shape origin (x = y = inset): move them back by the inset.
     this.applyStroke(shape, stroke, 'box', false, (p) => ({
@@ -1284,24 +1368,187 @@ function castShadow(
   native.restore();
 }
 
+/** Does this browser's 2D context have `filter` (blur on a drawing)? */
+function probeContextFilter(): boolean {
+  const context = document.createElement('canvas').getContext('2d');
+  return context !== null && 'filter' in context;
+}
+
+/** The device-space box of the node's rect, grown by `margin` and clamped to the canvas; null when empty. */
+function backdropBox(
+  m: DOMMatrix,
+  width: number,
+  height: number,
+  margin: number,
+  canvas: { readonly width: number; readonly height: number },
+): { x: number; y: number; w: number; h: number } | null {
+  const corners = [
+    [0, 0],
+    [width, 0],
+    [0, height],
+    [width, height],
+  ] as const;
+  const xs = corners.map(([x, y]) => m.a * x + m.c * y + m.e);
+  const ys = corners.map(([x, y]) => m.b * x + m.d * y + m.f);
+  const x0 = Math.max(0, Math.floor(Math.min(...xs) - margin));
+  const y0 = Math.max(0, Math.floor(Math.min(...ys) - margin));
+  const x1 = Math.min(canvas.width, Math.ceil(Math.max(...xs) + margin));
+  const y1 = Math.min(canvas.height, Math.ceil(Math.max(...ys) + margin));
+  return x1 > x0 && y1 > y0 ? { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } : null;
+}
+
+/**
+ * CSS `backdrop-filter: blur(<blur>px)`: clips to the node's outline and redraws what the layer's canvas
+ * already holds, blurred, over itself. The blur is in the node's space; the current matrix (node scale,
+ * zoom and device pixel ratio) turns it into device pixels, as for the shadow's. The copy is drawn with
+ * the identity matrix because the canvas is in device pixels, only over the node's box grown by 3 sigma.
+ * At full alpha the copy replaces the backdrop (`copy`, so sharp content under a translucent area does not
+ * show through); below 1 it mixes in at that alpha, like CSS element opacity.
+ */
+function blurBackdrop(
+  native: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  radius: CornerRadius,
+  blur: number,
+): void {
+  if (width <= 0 || height <= 0) return;
+  const m = native.getTransform();
+  const sx = Math.hypot(m.a, m.b) || 1;
+  const sy = Math.hypot(m.c, m.d) || 1;
+  const sigma = blur * Math.min(sx, sy);
+  const box = backdropBox(m, width, height, Math.ceil(3 * sigma), native.canvas);
+  if (box === null) return;
+  native.save();
+  roundedRectPath(native, width, height, radius);
+  native.clip();
+  native.setTransform(1, 0, 0, 1, 0, 0);
+  native.filter = `blur(${sigma}px)`;
+  if (native.globalAlpha >= 1) native.globalCompositeOperation = 'copy';
+  native.drawImage(native.canvas, box.x, box.y, box.w, box.h, box.x, box.y, box.w, box.h);
+  native.restore();
+}
+
 /**
  * One shadow-only shape per inner shadow (CSS `inset`), the last of the list first so the first one
  * stays on top; they go above the fills and below the stroke and the children.
  */
 function innerShadowShapes(node: SceneNode, shadows: readonly Shadow[]): Konva.Shape[] {
-  return [...shadows]
-    .reverse()
-    .filter((shadow) => !isInvisibleShadow(shadow))
-    .map((shadow) => {
-      const shape = new KonvaShape({
-        width: node.width,
-        height: node.height,
-        listening: false,
-        sceneFunc: (ctx) => castInnerShadow(ctx._context, node, shadow),
-      });
-      shape.setAttr(INNER_SHADOW_ATTR, true);
-      return shape;
+  const visible = shadows.filter((shadow) => !isInvisibleShadow(shadow));
+  if (visible.length === 0) return [];
+  // The glyphs of a `path` or an icon are read once; each draw only replays them.
+  const glyphs = glyphOutline(node);
+  return [...visible].reverse().map((shadow) => {
+    const shape = new KonvaShape({
+      width: node.width,
+      height: node.height,
+      listening: false,
+      sceneFunc: (ctx) =>
+        glyphs
+          ? castGlyphInnerShadow(ctx._context, node, shadow, glyphs)
+          : castInnerShadow(ctx._context, node, shadow),
     });
+    shape.setAttr(INNER_SHADOW_ATTR, true);
+    return shape;
+  });
+}
+
+/** Does this node draw an inner shadow: frame, rect, ellipse, path, or an icon (a group of paths)? */
+function drawsInnerShadow(node: SceneNode): boolean {
+  switch (node.type) {
+    case 'frame':
+    case 'rect':
+    case 'ellipse':
+    case 'path':
+      return true;
+    case 'group':
+      return node.children.some((c) => c.type === 'path');
+    default:
+      return false;
+  }
+}
+
+/** One glyph of a `path` or an icon: its segments, the matrix to the node's space and its fill rule. */
+interface Glyph {
+  readonly segments: ReturnType<typeof KonvaPath.parsePathData>;
+  readonly transform: Matrix;
+  readonly fillRule: 'nonzero' | 'evenodd';
+}
+
+/** The glyphs a `path` (itself) or an icon group (its path children) draws; none for other nodes. */
+function glyphOutline(node: SceneNode): Glyph[] | undefined {
+  const glyph = (p: SceneNode & { type: 'path' }, transform: Matrix): Glyph => ({
+    segments: KonvaPath.parsePathData(p.d),
+    transform,
+    fillRule: p.fillRule,
+  });
+  if (node.type === 'path') return [glyph(node, [1, 0, 0, 1, 0, 0])];
+  if (node.type !== 'group') return undefined;
+  const glyphs: Glyph[] = [];
+  for (const child of node.children)
+    if (child.type === 'path') glyphs.push(glyph(child, nodeMatrix(child)));
+  return glyphs;
+}
+
+function traceGlyph(native: CanvasRenderingContext2D, glyph: Glyph): void {
+  iconClipPath(native, glyph.segments, glyph.transform);
+}
+
+/**
+ * The inner shadow of a `path` or an icon: for each glyph, clips to it (with its own fill rule) and
+ * draws, far from the screen, a ring (a big rectangle with every glyph as the hole) whose blurred
+ * shadow comes back by the offset. The union of the glyphs is the hole; `spread` does not apply.
+ */
+function castGlyphInnerShadow(
+  native: CanvasRenderingContext2D,
+  node: SceneNode,
+  shadow: Shadow,
+  glyphs: readonly Glyph[],
+): void {
+  const reachBox = Math.max(node.width, node.height);
+  for (const glyph of glyphs) {
+    native.save();
+    native.beginPath();
+    traceGlyph(native, glyph);
+    native.clip(glyph.fillRule);
+    const margin = aimRing(native, node, shadow);
+    native.beginPath();
+    for (const hole of glyphs) traceGlyph(native, hole);
+    const grow = margin + reachBox;
+    native.rect(-grow, -grow, node.width + 2 * grow, node.height + 2 * grow);
+    native.fillStyle = '#000000';
+    native.fill('evenodd');
+    native.restore();
+  }
+}
+
+/**
+ * Points the context's shadow at the ring: the shadow's own settings, and the ring moved far to the
+ * left so only its shadow (brought back by the offset) shows. Returns the margin the ring needs.
+ */
+function aimRing(
+  native: CanvasRenderingContext2D,
+  node: SceneNode,
+  shadow: Shadow,
+): number {
+  const m = native.getTransform();
+  const sx = Math.hypot(m.a, m.b) || 1;
+  const sy = Math.hypot(m.c, m.d) || 1;
+  const margin =
+    2 * shadow.blur + Math.abs(shadow.offset.x) + Math.abs(shadow.offset.y) + 4;
+  const reach =
+    native.canvas.width +
+    native.canvas.height +
+    Math.hypot(node.width * sx, node.height * sy) +
+    2 * shadow.blur * Math.max(sx, sy) +
+    1000;
+  const away = reach / sx;
+  native.shadowColor = shadow.color;
+  native.shadowBlur = shadow.blur * Math.min(sx, sy);
+  native.shadowOffsetX = shadow.offset.x * sx + away * m.a;
+  native.shadowOffsetY = shadow.offset.y * sy + away * m.b;
+  native.translate(-away, 0);
+  return margin;
 }
 
 /** The outline of a frame, rect or ellipse (`grow` > 0 enlarges it on every side), at the origin. */
@@ -1333,23 +1580,7 @@ function castInnerShadow(
   native.save();
   outlinePath(native, node, 0);
   native.clip();
-  const m = native.getTransform();
-  const sx = Math.hypot(m.a, m.b) || 1;
-  const sy = Math.hypot(m.c, m.d) || 1;
-  const margin =
-    2 * shadow.blur + Math.abs(shadow.offset.x) + Math.abs(shadow.offset.y) + 4;
-  const reach =
-    native.canvas.width +
-    native.canvas.height +
-    Math.hypot(node.width * sx, node.height * sy) +
-    2 * shadow.blur * Math.max(sx, sy) +
-    1000;
-  const away = reach / sx;
-  native.shadowColor = shadow.color;
-  native.shadowBlur = shadow.blur * Math.min(sx, sy);
-  native.shadowOffsetX = shadow.offset.x * sx + away * m.a;
-  native.shadowOffsetY = shadow.offset.y * sy + away * m.b;
-  native.translate(-away, 0);
+  const margin = aimRing(native, node, shadow);
   const holeW = node.width - 2 * spread;
   const holeH = node.height - 2 * spread;
   if (holeW > 0 && holeH > 0) {
@@ -1542,14 +1773,27 @@ function roundedRectPath(
 
 export function renderScene(scene: Scene, options: RenderOptions = {}): RenderResult {
   const renderer = new Renderer(options);
-  const root = renderer.render(scene.root);
+  // Only a `frame` root carries overlay nodes; a `group` root draws as it is.
+  const { base, overlay }: { base: SceneNode; overlay?: SceneNode } =
+    scene.root.type === 'frame' ? splitOverlay(scene.root) : { base: scene.root };
+  const root = renderer.render(base);
+  const over = overlay === undefined ? undefined : renderer.renderOverlay(overlay);
+  const together = over !== undefined && options.overlay !== 'apart';
   return {
-    root,
+    root: together ? stacked(root, over) : root,
+    ...(over !== undefined && !together ? { overlay: over } : {}),
     byId: renderer.byId,
     warnings: renderer.warnings,
     imageUrls: [...renderer.imageUrls],
     packageImages: [...renderer.packageKeys],
   };
+}
+
+/** The base and its overlay in one group (a lone drawing): the overlay is painted last. */
+function stacked(base: Konva.Group, overlay: Konva.Group): Konva.Group {
+  const group = new Konva.Group({ name: base.name() });
+  group.add(base, overlay);
+  return group;
 }
 
 /** The id of the scene node that owns a Konva event target (shape or container), if any. */

@@ -91,23 +91,79 @@ function boxPass(
   height: number,
   radius: number,
   horizontal: boolean,
+  clamp = false,
 ): void {
   const lines = horizontal ? height : width;
   const length = horizontal ? width : height;
   const at = (line: number, i: number) =>
     horizontal ? line * width + i : i * width + line;
+  // Outside the line: zero, or (clamp) the nearest edge sample.
+  const sample = (line: number, i: number): number => {
+    if (i >= 0 && i < length) return src[at(line, i)]!;
+    return clamp ? src[at(line, i < 0 ? 0 : length - 1)]! : 0;
+  };
   const size = 2 * radius + 1;
   for (let line = 0; line < lines; line++) {
     let sum = 0;
-    for (let i = -radius; i <= radius; i++)
-      sum += i >= 0 && i < length ? src[at(line, i)]! : 0;
+    for (let i = -radius; i <= radius; i++) sum += sample(line, i);
     for (let i = 0; i < length; i++) {
       dst[at(line, i)] = sum / size;
-      const out = i - radius;
-      const into = i + radius + 1;
-      if (out >= 0) sum -= src[at(line, out)]!;
-      if (into < length) sum += src[at(line, into)]!;
+      sum += sample(line, i + radius + 1) - sample(line, i - radius);
     }
+  }
+}
+
+/**
+ * The box radius for `sigma` (three boxes of radius r have variance r(r + 1): the r closest to `sigma`),
+ * clamped to `max`: with the edge pixels repeated, a larger radius gives the same result.
+ */
+export function boxRadiusFor(sigma: number, max: number): number {
+  const radius = Math.round((Math.sqrt(1 + 4 * sigma * sigma) - 1) / 2);
+  return Math.min(radius, Math.max(0, Math.floor(max)));
+}
+
+/**
+ * Gaussian blur (`sigma` is the standard deviation, in pixels, like CSS `blur()`) of an RGBA region,
+ * in place, by three box passes with the edge pixels repeated. The channels are blurred premultiplied
+ * by alpha, so a transparent pixel does not bleed its color.
+ */
+export function blurRgba(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  sigma: number,
+): void {
+  const radius = boxRadiusFor(sigma, Math.max(width, height));
+  if (radius <= 0 || width === 0 || height === 0) return;
+  const planes = premultipliedPlanes(data, width * height);
+  const tmp = new Float32Array(width * height);
+  for (const plane of planes) {
+    for (let pass = 0; pass < 3; pass++) {
+      boxPass(plane, tmp, width, height, radius, true, true);
+      boxPass(tmp, plane, width, height, radius, false, true);
+    }
+  }
+  writePlanes(data, planes);
+}
+
+/** The R, G, B (premultiplied by alpha) and A planes of an RGBA buffer, in 0..255 and 0..1. */
+function premultipliedPlanes(data: Uint8ClampedArray, count: number): Float32Array[] {
+  const planes = [0, 1, 2, 3].map(() => new Float32Array(count));
+  for (let i = 0; i < count; i++) {
+    const a = data[i * 4 + 3]! / 255;
+    for (let c = 0; c < 3; c++) planes[c]![i] = data[i * 4 + c]! * a;
+    planes[3]![i] = a;
+  }
+  return planes;
+}
+
+/** Writes the `premultipliedPlanes` back into `data`, un-premultiplied. */
+function writePlanes(data: Uint8ClampedArray, planes: Float32Array[]): void {
+  const alpha = planes[3]!;
+  for (let i = 0; i < alpha.length; i++) {
+    const a = alpha[i]!;
+    for (let c = 0; c < 3; c++) data[i * 4 + c] = a > 0 ? planes[c]![i]! / a : 0;
+    data[i * 4 + 3] = a * 255;
   }
 }
 

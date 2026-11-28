@@ -62,6 +62,7 @@ const INHERITED_KEYS = [
   'rotation',
   'scale',
   'filter',
+  'overlay',
   'anchors',
   'minWidth',
   'maxWidth',

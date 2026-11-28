@@ -219,6 +219,14 @@ export interface StrokeSpec {
   /** Only these sides have a stroke (v4, on `frame` and `rect`); absent = all four. */
   readonly sides?: Expr<readonly StrokeSide[]>;
   /**
+   * The radius of the outline the stroke is drawn on (v4, on `frame` and `rect`): the same forms
+   * as the node's `cornerRadius`. It replaces "the node's radius plus `offset`", and `align` is
+   * relative to it: an inside stroke has `cornerRadius` outside and `cornerRadius - width` inside.
+   * It applies to the whole outline, to `sides` and to `gap`; the fill, the clip and the shadows
+   * keep the node's radius.
+   */
+  readonly cornerRadius?: Expr<number | readonly [Radius, Radius, Radius, Radius]>;
+  /**
    * Stroke width (v4, literal): `true` (default) scales with the zoom; `false` keeps the width
    * in screen pixels, at any zoom.
    */
@@ -239,8 +247,11 @@ export interface StrokeGapSpec {
 export type StrokeSide = 'top' | 'right' | 'bottom' | 'left';
 export const STROKE_SIDES: readonly StrokeSide[] = ['top', 'right', 'bottom', 'left'];
 
-/** A corner radius: number ≥ 0 or, in v4, number `$token`. */
-type Radius = number | { readonly $token: string };
+/** A corner radius: number ≥ 0 or, in v4, number `$token` or an expression that gives a number. */
+type Radius = Expr<number> | { readonly $token: string };
+
+/** A shadow measure: a number or, in v4, a number `$token` or an expression that gives a number. */
+type ShadowNumber = Expr<number> | { readonly $token: string };
 
 export interface ShadowSpec {
   /**
@@ -250,12 +261,12 @@ export interface ShadowSpec {
    */
   readonly $token?: string;
   readonly color: Expr<Color>;
-  /** In v4 each measure also accepts a number `$token`. */
-  readonly x?: number | { readonly $token: string };
-  readonly y?: number | { readonly $token: string };
-  readonly blur?: number | { readonly $token: string };
-  /** Grows (or, if negative, shrinks) the shadow's shape on each side (v4, px; literal or `$token`). */
-  readonly spread?: number | { readonly $token: string };
+  /** In v4 each measure also accepts a number `$token` or an expression. */
+  readonly x?: ShadowNumber;
+  readonly y?: ShadowNumber;
+  readonly blur?: ShadowNumber;
+  /** Grows (or, if negative, shrinks) the shadow's shape on each side (v4, px; literal, `$token` or expression). */
+  readonly spread?: ShadowNumber;
   /** CSS `inset` (v4): drawn inside the shape; only on `frame`, `rect` and `ellipse`. Literal boolean. */
   readonly inner?: boolean;
 }
@@ -456,6 +467,14 @@ interface TemplateNodeBase {
    */
   readonly filter?: FilterSpec;
   /**
+   * `formatVersion` 4: draws the node (and its subtree) above the child markings of the same
+   * container, in a second pass, instead of in its place in the drawing. A literal boolean, not
+   * valid on the root. Drawing order only: the layout, the measurement, `hug`, the anchors, the
+   * slots and the warnings do not change. It has no effect in a component with `screen` nor inside
+   * a `component` node, which have no child markings.
+   */
+  readonly overlay?: boolean;
+  /**
    * `formatVersion` 4: pins the reading direction of the subtree (literal `ltr` or `rtl`), instead
    * of following the container's: a phone number, a snippet of code. The node is placed by its
    * parent in the parent's direction; what is inside the node follows the one it pins.
@@ -507,7 +526,7 @@ interface TemplateNodeBase {
   readonly stroke?: StrokeSpec;
   /** One shadow, or (v4) 1 to 4: the first sits on top, like CSS's `box-shadow`. */
   readonly shadow?: ShadowSpec | readonly ShadowSpec[];
-  /** In v4 each item of the list also accepts a number `$token`. */
+  /** In v4 each item of the list also accepts a number `$token` or an expression. */
   readonly cornerRadius?: Expr<number | readonly [Radius, Radius, Radius, Radius]>;
 }
 
@@ -517,6 +536,13 @@ export interface FrameTemplate extends TemplateNodeBase {
   readonly clip?: BoolExpr;
   readonly layout?: LayoutSpec;
   readonly children?: readonly TemplateNode[];
+  /**
+   * `formatVersion` 4: blurs what is already drawn below the node, clipped to the node's outline, before
+   * its fill, like CSS `backdrop-filter: blur(<n>px)` (`n` is the standard deviation). A number >= 0 in
+   * component units: a literal, an expression or a number `$token`. Drawing only: no layout change and no
+   * enlarged clip.
+   */
+  readonly backdropBlur?: Expr<number>;
   /**
    * Frame variables (v4, only in the written file): name → expression, used with
    * `{ "$var": "name" }` in this frame and in the descendants. `parseComponent` swaps the `$var`s
@@ -528,6 +554,13 @@ export interface FrameTemplate extends TemplateNodeBase {
 
 export interface RectTemplate extends TemplateNodeBase {
   readonly type: 'rect';
+  /**
+   * `formatVersion` 4: blurs what is already drawn below the node, clipped to the node's outline, before
+   * its fill, like CSS `backdrop-filter: blur(<n>px)` (`n` is the standard deviation). A number >= 0 in
+   * component units: a literal, an expression or a number `$token`. Drawing only: no layout change and no
+   * enlarged clip.
+   */
+  readonly backdropBlur?: Expr<number>;
 }
 
 export interface EllipseTemplate extends TemplateNodeBase {
@@ -799,7 +832,8 @@ export const IMAGE_FITS_V4: readonly ImageFit[] = [
 export interface ImageTemplate extends TemplateNodeBase {
   readonly type: 'image';
   readonly src: Expr<string>;
-  readonly fit?: ImageFit;
+  /** In v4 an expression that gives one of the fits. */
+  readonly fit?: Expr<ImageFit>;
 }
 
 /**

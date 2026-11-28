@@ -1,0 +1,42 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "link",
+  "name": "Link",
+  "description": "A text link with a focus ring. The ring is a rect that fills the link, with radius 0 and an inside stroke 2 px wide, 2 px away from the text box, with stroke.cornerRadius 4: the ring is 4 px round on its outer edge and 2 px round on its inner edge, like the Figma layer. The focused field shows or hides it.",
+  "size": { "width": 80, "height": 32 },
+  "preview": { "focused": "true" },
+  "template": {
+    "type": "frame",
+    "name": "link",
+    "layout": { "type": "none" },
+    "children": [
+      {
+        "type": "text",
+        "name": "label",
+        "text": "Link",
+        "font": { "size": 14, "weight": 600, "lineHeight": 20 },
+        "color": "#2563EB",
+        "anchors": { "centerX": true, "centerY": true }
+      },
+      {
+        "type": "rect",
+        "name": "ring",
+        "width": "fill",
+        "height": "fill",
+        "cornerRadius": 0,
+        "stroke": {
+          "color": {
+            "$if": { "$eq": ["focused", "true"] },
+            "then": "#2563EB",
+            "else": "none"
+          },
+          "width": 2,
+          "align": "inside",
+          "offset": 2,
+          "cornerRadius": 4
+        }
+      }
+    ]
+  }
+}

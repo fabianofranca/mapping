@@ -1,0 +1,68 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "header",
+  "name": "Header",
+  "description": "A 200 × 240 area with a column slot named content for the child markings and a 200 × 56 translucent bar on top. The bar has overlay: true, so it is drawn above the child markings, and backdropBlur 16, so it blurs what is drawn under it, tinted by its #FFFFFFB3 fill; a chip inside the bar has its own backdropBlur 4.",
+  "size": {
+    "width": 200,
+    "height": 240
+  },
+  "template": {
+    "type": "frame",
+    "name": "header",
+    "layout": {
+      "type": "none"
+    },
+    "fill": "#F9FAFB",
+    "children": [
+      {
+        "type": "slot",
+        "name": "content",
+        "label": "Content",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "column",
+          "gap": 0
+        }
+      },
+      {
+        "type": "frame",
+        "name": "bar",
+        "width": 200,
+        "height": 56,
+        "layout": {
+          "type": "none"
+        },
+        "fill": "#FFFFFFB3",
+        "backdropBlur": 16,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0
+        },
+        "overlay": true,
+        "children": [
+          {
+            "type": "rect",
+            "name": "chip",
+            "width": 72,
+            "height": 24,
+            "cornerRadius": 12,
+            "fill": "#FFFFFF80",
+            "backdropBlur": 4,
+            "anchors": {
+              "left": 12,
+              "top": 16
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
