@@ -1,4 +1,4 @@
-# MCP release candidates cleaned up by ancestry — [Não lançado] (épico `epic/rc-cleanup`, MCP unchanged 0.73.1, schema v26)
+# MCP release candidates cleaned up by ancestry — [Não lançado] (épico `epic/rc-cleanup`, PR #0, MCP unchanged 0.73.1, schema v26)
 
 ## Corrigido
 
