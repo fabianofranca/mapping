@@ -161,4 +161,4 @@ Of the 5 blocks: total cost US$ 72.33 and median US$ 13.19; final context from 4
 
 **Previous baseline (3 blocks; time measured per block, stage #482, commit `159f46d`):** block 1 43:44, block 2 36:33 (with the visual pass) and block 3 33:52 ([summary](https://github.com/fabianofranca/mapping/issues/485#issuecomment-6643772361)); that of stage #424 was 47:18, 35:13 and 38:11 ([summary](https://github.com/fabianofranca/mapping/issues/424)). Indicative goal of 45 min, not a failure criterion.
 
-**R56 of #2144 (TA5, renumbered at SM1):** R56 (Touch area overlap and spacing, 16 steps; it was written as R55, but `main` took R55 for drawing fidelity (#2915), so the next free number was R56) went into block 1, the one with the most room (216,964 before R55, ceiling 232,000), which becomes 185 steps.
+**R56 of #2144 (TA5):** R56 (Touch area overlap and spacing, 16 steps; renumbered from R55) went into block 1, which becomes 185 steps.
