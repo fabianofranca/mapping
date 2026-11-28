@@ -1563,6 +1563,54 @@ button.layer-group-label:hover {
   min-width: 0;
 }
 
+/* "Variants" section of a container (stage #2034, VR3): one row per other variant, then the actions. */
+.variants-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  position: relative;
+}
+
+.variants-list,
+.variants-missing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The row is a button (inline-flex), where `text-overflow` does not apply: the name truncates in its own
+   span, as the "Move to page" menu items do (`.menu-item-name`). */
+.variants-row {
+  justify-content: flex-start;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.variants-row-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The "Link to variant…" menu is anchored to the section, not to its (small) button, so it keeps inside
+   Details and the long names truncate instead of widening it. */
+.variants-section .menu-popover {
+  position: static;
+}
+
+.variants-section .menu-list {
+  max-width: 100%;
+}
+
+.variants-missing-title {
+  font: var(--t-small);
+}
+
 /* Field groups (stage #2918, FG3): the subheading is a full-width row of the PropertyGrid; the
    group's rows sit in a wrapper that does not make a box, so the label/control columns hold. */
 .field-group-head,

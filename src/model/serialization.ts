@@ -128,6 +128,7 @@ export function serialize(p: Project): string {
       ...(i.classes == null || Object.keys(i.classes).length === 0
         ? {}
         : { classes: { ...i.classes } }),
+      ...(i.variantGroup == null ? {} : { variantGroup: i.variantGroup }),
     })),
     markings: p.markings.map(canonicalMarking),
     arrows: p.arrows.map((a) => ({

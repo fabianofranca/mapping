@@ -88,6 +88,7 @@ Each DS component and its origin in the code. A DS name can cover several files,
 | `PerspectivePicker` | `src/ui/PerspectivePicker.tsx` | guide only, no preview |
 | `PerspectiveDialogs` | `src/ui/NewPerspectiveDialog.tsx`, `ManagePerspectivesDialog.tsx`, `DeletePerspectiveDialog.tsx` | guide only, no preview |
 | `PerspectivesSection` | `src/ui/PerspectivesSection.tsx`, `ArrivalNotice.tsx` | guide only, no preview |
+| `ContainerVariantsSection` | `src/ui/ContainerVariantsSection.tsx` | guide only, no preview; the `.variants-*` rules are in `src/theme/details.css`. |
 | `ToolWindow` | `src/ui/ToolWindow.tsx` | Sizes in `src/ui/toolWindowLayout.ts`; assembly in `src/app/EditorWindows.tsx`. |
 | `ToolStripButton` | `src/ui/ToolStrip.tsx` | It is the `StripButton`, not exported; metadata in `src/ui/toolWindowMeta.ts`. |
 | `NarrowWindow` | `src/app/NarrowWindow.tsx` | Exports `NarrowWindowNotice` and `useNarrowWindow`; limit in `src/theme/breakpoints.ts`. |

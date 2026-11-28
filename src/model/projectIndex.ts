@@ -88,6 +88,11 @@ export interface ProjectIndex {
   readonly pageOf: ReadonlyMap<string, string>;
   /** The ids of `roots` on each page, in `roots` order. Every page of the project has an entry. */
   readonly rootsByPage: ReadonlyMap<string, readonly string[]>;
+  /**
+   * The other members of each container's variant group (v26), in project order; only containers whose
+   * group has two or more members have an entry (a group of one gives nothing).
+   */
+  readonly variantsOf: ReadonlyMap<string, readonly ProjectContainer[]>;
   /** "For everyone" perspectives that have each root, in `perspectives` order. */
   readonly perspectivesByRoot: ReadonlyMap<string, readonly Perspective[]>;
   /** Annotations of each marking, in project order. */
@@ -301,6 +306,23 @@ function withPages<T extends Pick<ProjectIndex, 'roots'>>(
   return { ...groups, ...pageGroups(p, containers, markings, groups.roots) };
 }
 
+/** The other members of each variant group, by container id (a group of one has no entry). */
+function variantGroups(p: Project): Map<string, readonly ProjectContainer[]> {
+  const groups = new Map<string, ProjectContainer[]>();
+  for (const c of p.containers)
+    if (c.variantGroup != null) push(groups, c.variantGroup, c);
+  const variantsOf = new Map<string, readonly ProjectContainer[]>();
+  for (const members of groups.values()) {
+    if (members.length < 2) continue;
+    for (const c of members)
+      variantsOf.set(
+        c.id,
+        members.filter((m) => m !== c),
+      );
+  }
+  return variantsOf;
+}
+
 function buildIndex(p: Project): ProjectIndex {
   const entries = new Map<string, ReadonlyMap<string, Entry>>();
   const children = new Map<string | null, Marking[]>();
@@ -365,6 +387,7 @@ function buildIndex(p: Project): ProjectIndex {
     ),
     annotationsByMarking,
     annotationsByOwner,
+    variantsOf: variantGroups(p),
     specializations: byId(p.specializations),
     types,
     specLayers,

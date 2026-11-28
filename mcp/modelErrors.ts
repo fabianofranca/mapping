@@ -108,6 +108,8 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'page-mixed': 'the items are on different pages: a wrap takes items of a single page',
   'page-not-empty':
     'the page has content: say where it goes (`move_to`) or discard it (`discard: true`)',
+  'variant-self': 'a container cannot be a variant of itself',
+  'variant-already-linked': 'the containers are already variants of each other',
 };
 
 /** Hint about the next step for the model errors that have one. */
