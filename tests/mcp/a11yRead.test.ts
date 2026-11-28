@@ -362,3 +362,110 @@ describe('touch-target-overlap in get_marking, get_annotation and list_markings'
     expect(incomplete.markings).toEqual([]);
   });
 });
+
+// Stage #1998 (TA4): `touch-target-small` with the WCAG 2.5.8 spacing in the reads. The root minimum is 24 x 24
+// `visual` with `spacing: true` (density 1): `IconA` and `IconB` are 20 x 20 with centers 20 apart (their circles
+// overlap); `Lone` is a chip, whose type has the same minimum with no opt-in.
+describe('touch-target-small with the spacing in get_marking, get_annotation and the type', () => {
+  let sws: A11yWorkspace;
+  const call = (name: string, args: Record<string, unknown>) => a11yCall(sws, name, args);
+  const list = async () =>
+    (await call('list_markings', { project: 'a11y', container: A11Y_SCREEN }))
+      .markings as { ref: string; name: string; warnings?: number }[];
+  const refOf = async (name: string) => (await list()).find((r) => r.name === name)!.ref;
+  const annotationOf = async (name: string) => {
+    const marking = await call('get_marking', { ref: await refOf(name) });
+    return (marking.layers as { annotations: Record<string, unknown>[] }[]).flatMap(
+      (l) => l.annotations,
+    )[0]!;
+  };
+
+  beforeAll(async () => {
+    sws = await a11yWorkspace(
+      (_add, plain) => {
+        plain(
+          'IconA',
+          'button',
+          { x: 100, y: 100, width: 20, height: 20 },
+          { label: 'A' },
+        );
+        plain(
+          'IconB',
+          'button',
+          { x: 120, y: 100, width: 20, height: 20 },
+          { label: 'B' },
+        );
+        plain('Lone', 'chip', { x: 600, y: 100, width: 20, height: 20 }, { label: 'L' });
+      },
+      {
+        density: 1,
+        tweak: (spec: Doc) => {
+          spec.formatVersion = 27;
+          spec.accessibility.touchTarget = {
+            width: 24,
+            height: 24,
+            mode: 'visual',
+            spacing: true,
+          };
+          // The type `chip` declares its own area, with no opt-in: the plain size finding, as before.
+          spec.layers[0].annotationTypes.find(
+            (t: { id: string }) => t.id === 'chip',
+          ).accessibility.touchTarget = { width: 24, height: 24, mode: 'visual' };
+        },
+      },
+    );
+  });
+
+  afterAll(async () => {
+    await sws.client.close();
+    rmSync(sws.base, { recursive: true, force: true });
+  });
+
+  it('get_marking has audit with spacing.other naming the neighbor', async () => {
+    const a = await annotationOf('IconA');
+    const b = await annotationOf('IconB');
+    expect(a.audit).toEqual([
+      {
+        code: 'touch-target-small',
+        annotation: a.ref,
+        actual: { width: 20, height: 20 },
+        min: { width: 24, height: 24 },
+        minPx: { width: 24, height: 24 },
+        density: 1,
+        spacing: { other: { marking: await refOf('IconB'), annotation: b.ref } },
+      },
+    ]);
+    expect(b.audit).toMatchObject([
+      { spacing: { other: { marking: await refOf('IconA') } } },
+    ]);
+  });
+
+  it('an undersized marking of a type with no opt-in has the size finding and no spacing key', async () => {
+    const lone = await annotationOf('Lone');
+    expect(lone.audit).toHaveLength(1);
+    expect((lone.audit as Record<string, unknown>[])[0]).not.toHaveProperty('spacing');
+  });
+
+  it('get_annotation carries the same audit', async () => {
+    const a = await annotationOf('IconA');
+    expect((await call('get_annotation', { ref: a.ref })).audit).toEqual(a.audit);
+  });
+
+  it('get_component and typeAccessibility show spacing: true as declared', async () => {
+    const button = await call('get_component', {
+      project: 'a11y',
+      specId: 'accessibility',
+      type: 'button',
+    });
+    expect(button.accessibility.touchTarget).toEqual({
+      width: 24,
+      height: 24,
+      mode: 'visual',
+      spacing: true,
+    });
+    const marking = await call('get_marking', { ref: await refOf('IconA') });
+    expect(marking.typeAccessibility['accessibility/button'].touchTarget).toEqual(
+      button.accessibility.touchTarget,
+    );
+  });
+});

@@ -22,8 +22,22 @@ const sizeOf = (
   round: (n: number) => number,
 ): Json => ({ width: round(size.width), height: round(size.height) });
 
-/** `touch-target-small`: the size in units, the minimum in units and in image pixels, and the density (pixels per unit). */
+/**
+ * `touch-target-small`: the size in units, the minimum in units and in image pixels, and the density (pixels per unit).
+ * With the WCAG 2.5.8 spacing (stage #1998, TA4) the neighbor that blocks the circle comes in `spacing.other`.
+ */
 function smallView(refs: Refs, f: TouchTargetSmallFinding): Json {
+  const spacing =
+    f.spacing === undefined
+      ? {}
+      : {
+          spacing: {
+            other: {
+              marking: refs.ref('m', f.spacing.other.markingId),
+              annotation: refs.ref('a', f.spacing.other.annotationId),
+            },
+          },
+        };
   return {
     code: f.code,
     annotation: refs.ref('a', f.annotationId),
@@ -31,6 +45,7 @@ function smallView(refs: Refs, f: TouchTargetSmallFinding): Json {
     min: sizeOf(f.min, unitsOf),
     minPx: sizeOf(f.minPx, (n) => n),
     density: Number(f.density.toFixed(3)),
+    ...spacing,
   };
 }
 
@@ -59,10 +74,14 @@ export function auditView(refs: Refs, findings: readonly AuditFinding[]): Json[]
   );
 }
 
-/** The text of a warning: `36 × 40; minimum 44 × 44 units (132 × 132 px at 3x)`. */
-function smallMessage(f: TouchTargetSmallFinding): string {
+/** The text of a warning: `36 × 40; minimum 44 × 44 units (132 × 132 px at 3x)`, plus ` — too close to Icon B` with the spacing. */
+function smallMessage(refs: Refs, f: TouchTargetSmallFinding): string {
   const { actual, min, minPx } = f;
-  return `${actualUnitsOf(actual.width)} × ${actualUnitsOf(actual.height)}; minimum ${unitsOf(min.width)} × ${unitsOf(min.height)} units (${minPx.width} × ${minPx.height} px at ${densityText(f.density)}x)`;
+  const close =
+    f.spacing === undefined
+      ? ''
+      : ` — too close to ${refs.markingName(f.spacing.other.markingId)}`;
+  return `${actualUnitsOf(actual.width)} × ${actualUnitsOf(actual.height)}; minimum ${unitsOf(min.width)} × ${unitsOf(min.height)} units (${minPx.width} × ${minPx.height} px at ${densityText(f.density)}x)${close}`;
 }
 
 /** The text of an overlap: `overlaps the touch area of Icon B by 4 × 48 units (4 × 48 px at 1x)`. */
@@ -72,7 +91,7 @@ function overlapMessage(refs: Refs, f: TouchTargetOverlapFinding): string {
 }
 
 const warningMessage = (refs: Refs, f: AuditFinding): string =>
-  f.code === 'touch-target-overlap' ? overlapMessage(refs, f) : smallMessage(f);
+  f.code === 'touch-target-overlap' ? overlapMessage(refs, f) : smallMessage(refs, f);
 
 /** A finding as an entry of the plan's `warnings`: the audit's fields plus the marking and a message. */
 export function auditWarning(refs: Refs, finding: AuditFinding): Json {
