@@ -1,4 +1,4 @@
-# `import_icons` inputs: SVG from the scratch folder and `ignoreFilters` — [Não lançado] (épico `epic/icon-import-inputs`, PR #3076, MCP 0.68.0, schema v25, unchanged)
+# `import_icons` inputs: SVG from the scratch folder and `ignoreFilters` — 2026-11-28 (épico `epic/icon-import-inputs`, PR #3076, MCP 0.68.0, schema v25, unchanged)
 
 ## Adicionado
 

@@ -1,4 +1,4 @@
-# `import_icons` inputs — [Não lançado] (épico `epic/icon-import-inputs`)
+# `import_icons` inputs — 2026-11-28 (épico `epic/icon-import-inputs`)
 
 ## Pendências
 
@@ -6,7 +6,7 @@ None. The epic only touches the MCP server (`import_icons`), the SVG converter i
 
 ## Sincronização
 
-Nothing to write to the **Mapping** artifact: the epic does not change a component, token or icon of the app.
+Sem impacto: nothing to write to the **Mapping** artifact; the epic does not change a component, token or icon of the app.
 
 ## Ficou sem gravar
 
