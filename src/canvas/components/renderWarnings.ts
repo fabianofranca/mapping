@@ -31,7 +31,9 @@ export type RenderWarningCode =
   /** Remote image loaded without CORS in a pixel-safe drawing (`params.origin`). */
   | 'remote-image-opaque'
   /** Angular gradient without `createConicGradient`: the first stop's color. */
-  | 'angular-gradient-unsupported';
+  | 'angular-gradient-unsupported'
+  /** `backdropBlur` without `filter` on the 2D context: no blur (the fills still draw). */
+  | 'backdrop-blur-unsupported';
 
 export interface RenderWarning {
   readonly code: RenderWarningCode;
@@ -54,4 +56,5 @@ export const RENDER_WARNING_CODES: readonly RenderWarningCode[] = [
   'angular-gradient-unsupported',
   'remote-image-failed',
   'remote-image-opaque',
+  'backdrop-blur-unsupported',
 ];

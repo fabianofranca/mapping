@@ -256,6 +256,21 @@ describe('splitOverlay', () => {
     expect(base.fills).toEqual(drawn.fills);
   });
 
+  it('the overlay ancestors drop backdropBlur while the base keeps it', () => {
+    const drawn = nested();
+    const blurred: FrameNode = {
+      ...drawn,
+      children: drawn.children.map((n) =>
+        n.name === 'mid' ? ({ ...n, backdropBlur: 8 } as SceneNode) : n,
+      ),
+    };
+    const { base, overlay } = splitOverlay(blurred);
+    expect((named(base, 'mid') as FrameNode).backdropBlur).toBe(8);
+    expect(
+      (named(overlay as SceneNode, 'mid') as FrameNode).backdropBlur,
+    ).toBeUndefined();
+  });
+
   it('the same root returns the same pair', () => {
     const drawn = nested();
     expect(splitOverlay(drawn)).toBe(splitOverlay(drawn));

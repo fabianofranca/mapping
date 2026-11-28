@@ -92,6 +92,7 @@ The two image tools return the **image** (`image` content) and, before it, a JSO
   - `maxSize` (default 1568, between 64 and 4096) limits the longer side of the returned image; the image is never enlarged. A small marking comes out at real size: use `padding` to see the surroundings.
   - `format`: `png` (default, lossless: good for screens and text), `jpeg` (default if the original file is JPEG) or `webp`.
   - A node with `overlay: true` in a component is drawn **above the child markings** in the PNG of `render_marking`, `render_container` and a container without a file (a scrollbar over a list), and the app and the viewer draw it the same way.
+  - A `frame` or `rect` with `backdropBlur` blurs what is drawn under it: the PNG blurs everything below it, the container's image included; the app and the viewer blur only the component drawings below it.
   - In a **background-only container** the crop is the **drawing of the components** (`drawing: "rendered"`), the same as `render_container`: real text, shadow (outer and inner, `inner: true`), dashes, icons and the images of the library package; gradients (linear, radial and angular, painted per pixel); only the remote image (a placeholder) is simplified.
   - A background-only container whose `background` is a token (`{ "$token": "surface" }`) is painted with the **resolved color** in its effective drawing mode (the `get_container` `resolvedBackground`); `render_*` with `drawingMode` resolves it with the pinned axes, so the same screen shows the light and the dark board.
 - An **arrow** (`arrow`) and a **canvas marking** (`canvas-marking`, no container) have no image to crop: ask for the image of the arrow's source or target marking, or `get_container_file` of the containers under the canvas marking (`members` of `get_marking`).
@@ -129,7 +130,7 @@ In the text: `container` says which container the crop is from (`ref`, `file`, `
 
 A field can also name a token of the project: a type whose component reads `$tokenNamed` takes the token's name as the field's value (`cor: on-surface`, `familia: font-mono`), looked up in any applied library and in the marking's drawing mode; a name that resolves to nothing draws the default, so check the render.
 
-**A design that shows an element over the content** (a scrollbar over a list, a badge over a card) is modeled in the type's component with a node marked `overlay: true`, not by changing the markings: it is drawn above the child markings in the PNG of `render_marking` and `render_container`, so check the proposal's preview with those tools.
+**A design that shows an element over the content** (a scrollbar over a list, a badge over a card) is modeled in the type's component with a node marked `overlay: true`, not by changing the markings: it is drawn above the child markings in the PNG of `render_marking` and `render_container`, so check the proposal's preview with those tools. A translucent bar that blurs what is under it (a header) takes `backdropBlur` in the component; the PNG blurs everything below it, image included, while the app only blurs the component drawings.
 
 ### The flow
 

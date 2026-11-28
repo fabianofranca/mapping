@@ -365,8 +365,8 @@ export const BASE_KEYS = [
 ] as const;
 /** Keys of each node type, besides the common ones. */
 export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> = {
-  frame: ['clip', 'layout', 'children'],
-  rect: [],
+  frame: ['clip', 'layout', 'children', 'backdropBlur'],
+  rect: ['backdropBlur'],
   ellipse: ['startAngle', 'sweepAngle'],
   text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
   path: ['d', 'viewBox', 'fillRule', 'mirror'],

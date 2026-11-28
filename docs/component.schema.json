@@ -2822,6 +2822,10 @@
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
         },
+        "backdropBlur": {
+          "description": "formatVersion 4: blurs what is already drawn below the node, clipped to its outline, before its fill (CSS backdrop-filter: blur, standard deviation, in component units). A number >= 0, literal, expression or number token. Drawing only. In a lower formatVersion, parseComponent refuses.",
+          "$ref": "#/$defs/expr_nonNegative"
+        },
         "filter": {
           "type": "object",
           "additionalProperties": false,
@@ -2915,6 +2919,10 @@
           "type": "boolean"
         },
         "scale": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "backdropBlur": {
+          "description": "formatVersion 4: blurs what is already drawn below the node, clipped to its outline, before its fill (CSS backdrop-filter: blur, standard deviation, in component units). A number >= 0, literal, expression or number token. Drawing only. In a lower formatVersion, parseComponent refuses.",
           "$ref": "#/$defs/expr_nonNegative"
         },
         "filter": {

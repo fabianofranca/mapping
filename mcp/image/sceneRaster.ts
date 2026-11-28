@@ -26,6 +26,7 @@ import {
 } from '../../src/model/components/scene';
 import {
   MAX_SHADOW_PIXELS,
+  blurRgba,
   compositeInnerShadow,
   compositeShadow,
   dashPaths,
@@ -916,6 +917,7 @@ class Painter {
 
     const shapes = this.shapes(node);
     this.shadows(node, shapes, matrix, alpha, clip);
+    this.backdropBlur(node, shapes, matrix, alpha, clip);
     const rule = node.type === 'path' ? node.fillRule : 'nonzero';
     // An open line has no interior: only the stroke.
     const fillable = node.type !== 'line' || node.closed;
@@ -1268,6 +1270,95 @@ class Painter {
     );
   }
 
+  /**
+   * `backdropBlur` on a `frame` or `rect`: what is already on the raster under the node's outline is
+   * blurred (sigma = `backdropBlur` × the node's scale, like CSS `backdrop-filter: blur()`) and put
+   * back by the outline's coverage, before the node's own fill.
+   */
+  private backdropBlur(
+    node: SceneNode,
+    shapes: Subpath[],
+    matrix: Matrix,
+    alpha: number,
+    clip: PixelRect,
+  ): void {
+    if ((node.type !== 'frame' && node.type !== 'rect') || shapes.length === 0) return;
+    const sigma = (node.backdropBlur ?? 0) * this.nodeScale(matrix);
+    if (!(sigma > 0)) return;
+    const polygons = shapes.map((sub) => this.toRaster(sub.points, matrix));
+    const edge = bounds(polygons.flat());
+    const margin = Math.ceil(sigma * 3) + 2;
+    const x0 = Math.max(0, Math.floor(edge.x) - margin);
+    const y0 = Math.max(0, Math.floor(edge.y) - margin);
+    const x1 = Math.min(this.raster.width, Math.ceil(edge.x + edge.width) + margin);
+    const y1 = Math.min(this.raster.height, Math.ceil(edge.y + edge.height) + margin);
+    const box: PixelRect = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+    if (box.width <= 0 || box.height <= 0 || box.width * box.height > MAX_SHADOW_PIXELS)
+      return;
+    const blurred = createRaster(box.width, box.height);
+    for (let row = 0; row < box.height; row++) {
+      const from = ((box.y + row) * this.raster.width + box.x) * 4;
+      blurred.data.set(
+        this.raster.data.subarray(from, from + box.width * 4),
+        row * box.width * 4,
+      );
+    }
+    blurRgba(blurred.data, box.width, box.height, sigma);
+    const cover = createRaster(box.width, box.height);
+    const local = { x: 0, y: 0, width: box.width, height: box.height };
+    fillPolygons(
+      cover,
+      polygons.map((poly) => poly.map((p) => ({ x: p.x - box.x, y: p.y - box.y }))),
+      'nonzero',
+      { rgb: [0, 0, 0], alpha: 1 },
+      local,
+    );
+    this.mixBlurred(blurred, cover, box, alpha, clip);
+  }
+
+  /**
+   * Mixes `blurred` into the raster pixels of `box` (inside `clip`), weighted by the coverage `cover` times
+   * the node's effective opacity `alpha` (1 replaces the backdrop; below 1 it is a*blur + (1-a)*original).
+   */
+  private mixBlurred(
+    blurred: Raster,
+    cover: Raster,
+    box: PixelRect,
+    alpha: number,
+    clip: PixelRect,
+  ): void {
+    const rx0 = Math.max(box.x, Math.floor(clip.x));
+    const ry0 = Math.max(box.y, Math.floor(clip.y));
+    const rx1 = Math.min(box.x + box.width, Math.ceil(clip.x + clip.width));
+    const ry1 = Math.min(box.y + box.height, Math.ceil(clip.y + clip.height));
+    const out = this.raster.data;
+    for (let y = ry0; y < ry1; y++) {
+      for (let x = rx0; x < rx1; x++) {
+        const j = ((y - box.y) * box.width + (x - box.x)) * 4;
+        const k = (cover.data[j + 3]! / 255) * alpha;
+        if (k <= 0) continue;
+        const i = (y * this.raster.width + x) * 4;
+        const dstA = out[i + 3]! / 255;
+        const srcA = blurred.data[j + 3]! / 255;
+        const a = srcA * k + dstA * (1 - k);
+        for (let c = 0; c < 3; c++) {
+          const mixed = blurred.data[j + c]! * srcA * k + out[i + c]! * dstA * (1 - k);
+          out[i + c] = a > 0 ? mixed / a : 0;
+        }
+        out[i + 3] = a * 255;
+      }
+    }
+  }
+
+  /** The node's own scale (and its ancestors') over the painter's: 1 without a node `scale`. */
+  private nodeScale(matrix: Matrix): number {
+    const [a, b, c, d] = matrix;
+    const ratio = Math.sqrt(Math.abs(a * d - b * c)) / this.scale;
+    return (
+      this.scale * (Math.abs(ratio - 1) < 1e-9 || !Number.isFinite(ratio) ? 1 : ratio)
+    );
+  }
+
   /** One shadow: the shape's mask (`casting`), blurred and shifted, composed onto the raster. */
   private shadow(
     casting: Subpath[],
@@ -1278,10 +1369,7 @@ class Painter {
     const polygons = casting.map((sub) => this.toRaster(sub.points, matrix));
     // The shadow follows the node's own scale (and its ancestors'), like the Konva one: the matrix's
     // pixels per unit over the painter's (the view and the density), which is 1 without a node `scale`.
-    const [a, b, c, d] = matrix;
-    const ratio = Math.sqrt(Math.abs(a * d - b * c)) / this.scale;
-    const nodeScale = Math.abs(ratio - 1) < 1e-9 || !Number.isFinite(ratio) ? 1 : ratio;
-    const scale = this.scale * nodeScale;
+    const scale = this.nodeScale(matrix);
     const sigma = (shadow.blur * scale) / 2;
     const margin = Math.ceil(sigma * 3) + 2;
     const edge = bounds(polygons.flat());
