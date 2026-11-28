@@ -239,8 +239,11 @@ export interface StrokeGapSpec {
 export type StrokeSide = 'top' | 'right' | 'bottom' | 'left';
 export const STROKE_SIDES: readonly StrokeSide[] = ['top', 'right', 'bottom', 'left'];
 
-/** A corner radius: number ≥ 0 or, in v4, number `$token`. */
-type Radius = number | { readonly $token: string };
+/** A corner radius: number ≥ 0 or, in v4, number `$token` or an expression that gives a number. */
+type Radius = Expr<number> | { readonly $token: string };
+
+/** A shadow measure: a number or, in v4, a number `$token` or an expression that gives a number. */
+type ShadowNumber = Expr<number> | { readonly $token: string };
 
 export interface ShadowSpec {
   /**
@@ -250,12 +253,12 @@ export interface ShadowSpec {
    */
   readonly $token?: string;
   readonly color: Expr<Color>;
-  /** In v4 each measure also accepts a number `$token`. */
-  readonly x?: number | { readonly $token: string };
-  readonly y?: number | { readonly $token: string };
-  readonly blur?: number | { readonly $token: string };
-  /** Grows (or, if negative, shrinks) the shadow's shape on each side (v4, px; literal or `$token`). */
-  readonly spread?: number | { readonly $token: string };
+  /** In v4 each measure also accepts a number `$token` or an expression. */
+  readonly x?: ShadowNumber;
+  readonly y?: ShadowNumber;
+  readonly blur?: ShadowNumber;
+  /** Grows (or, if negative, shrinks) the shadow's shape on each side (v4, px; literal, `$token` or expression). */
+  readonly spread?: ShadowNumber;
   /** CSS `inset` (v4): drawn inside the shape; only on `frame`, `rect` and `ellipse`. Literal boolean. */
   readonly inner?: boolean;
 }
@@ -490,7 +493,7 @@ interface TemplateNodeBase {
   readonly stroke?: StrokeSpec;
   /** One shadow, or (v4) 1 to 4: the first sits on top, like CSS's `box-shadow`. */
   readonly shadow?: ShadowSpec | readonly ShadowSpec[];
-  /** In v4 each item of the list also accepts a number `$token`. */
+  /** In v4 each item of the list also accepts a number `$token` or an expression. */
   readonly cornerRadius?: Expr<number | readonly [Radius, Radius, Radius, Radius]>;
 }
 
@@ -776,7 +779,8 @@ export const IMAGE_FITS_V4: readonly ImageFit[] = [
 export interface ImageTemplate extends TemplateNodeBase {
   readonly type: 'image';
   readonly src: Expr<string>;
-  readonly fit?: ImageFit;
+  /** In v4 an expression that gives one of the fits. */
+  readonly fit?: Expr<ImageFit>;
 }
 
 /**
