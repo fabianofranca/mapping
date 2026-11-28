@@ -36,8 +36,8 @@ function withDecorative(): Project {
 }
 
 describe('schema v25', () => {
-  it('the current version is 25 and the registry has the v24 → v25 migration', () => {
-    expect(SCHEMA_VERSION).toBe(25);
+  it('the registry has the v24 → v25 migration', () => {
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(25);
     expect(migrations.get(24)).toBe(migrateFrom24To25);
   });
 
@@ -73,10 +73,12 @@ describe('schema v25', () => {
     // A stale parent that a settle would fix: the migration leaves the data untouched.
     const stale = markingsOf(raw).map((m) => ({ ...m, parentId: null }));
     const data = { ...raw, markings: stale };
-    const result = migrate(data, 24);
-    expect(result).toEqual({ ok: true, data: { ...data, schemaVersion: 25 } });
+    expect(migrate(data, 24, migrations, 25)).toEqual({
+      ok: true,
+      data: { ...data, schemaVersion: 25 },
+    });
     const migrated = opened(raw);
-    expect(migrated.schemaVersion).toBe(25);
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
     expect(migrated.markings.every((m) => m.decorative === false)).toBe(true);
   });
 });
