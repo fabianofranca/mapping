@@ -112,7 +112,7 @@ export const componentMessages = {
   'component.gapNotWithSides': 'gap is not valid with sides',
   'component.expectedShadowCount': 'expected 1 to {max} shadows',
   'component.expectedTrueOrFalse': 'expected true or false',
-  'component.innerShadowNodes': 'only valid on frame, rect and ellipse',
+  'component.innerShadowNodes': 'only valid on frame, rect, ellipse, path and icon',
   'component.gapNodeNotFound': 'node not found: {name}',
   'component.gapNotInRepeat': 'stroke.gap cannot be used inside a repeat',
   'component.gapNotSelf': 'stroke.gap.node cannot name the node itself: {name}',

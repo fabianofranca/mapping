@@ -55,6 +55,6 @@
     "Raised to 2,785,280 (2,720 KiB) by the budget rule (2026-11-27, epic `field-groups-except`): excess of 3791 bytes, growth of 6380 bytes over `main`. Above the limits: raises since the owner review above 64 KiB.",
     "Raised to 2,801,664 (2,736 KiB) by the budget rule (2026-11-27, epic `field-groups-except`): excess of 2988 bytes, growth of 21961 bytes over `main`. Above the limits: raises since the owner review above 64 KiB.",
     "Raised to 2,818,048 (2,752 KiB) by the budget rule (2026-11-28, epic `intended-overflow-absolute`): excess of 398 bytes, growth of 2040 bytes over `main`. Above the limits: raises since the owner review above 64 KiB.",
-    "Raised to 2,834,432 (2,768 KiB) by the budget rule (2026-11-28, epic `touch-overlap-audit`): excess of 1802 bytes, growth of 8790 bytes over `main`. Above the limits: raises since the owner review above 64 KiB."
+    "Raised to 2,834,432 (2,768 KiB) by the budget rule (2026-11-28, epic `drawing-fidelity`): excess of 2502 bytes, growth of 9490 bytes over `main`. Above the limits: raises since the owner review above 64 KiB."
   ]
 }

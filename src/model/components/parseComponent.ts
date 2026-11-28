@@ -188,6 +188,7 @@ const BASE_KEYS = [
   'rotation',
   'scale',
   'filter',
+  'overlay',
   'width',
   'height',
   'minWidth',
@@ -314,13 +315,15 @@ function checkLiteralOrToken(value: unknown, path: string, check: Check, out: Ct
   else check(value, path, out);
 }
 
+/** An item of the `cornerRadius` list: a number ≥ 0 or (v4) a `$token` or an expression that gives one. */
+const isRadiusItem = (n: unknown): boolean =>
+  (isFiniteNumber(n) && n >= 0) || isExprObject(n);
+
 const checkCornerRadius = tokenCheck('number', (v, p, out) => {
-  const isRadius = (n: unknown): boolean =>
-    (isFiniteNumber(n) && n >= 0) || isTokenObject(n);
   if (isFiniteNumber(v) && v >= 0) return;
-  if (Array.isArray(v) && v.length === 4 && v.every(isRadius)) {
+  if (Array.isArray(v) && v.length === 4 && v.every(isRadiusItem)) {
     v.forEach((item: unknown, i) => {
-      if (isTokenObject(item)) checkTokenExpr(item, `${p}[${i}]`, checkNonNegative, out);
+      if (isExprObject(item)) checkExpr(item, `${p}[${i}]`, checkNonNegative, out);
     });
     return;
   }
@@ -803,11 +806,25 @@ function checkStrokeV4(
     checkExpr(value.join, join(path, 'join'), oneOf(['miter', 'round', 'bevel']), out);
   if ('scale' in value) checkBoolean(value.scale, join(path, 'scale'), out);
   if ('offset' in value) checkOffset(value.offset, join(path, 'offset'), nodeType, out);
+  if ('cornerRadius' in value) checkStrokeRadius(value, path, nodeType, out);
   if (!('sides' in value)) return;
   const at = join(path, 'sides');
   if (nodeType !== undefined && nodeType !== 'frame' && nodeType !== 'rect')
     add(out, at, `only valid in frame and rect (this is ${nodeType})`);
   else checkExpr(value.sides, at, checkSides, out);
+}
+
+/** `stroke.cornerRadius`: like the node's `cornerRadius`, only in `frame` and `rect`. */
+function checkStrokeRadius(
+  stroke: Rec,
+  path: string,
+  nodeType: string | undefined,
+  out: Ctx,
+): void {
+  const at = join(path, 'cornerRadius');
+  if (nodeType !== undefined && nodeType !== 'frame' && nodeType !== 'rect')
+    add(out, at, `only valid in frame and rect (this is ${nodeType})`);
+  else checkExpr(stroke.cornerRadius, at, checkCornerRadius, out);
 }
 
 /** `stroke.offset`: px ≥ 0 (literal or a number `$token`), only in `frame`, `rect` and `ellipse`. */
@@ -826,7 +843,19 @@ function checkStroke(value: unknown, path: string, out: Ctx, nodeType?: string):
   if (!isRecord(value)) return add(out, path, 'expected an object');
   checkKeys(
     value,
-    ['color', 'width', 'align', 'dash', 'cap', 'join', 'sides', 'scale', 'offset', 'gap'],
+    [
+      'color',
+      'width',
+      'align',
+      'dash',
+      'cap',
+      'join',
+      'sides',
+      'scale',
+      'offset',
+      'gap',
+      'cornerRadius',
+    ],
     path,
     out,
   );
@@ -884,16 +913,14 @@ function checkShadowItem(
   if ('$token' in value) checkWholeToken(value, path, 'shadow', out);
   else if (!('color' in value)) add(out, join(path, 'color'), 'required field');
   if ('color' in value) checkExpr(value.color, join(path, 'color'), checkColor, out);
-  if ('x' in value) checkLiteralOrToken(value.x, join(path, 'x'), checkNumber, out);
-  if ('y' in value) checkLiteralOrToken(value.y, join(path, 'y'), checkNumber, out);
-  if ('blur' in value)
-    checkLiteralOrToken(value.blur, join(path, 'blur'), checkNonNegative, out);
-  if ('spread' in value)
-    checkLiteralOrToken(value.spread, join(path, 'spread'), checkNumber, out);
+  if ('x' in value) checkExpr(value.x, join(path, 'x'), checkNumber, out);
+  if ('y' in value) checkExpr(value.y, join(path, 'y'), checkNumber, out);
+  if ('blur' in value) checkExpr(value.blur, join(path, 'blur'), checkNonNegative, out);
+  if ('spread' in value) checkExpr(value.spread, join(path, 'spread'), checkNumber, out);
   if ('inner' in value) checkInner(value.inner, join(path, 'inner'), nodeType, out);
 }
 
-/** `shadow.inner`: a literal boolean, `true` only on frame, rect and ellipse (v4). */
+/** `shadow.inner`: a literal boolean, `true` only on frame, rect, ellipse, path and icon (v4). */
 function checkInner(
   value: unknown,
   path: string,
@@ -902,10 +929,16 @@ function checkInner(
 ): void {
   if (typeof value !== 'boolean') return add(out, path, 'expected true or false');
   if (value && nodeType !== undefined && !INNER_SHADOW_TYPES.includes(nodeType))
-    add(out, path, 'only valid on frame, rect and ellipse');
+    add(out, path, 'only valid on frame, rect, ellipse, path and icon');
 }
 
-const INNER_SHADOW_TYPES: readonly string[] = ['frame', 'rect', 'ellipse'];
+const INNER_SHADOW_TYPES: readonly string[] = [
+  'frame',
+  'rect',
+  'ellipse',
+  'path',
+  'icon',
+];
 
 /** `shadow`: one shadow or, in v4, a list of 1 to 4 (the version is checked separately). */
 function checkShadow(value: unknown, path: string, out: Ctx, nodeType?: string): void {
@@ -1410,8 +1443,8 @@ function checkNode(
   if (type === 'component') return checkComponentNode(value, path, out, parent);
 
   const extra: Record<string, readonly string[]> = {
-    frame: ['clip', 'layout', 'children'],
-    rect: [],
+    frame: ['clip', 'layout', 'children', 'backdropBlur'],
+    rect: ['backdropBlur'],
     ellipse: ['startAngle', 'sweepAngle'],
     text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
     path: ['d', 'viewBox', 'fillRule', 'mirror'],
@@ -1467,6 +1500,8 @@ function checkNode(
     checkExpr(value.rotation, join(path, 'rotation'), checkNumber, out);
   checkIntendedKeys(value, path, type, out);
   checkScaleFilter(value, path, out);
+  checkOverlay(value, path, out);
+  checkBackdropBlur(value, path, out);
   checkNodeSizes(value, path, type, out);
   checkSpanWeight(value, path, type, parent, out);
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
@@ -1560,6 +1595,18 @@ function checkComponentNode(
   if ('provide' in value) checkProvide(value.provide, join(path, 'provide'), out);
 }
 
+/** `overlay` (v4): a literal boolean; on the root it is rejected by the root check, in the version before 4 by `V4_NODE_KEYS`. */
+function checkOverlay(value: Rec, path: string, out: Ctx): void {
+  if ('overlay' in value && typeof value.overlay !== 'boolean')
+    add(out, join(path, 'overlay'), 'expected true or false');
+}
+
+/** `backdropBlur` (v4, `frame` and `rect`): a number ≥ 0, literal, expression or number `$token`; drawing only. */
+function checkBackdropBlur(value: Rec, path: string, out: Ctx): void {
+  if ('backdropBlur' in value)
+    checkExpr(value.backdropBlur, join(path, 'backdropBlur'), checkNonNegative, out);
+}
+
 /** Is `key` a key the node `type` accepts (the base ones, except the `repeat`'s rejected ones, and the type's own)? */
 function isKnownKey(
   type: string,
@@ -1609,6 +1656,7 @@ function checkComponentBase(
     checkExpr(value.rotation, join(path, 'rotation'), checkNumber, out);
   checkIntendedKeys(value, path, 'component', out);
   checkScaleFilter(value, path, out);
+  checkOverlay(value, path, out);
   checkNodeSizes(value, path, 'component', out);
   checkSpanWeight(value, path, 'component', parent, out);
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
@@ -1713,9 +1761,10 @@ function checkImage(value: Rec, path: string, out: Ctx): void {
   if (!('src' in value)) add(out, at, 'required field');
   else checkImageSrc(value.src, at, out);
   if ('fit' in value)
-    oneOf(['cover', 'contain', 'fill', ...IMAGE_FITS_V4])(
+    checkExpr(
       value.fit,
       join(path, 'fit'),
+      oneOf(['cover', 'contain', 'fill', ...IMAGE_FITS_V4]),
       out,
     );
 }
@@ -1824,6 +1873,7 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['stroke', 'scale'],
   ['stroke', 'offset'],
   ['stroke', 'gap'],
+  ['stroke', 'cornerRadius'],
   ['shadow', 'spread'],
   ['layout', 'reverse'],
   ...GRID_TRACK_KEYS.map((key): readonly string[] => ['layout', key]),
@@ -1847,6 +1897,8 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['rotation'],
   ['scale'],
   ['filter'],
+  ['overlay'],
+  ['backdropBlur'],
   ['startAngle'],
   ['sweepAngle'],
   ['provide'],
@@ -1858,6 +1910,7 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
 /** Keys that are valid in any version as a literal, but only with an expression in formatVersion 4. */
 const V4_EXPR_KEYS: readonly (readonly string[])[] = [
   ['clip'],
+  ['fit'],
   ['stroke', 'dash'],
   ['width'],
   ['height'],
@@ -2092,6 +2145,36 @@ function tokenVersionIssues(version: unknown, template: unknown): ComponentIssue
 function isPlainPaddingExpr(item: unknown): boolean {
   if (!isExprObject(item)) return false;
   return !Object.keys(item).some((k) => k === '$token' || isV4OnlyOp(k));
+}
+
+/**
+ * An expression in a `cornerRadius` list item or in a (single) shadow's `x`, `y` or `blur`, in a version before 4:
+ * `only allowed with formatVersion 4`, at the item's path. A `$token` or a numeric operation is flagged by its own
+ * rule, `spread` is a v4 key by itself and a shadow list is refused as a whole.
+ */
+function keyExpressionVersionIssues(
+  version: unknown,
+  template: unknown,
+): ComponentIssue[] {
+  if (isV4(version)) return [];
+  const out: ComponentIssue[] = [];
+  const walk = (node: unknown, at: string): void => {
+    if (!isRecord(node)) return;
+    if (Array.isArray(node.cornerRadius))
+      node.cornerRadius.forEach((item: unknown, i) => {
+        if (isPlainPaddingExpr(item))
+          addIssue(out, `${join(at, 'cornerRadius')}[${i}]`, V4_ONLY_MESSAGE);
+      });
+    if (isRecord(node.shadow))
+      for (const key of ['x', 'y', 'blur'])
+        if (isPlainPaddingExpr(node.shadow[key]))
+          addIssue(out, join(join(at, 'shadow'), key), V4_ONLY_MESSAGE);
+    if (Array.isArray(node.children))
+      node.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (node.type === 'repeat') walk(node.template, join(at, 'template'));
+  };
+  walk(template, 'template');
+  return out;
 }
 
 /** The `padding` of a frame, slot, `repeat` or run (a list of items) and `font.letterSpacing` (percent) before version 4. */
@@ -2737,7 +2820,7 @@ function collectIssues(
       version >= COMPONENT_FORMAT_VERSION_FIDELITY &&
       isRecord(template)
     )
-      for (const key of ['rotation', 'overflow', 'position'])
+      for (const key of ['rotation', 'overflow', 'position', 'overlay'])
         if (key in template) add(out, `template.${key}`, 'not valid on the root');
     checkNode(template, 'template', out);
     checkGapNodes(template, out);
@@ -2758,6 +2841,7 @@ function collectIssues(
     );
     issues.push(...shadowListVersionIssues(version, template));
     issues.push(...innerShadowVersionIssues(version, template));
+    issues.push(...keyExpressionVersionIssues(version, template));
     issues.push(...gradientVersionIssues(version, template));
     issues.push(...noneAlignVersionIssues(version, template));
     issues.push(...tokenVersionIssues(version, template));

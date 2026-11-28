@@ -347,6 +347,7 @@ export const BASE_KEYS = [
   'rotation',
   'scale',
   'filter',
+  'overlay',
   'width',
   'height',
   'anchors',
@@ -366,8 +367,8 @@ export const BASE_KEYS = [
 ] as const;
 /** Keys of each node type, besides the common ones. */
 export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> = {
-  frame: ['clip', 'layout', 'children'],
-  rect: [],
+  frame: ['clip', 'layout', 'children', 'backdropBlur'],
+  rect: ['backdropBlur'],
   ellipse: ['startAngle', 'sweepAngle'],
   text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
   path: ['d', 'viewBox', 'fillRule', 'mirror'],
@@ -397,6 +398,7 @@ export const REPEAT_BASE_KEYS = [
   'rotation',
   'scale',
   'filter',
+  'overlay',
   'width',
   'height',
   'anchors',
@@ -421,7 +423,7 @@ const ANCHOR_KEYS = [
   'end',
 ] as const;
 const LAYOUT_KEYS = ['gap', 'padding', 'align', 'justify'] as const;
-const STROKE_KEYS = ['color', 'width', 'align', 'dash', 'scale'] as const;
+const STROKE_KEYS = ['color', 'width', 'align', 'dash', 'scale', 'cornerRadius'] as const;
 const FILTER_KEYS = ['grayscale'] as const;
 const SHADOW_KEYS = ['color', 'x', 'y', 'blur', 'inner'] as const;
 const FONT_KEYS = [

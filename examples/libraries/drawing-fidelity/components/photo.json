@@ -1,0 +1,25 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "photo",
+  "name": "Photo",
+  "description": "A 160 × 96 box with the package image (96 × 48, four flat-color quadrants) whose fit comes from the fit field: cover, contain, fill or none.",
+  "size": { "width": 160, "height": 96 },
+  "preview": { "fit": "contain" },
+  "template": {
+    "type": "frame",
+    "name": "photo",
+    "layout": { "type": "row" },
+    "fill": "#E5E7EB",
+    "children": [
+      {
+        "type": "image",
+        "name": "picture",
+        "src": "images/photo.png",
+        "width": "fill",
+        "height": "fill",
+        "fit": { "$field": "fit", "default": "cover" }
+      }
+    ]
+  }
+}
