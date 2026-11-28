@@ -96,8 +96,10 @@ describe('plan_changes: slot items of the drawing proof', () => {
       },
     ]);
     expect(reply.errors).toBeUndefined();
+    // The new Rounded bar is a child of Bar (stored, never of the pin it covers: stage #3087) and lands in the
+    // full slot, so it is also the one past `max`; the pins' own `slot-full` (of this bar and of the other) do not show.
     const items = slotItems(reply.issues.new);
-    expect(items).toHaveLength(1);
+    expect(items.map((i) => i.code)).toEqual(['slot-not-accepted', 'slot-full']);
     expect(items[0]).toMatchObject({
       code: 'slot-not-accepted',
       slot: { id: 'navigationIcon', name: 'Navigation icon' },
@@ -107,6 +109,7 @@ describe('plan_changes: slot items of the drawing proof', () => {
       'the slot Navigation icon of Bar does not accept Rounded bar',
     );
     expect(items[0]!.max).toBeUndefined();
+    expect(items[1]).toMatchObject({ slot: { id: 'navigationIcon' }, owner: 'Bar', max: 1 });
   });
 });
 

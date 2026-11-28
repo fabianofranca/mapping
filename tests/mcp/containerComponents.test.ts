@@ -540,7 +540,7 @@ describe('create_marking with inside (child in the slot)', () => {
     expect(warning?.message).toMatch(/enlarge the component or use Arrange in the app/);
   });
 
-  it('full slot and the child falls inside a sibling: the warning also says where it ended up', async () => {
+  it('full slot and the child lands over a sibling: the stored parent is still the one requested (stage #3087)', async () => {
     const result = await run([
       SCREEN,
       COLUMN,
@@ -548,10 +548,12 @@ describe('create_marking with inside (child in the slot)', () => {
       child('$b2'),
     ]);
     expect(result.errors).toEqual([]);
-    expect(marking(result, '$b2').parentId).toBe(idOf(result, '$b1'));
+    // A sibling is materialized: the geometry no longer moves the child inside it, so the warning has no
+    // "it ended up inside" part and the parent stays the component that was asked for.
+    expect(marking(result, '$b2').parentId).toBe(idOf(result, '$col'));
     const warning = result.deprecations.find((d) => d.index === 3);
     expect(warning?.message).toMatch(/did not fit in the slot of/);
-    expect(warning?.message).toMatch(/it ended up inside/);
+    expect(warning?.message ?? '').not.toMatch(/it ended up inside/);
   });
 
   it('sibling covers the slot: the child stays in the component, not inside the sibling (CL1, finding 3.1)', async () => {
