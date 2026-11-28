@@ -1,4 +1,4 @@
-# Touch overlap audit — [Não lançado] (épico `epic/touch-overlap-audit`, PR #3117, MCP 0.72.0, schema v26, unchanged)
+# Touch overlap audit — 2026-11-28 (épico `epic/touch-overlap-audit`, PR #3117, MCP 0.74.0, schema v26, unchanged)
 
 ## Adicionado
 
