@@ -42,9 +42,14 @@ export interface TouchTargetSmallFinding {
   readonly minPx: AuditSize;
   /** Image pixels per component unit of the marking's space. */
   readonly density: number;
+  /**
+   * Only with `touchTarget.spacing` (WCAG 2.5.8, stage #1998): the circle of the minimum, centered on the
+   * rectangle, is blocked by `other`. Absent without the opt-in, so the finding is the same as before.
+   */
+  readonly spacing?: { readonly other: AuditNeighbor };
 }
 
-/** The annotation and marking of the other side of an overlap. */
+/** The annotation and marking of the other side of an overlap (or of a blocked circle). */
 export interface AuditNeighbor {
   readonly annotationId: string;
   readonly markingId: string;
@@ -359,33 +364,45 @@ function partsIssues(
 const toPixels = (units: number, density: number): number =>
   Math.ceil(Number((units * density).toFixed(6)));
 
+/** The minimum touch area in image pixels. */
+const minPixels = (touch: SpecTouchTarget, density: number): AuditSize => ({
+  width: toPixels(touch.width, density),
+  height: toPixels(touch.height, density),
+});
+
+/** The rectangle is below the minimum on an axis, with 1 px of tolerance per axis (like the slots' `SLOT_TOLERANCE`). */
+const isUndersized = (r: Rect, minPx: AuditSize): boolean =>
+  r.width < minPx.width - 1 || r.height < minPx.height - 1;
+
+/**
+ * The size finding of `a`. With `touchTarget.spacing` an undersized target passes when its circle is clear
+ * (`blockers` has no entry); when it is blocked the finding names the neighbor.
+ */
 function touchFindings(
   p: Project,
   a: Annotation,
   touch: SpecTouchTarget | null,
+  blockers: ReadonlyMap<string, AuditNeighbor>,
 ): TouchTargetSmallFinding[] {
   if (touch === null) return [];
   const marking = projectIndex(p).markings.get(a.markingId);
   if (marking === undefined) return [];
   const density = effectiveDensity(p, marking.containerId);
-  const minPx = {
-    width: toPixels(touch.width, density),
-    height: toPixels(touch.height, density),
-  };
+  const minPx = minPixels(touch, density);
   const r: Rect = marking.rect;
-  // 1 px of tolerance per axis (like the slots' `SLOT_TOLERANCE`).
-  if (r.width >= minPx.width - 1 && r.height >= minPx.height - 1) return [];
-  return [
-    {
-      code: 'touch-target-small',
-      annotationId: a.id,
-      markingId: marking.id,
-      actual: { width: r.width / density, height: r.height / density },
-      min: { width: touch.width, height: touch.height },
-      minPx,
-      density,
-    },
-  ];
+  if (!isUndersized(r, minPx)) return [];
+  const finding: TouchTargetSmallFinding = {
+    code: 'touch-target-small',
+    annotationId: a.id,
+    markingId: marking.id,
+    actual: { width: r.width / density, height: r.height / density },
+    min: { width: touch.width, height: touch.height },
+    minPx,
+    density,
+  };
+  if (touch.spacing !== true) return [finding];
+  const other = blockers.get(a.id);
+  return other === undefined ? [] : [{ ...finding, spacing: { other } }];
 }
 
 function auditAnnotation(
@@ -394,6 +411,7 @@ function auditAnnotation(
   resolved: ResolvedType,
   ctx: AuditContext,
   overlaps: readonly TouchTargetOverlapFinding[],
+  blockers: ReadonlyMap<string, AuditNeighbor>,
 ): AnnotationAudit | null {
   const values = a.values ?? {};
   const drawing = ctx.drawings?.get(a.markingId);
@@ -403,7 +421,10 @@ function auditAnnotation(
     ...partsIssues(resolved.parts, values, inactive),
   ];
   // `touch-target-small` first, then the overlaps (decision 5 of #1998).
-  const findings: AuditFinding[] = [...touchFindings(p, a, resolved.touch), ...overlaps];
+  const findings: AuditFinding[] = [
+    ...touchFindings(p, a, resolved.touch, blockers),
+    ...overlaps,
+  ];
   return issues.length === 0 && findings.length === 0 ? null : { issues, findings };
 }
 
@@ -494,6 +515,17 @@ interface TouchParticipant extends TouchBox {
   readonly markingId: string;
   /** Image pixels per component unit of the space. */
   readonly density: number;
+  /** The WCAG 2.5.8 circle of an undersized `visual` area (it blocks the circles of its neighbors); else `null`. */
+  readonly circle: Circle | null;
+  /** The circle is audited: the area switched `spacing` on and is undersized. */
+  readonly spacing: boolean;
+}
+
+/** A circle in image pixels of its space. */
+interface Circle {
+  readonly x: number;
+  readonly y: number;
+  readonly r: number;
 }
 
 /** A side of an area grown to `minPx` around its center (never shrunk). */
@@ -532,6 +564,16 @@ function touchBox(
   return { space: spaceOf(marking), kind, left, top, right, bottom };
 }
 
+/**
+ * The circle of an undersized `visual` area (WCAG 2.5.8): centered on the rectangle, with the diameter of the
+ * minimum's side (the smaller one when it is not square) in whole pixels, `ceil(side x density)`.
+ */
+function circleOf(r: Rect, area: SpecTouchTarget, density: number): Circle | null {
+  if (area.mode === 'expanded' || !isUndersized(r, minPixels(area, density))) return null;
+  const diameter = toPixels(Math.min(area.width, area.height), density);
+  return { x: r.x + r.width / 2, y: r.y + r.height / 2, r: diameter / 2 };
+}
+
 function touchParticipants(p: Project, audited: readonly Audited[]): TouchParticipant[] {
   const markings = projectIndex(p).markings;
   const out: TouchParticipant[] = [];
@@ -540,11 +582,14 @@ function touchParticipants(p: Project, audited: readonly Audited[]): TouchPartic
     const marking = markings.get(annotation.markingId);
     if (resolved.area === null || marking === undefined) continue;
     const density = effectiveDensity(p, marking.containerId);
+    const circle = circleOf(marking.rect, resolved.area, density);
     out.push({
       ...touchBox(marking, resolved.area, density),
       annotationId: annotation.id,
       markingId: marking.id,
       density,
+      circle,
+      spacing: circle !== null && resolved.area.spacing === true,
     });
   }
   return out;
@@ -561,6 +606,13 @@ function isAncestor(
   }
   return false;
 }
+
+/** One marking is inside the other: neither a pair for the overlap nor a neighbor for the circle. */
+const isRelated = (
+  markings: ReadonlyMap<string, { readonly parentId: string | null }>,
+  a: string,
+  b: string,
+): boolean => a === b || isAncestor(markings, a, b) || isAncestor(markings, b, a);
 
 const roundPx = (n: number): number => Number(n.toFixed(6));
 
@@ -616,10 +668,8 @@ function touchOverlaps(
   sweepTouchBoxes(participants, (i, j) => {
     const a = participants[i]!;
     const b = participants[j]!;
-    if (a.markingId === b.markingId) return;
     if (a.kind === 'visual' && b.kind === 'visual') return;
-    if (isAncestor(markings, a.markingId, b.markingId)) return;
-    if (isAncestor(markings, b.markingId, a.markingId)) return;
+    if (isRelated(markings, a.markingId, b.markingId)) return;
     add(i, j);
     add(j, i);
   });
@@ -629,6 +679,82 @@ function touchOverlaps(
       list.sort((x, y) => x.at[0] - y.at[0] || x.at[1] - y.at[1]).map((e) => e.finding),
     ]),
   );
+}
+
+// --- The WCAG 2.5.8 spacing (stage #1998, decisions 17 to 20) ---
+
+/** The box a participant takes in the circle sweep: its area, widened to its circle's bounding square. */
+function circleBox(x: TouchParticipant): TouchBox {
+  const c = x.circle;
+  if (c === null) return x;
+  return {
+    ...x,
+    left: Math.min(x.left, c.x - c.r),
+    top: Math.min(x.top, c.y - c.r),
+    right: Math.max(x.right, c.x + c.r),
+    bottom: Math.max(x.bottom, c.y + c.r),
+  };
+}
+
+/** How deep the circle goes into the area's rectangle (negative when it is clear). */
+function depthIntoArea(c: Circle, area: TouchBox): number {
+  const dx = Math.max(area.left - c.x, 0, c.x - area.right);
+  const dy = Math.max(area.top - c.y, 0, c.y - area.bottom);
+  return c.r - Math.hypot(dx, dy);
+}
+
+/** The neighbor is in the way of the circle: its area or its own circle goes in more than the tolerance. */
+function blocksCircle(c: Circle, other: TouchParticipant): boolean {
+  if (roundPx(depthIntoArea(c, other)) > OVERLAP_TOLERANCE) return true;
+  const o = other.circle;
+  return (
+    o !== null &&
+    roundPx(c.r + o.r - Math.hypot(c.x - o.x, c.y - o.y)) > OVERLAP_TOLERANCE
+  );
+}
+
+/**
+ * For each annotation whose circle is audited (`spacing: true`, undersized), the first neighbor that blocks it, in
+ * the project order of the other marking and then of the annotation. A neighbor is any participant of the same space,
+ * on a marking that is not it nor inside it nor above it. The circle sweep only runs in the spaces that have a circle
+ * to audit, and only the pairs it finds are tested: no loop over every pair.
+ */
+function spacingBlockers(
+  p: Project,
+  participants: readonly TouchParticipant[],
+): Map<string, AuditNeighbor> {
+  const subjectSpaces = new Set(
+    participants.filter((x) => x.spacing).map((x) => x.space),
+  );
+  const found = new Map<string, AuditNeighbor>();
+  if (subjectSpaces.size === 0) return found;
+  const scoped = participants.filter((x) => subjectSpaces.has(x.space));
+  const markings = projectIndex(p).markings;
+  const order = new Map(p.markings.map((m, i) => [m.id, i] as const));
+  const best = new Map<string, [number, number]>();
+  const consider = (subject: TouchParticipant, at: number) => {
+    const other = scoped[at]!;
+    if (!subject.spacing || subject.circle === null) return;
+    if (isRelated(markings, subject.markingId, other.markingId)) return;
+    if (!blocksCircle(subject.circle, other)) return;
+    const rank: [number, number] = [order.get(other.markingId) ?? 0, at];
+    const first = best.get(subject.annotationId);
+    if (
+      first !== undefined &&
+      (first[0] < rank[0] || (first[0] === rank[0] && first[1] < rank[1]))
+    )
+      return;
+    best.set(subject.annotationId, rank);
+    found.set(subject.annotationId, {
+      annotationId: other.annotationId,
+      markingId: other.markingId,
+    });
+  };
+  sweepTouchBoxes(scoped.map(circleBox), (i, j) => {
+    consider(scoped[i]!, j);
+    consider(scoped[j]!, i);
+  });
+  return found;
 }
 
 function computeAudit(p: Project, ctx: AuditContext): AccessibilityAudit {
@@ -646,7 +772,9 @@ function computeAudit(p: Project, ctx: AuditContext): AccessibilityAudit {
         : resolved,
     });
   }
-  const overlaps = touchOverlaps(p, touchParticipants(p, audited));
+  const participants = touchParticipants(p, audited);
+  const overlaps = touchOverlaps(p, participants);
+  const blockers = spacingBlockers(p, participants);
   for (const { annotation, resolved } of audited) {
     const entry = auditAnnotation(
       p,
@@ -654,6 +782,7 @@ function computeAudit(p: Project, ctx: AuditContext): AccessibilityAudit {
       resolved,
       ctx,
       overlaps.get(annotation.id) ?? [],
+      blockers,
     );
     if (entry) out.set(annotation.id, entry);
   }
