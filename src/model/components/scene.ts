@@ -284,6 +284,8 @@ export interface FrameNode extends NodeBase {
    */
   readonly clipBox?: ClipBox;
   readonly cornerRadius: CornerRadius;
+  /** Blurs what is already drawn under the node's outline before its fills (`backdropBlur`, px of the node's space); absent = none. */
+  readonly backdropBlur?: number;
   readonly children: readonly SceneNode[];
 }
 
@@ -311,6 +313,8 @@ export type CornerRadius = number | readonly [number, number, number, number];
 export interface RectNode extends NodeBase {
   readonly type: 'rect';
   readonly cornerRadius: CornerRadius;
+  /** Blurs what is already drawn under the node's outline before its fills (`backdropBlur`, px of the node's space); absent = none. */
+  readonly backdropBlur?: number;
 }
 
 export interface EllipseNode extends NodeBase {

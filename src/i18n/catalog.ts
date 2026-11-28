@@ -124,6 +124,8 @@ export const catalogEnUS = {
   'catalog.drawWarning.stroke-image-gray': 'Stroke with an image drawn in gray.',
   'catalog.drawWarning.angular-gradient-unsupported':
     'Angular gradient is not supported by this browser: drawn with its first color.',
+  'catalog.drawWarning.backdrop-blur-unsupported':
+    'Background blur is not supported by this browser: drawn without the blur.',
   'catalog.drawWarning.remote-image-failed':
     'The remote image from {origin} did not load (server without CORS, unreachable, or image too large). Diagnostics › Remote images shows the reason.',
   'catalog.drawWarning.remote-image-opaque':
@@ -255,6 +257,8 @@ export const catalogPtBR: Record<keyof typeof catalogEnUS, string> = {
   'catalog.drawWarning.stroke-image-gray': 'Traço com imagem desenhado em cinza.',
   'catalog.drawWarning.angular-gradient-unsupported':
     'Gradiente angular não é suportado por este navegador: desenhado com a primeira cor.',
+  'catalog.drawWarning.backdrop-blur-unsupported':
+    'Desfoque de fundo não é suportado por este navegador: desenhado sem o desfoque.',
   'catalog.drawWarning.remote-image-failed':
     'A imagem remota de {origin} não carregou (servidor sem CORS, inacessível ou imagem grande demais). Diagnóstico › Imagens remotas mostra o motivo.',
   'catalog.drawWarning.remote-image-opaque':

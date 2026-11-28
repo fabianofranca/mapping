@@ -34,9 +34,11 @@ import { Shape as KonvaShape } from 'konva/lib/Shape';
 import { Text as KonvaText, type TextConfig } from 'konva/lib/shapes/Text';
 import {
   type CornerRadius,
+  type FrameNode,
   type Matrix,
   type Paint,
   type Point,
+  type RectNode,
   type Scene,
   type SceneNode,
   type SceneTextRun,
@@ -143,6 +145,8 @@ export const SCENE_ID_ATTR = 'sceneId';
 const HIT_ONLY_ATTR = 'hitOnly';
 /** Marks the shadow-only shape of an inner shadow: it never owns an outer shadow. */
 const INNER_SHADOW_ATTR = 'innerShadow';
+/** The shape that blurs what is under a node (`backdropBlur`): it paints no fill, so it never owns the shadow. */
+const BACKDROP_ATTR = 'backdropBlur';
 
 interface Box {
   readonly width: number;
@@ -251,7 +255,12 @@ class Renderer {
     // shapes only carry their own shadow: neither owns the outer shadow.
     const shadowOwner =
       shadows.length > 0
-        ? shapes.find((s) => !s.getAttr(HIT_ONLY_ATTR) && !s.getAttr(INNER_SHADOW_ATTR))
+        ? shapes.find(
+            (s) =>
+              !s.getAttr(HIT_ONLY_ATTR) &&
+              !s.getAttr(INNER_SHADOW_ATTR) &&
+              !s.getAttr(BACKDROP_ATTR),
+          )
         : undefined;
     // Several shadows (or `spread`) on a rectangle or ellipse: one shadow-only shape per shadow,
     // below the node's shapes, the last of the list first (the first stays on top).
@@ -312,6 +321,28 @@ class Renderer {
     return container;
   }
 
+  /**
+   * The blur of what is under the node (`backdropBlur`): one shape below the fills. Without `filter` on the
+   * 2D context it draws nothing and warns (the fills still draw).
+   */
+  private backdropShapes(node: FrameNode | RectNode): Konva.Shape[] {
+    const blur = node.backdropBlur ?? 0;
+    if (!(blur > 0)) return [];
+    if (!contextHasFilter()) {
+      this.warn('backdrop-blur-unsupported');
+      return [];
+    }
+    const shape = new KonvaShape({
+      width: node.width,
+      height: node.height,
+      listening: false,
+      sceneFunc: (ctx) =>
+        blurBackdrop(ctx._context, node.width, node.height, node.cornerRadius, blur),
+    });
+    shape.setAttr(BACKDROP_ATTR, true);
+    return [shape];
+  }
+
   private hitOnly(shape: Konva.Shape): Konva.Shape {
     shape.setAttr(HIT_ONLY_ATTR, true);
     return shape;
@@ -329,6 +360,7 @@ class Renderer {
     switch (node.type) {
       case 'frame':
       case 'rect': {
+        shapes.push(...this.backdropShapes(node));
         for (const paint of node.fills) {
           const config = {
             width: node.width,
@@ -1325,6 +1357,38 @@ function castShadow(
     roundedRectPath(native, width, height, spreadRadius(node.cornerRadius, spread));
   native.fillStyle = '#000000';
   native.fill();
+  native.restore();
+}
+
+/** Does this browser's 2D context have `filter` (blur on a drawing)? */
+function contextHasFilter(): boolean {
+  const context = document.createElement('canvas').getContext('2d');
+  return context !== null && 'filter' in context;
+}
+
+/**
+ * CSS `backdrop-filter: blur(<blur>px)`: clips to the node's outline and redraws what the layer's canvas
+ * already holds, blurred, over itself. The blur is in the node's space; the current matrix (node scale,
+ * zoom and device pixel ratio) turns it into device pixels, as for the shadow's. The copy is drawn with
+ * the identity matrix because the canvas is in device pixels.
+ */
+function blurBackdrop(
+  native: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  radius: CornerRadius,
+  blur: number,
+): void {
+  if (width <= 0 || height <= 0) return;
+  const m = native.getTransform();
+  const sx = Math.hypot(m.a, m.b) || 1;
+  const sy = Math.hypot(m.c, m.d) || 1;
+  native.save();
+  roundedRectPath(native, width, height, radius);
+  native.clip();
+  native.setTransform(1, 0, 0, 1, 0, 0);
+  native.filter = `blur(${blur * Math.min(sx, sy)}px)`;
+  native.drawImage(native.canvas, 0, 0);
   native.restore();
 }
 

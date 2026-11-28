@@ -1432,8 +1432,8 @@ function checkNode(
   if (type === 'component') return checkComponentNode(value, path, out, parent);
 
   const extra: Record<string, readonly string[]> = {
-    frame: ['clip', 'layout', 'children'],
-    rect: [],
+    frame: ['clip', 'layout', 'children', 'backdropBlur'],
+    rect: ['backdropBlur'],
     ellipse: ['startAngle', 'sweepAngle'],
     text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
     path: ['d', 'viewBox', 'fillRule', 'mirror'],
@@ -1490,6 +1490,7 @@ function checkNode(
     checkExpr(value.rotation, join(path, 'rotation'), checkNumber, out);
   checkScaleFilter(value, path, out);
   checkOverlay(value, path, out);
+  checkBackdropBlur(value, path, out);
   checkNodeSizes(value, path, type, out);
   checkSpanWeight(value, path, type, parent, out);
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
@@ -1587,6 +1588,12 @@ function checkComponentNode(
 function checkOverlay(value: Rec, path: string, out: Ctx): void {
   if ('overlay' in value && typeof value.overlay !== 'boolean')
     add(out, join(path, 'overlay'), 'expected true or false');
+}
+
+/** `backdropBlur` (v4, `frame` and `rect`): a number ≥ 0, literal, expression or number `$token`; drawing only. */
+function checkBackdropBlur(value: Rec, path: string, out: Ctx): void {
+  if ('backdropBlur' in value)
+    checkExpr(value.backdropBlur, join(path, 'backdropBlur'), checkNonNegative, out);
 }
 
 /** `scale` (a number ≥ 0) and `filter` (`{ grayscale }`) of any node (v4): drawing only. */
@@ -1852,6 +1859,7 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['scale'],
   ['filter'],
   ['overlay'],
+  ['backdropBlur'],
   ['startAngle'],
   ['sweepAngle'],
   ['provide'],

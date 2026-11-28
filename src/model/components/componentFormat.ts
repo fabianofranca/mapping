@@ -520,6 +520,13 @@ export interface FrameTemplate extends TemplateNodeBase {
   readonly layout?: LayoutSpec;
   readonly children?: readonly TemplateNode[];
   /**
+   * `formatVersion` 4: blurs what is already drawn below the node, clipped to the node's outline, before
+   * its fill, like CSS `backdrop-filter: blur(<n>px)` (`n` is the standard deviation). A number >= 0 in
+   * component units: a literal, an expression or a number `$token`. Drawing only: no layout change and no
+   * enlarged clip.
+   */
+  readonly backdropBlur?: Expr<number>;
+  /**
    * Frame variables (v4, only in the written file): name → expression, used with
    * `{ "$var": "name" }` in this frame and in the descendants. `parseComponent` swaps the `$var`s
    * for the content and returns the frame **without** `let`: whoever uses the parsed component
@@ -530,6 +537,13 @@ export interface FrameTemplate extends TemplateNodeBase {
 
 export interface RectTemplate extends TemplateNodeBase {
   readonly type: 'rect';
+  /**
+   * `formatVersion` 4: blurs what is already drawn below the node, clipped to the node's outline, before
+   * its fill, like CSS `backdrop-filter: blur(<n>px)` (`n` is the standard deviation). A number >= 0 in
+   * component units: a literal, an expression or a number `$token`. Drawing only: no layout change and no
+   * enlarged clip.
+   */
+  readonly backdropBlur?: Expr<number>;
 }
 
 export interface EllipseTemplate extends TemplateNodeBase {

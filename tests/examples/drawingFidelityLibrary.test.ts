@@ -1,7 +1,7 @@
 // Example library `drawing-fidelity`: an expression in each `cornerRadius` item (the Corner card), in
 // `image.fit` (the Photo) and in the shadow numbers (the Signal), partial `sides` that follow the
-// radius (the Divider), `stroke.cornerRadius` (the Link) and `overlay` (the Scroll and the Block). Later phases
-// of the stage add types.
+// radius (the Divider), `stroke.cornerRadius` (the Link) and `overlay` (the Scroll and the Block) and
+// `backdropBlur` (the Header). Later phases of the stage add types.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -53,13 +53,14 @@ function draw(id: string, values: Record<string, string>) {
 }
 
 describe('example library drawing-fidelity', () => {
-  it('has the specialization, seven components, seven documents, the icon set and one image', () => {
+  it('has the specialization, eight components, eight documents, the icon set and one image', () => {
     expect(files.map((f) => f.path)).toEqual(
       [
         SPEC_FILE,
         'components/block.json',
         'components/corner-card.json',
         'components/divider.json',
+        'components/header.json',
         'components/link.json',
         'components/photo.json',
         'components/scroll.json',
@@ -67,6 +68,7 @@ describe('example library drawing-fidelity', () => {
         'docs/block.md',
         'docs/corner-card.md',
         'docs/divider.md',
+        'docs/header.md',
         'docs/link.md',
         'docs/photo.md',
         'docs/scroll.md',
@@ -82,7 +84,7 @@ describe('example library drawing-fidelity', () => {
     expect(report.errors).toEqual([]);
     expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
-    expect(report.summary).toMatchObject({ types: 7, components: 7, docs: 7, images: 1 });
+    expect(report.summary).toMatchObject({ types: 8, components: 8, docs: 8, images: 1 });
   });
 
   it('has a 96 × 48 PNG image', () => {
@@ -192,6 +194,29 @@ describe('example library drawing-fidelity', () => {
     const { base, overlay } = splitOverlay(root);
     expect([...walk(base)].map((n) => n.name)).not.toContain('scrollbar');
     expect([...walk(overlay as SceneNode)].map((n) => n.name)).toContain('scrollbar');
+  });
+
+  it('draws the Header bar as a translucent overlay with a backdrop blur', () => {
+    const { root, warnings } = draw('header', {});
+    expect(warnings).toEqual([]);
+    const nodes = [...walk(root)];
+    const bar = nodes.find((n) => n.name === 'bar');
+    expect(bar).toMatchObject({
+      type: 'frame',
+      overlay: true,
+      backdropBlur: 16,
+      width: 200,
+      height: 56,
+    });
+    // The bar sits at the top: its translate (e, f) is 0, 0.
+    expect(bar!.transform.slice(4)).toEqual([0, 0]);
+    const fill = (bar as unknown as { fills: { color: string }[] }).fills[0]!;
+    expect(fill.color.toUpperCase()).toBe('#FFFFFFB3');
+    expect(nodes.find((n) => n.name === 'chip')).toMatchObject({
+      type: 'rect',
+      backdropBlur: 4,
+    });
+    expect(nodes.some((n) => n.name === 'content')).toBe(true);
   });
 
   it('draws the Block fill from the color field', () => {

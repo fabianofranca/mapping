@@ -29,6 +29,8 @@ function drawWarning({ code, params }: RenderWarning): string {
       return 'stroke with an image drawn in gray';
     case 'angular-gradient-unsupported':
       return 'angular gradient is not supported by this browser: drawn with its first color';
+    case 'backdrop-blur-unsupported':
+      return 'background blur is not supported by this browser: drawn without the blur';
     case 'remote-image-failed':
       return `the remote image from ${String(params?.origin ?? '')} did not load (server without CORS, unreachable, or image too large)`;
     case 'remote-image-opaque':

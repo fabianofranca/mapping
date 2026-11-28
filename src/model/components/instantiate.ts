@@ -3493,6 +3493,19 @@ function createEngine(
     return n === 1 ? {} : { scale: n };
   };
 
+  /** The evaluated `backdropBlur` of a frame or rect; 0, absent or invalid (negative, not a number, with a warning) is omitted. */
+  const backdropBlurOf = (node: TemplateNode): { backdropBlur?: number } => {
+    if (node.type !== 'frame' && node.type !== 'rect') return {};
+    const value = ev<unknown>(node.backdropBlur as Expr<unknown> | undefined, undefined);
+    if (value === undefined || value === null || value === '') return {};
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n) || n < 0) {
+      invalidValue('backdropBlur', value);
+      return {};
+    }
+    return n === 0 ? {} : { backdropBlur: n };
+  };
+
   /** The inner root's own `scale` times the `component` node's: they compose by multiplying. */
   const composedScale = (own: number | undefined, node: TemplateNode): number =>
     (own ?? 1) * (scaleOf(node).scale ?? 1);
@@ -3558,6 +3571,7 @@ function createEngine(
     });
     const base = {
       ...common(frame, `${prefix}/${path}`, x, y, w, h),
+      ...backdropBlurOf(frame),
       ...(stroke ? { stroke } : {}),
       type: 'frame' as const,
       clip: bool(frame.clip, isRoot),
@@ -4162,6 +4176,7 @@ function createEngine(
         registerGap(node, id, stroke);
         return {
           ...common(node, id, x, y, w, h),
+          ...backdropBlurOf(node),
           ...(stroke ? { stroke } : {}),
           type: 'rect',
           cornerRadius: radiusOf(node),

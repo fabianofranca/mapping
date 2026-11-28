@@ -335,6 +335,8 @@ In `formatVersion` 4 of the **component** the layout gains four features; the sp
 
 An element that must sit above the content a slot receives (a scrollbar over a list, a badge on a corner, a header over the scrolled content) is a node with `"overlay": true` (a literal boolean, any node except the root; not valid on the root). It keeps its place in the layout and anchors; only the drawing order changes (second pass, after the child markings of the same container). It has no effect in a `screen` component or inside a `component` node. The app, the viewer and the MCP PNG all draw it above the child markings. Details: `docs/COMPONENT-FORMAT.md`, "Above the child markings: `overlay`".
 
+A translucent bar that blurs what is under it (a header over scrolling content) takes `"backdropBlur": 16` (a number >= 0 in component units, on `frame` and `rect`, `formatVersion` 4), usually with `overlay: true`. The app and the viewer blur only the component drawings below it (not the container's image); the MCP PNG blurs everything below it. Details: "Backdrop blur: `backdropBlur`".
+
 #### Rich text: runs and an inline chip in the middle of the line (component `formatVersion` 4)
 
 When the drawing shows **bold, another color or a box with a background in the middle of a sentence** ("Invoice for **March** `overdue`"), use `runs` on the `text` node, in place of `text`: a non-empty list of runs `{ "text", "weight"?, "italic"?, "color"?, "decoration"?, "family"?, "size"?, "background"?, "radius"?, "padding"? }`. The specialization does not change (its `formatVersion` stays as it is). Rules:
