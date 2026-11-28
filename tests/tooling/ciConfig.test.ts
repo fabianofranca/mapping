@@ -228,7 +228,10 @@ describe('mcp-release.yml attaches mapping-mcp.js to the Release', () => {
       release.indexOf('\n  decide:'),
       release.indexOf('\n  release:'),
     );
-    const job = release.slice(release.indexOf('\n  release:'));
+    const job = release.slice(
+      release.indexOf('\n  release:'),
+      release.indexOf('\n  cleanup-rcs:'),
+    );
     expect(decide).toMatch(/permissions:\n {6}contents: read/);
     expect(decide).toContain('scripts/release/stableRelease.mjs decide');
     expect(job).toMatch(/needs: decide/);
@@ -767,7 +770,7 @@ describe('mcp-release.yml: the rc cleanup is its own job', () => {
     expect(releaseJob).not.toContain('--cleanup-tag');
     expect(cleanup).toContain('needs: [decide, release]');
     expect(cleanup).toContain(
-      "if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'",
+      "if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.release.result != 'failure' && needs.release.result != 'cancelled'",
     );
     expect(cleanup).toMatch(/permissions:\n {6}contents: write/);
     expect(cleanup).toMatch(/group: mcp-release-cleanup\n {6}cancel-in-progress: false/);

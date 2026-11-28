@@ -165,11 +165,10 @@ jobs:
               --notes "Mapping MCP server. Copy \`mapping-mcp.js\` to \`tools/\` in your repository and register it in \`.mcp.json\`. It also brings the workspace's \`setup.sh\`, the \`SKILL.md\` skill, the \`AGENTS.mapping.md\` rules and the \`watch-comments.mjs\` watcher, the \`watch-conversations.SKILL.md\` skill that wakes the agent in the same chat, and the \`mapping-signature.mjs\` signature extractor, each with its \`.sha256\`. Instructions in docs/MCP.md. To update a workspace that still has the old \`setup.sh\`, once: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
           fi
 
-  # An rc carries the epic's provisional version, which the closing may change, so it is deleted by
-  # ancestry: when its commit is already in `main`. An rc of an open epic points elsewhere and stays.
+  # Deleted by ancestry (the epic's provisional version may change); not after a failed `release`.
   cleanup-rcs:
     needs: [decide, release]
-    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.release.result != 'failure' && needs.release.result != 'cancelled'
     runs-on: ubuntu-latest
     permissions:
       contents: write
