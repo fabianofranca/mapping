@@ -1,4 +1,4 @@
-# Drawing fidelity — [Não lançado] (épico `epic/drawing-fidelity`, MCP 0.71.0, viewer 0.13.0, schema v25 unchanged)
+# Drawing fidelity — [Não lançado] (épico `epic/drawing-fidelity`, PR #0, MCP 0.71.0, schema v25 unchanged, viewer 0.13.0)
 
 ## Adicionado
 
