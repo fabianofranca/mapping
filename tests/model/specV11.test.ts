@@ -50,7 +50,7 @@ describe('formatVersion 11: versions', () => {
   });
 
   it('the invalid-version message lists 1 to 27', () => {
-    expect(issuesOf(v11Json(undefined, 27))).toContainEqual({
+    expect(issuesOf(v11Json(undefined, 28))).toContainEqual({
       path: 'formatVersion',
       message:
         'must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 or 27',
