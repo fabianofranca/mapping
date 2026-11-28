@@ -184,7 +184,9 @@ describe('shadow.inner on path, icon and arcs', () => {
         }),
       ),
     );
-    const [arc] = (root as { children: { type: string; effects: unknown[] }[] }).children;
+    const [arc] = (
+      root as unknown as { children: { type: string; effects: unknown[] }[] }
+    ).children;
     expect(arc!.type).toBe('path');
     expect(arc!.effects).toEqual([
       { color: '#000', offset: { x: 0, y: 0 }, blur: 2, inner: true },

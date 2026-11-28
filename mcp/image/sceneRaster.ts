@@ -834,6 +834,11 @@ function alignedShapes(node: SceneNode, shapes: Subpath[]): Subpath[] {
   return [{ points: points.map((p) => ({ x: p.x + d, y: p.y + d })), closed: true }];
 }
 
+/** A frame, rect, ellipse or path: the nodes whose own outline carries an inner shadow. */
+function hasOutline(node: SceneNode): boolean {
+  return ['frame', 'rect', 'ellipse', 'path'].includes(node.type);
+}
+
 /** A set of subpaths filled together under one fill rule (an inner shadow's outline or hole). */
 interface FillLayer {
   readonly shapes: Subpath[];
@@ -1129,21 +1134,26 @@ class Painter {
     alpha: number,
     clip: PixelRect,
   ): void {
-    const boxed =
-      node.type === 'frame' || node.type === 'rect' || node.type === 'ellipse';
-    if ((!boxed && node.type !== 'path') || shapes.length === 0) return;
-    const rule = node.type === 'path' ? node.fillRule : 'nonzero';
+    if (!hasOutline(node) || shapes.length === 0) return;
     for (const shadow of [...node.effects].reverse()) {
       const color = parseColor(shadow.color);
-      if (!shadow.inner || color === null) continue;
-      // `spread` only applies to the boxed shapes; a path's hole is its own outline.
-      const hole = boxed ? spreadShapes(node, shapes, -(shadow.spread ?? 0)) : shapes;
-      this.innerShadow([{ shapes, rule }], [{ shapes: hole, rule }], shadow, matrix, {
-        color,
-        alpha,
-        clip,
-      });
+      if (shadow.inner && color !== null)
+        this.innerShadowOf(node, shapes, shadow, matrix, { color, alpha, clip });
     }
+  }
+
+  /** One inner shadow of a boxed shape or a path (a path keeps its hole: no `spread`). */
+  private innerShadowOf(
+    node: SceneNode,
+    shapes: Subpath[],
+    shadow: Shadow,
+    matrix: Matrix,
+    paint: { color: Color; alpha: number; clip: PixelRect },
+  ): void {
+    const rule = node.type === 'path' ? node.fillRule : 'nonzero';
+    const hole =
+      node.type === 'path' ? shapes : spreadShapes(node, shapes, -(shadow.spread ?? 0));
+    this.innerShadow([{ shapes, rule }], [{ shapes: hole, rule }], shadow, matrix, paint);
   }
 
   /**
