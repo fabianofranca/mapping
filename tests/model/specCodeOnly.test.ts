@@ -71,7 +71,7 @@ const onColumn = (value: unknown) => (s: Json) => {
 
 describe('formatVersion 24: codeOnly on a field', () => {
   it('24 is in the list and is no longer the current version', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(25);
+    expect(SPEC_FORMAT_VERSION).toBe(26);
     expect(SPEC_FORMAT_VERSIONS).toContain(24);
   });
 

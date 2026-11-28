@@ -19,7 +19,8 @@ import { hasParentSegment, isWithin, writeFileAtomic, type Roots } from './paths
 // (`src/model/components/svgIcon.ts`). The icons file is package DATA, not code: the tool reads only
 // `.svg` files (the extension is checked before the content is opened) and writes only that one
 // `.json`, atomically, after validating the merged file with `parseIconsFile`. It never writes the
-// specialization, a project, `specs/` or anything outside the roots.
+// specialization, a project, `specs/` or anything outside the roots. The `svg` input may also be in
+// a scratch folder (`--scratch`, read-only: `Roots.resolveInputFile`, stage #2931).
 
 type Json = Record<string, unknown>;
 
@@ -33,6 +34,7 @@ export interface ImportIconsArgs {
   readonly replace?: boolean;
   readonly colors?: SvgColors;
   readonly mirror?: boolean;
+  readonly ignoreFilters?: boolean;
   readonly dryRun?: boolean;
 }
 
@@ -68,13 +70,13 @@ const invalidArguments = (message: string, details: Json = {}): ToolError =>
 // ---------------------------------------------------------------------------------------------
 // Input: the SVG file or folder
 
-/** The files an `svg` argument names: a `.svg` file, or the `.svg` files of a folder (no recursion). */
+/** The files an `svg` argument names: a `.svg` file, or the `.svg` files of a folder (no recursion), in a root or a scratch folder. */
 async function readSvgSources(
   roots: Roots,
   svg: string,
   name: string | undefined,
 ): Promise<readonly SvgSource[]> {
-  const { real } = await roots.resolveExisting(svg);
+  const { real } = await roots.resolveInputFile(svg);
   const info = await stat(real);
   if (info.isDirectory()) {
     if (name !== undefined) {
@@ -109,7 +111,7 @@ async function readFolder(roots: Roots, dir: string): Promise<readonly SvgSource
   return sources;
 }
 
-/** One entry of the folder: a link that leaves the roots, or that is not an `.svg`, is a problem of that file. */
+/** One entry of the folder: a link that leaves the roots and scratch folders, or that is not an `.svg`, is a problem of that file. */
 async function readFolderEntry(
   roots: Roots,
   dir: string,
@@ -117,15 +119,16 @@ async function readFolderEntry(
 ): Promise<SvgSource> {
   let real: string;
   try {
-    real = await realpath(join(dir, file));
-  } catch {
+    real = (await roots.resolveInputFile(join(dir, file))).real;
+  } catch (error) {
+    if (error instanceof ToolError && error.code === 'outside-roots') {
+      return {
+        file,
+        problem:
+          'outside-roots: the link points outside the configured roots and scratch folders',
+      };
+    }
     return { file, problem: 'the file cannot be read' };
-  }
-  if ((await roots.locate(real)) === null) {
-    return {
-      file,
-      problem: 'outside-roots: the link points outside the configured roots',
-    };
   }
   if (!isSvgPath(real))
     return { file, problem: 'the link does not point to an .svg file' };
@@ -256,6 +259,8 @@ interface Problem {
 interface Conversion {
   readonly converted: Converted[];
   readonly errors: Problem[];
+  /** What `ignoreFilters` dropped from the files that converted (a file with an error has none). */
+  readonly warnings: Problem[];
   /** The file's `viewBox`: the existing one, or the first imported icon's. */
   readonly viewBox: readonly [number, number];
 }
@@ -293,6 +298,7 @@ function convertAll(
 ): Conversion {
   const converted: Converted[] = [];
   const errors: Problem[] = [];
+  const warnings: Problem[] = [];
   const usedBy = new Map<string, string>();
   let viewBox = known;
   for (const source of sources) {
@@ -317,8 +323,13 @@ function convertAll(
     }
     usedBy.set(name, source.file);
     converted.push({ name, file: source.file, icon: result.icon });
+    for (const drop of result.dropped ?? [])
+      warnings.push({
+        file: source.file,
+        message: `dropped in SVG: ${drop.element} ${drop.attribute}="${drop.value}" (ignoreFilters)`,
+      });
   }
-  return { converted, errors, viewBox: viewBox ?? DEFAULT_ICON_VIEWBOX };
+  return { converted, errors, warnings, viewBox: viewBox ?? DEFAULT_ICON_VIEWBOX };
 }
 
 interface Merge {
@@ -454,6 +465,16 @@ export async function importIcons(roots: Roots, args: ImportIconsArgs): Promise<
   );
 }
 
+/** The options `svgToIcon` takes from the call's arguments. */
+function conversionOptions(args: ImportIconsArgs): SvgOptions {
+  return {
+    colors: args.colors ?? 'auto',
+    ...(args.mirror === true ? { mirror: true } : {}),
+    ...(args.ignoreFilters === true ? { ignoreFilters: true } : {}),
+    ...(args.name === undefined ? {} : { name: args.name }),
+  };
+}
+
 async function mergeIntoFile(
   roots: Roots,
   pkg: PackageSource,
@@ -464,11 +485,7 @@ async function mergeIntoFile(
   const { target, file, existing } = await readIconsTarget(roots, pkg, iconsFile);
   const conversion = convertAll(
     sources,
-    {
-      colors: args.colors ?? 'auto',
-      ...(args.mirror === true ? { mirror: true } : {}),
-      ...(args.name === undefined ? {} : { name: args.name }),
-    },
+    conversionOptions(args),
     existing?.viewBox as ViewBox | undefined,
   );
   const { next, merge, formatVersion } = mergedFile(existing, conversion, args);
@@ -488,6 +505,7 @@ async function mergeIntoFile(
     replaced: merge.replaced,
     skipped: merge.skipped,
     errors: conversion.errors,
+    warnings: conversion.warnings,
     written,
     hint: 'run validate_library on the package to check the written file against the components',
   };
