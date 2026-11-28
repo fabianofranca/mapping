@@ -161,13 +161,17 @@ describe('variantOf in add_container and update_container', () => {
     const a = refOf(made.proposed, '$a');
     const b = refOf(made.proposed, '$b');
 
-    const self = await plan(name, [{ op: 'update_container', container: a, variantOf: a }]);
+    const self = await plan(name, [
+      { op: 'update_container', container: a, variantOf: a },
+    ]);
     expect(self.valid).toBe(false);
     expect(self.errors[0]).toMatchObject({
       code: 'invalid-arguments',
       variantError: 'variant-self',
     });
-    const again = await plan(name, [{ op: 'update_container', container: a, variantOf: b }]);
+    const again = await plan(name, [
+      { op: 'update_container', container: a, variantOf: b },
+    ]);
     expect(again.errors[0]).toMatchObject({
       code: 'invalid-arguments',
       variantError: 'variant-already-linked',

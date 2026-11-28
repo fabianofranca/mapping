@@ -33,7 +33,8 @@ export function missingTypeRows(refs: Refs, container: ProjectContainer): Json[]
   const index = projectIndex(p);
   return missingVariantTypes(p, container.id).map((m) => ({
     type: `${m.type.specId}/${m.type.typeId}`,
-    name: index.types.get(typeKey(m.type.specId, m.type.typeId))?.type.name ?? m.type.typeId,
+    name:
+      index.types.get(typeKey(m.type.specId, m.type.typeId))?.type.name ?? m.type.typeId,
     variants: m.variants.map((id) => refs.ref('i', id)),
   }));
 }
