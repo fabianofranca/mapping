@@ -176,6 +176,20 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 
 **Scripts.** Added with the stage's script (the last phase).
 
+### `examples/libraries/touch-targets/`
+
+**What it is.** The example of the **intended overflow and absolute children** stage (#2913): three types (a layer `targets`). **Top bar** (`top-bar`, 360 × 44, field `title`): a `row` root with `clip: false`, a title and two 48 × 48 action frames, each with a 24 circle, flagged `overflow: "intended"`. **List item** (`list-item`, 360 wide, `hug` height, fields `title` and `supporting`): a padded `body` column, a state-layer `rect` with `position: "absolute"` and `anchors` on all four sides, and a 24 × 24 trailing frame holding a 48 × 48 touch area, centered and `overflow: "intended"`. **Touch row** (`touch-row`, 320 × 40): a 40 high slot `actions` with `childOverflow: "intended"` that accepts the package's own types.
+
+**How to open.** **Specializations** › **Apply folder…** and pick the folder; mark a Top bar at 360 × 44. With the MCP server, apply the folder to a project and call `render_marking` on it.
+
+**What you can see.**
+
+- The 48 actions are drawn past the 44 bar, above and below. The app shows no "The component does not fit" pending item and no Diagnostics entry: only `validate_library` reports an intended overflow, as the warning `overflow intended: <frame>`. The package validates with no error and exactly four such warnings (the Top bar's and the List item's preview and example).
+- The List item is 72 high (16 + two 20 texts + 16): the state layer covers the whole box (the padding does not apply to it) and does not grow the item. In an `rtl` container the touch area moves to the left edge.
+- A 48 × 48 child marking in the Touch row's 40 high slot gives no pending item; without `childOverflow` the item reads `content larger than the box: slot actions`.
+
+**Scripts.** R54 in `docs/TESTING.md` ("Intended overflow and absolute children").
+
 ### `examples/libraries/data-model/`
 
 **What it is.** The example of the **file formats** (`fileFormats`, `formatVersion` 20) for a specialization **without components**: the data model of a service. Two types, **Class** (the `attributes` table: name, type, required, example) and **Endpoint** (method, path, request, response, timeout), and two formats, each one a plugin with `generate` and `parse`: **OpenAPI** (`yaml`, OpenAPI 3.0.3: the classes become `components.schemas`, the endpoints become `paths`) and **Attributes CSV** (`csv`, one line per attribute of each class).
@@ -430,6 +444,8 @@ When one exists, the example is from `libraries/`. The features of the file form
 | Node size: px, `fill`, `hug` and `%`                                                | px, `fill` and `hug` in all; `%` in the Slider and the Short navigation bar (`material3-compose`)                                                 |
 | `size`, `minSize` and `sizing`                                                      | All components; official `minSize` only in the Button, FAB, Text field and others (`material3-compose`)                                           |
 | Anchors (`anchors`)                                                                 | `left`, `right`, `top`, `bottom`, `centerX` and `centerY` (`material3-compose`: FAB, Pull to refresh)                                             |
+| `overflow: "intended"` on a node and `childOverflow` on a slot                      | Top bar and List item; Touch row (`touch-targets`)                                                                                                |
+| `position: "absolute"` (a child out of the flow)                                    | List item state layer (`touch-targets`)                                                                                                           |
 | `component` node, its `values` and `provide`                                        | Icon button, with `glyph`, `spinner` and `badge` (`composition`)                                                                                  |
 | Corner anchor (`anchor.align: "corner-end"`)                                        | Badge root (`composition`)                                                                                                                        |
 | Icon `fillRule` (icons file `formatVersion` 3)                                      | Icon holes (`drawing-keys`)                                                                                                                       |

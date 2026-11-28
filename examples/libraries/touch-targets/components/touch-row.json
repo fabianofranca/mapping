@@ -1,0 +1,38 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "touch-row",
+  "name": "Touch row",
+  "description": "A 320 × 40 row with one slot, `actions`, 40 high and anchored to the top. The slot has `childOverflow: \"intended\"`, so a 48 × 48 child marking in it (in a taller row) raises no `component-overflow`.",
+  "size": {
+    "width": 320,
+    "height": 40
+  },
+  "template": {
+    "type": "frame",
+    "name": "row",
+    "layout": {
+      "type": "none"
+    },
+    "fill": "#F3F4F6",
+    "children": [
+      {
+        "type": "slot",
+        "id": "actions",
+        "label": "Actions",
+        "childOverflow": "intended",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0
+        },
+        "layout": {
+          "type": "row",
+          "gap": 8,
+          "align": "center"
+        },
+        "height": 40
+      }
+    ]
+  }
+}

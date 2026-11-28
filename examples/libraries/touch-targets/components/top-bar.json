@@ -1,0 +1,65 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "top-bar",
+  "name": "Top bar",
+  "description": "A 360 × 44 bar with a title and two 48 × 48 action touch targets. The targets are taller than the bar on purpose (`overflow: \"intended\"`), so they are drawn past it, above and below, and `clip: false` keeps them visible.",
+  "size": { "width": 360, "height": 44 },
+  "preview": { "title": "Inbox" },
+  "template": {
+    "type": "frame",
+    "name": "bar",
+    "clip": false,
+    "layout": { "type": "row", "padding": [0, 4], "align": "center" },
+    "fill": "#E5E7EB",
+    "children": [
+      {
+        "type": "text",
+        "name": "title",
+        "text": { "$field": "title", "default": "Inbox" },
+        "font": { "size": 16, "weight": 500, "lineHeight": 24 },
+        "color": "#111827",
+        "width": "fill",
+        "height": 24
+      },
+      {
+        "type": "frame",
+        "name": "action one",
+        "overflow": "intended",
+        "width": 48,
+        "height": 48,
+        "layout": { "type": "none" },
+        "fill": "#2563EB33",
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "icon one",
+            "width": 24,
+            "height": 24,
+            "anchors": { "centerX": true, "centerY": true },
+            "fill": "#1D4ED8"
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "action two",
+        "overflow": "intended",
+        "width": 48,
+        "height": 48,
+        "layout": { "type": "none" },
+        "fill": "#DC262633",
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "icon two",
+            "width": 24,
+            "height": 24,
+            "anchors": { "centerX": true, "centerY": true },
+            "fill": "#B91C1C"
+          }
+        ]
+      }
+    ]
+  }
+}

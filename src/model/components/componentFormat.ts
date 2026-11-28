@@ -503,7 +503,24 @@ interface TemplateNodeBase {
    * `Modifier.weight` and CSS's `flex-grow`.
    */
   readonly weight?: Expr<number>;
-  /** Only with a `layout: none` parent. */
+  /**
+   * `formatVersion` 4: `"intended"` says that the node may go past its parent's box on purpose (a
+   * 48 px touch target in a 44 px bar). The "does not fit" checks of the parent are repeated without
+   * the flagged children, so a flagged overflow is no `component-overflow` item while a sibling's
+   * real one still is. Only the warning changes: layout, measurement, `hug`, `clip` and the drawing
+   * stay as they are. Not valid on the root or on a `repeat` (the drawing belongs to its `template`).
+   */
+  readonly overflow?: 'intended';
+  /**
+   * `formatVersion` 4: `"absolute"` takes the node out of the flow of a `row`, `column` or `grid`
+   * parent (CSS `position: absolute`): it takes no place on the main axis, no `gap`, no `fill`
+   * share, no grid cell and no flow line, and the parent's `hug`, baseline and `justify` ignore it.
+   * It is sized and placed like a child of a `none` frame of the parent's whole box (the padding does
+   * not apply), by its `anchors`. In a `none` parent it changes nothing. Not valid on the root or on
+   * a `repeat`'s `template` (the `repeat` itself takes it).
+   */
+  readonly position?: 'absolute';
+  /** Only with a `layout: none` parent, or on a `position: "absolute"` node. */
   readonly anchors?: Anchors;
   readonly fill?: Expr<FillSpec>;
   readonly stroke?: StrokeSpec;
@@ -717,6 +734,12 @@ export interface SlotTemplate extends TemplateNodeBase {
    * the child's drawing only appears inside it.
    */
   readonly clip?: BoolExpr;
+  /**
+   * `"intended"` (v4): the child markings may go past the slot's box on purpose (touch targets), so
+   * they give no `content larger than the box: slot` shortfall. `slot-not-accepted`, `slot-full`,
+   * `slot-hidden` and the `clip` do not change.
+   */
+  readonly childOverflow?: 'intended';
   /**
    * Inherited color (v4): values that the slot offers to the child markings, by name (free, no
    * platform name). Each value is resolved in the parent (its fields, tokens and mode) and the

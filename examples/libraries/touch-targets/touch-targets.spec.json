@@ -1,0 +1,51 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 25,
+  "id": "touch-targets",
+  "name": "Touch targets",
+  "version": 1,
+  "description": "Touch targets that go past their parent's box on purpose, and an overlay that sits out of the flow. The Top bar (`top-bar`) is 44 high with two 48 × 48 actions (`overflow: \"intended\"`). The List item (`list-item`) hugs its padded body, has a state layer with `position: \"absolute\"` and a 48 × 48 touch area in a 24 × 24 trailing frame. The Touch row (`touch-row`) has an `actions` slot with `childOverflow: \"intended\"`. `validate_library` reports each intended overflow as a warning (`overflow intended`); nothing else does.",
+  "layers": [
+    {
+      "id": "targets",
+      "name": "Targets",
+      "color": "#2563EB",
+      "annotationTypes": [
+        {
+          "id": "top-bar",
+          "name": "Top bar",
+          "component": "components/top-bar.json",
+          "doc": "docs/top-bar.md",
+          "fields": [{ "key": "title", "type": "string", "default": "Inbox" }],
+          "examples": [{ "name": "Default", "values": {} }]
+        },
+        {
+          "id": "list-item",
+          "name": "List item",
+          "component": "components/list-item.json",
+          "doc": "docs/list-item.md",
+          "fields": [
+            { "key": "title", "type": "string", "default": "Title" },
+            { "key": "supporting", "type": "string", "default": "Supporting text" }
+          ],
+          "examples": [{ "name": "Default", "values": {} }]
+        },
+        {
+          "id": "touch-row",
+          "name": "Touch row",
+          "component": "components/touch-row.json",
+          "doc": "docs/touch-row.md",
+          "fields": [],
+          "slots": [
+            {
+              "id": "actions",
+              "name": "Actions",
+              "accepts": ["top-bar", "list-item", "touch-row"]
+            }
+          ],
+          "examples": [{ "name": "Default", "values": {} }]
+        }
+      ]
+    }
+  ]
+}

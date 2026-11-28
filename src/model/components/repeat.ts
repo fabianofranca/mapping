@@ -70,6 +70,7 @@ const INHERITED_KEYS = [
   'maxHeight',
   'span',
   'weight',
+  'position',
 ] as const;
 
 /** What the generated frame inherits from the `repeat` (only the keys present). */

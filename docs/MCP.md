@@ -317,6 +317,13 @@ The component format gains drawing keys without a version bump (`formatVersion` 
 - **Inner shadow on `icon` and `path` (DG2).** `shadow.inner: true` is valid on `path` and `icon` (on `text` or `image` the error is `shadow.inner: only valid on frame, rect, ellipse, path and icon`). The PNG draws it over the path with its fill rule, or over the union of an icon's paths inside its `clip`; `spread` is ignored there. A list on a `path` or `icon` draws the first outer shadow and every inner one, and an `ellipse` arc draws its inner shadow.
 - **Update the MCP first:** an earlier version rejects an expression in those positions (`expected a number`, `expected one of: …`) and `inner: true` on a `path` or `icon` (`only valid on frame, rect and ellipse`).
 
+### Change in 0.70.0 — intended overflow and absolute children (stage #2913)
+
+- **`overflow: "intended"` on a component node and `childOverflow: "intended"` on a slot** (component `formatVersion` 4, no raise). `validate_library` accepts both keys and every drawing, measurement and pending item of the MCP follows them: a node flagged `overflow: "intended"` does not make the parent's `content larger than the box: <frame>` check fail (a sibling that really overflows still does, with its own shortfall), and a slot with `childOverflow` does not count its child markings past the box. `render_*`, `measure_component`, `fit_marking`, the fit and `plan_changes` (`issues.new` `component-overflow`) see no overflow from either key; layout, `hug` and the drawing do not change.
+- **The one reader is `validate_library`.** Level 3 reports each flagged overflow as the warning `overflow intended: <frame>` once per case (for example `type "top-bar", the default values, initial size 360×44: overflow intended: bar (approximate)`). It is a note, not a defect, and it needs no fix.
+- **`position: "absolute"` on a component node** (component `formatVersion` 4, no raise). A child of a `row`, `column` or `grid` leaves the flow: every drawing, measurement and pending item of the MCP (`render_*`, `measure_component`, `fit_marking`, the fit, `plan_changes`) places it like a child of a `none` frame of the parent's whole box, and the parent's size, `hug` and baseline ignore it. `validate_library` accepts the key (`expected one of: absolute` for another value, `not valid on the root` on the template root and on a `repeat`'s `template`).
+- **Update the MCP first.** An earlier MCP or app refuses the keys with `unknown key: overflow`, `unknown key: childOverflow` or `unknown key: position` at their paths, and in a `formatVersion` 1 to 3 file they are `only allowed with formatVersion 4`. See [`COMPONENT-FORMAT.md`](COMPONENT-FORMAT.md), "Intended overflow".
+
 ### Change in 0.68.0 — `import_icons` inputs (stage #2931)
 
 `import_icons` reads its `svg` from a scratch folder too and can import a file with a `filter`. The icons file, specialization, component, project schema, proposal, comment and signature formats do not change.
@@ -448,6 +455,14 @@ The stage `epic/format-plugins-app` raises the specialization format to **`forma
 ### Container classes in the specialization format (stage #1901, 0.56.0)
 
 The stage `epic/container-context` starts with `formatVersion` 21 of the specialization: `containerClasses` at the root (named sets of classes, computed from a container's size with `by` and `below`, or chosen per container), `classes` on a ready-made size of `containers` and `appliesIn` on a type. No tool, operation or argument is new; `get_specialization` returns the keys as they are and `validate_specialization` and `validate_library` accept and check them (the error paths are in `docs/SPEC-FORMAT.md`, "Container classes (`formatVersion` 21)"). The three keys are outside the version contract. **Update the MCP first:** an earlier version refuses a specialization of `formatVersion` 21.
+
+### Variants of a screen (schema v26, stage #2034)
+
+Proposal `formatVersion` 14. No tool is new.
+
+- **Operations.** `add_container` and `update_container` accept `variantOf`: a container reference, id or `$name` of the batch. It runs the model's `linkVariant` (two groups merge); in `update_container`, `variantOf: null` runs `unlinkVariant`. The same container or one already in the group is `invalid-arguments` with `variantError` (`variant-self`, `variant-already-linked`) next to the message; an unknown reference is `not-found`. The raw group id is never an argument.
+- **Reading.** `get_container` returns `variants` (`[{ ref, name, page: { id, name }, effectiveClasses }]`, empty without a link) and `missingTypes` (`[{ type, name, variants: [ref…] }]`: the annotation types on a marking of another variant and on none of this container, skipping the types whose `appliesIn` excludes its class). `get_project` adds `variants: [ref…]` only to the containers that have them. `missingTypes` is informative: it is not a pending item.
+- **Proposal.** A proposal that carries a `variantGroup` is written in `formatVersion` 14; an earlier app or MCP rejects it. **Update the MCP first.**
 
 ### Container classes in the project (stage #1901, 0.56.0)
 

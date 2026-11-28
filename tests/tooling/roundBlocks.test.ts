@@ -13,7 +13,9 @@ import { describe, expect, it } from 'vitest';
  * (#2012) raised it by another 500 (to 201,000): the text fixes of R3.19, R11.4, R17.32, R17.59 and R29.10 took block 5 to 200.7 thousand. TX1 of #2081 raised it by 6,000 (to 207,000): the `texto` type of the notes library (R12.45 to R12.53) took block 3 from 199.5 to 207.0 thousand. TX2 raised it by another 6,000 (to 213,000): the update steps R12.54 to R12.56 took block 3 to 210.6 thousand. Stage #2193 (BR1) rebalanced the blocks instead of raising the ceiling again: five scripts changed block and the largest block measures 207,328; the sync SM1 with #1881 (R43) moved R40 and R2 and left it at 211,398. AF7 of #2035 raised it by another 7,000 (to 220,000): script R44 (the `measured` library as a `dom` format, 18 steps) took block 4 from 211.0 to 219.2 thousand, and no other block had the room. Stage #2625 (RH1) went to seven blocks so that R25's block keeps room to grow: six scripts changed block and, with R44 in block 3, the largest block measures 206,061 (R25's).
  */
 // DM5 of #2826 raised the ceiling by 1,000 (220,000 -> 221,000): the notes package at version 7 rewrote steps in block 3 (220,045).
-const MAX_BLOCK_GUIDE_CHARS = 221_000;
+// SM1 of #2913 raised the ceiling by 1,000 (221,000 -> 222,000): R54 (14,622) and R52 (12,121) did not fit the 7 blocks of 221,000 (block 2 with R52 measures 221,569).
+// VR3 of #2034 raised it by 10,000 (222,000 -> 232,000): R53 (11.4 thousand) did not fit any of the 7 blocks of 222,000 (block 5 with R53 measures 231,050).
+const MAX_BLOCK_GUIDE_CHARS = 232_000;
 
 /**
  * Stage #1533 (TE1, decisions 3 and 5): the limit above measures what the tester reads, the block's guide without the

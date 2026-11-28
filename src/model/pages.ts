@@ -4,6 +4,7 @@
 // never look at another page. Pure functions, no browser API.
 import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { IMAGE_GAP } from './containers';
+import { pruneLoneVariantGroups, variantGroupsOf } from './containerVariants';
 import { fail, type PageAnchorCrossing, type PageArrowCrossing } from './errors';
 import { boundingBox, right } from './geometry';
 import { settleFrom, type SettleOptions } from './hierarchySettle';
@@ -383,7 +384,15 @@ export function deletePage(
     const moved = moveRoots(p, roots, how.moveTo, options, true);
     return { ...moved, pages };
   }
-  return settleFrom(p, { ...withoutPageContent(p, pageId), pages }, options);
+  const groups = variantGroupsOf(
+    p,
+    new Set(p.containers.filter((c) => c.pageId === pageId).map((c) => c.id)),
+  );
+  return settleFrom(
+    p,
+    pruneLoneVariantGroups({ ...withoutPageContent(p, pageId), pages }, groups),
+    options,
+  );
 }
 
 /**

@@ -141,6 +141,7 @@ import {
 } from '../src/model';
 import type { LibraryIssue } from '../src/model/library';
 import { applyClassChoices } from './containerClassOps';
+import { applyVariantLink, applyVariantUnlink } from './containerVariantOps';
 import { backgroundText, checkBackgroundInput } from './backgroundInput';
 import { drawingModeMap } from './drawingModeInput';
 import { ToolError, type ToolErrorCode } from './errors';
@@ -1465,7 +1466,24 @@ class Batch {
         description: `${result.description}${classes.changes.map((c) => `, ${c}`).join('')}`,
       };
     }
+    if (op.variantOf != null) result = this.linkVariantStep(result, id, op.variantOf);
     return result;
+  }
+
+  /** `variantOf` of `add_container`: links the new container to the referenced one. */
+  private linkVariantStep(step: Step, id: string, reference: string): Step {
+    const other = this.containerItem(reference, step.project);
+    const linked = applyVariantLink(
+      step.project,
+      id,
+      other,
+      this.refs(step.project).imageLabel(other),
+    );
+    return {
+      ...step,
+      project: linked.project,
+      description: `${step.description}, ${linked.change}`,
+    };
   }
 
   /** `beside` of `add_container`: the id of the reference container; with `center` it is `invalid-arguments`. */
@@ -1627,6 +1645,11 @@ class Batch {
       project = classes.project;
       changes.push(...classes.changes);
     }
+    if (op.variantOf !== undefined) {
+      const linked = this.variantOfChange(project, id, op.variantOf);
+      project = linked.project;
+      changes.push(linked.change);
+    }
     if (op.locked === true) {
       project = setImageLocked(project, id, true);
       changes.push('lock');
@@ -1635,6 +1658,17 @@ class Batch {
       project,
       description: `Change the container "${this.refs(p).imageLabel(id)}": ${changes.join(', ') || 'nothing'}`,
     };
+  }
+
+  /** `variantOf` of `update_container`: a reference links, `null` leaves the group. */
+  private variantOfChange(
+    p: Project,
+    id: string,
+    variantOf: string | null,
+  ): { project: Project; change: string } {
+    if (variantOf === null) return applyVariantUnlink(p, id);
+    const other = this.containerItem(variantOf, p);
+    return applyVariantLink(p, id, other, this.refs(p).imageLabel(other));
   }
 
   /** `replace_container` and the old `replace_image`: replaces the container's image file. */

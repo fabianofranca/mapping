@@ -336,6 +336,7 @@ const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
   'image.density': 'review.field.density',
   'image.direction': 'review.field.direction',
   'image.classes': 'review.field.classes',
+  'image.variantGroup': 'review.field.variantGroup',
   'page.name': 'review.field.name',
   'page.position': 'review.field.position',
   'marking.page': 'review.field.page',
@@ -652,6 +653,86 @@ function classesText(names: ReviewNames, value: JsonValue): string {
     .join(', ');
 }
 
+/** The ids of the containers other than `exceptId` that are in `group` in the project. */
+function groupMembersIn(p: Project | null, group: string, exceptId: string): string[] {
+  return (p?.containers ?? [])
+    .filter((m) => m.variantGroup === group && m.id !== exceptId)
+    .map((m) => m.id);
+}
+
+/** The container a change of the proposal puts in `group` (a `variantGroup` change, or a created container with it). */
+function proposedMemberOf(other: Change, group: string, exceptId: string): string | null {
+  if (
+    other.entity !== 'image' ||
+    other.kind === 'remove' ||
+    other.entityId === exceptId
+  ) {
+    return null;
+  }
+  const value =
+    other.field === 'variantGroup' ? other.to : entityRecord(other)?.variantGroup;
+  return value === group ? other.entityId : null;
+}
+
+/** Does this change of the proposal take the container out of `group` (another group, none, or removed)? */
+function leavesGroup(other: Change, group: string): boolean {
+  if (other.entity !== 'image') return false;
+  if (other.kind === 'remove') return true;
+  return other.field === 'variantGroup' && other.to !== group;
+}
+
+/**
+ * Who is in `group` after the proposal, besides `exceptId`: the "as it would be" project (the current one
+ * when there is no preview) plus the containers the proposal's own changes put in it, minus the ones its
+ * changes take out.
+ */
+function groupMembersAfter(
+  names: ReviewNames,
+  group: string,
+  exceptId: string,
+): Set<string> {
+  const ids = new Set(groupMembersIn(names.preview ?? names.current, group, exceptId));
+  for (const other of names.proposal.changes) {
+    const joined = proposedMemberOf(other, group, exceptId);
+    if (joined !== null) ids.add(joined);
+    else if (leavesGroup(other, group)) ids.delete(other.entityId);
+  }
+  return ids;
+}
+
+/**
+ * The variant group of a container as "Variant of: Compact, Expanded": the names of the OTHER containers
+ * in it, never the id. The old value lists the group as the current project has it; the new one, as it
+ * would be after the proposal (a container linked or created in the same proposal joins; one it unlinks
+ * or removes is gone). No group (`null`), or nobody else in it, is "No variants".
+ */
+function variantGroupText(names: ReviewNames, c: Change, value: JsonValue): string {
+  if (typeof value !== 'string') return t('review.value.variantNone');
+  const ids =
+    value === c.to
+      ? groupMembersAfter(names, value, c.entityId)
+      : new Set(groupMembersIn(names.current, value, c.entityId));
+  if (ids.size === 0) return t('review.value.variantNone');
+  return t('review.value.variantOf', {
+    names: [...ids].map((id) => imageName(names, id)).join(', '),
+  });
+}
+
+/**
+ * "Variant of: …" for a container created already linked (`add_container` with `variantOf`), so the review
+ * shows the link before it is accepted. Empty for a removal, or for a container with no other in its group.
+ */
+function createdVariantText(
+  names: ReviewNames,
+  c: Change,
+  value: Record<string, JsonValue>,
+): string {
+  const group = value.variantGroup;
+  if (c.kind !== 'create' || typeof group !== 'string') return '';
+  const ids = groupMembersAfter(names, group, c.entityId);
+  return ids.size === 0 ? '' : variantGroupText(names, { ...c, to: group }, group);
+}
+
 /** The `project` entity: the drawing mode and, when pinned, "Direction: …". */
 function projectSummary(value: Record<string, JsonValue>): string {
   const parts = [
@@ -681,7 +762,9 @@ function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string 
         typeof value.width === 'number' && typeof value.height === 'number'
           ? t('image.dimensions', { width: value.width, height: value.height })
           : '';
-      return [name, size].filter(Boolean).join(' · ');
+      return [name, size, createdVariantText(names, c, value)]
+        .filter(Boolean)
+        .join(' · ');
     }
     case 'arrow':
       return arrowName(names, c.entityId) ?? '';
@@ -737,6 +820,7 @@ export function valueParts(
   if (field === 'drawingMode' && value !== null) return [{ text: modeText(value) ?? '' }];
   if (field === 'direction') return [{ text: directionText(c.entity, value) }];
   if (field === 'classes') return [{ text: classesText(names, value) }];
+  if (field === 'variantGroup') return [{ text: variantGroupText(names, c, value) }];
   if (field === 'page' && isRecord(value))
     return [{ text: pageValueText(names, value, value === c.to) }];
   if (field === 'anchor' && value !== null) return [{ text: anchorText(names, value) }];

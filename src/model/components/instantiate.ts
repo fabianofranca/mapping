@@ -289,6 +289,12 @@ export interface InstantiateOptions {
    */
   readonly slotContent?: SlotContent;
   /**
+   * Adds the note `overflow intended: <frame>` when only the children flagged `overflow: "intended"`
+   * fail a "does not fit" check (decision 5 of #2913; default off). The note is no shortfall: only
+   * the validator's proof asks for it.
+   */
+  readonly reportIntended?: boolean;
+  /**
    * The slots (by `slotKey`) that hold child markings even without a `slotContent` entry (a fixed-size
    * slot has nothing to measure): their `fallback` is neither measured nor drawn.
    */
@@ -628,6 +634,8 @@ interface Placement {
   readonly y: number;
   readonly w: number;
   readonly h: number;
+  /** Out of the flow (`position: "absolute"` in a `row`, `column` or `grid` parent). */
+  readonly absolute?: true;
 }
 
 /** Space of one axis when sizing the children: null `content` = the parent is being measured (hug). */
@@ -653,6 +661,11 @@ interface Plan {
   readonly w: number;
   readonly h: number;
   readonly placements: readonly Placement[];
+}
+
+/** The space of an axis whose size is known: the whole box. */
+function whole(size: number): AxisSpace {
+  return { content: size, bound: null };
 }
 
 const EPS = 0.001;
@@ -813,6 +826,19 @@ function createEngine(
   const warnShort = (code: ModelMessageTemplateCode, name: string, missing: number) => {
     const { text } = warn(code, { name });
     shortfalls.set(text, Math.max(shortfalls.get(text) ?? 0, missing));
+  };
+  /** Is the child flagged `overflow: "intended"` (it may go past its parent's box)? */
+  const isIntended = (kid: Kid): boolean => kid.node.overflow === 'intended';
+  /**
+   * A "does not fit" check repeated without the flagged children: `all` is how much is missing with
+   * every child, `kept` without the flagged ones (a value above `tolerance` fails). What `kept` still
+   * misses is the usual warning with its shortfall; what only the flagged ones add is no shortfall
+   * and, with `reportIntended`, the note.
+   */
+  const warnFit = (name: string, all: number, kept: number, tolerance: number): void => {
+    if (kept > tolerance) warnShort('engine.contentTooBig', name, kept);
+    else if (all > tolerance && options.reportIntended === true)
+      warn('engine.overflowIntended', { name });
   };
   const prefix = options.idPrefix ?? 'c';
 
@@ -1363,6 +1389,7 @@ function createEngine(
     if (node.type === 'component') return componentBaseline(node, w, h);
     if (node.type !== 'frame') return undefined;
     for (const placed of planFrame(node, w, h).placements) {
+      if (placed.absolute) continue;
       const inner = kidBaseline(placed.kid.node, placed.w, placed.h);
       if (inner !== undefined) return placed.y + inner;
     }
@@ -1615,6 +1642,48 @@ function createEngine(
     (frame.children ?? [])
       .map((node, index) => ({ node, index }))
       .filter((kid) => isVisible(kid.node));
+
+  /** Is the child out of the flow (`position: "absolute"` in a `row`, `column` or `grid`; in `none` it changes nothing)? */
+  const isAbsolute = (kid: Kid, layout: FrameLayout): boolean =>
+    layout.kind !== 'none' && kid.node.position === 'absolute';
+
+  /** The children that take part in the flow: the absolute ones leave it (decision 6 of #2913). */
+  const flowKids = (kids: readonly Kid[], layout: FrameLayout): Kid[] =>
+    kids.filter((kid) => !isAbsolute(kid, layout));
+
+  /**
+   * The absolute children of a frame, sized and placed like the children of a `none` frame of the
+   * parent's whole box (no padding), once the parent's size is known; the flow's placements and
+   * theirs come back in the template order.
+   */
+  const withAbsolute = (
+    frame: FrameTemplate,
+    layout: FrameLayout,
+    kids: readonly Kid[],
+    flow: Plan,
+  ): Plan => {
+    const absolute = kids.filter((kid) => isAbsolute(kid, layout));
+    if (absolute.length === 0) return flow;
+    const box: FrameLayout = { ...NONE_LAYOUT, dir: layout.dir };
+    const widths = resolveAxis(frame, box, absolute, 'w', whole(flow.w), null);
+    const heights = resolveAxis(frame, box, absolute, 'h', whole(flow.h), widths);
+    const xs = positionAxis(box, absolute, 'w', widths, flow.w);
+    const ys = positionAxis(box, absolute, 'h', heights, flow.h);
+    const placed = absolute.map((kid, i): Placement => ({
+      kid,
+      x: xs[i] ?? 0,
+      y: ys[i] ?? 0,
+      w: widths[i] ?? 0,
+      h: heights[i] ?? 0,
+      absolute: true,
+    }));
+    return {
+      ...flow,
+      placements: [...flow.placements, ...placed].sort(
+        (a, b) => a.kid.index - b.kid.index,
+      ),
+    };
+  };
 
   const planCache = new Map<FrameTemplate, Map<string, Plan>>();
 
@@ -1871,6 +1940,7 @@ function createEngine(
       ...(options.container === undefined ? {} : { container: options.container }),
       nestingDepth: componentDepth + 1,
       nestedMemo,
+      ...(options.reportIntended === true ? { reportIntended: true } : {}),
     };
   };
 
@@ -2166,7 +2236,7 @@ function createEngine(
   /** The intrinsic width of a frame, padding included (see "Sizing" in `docs/COMPONENT-FORMAT.md`). */
   const frameIntrinsic = (frame: FrameTemplate, mode: IntrinsicSize): number => {
     const layout = layoutOf(frame);
-    const kids = visibleKids(frame);
+    const kids = flowKids(visibleKids(frame), layout);
     const padding = padAxis(layout, 'w');
     if (kids.length === 0) return padding;
     if (layout.kind === 'grid') return gridIntrinsic(layout, kids, mode) + padding;
@@ -2314,6 +2384,18 @@ function createEngine(
     return sizes;
   };
 
+  /** What is left of `content` on the main axis without the `skip`ped children (their sizes and the gaps around them). */
+  const mainRemaining = (
+    sizes: readonly (number | 'fill')[],
+    gap: number,
+    content: number,
+    skip: readonly boolean[],
+  ): number => {
+    const kept = sizes.filter((_, i) => skip[i] !== true);
+    const fixed = kept.reduce<number>((sum, s) => sum + (s === 'fill' ? 0 : s), 0);
+    return content - fixed - gap * Math.max(0, kept.length - 1);
+  };
+
   /** Sizes on the main axis: fixed ones come ready and the `fill`s split what is left (by the weights). */
   const resolveMain = (
     frame: FrameTemplate,
@@ -2323,13 +2405,16 @@ function createEngine(
     content: number | null,
     tolerance: number,
     weights: readonly number[] = [],
+    intended: readonly boolean[] = [],
   ): number[] => {
     const fixed = sizes.reduce<number>((sum, s) => sum + (s === 'fill' ? 0 : s), 0);
     let free = 0;
     if (content !== null) {
       const remaining = content - fixed - layout.gap * Math.max(0, sizes.length - 1);
-      if (remaining < -tolerance)
-        warnShort('engine.contentTooBig', nodeName(frame), -remaining);
+      const kept = intended.includes(true)
+        ? mainRemaining(sizes, layout.gap, content, intended)
+        : remaining;
+      warnFit(nodeName(frame), -remaining, -kept, tolerance);
       free = Math.max(0, remaining);
     }
     const shares = distributeFill(
@@ -2467,6 +2552,17 @@ function createEngine(
     return sizes.map((s) => (s === 'fill' ? (shares[next++] ?? 0) : s));
   };
 
+  /** The largest extent of the children on the cross axis (`noneExtent` in a `none` frame). */
+  const crossWidest = (
+    layout: FrameLayout,
+    kids: readonly Kid[],
+    axis: Axis,
+    numbers: readonly number[],
+  ): number =>
+    layout.kind === 'none'
+      ? noneExtent(kids, axis, numbers, layout.dir)
+      : Math.max(...numbers);
+
   /** Children's sizes on an axis; null `space.content` = the parent is being measured (hug). */
   const resolveAxis = (
     frame: FrameTemplate,
@@ -2497,17 +2593,20 @@ function createEngine(
         space.content,
         tolerance,
         weightsFor(kids, fitted),
+        kids.map(isIntended),
       );
     }
     const numbers = sizes.map((s) => (s === 'fill' ? 0 : s));
     if (space.content !== null) {
       const content = space.content;
-      const widest =
-        layout.kind === 'none'
-          ? noneExtent(kids, axis, numbers, layout.dir)
-          : Math.max(...numbers);
-      if (widest > content + tolerance)
-        warnShort('engine.contentTooBig', nodeName(frame), widest - content);
+      const keep = (skip: boolean): number =>
+        crossWidest(
+          layout,
+          kids.filter((kid) => !(skip && isIntended(kid))),
+          axis,
+          numbers.filter((_, i) => !(skip && isIntended(kids[i] as Kid))),
+        );
+      warnFit(nodeName(frame), keep(false) - content, keep(true) - content, tolerance);
     }
     return numbers;
   };
@@ -2763,6 +2862,7 @@ function createEngine(
           indices.map((i) => kids[i] as Kid),
           indices.map((i) => sizes[i] ?? 0),
         ),
+        indices.map((i) => isIntended(kids[i] as Kid)),
       );
     });
     const usedOf = (line: readonly number[]) =>
@@ -2938,6 +3038,21 @@ function createEngine(
   const gridTolerance = (space: GridSpace): number =>
     space.kids.some((kid) => kid.node.type === 'text') ? TEXT_TOLERANCE : EPS;
 
+  /** The cells' check: a child larger than its cell, without the flagged children for the usual warning. */
+  const warnGridExcess = (
+    space: GridSpace,
+    sizes: readonly number[],
+    extents: readonly number[],
+  ): void => {
+    const excess = (skip: boolean): number =>
+      maxOf(
+        sizes.map((size, i) =>
+          skip && isIntended(space.kids[i] as Kid) ? 0 : size - (extents[i] ?? 0),
+        ),
+      );
+    warnFit(nodeName(space.frame), excess(false), excess(true), gridTolerance(space));
+  };
+
   /**
    * The tracks' axis with a track list: px, `hug` (the largest span 1 child of the track) and `fr`
    * (what is left), the cells of `span` tracks, the child aligned within the cell. The `hug` of the
@@ -2963,9 +3078,7 @@ function createEngine(
     const sizes = kids.map((_, i) =>
       gridKidSize(space, i, axis, extents[i] ?? 0, others),
     );
-    const excess = maxOf(sizes.map((size, i) => size - (extents[i] ?? 0)));
-    if (known !== null && excess > gridTolerance(space))
-      warnShort('engine.contentTooBig', nodeName(space.frame), excess);
+    if (known !== null) warnGridExcess(space, sizes, extents);
     const start = axis === 'w' ? layout.pad.left : layout.pad.top;
     const align = gridAlign(space, axis);
     return {
@@ -3008,9 +3121,7 @@ function createEngine(
     const sizes = kids.map((_, i) =>
       gridKidSize(space, i, axis, extents[i] ?? 0, others),
     );
-    const excess = maxOf(sizes.map((size, i) => size - (extents[i] ?? 0)));
-    if (known !== null && excess > gridTolerance(space))
-      warnShort('engine.contentTooBig', nodeName(space.frame), excess);
+    if (known !== null) warnGridExcess(space, sizes, extents);
     const start = axis === 'w' ? layout.pad.left : layout.pad.top;
     const align = gridAlign(space, axis);
     return {
@@ -3048,8 +3159,25 @@ function createEngine(
     const extents = lineExtents(cells, space.lines, natural);
     const stacked = stackLines(extents, layout.lineGap, false);
     const content = gridContent(space, axis);
-    if (content !== null && stacked.total > content + gridTolerance(space))
-      warnShort('engine.contentTooBig', nodeName(space.frame), stacked.total - content);
+    if (content !== null) {
+      const kept = kids.some(isIntended)
+        ? stackLines(
+            lineExtents(
+              cells,
+              space.lines,
+              natural.map((size, i) => (isIntended(kids[i] as Kid) ? 0 : size)),
+            ),
+            layout.lineGap,
+            false,
+          ).total
+        : stacked.total;
+      warnFit(
+        nodeName(space.frame),
+        stacked.total - content,
+        kept - content,
+        gridTolerance(space),
+      );
+    }
     const extentOf = (i: number): number => extents[cells[i]?.line ?? 0] ?? 0;
     const sizes = kids.map((_, i) => gridKidSize(space, i, axis, extentOf(i), others));
     const start = axis === 'w' ? layout.pad.left : layout.pad.top;
@@ -3159,11 +3287,22 @@ function createEngine(
     if (cached) return cached;
 
     const layout = layoutOf(frame);
-    const kids = visibleKids(frame);
-    if (layout.kind === 'grid')
-      return remember(frame, key, planGrid(frame, layout, kids, w, h, bounds));
-    if (layout.wrap !== 'none')
-      return remember(frame, key, planWrapped(frame, layout, kids, w, h, bounds));
+    const all = visibleKids(frame);
+    const flow = planFlow(frame, layout, flowKids(all, layout), w, h, bounds);
+    return remember(frame, key, withAbsolute(frame, layout, all, flow));
+  };
+
+  /** The plan of the children that take part in the flow (all of them in a `none` frame). */
+  const planFlow = (
+    frame: FrameTemplate,
+    layout: FrameLayout,
+    kids: readonly Kid[],
+    w: number | null,
+    h: number | null,
+    bounds: Limits,
+  ): Plan => {
+    if (layout.kind === 'grid') return planGrid(frame, layout, kids, w, h, bounds);
+    if (layout.wrap !== 'none') return planWrapped(frame, layout, kids, w, h, bounds);
     const padW = layout.pad.left + layout.pad.right;
     const padH = layout.pad.top + layout.pad.bottom;
     const baselined = layout.kind === 'row' && layout.align === 'baseline';
@@ -3210,7 +3349,7 @@ function createEngine(
         h: vertical.sizes[i] ?? 0,
       })),
     };
-    return remember(frame, key, plan);
+    return plan;
   };
 
   // --- style ----------------------------------------------------------------------------

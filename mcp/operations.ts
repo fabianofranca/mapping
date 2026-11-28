@@ -192,8 +192,15 @@ const classesField = z
     'Container classes the container is in: a map `set id → class id` of the CHOSEN sets (`containerClasses` without `by` in `get_specialization`), e.g. `{ "platform": "android" }`. In `update_container` a set not named stays as it is, `null` for a set removes it and `classes: null` removes them all; absent does not change. A set that is computed (`by`), one no applied specialization declares or a class the set does not declare is `invalid-arguments` (`chosenSets` lists the sets and their classes). A computed set follows the container\'s size ÷ `density` by itself (see `effectiveClasses` in `get_container`).',
   );
 
+const variantOfText =
+  'Links the container as a variant of another one (the same screen in another size): a container reference, id or alias `$name`. The link is symmetric, with no main container; two groups merge. The same container, or one already in its group, is `invalid-arguments` (`variantError` says which); an unknown one is `not-found`. It says nothing about the page or the class.';
+
 /** Fields of `update_container` (and of the old `update_image`). */
 const updateContainerFields = {
+  variantOf: item('Container')
+    .nullable()
+    .optional()
+    .describe(`${variantOfText} \`null\` leaves the group; absent does not change.`),
   name: name.optional(),
   source: externalSource.optional(),
   x: z.number().optional().describe('Position on the canvas (canvas units).'),
@@ -420,6 +427,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     direction: directionField,
     density: densityField,
     classes: classesField,
+    variantOf: item('Container').optional().describe(variantOfText),
     name: z
       .string()
       .optional()
