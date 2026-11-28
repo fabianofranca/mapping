@@ -154,7 +154,7 @@ export function ContainerVariantsSection({
   readonly readOnly: boolean;
 }) {
   const editor = useEditor();
-  const project = editor.store.project.value;
+  const project = editor.store.committed.value;
   if (!project) return null;
   const variants = variantsOf(project, image.id);
   return (
