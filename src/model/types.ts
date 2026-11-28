@@ -4,7 +4,7 @@ import type { Spec } from './spec';
 // Types of the `mapping.json` (schema v26). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
 // the operations always return a new project.
 
-export const SCHEMA_VERSION = 26;
+export const SCHEMA_VERSION = 27;
 /** Longest `containers[].variantGroup` the file accepts (v26). */
 export const MAX_VARIANT_GROUP_LENGTH = 64;
 /** Drawing mode (v24): axis → entry of the specializations' `tokens` (the same shape as a token selection). */
@@ -174,6 +174,12 @@ export interface Marking {
    * never chosen by hand); `null` = none.
    */
   readonly parentId: string | null;
+  /**
+   * Slot of the parent the marking sits in (v27, stored structure): the id of one of the
+   * parent's slots. Only on a materialized marking whose parent is a materialized marking with
+   * named slots; absent reads as no slot (a component with a single slot never stores it).
+   */
+  readonly slot?: string;
   /**
    * Page of the marking (v21): a `pages[].id` on a canvas marking (null `containerId`, floating
    * included); `null` on a container marking (its page is the container's).

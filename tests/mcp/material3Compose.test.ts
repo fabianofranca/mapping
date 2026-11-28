@@ -102,6 +102,22 @@ function screen(): Project {
   p = addContainer(p, { id: 'SCREEN', file: 'images/a.png', width: 360, height: 800 });
   // The bars of the slot cases (SL7 of #1080), in another container so that no Scaffold wraps them.
   p = addContainer(p, { id: 'BARS', file: 'images/b.png', width: 360, height: 400 });
+  // Marking-to-parent links as the file stores them: a marking drawn by a component type is materialized
+  // and the settle no longer picks its children by geometry (stage #3087), so the scene says who contains whom.
+  const PARENT: Record<string, string> = {
+    TB: 'SC',
+    LC: 'SC',
+    L1: 'LC',
+    L2: 'LC',
+    BT: 'SC',
+    FB: 'SC',
+    BI1: 'BAB',
+    BI2: 'BAB',
+    BXF: 'BAB',
+    TI1: 'TAB',
+    TI2: 'TAB',
+    TI3: 'TAB',
+  };
   const add = (
     id: string,
     typeId: string,
@@ -119,6 +135,14 @@ function screen(): Project {
     });
     for (const [key, value] of Object.entries(values))
       p = setFieldValue(p, id, key, value);
+    const parent = PARENT[id];
+    if (parent !== undefined)
+      p = {
+        ...p,
+        markings: p.markings.map((m) =>
+          m.id === `M${id}` ? { ...m, parentId: `M${parent}` } : m,
+        ),
+      };
   };
   const r = (x: number, y: number, width: number, height: number) => ({
     x,

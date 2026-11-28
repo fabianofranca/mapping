@@ -471,6 +471,7 @@ export const enUS = {
   'invariant.rect-out-of-image': 'rectangle outside the image',
   'invariant.parent-other-image': 'parent in another image',
   'invariant.rect-outside-parent': "outside the parent's rectangle",
+  'invariant.slot-without-parent': 'a slot with no materialized parent to sit in',
   'invariant.hierarchy-cycle': 'cycle in the hierarchy',
   'invariant.container-parent-missing': "container's parent marking does not exist",
   'invariant.container-parent-not-canvas':
@@ -524,6 +525,7 @@ export const enUS = {
   'repair.page-set': 'goes to the first page',
   'repair.page-cleared': 'the page is cleared (the container decides)',
   'repair.decorative-cleared': 'the decorative flag is turned off (it stays floating)',
+  'repair.slot-cleared': 'the slot is removed (the marking has no materialized parent)',
   'error.invalid-zip': 'The file is not a valid zip.',
   'error.missing-mapping': 'The zip has no mapping.json.',
   'error.not-found': 'Project not found.',

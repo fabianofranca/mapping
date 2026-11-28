@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createProject, imageCanvasRect } from '../../src/model';
+import { createProject, imageCanvasRect, materializedIds } from '../../src/model';
 import type { Arrow, Marking, Project, ProjectContainer, Rect } from '../../src/model';
 import type { Size } from '../../src/model/geometry';
 import {
@@ -11,6 +11,8 @@ import {
   referenceEnclosingAmong,
   referenceSettleHierarchy,
 } from '../support/settleReference';
+import { materialize, plainTyped } from '../support/structureFixtures';
+import { componentProject } from './componentFixtures';
 
 // Equivalence by random draw (#882, decision 1): `settleHierarchy` and `enclosingAmong` must give
 // EXACTLY the same result as the frozen reference (`tests/support/settleReference.ts`,
@@ -380,6 +382,51 @@ function genProject(rng: Rng): Project {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Natures (stage #3087, decision 4): the same projects, with materialized markings and stored parents
+// ---------------------------------------------------------------------------------------------
+
+/** Salt of the generator of the natures: a separate stream, so the plain cases stay what they were. */
+const NATURE_SALT = 3087;
+const NATURE_SHARE = 0.55;
+
+let natureBase: Project | null = null;
+
+/**
+ * The project with the component specialization applied, `text` annotations (materialized) on a
+ * share of the markings, `plain` ones (typed, but observation) on a few, and a `slot` on some
+ * children of those. Every `parentId` already drawn stays as it is: valid, nonexistent, in a cycle.
+ */
+function withNatures(rng: Rng, p: Project): Project {
+  natureBase ??= componentProject();
+  let out: Project = {
+    ...natureBase,
+    containers: p.containers,
+    markings: p.markings,
+    arrows: p.arrows,
+  };
+  const share = rng.pick([0.15, 0.3, 0.6]);
+  for (const m of p.markings) {
+    if (rng.chance(share)) out = materialize(out, m.id);
+    else if (rng.chance(0.1)) out = plainTyped(out, m.id);
+  }
+  const ids = materializedIds(out);
+  return {
+    ...out,
+    markings: out.markings.map((m) =>
+      m.parentId !== null && ids.has(m.id) && rng.chance(0.4)
+        ? { ...m, slot: 'body' }
+        : m,
+    ),
+  };
+}
+
+/** A `before` in which some markings had another nature (the annotation was not there yet). */
+function natureBefore(rng: Rng, p: Project, before: Project): Project {
+  if (!rng.chance(0.5)) return { ...before, annotations: p.annotations };
+  return { ...before, annotations: p.annotations.filter(() => rng.chance(0.5)) };
+}
+
+// ---------------------------------------------------------------------------------------------
 // Cases
 // ---------------------------------------------------------------------------------------------
 
@@ -442,13 +489,15 @@ function buildCase(index: number): Case {
   let project = genProject(rng);
   // Some of the cases already come settled: the "nothing changes returns the same object" path must show up.
   if (rng.chance(0.15)) project = referenceSettleHierarchy(project);
-  return {
-    index,
-    project,
-    minSizeOf: genMinSizes(rng, project),
-    before: genBefore(rng, project),
-    enclosing: [genEnclosingQuery(rng, project), genEnclosingQuery(rng, project)],
-  };
+  const minSizeOf = genMinSizes(rng, project);
+  let before = genBefore(rng, project);
+  const enclosing = [genEnclosingQuery(rng, project), genEnclosingQuery(rng, project)];
+  const natures = makeRng(SEED + index * SEED_STEP + NATURE_SALT);
+  if (natures.chance(NATURE_SHARE)) {
+    project = withNatures(natures, project);
+    before = natureBefore(natures, project, before);
+  }
+  return { index, project, minSizeOf, before, enclosing };
 }
 
 let cached: readonly Case[] | null = null;
@@ -513,7 +562,13 @@ type Category =
   | 'missingParent'
   | 'leavesContainer'
   | 'enclosingAnswered'
-  | 'unitsScaled';
+  | 'unitsScaled'
+  | 'materialized'
+  | 'storedParentKept'
+  | 'storedParentDropped'
+  | 'slotKept'
+  | 'slotDropped'
+  | 'natureChangedBefore';
 
 const rectsEqual = (a: Rect, b: Rect): boolean =>
   a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
@@ -566,10 +621,31 @@ function spaceCategories(p: Project, settled: Project): Category[] {
   return out;
 }
 
+/** Categories of the stored structure: materialized markings keep a valid stored parent. */
+function natureCategories(c: Case, settled: Project): Category[] {
+  const p = c.project;
+  const ids = materializedIds(p);
+  if (ids.size === 0) return [];
+  const out: Category[] = ['materialized'];
+  const pairs = p.markings.map((m, i) => [m, settled.markings[i] as Marking] as const);
+  const stored = pairs.filter(([a]) => ids.has(a.id) && a.parentId !== null);
+  if (stored.some(([a, b]) => b.parentId === a.parentId)) out.push('storedParentKept');
+  if (stored.some(([, b]) => b.parentId === null)) out.push('storedParentDropped');
+  if (pairs.some(([a, b]) => a.slot !== undefined && b.slot === a.slot)) {
+    out.push('slotKept');
+  }
+  if (pairs.some(([a, b]) => a.slot !== undefined && b.slot === undefined)) {
+    out.push('slotDropped');
+  }
+  if (materializedIds(c.before) !== ids) out.push('natureChangedBefore');
+  return out;
+}
+
 function categoriesOf(c: Case): Category[] {
   const p = c.project;
   const settled = settleHierarchy(p);
   const out = spaceCategories(p, settled);
+  out.push(...natureCategories(c, settled));
   out.push(settled === p ? 'unchanged' : 'changed');
   const buckets = equalBuckets(p.markings.filter((m) => !m.floating));
   if (buckets.length > 0) out.push('equalRects');
@@ -641,6 +717,12 @@ const REQUIRED: readonly Category[] = [
   'leavesContainer',
   'enclosingAnswered',
   'unitsScaled',
+  'materialized',
+  'storedParentKept',
+  'storedParentDropped',
+  'slotKept',
+  'slotDropped',
+  'natureChangedBefore',
 ];
 
 describe('settle equivalence with the frozen reference', () => {

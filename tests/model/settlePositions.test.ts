@@ -9,6 +9,13 @@ import {
   type Project,
 } from '../../src/model';
 import { knownPositions } from '../../src/model/settlePositions';
+import {
+  find,
+  materialize,
+  raw,
+  r,
+  structureProject,
+} from '../support/structureFixtures';
 import { emptyProject } from './fixtures';
 
 // Decision 12 of #1971: a move or resize inside one space keeps the space's entry of the position
@@ -175,5 +182,55 @@ describe('advancePositions: a move inside a space keeps the entry', () => {
     });
     expect(boxAt(after, 'A', 'far')).toEqual([601, 600, 651, 660]);
     expect(boxAt(before, 'A', 'far')).toEqual([601, 600, 701, 700]);
+  });
+});
+
+// Stage #3087 (decision 3): the stored structure of a materialized marking moves with it, and a
+// marking that only sits over a materialized one (an observation) is not its member.
+
+describe('advancePositions: materialized markings', () => {
+  function structured(): Project {
+    const p = structureProject(
+      [
+        raw('card', r(10, 10, 300, 300)),
+        raw('child', r(50, 50, 80, 40), { parentId: 'card' }),
+        raw('bare', r(200, 200, 40, 40)),
+        raw('far', r(600, 600, 100, 100)),
+        // Enough markings that an operation touching a few of them is clipped (not settled in full).
+        ...[1, 2, 3, 4, 5, 6, 7, 8].map((k) =>
+          raw(`fill${k}`, r(320 + k * 40, 400, 30, 30)),
+        ),
+      ],
+      ['card', 'child'],
+    );
+    return settleHierarchy(p);
+  }
+
+  it('keeps the stored parent of a materialized child through the settle', () => {
+    const p = structured();
+    expect(find(p, 'child').parentId).toBe('card');
+    // An observation marking over a materialized one does not become its member.
+    expect(find(p, 'bare').parentId).toBeNull();
+  });
+
+  it('moves a materialized marking with its stored member and keeps the entry of the space', () => {
+    const before = moveMarking(structured(), 'far', 1, 0);
+    expect(knownPositions(before.markings)?.has('I1')).toBe(true);
+    const after = moveMarking(before, 'card', 7, 3);
+    expect(boxAt(after, 'I1', 'card')).toEqual([17, 13, 317, 313]);
+    expect(boxAt(after, 'I1', 'child')).toEqual([57, 53, 137, 93]);
+    // The bare marking over the card is not a member: it stays where it was.
+    expect(boxAt(after, 'I1', 'bare')).toEqual([200, 200, 240, 240]);
+    expect(find(after, 'child').parentId).toBe('card');
+    expect(find(after, 'bare').parentId).toBeNull();
+    expect(boxAt(before, 'I1', 'card')).toEqual([10, 10, 310, 310]);
+  });
+
+  it('a marking that turns materialized is no candidate and keeps the stored child of the card', () => {
+    const p = materialize(structured(), 'bare');
+    const settled = settleHierarchy(p);
+    // `bare` is materialized now: it is no candidate, and the free child of the card stays free.
+    expect(find(settled, 'bare').parentId).toBeNull();
+    expect(find(settled, 'child').parentId).toBe('card');
   });
 });

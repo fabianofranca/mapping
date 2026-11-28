@@ -52,7 +52,7 @@ const OFF = { direction: 'StartToEnd', enableDismissFromStartToEnd: 'false' };
 const ON = { direction: 'StartToEnd' };
 
 /** A swipe-to-dismiss with `child` ('icon' directly, or a plain marking holding an icon) in its start strip. */
-function scene(values: Record<string, string>, child: 'direct' | 'plain'): Project {
+function scene(values: Record<string, string>, child: 'direct'): Project {
   let p = applySpecialization(emptyProject(), spec, {
     newId: (() => {
       let n = 0;
@@ -87,7 +87,9 @@ function painted(p: Project): { count: number; ink: number } {
   return { count, ink };
 }
 
-describe.each(['direct', 'plain'] as const)(
+// A plain marking is no child of a component since stage #3087 (a bare marking never takes a materialized
+// parent), so only the direct child is left.
+describe.each(['direct'] as const)(
   'the MCP render of a child in a hidden slot (%s)',
   (child) => {
     it('the model marks the drawing hidden when the direction is off, and not when it is on', () => {

@@ -18,6 +18,7 @@ import {
   setFieldValue,
   setProjectDrawingMode,
   setMarkingLocked,
+  settleHierarchy,
   type ComponentCatalog,
   type NewComponentArgs,
   type Project,
@@ -31,6 +32,7 @@ import {
   tokenSlotCatalog,
 } from './componentFixtures';
 import { FIT_SPEC_ID, LONG_LABEL, fitCatalog, fitProject } from './fitFixtures';
+import { materialize } from '../support/structureFixtures';
 import { emptyProject, expectValid, marking } from './fixtures';
 
 const catalog = testCatalog();
@@ -69,6 +71,12 @@ const box = (x: number, y: number, width: number, height: number): Rect => ({
   height,
 });
 const rectOf = (p: Project, id: string): Rect => marking(p, id).rect;
+/** Stores `parentId` on the marking (what an operation of the stored structure does), settled. */
+const adopt = (p: Project, id: string, parentId: string): Project =>
+  settleHierarchy({
+    ...p,
+    markings: p.markings.map((m) => (m.id === id ? { ...m, parentId } : m)),
+  });
 const arrange = (p: Project, id: string, cat: ComponentCatalog = catalog) =>
   arrangeMarking(p, cat, id, approximateMeasurer);
 
@@ -191,12 +199,13 @@ describe('arrangeMarking: row and column', () => {
     p = add(p, 'B', 'box', box(150, 150, 100, 100), 'C');
     p = add(p, 'BT', 'text', box(160, 160, 80, 30), 'B');
     p = createMarking(p, { id: 'Deep', containerId: 'I1', rect: box(170, 200, 20, 20) });
-    expect(marking(p, 'Deep').parentId).toBe('B');
+    // A bare marking over a materialized one is no member of it (stage #3087): it stays where it is.
+    expect(marking(p, 'Deep').parentId).toBeNull();
     const { project } = arrange(p, 'C');
     // B goes to the start of the slot (100,100): offset (-50,-50).
     expect(rectOf(project, 'B')).toEqual(box(100, 100, 100, 100));
     expect(rectOf(project, 'BT')).toEqual(box(110, 110, 80, 30));
-    expect(rectOf(project, 'Deep')).toEqual(box(120, 150, 20, 20));
+    expect(rectOf(project, 'Deep')).toEqual(box(170, 200, 20, 20));
     expectValid(project);
   });
 });
@@ -231,6 +240,8 @@ describe('arrangeMarking: hug', () => {
   it('never below the minSize', () => {
     let p = add(componentProject(), 'C', 'rowhug', box(100, 100, 200, 60));
     p = createMarking(p, { id: 'Small', containerId: 'I1', rect: box(105, 105, 10, 10) });
+    // A bare marking is no member of a materialized one: the child is materialized and stored in C.
+    p = adopt(materialize(p, 'Small'), 'Small', 'C');
     expect(marking(p, 'Small').parentId).toBe('C');
     const { project } = arrange(p, 'C');
     // minSize 40×20 of the component.
@@ -989,11 +1000,11 @@ describe('fitMarking (MC3, decision 14 of #898)', () => {
     expect(canFit(row, fcat, 'R')).toBe(false);
   });
 
-  it('settles at the end: a marking that now fits inside becomes a child', () => {
+  it('settles at the end: a bare marking that now fits inside stays free (B is materialized)', () => {
     let p = withLabel('fit-button', LONG_LABEL);
     p = createMarking(p, { id: 'S', containerId: 'I1', rect: box(110, 145, 20, 10) });
     expect(marking(p, 'S').parentId).toBeNull();
-    expect(marking(fit(p, 'B'), 'S').parentId).toBe('B');
+    expect(marking(fit(p, 'B'), 'S').parentId).toBeNull();
   });
 
   it('gesture previews do not settle (settle: false)', () => {

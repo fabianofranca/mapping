@@ -11,6 +11,7 @@ import {
   type Size,
 } from './geometry';
 import { reconcilePerspectives, reconcilePerspectivesFrom } from './perspectiveReconcile';
+import { materializedIds } from './nature';
 import { projectIndex } from './projectIndex';
 import { settleDelta, type SettleDelta } from './settleDelta';
 import { localParents, type Dirty } from './settleLocal';
@@ -32,6 +33,14 @@ import {
   unitsFactor,
   type SpaceUnits,
 } from './settleUnits';
+import {
+  anchorOf,
+  needsReparent,
+  reparented,
+  storedStructure,
+  withoutSlot,
+  type Structure,
+} from './settleStructure';
 import { buildRectIndex, type RectIndex } from './spaceIndex';
 import type { Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
@@ -137,8 +146,11 @@ export function enclosingAmong(
   pageId?: string | null,
 ): string | null {
   const group: Entry[] = [];
+  const materialized = materializedIds(p);
   p.markings.forEach((m, i) => {
-    if (m.floating || m.decorative || m.containerId !== containerId) return;
+    // A materialized marking is never a parent by geometry (stored structure, #3087).
+    if (m.floating || m.decorative || materialized.has(m.id)) return;
+    if (m.containerId !== containerId) return;
     if (containerId === null && pageId !== undefined && m.pageId !== pageId) return;
     group.push({ m, i });
   });
@@ -409,6 +421,12 @@ interface Work {
   readonly table: TableHolder;
   /** Positions (ascending) of the markings the operation touched: their stored box is not valid. */
   touched: readonly number[];
+  /** The materialized markings: never a parent by geometry, they keep their stored parent. */
+  readonly materialized: ReadonlySet<string>;
+  /** The stored parents of the materialized markings, as the operation left them. */
+  readonly structure: Structure;
+  /** The materialized markings of the project from before the operation (`delta` only). */
+  readonly wasMaterialized: ReadonlySet<string>;
 }
 
 /**
@@ -443,6 +461,7 @@ function settleGeometry(
   if (delta !== null && delta.changed.length + delta.old.length + delta.full.size === 0) {
     return p;
   }
+  const materialized = materializedIds(p);
   const w: Work = {
     p,
     options,
@@ -453,7 +472,11 @@ function settleGeometry(
     dirty: new Map(),
     table,
     touched: [],
+    materialized,
+    structure: storedStructure(p.markings, materialized),
+    wasMaterialized: delta?.wasMaterialized ?? materialized,
   };
+  dropInvalidParents(w);
   moveToSpaces(w, delta);
   if (delta !== null) {
     collectDirty(w, delta);
@@ -466,13 +489,24 @@ function settleGeometry(
 }
 
 /**
- * Indices of the markings that need the space checked: those that changed and those of the whole
- * spaces.
+ * A materialized marking whose stored parent is invalid (missing, floating, decorative, in a cycle, in
+ * another space or page) loses it and its slot, and keeps its rectangle (stage #3087, decision 3).
+ */
+function dropInvalidParents(w: Work): void {
+  for (const i of w.structure.invalid) {
+    w.list.set(i, { ...withoutSlot(w.list.at(i)), parentId: null });
+  }
+}
+
+/**
+ * Indices of the markings that need the space checked: those that changed, those of the whole
+ * spaces and the ones that just lost an invalid parent (they take their space by geometry).
  */
 function spaceCandidates(w: Work, delta: SettleDelta | null): Iterable<number> {
   const list = w.list.items();
   if (delta === null) return list.keys();
   const out = new Set(delta.changed);
+  for (const i of w.structure.invalid) out.add(i);
   if (delta.full.size > 0) {
     list.forEach((m, i) => {
       if (delta.full.has(m.containerId)) out.add(i);
@@ -485,14 +519,19 @@ function spaceCandidates(w: Work, delta: SettleDelta | null): Iterable<number> {
  * Takes each marking to the space the geometry gives it (the container that contains it, otherwise
  * the canvas), in two passes over the same candidates: the target of each one, and then the
  * conversion, set by set (`landSet`), so the clipped settle and the whole one give the same result.
+ * A materialized marking with a valid stored parent decides nothing: it goes where its parent goes
+ * (`followMoves`).
  */
 function moveToSpaces(w: Work, delta: SettleDelta | null): void {
   const lookup = containerLookup(w.p.containers);
   const moves: Move[] = [];
   for (const i of spaceCandidates(w, delta)) {
-    const move = moveOf(w.p, w.list.at(i), i, lookup);
+    const m = w.list.at(i);
+    if (w.structure.followers.has(m.id)) continue;
+    const move = moveOf(w.p, m, i, lookup);
     if (move !== null) moves.push(move);
   }
+  moves.push(...followMoves(w, moves));
   const lands = new Map<number, Marking>();
   for (const set of setsOf(moves)) {
     landSet(w.p, set, w.options).forEach((next, k) =>
@@ -510,6 +549,26 @@ function moveToSpaces(w: Work, delta: SettleDelta | null): void {
     // parents.
     if (next.containerId === null) w.full?.add(null);
   }
+}
+
+/**
+ * The moves of the materialized markings that travel with an anchor that changes space: the same
+ * target, their own footprint (their rectangle may stay outside the space they leave).
+ */
+function followMoves(w: Work, moves: readonly Move[]): Move[] {
+  const { followers } = w.structure;
+  if (moves.length === 0 || followers.size === 0) return [];
+  const anchored = new Map(moves.map((move) => [move.marking.id, move]));
+  const out: Move[] = [];
+  w.list.items().forEach((m, index) => {
+    if (!followers.has(m.id)) return;
+    const move = anchored.get(anchorOf(w.structure, m.id));
+    if (move === undefined) return;
+    const placement = move.from.space.placement;
+    const canvas = m.containerId === null ? m.rect : toCanvasRect(placement, m.rect);
+    out.push({ ...move, index, marking: m, canvas });
+  });
+  return out;
 }
 
 /**
@@ -540,9 +599,14 @@ function collectDirty(w: Work, delta: SettleDelta): void {
     return dirty;
   };
   w.touched = [...new Set([...delta.changed, ...w.landed])].sort((a, b) => a - b);
-  for (const m of delta.old) dirtyOf(m)?.rects.push(m.rect);
+  // A materialized marking is no candidate of any parent: what it covers does not depend on it.
+  // The old rectangle counts by the nature the marking had before the operation.
+  for (const m of delta.old) {
+    if (!w.wasMaterialized.has(m.id)) dirtyOf(m)?.rects.push(m.rect);
+  }
   for (const i of w.touched) {
     const m = w.list.at(i);
+    if (w.materialized.has(m.id)) continue;
     const dirty = dirtyOf(m);
     dirty?.rects.push(m.rect);
     dirty?.seeds.push(i);
@@ -591,9 +655,11 @@ function settleFullSpaces(
   list.forEach((m, i) => {
     if (!inSpaces(m.containerId)) return;
     if (m.floating) {
-      if (m.parentId !== null) patches.push({ m: { ...m, parentId: null }, i });
+      if (needsReparent(m, null)) patches.push({ m: reparented(m, null), i });
       return;
     }
+    // A materialized marking keeps its stored parent (`dropInvalidParents` took the invalid ones).
+    if (w.materialized.has(m.id)) return;
     const key = spaceKey(m);
     const group = bySpace.get(key);
     if (group) group.push({ m, i });
@@ -616,7 +682,8 @@ function settleFullSpaces(
   for (const [space, group] of bySpace) {
     for (const e of group) {
       const parentId = markingParent(indexOf(space), e.m, rankOf);
-      if (parentId !== e.m.parentId) patches.push({ m: { ...e.m, parentId }, i: e.i });
+      if (needsReparent(e.m, parentId))
+        patches.push({ m: reparented(e.m, parentId), i: e.i });
     }
   }
   const containers = inSpaces(null)
@@ -655,7 +722,13 @@ function settleContainerParents(
  * settled in full.
  */
 function settleLocal(w: Work, space: string | null, dirty: Dirty): boolean {
-  const patches = localParents(w.list.items(), entryOf(w, space), dirty, w.touched);
+  const patches = localParents(
+    w.list.items(),
+    entryOf(w, space),
+    dirty,
+    w.touched,
+    w.materialized,
+  );
   if (patches === null) return false;
   for (const e of patches) w.list.set(e.i, e.m);
   return true;

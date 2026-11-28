@@ -74,7 +74,7 @@ describe('migration v12 → v13 (no inheritance)', () => {
     const result = load(JSON.stringify(raw));
     expect(result.migratedFrom).toBe(12);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(26);
+    expect(result.project.schemaVersion).toBe(27);
     expect(result.project.annotations.map((a) => a.id)).toEqual(
       raw.annotations.map((a: Raw) => a.id),
     );
@@ -86,7 +86,7 @@ describe('migration v12 → v13 (no inheritance)', () => {
     const result = load(JSON.stringify(v12Raw()));
     const saved = serialize(result.project);
     const data = JSON.parse(saved) as Raw;
-    expect(data.schemaVersion).toBe(26);
+    expect(data.schemaVersion).toBe(27);
     for (const a of data.annotations) expect(a).not.toHaveProperty('inherit');
     expect(saved).not.toContain('"inherit"');
     const again = load(saved);

@@ -51,6 +51,7 @@ export { fitComponentSize, resolveSizing } from './components/sizing';
 export * from './componentMeasure';
 export type { FrameNode, SceneNode } from './components/scene';
 export * from './componentCatalog';
+export * from './nature';
 export * from './structural';
 export * from './componentValues';
 export * from './componentDrawings';

@@ -9,6 +9,7 @@ import {
   type Project,
 } from '../../src/model';
 import { imageCanvasRect, rectsOverlap } from '../../src/model/geometry';
+import { r, raw, structureProject } from '../support/structureFixtures';
 import { sampleProject } from './fixtures';
 
 function codes(p: Project) {
@@ -610,5 +611,66 @@ describe('images-overlap', () => {
       height: 1 + next(10000),
     }));
     expect(expectSamePairs(rects)).toBeGreaterThan(100);
+  });
+});
+
+describe('invariant validator: stored structure (v27)', () => {
+  const at = (rect = r(20, 20, 200, 100)) => rect;
+  const project = (
+    markings: readonly Marking[],
+    materialized: readonly string[],
+  ): Project => structureProject(markings, materialized);
+
+  it('a `slot` on an observation marking is `slot-without-parent`', () => {
+    const p = project(
+      [raw('A', r(0, 0, 500, 400)), raw('B', at(), { slot: 'left' })],
+      [],
+    );
+    expect(codes(p)).toEqual(['slot-without-parent:B']);
+  });
+
+  it('a `slot` on a loose materialized marking is `slot-without-parent`', () => {
+    const p = project([raw('card', at(), { slot: 'left' })], ['card']);
+    expect(codes(p)).toEqual(['slot-without-parent:card']);
+  });
+
+  it('a `slot` on a marking whose parent is an observation marking is `slot-without-parent`', () => {
+    const p = project(
+      [raw('A', r(0, 0, 500, 400)), raw('card', at(), { parentId: 'A', slot: 'left' })],
+      ['card'],
+    );
+    expect(codes(p)).toEqual(['slot-without-parent:card']);
+  });
+
+  it('a `slot` on a materialized child of a materialized parent is valid', () => {
+    const p = project(
+      [
+        raw('panel', r(0, 0, 500, 400)),
+        raw('tile', at(), { parentId: 'panel', slot: 'left' }),
+      ],
+      ['panel', 'tile'],
+    );
+    expect(codes(p)).toEqual([]);
+  });
+
+  it('a materialized child outside its stored parent is not `rect-outside-parent`', () => {
+    const p = project(
+      [raw('A', r(0, 0, 100, 100)), raw('card', r(300, 300, 50, 50), { parentId: 'A' })],
+      ['card'],
+    );
+    expect(codes(p)).toEqual([]);
+  });
+
+  it('an observation child outside its parent still is `rect-outside-parent`', () => {
+    const p = project(
+      [raw('A', r(0, 0, 100, 100)), raw('B', r(300, 300, 50, 50), { parentId: 'A' })],
+      [],
+    );
+    expect(codes(p)).toEqual(['rect-outside-parent:B']);
+  });
+
+  it('a stored parent that does not exist keeps `missing-parent`', () => {
+    const p = project([raw('card', at(), { parentId: 'ghost' })], ['card']);
+    expect(codes(p)).toEqual(['missing-parent:card']);
   });
 });

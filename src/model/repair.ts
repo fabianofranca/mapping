@@ -13,6 +13,7 @@ import {
 } from './geometry';
 import { IMAGE_GAP } from './containers';
 import { DEFAULT_PAGE_NAME } from './migrations';
+import { withoutSlot } from './settleStructure';
 import {
   pageNameKey,
   perspectiveNameKey,
@@ -45,7 +46,8 @@ export type RepairAction =
   | 'created'
   | 'page-set'
   | 'page-cleared'
-  | 'decorative-cleared';
+  | 'decorative-cleared'
+  | 'slot-cleared';
 
 export interface RepairRecord {
   readonly action: RepairAction;
@@ -83,6 +85,7 @@ const REPAIRABLE: ReadonlySet<InvariantCode> = new Set<InvariantCode>([
   'parent-floating',
   'parent-decorative',
   'decorative-floating',
+  'slot-without-parent',
   'arrow-endpoint-missing',
   'arrow-self',
   'duplicate-id', // only the perspective one (see `isRepairable`)
@@ -307,7 +310,7 @@ function repairRound(
       next = { ...next, parentId: null };
       record(out, 'made-root', 'page-parent-mismatch', 'marking', m);
     }
-    markings.push(next);
+    markings.push(repairSlot(next, m, has, out));
   }
   const anchored = markings.map((m) => releaseBrokenAnchor(m, has, out));
 
@@ -473,6 +476,23 @@ function repairContainerPage(
   if (code === undefined || pageIds.has(c.pageId)) return c;
   record(out, 'page-set', code, 'image', c);
   return { ...c, pageId: firstPage };
+}
+
+/**
+ * A `slot` with no parent to sit in goes away: the reported `slot-without-parent`, and the one a repair
+ * that made the marking loose left behind (that repair already reported the marking).
+ */
+function repairSlot(
+  next: Marking,
+  was: Marking,
+  has: (entity: InvariantEntity, id: string, code: InvariantCode) => boolean,
+  out: RepairRecord[],
+): Marking {
+  if (next.slot === undefined) return next;
+  const reported = has('marking', was.id, 'slot-without-parent');
+  if (!reported && next.parentId !== null) return next;
+  if (reported) record(out, 'slot-cleared', 'slot-without-parent', 'marking', was);
+  return withoutSlot(next);
 }
 
 /** Canvas marking without a page or on a missing one → first page; container marking with a page → `null`. */

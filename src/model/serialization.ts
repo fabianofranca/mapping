@@ -42,7 +42,7 @@ function canonicalAnchor(a: MarkingAnchor): MarkingAnchor {
 }
 
 /**
- * The marking with the keys always in the same order. `decorative` is written only when `true`,
+ * The marking with the keys always in the same order. `slot` is written only when set, right after `parentId`. `decorative` is written only when `true`,
  * right after `floating` (absent reads as `false`), so the object is typed as the marking it reads
  * back as.
  */
@@ -51,6 +51,7 @@ function canonicalMarking(m: Marking): Marking {
     id: m.id,
     containerId: m.containerId,
     parentId: m.parentId,
+    ...(m.slot === undefined ? {} : { slot: m.slot }),
     pageId: m.pageId,
     name: m.name,
     rect: { x: m.rect.x, y: m.rect.y, width: m.rect.width, height: m.rect.height },

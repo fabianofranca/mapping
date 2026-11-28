@@ -419,6 +419,13 @@ export const migrateFrom24To25: Migration = (data) => data;
  */
 export const migrateFrom25To26: Migration = (data) => data;
 
+/**
+ * v26 → v27 (stored structure): only the version changes. `markings[].slot` is optional (absent reads as
+ * no slot) and is written only when set; the new version exists so that an earlier app opens a file with a
+ * stored slot read-only, instead of dropping the key when writing. It settles nothing.
+ */
+export const migrateFrom26To27: Migration = (data) => data;
+
 /** Migration registry: the key is the source version. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -446,6 +453,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [23, migrateFrom23To24],
   [24, migrateFrom24To25],
   [25, migrateFrom25To26],
+  [26, migrateFrom26To27],
 ]);
 
 export type MigrationResult =

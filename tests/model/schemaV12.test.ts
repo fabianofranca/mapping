@@ -43,7 +43,7 @@ describe('migration v11 → v12 (containers)', () => {
     expect(migrations.get(11)).toBe(migrateFrom11To12);
     expect([...migrations.keys()]).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-      24, 25,
+      24, 25, 26,
     ]);
   });
 
@@ -63,7 +63,7 @@ describe('migration v11 → v12 (containers)', () => {
     expect(result.project).toEqual(p);
 
     const saved = JSON.parse(serialize(result.project)) as Record<string, unknown>;
-    expect(saved.schemaVersion).toBe(26);
+    expect(saved.schemaVersion).toBe(27);
     expect(saved.images).toBeUndefined();
     expect(saved.containers).toEqual(
       (JSON.parse(serialize(p)) as { containers: unknown }).containers,
@@ -135,7 +135,7 @@ describe('migration v11 → v12 (containers)', () => {
     };
     const result = load(v1);
     expect(result.migratedFrom).toBe(1);
-    expect(result.project.schemaVersion).toBe(26);
+    expect(result.project.schemaVersion).toBe(27);
     expect(result.project.containers.map((c) => c.id)).toEqual(
       original.images.map((i) => i.id),
     );
@@ -144,15 +144,15 @@ describe('migration v11 → v12 (containers)', () => {
     );
     const saved = JSON.parse(serialize(result.project)) as Record<string, unknown>;
     expect(saved.images).toBeUndefined();
-    expect(saved.schemaVersion).toBe(26);
+    expect(saved.schemaVersion).toBe(27);
   });
 });
 
 describe('schema v12', () => {
   it('the new project writes the current version with containers', () => {
-    expect(emptyProject().schemaVersion).toBe(26);
+    expect(emptyProject().schemaVersion).toBe(27);
     expect(JSON.parse(serialize(emptyProject()))).toMatchObject({
-      schemaVersion: 26,
+      schemaVersion: 27,
       containers: [],
     });
   });

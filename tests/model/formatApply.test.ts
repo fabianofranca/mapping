@@ -453,7 +453,9 @@ describe('applyFormatResult: a drawingMode text in add_container', () => {
   const withAxes = (): Project =>
     ({
       ...formatProject(),
-      specializations: [{ spec: { tokens: { axes: { theme: ['light', 'dark'] } } } }],
+      specializations: [
+        { spec: { layers: [], tokens: { axes: { theme: ['light', 'dark'] } } } },
+      ],
     }) as unknown as Project;
 
   const pinned = (project: Project, drawingMode: unknown) => {

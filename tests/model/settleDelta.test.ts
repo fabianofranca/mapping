@@ -39,6 +39,7 @@ describe('settleDelta', () => {
       old: [],
       full: new Set(),
       stable: true,
+      wasMaterialized: new Set(),
     });
   });
 
