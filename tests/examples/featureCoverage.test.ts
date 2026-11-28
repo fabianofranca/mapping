@@ -133,6 +133,11 @@ const MISSING_TODAY: string[] = [
   // Rich text of component v4 (stage #747, CF4): the distributed libraries do not migrate; covered
   // by tests/model/components/richText.test.ts, tests/e2e/ and by script R25.
   'component:node.text.runs',
+  // Intended overflow (stage #2913, OV1): `overflow` and the slot's `childOverflow` (component v4) have no
+  // example in the distributed libraries; covered by tests/model/components/intendedOverflow.test.ts,
+  // intendedOverflowParse.test.ts and by script R25.
+  'component:node.overflow',
+  'component:node.slot.childOverflow',
   // Row wrap (stage #898, MC4): `repeat` with `wrap` is not adopted by any distributed
   // library (Material 3 uses `layout.wrap` in the flow-row in MC6); covered by
   // tests/model/components/wrapLayout.test.ts and by script R25.
@@ -376,7 +381,10 @@ describe('the component feature list forgot nothing from the code', () => {
 
   it('common node keys (with `type`) and the repeat ones', () => {
     expect(['type', ...BASE_KEYS].sort()).toEqual(constList('BASE_KEYS').sort());
-    const rejected = constList('REPEAT_REJECTED_KEYS');
+    const rejected = [
+      ...constList('REPEAT_REJECTED_KEYS'),
+      ...constList('REPEAT_REJECTED_BASE_KEYS'),
+    ];
     expect([...REPEAT_BASE_KEYS].sort()).toEqual(
       BASE_KEYS.filter((k) => !rejected.includes(k)).sort(),
     );
