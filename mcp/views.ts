@@ -48,6 +48,7 @@ import { projectAudit, projectIssuesWithDrawings } from './drawings';
 import { childSlotView, markingSlotsView, typeSlotsView } from './slotViews';
 import { ToolError } from './errors';
 import { Refs } from './items';
+import { missingTypeRows, variantRefs, variantRows } from './variantViews';
 import {
   arrivalsView,
   perspectivesOfArrow,
@@ -624,6 +625,9 @@ export async function containerView(
     path: absolute,
     placement: image.placement,
     ...rootInfo(refs, image.id),
+    // The same screen in other sizes (empty without a link) and the types they map that this one does not.
+    variants: variantRows(refs, image),
+    missingTypes: missingTypeRows(refs, image),
     markingColor: image.markingColor,
     markings: p.markings.filter((m) => m.containerId === image.id).length,
     topLevelMarkings: topLevel.slice(0, LIST_LIMIT).map((m) => markingRow(refs, m)),
@@ -758,6 +762,7 @@ export function projectDetail(refs: Refs, pageQuery?: string): Json {
     ...(listed.hint ? { hint: listed.hint } : {}),
     containers: listed.containers.map((image) => ({
       ...containerSummary(refs, image),
+      ...variantRefs(refs, image),
       markings: markingsByContainer.get(image.id) ?? 0,
     })),
     layers: p.layers.map((layer) => ({

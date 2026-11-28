@@ -6,6 +6,7 @@
 - The model and the store link, merge and unlink variants, one undo entry each (`linkVariant`, `unlinkVariant`); deleting a container or a page never leaves a group of one behind (#2034).
 - `missingVariantTypes` lists the annotation types that another variant maps and this container lacks, skipping the types whose `appliesIn` excludes the container's class; it is informative and never a pending item (#2034).
 - A proposal can link and unlink containers: the `variantGroup` field of a container and of a created container, written in proposal `formatVersion` 14 only when it carries one. The review shows "Variant of: …" with the names of the other containers, or "No variants" (#2034).
+- The MCP links variants with `variantOf` in `add_container` and `update_container` (`null` leaves the group) and reads them: `get_container` returns `variants` and `missingTypes`, `get_project` lists `variants` on the containers that have them (#2034).
 
 ## Alterado
 
