@@ -27,7 +27,7 @@ const M0 = 'migrations[0]';
 const S0 = `${M0}.steps[0]`;
 const ONLY = `only allowed with formatVersion ${N}`;
 
-/** The Chip of the Toranja library: `avatarIcon` is the new optional field that splits `leadingIcon`. */
+/** The Chip of an external library: `avatarIcon` is the new optional field that splits `leadingIcon`. */
 function chip(withLeading = true): Json {
   return {
     id: 'chip',
