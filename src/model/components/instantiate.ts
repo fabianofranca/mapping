@@ -2551,7 +2551,6 @@ function createEngine(
     return sizes.map((s) => (s === 'fill' ? (shares[next++] ?? 0) : s));
   };
 
-  /** Children's sizes on an axis; null `space.content` = the parent is being measured (hug). */
   /** The largest extent of the children on the cross axis (`noneExtent` in a `none` frame). */
   const crossWidest = (
     layout: FrameLayout,
@@ -2563,6 +2562,7 @@ function createEngine(
       ? noneExtent(kids, axis, numbers, layout.dir)
       : Math.max(...numbers);
 
+  /** Children's sizes on an axis; null `space.content` = the parent is being measured (hug). */
   const resolveAxis = (
     frame: FrameTemplate,
     layout: FrameLayout,

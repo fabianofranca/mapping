@@ -1934,7 +1934,6 @@ function v4NodeKeyIssues(node: Rec, at: string, out: ComponentIssue[]): void {
     addIssue(out, join(at, 'clip'), V4_ONLY_MESSAGE);
   if (node.type === 'repeat' && 'layout' in node)
     addIssue(out, join(at, 'layout'), V4_ONLY_MESSAGE);
-
   // `direction` ltr/rtl is a v4 key; in the `repeat` the key is the stacking of the rows, in every version.
   if (node.type !== 'repeat' && 'direction' in node)
     addIssue(out, join(at, 'direction'), V4_ONLY_MESSAGE);
