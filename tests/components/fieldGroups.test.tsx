@@ -256,6 +256,23 @@ describe('field groups in Details', () => {
     expect(screen.getByLabelText('Piece 1 text')).toBeTruthy();
   });
 
+  it('going to a field inside a collapsed group expands the group', async () => {
+    const { harness, user } = setup({ variant: 'htmlTagged' });
+    await user.click(screen.getByRole('button', { name: 'Show or hide Piece 1' }));
+    expect(screen.queryByLabelText('Piece 1 text')).toBeNull();
+    // A pending item's "go to" link focuses the field of annotation A1.
+    act(() => {
+      harness.ui.focusField.value = 'part1Text';
+      harness.ui.focusAnnotation.value = 'A1';
+    });
+    expect(screen.getByLabelText('Piece 1 text')).toBeTruthy();
+    expect(
+      harness.ui.collapsed.value.has(
+        sectionKey({ kind: 'fieldGroup', id: 'deco/decorated/piece1' }),
+      ),
+    ).toBe(false);
+  });
+
   it('Enter and Space toggle the subheading from the keyboard', async () => {
     const { user } = setup({ variant: 'htmlTagged' });
     const toggle = screen.getByRole('button', { name: 'Show or hide Piece 2' });

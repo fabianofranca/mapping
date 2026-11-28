@@ -14,7 +14,12 @@ import {
   type Project,
 } from '../model';
 import { fieldDisplay } from '../model/specFieldDisplay';
-import { isSectionCollapsed, toggleSection, type AnnotationLocation } from '../store/ui';
+import {
+  expandSections,
+  isSectionCollapsed,
+  toggleSection,
+  type AnnotationLocation,
+} from '../store/ui';
 import { IssueBadge } from './AnnotationSummary';
 import { CodeDefinitions } from './CodeDefinitions';
 import { CommitInput } from './CommitInput';
@@ -76,9 +81,27 @@ function TypedBody({
   const ext = useDetailsExtension();
   const issues = useIssuesOf(annotation.id);
   // "Show" lists every hidden field until the selection changes (local state, per annotation).
-  const [showAll, setShowAll] = useState(false);
-  useEffect(() => setShowAll(false), [annotation.id]);
+  // The id it applies to is kept, so a new selection never renders one frame with it on.
+  const [showAllFor, setShowAllFor] = useState<string | null>(null);
+  const showAll = showAllFor === annotation.id;
   const resolved = typeOfAnnotation(project, annotation);
+  // A "go to" link to a field inside a collapsed group opens the group, so the field is in the DOM.
+  const focusedField =
+    ui.focusAnnotation.value === annotation.id ? ui.focusField.value : null;
+  const focusedGroup =
+    focusedField === null || !resolved
+      ? undefined
+      : resolved.type.fields.find((f) => f.key === focusedField)?.group;
+  const focusedSection =
+    focusedGroup === undefined || !resolved
+      ? null
+      : ({
+          kind: 'fieldGroup',
+          id: `${resolved.spec.id}/${resolved.type.id}/${focusedGroup}`,
+        } as const);
+  useEffect(() => {
+    if (focusedSection !== null) expandSections(ui, [focusedSection]);
+  }, [ui, focusedSection?.id, focusedField]);
   // The fields resolve references on every page (stage #883, CL1): a target on another page is
   // not broken. Only when `project` is the one in view (a given project stays as it is).
   const across = review.derived.shownAcrossPages.value;
@@ -141,7 +164,9 @@ function TypedBody({
           <HiddenFieldsLine
             count={base.hidden.length}
             shown={showAll}
-            onToggle={() => setShowAll((on) => !on)}
+            onToggle={() =>
+              setShowAllFor((id) => (id === annotation.id ? null : annotation.id))
+            }
           />
         )}
         <CodeDefinitions
