@@ -465,8 +465,51 @@ function dropEnded(boxes: readonly TouchBox[], active: number[], left: number): 
   active.length = kept;
 }
 
-/** The sweep along x over the boxes of one space (`order`: their indices), calling `visit` for each pair that meets. */
+/** The box with its axes swapped (x becomes y): the sweep along the other axis reads it as it reads any box. */
+const transposed = (b: TouchBox): TouchBox => ({
+  ...b,
+  left: b.top,
+  right: b.bottom,
+  top: b.left,
+  bottom: b.right,
+});
+
+/** Whether the boxes of `order` spread over more of the y axis than of the x axis (a column more than a row). */
+function spreadsMoreInY(boxes: readonly TouchBox[], order: readonly number[]): boolean {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const i of order) {
+    const b = boxes[i]!;
+    minX = Math.min(minX, b.left);
+    maxX = Math.max(maxX, b.right);
+    minY = Math.min(minY, b.top);
+    maxY = Math.max(maxY, b.bottom);
+  }
+  return maxY - minY > maxX - minX;
+}
+
+/**
+ * The sweep over the boxes of one space (`order`: their indices), calling `visit` for each pair that meets. It runs
+ * along the axis the boxes spread over the most (x for a row of controls, y for a column), so the active list holds
+ * the boxes that share that stretch of the axis and not a whole column.
+ */
 function sweepSpace(
+  boxes: readonly TouchBox[],
+  order: readonly number[],
+  visit: (i: number, j: number) => void,
+): void {
+  if (spreadsMoreInY(boxes, order)) {
+    const swapped: TouchBox[] = [];
+    for (const i of order) swapped[i] = transposed(boxes[i]!);
+    sweepAlongX(swapped, order, visit);
+    return;
+  }
+  sweepAlongX(boxes, order, visit);
+}
+
+function sweepAlongX(
   boxes: readonly TouchBox[],
   order: readonly number[],
   visit: (i: number, j: number) => void,
@@ -487,7 +530,7 @@ function sweepSpace(
 
 /**
  * Calls `visit(i, j)` once for every pair of boxes of the same space whose intersection is more than 1 px on each
- * axis (the audit's tolerance). A sweep per space (sort along x, then an active list), never a loop over every pair,
+ * axis (the audit's tolerance). A sweep per space (sort along the axis the boxes spread over the most, then an active list), never a loop over every pair,
  * so the cost follows the boxes that meet. Reused by the other audits that compare touch areas (decision 6 of #1998).
  */
 export function sweepTouchBoxes(

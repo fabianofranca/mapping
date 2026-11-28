@@ -1,7 +1,7 @@
 // Accessibility audit (stage #1126, A1; decisions 5 and 7 of #1081): `accessible-label-missing`
 // (a pending item, not produced by `projectIssues`) and the `touch-target-small` warning, from the
 // `accessibility` of the specialization (`formatVersion` 18).
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   accessibilityAudit,
   addAnnotation,
@@ -500,6 +500,69 @@ describe('touch-target-overlap', () => {
     expect(visited([box(0, 100), box(50, 50.5)])).toEqual([]);
     // 2 px wide: the intersection is 2 px, more than the tolerance.
     expect(visited([box(0, 100), box(50, 52)])).toEqual([[0, 1]]);
+  });
+
+  it('sweepTouchBoxes: finds the same pairs as a loop over every pair, in a column, a row and a grid (code review)', () => {
+    const boxes: TouchBox[] = [];
+    const add = (left: number, top: number, width: number, height: number) =>
+      boxes.push({
+        space: 'I1',
+        kind: 'visual',
+        left,
+        top,
+        right: left + width,
+        bottom: top + height,
+      });
+    for (let k = 0; k < 40; k++) add(0, k * 30, 100, 40); // a column; each box meets its neighbors
+    for (let k = 0; k < 40; k++) add(500 + k * 30, 0, 40, 100); // a row
+    for (let r = 0; r < 6; r++)
+      for (let c = 0; c < 6; c++) add(2000 + c * 35, 2000 + r * 35, 40, 40);
+    const found = new Set<string>();
+    sweepTouchBoxes(boxes, (i, j) => found.add(i < j ? `${i}-${j}` : `${j}-${i}`));
+    const expected = new Set<string>();
+    for (let i = 0; i < boxes.length; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i]!;
+        const b = boxes[j]!;
+        const w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+        const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+        if (w > 1 && h > 1) expected.add(`${i}-${j}`);
+      }
+    }
+    expect(expected.size).toBeGreaterThan(100);
+    expect(found).toEqual(expected);
+  });
+
+  it('sweepTouchBoxes: a tall column of boxes with the same x range does not compare every pair (code review)', () => {
+    let reads = 0;
+    const n = 3000;
+    const boxes: TouchBox[] = Array.from({ length: n }, (_, k) => {
+      const top = k * 50;
+      return {
+        space: 'I1',
+        kind: 'visual',
+        get left() {
+          reads++;
+          return 0;
+        },
+        get right() {
+          reads++;
+          return 100;
+        },
+        get top() {
+          reads++;
+          return top;
+        },
+        get bottom() {
+          reads++;
+          return top + 40;
+        },
+      };
+    });
+    const visit = vi.fn();
+    sweepTouchBoxes(boxes, visit);
+    expect(visit).not.toHaveBeenCalled();
+    expect(reads).toBeLessThan(40 * n);
   });
 
   it('an arrow annotation, touchTarget false, a non-interactive role and a free annotation give nothing', () => {
