@@ -335,6 +335,7 @@ export const BASE_KEYS = [
   'weight',
   'direction',
   'overflow',
+  'position',
 ] as const;
 /** Keys of each node type, besides the common ones. */
 export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> = {
@@ -379,6 +380,7 @@ export const REPEAT_BASE_KEYS = [
   'span',
   'weight',
   'direction',
+  'position',
 ];
 
 const ANCHOR_KEYS = [

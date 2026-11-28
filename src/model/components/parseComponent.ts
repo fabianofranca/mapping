@@ -203,10 +203,14 @@ const BASE_KEYS = [
   'weight',
   'direction',
   'overflow',
+  'position',
 ];
 
 /** The only value of `overflow` and `childOverflow` (v4): the overflow is meant (decisions 3 and 4 of #2913). */
 const INTENDED_VALUES = ['intended'] as const;
+
+/** The only value of `position` (v4): the node leaves the flow of a `row`, `column` or `grid` (decision 6 of #2913). */
+const POSITION_VALUES = ['absolute'] as const;
 
 /** Base keys a `repeat` does not have: the drawing belongs to each row's `template`. */
 const REPEAT_REJECTED_BASE_KEYS = ['overflow'];
@@ -1568,6 +1572,8 @@ function isKnownKey(
 
 /** `overflow` (every node but `repeat`) and `childOverflow` (the slot): the literal `"intended"` (v4). */
 function checkIntendedKeys(value: Rec, path: string, type: string, out: Ctx): void {
+  if ('position' in value)
+    oneOf(POSITION_VALUES)(value.position, join(path, 'position'), out);
   if ('overflow' in value && type !== 'repeat')
     oneOf(INTENDED_VALUES)(value.overflow, join(path, 'overflow'), out);
   if ('childOverflow' in value && type === 'slot')
@@ -1759,12 +1765,19 @@ function checkRepeat(value: Rec, path: string, out: Ctx): void {
   if (isRecord(template) && template.type !== 'frame') {
     add(out, join(at, 'type'), 'the template of a row must be of type "frame"');
   }
+  checkRowTemplateRootKeys(template, at, out);
   checkNode(template, at, out, repeatParent(value));
   for (const nested of forbiddenInRepeat(template, at)) {
     add(out, nested.path, `${nested.type} is not allowed inside a repeat`);
   }
   for (const table of runsTablesInRepeat(template, at))
     add(out, table, 'a runs table cannot be inside a repeat');
+}
+
+/** `position` belongs to the `repeat` itself, never to the root of its row's `template` (the generated frame inherits it). */
+function checkRowTemplateRootKeys(template: unknown, at: string, out: Ctx): void {
+  if (isRecord(template) && 'position' in template)
+    add(out, join(at, 'position'), 'not valid on the root');
 }
 
 /** The runs tables of the text nodes in a row's template (not entering a nested `repeat`). */
@@ -1908,6 +1921,7 @@ function noneAlignNodeIssues(node: Rec, at: string, out: ComponentIssue[]): void
 
 /** `overflow` (every node but `repeat`) and the slot's `childOverflow` (v4) in an earlier version. */
 function intendedKeyVersionIssues(node: Rec, at: string, out: ComponentIssue[]): void {
+  if ('position' in node) addIssue(out, join(at, 'position'), V4_ONLY_MESSAGE);
   if (node.type !== 'repeat' && 'overflow' in node)
     addIssue(out, join(at, 'overflow'), V4_ONLY_MESSAGE);
   if (node.type === 'slot' && 'childOverflow' in node)
@@ -2724,7 +2738,7 @@ function collectIssues(
       version >= COMPONENT_FORMAT_VERSION_FIDELITY &&
       isRecord(template)
     )
-      for (const key of ['rotation', 'overflow'])
+      for (const key of ['rotation', 'overflow', 'position'])
         if (key in template) add(out, `template.${key}`, 'not valid on the root');
     checkNode(template, 'template', out);
     checkGapNodes(template, out);

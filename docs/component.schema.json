@@ -2850,6 +2850,10 @@
         "rotation": {
           "$ref": "#/$defs/expr_number"
         },
+        "position": {
+          "description": "formatVersion 4: \"absolute\" takes the node out of the flow of a row, column or grid parent (CSS position: absolute): no place on the main axis, no gap, fill share, justify spacing, grid cell or flow line, and the parent's hug, min-content, max-content and baselines ignore it. It is sized and placed by its anchors like a child of a none frame of the parent's whole box (the padding does not apply). Draw order stays the template order. In a none parent it changes nothing. Not valid on the root or on a repeat's template. In a lower formatVersion, parseComponent refuses.",
+          "const": "absolute"
+        },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
         },
@@ -2946,6 +2950,10 @@
         "rotation": {
           "$ref": "#/$defs/expr_number"
         },
+        "position": {
+          "description": "formatVersion 4: \"absolute\" takes the node out of the flow of a row, column or grid parent (CSS position: absolute): no place on the main axis, no gap, fill share, justify spacing, grid cell or flow line, and the parent's hug, min-content, max-content and baselines ignore it. It is sized and placed by its anchors like a child of a none frame of the parent's whole box (the padding does not apply). Draw order stays the template order. In a none parent it changes nothing. Not valid on the root or on a repeat's template. In a lower formatVersion, parseComponent refuses.",
+          "const": "absolute"
+        },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
         },
@@ -3028,6 +3036,10 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "position": {
+          "description": "formatVersion 4: \"absolute\" takes the node out of the flow of a row, column or grid parent (CSS position: absolute): no place on the main axis, no gap, fill share, justify spacing, grid cell or flow line, and the parent's hug, min-content, max-content and baselines ignore it. It is sized and placed by its anchors like a child of a none frame of the parent's whole box (the padding does not apply). Draw order stays the template order. In a none parent it changes nothing. Not valid on the root or on a repeat's template. In a lower formatVersion, parseComponent refuses.",
+          "const": "absolute"
         },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
@@ -3128,6 +3140,10 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "position": {
+          "description": "formatVersion 4: \"absolute\" takes the node out of the flow of a row, column or grid parent (CSS position: absolute): no place on the main axis, no gap, fill share, justify spacing, grid cell or flow line, and the parent's hug, min-content, max-content and baselines ignore it. It is sized and placed by its anchors like a child of a none frame of the parent's whole box (the padding does not apply). Draw order stays the template order. In a none parent it changes nothing. Not valid on the root or on a repeat's template. In a lower formatVersion, parseComponent refuses.",
+          "const": "absolute"
         },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
@@ -3252,6 +3268,10 @@
         "rotation": {
           "$ref": "#/$defs/expr_number"
         },
+        "position": {
+          "description": "formatVersion 4: \"absolute\" takes the node out of the flow of a row, column or grid parent (CSS position: absolute): no place on the main axis, no gap, fill share, justify spacing, grid cell or flow line, and the parent's hug, min-content, max-content and baselines ignore it. It is sized and placed by its anchors like a child of a none frame of the parent's whole box (the padding does not apply). Draw order stays the template order. In a none parent it changes nothing. Not valid on the root or on a repeat's template. In a lower formatVersion, parseComponent refuses.",
+          "const": "absolute"
+        },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
         },
@@ -3362,6 +3382,10 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "position": {
+          "description": "formatVersion 4: \"absolute\" takes the node out of the flow of a row, column or grid parent (CSS position: absolute): no place on the main axis, no gap, fill share, justify spacing, grid cell or flow line, and the parent's hug, min-content, max-content and baselines ignore it. It is sized and placed by its anchors like a child of a none frame of the parent's whole box (the padding does not apply). Draw order stays the template order. In a none parent it changes nothing. Not valid on the root or on a repeat's template. In a lower formatVersion, parseComponent refuses.",
+          "const": "absolute"
         },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
@@ -3499,6 +3523,10 @@
         "rotation": {
           "$ref": "#/$defs/expr_number"
         },
+        "position": {
+          "description": "formatVersion 4: \"absolute\" takes the node out of the flow of a row, column or grid parent (CSS position: absolute): no place on the main axis, no gap, fill share, justify spacing, grid cell or flow line, and the parent's hug, min-content, max-content and baselines ignore it. It is sized and placed by its anchors like a child of a none frame of the parent's whole box (the padding does not apply). Draw order stays the template order. In a none parent it changes nothing. Not valid on the root or on a repeat's template. In a lower formatVersion, parseComponent refuses.",
+          "const": "absolute"
+        },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
         },
@@ -3597,6 +3625,10 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "position": {
+          "description": "formatVersion 4: \"absolute\" takes the node out of the flow of a row, column or grid parent (CSS position: absolute): no place on the main axis, no gap, fill share, justify spacing, grid cell or flow line, and the parent's hug, min-content, max-content and baselines ignore it. It is sized and placed by its anchors like a child of a none frame of the parent's whole box (the padding does not apply). Draw order stays the template order. In a none parent it changes nothing. Not valid on the root or on a repeat's template. In a lower formatVersion, parseComponent refuses.",
+          "const": "absolute"
         },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
@@ -3749,6 +3781,10 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "position": {
+          "description": "formatVersion 4: \"absolute\" takes the node out of the flow of a row, column or grid parent (CSS position: absolute): no place on the main axis, no gap, fill share, justify spacing, grid cell or flow line, and the parent's hug, min-content, max-content and baselines ignore it. It is sized and placed by its anchors like a child of a none frame of the parent's whole box (the padding does not apply). Draw order stays the template order. In a none parent it changes nothing. Not valid on the root or on a repeat's template. In a lower formatVersion, parseComponent refuses.",
+          "const": "absolute"
         },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
@@ -5374,6 +5410,10 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "position": {
+          "description": "formatVersion 4: \"absolute\" takes the node out of the flow of a row, column or grid parent (CSS position: absolute): no place on the main axis, no gap, fill share, justify spacing, grid cell or flow line, and the parent's hug, min-content, max-content and baselines ignore it. It is sized and placed by its anchors like a child of a none frame of the parent's whole box (the padding does not apply). Draw order stays the template order. In a none parent it changes nothing. Not valid on the root or on a repeat's template. In a lower formatVersion, parseComponent refuses.",
+          "const": "absolute"
         },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
