@@ -410,6 +410,32 @@ describe('ScreenRenderer: overlay', () => {
     expect((group.getChildren()[2] as Konva.Group).x()).toBe(30);
   });
 
+  it('the overlay sits in a positioned wrapper, so its own root keeps its transform and clip', () => {
+    const { group, renderer } = setup();
+    renderer.update(fidelity, SCREEN);
+    const overlay = group.getChildren()[2] as Konva.Group;
+    expect(overlay.getAttr('sceneId')).toBeUndefined();
+    expect(overlay.getChildren()).toHaveLength(1);
+    expect((overlay.getChildren()[0] as Konva.Group).getAttr('sceneId')).toBeDefined();
+  });
+
+  it('a redraw outside update() keeps the order of the overlays', () => {
+    const { group, renderer } = setup();
+    const two: Screen = {
+      ...SCREEN,
+      instances: [
+        SCREEN.instances[0] as Screen['instances'][number],
+        { ...(SCREEN.instances[0] as Screen['instances'][number]), id: 'scroll2' },
+      ],
+    };
+    renderer.update(fidelity, two);
+    expect(order(group)).toEqual(['scroll', 'scroll2', 'scroll+', 'scroll2+']);
+    const first = two.instances[0] as Screen['instances'][number];
+    renderer.render({ ...first, box: { ...first.box, x: 40 } });
+    expect(order(group)).toEqual(['scroll', 'scroll2', 'scroll+', 'scroll2+']);
+    expect((group.getChildren()[2] as Konva.Group).x()).toBe(40);
+  });
+
   it('a screen without overlay nodes has no extra group', () => {
     const { group, renderer } = setup();
     renderer.update(library, SAMPLE_SCREEN);

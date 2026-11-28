@@ -1672,7 +1672,9 @@ function roundedRectPath(
 
 export function renderScene(scene: Scene, options: RenderOptions = {}): RenderResult {
   const renderer = new Renderer(options);
-  const { base, overlay } = splitOverlay(scene.root);
+  // Only a `frame` root carries overlay nodes; a `group` root draws as it is.
+  const { base, overlay }: { base: SceneNode; overlay?: SceneNode } =
+    scene.root.type === 'frame' ? splitOverlay(scene.root) : { base: scene.root };
   const root = renderer.render(base);
   const over = overlay === undefined ? undefined : renderer.renderOverlay(overlay);
   const together = over !== undefined && options.overlay !== 'apart';

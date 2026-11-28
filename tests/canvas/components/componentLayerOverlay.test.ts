@@ -189,6 +189,27 @@ describe('ComponentLayerRenderer: overlay', () => {
     expect(overlay?.visible()).toBe(true);
   });
 
+  it('a screen-pixel drawing that moves and comes into view at once is shown (base and overlay)', () => {
+    const { layer, group } = setup();
+    const screen = {
+      anchor: 'top-left' as const,
+      rect: { x: 0, y: 0, width: 100, height: 40 },
+    };
+    const d: LayerDrawing = { ...drawing('s', { withBar: true }), screen };
+    const on: Rect = { x: 0, y: 0, width: 300, height: 300 };
+    const off: Rect = { x: 2000, y: 2000, width: 100, height: 100 };
+    layer.render(toMap(d), all, PLACEMENTS, 1, on);
+    layer.render(toMap(d), all, PLACEMENTS, 1, off);
+    expect(group().getChildren()[0]?.visible()).toBe(false);
+    // The zoom changes the screen-pixel placement in the same render that brings it back.
+    layer.render(toMap(d), all, PLACEMENTS, 2, on);
+    expect(
+      group()
+        .getChildren()
+        .every((n: Konva.Node) => n.visible()),
+    ).toBe(true);
+  });
+
   it('stays in the renderer parent (the floating layer keeps it in its own group)', () => {
     const floating = new Konva.Group();
     const layer = new ComponentLayerRenderer(floating);
