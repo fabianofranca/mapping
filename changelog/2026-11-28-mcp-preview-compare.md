@@ -1,4 +1,4 @@
-# Preview and compare a library — [Não lançado] (épico `epic/mcp-preview-compare`, PR #3041, MCP 0.65.0, schema v25 unchanged)
+# Preview and compare a library — 2026-11-28 (épico `epic/mcp-preview-compare`, PR #3041, MCP 0.67.0, schema v25 unchanged)
 
 ## Adicionado
 
