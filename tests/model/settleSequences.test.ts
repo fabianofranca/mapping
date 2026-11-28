@@ -13,7 +13,9 @@ import {
   moveMarking,
   moveRootsInPerspective,
   nudgeItems,
+  materializedIds,
   ModelError,
+  removeAnnotation,
   removeContainer,
   removeItems,
   removeMarking,
@@ -28,7 +30,10 @@ import {
   wrapItems,
 } from '../../src/model';
 import type { ItemRef, Marking, Project, Rect } from '../../src/model';
+import { settleFrom, settleHierarchy } from '../../src/model/hierarchySettle';
 import type { SettleOptions } from '../../src/model/hierarchySettle';
+import { materialize } from '../support/structureFixtures';
+import { componentProject } from './componentFixtures';
 import { AT, decided, propose } from './proposalFixtures';
 
 // Equivalence by sequences of public operations (#882, decision 5): for each operation that settles,
@@ -50,6 +55,14 @@ const check = vi.hoisted(() => ({
   partial: 0,
   /** Stage #2210 variant: containers with density and scale, and `minSizeOf` injected into every settle. */
   units: false,
+  /** Stage #3087 variant: the component specialization is applied and operations change natures and stored parents. */
+  natures: false,
+  /** Settles of the natures variant that ran with a materialized marking in the project. */
+  materialized: 0,
+  /** Settles of the natures variant in which a marking changed nature between `before` and `next`. */
+  natureFlips: 0,
+  /** Settles of the natures variant that kept a stored parent on a materialized marking. */
+  storedKept: 0,
   /** Settles of the variant whose `rect`s differ from the settle without `minSizeOf` (the rule really ran). */
   scaled: 0,
   /** How many times each operation changed the project (and was not refused). */
@@ -61,6 +74,13 @@ function componentOf(id: string): { width: number; height: number } | null {
   let h = 0;
   for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return h % 3 === 0 ? null : { width: 1 + (h % 5), height: 1 + (h % 7) };
+}
+
+function countNatures(before: Project, next: Project, got: Project): void {
+  const ids = materializedIds(next);
+  if (ids.size > 0) check.materialized++;
+  if (ids.size !== materializedIds(before).size) check.natureFlips++;
+  if (got.markings.some((m) => m.parentId !== null && ids.has(m.id))) check.storedKept++;
 }
 
 vi.mock('../../src/model/hierarchySettle', async (importOriginal) => {
@@ -78,6 +98,7 @@ vi.mock('../../src/model/hierarchySettle', async (importOriginal) => {
           check.scaled++;
         }
       }
+      if (check.natures) countNatures(before, next, got);
       const full = real.settleHierarchy(next, { before, ...options });
       check.calls++;
       if (got !== next) check.partial++;
@@ -435,6 +456,53 @@ const OPS: Record<string, { weight: number; run: Op }> = {
       };
     },
   },
+  toggleNature: {
+    weight: 4,
+    // Stage #3087: a `text` annotation (a type that declares a component) turns a marking into a
+    // materialized one; removing it turns it back. Only in the natures variant.
+    run: (c) => {
+      const m = check.natures ? anyMarking(c) : null;
+      if (!m) return c.p;
+      const own = c.p.annotations.find((a) => a.markingId === m.id && a.type !== null);
+      // An annotation operation of the store ends in the clipped settle, which sees the nature flip.
+      const next = own ? removeAnnotation(c.p, own.id) : materialize(c.p, m.id);
+      return settleFrom(c.p, next);
+    },
+  },
+  storeParent: {
+    weight: 4,
+    // The file may carry any `parentId` on a materialized marking (hand-written, an old version, a
+    // merge): valid, nonexistent, its own or in a cycle. The settle decides what survives.
+    run: (c) => {
+      if (!check.natures) return c.p;
+      const ids = materializedIds(c.p);
+      const own = c.p.markings.filter((m) => ids.has(m.id));
+      if (own.length === 0) return c.p;
+      const m = c.rng.pick(own);
+      const roll = c.rng.float();
+      const parentId =
+        roll < 0.2
+          ? null
+          : roll < 0.3
+            ? 'ghost'
+            : roll < 0.4
+              ? m.id
+              : c.rng.pick(c.p.markings).id;
+      // Loading the file settles it whole, so the next operations start from a settled project.
+      return settleHierarchy({
+        ...c.p,
+        markings: c.p.markings.map((x) =>
+          x.id === m.id
+            ? {
+                ...x,
+                parentId,
+                ...(parentId !== null && c.rng.chance(0.4) ? { slot: 'body' } : {}),
+              }
+            : x,
+        ),
+      });
+    },
+  },
 };
 
 const OP_NAMES = Object.keys(OPS);
@@ -473,11 +541,13 @@ function withUnits(rng: Rng, p: Project, id: string): Project {
 function startProject(rng: Rng, seed: number): { p: Project; counter: { n: number } } {
   const counter = { n: 0 };
   const next = (prefix: string): string => `${prefix}${seed}-${counter.n++}`;
-  let p = createProject({
-    name: 'Sequences',
-    now: '2026-11-09T12:00:00.000Z',
-    firstLayer: { id: 'L1', name: 'Layer', color: '#D32F2F' },
-  });
+  let p = check.natures
+    ? componentProject()
+    : createProject({
+        name: 'Sequences',
+        now: '2026-11-09T12:00:00.000Z',
+        firstLayer: { id: 'L1', name: 'Layer', color: '#D32F2F' },
+      });
   for (let k = 0; k < 3; k++) {
     p = addContainer(p, {
       id: `C${k}`,
@@ -531,7 +601,35 @@ function runSequence(seed: number): void {
   }
 }
 
+const NATURE_ONLY = new Set(['toggleNature', 'storeParent']);
+
 describe('clipped settle: equivalence by sequences of public operations (#882)', () => {
+  it(`the natures variant (#3087): ${SEQUENCES} sequences with materialized markings and stored parents`, () => {
+    check.natures = true;
+    check.calls = 0;
+    check.partial = 0;
+    check.materialized = 0;
+    check.natureFlips = 0;
+    check.storedKept = 0;
+    check.changed = {};
+    try {
+      for (let i = 0; i < SEQUENCES; i++) runSequence(SEED + i * SEED_STEP);
+    } finally {
+      check.natures = false;
+    }
+    expect(check.calls).toBeGreaterThan(SEQUENCES * STEPS * 0.4);
+    expect(check.partial).toBeGreaterThan(check.calls * 0.1);
+    // The natures really took part (otherwise the variant proves nothing).
+    expect(check.materialized).toBeGreaterThan(check.calls * 0.3);
+    expect(check.natureFlips).toBeGreaterThan(20);
+    expect(check.storedKept).toBeGreaterThan(20);
+    for (const name of NATURE_ONLY) {
+      expect(check.changed[name] ?? 0, `the operation ${name} never ran`).toBeGreaterThan(
+        0,
+      );
+    }
+  });
+
   it(`the units variant (#2210): ${SEQUENCES} sequences with density, scale and minSizeOf`, () => {
     check.units = true;
     check.calls = 0;
@@ -557,7 +655,7 @@ describe('clipped settle: equivalence by sequences of public operations (#882)',
     // The draw must really settle and change things, otherwise it proves nothing.
     expect(check.calls).toBeGreaterThan(SEQUENCES * STEPS * 0.4);
     expect(check.partial).toBeGreaterThan(check.calls * 0.1);
-    for (const name of OP_NAMES) {
+    for (const name of OP_NAMES.filter((n) => !NATURE_ONLY.has(n))) {
       expect(
         check.changed[name] ?? 0,
         `the operation ${name} never changed the project`,
