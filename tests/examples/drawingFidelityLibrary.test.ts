@@ -1,13 +1,15 @@
 // Example library `drawing-fidelity`: an expression in each `cornerRadius` item (the Corner card), in
 // `image.fit` (the Photo) and in the shadow numbers (the Signal), partial `sides` that follow the
-// radius (the Divider) and `stroke.cornerRadius` (the Link). Later phases of the stage add types.
+// radius (the Divider), `stroke.cornerRadius` (the Link) and `overlay` (the Scroll and the Block). Later phases
+// of the stage add types.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
 import { parseIconsText } from '../../src/model/components/icons';
 import { parseComponent } from '../../src/model/components/parseComponent';
-import type { FrameNode, SceneNode } from '../../src/model/components/scene';
+import { splitOverlay } from '../../src/model/components/overlay';
+import { walk, type FrameNode, type SceneNode } from '../../src/model/components/scene';
 import { sideStrokes } from '../../src/model/components/strokeSides';
 import { detectFormat, readSize } from '../../src/model/imageHeader';
 import { validateLibrary, type LibraryFile } from '../../src/model/library';
@@ -51,19 +53,23 @@ function draw(id: string, values: Record<string, string>) {
 }
 
 describe('example library drawing-fidelity', () => {
-  it('has the specialization, five components, five documents, the icon set and one image', () => {
+  it('has the specialization, seven components, seven documents, the icon set and one image', () => {
     expect(files.map((f) => f.path)).toEqual(
       [
         SPEC_FILE,
+        'components/block.json',
         'components/corner-card.json',
         'components/divider.json',
         'components/link.json',
         'components/photo.json',
+        'components/scroll.json',
         'components/signal.json',
+        'docs/block.md',
         'docs/corner-card.md',
         'docs/divider.md',
         'docs/link.md',
         'docs/photo.md',
+        'docs/scroll.md',
         'docs/signal.md',
         'icons/icons.json',
         'images/photo.png',
@@ -76,7 +82,7 @@ describe('example library drawing-fidelity', () => {
     expect(report.errors).toEqual([]);
     expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
-    expect(report.summary).toMatchObject({ types: 5, components: 5, docs: 5, images: 1 });
+    expect(report.summary).toMatchObject({ types: 7, components: 7, docs: 7, images: 1 });
   });
 
   it('has a 96 × 48 PNG image', () => {
@@ -176,5 +182,26 @@ describe('example library drawing-fidelity', () => {
   it('draws the Link without the ring when focused is false', () => {
     const { root } = draw('link', { focused: 'false' });
     expect(root.children.find((c) => c.name === 'ring')?.stroke).toBeUndefined();
+  });
+
+  it('flags the Scroll scrollbar as an overlay and keeps it out of the base', () => {
+    const { root, warnings } = draw('scroll', {});
+    expect(warnings).toEqual([]);
+    const bar = [...walk(root)].find((n) => n.name === 'scrollbar');
+    expect(bar).toMatchObject({ overlay: true, width: 4, height: 80 });
+    const { base, overlay } = splitOverlay(root);
+    expect([...walk(base)].map((n) => n.name)).not.toContain('scrollbar');
+    expect([...walk(overlay as SceneNode)].map((n) => n.name)).toContain('scrollbar');
+  });
+
+  it('draws the Block fill from the color field', () => {
+    const fill = (color: string) => {
+      const { root, warnings } = draw('block', { color });
+      expect(warnings, color).toEqual([]);
+      return (root.fills[0] as { color: string }).color;
+    };
+    expect(fill('blue')).toBe('#93C5FD');
+    expect(fill('green')).toBe('#86EFAC');
+    expect(fill('amber')).toBe('#FCD34D');
   });
 });

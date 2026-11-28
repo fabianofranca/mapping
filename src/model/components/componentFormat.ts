@@ -467,6 +467,14 @@ interface TemplateNodeBase {
    */
   readonly filter?: FilterSpec;
   /**
+   * `formatVersion` 4: draws the node (and its subtree) above the child markings of the same
+   * container, in a second pass, instead of in its place in the drawing. A literal boolean, not
+   * valid on the root. Drawing order only: the layout, the measurement, `hug`, the anchors, the
+   * slots and the warnings do not change. It has no effect in a component with `screen` nor inside
+   * a `component` node, which have no child markings.
+   */
+  readonly overlay?: boolean;
+  /**
    * `formatVersion` 4: pins the reading direction of the subtree (literal `ltr` or `rtl`), instead
    * of following the container's: a phone number, a snippet of code. The node is placed by its
    * parent in the parent's direction; what is inside the node follows the one it pins.
