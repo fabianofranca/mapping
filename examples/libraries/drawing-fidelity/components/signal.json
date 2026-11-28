@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "signal",
   "name": "Signal",
-  "description": "A round indicator with a ring icon on top. The outer shadow of the base ellipse takes its y and blur from the size field (s, m or l), each one a $switch.",
+  "description": "A round indicator with a ring icon on top, which has its own outer and inner shadow. The outer shadow of the base ellipse takes its y and blur from the size field (s, m or l), each one a $switch.",
   "size": { "width": 96, "height": 96 },
   "preview": { "size": "m" },
   "template": {
@@ -35,7 +35,11 @@
         "width": 24,
         "height": 24,
         "color": "#FFFFFF",
-        "anchors": { "centerX": true, "centerY": true }
+        "anchors": { "centerX": true, "centerY": true },
+        "shadow": [
+          { "color": "#00000066", "x": 0, "y": 2, "blur": 4 },
+          { "color": "#00000099", "x": 0, "y": 1, "blur": 2, "inner": true }
+        ]
       }
     ]
   }

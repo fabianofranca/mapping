@@ -235,6 +235,7 @@ Button and menu names are the app's English texts. On the home screen: **Open fo
 - Each corner of the card follows its own expression: the top pair changes with `top`, the bottom pair with `bottom`.
 - The same image with each `fit`: `cover` crops the sides, `contain` leaves bands above and below, `fill` stretches, `none` keeps 96 x 48 in the middle.
 - The shadow of the Signal grows with `size` (y 2, 4 or 8; blur 4, 8 or 16), with no repeated node per size.
+- The ring icon of the Signal has an inner shadow: it darkens the edges of the ring's band, inside its outline, and never the hole or the outside.
 - A result outside the allowed set (a negative radius or blur, a text that is not a fit) draws the default and the drawing warns with `invalid value in <key>`.
 
 **Scripts.** None yet: the stage's test script comes with its last phase.

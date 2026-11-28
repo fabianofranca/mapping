@@ -59,6 +59,7 @@ function recorder() {
     save: note('save'),
     restore: note('restore'),
     translate: note('translate'),
+    transform: note('transform'),
     beginPath: note('beginPath'),
     moveTo: note('moveTo'),
     lineTo: note('lineTo'),
@@ -185,7 +186,108 @@ describe('inner shadow in Konva', () => {
     expect(innerShapes(group)[0]!.shadowBlur()).toBe(0);
   });
 
-  it('a node that is not frame, rect or ellipse ignores it and warns', () => {
+  it('a path draws the inner shadow clipped by its own outline and fill rule', () => {
+    const root = {
+      ...baseNode({
+        id: 'n',
+        name: 'n',
+        width: 48,
+        height: 48,
+        effects: [inner()],
+        fills: [{ type: 'solid', color: '#ffffff' }],
+      }),
+      type: 'path',
+      d: 'M0 0H48V48H0Z M12 12H36V36H12Z',
+      fillRule: 'evenodd',
+    } as unknown as SceneNode;
+    const { byId, warnings } = renderScene({ root, warnings: [] });
+    expect(warnings).toEqual([]);
+    const shapes = innerShapes(byId.get('n')!);
+    expect(shapes).toHaveLength(1);
+    const { calls } = draw(shapes[0]!);
+    const names = calls.map((c) => c[0]);
+    expect(names.indexOf('clip')).toBeGreaterThan(-1);
+    expect(names.indexOf('clip')).toBeLessThan(names.indexOf('fill'));
+    expect(calls.find((c) => c[0] === 'clip')?.[1]).toBe('evenodd');
+    expect(calls.find((c) => c[0] === 'fill')?.[1]).toBe('evenodd');
+  });
+
+  it('an icon group draws it over its paths, after the children, with no warning', () => {
+    const glyph = (id: string, d: string): SceneNode =>
+      ({
+        ...baseNode({
+          id,
+          name: id,
+          width: 24,
+          height: 24,
+          fills: [{ type: 'solid', color: '#ffffff' }],
+        }),
+        type: 'path',
+        d,
+        fillRule: 'nonzero',
+        transform: [2, 0, 0, 2, 0, 0],
+      }) as unknown as SceneNode;
+    const root = {
+      ...baseNode({ id: 'n', name: 'n', width: 48, height: 48, effects: [inner()] }),
+      type: 'group',
+      children: [glyph('a', 'M0 0H10V10H0Z'), glyph('b', 'M12 12H22V22H12Z')],
+    } as unknown as SceneNode;
+    const { byId, warnings } = renderScene({ root, warnings: [] });
+    expect(warnings).toEqual([]);
+    const group = byId.get('n')!;
+    const shapes = innerShapes(group);
+    expect(shapes).toHaveLength(1);
+    const last = group.getChildren().at(-1) as Konva.Node;
+    expect(last.getAttr('innerShadow')).toBe(true);
+    const { calls } = draw(shapes[0]!);
+    // One clip per glyph (the union), each one before the single fill of the ring.
+    expect(calls.filter((c) => c[0] === 'clip')).toHaveLength(2);
+  });
+
+  it('an arc (a path from an ellipse with sweepAngle) draws its inner shadow', () => {
+    const root = {
+      ...baseNode({
+        id: 'n',
+        name: 'n',
+        width: 20,
+        height: 20,
+        effects: [inner()],
+        fills: [{ type: 'solid', color: '#ffffff' }],
+      }),
+      type: 'path',
+      d: 'M20 10A10 10 0 0 0 0 10L10 10Z',
+      fillRule: 'nonzero',
+    } as unknown as SceneNode;
+    const { byId, warnings } = renderScene({ root, warnings: [] });
+    expect(warnings).toEqual([]);
+    expect(innerShapes(byId.get('n')!)).toHaveLength(1);
+  });
+
+  it('a list on a path keeps the first outer shadow and every inner one', () => {
+    const outer: Shadow = { color: '#333333', offset: { x: 0, y: 2 }, blur: 4 };
+    const root = {
+      ...baseNode({
+        id: 'n',
+        name: 'n',
+        width: 10,
+        height: 10,
+        effects: [outer, inner(), { ...outer, color: '#444444' }, inner()],
+        fills: [{ type: 'solid', color: '#ffffff' }],
+      }),
+      type: 'path',
+      d: 'M0 0H10V10H0Z',
+      fillRule: 'nonzero',
+    } as unknown as SceneNode;
+    const { byId, warnings } = renderScene({ root, warnings: [] });
+    const group = byId.get('n')!;
+    expect(innerShapes(group)).toHaveLength(2);
+    const node = group.getChildren().find((c) => c.listening()) as Konva.Shape;
+    expect(node.shadowBlur()).toBe(4);
+    expect(node.shadowColor()).toBe('#333333');
+    expect(warnings.map((w) => w.code)).toEqual(['extra-shadows']);
+  });
+
+  it('a node that is not frame, rect, ellipse, path or icon ignores it and warns', () => {
     const root = {
       ...baseNode({ id: 'n', name: 'n', width: 10, height: 10, effects: [inner()] }),
       type: 'line',
