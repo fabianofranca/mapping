@@ -1,0 +1,71 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "list-item",
+  "name": "List item",
+  "description": "A 360 wide row that hugs its height: the padded `body` column (title and supporting text) decides it. A translucent state layer is `position: \"absolute\"` over the whole box, so it does not grow the item. The trailing 24 × 24 frame holds a 48 × 48 touch area, centered, that goes past it on purpose (`overflow: \"intended\"`).",
+  "size": { "width": 360, "height": 72 },
+  "sizing": { "width": 360, "height": "hug" },
+  "preview": { "title": "Title", "supporting": "Supporting text" },
+  "template": {
+    "type": "frame",
+    "name": "item",
+    "layout": { "type": "row", "padding": 16, "align": "center" },
+    "fill": "#FFFFFF",
+    "children": [
+      {
+        "type": "frame",
+        "name": "body",
+        "width": "fill",
+        "height": "hug",
+        "layout": { "type": "column" },
+        "children": [
+          {
+            "type": "text",
+            "name": "title",
+            "text": { "$field": "title", "default": "Title" },
+            "font": { "size": 16, "weight": 500, "lineHeight": 20 },
+            "color": "#111827",
+            "width": "fill",
+            "height": 20
+          },
+          {
+            "type": "text",
+            "name": "supporting",
+            "text": { "$field": "supporting", "default": "Supporting text" },
+            "font": { "size": 14, "lineHeight": 20 },
+            "color": "#4B5563",
+            "width": "fill",
+            "height": 20
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "state layer",
+        "position": "absolute",
+        "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+        "fill": "#FF000040"
+      },
+      {
+        "type": "frame",
+        "name": "trailing",
+        "width": 24,
+        "height": 24,
+        "layout": { "type": "none" },
+        "children": [
+          {
+            "type": "rect",
+            "name": "touch area",
+            "overflow": "intended",
+            "width": 48,
+            "height": 48,
+            "anchors": { "centerX": true, "centerY": true },
+            "fill": "#2563EB66",
+            "cornerRadius": 24
+          }
+        ]
+      }
+    ]
+  }
+}
