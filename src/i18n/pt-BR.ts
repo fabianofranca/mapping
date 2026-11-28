@@ -472,6 +472,7 @@ export const ptBR: Dictionary = {
   'invariant.rect-out-of-image': 'retângulo fora da imagem',
   'invariant.parent-other-image': 'pai em outra imagem',
   'invariant.rect-outside-parent': 'fora do retângulo do pai',
+  'invariant.slot-without-parent': 'slot sem um pai materializado em que ficar',
   'invariant.hierarchy-cycle': 'ciclo na hierarquia',
   'invariant.container-parent-missing': 'marcação pai do container inexistente',
   'invariant.container-parent-not-canvas':
@@ -525,6 +526,7 @@ export const ptBR: Dictionary = {
   'repair.page-set': 'vai para a primeira página',
   'repair.page-cleared': 'a página é limpa (quem decide é o container)',
   'repair.decorative-cleared': 'a marcação decorativa é desligada (continua flutuante)',
+  'repair.slot-cleared': 'o slot é removido (a marcação não tem pai materializado)',
   'error.invalid-zip': 'O arquivo não é um zip válido.',
   'error.missing-mapping': 'O zip não contém um mapping.json.',
   'error.not-found': 'Projeto não encontrado.',

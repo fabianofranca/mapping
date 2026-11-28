@@ -7,6 +7,7 @@ import {
   sameRect,
 } from './geometry';
 import { enclosingAmong } from './hierarchySettle';
+import { materializedIds } from './nature';
 import { containersOfPage, firstPageId } from './spaces';
 import { projectIndex } from './projectIndex';
 import type { Marking, Project, Rect } from './types';
@@ -45,8 +46,11 @@ function containingIds(
   pageId: string | null,
 ): Set<string> {
   const ids = new Set<string>();
+  // A materialized marking is never a parent by geometry (stored structure, #3087).
+  const materialized = materializedIds(p);
   for (const m of p.markings) {
-    if (m.floating || m.decorative || m.containerId !== containerId) continue;
+    if (m.floating || m.decorative || materialized.has(m.id)) continue;
+    if (m.containerId !== containerId) continue;
     if (containerId === null && m.pageId !== pageId) continue;
     if (containsRect(m.rect, rect) && !sameRect(m.rect, rect)) ids.add(m.id);
   }

@@ -146,6 +146,11 @@ export const markingSchema = z.object({
   /** `null` = canvas marking (v13): `rect` in canvas units. */
   containerId: id.nullable(),
   parentId: id.nullable(),
+  /** Slot of the parent the marking sits in (v27); absent or `null` = none. */
+  slot: id
+    .nullable()
+    .optional()
+    .transform((slot) => slot ?? undefined),
   /**
    * Page of a canvas marking (v21); `null` on a container marking. Absent reads as `null`: a
    * canvas marking without a page is the `page-required` invariant.

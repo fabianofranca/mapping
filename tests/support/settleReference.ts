@@ -10,6 +10,7 @@ import {
 } from '../../src/model/geometry';
 import { clearArrowRoutes } from '../../src/model/hierarchySettle';
 import { reconcilePerspectives } from '../../src/model/perspectiveReconcile';
+import { materializedIds } from '../../src/model/nature';
 import { projectIndex } from '../../src/model/projectIndex';
 import type {
   Marking,
@@ -27,6 +28,10 @@ import type { Size } from '../../src/model/geometry';
  * test, `tests/model/settleEquivalence.test.ts`, compares the new implementation with it, and that is what
  * proves an optimization changed no result, ties included). Only `settleIf`/`settleFrom`
  * and the public query functions are left out; `clearArrowRoutes` is imported because it did not change.
+ *
+ * Stage #3087 (stored structure, decisions 3 and 4) added the nature, in this file's own naive form:
+ * a materialized marking is never a candidate parent and keeps its stored parent (an invalid one
+ * becomes `null`, its slot goes), and it lives in its parent's space; everything else is as above.
  *
  * Stage #2210 (decision 9) added the "keep the size in units" rule, in this file's own
  * straightforward form: the moves are collected first, and each one finds its set (the same
@@ -197,8 +202,10 @@ export function referenceEnclosingAmong(
   pageId?: string | null,
 ): string | null {
   const group: Entry[] = [];
+  const materialized = materializedIds(p);
   p.markings.forEach((m, i) => {
-    if (m.floating || m.decorative || m.containerId !== containerId) return;
+    if (m.floating || m.decorative || materialized.has(m.id)) return;
+    if (m.containerId !== containerId) return;
     if (containerId === null && pageId !== undefined && m.pageId !== pageId) return;
     group.push({ m, i });
   });
@@ -206,6 +213,55 @@ export function referenceEnclosingAmong(
   equalRectRanks(group, ranks);
   const inside = group.filter((e) => candidates.has(e.m.id));
   return pickParent(inside, current, (id) => ranks.get(id) ?? -1);
+}
+
+
+/**
+ * The stored parent of a materialized marking, read naively on the markings as the operation left
+ * them: valid when the parent exists, is another marking of the same container and page, is not
+ * floating or decorative and is not on a cycle of stored parents. A cycle is found by walking up
+ * from every marking with a step limit.
+ */
+function referenceStoredParent(p: Project, m: Marking): string | null {
+  if (m.parentId === null || m.floating) return null;
+  const byId = (id: string) => p.markings.find((o) => o.id === id);
+  const edge = (x: Marking): Marking | null => {
+    const parent = x.parentId === null ? undefined : byId(x.parentId);
+    if (
+      !parent ||
+      parent.id === x.id ||
+      parent.containerId !== x.containerId ||
+      parent.pageId !== x.pageId ||
+      parent.floating ||
+      parent.decorative
+    ) {
+      return null;
+    }
+    return parent;
+  };
+  const materialized = materializedIds(p);
+  if (edge(m) === null) return null;
+  // On a cycle: walking up through valid edges between materialized markings returns to `m`.
+  let at: Marking | null = edge(m);
+  for (let step = 0; at !== null && step <= p.markings.length; step++) {
+    if (at.id === m.id) return null;
+    at = materialized.has(at.id) && at.parentId !== null && !at.floating ? edge(at) : null;
+  }
+  return m.parentId;
+}
+
+/** The marking that decides the space of `m`: up the valid stored parents of materialized markings. */
+function referenceAnchor(p: Project, m: Marking): Marking {
+  const materialized = materializedIds(p);
+  let at = m;
+  for (let step = 0; step <= p.markings.length; step++) {
+    if (!materialized.has(at.id)) return at;
+    const parentId = referenceStoredParent(p, at);
+    const parent = parentId === null ? undefined : p.markings.find((o) => o.id === parentId);
+    if (!parent) return at;
+    at = parent;
+  }
+  return at;
 }
 
 /** A marking that changes space: what the first pass of the settle finds. */
@@ -345,14 +401,36 @@ function referenceLand(
 /** The settle of geometry and membership, without the perspectives. */
 function referenceSettleGeometry(p: Project, options?: SettleOptions): Project {
   let changed = false;
+  const materialized = materializedIds(p);
+  // The stored parents as the operation left them: an invalid one is dropped before anything moves.
+  const kept = p.markings.map((m) => {
+    if (!materialized.has(m.id) || m.parentId === null || m.floating) return m;
+    if (referenceStoredParent(p, m) !== null) return m;
+    const { slot: _slot, ...rest } = m;
+    return { ...rest, parentId: null };
+  });
+  const base: Project = { ...p, markings: kept };
   // Markings that changed space: the arrow attached to them loses its waypoints.
   const movedSpace = new Set<string>();
-  const moves = p.markings.map((m) => referenceMove(p, m));
+  // A materialized marking with a valid stored parent decides nothing: it goes where its anchor goes.
+  const follows = (m: Marking) =>
+    materialized.has(m.id) && m.parentId !== null && !m.floating;
+  const decided = kept.map((m) => (follows(m) ? null : referenceMove(base, m)));
+  const moves = kept.map((m, i) => {
+    if (!follows(m)) return decided[i] ?? null;
+    const anchor = referenceAnchor(base, m);
+    const move = decided[kept.findIndex((o) => o.id === anchor.id)] ?? null;
+    if (move === null) return null;
+    const container =
+      m.containerId === null ? null : projectIndex(base).containers.get(m.containerId);
+    const canvas = container ? toCanvasRect(container.placement, m.rect) : m.rect;
+    return { ...move, m, canvas };
+  });
   const all = moves.filter((move): move is RefMove => move !== null);
-  const placed = p.markings.map((m, i) => {
+  const placed = kept.map((m, i) => {
     const move = moves[i];
     const next = move ? referenceLand(p, all, move, options) : m;
-    if (next !== m) {
+    if (next !== p.markings[i]) {
       changed = true;
       if (next.containerId !== m.containerId) movedSpace.add(m.id);
     }
@@ -363,7 +441,7 @@ function referenceSettleGeometry(p: Project, options?: SettleOptions): Project {
   const spaceKey = (m: Marking) => m.containerId ?? `\0page:${m.pageId ?? ''}`;
   const bySpace = new Map<string, Entry[]>();
   placed.forEach((m, i) => {
-    if (m.floating) return;
+    if (m.floating || materialized.has(m.id)) return;
     const group = bySpace.get(spaceKey(m));
     if (group) group.push({ m, i });
     else bySpace.set(spaceKey(m), [{ m, i }]);
@@ -373,6 +451,8 @@ function referenceSettleGeometry(p: Project, options?: SettleOptions): Project {
   const rankOf = (id: string) => ranks.get(id) ?? -1;
 
   const markings = placed.map((m) => {
+    // A materialized marking keeps its stored parent.
+    if (materialized.has(m.id) && !m.floating) return m;
     const group = m.floating ? [] : (bySpace.get(spaceKey(m)) ?? []);
     const own = rankOf(m.id);
     // Stage #2826: a decorative marking is never a candidate parent.

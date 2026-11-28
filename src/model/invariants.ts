@@ -8,6 +8,7 @@ import {
   rectsOverlap,
 } from './geometry';
 import { isValidDensity } from './density';
+import { materializedIds } from './nature';
 import { sameSpace } from './spaces';
 import { tableRows } from './refs';
 import type { Arrow, Entry, Marking, Perspective, Project, Rect } from './types';
@@ -27,6 +28,7 @@ export type InvariantCode =
   | 'rect-out-of-image'
   | 'parent-other-image'
   | 'rect-outside-parent'
+  | 'slot-without-parent'
   | 'hierarchy-cycle'
   | 'container-parent-missing'
   | 'container-parent-not-canvas'
@@ -411,6 +413,16 @@ function validateContainerPages(
   }
 }
 
+/** Does the marking with a `slot` have what a slot needs: to be materialized, inside a materialized parent? */
+function slotHasParent(
+  m: Marking,
+  markings: ReadonlyMap<string, Marking>,
+  materialized: ReadonlySet<string>,
+): boolean {
+  if (m.parentId === null || !materialized.has(m.id)) return false;
+  return materialized.has(m.parentId) && markings.has(m.parentId);
+}
+
 /**
  * Checks the invariants that the zod schema does not express. Empty list = valid project.
  * See docs/FORMAT.md, "Validity rules". The arrow (v13) has its own:
@@ -510,6 +522,7 @@ export function validateProject(p: Project): InvariantIssue[] {
   const containers = new Map(p.containers.map((image) => [image.id, image]));
   const markings = new Map(p.markings.map((m) => [m.id, m]));
   const annotations = new Map(p.annotations.map((a) => [a.id, a]));
+  const materialized = materializedIds(p);
 
   for (const m of p.markings) {
     // Canvas marking (v13): null `containerId`, `rect` in canvas units, no bounds.
@@ -531,6 +544,10 @@ export function validateProject(p: Project): InvariantIssue[] {
       marking('floating-in-container', m);
     }
     if (m.decorative && m.floating) marking('decorative-floating', m);
+    // A slot only exists on a materialized marking that sits in a materialized parent (v27).
+    if (m.slot !== undefined && !slotHasParent(m, markings, materialized)) {
+      marking('slot-without-parent', m);
+    }
     if (m.parentId === null) continue;
     const parent = markings.get(m.parentId);
     if (!parent) {
@@ -543,7 +560,8 @@ export function validateProject(p: Project): InvariantIssue[] {
       marking('parent-other-image', m, parent.id);
     else if (m.containerId === null && parent.pageId !== m.pageId)
       marking('page-parent-mismatch', m, parent.id);
-    else if (!containsRect(parent.rect, m.rect))
+    // A materialized child lives where its stored parent put it: it may cross the parent's edge.
+    else if (!materialized.has(m.id) && !containsRect(parent.rect, m.rect))
       marking('rect-outside-parent', m, parent.id);
   }
 

@@ -1,3 +1,4 @@
+import { materializedIds, natureChanges } from './nature';
 import type { Marking, Project, ProjectContainer } from './types';
 
 // What an operation touched between `before` and `next`, for the clipped settle (#882, decision 5).
@@ -20,6 +21,8 @@ export interface SettleDelta {
    * swapped objects or appended at the end): the index positions of `before` hold for `next`.
    */
   readonly stable: boolean;
+  /** Ids that were materialized in `before` (a changed marking's old rectangle counts by that nature). */
+  readonly wasMaterialized: ReadonlySet<string>;
 }
 
 interface MarkingDelta {
@@ -36,11 +39,20 @@ interface MarkingDelta {
 export function settleDelta(before: Project, next: Project): SettleDelta | null {
   const markings = markingDelta(before.markings, next.markings);
   if (markings === null) return null;
+  // A marking whose annotations changed its nature is touched even though the object is the same
+  // (stored structure, #3087): who contains it and whom it contains is read again.
+  if (!addNatureChanges(before, next, markings)) return null;
   const full = new Set<string | null>(markings.reordered);
   addContainerSpaces(before.containers, next.containers, full);
   const touched = [...markings.old, ...markings.changed.map((i) => next.markings[i])];
   if (touched.some((m) => m?.containerId === null)) full.add(null);
-  return { changed: markings.changed, old: markings.old, full, stable: markings.stable };
+  return {
+    changed: markings.changed,
+    old: markings.old,
+    full,
+    stable: markings.stable,
+    wasMaterialized: materializedIds(before),
+  };
 }
 
 function markingDelta(
@@ -66,6 +78,30 @@ function markingDelta(
     return null;
   }
   return delta.changed.length + delta.old.length > now.length / 2 ? null : delta;
+}
+
+/**
+ * Adds to `delta` the markings of `next` whose nature differs from `before`'s and whose object did not
+ * change (the changed ones are already there). `false` when there are too many (the whole project is
+ * settled), like the half rule of `markingDelta`.
+ */
+function addNatureChanges(
+  before: Project,
+  next: Project,
+  delta: MarkingDelta,
+): boolean {
+  const flipped = natureChanges(before, next);
+  if (flipped.size === 0) return true;
+  const known = new Set(delta.changed);
+  const was = new Map(before.markings.map((m) => [m.id, m]));
+  next.markings.forEach((m, i) => {
+    if (!flipped.has(m.id) || known.has(i)) return;
+    delta.changed.push(i);
+    const old = was.get(m.id);
+    if (old !== undefined && old === m) delta.old.push(old);
+  });
+  delta.changed.sort((a, b) => a - b);
+  return delta.changed.length + delta.old.length <= next.markings.length / 2;
 }
 
 function sameOrder(was: readonly Marking[], now: readonly Marking[]): boolean {

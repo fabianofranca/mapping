@@ -13,6 +13,7 @@ import {
   type Project,
 } from '../../src/model';
 import { idGen } from './specFixtures';
+import { r, raw, structureProject } from '../support/structureFixtures';
 import { image, marking, sampleProject } from './fixtures';
 
 function repair(p: Project) {
@@ -601,5 +602,43 @@ describe('repairProject: arrows', () => {
       expect(result.unrepaired).toEqual([]);
       expect(marking(result.project, 'M4').anchor).toBeNull();
     });
+  });
+});
+
+describe('repairProject: stored structure (v27)', () => {
+  const rect = r(20, 20, 200, 100);
+
+  it('`slot-without-parent` is repaired by removing the `slot`', () => {
+    const p = structureProject([raw('B', rect, { slot: 'left' })]);
+    const result = repair(p);
+    expect(result.unrepaired).toEqual([]);
+    expect(marking(result.project, 'B').slot).toBeUndefined();
+    expect(result.repaired).toEqual([
+      expect.objectContaining({ action: 'slot-cleared', code: 'slot-without-parent', id: 'B' }),
+    ]);
+    expect(validateProject(result.project)).toEqual([]);
+  });
+
+  it('a stored parent that is missing makes the marking loose and drops its `slot`', () => {
+    const p = structureProject([raw('card', rect, { parentId: 'ghost', slot: 'left' })], [
+      'card',
+    ]);
+    const result = repair(p);
+    const card = marking(result.project, 'card');
+    expect(card.parentId).toBeNull();
+    expect(card.slot).toBeUndefined();
+    expect(card.rect).toEqual(rect);
+    expect(validateProject(result.project)).toEqual([]);
+  });
+
+  it('a valid stored structure is left alone', () => {
+    const p = structureProject(
+      [
+        raw('panel', r(0, 0, 500, 400)),
+        raw('tile', rect, { parentId: 'panel', slot: 'left' }),
+      ],
+      ['panel', 'tile'],
+    );
+    expect(repair(p)).toEqual({ project: p, repaired: [], unrepaired: [] });
   });
 });

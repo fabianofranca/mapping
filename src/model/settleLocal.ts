@@ -120,6 +120,7 @@ function scan(
   entry: SpaceEntry,
   dirty: Dirty,
   skip: readonly number[],
+  solid: ReadonlySet<string>,
 ): Scan | null {
   const seeds = dirty.seeds;
   const box = boxesOf(dirty.rects);
@@ -127,6 +128,7 @@ function scan(
   const entries: Entry[] = [];
   const seeded: Entry[][] = seeds.map(() => []);
   const complete = visitSpace(list, entry, skip, seeds, (i, x, y, x2, y2) => {
+    if (solid.has((list[i] as Marking).id)) return true;
     if (insideAny(box, x, y, x2, y2)) {
       if (entries.length >= LOCAL_DIRTY) return false;
       entries.push({ m: list[i] as Marking, i });
@@ -141,7 +143,7 @@ function scan(
   if (!complete) return null;
   const seedAt = new Map(seeds.map((i, k) => [i, seeded[k] as Entry[]]));
   const others = entries.filter((e) => !seedAt.has(e.i));
-  const found = candidatesOf(list, entry, skip, seeds, others);
+  const found = candidatesOf(list, entry, skip, seeds, others, solid);
   const candidates = entries.map((e) => seedAt.get(e.i) ?? (found.shift() as Entry[]));
   return { entries, candidates };
 }
@@ -153,11 +155,13 @@ function candidatesOf(
   skip: readonly number[],
   extras: readonly number[],
   dirty: readonly Entry[],
+  solid: ReadonlySet<string>,
 ): Entry[][] {
   if (dirty.length === 0) return [];
   const out: Entry[][] = dirty.map(() => []);
   const dirtyBox = boxesOf(dirty.map((d) => d.m.rect));
   visitSpace(list, entry, skip, extras, (i, x, y, x2, y2) => {
+    if (solid.has((list[i] as Marking).id)) return true;
     for (let k = 0; k < dirty.length; k++) {
       if ((dirty[k] as Entry).i !== i && coversBox(dirtyBox, k * 4, x, y, x2, y2)) {
         (out[k] as Entry[]).push({ m: list[i] as Marking, i });
@@ -172,17 +176,18 @@ function candidatesOf(
  * The new parents (as markings already carrying the new `parentId`) of the space's markings that fit
  * in any of the `dirty.rects`, or `null` when there are too many: the space is then settled whole.
  * `entry` is what is known about the space and `skip`, the (increasing) positions touched by the
- * operation, with a stale box.
-
+ * operation, with a stale box. `solid` holds the materialized markings: they neither get a parent by
+ * geometry nor are candidates of one (stored structure, #3087).
  */
 export function localParents(
   list: readonly Marking[],
   entry: SpaceEntry,
   dirty: Dirty,
   skip: readonly number[],
+  solid: ReadonlySet<string>,
 ): Entry[] | null {
   if (dirty.rects.length > LOCAL_RECTS) return null;
-  const found = scan(list, entry, dirty, skip);
+  const found = scan(list, entry, dirty, skip, solid);
   if (found === null) return null;
   const { entries, candidates } = found;
   const involved = new Map<number, Entry>();
