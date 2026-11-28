@@ -14,3 +14,7 @@
 
 - The `dist/index.html` ceiling went up 16 KiB, from 2768896 to 2785280, by the budget rule; above the limits, `bug` #3059 for the owner to review
 - The `dist/index.html` ceiling went up 16 KiB, from 2785280 to 2801664, by the budget rule; above the limits, `bug` #3066 for the owner to review
+
+## Corrigido
+
+- A "go to" link of a pending item whose field sits in a collapsed field group now opens the group, so the field is reached and focused; "Show" for hidden fields no longer flashes on for the next selected annotation.
