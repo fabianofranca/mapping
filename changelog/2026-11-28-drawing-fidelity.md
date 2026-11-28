@@ -1,4 +1,4 @@
-# Drawing fidelity — [Não lançado] (épico `epic/drawing-fidelity`, PR #3098, MCP 0.71.0, schema v25 unchanged, viewer 0.13.0)
+# Drawing fidelity — 2026-11-28 (épico `epic/drawing-fidelity`, PR #3098, MCP 0.73.0, schema v26 unchanged, viewer 0.13.0)
 
 ## Adicionado
 

@@ -1,4 +1,4 @@
-# Drawing fidelity — [Não lançado] (épico `epic/drawing-fidelity`)
+# Drawing fidelity — 2026-11-28 (épico `epic/drawing-fidelity`)
 
 ## Pendências
 
