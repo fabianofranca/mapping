@@ -331,6 +331,10 @@ In `formatVersion` 4 of the **component** the layout gains four features; the sp
 - **The drawing proof runs in each mode** of the specialization (`light`, `dark`…) with the mode's tokens: the warning cites the mode (`type "card", the preview, mode dark, initial size 300×120: …`), and a text whose `size` comes from a token is measured with the token's size. A case that only does not fit in `dark` warns only there; fix the size or the token and validate again.
 - New drawing-proof warning: `text larger than the box: <node>` (the wrapped lines exceed the node's height, or a word wider than the box, and nothing cuts them; give more height or width, let the text wrap, or use `maxLines`/`ellipsis`). Tolerance of 1 px per text node; the warning enters the "the component does not fit" pending item. Line height follows CSS: `lineHeight` in px (above 3) is the line's height as it is, the multiple does not round.
 
+#### Above the child markings: `overlay` (component `formatVersion` 4)
+
+An element that must sit above the content a slot receives (a scrollbar over a list, a badge on a corner, a header over the scrolled content) is a node with `"overlay": true` (a literal boolean, any node except the root; not valid on the root). It keeps its place in the layout and anchors; only the drawing order changes (second pass, after the child markings of the same container). It has no effect in a `screen` component or inside a `component` node. The app and the viewer may still draw it in place; the MCP PNG draws it above. Details: `docs/COMPONENT-FORMAT.md`, "Above the child markings: `overlay`".
+
 #### Rich text: runs and an inline chip in the middle of the line (component `formatVersion` 4)
 
 When the drawing shows **bold, another color or a box with a background in the middle of a sentence** ("Invoice for **March** `overdue`"), use `runs` on the `text` node, in place of `text`: a non-empty list of runs `{ "text", "weight"?, "italic"?, "color"?, "decoration"?, "family"?, "size"?, "background"?, "radius"?, "padding"? }`. The specialization does not change (its `formatVersion` stays as it is). Rules:
