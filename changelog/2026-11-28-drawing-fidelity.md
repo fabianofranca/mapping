@@ -15,5 +15,5 @@
 ## Alterado
 
 - Component format 4: a partial `stroke.sides` on a box with a corner radius now follows the corner arcs: full width where both sides of a corner are requested and tapering to 0 next to an unrequested side, like CSS and Figma. The app, the viewer and the MCP PNG draw it the same; `dash` keeps straight segments.
-- The `dist/index.html` ceiling rose 16 KiB, from 2801664 to 2818048, by the budget rule; above the limits, `bug` #3102 for the owner to review.
+- The `dist/index.html` ceiling rose 16 KiB, from 2818048 (`main`'s) to 2834432, by the budget rule; above the limits, `bug` #3125 (and #3102 for the earlier raise) for the owner to review.
 - The full round now runs R0 to R55: R55 is in block 3 (block 2 would have passed the guide size limit after the `main` merge).
