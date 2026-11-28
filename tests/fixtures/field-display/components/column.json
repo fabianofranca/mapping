@@ -1,0 +1,29 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "column",
+  "name": "Column",
+  "size": {
+    "width": 200,
+    "height": 160
+  },
+  "template": {
+    "type": "frame",
+    "layout": {
+      "type": "column"
+    },
+    "fill": "#F3EDF7",
+    "children": [
+      {
+        "type": "slot",
+        "id": "items",
+        "name": "items",
+        "width": "fill",
+        "height": "fill",
+        "layout": {
+          "type": "none"
+        }
+      }
+    ]
+  }
+}

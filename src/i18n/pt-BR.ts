@@ -1027,6 +1027,11 @@ export const ptBR: Dictionary = {
   'typed.unknownType':
     'O tipo "{type}" não existe mais na especialização. A anotação está somente leitura.',
   'typed.convertToFree': 'Converter em anotação livre',
+  'typed.fieldGroup.toggle': 'Mostrar ou ocultar {name}',
+  'typed.hiddenFields': '{count} campos ocultos',
+  'typed.hiddenFieldsOne': '1 campo oculto',
+  'typed.showHiddenFields': 'Mostrar',
+  'typed.hideHiddenFields': 'Ocultar',
   'typed.addRow': '+ Linha',
   'typed.removeRow': 'Remover linha',
   'typed.moveRowUp': 'Subir linha',

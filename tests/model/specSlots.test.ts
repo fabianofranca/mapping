@@ -101,6 +101,51 @@ describe('typeSlots', () => {
     );
   });
 
+  it('a clause with except gives the layer minus the excluded type (formatVersion 26)', () => {
+    const p = projectOf(
+      specOf((type, spec) => {
+        spec.formatVersion = 26;
+        type.slots[1].accepts = [{ layer: 'content', except: ['image'] }];
+      }),
+    );
+    expect(typeSlots(p, 'slots', 'bar', bar)[1]?.accepts).toEqual(new Set(['text']));
+  });
+
+  it('an item of the same list that names the excluded type still accepts it', () => {
+    const p = projectOf(
+      specOf((type, spec) => {
+        spec.formatVersion = 26;
+        type.slots[1].accepts = [{ layer: 'content', except: ['image'] }, 'image'];
+      }),
+    );
+    expect(typeSlots(p, 'slots', 'bar', bar)[1]?.accepts).toEqual(
+      new Set(['text', 'image']),
+    );
+  });
+
+  it('placement skips the slot for the excluded type and takes the one that accepts it', () => {
+    const p = projectOf(
+      specOf((type, spec) => {
+        spec.formatVersion = 26;
+        type.slots[0].accepts = [{ layer: 'content' }];
+        type.slots[1].accepts = [{ layer: 'content', except: ['image'] }];
+      }),
+    );
+    const slots = typeSlots(p, 'slots', 'bar', bar);
+    // `text` fits both slots: the first (navigationIcon) wins; `image` is accepted only by it, too.
+    expect(slotForPlacement(slots, { typeId: 'text' })).toEqual(
+      expect.objectContaining({ ok: true, id: 'navigationIcon' }),
+    );
+    // With navigationIcon full (max 1), `text` goes to actions and `image` has no slot that takes it.
+    const full = new Map([['navigationIcon', 1]]);
+    expect(slotForPlacement(slots, { typeId: 'text', counts: full })).toEqual(
+      expect.objectContaining({ ok: true, id: 'actions', basis: 'accepts' }),
+    );
+    expect(slotForPlacement(slots, { typeId: 'image', counts: full })).toEqual(
+      expect.objectContaining({ ok: true, id: 'navigationIcon', basis: 'accepts-full' }),
+    );
+  });
+
   it('a slot declared without accepts accepts everything (no accepts in the result)', () => {
     const p = projectOf(
       specOf((type) => {

@@ -279,3 +279,19 @@ describe('UI state: arrows (ME4)', () => {
     });
   });
 });
+
+describe('field group sections (stage #2918, FG3)', () => {
+  it('the fieldGroup key toggles and does not collide with an annotation key of the same id', () => {
+    const ui = createEditorUi();
+    const group = { kind: 'fieldGroup', id: 'deco/decorated/piece1' } as const;
+    const annotation = { kind: 'annotation', id: 'deco/decorated/piece1' } as const;
+    expect(sectionKey(group)).toBe('fieldGroup:deco/decorated/piece1');
+    expect(sectionKey(group)).not.toBe(sectionKey(annotation));
+    expect(isSectionCollapsed(ui, group)).toBe(false);
+    toggleSection(ui, group);
+    expect(isSectionCollapsed(ui, group)).toBe(true);
+    expect(isSectionCollapsed(ui, annotation)).toBe(false);
+    toggleSection(ui, group);
+    expect(isSectionCollapsed(ui, group)).toBe(false);
+  });
+});
