@@ -9,6 +9,7 @@ import {
   proposalImagePath,
   type ItemKind,
   type Project,
+  type ProjectContainer,
   type Proposal,
   type ReviseError,
 } from '../src/model';
@@ -27,7 +28,15 @@ import {
 import { resolveOptionalOperations } from './operationsFile';
 import type { Operation } from './operations';
 import { resolveProjectFile, type Roots } from './paths';
-import { findProject, loadCatalog, loadProject, type ProjectLocation } from './projects';
+import {
+  MAX_FONT_BYTES,
+  findProject,
+  loadCatalog,
+  loadProject,
+  type LoadedProject,
+  type ProjectLocation,
+} from './projects';
+import { broughtFontSpecs, buildPreviewFonts, type FontReader } from './previewFonts';
 import { revisionReserve, toToolError } from './proposalRevise';
 import { newProposalReserveAt } from './proposalStore';
 import { resolveProposal, type ResolvedProposal } from './proposalRefs';
@@ -59,11 +68,13 @@ export function hasPreview(args: Omit<PreviewArgs, 'ref'>): boolean {
 type Aliases = BatchResult['aliases'];
 
 /** What the preview draws: the previewed project and what the drawing needs to read from it. */
-interface Previewed {
+export interface Previewed {
   readonly refs: Refs;
   /** The project the batch started from (disk, or the proposal's whole proposed state): what is not here is provisional. */
   readonly before: Project;
   readonly aliases: Aliases;
+  /** The project on disk, before the proposal or the batch (where a deleted item is still found). */
+  readonly onDisk: Project;
   readonly source: ImageSource;
   readonly operations: number | undefined;
   readonly proposal: string | undefined;
@@ -167,19 +178,47 @@ function imageSourceOf(
   };
 }
 
-/** The specializations the preview brings (new or changed) that declare `fonts`: they count only once applied. */
-function fontsWarning(disk: Project, previewed: Project): string | undefined {
-  const brought = previewed.specializations.filter((s) => {
-    if ((s.spec?.fonts?.length ?? 0) === 0) return false;
-    const was = disk.specializations.find((d) => d.id === s.id);
-    return (
-      was === undefined ||
-      (was.spec !== s.spec && JSON.stringify(was.spec) !== JSON.stringify(s.spec))
-    );
-  });
-  if (brought.length === 0) return undefined;
-  const ids = brought.map((s) => s.id).join(', ');
-  return `the library ${ids} declares fonts: the preview draws its text with the fonts already in the project (or the embedded one); the library's fonts count only after it is applied`;
+/** Where a font file is read: the batch's package files, the proposal folder, then the project copy (decision 2). */
+function fontReaderOf(
+  roots: Roots,
+  location: ProjectLocation,
+  packageFiles: ReadonlyMap<string, Uint8Array>,
+  mapped: ((path: string) => string) | undefined,
+): FontReader {
+  return async (path) => {
+    const given = packageFiles.get(path);
+    if (given !== undefined) return given.byteLength > MAX_FONT_BYTES ? null : given;
+    for (const candidate of mapped === undefined ? [path] : [mapped(path), path]) {
+      const real = await resolveProjectFile(roots, location.dir, candidate);
+      if (real === null) continue;
+      try {
+        if ((await stat(real)).size > MAX_FONT_BYTES) return null;
+        return new Uint8Array(await readFile(real));
+      } catch {
+        // Unreadable: the next place, then the embedded font.
+      }
+    }
+    return null;
+  };
+}
+
+/**
+ * The loaded project the preview draws with: the font book of the previewed project (its libraries' `fonts`,
+ * read through `read`) when a brought specialization declares fonts; otherwise `loaded` as it is (decision 2).
+ */
+async function withPreviewFonts(
+  base: LoadedProject,
+  disk: Project,
+  previewed: Project,
+  read: FontReader,
+): Promise<{ loaded: LoadedProject; warning: string | undefined }> {
+  const brought = broughtFontSpecs(disk, previewed);
+  if (brought.length === 0) return { loaded: base, warning: undefined };
+  const { book, warnings } = await buildPreviewFonts(previewed, read, brought);
+  return {
+    loaded: { ...base, fonts: book },
+    warning: warnings.length === 0 ? undefined : warnings.join('; '),
+  };
 }
 
 function invalidBatch(result: BatchResult): ToolError {
@@ -213,14 +252,22 @@ async function previewProposal(
     proposed,
     componentPath(stored.proposal),
   );
+  const read = fontReaderOf(roots, location, new Map(), componentPath(stored.proposal));
+  const drawn = await withPreviewFonts(
+    { ...loaded, project: proposed, catalog },
+    loaded.project,
+    proposed,
+    read,
+  );
   return {
-    refs: new Refs({ ...loaded, project: proposed, catalog }),
+    refs: new Refs(drawn.loaded),
     before: proposed,
     aliases: new Map(),
+    onDisk: loaded.project,
     source: imageSourceOf(roots, location, stored.id, new Map()),
     operations: undefined,
     proposal: resolved.refs.ref(stored.id),
-    warning: fontsWarning(loaded.project, proposed),
+    warning: drawn.warning,
     revision: loaded.project.revision,
   };
 }
@@ -264,14 +311,27 @@ async function previewBatch(
   );
   if (!prepared.valid) throw invalidBatch(prepared.result);
   const { result } = prepared;
+  const read = fontReaderOf(
+    roots,
+    location,
+    result.packageFiles,
+    resolved === undefined ? undefined : componentPath(resolved.stored.proposal),
+  );
+  const drawn = await withPreviewFonts(
+    prepared.refs.loaded,
+    prepared.loaded.project,
+    result.project,
+    read,
+  );
   return {
-    refs: prepared.refs,
+    refs: drawn.loaded === prepared.refs.loaded ? prepared.refs : new Refs(drawn.loaded),
     before: result.before,
     aliases: result.aliases,
+    onDisk: prepared.loaded.project,
     source: imageSourceOf(roots, location, resolved?.stored.id, result.imageFiles),
     operations: batch.length,
     proposal: resolved?.refs.ref(resolved.stored.id),
-    warning: fontsWarning(prepared.loaded.project, result.project),
+    warning: drawn.warning,
     revision: prepared.loaded.project.revision,
   };
 }
@@ -313,6 +373,71 @@ function aliasTarget(aliases: Aliases, alias: string, kind: ItemKind): string {
   return target.id;
 }
 
+/** A short note on how the previewed project got rid of an item: who deleted it, and the project it was in. */
+function deletion(
+  preview: Previewed,
+  kind: ItemKind,
+  code: string,
+): { by: 'batch' | 'proposal'; from: Project; id: string } | undefined {
+  const starts: [Project, 'batch' | 'proposal'][] = [[preview.before, 'batch']];
+  if (preview.onDisk !== preview.before) starts.push([preview.onDisk, 'proposal']);
+  for (const [from, by] of starts) {
+    const found = matchShortCode(from, kind, code);
+    if (found.length === 1) return { by, from, id: found[0]!.id };
+  }
+  return undefined;
+}
+
+/** How the preview cites a container it creates: its `$alias`, or the final reference of a proposal's. */
+function citationOf(preview: Previewed, id: string, before: Project): string | undefined {
+  for (const [alias, target] of preview.aliases) {
+    if ('id' in target && target.id === id) return alias;
+  }
+  return projectIndex(before).containers.has(id) ? preview.refs.ref('i', id) : undefined;
+}
+
+/** The containers the preview creates in place of the deleted one: same name, else the same page. */
+function replacements(preview: Previewed, from: Project, deleted: string): string[] {
+  const gone = projectIndex(from).containers.get(deleted);
+  if (gone === undefined) return [];
+  const known = projectIndex(from).containers;
+  const created = preview.refs.project.containers.filter((c) => !known.has(c.id));
+  const named = created.filter((c) => c.name !== null && c.name === gone.name);
+  const chosen =
+    named.length > 0 ? named : created.filter((c) => c.pageId === gone.pageId);
+  return chosen
+    .map((c) => citationOf(preview, c.id, preview.before))
+    .filter((c): c is string => c !== undefined);
+}
+
+/** The `not-found` of a reference the preview no longer has: names who deleted it and what replaces it. */
+function notFound(
+  preview: Previewed,
+  ref: string,
+  kind: ItemKind,
+  code: string,
+): ToolError {
+  const base = `${KIND_NOT_FOUND[kind]}: ${ref}`;
+  const gone = deletion(preview, kind, code);
+  if (gone === undefined) return new ToolError('not-found', base, { ref });
+  const by = gone.by;
+  const message = `${kind === 'i' ? 'container' : 'marking'} deleted by the ${by}: ${ref}`;
+  if (kind !== 'i') {
+    return new ToolError('not-found', message, { ref, deletedBy: by });
+  }
+  const replacedBy = replacements(preview, gone.from, gone.id);
+  const hint =
+    replacedBy.length > 0
+      ? `cite the container created in its place (${replacedBy.join(', ')}); to change only the image and keep the container and its code, use \`replace_container\` (it keeps the size)`
+      : 'the container the batch creates in its place has no `as`: give it an `as` and cite its `$alias`; to change only the image and keep the container and its code, use `replace_container` (it keeps the size)';
+  return new ToolError('not-found', message, {
+    ref,
+    deletedBy: by,
+    ...(replacedBy.length > 0 ? { replacedBy } : {}),
+    hint,
+  });
+}
+
 /** The item a reference cites in the previewed project (an existing item's or a proposal's final reference). */
 function citedItem(preview: Previewed, ref: string, kind: ItemKind): string {
   const parsed = parseRef(ref);
@@ -330,9 +455,7 @@ function citedItem(preview: Previewed, ref: string, kind: ItemKind): string {
     );
   }
   const found = matchShortCode(preview.refs.project, kind, parsed.code);
-  if (found.length === 0) {
-    throw new ToolError('not-found', `${KIND_NOT_FOUND[kind]}: ${ref}`, { ref });
-  }
+  if (found.length === 0) throw notFound(preview, ref, kind, parsed.code);
   if (found.length > 1) {
     throw new ToolError(
       'ambiguous-ref',
@@ -343,7 +466,7 @@ function citedItem(preview: Previewed, ref: string, kind: ItemKind): string {
   return found[0]!.id;
 }
 
-interface Target {
+export interface Target {
   readonly id: string;
   /** Set when the reference was a `$alias`. */
   readonly alias: string | undefined;
@@ -355,6 +478,25 @@ function targetOf(preview: Previewed, ref: string, kind: ItemKind): Target {
     : { id: citedItem(preview, ref, kind), alias: undefined };
 }
 
+/** The `alias`, `provisional` and `preview` fields of a previewed item, as the response carries them. */
+export function previewFields(
+  preview: Previewed,
+  target: Target,
+  kind: ItemKind,
+): Record<string, unknown> {
+  const known = projectIndex(preview.before);
+  const exists = (kind === 'i' ? known.containers : known.markings).has(target.id);
+  return {
+    ...(target.alias === undefined ? {} : { alias: target.alias }),
+    ...(exists ? {} : { provisional: true }),
+    preview: {
+      ...(preview.proposal === undefined ? {} : { proposal: preview.proposal }),
+      ...(preview.operations === undefined ? {} : { operations: preview.operations }),
+      revision: preview.revision,
+    },
+  };
+}
+
 /** The `preview` of the response, with the item's `alias` and `provisional` when the batch creates it. */
 function withPreview(
   preview: Previewed,
@@ -362,25 +504,40 @@ function withPreview(
   kind: ItemKind,
   result: ImageResult,
 ): ImageResult {
-  const known = projectIndex(preview.before);
-  const exists = (kind === 'i' ? known.containers : known.markings).has(target.id);
   const warning = [result.json.warning, preview.warning]
     .filter((w): w is string => typeof w === 'string')
     .join('; ');
+  const { alias, provisional, preview: previewed } = previewFields(preview, target, kind);
   return {
     ...result,
     json: {
       ...result.json,
-      ...(target.alias === undefined ? {} : { alias: target.alias }),
-      ...(exists ? {} : { provisional: true }),
+      ...(alias === undefined ? {} : { alias }),
+      ...(provisional === undefined ? {} : { provisional }),
       ...(warning === '' ? {} : { warning }),
-      preview: {
-        ...(preview.proposal === undefined ? {} : { proposal: preview.proposal }),
-        ...(preview.operations === undefined ? {} : { operations: preview.operations }),
-        revision: preview.revision,
-      },
+      preview: previewed,
     },
   };
+}
+
+/** One side of a container preview: the previewed project, the container the reference names in it, and what it carries. */
+export interface ContainerSide {
+  readonly preview: Previewed;
+  readonly target: Target;
+  readonly container: ProjectContainer;
+}
+
+/** Opens the preview of `args` and finds the container its `ref` names, without drawing (the compare draws two sides). */
+export async function openContainerSide(
+  roots: Roots,
+  now: () => number,
+  args: PreviewArgs,
+): Promise<ContainerSide> {
+  const preview = await openPreview(roots, now, args);
+  const target = targetOf(preview, args.ref, 'i');
+  const container = projectIndex(preview.refs.project).containers.get(target.id);
+  if (!container) throw new ToolError('not-found', `container not found: ${args.ref}`);
+  return { preview, target, container };
 }
 
 /** `render_container` with `proposal`, `operations` or `operationsFile`. */
@@ -391,10 +548,7 @@ export async function previewContainer(
   options: RenderOptions,
   images: ImageServer | null,
 ): Promise<ImageResult> {
-  const preview = await openPreview(roots, now, args);
-  const target = targetOf(preview, args.ref, 'i');
-  const container = projectIndex(preview.refs.project).containers.get(target.id);
-  if (!container) throw new ToolError('not-found', `container not found: ${args.ref}`);
+  const { preview, target, container } = await openContainerSide(roots, now, args);
   const result = await renderContainer(
     roots,
     preview.refs,
