@@ -263,7 +263,12 @@ The slot is the space; what is drawn inside it are the children. Its `width`, `h
 
 A component may have more than one `slot`, each one named by its `id` (the pattern and the rules are in the table above). The `fallback` of a slot is the content the component draws by itself while the slot is empty.
 
-**Which slot a child marking is in.** It is **derived from the geometry, not a belonging**: nothing is written to the project, and containment (`settleHierarchy`) does not read slots. The parent of a child is still the marking that contains it; the slot only says which of the parent's slots its rectangle falls in. For each child, the candidate slots come in three orders, and the first non-empty one is used:
+**Which slot a child marking is in.** It is **stored**: a materialized child of a parent with several slots carries `slot` in the project (`Marking.slot`, stage #3087), written along with `parentId` by the operation that sets the parent (the drop, the Palette, `create_marking.inside`, `update_marking.parent`, the creation rule). The drawing, Arrange, the viewer and the MCP's PNG put the child **in that slot, whatever its rectangle**, and a child may lie past its parent's or its slot's edge and stay in it (the slot's `clip` cuts what passes). Containment (`settleHierarchy`) does not read slots. Two cases fall back to the geometry below:
+
+- **No stored `slot`** (a project from before the field, or a parent with a single slot, which never stores one): the child is in the slot its rectangle falls in, exactly as before.
+- **A stored `slot` the component does not have** (a library update renamed it, or the parent has no slot at all): the child is drawn where the geometry puts it and gets the pending item `slot-missing` (in Details, in the Incomplete list and in the MCP's `issues`); setting the parent again, or editing the `slot`, clears it. The type's `accepts` and `max` still apply to a stored slot: a child it does not accept gets `slot-not-accepted`, one beyond the `max` gets `slot-full`.
+
+For a child with no stored slot, the candidate slots come in three orders, and the first non-empty one is used:
 
 1. the slots that explicitly accept the child's type (`accepts`, arriving in a later phase of the stage);
 2. the slots without `accepts` (they accept everything, including a child without a type);
@@ -1024,7 +1029,7 @@ The test that proves it is `tests/model/components/layout.test.ts` (group "Mater
 ### Two ways to lay out
 
 - **`layoutScreen`** (above): a screen without rectangles; computes sizes and positions. It feeds the screens coming from an external source.
-- **`arrange`** (`arrange.ts`): instances that **already have a rectangle**; the slot's `layout` only **positions** the children (order among siblings, `gap`, `padding`, `align`, `justify`), rounding to whole px, and writes the rectangles. The rectangle remains the source of truth; the layout is an editing tool. A slot without a layout (or `none`) leaves the children where they are. With `grid`, `arrange` and Arrange write the children into the cells (see "Size-based screen layout"). With `wrap`, `arrange` and the app's Arrange put the children in lines (`lineGap`, `maxPerLine`, `justify` and `reverse` per line); children beyond `maxLines` lines stay where they are. The "Arrange" action in the app is from phase B3.
+- **`arrange`** (`arrange.ts`): instances that **already have a rectangle**; the slot's `layout` only **positions** the children (order among siblings, `gap`, `padding`, `align`, `justify`), rounding to whole px, and writes the rectangles. The rectangle remains the source of truth; the layout is an editing tool. A slot without a layout (or `none`) leaves the children where they are. With `grid`, `arrange` and Arrange write the children into the cells (see "Size-based screen layout"). With `wrap`, `arrange` and the app's Arrange put the children in lines (`lineGap`, `maxPerLine`, `justify` and `reverse` per line); children beyond `maxLines` lines stay where they are. The "Arrange" action in the app is from phase B3. Arrange reads each child's **stored slot** (the geometry only for a child without one) and clamps a child into the **image only**, never into its parent's rectangle: a child that the layout puts past the slot's edge stays there, still its child, drawn cut by the slot's `clip`, and the drawing reports `component-overflow` unless the slot declares `childOverflow: "intended"`.
 
 ## Reading direction (`formatVersion` 4)
 

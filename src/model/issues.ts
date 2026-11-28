@@ -75,6 +75,11 @@ export type AnnotationIssueCode =
   /** The child is in a slot hidden by its `visible`: it stays in the slot and in the code, and is not drawn (#1978). */
   | 'slot-hidden'
   /**
+   * The child stores a slot (`Marking.slot`) that its parent's component does not have (a library update renamed it,
+   * or the parent has no slot): the child is drawn where the geometry puts it (stage #3087, decision 11).
+   */
+  | 'slot-missing'
+  /**
    * The accessible label is empty (stage #1126, `accessibility.label.required`), on the type or on a
    * part. Not produced by `projectIssues`: `accessibilityAudit` (`accessibility.ts`) does.
    */
@@ -88,9 +93,9 @@ export interface AnnotationIssue {
   readonly rowId?: string;
   /** Table column involved. */
   readonly column?: string;
-  /** `slot-not-accepted`, `slot-full` and `slot-hidden`: the slot of the owner that the child is in. */
+  /** `slot-not-accepted`, `slot-full`, `slot-hidden` and `slot-missing`: the slot of the owner that the child is in (with `slot-missing`, the stored one the owner lacks). */
   readonly slot?: { readonly id: string; readonly name: string };
-  /** `slot-not-accepted`, `slot-full` and `slot-hidden`: the name of the owner's type (the one that has the slot). */
+  /** `slot-not-accepted`, `slot-full`, `slot-hidden` and `slot-missing`: the name of the owner's type (the one that has the slot). */
   readonly owner?: string;
   /** `slot-full`: the number of children the slot takes. */
   readonly max?: number;

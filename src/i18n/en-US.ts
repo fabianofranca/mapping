@@ -1098,6 +1098,8 @@ export const enUS = {
   'issue.slot-not-accepted': 'the slot {slot} of {owner} does not accept {type}',
   'issue.slot-full': 'the slot {slot} of {owner} takes {max}',
   'issue.slot-hidden': 'the slot {slot} of {owner} is hidden',
+  'issue.slot-missing':
+    '{owner} has no slot {slot}: the marking is drawn where its rectangle lies',
   'issue.accessible-label-missing': 'missing accessible label',
   'issue.accessible-label-missing-field': 'Missing accessible label: {field}',
   'issue.accessible-label-missing-part': 'Missing accessible label on the part {part}',

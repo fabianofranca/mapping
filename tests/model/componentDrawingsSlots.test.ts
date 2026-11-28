@@ -15,6 +15,7 @@ import {
   moveMarking,
   parseSpec,
   setFieldValue,
+  setMarkingParent,
   setMarkingRect,
   slotOverflowKey,
   type ComponentCatalog,
@@ -226,7 +227,7 @@ describe('ComponentDrawing: a child inside a hug slot is not an overflow (CL1, 2
 });
 
 describe('createDrawingCache: slots', () => {
-  it('moving a child from one slot to the other re-instantiates only the bar and that child', () => {
+  it('moving a child over the other slot re-instantiates only the bar and that child, and the child stays in its stored slot', () => {
     const cache = createDrawingCache();
     const p = barWithTwoChildren();
     const before = cache(p, catalog, approximateMeasurer, 0);
@@ -241,6 +242,21 @@ describe('createDrawingCache: slots', () => {
     const after = cache(moved, catalog, approximateMeasurer, 0);
     expect(after.get('B')).not.toBe(before.get('B'));
     expect(after.get('NAV')).not.toBe(before.get('NAV'));
+    expect(after.get('ACT')).toBe(before.get('ACT'));
+    // The slot is stored (stage #3087): the rectangle no longer decides it.
+    expect(after.get('B')!.slotOf.get('NAV')).toBe('navigationIcon');
+  });
+
+  it('changing the stored slot of a child re-instantiates the bar and not the other child', () => {
+    const cache = createDrawingCache();
+    const p = barWithTwoChildren();
+    const before = cache(p, catalog, approximateMeasurer, 0);
+    const other = setMarkingParent(p, catalog, approximateMeasurer, 'NAV', {
+      parentId: 'B',
+      slot: 'actions',
+    });
+    const after = cache(other, catalog, approximateMeasurer, 0);
+    expect(after.get('B')).not.toBe(before.get('B'));
     expect(after.get('ACT')).toBe(before.get('ACT'));
     expect(after.get('B')!.slotOf.get('NAV')).toBe('actions');
   });

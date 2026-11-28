@@ -1099,6 +1099,8 @@ export const ptBR: Dictionary = {
   'issue.slot-not-accepted': 'o slot {slot} de {owner} não aceita {type}',
   'issue.slot-full': 'o slot {slot} de {owner} aceita {max}',
   'issue.slot-hidden': 'o slot {slot} de {owner} está oculto',
+  'issue.slot-missing':
+    '{owner} não tem o slot {slot}: a marcação é desenhada onde seu retângulo está',
   'issue.accessible-label-missing': 'sem rótulo acessível',
   'issue.accessible-label-missing-field': 'Sem rótulo acessível: {field}',
   'issue.accessible-label-missing-part': 'Sem rótulo acessível na parte {part}',

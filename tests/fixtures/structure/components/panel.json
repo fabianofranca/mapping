@@ -1,0 +1,31 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "panel",
+  "name": "Panel",
+  "description": "A row with two named slots, `left` and `right`: a child marking is stored in one of them.",
+  "size": { "width": 300, "height": 100 },
+  "template": {
+    "type": "frame",
+    "layout": { "type": "row", "padding": 10, "gap": 20 },
+    "fill": "#F3EDF7",
+    "children": [
+      {
+        "type": "slot",
+        "id": "left",
+        "name": "left",
+        "width": 130,
+        "height": 80,
+        "layout": { "type": "row", "gap": 4, "align": "center" }
+      },
+      {
+        "type": "slot",
+        "id": "right",
+        "name": "right",
+        "width": 130,
+        "height": 80,
+        "layout": { "type": "row", "gap": 4, "align": "center" }
+      }
+    ]
+  }
+}

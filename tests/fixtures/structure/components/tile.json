@@ -1,0 +1,13 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "tile",
+  "name": "Tile",
+  "description": "A plain 80 × 40 block: the child of the stored-structure fixtures.",
+  "size": { "width": 80, "height": 40 },
+  "template": {
+    "type": "frame",
+    "layout": { "type": "none" },
+    "fill": "#6750A4"
+  }
+}

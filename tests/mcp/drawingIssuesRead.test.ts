@@ -219,3 +219,22 @@ describe('plan_changes counts what the project already had (CL1, 4.2)', () => {
     expect(plan.issues.new ?? []).toEqual([]);
   });
 });
+
+describe('a stored slot the component lacks (stage #3087, `slot-missing`)', () => {
+  it('reaches the MCP reads: the project counts it and the child lists it with the stored slot and the owner', async () => {
+    const file = join(ws.dir, 'mapping.json');
+    const json = JSON.parse(readFileSync(file, 'utf8'));
+    json.revision = (json.revision ?? 0) + 1;
+    const pin = json.markings.find((m: { id: string }) => m.id === 'mk-p1');
+    pin.slot = 'gone';
+    writeFileSync(file, JSON.stringify(json));
+    const project = await call('get_project', { project: 'slots' });
+    expect(project.issues.byCode).toMatchObject({ 'slot-missing': 1 });
+    const rows = await refs();
+    const all: IssueData[] = [];
+    for (const r of rows) all.push(...(await issuesOf(r.ref)));
+    expect(all.filter((i) => i.code === 'slot-missing')).toEqual([
+      { code: 'slot-missing', slot: { id: 'gone', name: 'gone' }, owner: 'Bar' },
+    ]);
+  });
+});
