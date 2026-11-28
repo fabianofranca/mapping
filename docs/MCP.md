@@ -315,7 +315,7 @@ A marking can be **decorative**: a child like any marking that is never a parent
 
 - **`svg` in the scratch folder.** The `svg` argument (a file or a folder) resolves like `operationsFile`: roots first, then the scratch folders; an absolute path inside a root or a scratch folder. The server only reads there; `path` stays inside the roots. A folder entry that is a link leaving both areas is an entry of `errors`. See "Roots" and "Importing icons (`import_icons`)".
 - **`ignoreFilters`** (boolean, optional): drops every `filter` of the SVG and imports the drawing. The default still refuses a `filter`.
-- **`warnings`** in the response (`[{ file, message }]`, `[]` when none): one entry per dropped `filter` (`dropped in SVG: g filter="url(#filter0_i_1_2)" (ignoreFilters)`).
+- **`warnings`** in the response (`[{ file, message }]`, `[]` when none): one entry per distinct element and `filter` value (`dropped in SVG: g filter="url(#filter0_i_1_2)" (ignoreFilters)`).
 - **Update the MCP first:** an earlier version reads `svg` only inside the roots (a scratch path is `outside-roots` or `path-not-found`), does not know `ignoreFilters` (the argument is rejected) and returns no `warnings`.
 
 ### Change in 0.64.0 — Arrange in the batch (stage #2927)
