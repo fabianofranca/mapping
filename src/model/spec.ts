@@ -53,6 +53,7 @@ import {
 export { isPackagePath };
 export {
   ACCESSIBILITY_ROLES,
+  ACCESSIBILITY_SPACING_VERSION,
   ACCESSIBILITY_VERSION,
   INTERACTIVE_ROLES,
   type AccessibilityRole,
@@ -144,7 +145,10 @@ const PLAIN_SOURCES_VERSION = 22;
 // version 26 is 25 plus `except` in a slot's `accepts` clause (stage #2918: the clause's types
 // minus the listed ids), additive in the version contract, and, still in version 26, `fieldGroups` on
 // the type and `group` and `visibleWhen` on a top-level field (stage #2918, FG2: field groups and
-// conditional display in Details, see `specFieldDisplay.ts`), outside the version contract.
+// conditional display in Details, see `specFieldDisplay.ts`), outside the version contract;
+// version 27 is 26 plus `accessibility.touchTarget.spacing` at the root and on the type (stage
+// #1998: the opt-in of the WCAG 2.5.8 spacing audit; `true` needs mode `visual` and a square
+// minimum; see `specAccessibility.ts`), outside the version contract too.
 // The zod here is the source of truth; `docs/spec.schema.json` mirrors it for those who do not
 // use TypeScript. No browser APIs: reusable by the MCP server.
 //
@@ -157,11 +161,11 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Value used before the product rename: import still accepts it. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Current format version (the one that the documentation and new examples use). */
-export const SPEC_FORMAT_VERSION = 26;
+export const SPEC_FORMAT_VERSION = 27;
 /** Versions accepted on import. */
 export const SPEC_FORMAT_VERSIONS = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-  25, 26,
+  25, 26, 27,
 ] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 

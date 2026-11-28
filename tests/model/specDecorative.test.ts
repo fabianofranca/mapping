@@ -49,7 +49,7 @@ const issuesOf = (value: Json) => {
 
 describe('formatVersion 25: decorative on the type', () => {
   it('25 is in the list and is no longer the current version', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(26);
+    expect(SPEC_FORMAT_VERSION).toBe(27);
     expect(SPEC_FORMAT_VERSIONS).toContain(25);
   });
 

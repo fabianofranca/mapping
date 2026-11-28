@@ -434,14 +434,14 @@ describe('formatVersion 1 e 2', () => {
     expect(parseSpec(withoutPlatforms(base())).ok).toBe(true);
   });
 
-  it('formatVersion outside 1 to 26 is rejected, with the valid list in the message', () => {
+  it('formatVersion outside 1 to 27 is rejected, with the valid list in the message', () => {
     for (const bad of [0, 27, '2', null]) {
       const spec = { ...base(), formatVersion: bad };
       const errors = errorsOf(parseSpec(spec));
       expect(
         errors.some((e) =>
           e.startsWith(
-            'formatVersion: must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 or 26',
+            'formatVersion: must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 or 27',
           ),
         ),
       ).toBe(true);

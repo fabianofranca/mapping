@@ -9,6 +9,9 @@ import { addSpecIssue, specMsg, type SpecMsg } from './specIssueCode';
 /** First `formatVersion` of `accessibility`. */
 export const ACCESSIBILITY_VERSION = 18;
 
+/** First `formatVersion` of `touchTarget.spacing` (the WCAG 2.5.8 spacing opt-in). */
+export const ACCESSIBILITY_SPACING_VERSION = 27;
+
 /** First `formatVersion` of `accessibility.variants` (role and label per case of an enum field). */
 export const ACCESSIBILITY_VARIANTS_VERSION = 21;
 
@@ -55,6 +58,8 @@ export interface SpecTouchTarget {
   width: number;
   height: number;
   mode?: TouchTargetMode;
+  /** `formatVersion` 27: audit the WCAG 2.5.8 spacing of an undersized `visual` target (`true` needs a square). */
+  spacing?: boolean;
 }
 
 /** The first of the fields with a value gives the accessible name. */
@@ -108,8 +113,22 @@ const touchTargetShape = z
     mode: z
       .enum(['visual', 'expanded'], { error: 'must be "visual" or "expanded"' })
       .optional(),
+    spacing: z.boolean({ error: 'must be true or false' }).optional(),
   })
   .strict();
+
+/** The type's `touchTarget` (`false` turns the audit off): the issues of the object keep their exact path. */
+const typeTouchTargetShape = z
+  .unknown()
+  .transform((value, ctx): SpecTouchTarget | false | undefined => {
+    if (value === undefined || value === false) return value;
+    const parsed = touchTargetShape.safeParse(value);
+    if (parsed.success) return parsed.data;
+    for (const { message, path } of parsed.error.issues) {
+      ctx.addIssue({ code: 'custom', message, path });
+    }
+    return z.NEVER;
+  });
 
 const labelShape = z
   .object({
@@ -162,7 +181,7 @@ export const typeAccessibilityShape = z
   .object({
     role: roleShape.optional(),
     label: labelShape.optional(),
-    touchTarget: z.union([touchTargetShape, z.literal(false)]).optional(),
+    touchTarget: typeTouchTargetShape.optional(),
     parts: z.array(partShape).optional(),
     variants: variantsShape.optional(),
   })
@@ -211,6 +230,13 @@ interface RawTypeAccessibility {
 interface RawType {
   readonly fields: readonly RawField[];
   readonly accessibility?: RawTypeAccessibility | undefined;
+}
+
+interface RawTouchTarget {
+  readonly width?: unknown;
+  readonly height?: unknown;
+  readonly mode?: unknown;
+  readonly spacing?: unknown;
 }
 
 interface RawSpec {
@@ -452,6 +478,32 @@ function checkTypeAccessibility(
 }
 
 /**
+ * `touchTarget.spacing` (v27): before it, the key (even `false`) is an error at its path; from it,
+ * `true` needs the `visual` mode (the default) and a square minimum. The boolean shape is in the zod.
+ */
+function checkTouchSpacing(
+  touch: unknown,
+  formatVersion: number,
+  path: Path,
+  add: Add,
+): void {
+  if (typeof touch !== 'object' || touch === null) return;
+  const { spacing, mode, width, height } = touch as RawTouchTarget;
+  if (spacing === undefined) return;
+  const at = [...path, 'touchTarget', 'spacing'];
+  if (formatVersion < ACCESSIBILITY_SPACING_VERSION) {
+    const only = specMsg('spec.onlyFormat', {
+      version: String(ACCESSIBILITY_SPACING_VERSION),
+    });
+    add(at, only);
+    return;
+  }
+  if (spacing !== true) return;
+  if (mode === 'expanded') add(at, specMsg('spec.touchSpacingNeedsVisual'));
+  if (width !== height) add(at, specMsg('spec.touchSpacingNeedsSquare'));
+}
+
+/**
  * `accessibility` (v18): before it, the key at the root and on the type is an error at the exact
  * path; from it, the role is on the list, the touch target only goes with an interactive role, the
  * label fields exist and are `string` or `enum`, and each part has a unique id and a `when` that is
@@ -462,12 +514,19 @@ export function checkAccessibilityKeys(spec: RawSpec, ctx: z.RefinementCtx): voi
   const current = spec.formatVersion >= ACCESSIBILITY_VERSION;
   const only = specMsg('spec.onlyFormat', { version: String(ACCESSIBILITY_VERSION) });
   if (spec.accessibility !== undefined && !current) add(['accessibility'], only);
+  else if (spec.accessibility !== undefined) {
+    const root = (spec.accessibility as { touchTarget?: unknown }).touchTarget;
+    checkTouchSpacing(root, spec.formatVersion, ['accessibility'], add);
+  }
   spec.layers.forEach((layer, li) => {
     layer.annotationTypes.forEach((type, ti) => {
       if (type.accessibility === undefined) return;
       const path: Path = ['layers', li, 'annotationTypes', ti, 'accessibility'];
       if (!current) add(path, only);
-      else checkTypeAccessibility(type.accessibility, type, spec, path, add);
+      else {
+        checkTypeAccessibility(type.accessibility, type, spec, path, add);
+        checkTouchSpacing(type.accessibility.touchTarget, spec.formatVersion, path, add);
+      }
     });
   });
 }
