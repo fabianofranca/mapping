@@ -8,6 +8,7 @@ import {
   APP_ID,
   LEGACY_APP_ID,
   COORDINATE_SYSTEM,
+  MAX_VARIANT_GROUP_LENGTH,
   READING_DIRECTIONS,
   SCHEMA_VERSION,
   type JsonValue,
@@ -130,6 +131,14 @@ export const containerSchema = z.object({
     .transform((classes) =>
       classes == null || Object.keys(classes).length === 0 ? undefined : classes,
     ),
+  /** Variant group (v26): a non-empty string of at most 64 characters; `null` reads as absent. */
+  variantGroup: z
+    .string()
+    .min(1)
+    .max(MAX_VARIANT_GROUP_LENGTH)
+    .nullable()
+    .optional()
+    .transform((group) => group ?? undefined),
 });
 
 export const markingSchema = z.object({

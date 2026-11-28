@@ -1,4 +1,4 @@
-# Format of `mapping.json` (schema v25)
+# Format of `mapping.json` (schema v26)
 
 The project is a folder (or a zip with the same content) with `mapping.json`, `images/` (the containers' image files) and,
 if any specializations are applied, `specs/` (and, if there are change proposals, `proposals/`). All the markings' coordinates are
@@ -127,7 +127,7 @@ in the project; `null` in the container without a file, v10: see below); `width`
 `pageId` (v21: the page the container lives on; see "Fields of v21 (pages)");
 `markingColor` (`null` or color); `locked` (boolean, v5: see below); `source` (`null` or source, v8:
 see below); `background` (`null`, a `#RRGGBB` color or, since v24, `{ "$token": "<name>" }`; v10: the background of the container without a file; see "Fields of v24");
-`drawingMode` (v18, optional: the drawing mode that the container pins, a map axis → entry since v24; see "Fields of v18" and "Fields of v24"); `direction` (v20, optional: the reading direction that the container pins, `ltr` or `rtl`; see "Fields of v20"); `density` (v19, optional: image pixels per component unit; see "Fields of v19"). `classes` (v23, optional: the container classes the container is in, a map `set id → class id` of the chosen sets; see "Fields of v23").
+`drawingMode` (v18, optional: the drawing mode that the container pins, a map axis → entry since v24; see "Fields of v18" and "Fields of v24"); `direction` (v20, optional: the reading direction that the container pins, `ltr` or `rtl`; see "Fields of v20"); `density` (v19, optional: image pixels per component unit; see "Fields of v19"). `classes` (v23, optional: the container classes the container is in, a map `set id → class id` of the chosen sets; see "Fields of v23"). `variantGroup` (v26, optional: the group of containers that are variants of the same screen; see "Fields of v26").
 
 **`markings[]`**: `id`; `containerId` (v12; formerly `imageId`; `null` in the canvas marking, v13); `parentId` (parent marking or `null`,
 computed by the app since v13); `pageId` (v21: the page of a canvas marking; `null` inside a container); `name` (`string` or `null`);
@@ -1277,6 +1277,22 @@ v25 adds the **decorative** marking: a marking that dresses a screen (a frame, a
 
 Only `schemaVersion` changes to 25; no data is altered and nothing is settled. As in every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
 
+## Fields of v26 (variants of a screen)
+
+v26 links containers that are the same screen in different sizes (for instance compact and expanded), so a reader can go from one to the other and compare what each maps.
+
+- **`containers[].variantGroup`** (string, optional): a non-empty string of at most 64 characters (the app writes a `crypto.randomUUID()`). **The containers with the same value are variants of each other**; there is no main one, and the link says nothing about the container class (v23) or the page (v21). Absent or `null` means no link; `null` is read as absent and **never written**. The writer puts the key last in the container, after `classes`. The same key goes on a container of a proposal (see [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md), `formatVersion` 14).
+- **A group of one** (a `variantGroup` that no other container shares) is **not an error**: it is read and kept, gives no variant and no check, and means no link. A proposal accepted in part, or a file written by hand, can leave one. Every operation of the model that leaves one (linking merges groups, unlinking, deleting a container, deleting a page with its content) drops the key of the member left alone, so the app never writes one by itself.
+- **Pages.** The variants can be on any page. Moving a container to another page, or deleting a page with "Move the content to…", keeps the link; deleting a page with everything in it removes its containers and the rule above applies.
+- **Lock.** A locked container can be linked and unlinked like it can be renamed.
+- **A reader's check (informative).** The annotation types (`spec/type`) that a marking of another variant has and no marking of this container has, skipping a type whose `appliesIn` (v23) excludes the class this container has. It is only a hint: it is not a pending item and does not enter `issues`.
+- **No new validity rule.** Every `variantGroup` that passes the schema is valid.
+- **Why the version changes:** an earlier app would silently drop the unknown key when writing; with the new version it opens the file read-only instead.
+
+### Migration v25 → v26
+
+Only `schemaVersion` changes to 26; no data is altered. As in every migration, the original goes to `backups/` before the first write and the migration banner appears at the top.
+
 ## Migration
 
 v1 files are migrated on opening: every image gets `name: null` and every annotation gets
@@ -1287,7 +1303,7 @@ image and each marking. v5 files get `revision: 0`. v6 files get `platformRepos:
 v7 files get `source: null` on each image and each marking. v8 files lose the values of the
 `codeRef` fields, by the type declared in the specialization copy (see "Fields of v9"). v9 files
 get `background: null` on each image (see "Fields of v10"). v10 files lose the `urlTemplate` of
-each `platformRepos` entry, and an entry that only had it goes away (see "Fields of v11"). v11 files swap `images` for `containers` and `imageId` for `containerId` (see "Fields of v12"). v12 files lose `inherit` from each annotation and gain `floating: false` on each marking, `parentId: null` on each container and `arrows: []` at the root (see "Fields of v13"). v13 files gain `parentRole: null` on each annotation and `docRepos: {}` at the root (see "Fields of v14"). v14 files only get the number bumped (see "Fields of v15"). v15 files gain `project.id` (a new UUID), `perspectives: []` and `arrivals: []` (see "Fields of v16"). v16 files only get the number bumped (see "Fields of v17"). v17 files only get the number bumped (see "Fields of v18"). v18 files only get the number bumped (see "Fields of v19"). v19 files only get the number bumped (see "Fields of v20"). v20 files gain `pages` (one page) and the `pageId` of each container and canvas marking (see "Fields of v21"). v21 files only get the number bumped (see "Fields of v22"). v22 files only get the number bumped (see "Fields of v23"). v23 files turn the string `drawingMode` of the project and of each container into the map `{ "mode": <string> }` (see "Fields of v24"). v24 files only get the number bumped (see "Fields of v25"). On save, the
-file becomes v25 (and, in folder mode, the original goes first to `backups/`, as in any
+each `platformRepos` entry, and an entry that only had it goes away (see "Fields of v11"). v11 files swap `images` for `containers` and `imageId` for `containerId` (see "Fields of v12"). v12 files lose `inherit` from each annotation and gain `floating: false` on each marking, `parentId: null` on each container and `arrows: []` at the root (see "Fields of v13"). v13 files gain `parentRole: null` on each annotation and `docRepos: {}` at the root (see "Fields of v14"). v14 files only get the number bumped (see "Fields of v15"). v15 files gain `project.id` (a new UUID), `perspectives: []` and `arrivals: []` (see "Fields of v16"). v16 files only get the number bumped (see "Fields of v17"). v17 files only get the number bumped (see "Fields of v18"). v18 files only get the number bumped (see "Fields of v19"). v19 files only get the number bumped (see "Fields of v20"). v20 files gain `pages` (one page) and the `pageId` of each container and canvas marking (see "Fields of v21"). v21 files only get the number bumped (see "Fields of v22"). v22 files only get the number bumped (see "Fields of v23"). v23 files turn the string `drawingMode` of the project and of each container into the map `{ "mode": <string> }` (see "Fields of v24"). v24 files only get the number bumped (see "Fields of v25"). v25 files only get the number bumped (see "Fields of v26"). On save, the
+file becomes v26 (and, in folder mode, the original goes first to `backups/`, as in any
 migration).
 Files of a newer version open read-only.

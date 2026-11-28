@@ -88,7 +88,10 @@ export type ModelErrorCode =
   // pages in one wrap, a page with content deleted without saying where the content goes
   | 'page-required'
   | 'page-mixed'
-  | 'page-not-empty';
+  | 'page-not-empty'
+  // Variants of a screen (v26): a container linked to itself or to one of its own group
+  | 'variant-self'
+  | 'variant-already-linked';
 
 /**
  * Structured facts that some errors carry (a plain, serializable object). The model keeps

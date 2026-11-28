@@ -1,5 +1,10 @@
 import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { normalizedContainerClasses } from './containerClasses';
+import {
+  checkVariantGroup,
+  pruneLoneVariantGroups,
+  variantGroupsOf,
+} from './containerVariants';
 import { MAX_DENSITY, MIN_DENSITY, withoutDensity } from './density';
 import { fail } from './errors';
 import { TOKEN_NAME_PATTERN } from './components/tokens';
@@ -460,6 +465,8 @@ export function addContainer(
     readonly pageId?: string;
     /** Chosen container classes (v23): set id → class id; an empty map writes no key. */
     readonly classes?: Readonly<Record<string, string>> | null;
+    /** Variant group (v26): the new container joins the variants that share it. */
+    readonly variantGroup?: string | null;
   },
   options?: SettleOptions,
 ): Project {
@@ -484,6 +491,9 @@ export function addContainer(
     height: args.height,
     placement: newContainerPlacement(p, args, args, pageId),
     ...(classes === undefined ? {} : { classes }),
+    ...(args.variantGroup == null
+      ? {}
+      : { variantGroup: checkVariantGroup(args.variantGroup) }),
   };
   return settleFrom(p, { ...p, containers: [...p.containers, image] }, options);
 }
@@ -509,6 +519,8 @@ export function addBackgroundContainer(
     readonly pageId?: string;
     /** Chosen container classes (v23): set id → class id; an empty map writes no key. */
     readonly classes?: Readonly<Record<string, string>> | null;
+    /** Variant group (v26): the new container joins the variants that share it. */
+    readonly variantGroup?: string | null;
   },
   options?: SettleOptions,
 ): Project {
@@ -532,6 +544,9 @@ export function addBackgroundContainer(
     height: args.height,
     placement: newContainerPlacement(p, args, args, pageId),
     ...(classes === undefined ? {} : { classes }),
+    ...(args.variantGroup == null
+      ? {}
+      : { variantGroup: checkVariantGroup(args.variantGroup) }),
   };
   return settleFrom(p, { ...p, containers: [...p.containers, image] }, options);
 }
@@ -746,7 +761,12 @@ export function removeContainer(
 ): Project {
   findById(p.containers, containerId);
   requireUnlocked(canDeleteImage(p, containerId));
-  return settleFrom(p, cascadeRemoveImage(p, containerId), options);
+  const groups = variantGroupsOf(p, new Set([containerId]));
+  return settleFrom(
+    p,
+    pruneLoneVariantGroups(cascadeRemoveImage(p, containerId), groups),
+    options,
+  );
 }
 
 /** The deletion itself, without the lock: also serves to count the impact. */

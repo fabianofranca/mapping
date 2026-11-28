@@ -85,6 +85,8 @@ export function imageValue(i: ProjectContainer, withPage = false): JsonValue {
     ...(i.classes == null || Object.keys(i.classes).length === 0
       ? {}
       : { classes: toJson(i.classes) }),
+    // Only when the container is in a variant group (formatVersion 14).
+    ...(i.variantGroup == null ? {} : { variantGroup: i.variantGroup }),
     // Only when the proposal carries pages (formatVersion 10).
     ...(withPage ? { pageId: i.pageId } : {}),
   });
@@ -203,6 +205,7 @@ export const COMPARED_FIELDS = {
     'density',
     'direction',
     'classes',
+    'variantGroup',
     'page',
   ],
   marking: [
@@ -289,6 +292,8 @@ export function imageField(i: ProjectContainer, field: string): JsonValue | unde
       return i.classes == null || Object.keys(i.classes).length === 0
         ? null
         : toJson(i.classes);
+    case 'variantGroup':
+      return i.variantGroup ?? null;
     case 'page':
       return toJson({ pageId: i.pageId, position: i.placement });
     default:

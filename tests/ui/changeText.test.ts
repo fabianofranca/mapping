@@ -6,12 +6,14 @@ import {
   changeType,
   createArrow,
   createMarking,
+  linkVariant,
   setContainerClass,
   setBackgroundContainer,
   setContainerDensity,
   setMarkingAnchor,
   setMarkingDecorative,
   snapToAnchor,
+  unlinkVariant,
   setContainerDirection,
   setProjectDirection,
   setProjectDrawingMode,
@@ -524,5 +526,57 @@ describe('changeTitle and changeSummary: the marking decorative field (stage #28
     expect(textOf(base, setMarkingDecorative(base, 'F', true))).toBe(
       'Decorativa: não → sim',
     );
+  });
+});
+
+describe('changeTitle and changeSummary: the variants (decision 9 of #2034)', () => {
+  beforeEach(() => {
+    locale.value = 'en-US';
+  });
+  const named = ['Compact', 'Expanded', 'Medium'].reduce(
+    (p, name, i) =>
+      addBackgroundContainer(p, {
+        id: `c${i + 1}`,
+        name,
+        width: 400,
+        height: 300,
+        background: '#FFFFFF',
+      }),
+    emptyProject(),
+  );
+  const changesOf = (before: Project, after: Project) => {
+    const proposal = propose(before, after);
+    const names = { current: before, preview: null, proposal };
+    return proposal.changes
+      .filter((c) => c.field === 'variantGroup')
+      .map((c) => `${c.entityId}|${changeTitle(names, c)}: ${changeSummary(names, c)}`);
+  };
+
+  it('shows the names of the other containers of the group, never the id', () => {
+    const lines = changesOf(named, linkVariant(named, 'c1', 'c2'));
+    expect(lines).toEqual([
+      'c1|Variants: No variants → Variant of: Expanded',
+      'c2|Variants: No variants → Variant of: Compact',
+    ]);
+  });
+
+  it('a third container lists the other two, in project order', () => {
+    const linked = linkVariant(named, 'c1', 'c2');
+    const lines = changesOf(linked, linkVariant(linked, 'c3', 'c1'));
+    expect(lines).toEqual(['c3|Variants: No variants → Variant of: Compact, Expanded']);
+  });
+
+  it('removing the link shows the names before and "No variants" after', () => {
+    const linked = linkVariant(named, 'c1', 'c2');
+    expect(changesOf(linked, unlinkVariant(linked, 'c1'))).toEqual([
+      'c1|Variants: Variant of: Expanded → No variants',
+      'c2|Variants: Variant of: Compact → No variants',
+    ]);
+  });
+
+  it('the pt-BR text uses the pt-BR labels', () => {
+    locale.value = 'pt-BR';
+    const [line] = changesOf(named, linkVariant(named, 'c1', 'c2'));
+    expect(line).toBe('c1|Variantes: Sem variantes → Variante de: Expanded');
   });
 });

@@ -407,6 +407,15 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     /** Direction the container fixes; `null` goes back to following the project's. One undo entry. */
     setContainerDirection: (containerId: string, direction: ReadingDirection | null) =>
       store.apply((p) => model.setContainerDirection(p, containerId, direction)),
+    /**
+     * Links two containers as variants of the same screen (v26): a new group, joining one, or merging two.
+     * One undo entry. `variant-self` and `variant-already-linked` are refused.
+     */
+    linkVariant: (containerId: string, otherId: string) =>
+      store.apply((p) => model.linkVariant(p, containerId, otherId)),
+    /** Takes the container out of its variant group (the last one left alone loses its key too). One undo entry. */
+    unlinkVariant: (containerId: string) =>
+      store.apply((p) => model.unlinkVariant(p, containerId)),
     renameContainer: (containerId: string, name: string | null) =>
       store.apply((p) => model.renameContainer(p, containerId, name)),
 
