@@ -175,7 +175,7 @@ export function ContainerVariantsSection({
                   variant="ghost"
                   onClick={() => goToVariant(editor, v.id)}
                 >
-                  {rowText(project, image, v)}
+                  <span class="variants-row-text">{rowText(project, image, v)}</span>
                 </Button>
               </li>
             ))}
