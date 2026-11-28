@@ -216,7 +216,12 @@ describe('example library drawing-fidelity', () => {
       type: 'rect',
       backdropBlur: 4,
     });
-    expect(nodes.some((n) => n.name === 'content')).toBe(true);
+    const template = JSON.parse(text('components/header.json')).template as {
+      children: { type: string; name: string }[];
+    };
+    expect(template.children.some((c) => c.type === 'slot' && c.name === 'content')).toBe(
+      true,
+    );
   });
 
   it('draws the Block fill from the color field', () => {
