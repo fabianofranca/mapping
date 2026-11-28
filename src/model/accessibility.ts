@@ -33,7 +33,7 @@ export interface AuditSize {
  * Warning (not an issue: it does not count as incomplete) of a marking whose rectangle is below the
  * minimum touch area. `actual` and `min` are in component units, `minPx` in image pixels.
  */
-export interface AuditFinding {
+export interface TouchTargetSmallFinding {
   readonly code: 'touch-target-small';
   readonly annotationId: string;
   readonly markingId: string;
@@ -43,6 +43,31 @@ export interface AuditFinding {
   /** Image pixels per component unit of the marking's space. */
   readonly density: number;
 }
+
+/** The annotation and marking of the other side of an overlap. */
+export interface AuditNeighbor {
+  readonly annotationId: string;
+  readonly markingId: string;
+}
+
+/**
+ * Warning (stage #1998) of a touch area that overlaps a neighbor's: two interactive annotations of different
+ * markings in the same space, neither inside the other, at least one of them `expanded`. There is one finding per
+ * annotation of the pair, each naming the other. `overlap` is the intersection in component units, `overlapPx` in
+ * image pixels.
+ */
+export interface TouchTargetOverlapFinding {
+  readonly code: 'touch-target-overlap';
+  readonly annotationId: string;
+  readonly markingId: string;
+  readonly other: AuditNeighbor;
+  readonly overlap: AuditSize;
+  readonly overlapPx: AuditSize;
+  /** Image pixels per component unit of the marking's space. */
+  readonly density: number;
+}
+
+export type AuditFinding = TouchTargetSmallFinding | TouchTargetOverlapFinding;
 
 export interface AnnotationAudit {
   readonly issues: readonly AnnotationIssue[];
@@ -93,8 +118,10 @@ interface ResolvedRole {
   readonly role: string | undefined;
   /** Label of the role; `null` when it is not audited by itself. */
   readonly label: ResolvedLabel | null;
-  /** The touch area to audit (`visual` mode only); `null` when there is none to audit. */
+  /** The touch area the size check reads (`visual` mode only); `null` when there is none to check. */
   readonly touch: SpecTouchTarget | null;
+  /** The touch area the overlap check reads (`visual` or `expanded`); `null` when the type declares none. */
+  readonly area: SpecTouchTarget | null;
 }
 
 /** The `accessibility.variants` of a type, each case resolved once (the chosen one overlays the base per annotation). */
@@ -147,15 +174,14 @@ function resolvePart(
   };
 }
 
-function resolveTouch(
+/** The touch target that applies to the type (its own, else the root's); `null` when there is none or it opted out. */
+function resolveArea(
   type: SpecAnnotationType,
   root: SpecTouchTarget | undefined,
 ): SpecTouchTarget | null {
   const own = type.accessibility?.touchTarget;
   const touch = own === undefined ? root : own;
-  return touch === undefined || touch === false || touch.mode === 'expanded'
-    ? null
-    : touch;
+  return touch === undefined || touch === false ? null : touch;
 }
 
 /** Role, label and touch area for a role (the base's or a case's) with its label: the defaults follow the role. */
@@ -165,10 +191,12 @@ function resolveRole(
   role: string | undefined,
   label: SpecAccessibilityLabel | undefined,
 ): ResolvedRole {
+  const area = isInteractive(role) ? resolveArea(type, root) : null;
   return {
     role,
     label: isAudited(role) ? resolveLabel(label, role ?? '', null) : null,
-    touch: isInteractive(role) ? resolveTouch(type, root) : null,
+    touch: area?.mode === 'expanded' ? null : area,
+    area,
   };
 }
 
@@ -335,7 +363,7 @@ function touchFindings(
   p: Project,
   a: Annotation,
   touch: SpecTouchTarget | null,
-): AuditFinding[] {
+): TouchTargetSmallFinding[] {
   if (touch === null) return [];
   const marking = projectIndex(p).markings.get(a.markingId);
   if (marking === undefined) return [];
@@ -365,6 +393,7 @@ function auditAnnotation(
   a: Annotation,
   resolved: ResolvedType,
   ctx: AuditContext,
+  overlaps: readonly TouchTargetOverlapFinding[],
 ): AnnotationAudit | null {
   const values = a.values ?? {};
   const drawing = ctx.drawings?.get(a.markingId);
@@ -373,7 +402,8 @@ function auditAnnotation(
     ...typeIssues(resolved.label, values),
     ...partsIssues(resolved.parts, values, inactive),
   ];
-  const findings = touchFindings(p, a, resolved.touch);
+  // `touch-target-small` first, then the overlaps (decision 5 of #1998).
+  const findings: AuditFinding[] = [...touchFindings(p, a, resolved.touch), ...overlaps];
   return issues.length === 0 && findings.length === 0 ? null : { issues, findings };
 }
 
@@ -389,16 +419,232 @@ function resolvedOf(p: Project, a: Annotation): ResolvedType | null {
   return kase === undefined ? resolved : { ...resolved, ...kase };
 }
 
+// --- The overlap of touch areas (stage #1998) ---
+
+/** The intersection of two areas counts only when it is more than this many pixels on each axis. */
+const OVERLAP_TOLERANCE = 1;
+
+/** One touch area in the sweep: the space it lives in, its box in image pixels and its kind. */
+export interface TouchBox {
+  /** The container whose pixels the box is in (`null`: the canvas). Boxes of different spaces never meet. */
+  readonly space: string | null;
+  readonly kind: 'visual' | 'expanded';
+  readonly left: number;
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+}
+
+/** Moves the boxes of `active` that end before `left` (plus the tolerance) out of it, in place. */
+function dropEnded(boxes: readonly TouchBox[], active: number[], left: number): void {
+  let kept = 0;
+  for (const j of active) {
+    if (boxes[j]!.right - left > OVERLAP_TOLERANCE) active[kept++] = j;
+  }
+  active.length = kept;
+}
+
+/** The sweep along x over the boxes of one space (`order`: their indices), calling `visit` for each pair that meets. */
+function sweepSpace(
+  boxes: readonly TouchBox[],
+  order: readonly number[],
+  visit: (i: number, j: number) => void,
+): void {
+  const active: number[] = [];
+  for (const i of [...order].sort((x, y) => boxes[x]!.left - boxes[y]!.left)) {
+    const box = boxes[i]!;
+    dropEnded(boxes, active, box.left);
+    for (const j of active) {
+      const other = boxes[j]!;
+      const height = Math.min(other.bottom, box.bottom) - Math.max(other.top, box.top);
+      if (height > OVERLAP_TOLERANCE) visit(j, i);
+    }
+    active.push(i);
+  }
+}
+
+/**
+ * Calls `visit(i, j)` once for every pair of boxes of the same space whose intersection is more than 1 px on each
+ * axis (the audit's tolerance). A sweep per space (sort along x, then an active list), never a loop over every pair,
+ * so the cost follows the boxes that meet. Reused by the other audits that compare touch areas (decision 6 of #1998).
+ */
+export function sweepTouchBoxes(
+  boxes: readonly TouchBox[],
+  visit: (i: number, j: number) => void,
+): void {
+  const bySpace = new Map<string | null, number[]>();
+  boxes.forEach((box, i) => {
+    const list = bySpace.get(box.space);
+    if (list) list.push(i);
+    else bySpace.set(box.space, [i]);
+  });
+  for (const order of bySpace.values()) sweepSpace(boxes, order, visit);
+}
+
+/** An annotation with the resolved accessibility the audit reads from it. */
+interface Audited {
+  readonly annotation: Annotation;
+  readonly resolved: ResolvedType;
+}
+
+/** A participant of the overlap check: an interactive annotation of a marking with a touch area. */
+interface TouchParticipant extends TouchBox {
+  readonly annotationId: string;
+  readonly markingId: string;
+  /** Image pixels per component unit of the space. */
+  readonly density: number;
+}
+
+/** A side of an area grown to `minPx` around its center (never shrunk). */
+function grownSide(start: number, size: number, minPx: number): [number, number] {
+  const side = Math.max(size, minPx);
+  const center = start + size / 2;
+  return [center - side / 2, center + side / 2];
+}
+
+/** The box of a touch area: the rectangle for `visual`, the rectangle grown to the minimum for `expanded`. */
+function touchBox(
+  marking: { readonly containerId: string | null; readonly rect: Rect },
+  area: SpecTouchTarget,
+  density: number,
+): TouchBox {
+  const r = marking.rect;
+  const kind = area.mode === 'expanded' ? 'expanded' : 'visual';
+  const [left, right] =
+    kind === 'expanded'
+      ? grownSide(r.x, r.width, toPixels(area.width, density))
+      : [r.x, r.x + r.width];
+  const [top, bottom] =
+    kind === 'expanded'
+      ? grownSide(r.y, r.height, toPixels(area.height, density))
+      : [r.y, r.y + r.height];
+  return { space: marking.containerId, kind, left, top, right, bottom };
+}
+
+function touchParticipants(p: Project, audited: readonly Audited[]): TouchParticipant[] {
+  const markings = projectIndex(p).markings;
+  const out: TouchParticipant[] = [];
+  for (const { annotation, resolved } of audited) {
+    // An arrow is not in `markings`: it has no rectangle.
+    const marking = markings.get(annotation.markingId);
+    if (resolved.area === null || marking === undefined) continue;
+    const density = effectiveDensity(p, marking.containerId);
+    out.push({
+      ...touchBox(marking, resolved.area, density),
+      annotationId: annotation.id,
+      markingId: marking.id,
+      density,
+    });
+  }
+  return out;
+}
+
+/** `ancestor` is above `id` in the `parentId` chain. */
+function isAncestor(
+  markings: ReadonlyMap<string, { readonly parentId: string | null }>,
+  ancestor: string,
+  id: string,
+): boolean {
+  for (let at = markings.get(id)?.parentId; at != null; at = markings.get(at)?.parentId) {
+    if (at === ancestor) return true;
+  }
+  return false;
+}
+
+const roundPx = (n: number): number => Number(n.toFixed(6));
+
+/** The finding of `a` for its overlap with `b`; the intersection in image pixels and in component units. */
+function overlapFinding(
+  a: TouchParticipant,
+  b: TouchParticipant,
+): TouchTargetOverlapFinding {
+  const overlapPx = {
+    width: roundPx(Math.min(a.right, b.right) - Math.max(a.left, b.left)),
+    height: roundPx(Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)),
+  };
+  return {
+    code: 'touch-target-overlap',
+    annotationId: a.annotationId,
+    markingId: a.markingId,
+    other: { annotationId: b.annotationId, markingId: b.markingId },
+    overlap: {
+      width: roundPx(overlapPx.width / a.density),
+      height: roundPx(overlapPx.height / a.density),
+    },
+    overlapPx,
+    density: a.density,
+  };
+}
+
+/**
+ * The overlap findings by annotation: for each pair of participants on different markings in the same space,
+ * neither inside the other, with at least one `expanded`, one finding for each side. In an annotation they come in
+ * the project order of the other marking, then of the other annotation.
+ */
+function touchOverlaps(
+  p: Project,
+  participants: readonly TouchParticipant[],
+): Map<string, TouchTargetOverlapFinding[]> {
+  const markings = projectIndex(p).markings;
+  const order = new Map(p.markings.map((m, i) => [m.id, i] as const));
+  const found = new Map<
+    string,
+    { at: [number, number]; finding: TouchTargetOverlapFinding }[]
+  >();
+  const add = (side: number, other: number) => {
+    const a = participants[side]!;
+    const b = participants[other]!;
+    const entry = {
+      at: [order.get(b.markingId) ?? 0, other] as [number, number],
+      finding: overlapFinding(a, b),
+    };
+    const list = found.get(a.annotationId);
+    if (list) list.push(entry);
+    else found.set(a.annotationId, [entry]);
+  };
+  sweepTouchBoxes(participants, (i, j) => {
+    const a = participants[i]!;
+    const b = participants[j]!;
+    if (a.markingId === b.markingId) return;
+    if (a.kind === 'visual' && b.kind === 'visual') return;
+    if (isAncestor(markings, a.markingId, b.markingId)) return;
+    if (isAncestor(markings, b.markingId, a.markingId)) return;
+    add(i, j);
+    add(j, i);
+  });
+  return new Map(
+    [...found].map(([id, list]) => [
+      id,
+      list.sort((x, y) => x.at[0] - y.at[0] || x.at[1] - y.at[1]).map((e) => e.finding),
+    ]),
+  );
+}
+
 function computeAudit(p: Project, ctx: AuditContext): AccessibilityAudit {
   const out = new Map<string, AnnotationAudit>();
   const arrows = projectIndex(p).arrows;
-  for (const a of p.annotations) {
-    const resolved = resolvedOf(p, a);
+  const audited: Audited[] = [];
+  for (const annotation of p.annotations) {
+    const resolved = resolvedOf(p, annotation);
     if (!resolved) continue;
     // An arrow has no rectangle: only the label is audited, never the touch.
-    const own = arrows.has(a.markingId) ? { ...resolved, touch: null } : resolved;
-    const entry = auditAnnotation(p, a, own, ctx);
-    if (entry) out.set(a.id, entry);
+    audited.push({
+      annotation,
+      resolved: arrows.has(annotation.markingId)
+        ? { ...resolved, touch: null, area: null }
+        : resolved,
+    });
+  }
+  const overlaps = touchOverlaps(p, touchParticipants(p, audited));
+  for (const { annotation, resolved } of audited) {
+    const entry = auditAnnotation(
+      p,
+      annotation,
+      resolved,
+      ctx,
+      overlaps.get(annotation.id) ?? [],
+    );
+    if (entry) out.set(annotation.id, entry);
   }
   return out;
 }

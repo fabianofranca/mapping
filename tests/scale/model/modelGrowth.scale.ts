@@ -79,20 +79,36 @@ describe('accessibility growth (n = 2,500, 4n = 10,000 markings)', () => {
   // `accessibilityAudit` takes ~1.1 ms at 1,250 markings: the same short-sample mechanism as `perspectiveView` (stage #1968), where one
   // preemption of the scheduler on a shared runner weighs the most (8.5-8.9× under saturation, #2296). Its center does not depend on n (4.1-4.6×
   // at 1,250, 2,500 and 5,000), so the case measures at 2,500 and 10,000, where the run at n takes 2.4-2.9 ms and the ratio is 4.0-5.0× idle (stage #2300).
-  it('audits accessibility (labels, parts and touch targets)', GROWTH_OPTIONS, () => {
-    expectLinearGrowth('accessibilityAudit', {
-      build: (markings) => withAccessibility(build(markings)),
-      n: 2500,
-      // The index of the new version is already measured in the index case: here only the audit.
-      prepare: projectIndex,
-      run: (p) => {
-        const audit = accessibilityAudit(p);
-        if (audit.size === 0) throw new Error('the audit must find something');
-        return audit;
-      },
-      runs: 41,
-    });
-  });
+  it(
+    'audits accessibility (labels, parts, touch targets and their overlaps)',
+    GROWTH_OPTIONS,
+    () => {
+      expectLinearGrowth('accessibilityAudit', {
+        build: (markings) => {
+          const p = withAccessibility(build(markings));
+          // The fixture reports the three kinds of finding (a copy: the memo of `p` stays empty for the rounds).
+          const codes = new Set(
+            [...accessibilityAudit({ ...p }).values()].flatMap((a) =>
+              a.findings.map((f) => f.code),
+            ),
+          );
+          if (!codes.has('touch-target-small') || !codes.has('touch-target-overlap')) {
+            throw new Error('the audit must find small touch areas and overlaps');
+          }
+          return p;
+        },
+        n: 2500,
+        // The index of the new version is already measured in the index case: here only the audit.
+        prepare: projectIndex,
+        run: (p) => {
+          const audit = accessibilityAudit(p);
+          if (audit.size === 0) throw new Error('the audit must find something');
+          return audit;
+        },
+        runs: 41,
+      });
+    },
+  );
 });
 
 describe('perspective growth (n = 2,500, 4n = 10,000 markings)', () => {

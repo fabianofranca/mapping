@@ -435,16 +435,30 @@ function sameSize(
   return a.width === b.width && a.height === b.height;
 }
 
-function sameFinding(a: AuditFinding, b: AuditFinding): boolean {
-  return (
-    a.code === b.code &&
-    a.annotationId === b.annotationId &&
-    a.markingId === b.markingId &&
-    a.density === b.density &&
-    sameSize(a.actual, b.actual) &&
-    sameSize(a.min, b.min) &&
-    sameSize(a.minPx, b.minPx)
-  );
+/** The two findings say the same thing: the same code, annotation, marking, numbers and (an overlap) neighbor. */
+export function sameFinding(a: AuditFinding, b: AuditFinding): boolean {
+  if (
+    a.code !== b.code ||
+    a.annotationId !== b.annotationId ||
+    a.markingId !== b.markingId ||
+    a.density !== b.density
+  ) {
+    return false;
+  }
+  if (a.code === 'touch-target-overlap' && b.code === 'touch-target-overlap') {
+    return (
+      a.other.annotationId === b.other.annotationId &&
+      a.other.markingId === b.other.markingId &&
+      sameSize(a.overlap, b.overlap) &&
+      sameSize(a.overlapPx, b.overlapPx)
+    );
+  }
+  if (a.code === 'touch-target-small' && b.code === 'touch-target-small') {
+    return (
+      sameSize(a.actual, b.actual) && sameSize(a.min, b.min) && sameSize(a.minPx, b.minPx)
+    );
+  }
+  return false;
 }
 
 function sameFindings(

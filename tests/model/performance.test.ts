@@ -227,7 +227,8 @@ describe('large project with typed annotations and references', () => {
       const found = [...audit.values()];
       // The fixture has something to report in both kinds, in density 1 and in the 3x containers.
       expect(found.some((a) => a.issues.length > 0)).toBe(true);
-      expect(found.some((a) => a.findings.length > 0)).toBe(true);
+      const codes = new Set(found.flatMap((a) => a.findings.map((f) => f.code)));
+      expect(codes).toEqual(new Set(['touch-target-small', 'touch-target-overlap']));
       const ms = medianMs((p) => {
         projectIssues(p);
         return accessibilityAudit(p);

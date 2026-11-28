@@ -52,8 +52,8 @@ export const a11yCatalog: ComponentCatalog = (() => {
 })();
 
 /** The specialization applied to an empty project, with the container `I1` (1080 x 2400 px). */
-export function a11yWorld(density = 1): Project {
-  let p = applySpecialization(emptyProject(), a11ySpec, { newId: idGen('AY') });
+export function a11yWorld(density = 1, spec: Spec = a11ySpec): Project {
+  let p = applySpecialization(emptyProject(), spec, { newId: idGen('AY') });
   p = addContainer(p, { id: 'I1', file: 'images/screen.png', width: 1080, height: 2400 });
   return density === 1 ? p : setContainerDensity(p, 'I1', density);
 }

@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   accessibilityAudit,
+  addAnnotation,
   addContainer,
   addTableRow,
   addTypedAnnotation,
@@ -12,6 +13,7 @@ import {
   createArrow,
   createMarking,
   densityText,
+  moveContainer,
   parseSpec,
   projectIssues,
   setContainerDensity,
@@ -21,6 +23,7 @@ import {
   type Project,
   type Rect,
   type Spec,
+  type TouchTargetSmallFinding,
   typeAccessibility,
 } from '../../src/model';
 import { emptyProject } from './fixtures';
@@ -208,6 +211,10 @@ const issuesOf = (p: Project, id: string, ctx?: { drawings?: ComponentDrawings }
   accessibilityAudit(p, ctx).get(id)?.issues ?? [];
 const findingsOf = (p: Project, id: string) =>
   accessibilityAudit(p).get(id)?.findings ?? [];
+const smallOf = (p: Project, id: string) =>
+  findingsOf(p, id).filter(
+    (f): f is TouchTargetSmallFinding => f.code === 'touch-target-small',
+  );
 
 describe('touch-target-small', () => {
   it('density 1: a marking below the root minimum warns, with units, pixels and density', () => {
@@ -227,7 +234,7 @@ describe('touch-target-small', () => {
 
   it('density 3: 108x120 px is 36x40 units; the minimum 44x44 is 132x132 px', () => {
     const p = put(world(specOf(), 3), 'button', 'A', rect(108, 120), { label: 'Ok' });
-    const [finding] = findingsOf(p, 'A');
+    const [finding] = smallOf(p, 'A');
     expect(finding?.actual).toEqual({ width: 36, height: 40 });
     expect(finding?.minPx).toEqual({ width: 132, height: 132 });
     expect(finding?.density).toBe(3);
@@ -242,7 +249,7 @@ describe('touch-target-small', () => {
 
   it('the type touch target replaces the root one', () => {
     const p = put(world(), 'own', 'A', rect(46, 46));
-    expect(findingsOf(p, 'A')[0]?.min).toEqual({ width: 48, height: 48 });
+    expect(smallOf(p, 'A')[0]?.min).toEqual({ width: 48, height: 48 });
   });
 
   it('expanded mode, touchTarget false and a non-interactive role do not warn', () => {
@@ -288,9 +295,216 @@ describe('touch-target-small', () => {
     expect(densityText(1.5)).toBe('1.5');
     expect(densityText(2.6250001)).toBe('2.625');
     const p = put(world(specOf(), 2.625), 'button', 'A', rect(10, 10), { label: 'Ok' });
-    const [finding] = findingsOf(p, 'A');
+    const [finding] = smallOf(p, 'A');
     expect(finding?.density).toBe(2.625);
     expect(finding?.minPx).toEqual({ width: 116, height: 116 });
+  });
+});
+
+// Stage #1998 (TA2, decisions 2 to 6): `touch-target-overlap`, two neighbors whose touch areas overlap.
+describe('touch-target-overlap', () => {
+  /** `wide` (and any `expanded` type) as the audit sees it: grown to 48 around the center. */
+  const wideArrows = (s: Json) => {
+    const wide = s.layers[0].annotationTypes.find((t: Json) => t.id === 'wide');
+    wide.appliesTo = ['marking', 'arrow'];
+  };
+  const at = (x: number, y: number, size = 40): Rect => ({
+    x,
+    y,
+    width: size,
+    height: size,
+  });
+  const overlapsOf = (p: Project, id: string) =>
+    findingsOf(p, id).filter((f) => f.code === 'touch-target-overlap');
+  const pair = (gap: number, dy = 0): Project => {
+    const p = put(world(), 'wide', 'A', at(0, 0));
+    return put(p, 'wide', 'B', at(40 + gap, dy));
+  };
+
+  it('two expanded 40 x 40 neighbors 4 apart give one finding each, naming the other', () => {
+    const p = pair(4);
+    expect(findingsOf(p, 'A')).toEqual([
+      {
+        code: 'touch-target-overlap',
+        annotationId: 'A',
+        markingId: 'M_A',
+        other: { annotationId: 'B', markingId: 'M_B' },
+        overlap: { width: 4, height: 48 },
+        overlapPx: { width: 4, height: 48 },
+        density: 1,
+      },
+    ]);
+    expect(findingsOf(p, 'B')).toEqual([
+      {
+        code: 'touch-target-overlap',
+        annotationId: 'B',
+        markingId: 'M_B',
+        other: { annotationId: 'A', markingId: 'M_A' },
+        overlap: { width: 4, height: 48 },
+        overlapPx: { width: 4, height: 48 },
+        density: 1,
+      },
+    ]);
+  });
+
+  it('8 apart gives nothing; 5 apart (3 px) gives the finding', () => {
+    expect(accessibilityAudit(pair(8)).size).toBe(0);
+    expect(overlapsOf(pair(5), 'A')[0]?.overlap).toEqual({ width: 3, height: 48 });
+  });
+
+  it('an intersection of exactly 1 px on an axis gives nothing (the 1 px tolerance)', () => {
+    expect(accessibilityAudit(pair(7)).size).toBe(0);
+    expect(overlapsOf(pair(6), 'A')).toHaveLength(1);
+    // 1 px on the y axis, the full width on x.
+    expect(accessibilityAudit(pair(-40, 47)).size).toBe(0);
+    expect(overlapsOf(pair(-40, 46), 'A')).toHaveLength(1);
+  });
+
+  it('an expanded next to a visual participant overlaps the visual rectangle', () => {
+    let p = put(world(), 'wide', 'A', at(0, 0));
+    p = put(p, 'button', 'B', at(42, 0, 50), { label: 'Ok' });
+    expect(overlapsOf(p, 'A')[0]).toMatchObject({
+      other: { annotationId: 'B', markingId: 'M_B' },
+      overlap: { width: 2, height: 44 },
+    });
+    expect(overlapsOf(p, 'B')[0]).toMatchObject({
+      other: { annotationId: 'A', markingId: 'M_A' },
+      overlap: { width: 2, height: 44 },
+    });
+  });
+
+  it('two visual participants that overlap give nothing', () => {
+    let p = put(world(), 'button', 'A', at(0, 0, 60), { label: 'Ok' });
+    p = put(p, 'button', 'B', at(40, 0, 60), { label: 'Ok' });
+    expect(accessibilityAudit(p).size).toBe(0);
+  });
+
+  it('parent and child give nothing; different parents in the same space give the finding', () => {
+    let p = put(world(), 'wide', 'A', at(0, 0, 200));
+    p = put(p, 'wide', 'B', at(10, 10));
+    expect(p.markings.find((m) => m.id === 'M_B')?.parentId).toBe('M_A');
+    expect(accessibilityAudit(p).size).toBe(0);
+
+    let q = createMarking(world(), {
+      id: 'P1',
+      containerId: 'I1',
+      rect: { x: 0, y: 0, width: 100, height: 100 },
+      name: 'P1',
+    });
+    q = createMarking(q, {
+      id: 'P2',
+      containerId: 'I1',
+      rect: { x: 102, y: 0, width: 100, height: 100 },
+      name: 'P2',
+    });
+    q = put(q, 'wide', 'A', at(60, 10));
+    q = put(q, 'wide', 'B', at(104, 10));
+    expect(q.markings.find((m) => m.id === 'M_A')?.parentId).toBe('P1');
+    expect(q.markings.find((m) => m.id === 'M_B')?.parentId).toBe('P2');
+    expect(overlapsOf(q, 'A')).toHaveLength(1);
+  });
+
+  it('different spaces give nothing: two containers, or a container and the canvas', () => {
+    let p = addContainer(world(), { id: 'I2', file: 'b.png', ...SIZE });
+    p = put(p, 'wide', 'A', at(0, 0));
+    p = createMarking(p, { id: 'M_B', containerId: 'I2', rect: at(44, 0), name: 'B' });
+    p = addTypedAnnotation(p, {
+      id: 'B',
+      markingId: 'M_B',
+      layerId: layerOf(p, 'a11y', 'ui'),
+      type: { specId: 'a11y', typeId: 'wide' },
+    });
+    expect(accessibilityAudit(p).size).toBe(0);
+
+    // The container sits far from the canvas origin, so the canvas marking is not adopted by it.
+    let q = moveContainer(put(world(), 'wide', 'A', at(0, 0)), 'I1', 5000, 5000);
+    q = createMarking(q, { id: 'M_C', containerId: null, rect: at(44, 0), name: 'C' });
+    q = addTypedAnnotation(q, {
+      id: 'C',
+      markingId: 'M_C',
+      layerId: layerOf(q, 'a11y', 'ui'),
+      type: { specId: 'a11y', typeId: 'wide' },
+    });
+    expect(q.markings.find((m) => m.id === 'M_C')?.containerId).toBeNull();
+    expect(accessibilityAudit(q).size).toBe(0);
+  });
+
+  it('two canvas markings are in the same space and overlap', () => {
+    let p = moveContainer(world(), 'I1', 5000, 5000);
+    for (const [id, x] of [
+      ['A', 0],
+      ['B', 44],
+    ] as const) {
+      p = createMarking(p, {
+        id: `M_${id}`,
+        containerId: null,
+        rect: at(x, 0),
+        name: id,
+      });
+      p = addTypedAnnotation(p, {
+        id,
+        markingId: `M_${id}`,
+        layerId: layerOf(p, 'a11y', 'ui'),
+        type: { specId: 'a11y', typeId: 'wide' },
+      });
+    }
+    expect(p.markings.every((m) => m.containerId === null)).toBe(true);
+    expect(overlapsOf(p, 'A')).toHaveLength(1);
+  });
+
+  it('an arrow annotation, touchTarget false, a non-interactive role and a free annotation give nothing', () => {
+    let p = world(specOf(wideArrows));
+    p = put(p, 'wide', 'A', at(0, 0));
+    p = createMarking(p, { id: 'T', containerId: 'I1', rect: at(300, 300), name: 'T' });
+    p = createArrow(p, { id: 'AR', from: 'M_A', to: 'T' });
+    p = addTypedAnnotation(p, {
+      id: 'ARA',
+      markingId: 'AR',
+      layerId: layerOf(p, 'a11y', 'ui'),
+      type: { specId: 'a11y', typeId: 'wide' },
+    });
+    p = put(p, 'off', 'B', at(44, 0));
+    p = put(p, 'image', 'C', at(0, 44), { label: 'x' });
+    p = createMarking(p, { id: 'M_F', containerId: 'I1', rect: at(44, 44), name: 'F' });
+    const free = p.layers.find((l) => !l.spec);
+    if (free === undefined) throw new Error('no free layer');
+    p = addAnnotation(p, { id: 'F', markingId: 'M_F', layerId: free.id });
+    expect(accessibilityAudit(p).size).toBe(0);
+  });
+
+  it('density 3 converts the minimum and the overlap like touch-target-small', () => {
+    // 100 px = 33.3 units, grown to 48 units = 144 px; 8 px apart.
+    let p = world(specOf(), 3);
+    p = put(p, 'wide', 'A', at(0, 0, 100));
+    p = put(p, 'wide', 'B', at(108, 0, 100));
+    const [finding] = overlapsOf(p, 'A');
+    expect(finding).toMatchObject({
+      overlapPx: { width: 36, height: 144 },
+      overlap: { width: 12, height: 48 },
+      density: 3,
+    });
+  });
+
+  it('keeps touch-target-small first, then the overlaps in the project order of the other marking', () => {
+    // E (right) is created before D (left), so A names E first.
+    let p = put(world(), 'wide', 'E', at(225, 0, 30));
+    p = put(p, 'wide', 'D', at(155, 0, 30));
+    p = put(p, 'button', 'A', at(190, 0, 40), { label: 'Ok' });
+    const codes = findingsOf(p, 'A').map((f) =>
+      f.code === 'touch-target-overlap' ? `overlap:${f.other.annotationId}` : f.code,
+    );
+    expect(codes).toEqual(['touch-target-small', 'overlap:E', 'overlap:D']);
+  });
+
+  it('the overlap is not an issue: it does not make the annotation incomplete', () => {
+    const p = pair(4);
+    expect(accessibilityAudit(p).get('A')?.issues).toEqual([]);
+    expect(projectIssues(p).has('A')).toBe(false);
+  });
+
+  it('the audit stays the same object for the same project', () => {
+    const p = pair(4);
+    expect(accessibilityAudit(p)).toBe(accessibilityAudit(p));
   });
 });
 
