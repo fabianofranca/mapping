@@ -218,7 +218,7 @@ describe('large project with typed annotations and references', () => {
   );
 
   budgetIt(
-    `accessibility audit + pending items in under ${FRAME_BUDGET_MS} ms (half of the markings in a 3x container)`,
+    `accessibility audit + pending items + WCAG 2.5.8 spacing in under ${FRAME_BUDGET_MS} ms (half of the markings in a 3x container)`,
     BUDGET_OPTIONS,
     () => {
       const accessible = withAccessibility(project);
@@ -229,6 +229,12 @@ describe('large project with typed annotations and references', () => {
       expect(found.some((a) => a.issues.length > 0)).toBe(true);
       const codes = new Set(found.flatMap((a) => a.findings.map((f) => f.code)));
       expect(codes).toEqual(new Set(['touch-target-small', 'touch-target-overlap']));
+      // Both flavors of the size warning: the WCAG 2.5.8 circle (`spacing`) and the plain minimum.
+      const small = found
+        .flatMap((a) => a.findings)
+        .filter((f) => f.code === 'touch-target-small');
+      expect(small.some((f) => f.spacing !== undefined)).toBe(true);
+      expect(small.some((f) => f.spacing === undefined)).toBe(true);
       const ms = medianMs((p) => {
         projectIssues(p);
         return accessibilityAudit(p);
