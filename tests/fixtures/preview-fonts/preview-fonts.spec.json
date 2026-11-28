@@ -1,0 +1,23 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 25,
+  "id": "preview-fonts",
+  "name": "Preview fonts",
+  "version": 1,
+  "fonts": [{ "family": "Roboto", "file": "fonts/Roboto-Medium.woff", "weight": 500 }],
+  "layers": [
+    {
+      "id": "tags",
+      "name": "Tags",
+      "color": "#6750A4",
+      "annotationTypes": [
+        {
+          "id": "tag",
+          "name": "Tag",
+          "component": "components/tag.json",
+          "fields": [{ "key": "label", "type": "string", "default": "Tag" }]
+        }
+      ]
+    }
+  ]
+}
