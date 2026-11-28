@@ -123,4 +123,11 @@ describe('example library drawing-fidelity', () => {
     const { root } = draw('signal', { size: 'm' });
     expect(root.children.map((c) => c.name)).toEqual(['base', 'signal']);
   });
+
+  it('gives the Signal icon an outer shadow and an inner one', () => {
+    const { root, warnings } = draw('signal', { size: 'm' });
+    expect(warnings).toEqual([]);
+    const icon = root.children[1] as unknown as { effects: { inner?: boolean }[] };
+    expect(icon.effects.map((e) => e.inner === true)).toEqual([false, true]);
+  });
 });

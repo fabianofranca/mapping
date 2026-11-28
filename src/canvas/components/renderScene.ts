@@ -178,14 +178,14 @@ class Renderer {
     // (e.g. `filter` on a group that wraps the shape) passes the shadow to the first descendant
     // shape.
     const shadows = this.outerShadows([...pendingShadows, ...node.effects]);
-    const boxed =
-      node.type === 'frame' || node.type === 'rect' || node.type === 'ellipse';
-    const innerShadows = boxed ? node.effects.filter((s) => s.inner) : [];
-    // An inner shadow that no frame, rect or ellipse can draw (a scene from another source, or one
-    // handed down by a group): ignored, with a warning.
+    const innerShadows = drawsInnerShadow(node)
+      ? node.effects.filter((s) => s.inner)
+      : [];
+    // An inner shadow that no frame, rect, ellipse, path or icon can draw (a scene from another
+    // source, or one handed down by a group): ignored, with a warning.
     if (
       pendingShadows.some((s) => s.inner) ||
-      (!boxed && node.effects.some((s) => s.inner))
+      (!drawsInnerShadow(node) && node.effects.some((s) => s.inner))
     )
       this.warn('inner-shadow');
 
@@ -224,7 +224,9 @@ class Renderer {
       });
     }
 
-    const shapes = this.shapesOf(node, innerShadows);
+    // An icon's inner shadow lies over its glyphs: its shapes come after the children.
+    const overChildren = node.type === 'group';
+    const shapes = this.shapesOf(node, overChildren ? [] : innerShadows);
     // The invisible clickable area of a transparent frame does not paint, and the inner shadow's
     // shapes only carry their own shadow: neither owns the outer shadow.
     const shadowOwner =
@@ -273,6 +275,12 @@ class Renderer {
       }
       if (shadows.length > 0 && !shadowOwner && node.children.length === 0) {
         this.warn('empty-group-shadow');
+      }
+    }
+    if (overChildren) {
+      for (const shape of innerShadowShapes(node, innerShadows)) {
+        shape.setAttr(SCENE_ID_ATTR, node.id);
+        container.add(shape);
       }
     }
 
@@ -382,6 +390,7 @@ class Renderer {
           const shape = new KonvaPath({ data: node.d, fillRule: node.fillRule });
           shapes.push(...this.fillShape(shape, paint, box));
         }
+        shapes.push(...innerShadowShapes(node, innerShadows));
         if (node.stroke) {
           const shape = new KonvaPath({ data: node.d });
           this.applyStroke(shape, node.stroke, 'path');
@@ -1289,19 +1298,121 @@ function castShadow(
  * stays on top; they go above the fills and below the stroke and the children.
  */
 function innerShadowShapes(node: SceneNode, shadows: readonly Shadow[]): Konva.Shape[] {
-  return [...shadows]
-    .reverse()
-    .filter((shadow) => !isInvisibleShadow(shadow))
-    .map((shadow) => {
-      const shape = new KonvaShape({
-        width: node.width,
-        height: node.height,
-        listening: false,
-        sceneFunc: (ctx) => castInnerShadow(ctx._context, node, shadow),
-      });
-      shape.setAttr(INNER_SHADOW_ATTR, true);
-      return shape;
+  const visible = shadows.filter((shadow) => !isInvisibleShadow(shadow));
+  if (visible.length === 0) return [];
+  // The glyphs of a `path` or an icon are read once; each draw only replays them.
+  const glyphs = glyphOutline(node);
+  return [...visible].reverse().map((shadow) => {
+    const shape = new KonvaShape({
+      width: node.width,
+      height: node.height,
+      listening: false,
+      sceneFunc: (ctx) =>
+        glyphs
+          ? castGlyphInnerShadow(ctx._context, node, shadow, glyphs)
+          : castInnerShadow(ctx._context, node, shadow),
     });
+    shape.setAttr(INNER_SHADOW_ATTR, true);
+    return shape;
+  });
+}
+
+/** Does this node draw an inner shadow: frame, rect, ellipse, path, or an icon (a group of paths)? */
+function drawsInnerShadow(node: SceneNode): boolean {
+  switch (node.type) {
+    case 'frame':
+    case 'rect':
+    case 'ellipse':
+    case 'path':
+      return true;
+    case 'group':
+      return node.children.some((c) => c.type === 'path');
+    default:
+      return false;
+  }
+}
+
+/** One glyph of a `path` or an icon: its segments, the matrix to the node's space and its fill rule. */
+interface Glyph {
+  readonly segments: ReturnType<typeof KonvaPath.parsePathData>;
+  readonly transform: Matrix;
+  readonly fillRule: 'nonzero' | 'evenodd';
+}
+
+/** The glyphs a `path` (itself) or an icon group (its path children) draws; none for other nodes. */
+function glyphOutline(node: SceneNode): Glyph[] | undefined {
+  const glyph = (p: SceneNode & { type: 'path' }, transform: Matrix): Glyph => ({
+    segments: KonvaPath.parsePathData(p.d),
+    transform,
+    fillRule: p.fillRule,
+  });
+  if (node.type === 'path') return [glyph(node, [1, 0, 0, 1, 0, 0])];
+  if (node.type !== 'group') return undefined;
+  const glyphs: Glyph[] = [];
+  for (const child of node.children)
+    if (child.type === 'path') glyphs.push(glyph(child, nodeMatrix(child)));
+  return glyphs;
+}
+
+function traceGlyph(native: CanvasRenderingContext2D, glyph: Glyph): void {
+  iconClipPath(native, glyph.segments, glyph.transform);
+}
+
+/**
+ * The inner shadow of a `path` or an icon: for each glyph, clips to it (with its own fill rule) and
+ * draws, far from the screen, a ring (a big rectangle with every glyph as the hole) whose blurred
+ * shadow comes back by the offset. The union of the glyphs is the hole; `spread` does not apply.
+ */
+function castGlyphInnerShadow(
+  native: CanvasRenderingContext2D,
+  node: SceneNode,
+  shadow: Shadow,
+  glyphs: readonly Glyph[],
+): void {
+  const reachBox = Math.max(node.width, node.height);
+  for (const glyph of glyphs) {
+    native.save();
+    native.beginPath();
+    traceGlyph(native, glyph);
+    native.clip(glyph.fillRule);
+    const margin = aimRing(native, node, shadow);
+    native.beginPath();
+    for (const hole of glyphs) traceGlyph(native, hole);
+    const grow = margin + reachBox;
+    native.rect(-grow, -grow, node.width + 2 * grow, node.height + 2 * grow);
+    native.fillStyle = '#000000';
+    native.fill('evenodd');
+    native.restore();
+  }
+}
+
+/**
+ * Points the context's shadow at the ring: the shadow's own settings, and the ring moved far to the
+ * left so only its shadow (brought back by the offset) shows. Returns the margin the ring needs.
+ */
+function aimRing(
+  native: CanvasRenderingContext2D,
+  node: SceneNode,
+  shadow: Shadow,
+): number {
+  const m = native.getTransform();
+  const sx = Math.hypot(m.a, m.b) || 1;
+  const sy = Math.hypot(m.c, m.d) || 1;
+  const margin =
+    2 * shadow.blur + Math.abs(shadow.offset.x) + Math.abs(shadow.offset.y) + 4;
+  const reach =
+    native.canvas.width +
+    native.canvas.height +
+    Math.hypot(node.width * sx, node.height * sy) +
+    2 * shadow.blur * Math.max(sx, sy) +
+    1000;
+  const away = reach / sx;
+  native.shadowColor = shadow.color;
+  native.shadowBlur = shadow.blur * Math.min(sx, sy);
+  native.shadowOffsetX = shadow.offset.x * sx + away * m.a;
+  native.shadowOffsetY = shadow.offset.y * sy + away * m.b;
+  native.translate(-away, 0);
+  return margin;
 }
 
 /** The outline of a frame, rect or ellipse (`grow` > 0 enlarges it on every side), at the origin. */
@@ -1333,23 +1444,7 @@ function castInnerShadow(
   native.save();
   outlinePath(native, node, 0);
   native.clip();
-  const m = native.getTransform();
-  const sx = Math.hypot(m.a, m.b) || 1;
-  const sy = Math.hypot(m.c, m.d) || 1;
-  const margin =
-    2 * shadow.blur + Math.abs(shadow.offset.x) + Math.abs(shadow.offset.y) + 4;
-  const reach =
-    native.canvas.width +
-    native.canvas.height +
-    Math.hypot(node.width * sx, node.height * sy) +
-    2 * shadow.blur * Math.max(sx, sy) +
-    1000;
-  const away = reach / sx;
-  native.shadowColor = shadow.color;
-  native.shadowBlur = shadow.blur * Math.min(sx, sy);
-  native.shadowOffsetX = shadow.offset.x * sx + away * m.a;
-  native.shadowOffsetY = shadow.offset.y * sy + away * m.b;
-  native.translate(-away, 0);
+  const margin = aimRing(native, node, shadow);
   const holeW = node.width - 2 * spread;
   const holeH = node.height - 2 * spread;
   if (holeW > 0 && holeH > 0) {

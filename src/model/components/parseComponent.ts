@@ -882,7 +882,7 @@ function checkShadowItem(
   if ('inner' in value) checkInner(value.inner, join(path, 'inner'), nodeType, out);
 }
 
-/** `shadow.inner`: a literal boolean, `true` only on frame, rect and ellipse (v4). */
+/** `shadow.inner`: a literal boolean, `true` only on frame, rect, ellipse, path and icon (v4). */
 function checkInner(
   value: unknown,
   path: string,
@@ -891,10 +891,10 @@ function checkInner(
 ): void {
   if (typeof value !== 'boolean') return add(out, path, 'expected true or false');
   if (value && nodeType !== undefined && !INNER_SHADOW_TYPES.includes(nodeType))
-    add(out, path, 'only valid on frame, rect and ellipse');
+    add(out, path, 'only valid on frame, rect, ellipse, path and icon');
 }
 
-const INNER_SHADOW_TYPES: readonly string[] = ['frame', 'rect', 'ellipse'];
+const INNER_SHADOW_TYPES: readonly string[] = ['frame', 'rect', 'ellipse', 'path', 'icon'];
 
 /** `shadow`: one shadow or, in v4, a list of 1 to 4 (the version is checked separately). */
 function checkShadow(value: unknown, path: string, out: Ctx, nodeType?: string): void {

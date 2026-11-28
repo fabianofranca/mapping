@@ -834,10 +834,21 @@ function alignedShapes(node: SceneNode, shapes: Subpath[]): Subpath[] {
   return [{ points: points.map((p) => ({ x: p.x + d, y: p.y + d })), closed: true }];
 }
 
+/** A set of subpaths filled together under one fill rule (an inner shadow's outline or hole). */
+interface FillLayer {
+  readonly shapes: Subpath[];
+  readonly rule: 'nonzero' | 'evenodd';
+}
+
 /** The shadows the node draws: the list on frame, rect and ellipse; on other types, the first outer one (like the app). */
 function castingEffects(node: SceneNode): readonly Shadow[] {
   const boxed = node.type === 'frame' || node.type === 'rect' || node.type === 'ellipse';
-  return boxed ? node.effects : node.effects.filter((e) => !e.inner).slice(0, 1);
+  if (boxed) return node.effects;
+  const outer = node.effects.filter((e) => !e.inner).slice(0, 1);
+  // A path keeps every inner shadow (drawn above the fill, by `innerShadows`); it casts only the outer one.
+  return node.type === 'path'
+    ? [...outer, ...node.effects.filter((e) => e.inner)]
+    : outer;
 }
 
 /**
@@ -948,6 +959,7 @@ class Painter {
         }
       }
       for (const child of node.children) this.paint(child, matrix, alpha, childClip);
+      if (node.type === 'group') this.glyphInnerShadows(node, matrix, alpha, childClip);
     }
   }
 
@@ -994,6 +1006,7 @@ class Painter {
       (inner, shift, area) => {
         const moved = multiply(shift, matrix);
         for (const child of node.children) inner.paint(child, moved, alpha, area);
+        inner.glyphInnerShadows(node, moved, alpha, area);
       },
       clipPath.fillRule,
     );
@@ -1118,21 +1131,60 @@ class Painter {
   ): void {
     const boxed =
       node.type === 'frame' || node.type === 'rect' || node.type === 'ellipse';
-    if (!boxed || shapes.length === 0) return;
+    if ((!boxed && node.type !== 'path') || shapes.length === 0) return;
+    const rule = node.type === 'path' ? node.fillRule : 'nonzero';
     for (const shadow of [...node.effects].reverse()) {
       const color = parseColor(shadow.color);
       if (!shadow.inner || color === null) continue;
-      this.innerShadow(node, shapes, shadow, matrix, { color, alpha, clip });
+      // `spread` only applies to the boxed shapes; a path's hole is its own outline.
+      const hole = boxed ? spreadShapes(node, shapes, -(shadow.spread ?? 0)) : shapes;
+      this.innerShadow([{ shapes, rule }], [{ shapes: hole, rule }], shadow, matrix, {
+        color,
+        alpha,
+        clip,
+      });
     }
   }
 
   /**
-   * One inner shadow: the inverted mask of the hole (the shape shrunk by `spread`, shifted by the
-   * offset), blurred and multiplied by the shape's coverage.
+   * The inner shadows of an icon (a group with `path` children), over its glyphs: the hole and the
+   * inside are the union of the paths, each with its fill rule, in the group's space.
+   */
+  private glyphInnerShadows(
+    node: GroupNode,
+    matrix: Matrix,
+    alpha: number,
+    clip: PixelRect,
+  ): void {
+    if (!node.effects.some((e) => e.inner)) return;
+    const layers: FillLayer[] = node.children.flatMap((child) =>
+      child.type === 'path'
+        ? [
+            {
+              shapes: flattenPath(child.d).map((sub) => ({
+                ...sub,
+                points: sub.points.map((p) => apply(nodeMatrix(child), p)),
+              })),
+              rule: child.fillRule,
+            },
+          ]
+        : [],
+    );
+    if (layers.length === 0) return;
+    for (const shadow of [...node.effects].reverse()) {
+      const color = parseColor(shadow.color);
+      if (!shadow.inner || color === null) continue;
+      this.innerShadow(layers, layers, shadow, matrix, { color, alpha, clip });
+    }
+  }
+
+  /**
+   * One inner shadow: the inverted mask of the hole (the `holes` layers, shifted by the offset),
+   * blurred and multiplied by the coverage of the `layers`.
    */
   private innerShadow(
-    node: SceneNode,
-    shapes: Subpath[],
+    layers: readonly FillLayer[],
+    holes: readonly FillLayer[],
     shadow: Shadow,
     matrix: Matrix,
     paint: { color: Color; alpha: number; clip: PixelRect },
@@ -1143,14 +1195,16 @@ class Painter {
     const scale = this.scale * nodeScale;
     const sigma = (shadow.blur * scale) / 2;
     const margin = Math.ceil(sigma * 3) + 2;
-    const outline = shapes.map((sub) => this.toRaster(sub.points, matrix));
-    const hole = spreadShapes(node, shapes, -(shadow.spread ?? 0)).map((sub) =>
-      this.toRaster(
-        sub.points.map((p) => ({ x: p.x + shadow.offset.x, y: p.y + shadow.offset.y })),
-        matrix,
-      ),
-    );
-    const edge = bounds(outline.flat());
+    const toRaster = (layer: FillLayer, dx: number, dy: number): Polygon[] =>
+      layer.shapes.map((sub) =>
+        this.toRaster(
+          sub.points.map((p) => ({ x: p.x + dx, y: p.y + dy })),
+          matrix,
+        ),
+      );
+    const outline = layers.map((layer) => toRaster(layer, 0, 0));
+    const hole = holes.map((layer) => toRaster(layer, shadow.offset.x, shadow.offset.y));
+    const edge = bounds(outline.flat(2));
     const box: PixelRect = {
       x: Math.floor(edge.x) - margin,
       y: Math.floor(edge.y) - margin,
@@ -1159,22 +1213,29 @@ class Painter {
     };
     if (box.width * box.height > MAX_SHADOW_PIXELS) return;
     const whole: PixelRect = { x: 0, y: 0, width: box.width, height: box.height };
-    const coverage = (polygons: Polygon[]): Float32Array => {
-      const temp = createRaster(box.width, box.height);
-      fillPolygons(
-        temp,
-        polygons.map((poly) => poly.map((p) => ({ x: p.x - box.x, y: p.y - box.y }))),
-        'nonzero',
-        { rgb: [0, 0, 0], alpha: 1 },
-        whole,
-      );
+    // The union of the layers' coverage, each under its own fill rule.
+    const coverage = (
+      polygons: Polygon[][],
+      rules: readonly FillLayer[],
+    ): Float32Array => {
       const mask = new Float32Array(box.width * box.height);
-      for (let i = 0; i < mask.length; i++) mask[i] = temp.data[i * 4 + 3]! / 255;
+      polygons.forEach((polys, i) => {
+        const temp = createRaster(box.width, box.height);
+        fillPolygons(
+          temp,
+          polys.map((poly) => poly.map((p) => ({ x: p.x - box.x, y: p.y - box.y }))),
+          rules[i]!.rule,
+          { rgb: [0, 0, 0], alpha: 1 },
+          whole,
+        );
+        for (let k = 0; k < mask.length; k++)
+          mask[k] = Math.max(mask[k]!, temp.data[k * 4 + 3]! / 255);
+      });
       return mask;
     };
     compositeInnerShadow(
       this.raster,
-      { hole: coverage(hole), inside: coverage(outline) },
+      { hole: coverage(hole, holes), inside: coverage(outline, layers) },
       box,
       sigma,
       { rgb: paint.color.rgb, alpha: paint.color.alpha * paint.alpha },

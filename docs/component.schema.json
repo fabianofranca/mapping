@@ -2519,7 +2519,7 @@
         },
         "inner": {
           "type": "boolean",
-          "description": "true draws the shadow inside the shape, like CSS inset (formatVersion 4; only in frame, rect and ellipse; in another node type parseComponent refuses with 'only valid on frame, rect and ellipse', which the schema does not check)."
+          "description": "true draws the shadow inside the shape, like CSS inset (formatVersion 4; only in frame, rect, ellipse, path and icon; in another node type parseComponent refuses with 'only valid on frame, rect, ellipse, path and icon', which the schema does not check)."
         }
       },
       "description": "x, y, blur and spread accept a number { \"$token\": \"name\" } in formatVersion 4. The spread and inner exist only in formatVersion 4 (in a lower version parseComponent refuses with 'only allowed with formatVersion 4')."
