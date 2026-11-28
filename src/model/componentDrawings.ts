@@ -600,13 +600,14 @@ function overflowsOf(
   rectOf: ReadonlyMap<string, Rect>,
   density: number,
   hugOf: ReadonlyMap<string, HugAxes> = new Map(),
+  intended: ReadonlySet<string> = new Set(),
 ): Record<string, number> {
   const found: Record<string, number> = {};
   const shortfalls = instantiated.shortfalls ?? {};
   for (const w of instantiated.overflowWarnings ?? [])
     found[w] = (shortfalls[w] ?? 0) * density;
-  for (const slot of slots) {
-    if (slot.hidden) continue;
+  const checked = slots.filter((slot) => !slot.hidden && !intended.has(slot.id));
+  for (const slot of checked) {
     const rects = slot.children.flatMap((id) => rectOf.get(id) ?? []);
     const excess = rects.length > 0 ? slotExcess(slot.box, rects, hugOf.get(slot.id)) : 0;
     if (excess > 0) found[slotOverflowKey(slot.id)] = excess;
@@ -684,6 +685,15 @@ const NO_DEFS: readonly TypeSlot[] = [];
 function hugAxesOf(component: ComponentFile): ReadonlyMap<string, HugAxes> {
   return new Map(
     componentSlots(component).map((slot) => [slotKey(slot), slotHugAxes(slot)]),
+  );
+}
+
+/** The keys of the slots that say their child markings may go past the box (`childOverflow: "intended"`). */
+function intendedSlotsOf(component: ComponentFile): ReadonlySet<string> {
+  return new Set(
+    componentSlots(component)
+      .filter((slot) => slot.childOverflow === 'intended')
+      .map(slotKey),
   );
 }
 
@@ -1052,6 +1062,7 @@ function draw(input: DrawInput): Drawn {
           new Map(input.kids.map((k) => [k.id, k.rect])),
           space.density,
           hugAxesOf(mc.component),
+          intendedSlotsOf(mc.component),
         )
       : {};
   const drawing: ComponentDrawing = {

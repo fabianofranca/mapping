@@ -331,6 +331,8 @@ function proveCase(
       try {
         const { messages } = instantiate(component, drawCase.values, boxes[i] as Box, {
           measure: approximateMeasurer,
+          // The proof is the only reader of an intended overflow (decision 5 of #2913).
+          reportIntended: true,
           ...(tokens === undefined ? {} : { tokens }),
           ...(direction === 'rtl' ? { direction } : {}),
           ...(container === undefined ? {} : { container }),

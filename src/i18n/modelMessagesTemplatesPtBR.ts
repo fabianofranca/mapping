@@ -813,6 +813,7 @@ export const templatePtBR: {
   'model.engine.iconUnknown': 'ícone desconhecido: {name}',
   'model.engine.componentUnavailable': 'componente indisponível: {id}',
   'model.engine.contentTooBig': 'conteúdo maior que a caixa: {name}',
+  'model.engine.overflowIntended': 'estouro intencional: {name}',
   'model.engine.textTooBig': 'texto maior que a caixa: {name}',
   'model.engine.repeatLimited': 'repeat limitado a {limit} linhas: {name}',
   'model.engine.typeNoComponent': '{path}: tipo sem componente: {typeId}',

@@ -2866,6 +2866,10 @@
           "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
         },
+        "overflow": {
+          "description": "formatVersion 4: \"intended\" says that the node may go past its parent's box on purpose (a touch target bigger than its bar). The parent's fit checks are repeated without the flagged children, so only validate_library reports it (overflow intended: <frame>). Layout, measurement, hug, clip and the drawing do not change. Not valid on the root. In a lower formatVersion, parseComponent refuses.",
+          "const": "intended"
+        },
         "width": {
           "$ref": "#/$defs/expr_size"
         },
@@ -2958,6 +2962,10 @@
           "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
         },
+        "overflow": {
+          "description": "formatVersion 4: \"intended\" says that the node may go past its parent's box on purpose (a touch target bigger than its bar). The parent's fit checks are repeated without the flagged children, so only validate_library reports it (overflow intended: <frame>). Layout, measurement, hug, clip and the drawing do not change. Not valid on the root. In a lower formatVersion, parseComponent refuses.",
+          "const": "intended"
+        },
         "width": {
           "$ref": "#/$defs/expr_size"
         },
@@ -3044,6 +3052,10 @@
         "direction": {
           "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
+        },
+        "overflow": {
+          "description": "formatVersion 4: \"intended\" says that the node may go past its parent's box on purpose (a touch target bigger than its bar). The parent's fit checks are repeated without the flagged children, so only validate_library reports it (overflow intended: <frame>). Layout, measurement, hug, clip and the drawing do not change. Not valid on the root. In a lower formatVersion, parseComponent refuses.",
+          "const": "intended"
         },
         "width": {
           "$ref": "#/$defs/expr_size"
@@ -3132,6 +3144,10 @@
         "direction": {
           "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
+        },
+        "overflow": {
+          "description": "formatVersion 4: \"intended\" says that the node may go past its parent's box on purpose (a touch target bigger than its bar). The parent's fit checks are repeated without the flagged children, so only validate_library reports it (overflow intended: <frame>). Layout, measurement, hug, clip and the drawing do not change. Not valid on the root. In a lower formatVersion, parseComponent refuses.",
+          "const": "intended"
         },
         "width": {
           "$ref": "#/$defs/expr_size"
@@ -3252,6 +3268,10 @@
           "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
         },
+        "overflow": {
+          "description": "formatVersion 4: \"intended\" says that the node may go past its parent's box on purpose (a touch target bigger than its bar). The parent's fit checks are repeated without the flagged children, so only validate_library reports it (overflow intended: <frame>). Layout, measurement, hug, clip and the drawing do not change. Not valid on the root. In a lower formatVersion, parseComponent refuses.",
+          "const": "intended"
+        },
         "width": {
           "$ref": "#/$defs/expr_size"
         },
@@ -3358,6 +3378,14 @@
         "direction": {
           "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
+        },
+        "overflow": {
+          "description": "formatVersion 4: \"intended\" says that the node may go past its parent's box on purpose (a touch target bigger than its bar). The parent's fit checks are repeated without the flagged children, so only validate_library reports it (overflow intended: <frame>). Layout, measurement, hug, clip and the drawing do not change. Not valid on the root. In a lower formatVersion, parseComponent refuses.",
+          "const": "intended"
+        },
+        "childOverflow": {
+          "description": "formatVersion 4: \"intended\" says that the child markings may go past the slot's box on purpose (touch targets), so they give no \"content larger than the box: slot\" shortfall. slot-not-accepted, slot-full, slot-hidden and the slot clip do not change. In a lower formatVersion, parseComponent refuses.",
+          "const": "intended"
         },
         "width": {
           "$ref": "#/$defs/expr_size"
@@ -3487,6 +3515,10 @@
           "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
         },
+        "overflow": {
+          "description": "formatVersion 4: \"intended\" says that the node may go past its parent's box on purpose (a touch target bigger than its bar). The parent's fit checks are repeated without the flagged children, so only validate_library reports it (overflow intended: <frame>). Layout, measurement, hug, clip and the drawing do not change. Not valid on the root. In a lower formatVersion, parseComponent refuses.",
+          "const": "intended"
+        },
         "width": {
           "$ref": "#/$defs/expr_size"
         },
@@ -3581,6 +3613,10 @@
         "direction": {
           "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
+        },
+        "overflow": {
+          "description": "formatVersion 4: \"intended\" says that the node may go past its parent's box on purpose (a touch target bigger than its bar). The parent's fit checks are repeated without the flagged children, so only validate_library reports it (overflow intended: <frame>). Layout, measurement, hug, clip and the drawing do not change. Not valid on the root. In a lower formatVersion, parseComponent refuses.",
+          "const": "intended"
         },
         "width": {
           "$ref": "#/$defs/expr_sizeNoHug"
@@ -5354,6 +5390,10 @@
         "direction": {
           "description": "formatVersion 4: fixes the reading direction of the subtree (literal ltr or rtl, never an expression). The node is placed by the parent in the parent's direction; what is inside follows the one it fixes. In the repeat the direction key is a different one (the stacking of the rows). In a lower formatVersion, parseComponent refuses.",
           "enum": ["ltr", "rtl"]
+        },
+        "overflow": {
+          "description": "formatVersion 4: \"intended\" says that the node may go past its parent's box on purpose (a touch target bigger than its bar). The parent's fit checks are repeated without the flagged children, so only validate_library reports it (overflow intended: <frame>). Layout, measurement, hug, clip and the drawing do not change. Not valid on the root. In a lower formatVersion, parseComponent refuses.",
+          "const": "intended"
         },
         "width": {
           "$ref": "#/$defs/expr_size"
