@@ -412,6 +412,13 @@ function modeMap(text: string): { mode: string } | undefined {
  */
 export const migrateFrom24To25: Migration = (data) => data;
 
+/**
+ * v25 → v26 (variants of a screen): only the version changes. `containers[].variantGroup` is optional
+ * (absent or `null` = no link); the new version exists so that an earlier app opens a file with variants
+ * read-only, instead of dropping the key when writing. It settles nothing.
+ */
+export const migrateFrom25To26: Migration = (data) => data;
+
 /** Migration registry: the key is the source version. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -438,6 +445,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [22, migrateFrom22To23],
   [23, migrateFrom23To24],
   [24, migrateFrom24To25],
+  [25, migrateFrom25To26],
 ]);
 
 export type MigrationResult =

@@ -1,6 +1,7 @@
 import { releasedAnchors } from './anchorRelease';
 import { withAnchoredFollowers } from './anchors';
 import { arrowIdsAttachedTo, withoutArrows } from './arrows';
+import { pruneLoneVariantGroups, variantGroupsOf } from './containerVariants';
 import { fail } from './errors';
 import {
   MIN_MARKING_SIZE,
@@ -650,7 +651,12 @@ export function removeItems(
   const selected = resolveItems(p, items);
   if (selected.list.length === 0) return p;
   requireUnlocked(canDeleteItems(p, items));
-  return settleFrom(p, cascadeRemoveItems(p, selected), options);
+  const groups = variantGroupsOf(p, new Set(selected.containers.keys()));
+  return settleFrom(
+    p,
+    pruneLoneVariantGroups(cascadeRemoveItems(p, selected), groups),
+    options,
+  );
 }
 
 // ---------------------------------------------------------------------------

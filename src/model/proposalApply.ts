@@ -1,4 +1,5 @@
 import { isSameAspect, scaleRect } from './containers';
+import { pruneLoneVariantGroups, variantGroupsOf } from './containerVariants';
 import { withoutDensity } from './density';
 import { snapPlacement } from './geometry';
 import { setProjectDirection } from './direction';
@@ -265,6 +266,12 @@ function withField(
         return isRecord(to) && Object.keys(to).length > 0
           ? { ...rest, classes: to as unknown as Readonly<Record<string, string>> }
           : rest;
+      }
+      if (field === 'variantGroup') {
+        // `null` leaves the group: the key leaves (the file never keeps `null`).
+        const { variantGroup, ...rest } = i;
+        void variantGroup;
+        return typeof to === 'string' ? { ...rest, variantGroup: to } : rest;
       }
       if (field === 'placement')
         return { ...i, placement: snapPlacement(to as unknown as Placement) };
@@ -599,8 +606,15 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
     arrows,
     annotations: [...maps.annotation.values()] as Annotation[],
   };
+  // A removed container leaves no group of one behind (decision 4 of #2034); the rest is kept as accepted.
+  const removed = new Set(
+    changes
+      .filter((c) => c.kind === 'remove' && c.entity === 'image')
+      .map((c) => c.entityId),
+  );
+  const pruned = pruneLoneVariantGroups(assembled, variantGroupsOf(p, removed));
   const project = setProjectDirection(
-    setProjectDrawingMode(assembled, projectEntity?.drawingMode ?? null),
+    setProjectDrawingMode(pruned, projectEntity?.drawingMode ?? null),
     projectEntity?.direction ?? null,
   );
   return { project: reconcilePerspectives(p, project), problems };

@@ -1,10 +1,12 @@
 import type { TokenSelection } from './components/tokens';
 import type { Spec } from './spec';
 
-// Types of the `mapping.json` (schema v25). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
+// Types of the `mapping.json` (schema v26). See docs/FORMAT.md. Everything is `readonly`: the model is immutable and
 // the operations always return a new project.
 
-export const SCHEMA_VERSION = 25;
+export const SCHEMA_VERSION = 26;
+/** Longest `containers[].variantGroup` the file accepts (v26). */
+export const MAX_VARIANT_GROUP_LENGTH = 64;
 /** Drawing mode (v24): axis → entry of the specializations' `tokens` (the same shape as a token selection). */
 export type DrawingModeMap = TokenSelection;
 
@@ -129,6 +131,13 @@ export interface ProjectContainer {
    * written. A set or class that no applied specialization declares is kept (it gives no class).
    */
   readonly classes?: Readonly<Record<string, string>> | null;
+  /**
+   * Variant group (v26): the containers with the same value are variants of each other (the same
+   * screen in another size). A non-empty string of at most `MAX_VARIANT_GROUP_LENGTH` characters; absent
+   * or `null` = no link, and `null` is never written. A group no other container shares is a group of
+   * one: it is kept, gives no variant and is not an error.
+   */
+  readonly variantGroup?: string | null;
 }
 
 import {

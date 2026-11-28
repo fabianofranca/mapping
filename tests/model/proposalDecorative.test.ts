@@ -86,7 +86,7 @@ describe('proposal with the decorative field', () => {
     expect(proposal.formatVersion).toBe(PROPOSAL_FORMAT_VERSION);
     expect(usesDecorative(proposal.changes)).toBe(false);
     expect(PROPOSAL_DECORATIVE_FORMAT_VERSION).toBe(13);
-    expect(PROPOSAL_FORMAT_VERSIONS.at(-1)).toBe(13);
+    expect(PROPOSAL_FORMAT_VERSIONS).toContain(13);
   });
 
   it('a created non-decorative marking does not need 13 (and its value has no decorative key)', () => {

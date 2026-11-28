@@ -20,7 +20,7 @@ import {
 } from './schema';
 import { PLATFORM_ID_RE, formatSpecPath, specSchema, type SpecIssue } from './spec';
 import { CONTAINER_CLASS_ID_RE } from './containerClasses';
-import { READING_DIRECTIONS, type JsonValue } from './types';
+import { MAX_VARIANT_GROUP_LENGTH, READING_DIRECTIONS, type JsonValue } from './types';
 
 // Format of the change proposal (stage 4): `proposals/<id>/proposal.json`, `formatVersion` 4 on
 // creation, 5 with `revisions`, 6 with the drawing mode and 7 with the container density (only
@@ -31,7 +31,9 @@ import { READING_DIRECTIONS, type JsonValue } from './types';
 export const PROPOSAL_FORMAT = 'mapping-proposal';
 export const PROPOSAL_FORMAT_VERSION = 4;
 /**
- * Versions read, from 1 to 13: 13 adds the marking's `decorative` flag (the marking's `decorative` field and
+ * Versions read, from 1 to 14: 14 adds the container's `variantGroup` (the container's `variantGroup` field and
+ * the `variantGroup` in the value of a created or removed container, schema v26) and is only written when the
+ * proposal uses it (it includes what 13 and the earlier ones have); 13 adds the marking's `decorative` flag (the marking's `decorative` field and
  * `decorative: true` in the value of a created or removed marking, schema v25) and is only written when the
  * proposal uses it (it includes what 12 and the earlier ones have); 12 adds the drawing mode as a map axis → entry (the `project` entity's and the
  * container's `drawingMode` hold the map, schema v24) and is only written when the proposal carries one (it
@@ -57,7 +59,7 @@ export const PROPOSAL_FORMAT_VERSION = 4;
  * mode).
  */
 export const PROPOSAL_FORMAT_VERSIONS = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
 ] as const;
 
 /**
@@ -234,6 +236,34 @@ function hasPageId(value: JsonValue): boolean {
 }
 
 /**
+ * Proposal version that carries the container's variant group (schema v26): the `variantGroup` field (the
+ * group id, or `null` to leave the group) and the `variantGroup` in the value of a created or removed
+ * container. An earlier version would silently drop the group of a created container (the reader ignores
+ * unknown keys), so a proposal that uses it is written as 14. A whole container without the key has no
+ * group, and the writer only writes the key when there is one, so a proposal that never touches the
+ * variants keeps the version it had.
+ */
+export const PROPOSAL_VARIANT_GROUP_FORMAT_VERSION = 14;
+
+/** Does the proposal use the variant group (so that only `formatVersion` 14 represents it)? */
+export function usesVariantGroup(changes: readonly Change[]): boolean {
+  return changes.some(
+    (c) =>
+      c.entity === 'image' &&
+      (c.field === 'variantGroup' || hasVariantGroup(c.to) || hasVariantGroup(c.from)),
+  );
+}
+
+function hasVariantGroup(value: JsonValue): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    typeof (value as { readonly variantGroup?: JsonValue }).variantGroup === 'string'
+  );
+}
+
+/**
  * Proposal version that carries the marking's decorative flag (schema v25): the `decorative` field of a
  * marking and `decorative: true` in the value of a created or removed marking. An earlier version would
  * silently drop the flag of a created marking (the reader ignores unknown keys), so a proposal that uses
@@ -287,9 +317,9 @@ function hasContainerClasses(value: JsonValue): boolean {
 }
 
 /**
- * The `formatVersion` that creation or revision writes: 13 with a decorative marking, 12 with a drawing mode map, 11 with container classes, 10 with pages, 9 with an anchor, 8 with a direction, 7
+ * The `formatVersion` that creation or revision writes: 14 with a variant group, 13 with a decorative marking, 12 with a drawing mode map, 11 with container classes, 10 with pages, 9 with an anchor, 8 with a direction, 7
  * with a density, 6 with a drawing mode, otherwise `fallback` (4 on creation, 5 on revision).
- * `current` is the version of the proposal being rewritten: a 6, 7, 8, 9, 10, 11, 12 or 13 never goes down.
+ * `current` is the version of the proposal being rewritten: a 6, 7, 8, 9, 10, 11, 12, 13 or 14 never goes down.
  */
 export function proposalFormatVersionFor(
   changes: readonly Change[],
@@ -307,6 +337,7 @@ const VERSIONS_BY_FEATURE: readonly (readonly [
   (typeof PROPOSAL_FORMAT_VERSIONS)[number],
   (changes: readonly Change[]) => boolean,
 ])[] = [
+  [PROPOSAL_VARIANT_GROUP_FORMAT_VERSION, usesVariantGroup],
   [PROPOSAL_DECORATIVE_FORMAT_VERSION, usesDecorative],
   [
     PROPOSAL_DRAWING_MODE_MAP_FORMAT_VERSION,
@@ -414,6 +445,7 @@ export const IMAGE_FIELDS = [
   'density',
   'direction',
   'classes',
+  'variantGroup',
   'page',
 ] as const;
 /**
@@ -752,6 +784,7 @@ const imageFieldSchemas: Record<(typeof IMAGE_FIELDS)[number], z.ZodType> = {
   density: z.number().min(0.5).max(8).nullable(),
   direction: readingDirection.nullable(),
   classes: z.record(containerClassName, containerClassName).nullable(),
+  variantGroup: z.string().min(1).max(MAX_VARIANT_GROUP_LENGTH).nullable(),
   page: z.object({ pageId: id, position: placementSchema }),
 };
 
@@ -1068,6 +1101,26 @@ function checkDecorativeVersion(
 }
 
 /**
+ * The variant group exists from formatVersion 14: an earlier file with the `variantGroup` field or a
+ * `variantGroup` in a created or removed container is refused (a reader of an earlier version would drop the
+ * group of a created container without a trace).
+ */
+function checkVariantGroupVersion(
+  p: { readonly formatVersion: number; readonly changes: readonly Change[] },
+  add: AddIssue,
+): void {
+  if (p.formatVersion >= PROPOSAL_VARIANT_GROUP_FORMAT_VERSION) return;
+  p.changes.forEach((c, i) => {
+    if (usesVariantGroup([c])) {
+      add(
+        ['changes', i, 'entity'],
+        'the variant group only exists in formatVersion 14 or later',
+      );
+    }
+  });
+}
+
+/**
  * Rules of the revision history (formatVersion 5): `revisions` is required in 5 and does not
  * exist before; a withdrawn change is no longer in `changes`; a new change enters the history
  * only once. Ids cited in `changed`, `added` and `notes` that no longer exist are history.
@@ -1121,8 +1174,9 @@ export const proposalSchema = z
         z.literal(11),
         z.literal(12),
         z.literal(13),
+        z.literal(14),
       ],
-      { error: 'must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 or 13' },
+      { error: 'must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 or 14' },
     ),
     id: proposalId,
     title: z.string().trim().min(1, 'cannot be empty'),
@@ -1181,6 +1235,7 @@ export const proposalSchema = z
     checkPagesVersion(p, add);
     checkBackgroundTokenVersion(p, add);
     checkDecorativeVersion(p, add);
+    checkVariantGroupVersion(p, add);
     const noteIds = new Set<string>();
     p.notes.forEach((n, i) => {
       if (noteIds.has(n.id)) add(['notes', i, 'id'], `duplicate id "${n.id}"`);

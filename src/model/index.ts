@@ -27,6 +27,7 @@ export {
 } from './project';
 export * from './layers';
 export * from './containers';
+export * from './containerVariants';
 export * from './freePlacement';
 export * from './density';
 export * from './direction';
