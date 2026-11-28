@@ -19,6 +19,7 @@ const KEYS: Record<RenderWarningCode, TranslationKey> = {
   'stroke-radial-first-color': 'catalog.drawWarning.stroke-radial-first-color',
   'stroke-image-gray': 'catalog.drawWarning.stroke-image-gray',
   'angular-gradient-unsupported': 'catalog.drawWarning.angular-gradient-unsupported',
+  'backdrop-blur-unsupported': 'catalog.drawWarning.backdrop-blur-unsupported',
   'remote-image-failed': 'catalog.drawWarning.remote-image-failed',
   'remote-image-opaque': 'catalog.drawWarning.remote-image-opaque',
 };

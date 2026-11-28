@@ -1,7 +1,12 @@
 // DX2: `shadow.inner` (format 4) — validator, scene and clip.
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_FORMAT } from '../../../src/model/components/componentFormat';
-import { validateComponent } from '../../../src/model/components/parseComponent';
+import { modelMessage } from '../../../src/model/modelMessage';
+import {
+  parseComponent,
+  validateComponent,
+} from '../../../src/model/components/parseComponent';
+import { ptBRText } from '../../support/modelText';
 import {
   approximateMeasurer,
   instantiate,
@@ -30,9 +35,11 @@ const node = (type: string, extra: Record<string, unknown> = {}) => ({
 
 describe('shadow.inner (decision 8)', () => {
   it('inner: true on a single shadow of frame, rect and ellipse is valid', () => {
-    for (const type of ['frame', 'rect', 'ellipse'])
+    for (const type of ['frame', 'rect', 'ellipse', 'path', 'icon'])
       expect(
-        validateComponent(withChild(node(type, { shadow: shadow({ inner: true }) }))),
+        validateComponent(
+          withChild(node(type, { shadow: shadow({ inner: true }) })),
+        ).filter((m) => m.includes('inner')),
       ).toEqual([]);
   });
 
@@ -51,13 +58,13 @@ describe('shadow.inner (decision 8)', () => {
     ]);
   });
 
-  it('inner on text, path, icon or image is refused at the key', () => {
-    for (const type of ['text', 'path', 'icon', 'image']) {
+  it('inner on text or image is refused at the key', () => {
+    for (const type of ['text', 'image']) {
       const issues = validateComponent(
         withChild(node(type, { shadow: shadow({ inner: true }) })),
       ).filter((m) => m.includes('inner'));
       expect(issues).toEqual([
-        'template.children[0].shadow.inner: only valid on frame, rect and ellipse',
+        'template.children[0].shadow.inner: only valid on frame, rect, ellipse, path and icon',
       ]);
     }
   });
@@ -67,7 +74,7 @@ describe('shadow.inner (decision 8)', () => {
       withChild(node('text', { shadow: [shadow(), shadow({ inner: true })] })),
     ).filter((m) => m.includes('inner'));
     expect(issues).toEqual([
-      'template.children[0].shadow[1].inner: only valid on frame, rect and ellipse',
+      'template.children[0].shadow[1].inner: only valid on frame, rect, ellipse, path and icon',
     ]);
   });
 
@@ -144,5 +151,46 @@ describe('shadow.inner in the scene', () => {
       clipBox?: unknown;
     };
     expect(outer.clipBox).toBeDefined();
+  });
+});
+
+describe('shadow.inner on path, icon and arcs', () => {
+  it('the refusal on text is the new text, also in pt-BR', () => {
+    const result = parseComponent(
+      withChild(node('text', { shadow: shadow({ inner: true }) })),
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    const issue = result.issues.find((i) => i.path.endsWith('shadow.inner'));
+    expect(issue?.code).toBe('component.innerShadowNodes');
+    const message = modelMessage(
+      'component.innerShadowNodes',
+      issue?.params ?? {},
+      issue?.message ?? '',
+    );
+    expect(message.text).toBe('only valid on frame, rect, ellipse, path and icon');
+    // portuguese-guard:begin the object of the test is the pt-BR rendering of the model message
+    expect(ptBRText(message)).toBe('válido apenas em frame, rect, ellipse, path e icon');
+    // portuguese-guard:end
+  });
+
+  it('an ellipse arc is a scene path that keeps the inner shadow', () => {
+    const { root } = draw(
+      component(
+        {},
+        node('ellipse', {
+          sweepAngle: 180,
+          fill: '#fff',
+          shadow: { color: '#000', blur: 2, inner: true },
+        }),
+      ),
+    );
+    const [arc] = (
+      root as unknown as { children: { type: string; effects: unknown[] }[] }
+    ).children;
+    expect(arc!.type).toBe('path');
+    expect(arc!.effects).toEqual([
+      { color: '#000', offset: { x: 0, y: 0 }, blur: 2, inner: true },
+    ]);
   });
 });

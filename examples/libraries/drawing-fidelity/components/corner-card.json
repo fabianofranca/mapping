@@ -1,0 +1,31 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "corner-card",
+  "name": "Corner card",
+  "description": "A 160 × 96 card whose four corners come from two fields: top rounds or squares the two top corners, bottom the two bottom ones. Each item of the cornerRadius list is its own $switch.",
+  "size": { "width": 160, "height": 96 },
+  "preview": { "top": "round", "bottom": "square" },
+  "template": {
+    "type": "frame",
+    "name": "corner-card",
+    "layout": { "type": "row", "padding": 12, "align": "center", "justify": "center" },
+    "cornerRadius": [
+      { "$switch": "top", "cases": { "round": 16, "square": 0 }, "default": 0 },
+      { "$switch": "top", "cases": { "round": 16, "square": 0 }, "default": 0 },
+      { "$switch": "bottom", "cases": { "round": 16, "square": 0 }, "default": 0 },
+      { "$switch": "bottom", "cases": { "round": 16, "square": 0 }, "default": 0 }
+    ],
+    "fill": "#EEF2FF",
+    "stroke": { "color": "#6366F1", "width": 2 },
+    "children": [
+      {
+        "type": "text",
+        "name": "label",
+        "text": { "$concat": [{ "$field": "top" }, " / ", { "$field": "bottom" }] },
+        "font": { "size": 14, "weight": 600, "lineHeight": 20 },
+        "color": "#3730A3"
+      }
+    ]
+  }
+}

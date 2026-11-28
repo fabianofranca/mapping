@@ -159,6 +159,12 @@ export interface Stroke {
    * relative to that outline. With `sides`, it only applies to the requested sides.
    */
   readonly offset?: number;
+  /**
+   * The radius of the outline the stroke is drawn on (`frame` and `rect`; absent = the node's
+   * radius plus `offset`). `align` is relative to it: an inside stroke has `r` outside and
+   * `r - width` inside. The fill, the clip and the shadows keep the node's radius.
+   */
+  readonly cornerRadius?: CornerRadius;
   readonly cap?: 'butt' | 'round' | 'square';
   readonly join?: 'miter' | 'round' | 'bevel';
   /** `false`: the width is in screen pixels, at any zoom; absent = scales with the zoom. */
@@ -253,6 +259,12 @@ interface NodeBase {
    * stroke, the shadow and the frame's clip scale along. 0 draws nothing.
    */
   readonly scale?: number;
+  /**
+   * Draws above the child markings of the same container (`overlay` of the template node): only
+   * the top-level drawing of a marking sets it (not a component with `screen`, nor the inside of a
+   * `component` node). The tree stays whole; `splitOverlay` cuts it for whoever draws.
+   */
+  readonly overlay?: true;
   /** The node's local box (px); in `path` and `line` it is the box of the points, informative. */
   readonly width: number;
   readonly height: number;
@@ -272,6 +284,8 @@ export interface FrameNode extends NodeBase {
    */
   readonly clipBox?: ClipBox;
   readonly cornerRadius: CornerRadius;
+  /** Blurs what is already drawn under the node's outline before its fills (`backdropBlur`, px of the node's space); absent = none. */
+  readonly backdropBlur?: number;
   readonly children: readonly SceneNode[];
 }
 
@@ -299,6 +313,8 @@ export type CornerRadius = number | readonly [number, number, number, number];
 export interface RectNode extends NodeBase {
   readonly type: 'rect';
   readonly cornerRadius: CornerRadius;
+  /** Blurs what is already drawn under the node's outline before its fills (`backdropBlur`, px of the node's space); absent = none. */
+  readonly backdropBlur?: number;
 }
 
 export interface EllipseNode extends NodeBase {

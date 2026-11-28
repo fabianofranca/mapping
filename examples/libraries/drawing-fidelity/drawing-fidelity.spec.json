@@ -1,0 +1,195 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 26,
+  "id": "drawing-fidelity",
+  "name": "Drawing fidelity",
+  "version": 1,
+  "description": "Example of the drawing fidelity keys of the component format. The Corner card draws a card whose four corner radii each come from a $switch over the top and bottom fields; the Photo draws a package image whose fit comes from the fit field; the Signal draws a round indicator whose outer shadow y and blur come from the size field, with an icon on top; the Divider draws a pill whose bottom stroke follows the corner arcs; the Link draws a focus ring with its own corner radius (stroke.cornerRadius). The Scroll draws a scrollbar with overlay: true above the Blocks marked inside it, and the Block draws a bar of a color field. The Header draws a translucent bar with overlay: true and backdropBlur 16 over the child markings of its content slot.",
+  "icons": "icons/icons.json",
+  "layers": [
+    {
+      "id": "fidelity",
+      "name": "Fidelity",
+      "color": "#7C3AED",
+      "annotationTypes": [
+        {
+          "id": "corner-card",
+          "name": "Corner card",
+          "description": "A 160 × 96 card with a different corner radius on each corner: the top corners follow the top field and the bottom ones the bottom field.",
+          "component": "components/corner-card.json",
+          "doc": "docs/corner-card.md",
+          "fields": [
+            {
+              "key": "top",
+              "label": "Top",
+              "description": "The two top corners: round (16 px) or square (0).",
+              "type": "enum",
+              "options": ["round", "square"],
+              "default": "round"
+            },
+            {
+              "key": "bottom",
+              "label": "Bottom",
+              "description": "The two bottom corners: round (16 px) or square (0).",
+              "type": "enum",
+              "options": ["round", "square"],
+              "default": "square"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Sheet",
+              "values": {
+                "top": "round",
+                "bottom": "square"
+              }
+            }
+          ]
+        },
+        {
+          "id": "photo",
+          "name": "Photo",
+          "description": "The package image in a 160 × 96 box, drawn with the fit that the fit field names.",
+          "component": "components/photo.json",
+          "doc": "docs/photo.md",
+          "fields": [
+            {
+              "key": "fit",
+              "label": "Fit",
+              "description": "How the image fills the box: cover, contain, fill or none.",
+              "type": "enum",
+              "options": ["cover", "contain", "fill", "none"],
+              "default": "cover"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Contain",
+              "values": {
+                "fit": "contain"
+              }
+            }
+          ]
+        },
+        {
+          "id": "signal",
+          "name": "Signal",
+          "description": "A round indicator with a ring icon; the size field sets the y offset and the blur of its outer shadow.",
+          "component": "components/signal.json",
+          "doc": "docs/signal.md",
+          "fields": [
+            {
+              "key": "size",
+              "label": "Size",
+              "description": "The shadow size: s (y 2, blur 4), m (y 4, blur 8) or l (y 8, blur 16).",
+              "type": "enum",
+              "options": ["s", "m", "l"],
+              "default": "m"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Large",
+              "values": {
+                "size": "l"
+              }
+            }
+          ]
+        },
+        {
+          "id": "divider",
+          "name": "Divider",
+          "description": "A 200 × 16 pill with a 2 px stroke on the bottom side only: the stroke follows the two bottom arcs and tapers to 0 at the straight sides.",
+          "component": "components/divider.json",
+          "doc": "docs/divider.md",
+          "fields": [
+            {
+              "key": "elevated",
+              "label": "Elevated",
+              "description": "The bottom stroke: true draws it, false does not.",
+              "type": "enum",
+              "options": ["true", "false"],
+              "default": "true"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Flat",
+              "values": {
+                "elevated": "false"
+              }
+            }
+          ]
+        },
+        {
+          "id": "link",
+          "name": "Link",
+          "description": "A text link with a focus ring 2 px away from the text box: 4 px round on its outer edge and 2 px on its inner edge, from stroke.cornerRadius.",
+          "component": "components/link.json",
+          "doc": "docs/link.md",
+          "fields": [
+            {
+              "key": "focused",
+              "label": "Focused",
+              "description": "The focus ring: true draws it, false does not.",
+              "type": "enum",
+              "options": ["true", "false"],
+              "default": "true"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Idle",
+              "values": {
+                "focused": "false"
+              }
+            }
+          ]
+        },
+        {
+          "id": "scroll",
+          "name": "Scroll",
+          "description": "A 200 × 240 scroll area with a column slot for the child markings and a scrollbar on the right edge that is drawn above them (overlay: true).",
+          "component": "components/scroll.json",
+          "doc": "docs/scroll.md",
+          "fields": [],
+          "examples": []
+        },
+        {
+          "id": "header",
+          "name": "Header",
+          "description": "A 200 × 240 area with a column slot for the child markings and a translucent 200 × 56 bar on top that blurs what is drawn under it (overlay: true, backdropBlur 16).",
+          "component": "components/header.json",
+          "doc": "docs/header.md",
+          "fields": [],
+          "examples": []
+        },
+        {
+          "id": "block",
+          "name": "Block",
+          "description": "A 200 × 48 bar as wide as its box, in the color the color field names. Mark it inside a Scroll.",
+          "component": "components/block.json",
+          "doc": "docs/block.md",
+          "fields": [
+            {
+              "key": "color",
+              "label": "Color",
+              "description": "The fill: blue, green or amber.",
+              "type": "enum",
+              "options": ["blue", "green", "amber"],
+              "default": "blue"
+            }
+          ],
+          "examples": [
+            {
+              "name": "Green",
+              "values": {
+                "color": "green"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
