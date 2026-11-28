@@ -1,4 +1,4 @@
-# `except` in a slot's `accepts`; field groups and `visibleWhen` in Details — 2026-11-28 (épico `epic/field-groups-except`, PR #3053, MCP 0.68.0, schema v25 unchanged, specialization formatVersion 26)
+# `except` in a slot's `accepts`; field groups and `visibleWhen` in Details — 2026-11-28 (épico `epic/field-groups-except`, PR #3053, MCP 0.69.0, schema v25 unchanged, specialization formatVersion 26)
 
 ## Adicionado
 
