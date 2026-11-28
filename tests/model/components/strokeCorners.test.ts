@@ -292,3 +292,31 @@ describe('stroke.cornerRadius in the component file', () => {
     expect(issues[0]).toContain(at);
   });
 });
+
+describe('the enlarged clip covers the arcs of partial sides', () => {
+  function clipOf(extra: Record<string, unknown>): FrameNode['clipBox'] {
+    const scene = instantiate(
+      file({
+        type: 'frame',
+        cornerRadius: 8,
+        stroke: { color: '#000', width: 2, align: 'center', sides: ['left'], ...extra },
+        children: [],
+      } as FrameTemplate),
+      {},
+      { x: 0, y: 0, width: 100, height: 40 },
+      { measure: approximateMeasurer },
+    );
+    return (scene.root as FrameNode).clipBox;
+  }
+
+  it('a left-only stroke on a rounded box reaches past the top and bottom edges by half the width', () => {
+    const box = clipOf({});
+    expect(box?.y).toBeLessThanOrEqual(-1);
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeGreaterThanOrEqual(41);
+  });
+
+  it('a stroke radius counts too, on a radius-0 box', () => {
+    const box = clipOf({ cornerRadius: 6 });
+    expect(box?.y).toBeLessThanOrEqual(-1);
+  });
+});
