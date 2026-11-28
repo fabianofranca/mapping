@@ -15,12 +15,27 @@ import { konvaMeasurer } from '../../src/canvas/components/konvaMeasurer';
 import type { InteractionState } from '../../src/canvas/frame';
 import type { MarkingRenderer } from '../../src/canvas/renderers/markings';
 import { markingCanvasRect } from '../../src/canvas/markingGeometry';
-import { approximateMeasurer } from '../../src/model';
+import {
+  addBackgroundContainer,
+  addComponentMarking,
+  approximateMeasurer,
+} from '../../src/model';
 import { createDisplayImages } from '../../src/store/displayImages';
 import { setShowComponentsOnPhotos } from '../../src/store/settings';
 import { textMeasurer } from '../../src/store/textMeasure';
-import { SPEC_ID } from '../model/componentFixtures';
-import { componentEditor, installFakeCanvas, setOnlyScreens } from './harness';
+import {
+  COMPONENTS,
+  SPEC_ID,
+  componentProject,
+  testCatalog,
+} from '../model/componentFixtures';
+import {
+  componentEditor,
+  componentSources,
+  editorFor,
+  installFakeCanvas,
+  setOnlyScreens,
+} from './harness';
 
 // The component layer inside `CanvasController` (B3, P6): the drawing of each marking with a
 // component, redrawn only where it changed, and the border and text rules of semantic zoom.
@@ -49,8 +64,7 @@ describe('CanvasController: components', () => {
     localStorage.clear();
   });
 
-  function setup() {
-    const editor = componentEditor();
+  function setup(editor: ReturnType<typeof componentEditor> = componentEditor()) {
     const container = document.createElement('div');
     Object.defineProperty(container, 'clientWidth', { value: 380 });
     Object.defineProperty(container, 'clientHeight', { value: 700 });
@@ -444,5 +458,113 @@ describe('CanvasController: components', () => {
     flush();
     expect(text('TP')).toBe(false);
     controller.destroy();
+  });
+  // `overlay` (format 4, stage #2915, DG5, decision 10): the scrollbar is drawn above the child, but selection
+  // reads the markings' geometry, not the drawing.
+  describe('overlay and selection', () => {
+    function scrollSetup() {
+      const scrollbar = {
+        type: 'rect',
+        name: 'scrollbar',
+        width: 4,
+        height: 80,
+        fill: '#6B7280',
+        anchors: { right: 4, top: 16 },
+        overlay: true,
+      };
+      const box = COMPONENTS.box as { template: { children: unknown[] } };
+      const scroll = {
+        ...box,
+        formatVersion: 4,
+        template: { ...box.template, children: [...box.template.children, scrollbar] },
+      };
+      const catalog = testCatalog({ ...COMPONENTS, box: scroll });
+      let p = componentProject();
+      p = addBackgroundContainer(p, {
+        id: 'B1',
+        name: 'Screen',
+        width: 400,
+        height: 600,
+        background: '#FFFFFF',
+        center: { x: 1500, y: 300 },
+      });
+      const add = (
+        id: string,
+        typeId: string,
+        parentId: string | null,
+        rect: { x: number; y: number; width: number; height: number },
+      ) => {
+        p = addComponentMarking(
+          p,
+          catalog,
+          {
+            markingId: id,
+            annotationId: `A_${id}`,
+            containerId: 'B1',
+            parentId,
+            specId: SPEC_ID,
+            typeId,
+            rect,
+          },
+          approximateMeasurer,
+        );
+      };
+      add('S1', 'box', null, { x: 20, y: 20, width: 200, height: 240 });
+      // The child is as wide as the Scroll: it covers the scrollbar's area.
+      add('C1', 'text', 'S1', { x: 20, y: 20, width: 200, height: 48 });
+      const made = setup(
+        Object.assign(editorFor(p, false, componentSources(catalog)), {
+          sources: componentSources(catalog),
+        }),
+      );
+      const { controller, container, store } = made;
+      const placement = store.project.value?.containers.find(
+        (i) => i.id === 'B1',
+      )?.placement;
+      const s1 = store.project.value?.markings.find((m) => m.id === 'S1');
+      if (!placement || !s1) throw new Error('fixture');
+      controller.zoomTo(1);
+      const center = markingCanvasRect(placement, s1.rect);
+      controller.centerOnPoint({
+        x: center.x + center.width / 2,
+        y: center.y + center.height / 2,
+      });
+      flush();
+      // The scrollbar's point: right edge of the Scroll, 4 + 2 from it, 16 + 10 from the top.
+      const at = {
+        x: 190 + s1.rect.width / 2 - 6 * placement.scale,
+        y: 350 - (s1.rect.height / 2) * placement.scale + 26 * placement.scale,
+      };
+      const click = () => {
+        container.dispatchEvent(
+          new PointerEvent('pointerdown', { pointerId: 1, clientX: at.x, clientY: at.y }),
+        );
+        container.dispatchEvent(
+          new PointerEvent('pointerup', { pointerId: 1, clientX: at.x, clientY: at.y }),
+        );
+        flush();
+      };
+      return { ...made, click };
+    }
+
+    it('draws the scrollbar above the child and a click on it selects the child, then goes up to the Scroll', () => {
+      const { controller, ui, drawing, componentLayer, click } = scrollSetup();
+      const overlays = componentLayer()?.find(
+        (n: Konva.Node) => n.getAttr('overlayOf') === 'S1',
+      );
+      expect(overlays).toHaveLength(1);
+      // Above the child's drawing: both sit in the same group, the overlay after it.
+      const group = overlays?.[0]?.getParent();
+      const kids = group
+        ?.getChildren()
+        .map((n: Konva.Node) => n.getAttr('markingId') ?? n.getAttr('overlayOf'));
+      expect(kids).toEqual(['S1', 'C1', 'S1']);
+      expect(drawing('C1')).toBeDefined();
+      click();
+      expect(ui.selection.value).toEqual({ kind: 'marking', id: 'C1' });
+      click();
+      expect(ui.selection.value).toEqual({ kind: 'marking', id: 'S1' });
+      controller.destroy();
+    });
   });
 });

@@ -112,6 +112,12 @@ export interface ScreenRendererUpdateOptions {
 interface Mounted {
   instance: Instance;
   readonly node: Konva.Group;
+  /**
+   * The instance's `overlay` nodes (format 4): a group of the same parent, drawn after every instance, with the
+   * instance's position and clip. Absent when the drawing has none. It does not listen: a click on it goes to
+   * what is below.
+   */
+  overlay: Konva.Group | undefined;
   label: string | undefined;
   /** Remote URLs that the instance's last drawing requested. */
   imageUrls: readonly string[];
@@ -206,12 +212,27 @@ export class ScreenRenderer {
     for (const [id, entry] of this.mounted) {
       if (seen.has(id)) continue;
       entry.node.destroy();
+      entry.overlay?.destroy();
       this.mounted.delete(id);
       this.warningsById.delete(id);
       changed = true;
     }
     this.order = order;
+    if (this.stackOverlays(order, zBase + order.length)) changed = true;
     return changed;
+  }
+
+  /** The overlays go after every instance, in drawing order (the second pass); `true` if one moved. */
+  private stackOverlays(order: readonly string[], from: number): boolean {
+    let moved = false;
+    let z = from;
+    for (const id of order) {
+      const overlay = this.mounted.get(id)?.overlay;
+      if (overlay === undefined) continue;
+      if (this.setZ(overlay, z)) moved = true;
+      z += 1;
+    }
+    return moved;
   }
 
   /** The slot of a child (`slotKey`): the one it says, else the one the placement picks without geometry. */
@@ -284,7 +305,9 @@ export class ScreenRenderer {
     entry.childClips = new Map(
       [...entry.slotClips].map(([key, own]) => [key, intersectClips(own, clip)]),
     );
-    return applyClip(entry.node, localClip(clip, entry.instance.box));
+    const local = localClip(clip, entry.instance.box);
+    const overlayClipped = entry.overlay !== undefined && applyClip(entry.overlay, local);
+    return applyClip(entry.node, local) || overlayClipped;
   }
 
   /** Of the inherited values, those the instance's component reads (none if it reads nothing). */
@@ -300,6 +323,7 @@ export class ScreenRenderer {
     const entry: Mounted = {
       instance,
       node,
+      overlay: undefined,
       label: undefined,
       imageUrls: [],
       packageKeys: [],
@@ -417,7 +441,10 @@ export class ScreenRenderer {
 
   /** Destroys the instances' groups (the received group is left to the caller). */
   dispose(): void {
-    for (const { node } of this.mounted.values()) node.destroy();
+    for (const { node, overlay } of this.mounted.values()) {
+      node.destroy();
+      overlay?.destroy();
+    }
     this.mounted.clear();
     this.warningsById.clear();
     this.order = [];
@@ -439,6 +466,15 @@ export class ScreenRenderer {
     };
   }
 
+  /** Puts the overlay group beside the instance's (the position and the clip follow the instance). */
+  private addOverlay(entry: Mounted, overlay: Konva.Group, instance: Instance): void {
+    overlay.listening(false);
+    overlay.setAttr('overlayOf', instance.id);
+    overlay.position({ x: instance.box.x, y: instance.box.y });
+    entry.overlay = overlay;
+    this.group.add(overlay);
+  }
+
   private renderInto(
     entry: Mounted,
     instance: Instance,
@@ -452,6 +488,8 @@ export class ScreenRenderer {
     entry.offers = undefined;
     entry.slotClips = new Map();
     node.destroyChildren();
+    entry.overlay?.destroy();
+    entry.overlay = undefined;
     node.position({ x: instance.box.x, y: instance.box.y });
     node.scale({ x: 1, y: 1 });
     node.setAttr('boxSize', { width: instance.box.width, height: instance.box.height });
@@ -506,6 +544,8 @@ export class ScreenRenderer {
         ...this.packageImageOptions(),
         pixelSafe: this.options.pixelSafe,
         palette: this.palette,
+        // The overlay nodes are drawn after every instance: the renderer stacks them.
+        overlay: 'apart',
       },
     );
     entry.imageUrls = rendered.imageUrls;
@@ -514,6 +554,7 @@ export class ScreenRenderer {
     node.add(rendered.root);
     // Whole click area (even with a transparent background).
     node.add(new KonvaRect({ ...local, fill: HIT_FILL, name: 'hit', listening: true }));
+    if (rendered.overlay) this.addOverlay(entry, rendered.overlay, instance);
     const all = [
       ...result.warnings,
       ...rendered.warnings.map((w) => this.options.labels.drawWarning(w)),

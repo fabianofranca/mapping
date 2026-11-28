@@ -71,6 +71,11 @@ export interface ComponentLayerOptions {
 interface Mounted {
   readonly drawing: LayerDrawing;
   readonly node: Konva.Group;
+  /**
+   * The drawing's `overlay` nodes (format 4), drawn in a second pass above every drawing of the space: a sibling of
+   * `node` that follows it everywhere (mount, hide, drag, redraw) and is absent when nothing is flagged.
+   */
+  readonly overlay?: Konva.Group;
   /** Remote URLs the drawing uses (to redo only it when the image changes). */
   readonly imageUrls: readonly string[];
   /** Keys of the package images the drawing uses (to redo only it when one finishes decoding). */
@@ -193,7 +198,7 @@ export class ComponentLayerRenderer {
     for (const list of wanted.values()) for (const d of list) keep.add(d.markingId);
     for (const [markingId, entry] of this.mounted) {
       if (keep.has(markingId)) continue;
-      entry.node.destroy();
+      destroyEntry(entry);
       this.mounted.delete(markingId);
       changed = true;
     }
@@ -273,9 +278,13 @@ export class ComponentLayerRenderer {
     let changed = (touched & TOUCHED_GROUP) !== 0;
     const entry = this.mounted.get(drawing.markingId);
     if (!entry) return changed;
-    const moved =
-      placeScreen(entry.node, drawing, placement.scale, this.zoom) ||
-      showNode(entry.node, on);
+    const moved = nodesOf(entry).reduce(
+      (any, node) =>
+        placeScreen(node, drawing, placement.scale, this.zoom) ||
+        showNode(node, on) ||
+        any,
+      false,
+    );
     if (moved && this.inMirror(entry.node)) this.dragChanged = true;
     else if (moved) changed = true;
     return changed;
@@ -309,7 +318,7 @@ export class ComponentLayerRenderer {
       const on = onScreen(drawing, placement, zoom, area);
       const entry = this.mounted.get(drawing.markingId);
       if (entry) {
-        if (showNode(entry.node, on)) changed = true;
+        for (const node of nodesOf(entry)) if (showNode(node, on)) changed = true;
       } else if (on) {
         this.mountOne(drawing, group, group, placement, true);
         mountedNow = true;
@@ -335,8 +344,10 @@ export class ComponentLayerRenderer {
     let changed = false;
     for (const entry of this.mounted.values()) {
       const placement = placementOf(this.placements, entry.drawing.containerId);
-      if (placement && placeScreen(entry.node, entry.drawing, placement.scale, zoom)) {
-        if (this.inMirror(entry.node)) this.dragChanged = true;
+      if (!placement) continue;
+      for (const node of nodesOf(entry)) {
+        if (!placeScreen(node, entry.drawing, placement.scale, zoom)) continue;
+        if (this.inMirror(node)) this.dragChanged = true;
         else changed = true;
       }
     }
@@ -375,17 +386,27 @@ export class ComponentLayerRenderer {
       if (!wanted(entry)) continue;
       const parent = entry.node.getParent();
       const index = entry.node.zIndex();
-      entry.node.destroy();
-      const { node, imageUrls, packageKeys, images } = this.draw(entry.drawing);
+      const overlayIndex = entry.overlay?.zIndex() ?? 0;
+      destroyEntry(entry);
+      const { node, overlay, imageUrls, packageKeys, images } = this.draw(entry.drawing);
       if (parent) {
         parent.add(node);
         node.zIndex(index);
+        if (overlay) {
+          parent.add(overlay);
+          overlay.zIndex(overlayIndex);
+        }
         const placement = placementOf(this.placements, entry.drawing.containerId);
-        if (placement) placeScreen(node, entry.drawing, placement.scale, this.zoom);
+        if (placement) {
+          for (const each of [node, overlay]) {
+            if (each) placeScreen(each, entry.drawing, placement.scale, this.zoom);
+          }
+        }
       }
       this.mounted.set(markingId, {
         drawing: entry.drawing,
         node,
+        ...(overlay ? { overlay } : {}),
         imageUrls,
         packageKeys,
         images,
@@ -461,12 +482,14 @@ export class ComponentLayerRenderer {
     const into = this.touchedBy(home, group);
     const reused = current ? this.reuse(current, drawing, home, group) : null;
     if (reused !== null) return reused;
-    current?.node.destroy();
-    const { node, imageUrls, packageKeys, images } = this.draw(drawing);
+    if (current) destroyEntry(current);
+    const { node, overlay, imageUrls, packageKeys, images } = this.draw(drawing);
     home.add(node);
+    if (overlay) home.add(overlay);
     this.mounted.set(drawing.markingId, {
       drawing,
       node,
+      ...(overlay ? { overlay } : {}),
       imageUrls,
       packageKeys,
       images,
@@ -488,7 +511,7 @@ export class ComponentLayerRenderer {
     if (current.drawing !== drawing || parent === null) return null;
     if (parent === home) return 0;
     if (parent !== group && !this.isMirror(parent)) return null;
-    current.node.moveTo(home);
+    for (const node of nodesOf(current)) node.moveTo(home);
     return this.touchedBy(parent, group) | this.touchedBy(home, group);
   }
 
@@ -498,11 +521,12 @@ export class ComponentLayerRenderer {
 
   private draw(drawing: LayerDrawing): {
     node: Konva.Group;
+    overlay: Konva.Group | undefined;
     imageUrls: readonly string[];
     packageKeys: readonly string[];
     images: number;
   } {
-    const { root, imageUrls, packageImages } = renderScene(
+    const { root, overlay, imageUrls, packageImages } = renderScene(
       { root: drawing.root, warnings: [] },
       {
         palette: this.options.placeholder,
@@ -510,24 +534,40 @@ export class ComponentLayerRenderer {
         onImageLoaded: this.options.onImageLoaded,
         // The main canvas does not read pixels: an `opaque` image (no CORS) shows up.
         pixelSafe: false,
+        // The overlay nodes are drawn above every drawing of the space: the layer places them.
+        overlay: 'apart',
         ...(this.options.remoteImage ? { remoteImage: this.options.remoteImage } : {}),
         ...(drawing.specId === undefined ? {} : { specId: drawing.specId }),
         ...(this.options.packageImage ? { packageImage: this.options.packageImage } : {}),
       },
     );
     root.listening(false);
-    const node =
+    overlay?.listening(false);
+    const fit = (group: Konva.Group): Konva.Group =>
       drawing.clip && !drawing.screen
-        ? clipped(root, drawing.clip, drawing.clipShape)
-        : root;
+        ? clipped(group, drawing.clip, drawing.clipShape)
+        : group;
+    const node = fit(root);
     node.setAttr('markingId', drawing.markingId);
+    const over = overlay && fit(overlay);
+    over?.setAttr('overlayOf', drawing.markingId);
     return {
       node,
+      overlay: over,
       imageUrls,
       packageKeys: packageImages,
-      images: root.find('Image').length,
+      images: root.find('Image').length + (overlay?.find('Image').length ?? 0),
     };
   }
+}
+
+/** The groups a mounted drawing owns: its base and, when it has one, its overlay. */
+function nodesOf(entry: Mounted): Konva.Group[] {
+  return entry.overlay ? [entry.node, entry.overlay] : [entry.node];
+}
+
+function destroyEntry(entry: Mounted): void {
+  for (const node of nodesOf(entry)) node.destroy();
 }
 
 /**
@@ -739,19 +779,20 @@ function placeGroup(group: Konva.Group, { x, y, scale }: Placement): boolean {
   return true;
 }
 
-/** Leaves the group's children in the order of `list`; `true` if it had to touch anything. */
+/** Leaves the group's children in the order of `list` (the bases, then the overlays); `true` if it had to touch anything. */
 function sortChildren(
   group: Konva.Group,
   list: readonly LayerDrawing[],
   mounted: ReadonlyMap<string, Mounted>,
 ): boolean {
+  // The bases in drawing order, then the overlays (second pass) in the same order.
+  const entries = list.flatMap((drawing) => mounted.get(drawing.markingId) ?? []);
+  const wanted = [
+    ...entries.map((entry) => entry.node),
+    ...entries.flatMap((entry) => entry.overlay ?? []),
+  ];
   const children = group.getChildren();
-  const sameOrder = list.every(
-    (drawing, index) => children[index] === mounted.get(drawing.markingId)?.node,
-  );
-  if (sameOrder) return false;
-  list.forEach((drawing, index) => {
-    mounted.get(drawing.markingId)?.node.zIndex(index);
-  });
+  if (wanted.every((node, index) => children[index] === node)) return false;
+  wanted.forEach((node, index) => node.zIndex(index));
   return true;
 }
