@@ -514,6 +514,7 @@ Also counted as a finding: noticeable slowness (more than a second to respond), 
 
 - R53 uses folders of its own (`sdui-backend`, `variantes` and `variantes25`) and a work folder `W53`; it needs the shell, the MCP client over stdio, Playwright over CDP and the app. The steps run in sequence (R53.2 proposes the batch that R53.3 to R53.9 read; R53.5 and R53.6 leave the state that R53.7 and R53.8 read) and depend on no other script. Without the MCP, mark "not executed" R53.1, R53.2, R53.7 and R53.8; R53.3 to R53.6 and R53.9 need the project of R53.1 and R53.2.
 
+<!-- /roteiros -->
 <!-- roteiros: R54 -->
 
 - R54 uses folders of its own (`tt` and its copies `tt-*`, the projects `ttp` and `ttq`) built by the shell and the MCP from `REPO/examples/libraries/touch-targets/`, and a work folder `W54`; it needs the shell, ImageMagick, `python3`, the MCP client over stdio, Playwright over CDP and the app. The steps run in sequence (R54.2 builds the copies that R54.4, R54.5 and R54.8 use; R54.3 proposes the batch that R54.4 and R54.6 to R54.10 read) and depend on no other script. Without the MCP, mark "not executed" R54.1 to R54.3 and R54.5 to R54.7; R54.4, R54.8 and R54.9 need the project of R54.3.
