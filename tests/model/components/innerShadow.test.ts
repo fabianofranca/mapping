@@ -169,8 +169,9 @@ describe('shadow.inner on path, icon and arcs', () => {
       issue?.message ?? '',
     );
     expect(message.text).toBe('only valid on frame, rect, ellipse, path and icon');
-    // pt-BR kept: the object of the test is the pt-BR rendering of the model message
+    // portuguese-guard:begin the object of the test is the pt-BR rendering of the model message
     expect(ptBRText(message)).toBe('válido apenas em frame, rect, ellipse, path e icon');
+    // portuguese-guard:end
   });
 
   it('an ellipse arc is a scene path that keeps the inner shadow', () => {
