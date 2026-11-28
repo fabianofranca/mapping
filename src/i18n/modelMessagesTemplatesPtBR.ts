@@ -314,6 +314,8 @@ export const templatePtBR: {
   'model.spec.accessibilityPartColumnMissing':
     'when: a tabela {table} não tem a coluna {column}',
   'model.spec.accessibilityPartNoTouch': 'uma parte não tem área de toque',
+  'model.spec.touchSpacingNeedsVisual': 'spacing: só é válido com mode "visual"',
+  'model.spec.touchSpacingNeedsSquare': 'spacing: exige width igual a height',
   'model.spec.accessibilityLabelFieldsEmpty':
     'não pode ser vazio; liste ao menos um campo',
   'model.spec.structuralNoComponent':

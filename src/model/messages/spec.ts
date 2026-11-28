@@ -157,6 +157,8 @@ export const specMessages = {
     'when: "{when}" is neither a field nor a table of the type',
   'spec.accessibilityPartColumnMissing': 'when: the table {table} has no column {column}',
   'spec.accessibilityPartNoTouch': 'a part has no touch target',
+  'spec.touchSpacingNeedsVisual': 'spacing: only valid with mode "visual"',
+  'spec.touchSpacingNeedsSquare': 'spacing: needs width equal to height',
   'spec.accessibilityLabelFieldsEmpty': 'cannot be empty; list at least one field',
   // Types
   'spec.structuralNoComponent':
