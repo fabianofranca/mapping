@@ -11,8 +11,8 @@ name: MCP pre-release
 #   last phase (that phase's agent puts the label on when opening the PR). It generates `mcp-v<version>-rc.<n>`
 #   (n = that version's largest existing rc + 1) from the merge commit. Without the label, the
 #   merge does not generate an rc. If someone forgets the label, run this workflow by hand (`workflow_dispatch`)
-#   on the `epic/**` branch. The rcs are deleted by `mcp-release.yml` when the stable of the same
-#   version is published.
+#   on the `epic/**` branch. The rcs are deleted by the `cleanup-rcs` job of `mcp-release.yml`, on every
+#   push to `main`, once their commit is in `main` (the epic's closing may change the version).
 # The PR's tests run in `ci.yml`; the snapshot does not repeat them. The rc runs them, like the stable.
 #
 # The PR's code (`npm ci`, build, tests) runs in `*-build` jobs, with only `contents: read` and no

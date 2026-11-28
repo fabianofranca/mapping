@@ -228,7 +228,10 @@ describe('mcp-release.yml attaches mapping-mcp.js to the Release', () => {
       release.indexOf('\n  decide:'),
       release.indexOf('\n  release:'),
     );
-    const job = release.slice(release.indexOf('\n  release:'));
+    const job = release.slice(
+      release.indexOf('\n  release:'),
+      release.indexOf('\n  cleanup-rcs:'),
+    );
     expect(decide).toMatch(/permissions:\n {6}contents: read/);
     expect(decide).toContain('scripts/release/stableRelease.mjs decide');
     expect(job).toMatch(/needs: decide/);
@@ -752,6 +755,39 @@ describe('mcp-release.yml: rc tags, a tag that shows up midway and one pass per 
     expect(release.match(/workspaceAssets\.mjs/g)).toHaveLength(1);
     expect(release).toContain('stableRelease.mjs version --version-file mcp/version.ts');
     expect(release).not.toContain('sed -n "s/.*SERVER_VERSION');
+  });
+});
+
+// Bug #3133: the rc cleanup is its own job, on every push to main, by ancestry and not by version.
+describe('mcp-release.yml: the rc cleanup is its own job', () => {
+  const release = read('.github/workflows/mcp-release.yml');
+  const start = release.indexOf('\n  cleanup-rcs:');
+  const releaseJob = release.slice(release.indexOf('\n  release:'), start);
+  const cleanup = release.slice(start);
+
+  it('moves out of the release job and runs on every push to main, even when release is skipped', () => {
+    expect(start).toBeGreaterThan(0);
+    expect(releaseJob).not.toContain('--cleanup-tag');
+    expect(cleanup).toContain('needs: [decide, release]');
+    expect(cleanup).toContain(
+      "if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.release.result != 'failure' && needs.release.result != 'cancelled'",
+    );
+    expect(cleanup).toMatch(/permissions:\n {6}contents: write/);
+    expect(cleanup).toMatch(/group: mcp-release-cleanup\n {6}cancel-in-progress: false/);
+  });
+
+  it('deletes only the rcs (pattern checked first) whose commit is already in main', () => {
+    const pattern = "'^mcp-v[0-9]+\\.[0-9]+\\.[0-9]+-rc\\.[0-9]+$'";
+    expect(cleanup).toMatch(/fetch-depth: 0\n\s+fetch-tags: true/);
+    expect(cleanup.indexOf(pattern)).toBeGreaterThan(0);
+    expect(cleanup.indexOf(pattern)).toBeLessThan(
+      cleanup.indexOf('git merge-base --is-ancestor'),
+    );
+    expect(cleanup.indexOf('git merge-base --is-ancestor')).toBeLessThan(
+      cleanup.indexOf('gh release delete "$rc" --cleanup-tag --yes'),
+    );
+    expect(cleanup).toContain('git push origin --delete "refs/tags/$rc"');
+    expect(cleanup).not.toContain('mcp-snapshot');
   });
 });
 

@@ -3,7 +3,8 @@ name: MCP release
 # Stable `mcp-v<version>` (e.g. mcp-v0.3.0): builds `mapping-mcp.js` and attaches it to the Release. The tag's
 # version must be the one in `SERVER_VERSION` in `mcp/version.ts`. Only `x.y.z` triggers the stable: the
 # pre-releases `mcp-v<version>-rc.<n>` and `mcp-snapshot-pr<N>` (`mcp-prerelease.yml`) never
-# trigger it. When publishing, it deletes the rcs (release and tag) of the same version.
+# trigger it. The rcs (release and tag) are deleted by the `cleanup-rcs` job, on every push to `main`
+# (published or not): the ones whose commit is already in `main`, whatever their version.
 #
 # Three origins:
 # - push to `main` (the merge of an epic or of Dependabot; the ruleset only accepts those): the `decide` job
@@ -164,17 +165,32 @@ jobs:
               --notes "Mapping MCP server. Copy \`mapping-mcp.js\` to \`tools/\` in your repository and register it in \`.mcp.json\`. It also brings the workspace's \`setup.sh\`, the \`SKILL.md\` skill, the \`AGENTS.mapping.md\` rules and the \`watch-comments.mjs\` watcher, the \`watch-conversations.SKILL.md\` skill that wakes the agent in the same chat, and the \`mapping-signature.mjs\` signature extractor, each with its \`.sha256\`. Instructions in docs/MCP.md. To update a workspace that still has the old \`setup.sh\`, once: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
           fi
 
-      - name: Delete this version's release candidates
+  # Deleted by ancestry (the epic's provisional version may change); not after a failed `release`.
+  cleanup-rcs:
+    needs: [decide, release]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.release.result != 'failure' && needs.release.result != 'cancelled'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: mcp-release-cleanup
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Delete the release candidates already in main
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          version="${TAG#mcp-v}"
-          # rc releases (with the tag) and rc tags left without a release.
-          for rc in $(gh release list --limit 200 --json tagName --jq ".[].tagName" |
-            grep -E '^mcp-v[0-9.]+-rc\.[0-9]+$' | grep -F "mcp-v${version}-rc." || true); do
-            gh release delete "$rc" --cleanup-tag --yes
-          done
-          for rc in $(git ls-remote --tags origin "refs/tags/mcp-v${version}-rc.*" |
-            sed -n "s#.*refs/tags/\(.*\)\$#\1#p"); do
-            git push origin --delete "refs/tags/$rc" || true
+          for rc in $(git tag --list 'mcp-v*-rc.*'); do
+            printf '%s' "$rc" | grep -Eq '^mcp-v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$' || continue
+            git merge-base --is-ancestor "${rc}^{commit}" HEAD || continue
+            if gh release view "$rc" > /dev/null 2>&1; then
+              gh release delete "$rc" --cleanup-tag --yes
+            else
+              git push origin --delete "refs/tags/$rc"
+            fi
           done
