@@ -204,7 +204,8 @@ function structuredCopy(
             {
               ...next,
               markings: next.markings.map((m) =>
-                m.id === rootId ? { ...m, parentId } : m,
+                // The original's stored slot must not answer for the new parent: the geometry does.
+                m.id === rootId ? withoutSlot({ ...m, parentId }) : m,
               ),
             },
             parentId,
