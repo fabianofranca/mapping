@@ -135,10 +135,19 @@ function copiesOf(
   return {
     markings: [root, ...subtree].map((m) => {
       const { anchor, ...rest } = m;
-      void anchor;
+      // An anchor inside the copied set follows the copies; one that points outside would tie the copy to the original.
+      const inside = anchor != null && marking.has(anchor.to);
       const parent =
         m.id === root.id ? m.parentId : (marking.get(m.parentId ?? '') ?? null);
-      return { ...rest, id: marking.get(m.id) as string, parentId: parent, source: null };
+      return {
+        ...rest,
+        ...(inside && anchor
+          ? { anchor: { ...anchor, to: marking.get(anchor.to) as string } }
+          : {}),
+        id: marking.get(m.id) as string,
+        parentId: parent,
+        source: null,
+      };
     }),
     annotations: annotations.map((a) => ({
       ...a,
@@ -298,7 +307,8 @@ function pasteSpace(
  * Pastes the copied marking and its subtree (`data` of `itemClipboardData`) at `target`. It keeps the parent and the
  * slot when it lands in the same space and the parent exists; otherwise a materialized marking takes the parent the
  * geometry gives once (the creation rule) and an observation marking, the one from the geometry. It goes after the
- * last marking of the array, so after its siblings.
+ * last marking of the array, so after its siblings. The copy keeps its pixel size: `target.at` is in the pixels of
+ * the target space (a container) or in canvas units, and nothing is converted between spaces.
  */
 export function pasteMarking(
   p: Project,

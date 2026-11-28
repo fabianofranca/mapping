@@ -162,6 +162,14 @@ export function addTypedAnnotation(
   args: NewTypedAnnotationArgs,
   options?: NatureOptions,
 ): Project {
+  return applyNatureChanges(p, withTypedAnnotation(p, args), options);
+}
+
+/**
+ * The project with the typed annotation added and nothing else: no nature pass, no settle. For a throwaway
+ * project that only reads values (the placement's defaults), never for one that is kept.
+ */
+export function withTypedAnnotation(p: Project, args: NewTypedAnnotationArgs): Project {
   if (p.annotations.some((a) => a.id === args.id)) fail('duplicate-id', args.id);
   requireAnnotationOwner(p, args.markingId);
   const layer = findById(p.layers, args.layerId);
@@ -203,11 +211,7 @@ export function addTypedAnnotation(
     values: defaultValues(resolved.type),
     entries: [],
   };
-  return applyNatureChanges(
-    p,
-    { ...p, annotations: [...p.annotations, annotation] },
-    options,
-  );
+  return { ...p, annotations: [...p.annotations, annotation] };
 }
 
 function updateValues(

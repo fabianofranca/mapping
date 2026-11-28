@@ -70,7 +70,7 @@ import { firstPageId } from './spaces';
 import type { SpecAnnotationType } from './spec';
 import { findSpecType, projectLayerFor } from './specLookup';
 import type { SlotReader } from './structure';
-import { addTypedAnnotation, setFieldValue } from './typed';
+import { addTypedAnnotation, setFieldValue, withTypedAnnotation } from './typed';
 import type {
   Marking,
   MarkingAnchor,
@@ -664,7 +664,7 @@ function initialValues(
     source: null,
   };
   let next: Project = { ...p, markings: [...p.markings, scratch] };
-  next = addTypedAnnotation(next, {
+  next = withTypedAnnotation(next, {
     id: SCRATCH_ANNOTATION,
     markingId: SCRATCH_MARKING,
     layerId: layer.id,

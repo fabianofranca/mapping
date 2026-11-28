@@ -291,7 +291,8 @@ export function checkArrowsStayOnPage(
 /**
  * Moves the marking by the (integer) offset. Inside a container, it also takes all the
  * descendants along (locked ones included: the relative position between them and the marking
- * does not change); on the canvas, the marking is a lens and moves alone (floating included).
+ * does not change); on the canvas, the marking is a lens and moves alone (floating included), except
+ * for its stored children (a materialized marking's, and theirs), which travel with it in every space (stage #3087).
  * Nothing ties the marking to the container: it can leave it, and the settle decides the new
  * space, converting its `rect` and the descendants'. The markings anchored to it (v20) go along,
  * with the descendants and those anchored to them (the relative position is kept, locked ones

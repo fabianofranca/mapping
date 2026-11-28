@@ -841,3 +841,87 @@ describe('Duplicate and paste (decision 10)', () => {
     expect(copyOf(away)?.parentId).toBeNull();
   });
 });
+
+describe('review findings', () => {
+  it('a marking that becomes materialized keeps its stored child that has the same rectangle', () => {
+    // `C` (materialized, stored child of `M`) comes first in the array and has the same rectangle as `M`.
+    const base = baseProject();
+    const same = rc(300, 300, 100, 100);
+    const raw = (id: string, parentId: string | null) => ({
+      id,
+      containerId: 'I1',
+      parentId,
+      pageId: null,
+      name: null,
+      rect: same,
+      needsReview: false,
+      locked: false,
+      floating: false,
+      decorative: false,
+      source: null,
+    });
+    const rawProject = { ...base, markings: [raw('C', 'M'), raw('M', null)] };
+    const typedC = addTypedAnnotation(rawProject, {
+      id: 'AC',
+      markingId: 'C',
+      layerId: 'LS1',
+      type: { specId: SPEC_ID, typeId: 'pin' },
+    });
+    const p = { ...typedC, markings: rawProject.markings };
+    const next = addTypedAnnotation(p, {
+      id: 'AM',
+      markingId: 'M',
+      layerId: 'LS1',
+      type: { specId: SPEC_ID, typeId: 'rounded-bar' },
+    });
+    expect(get(next, 'C').parentId).toBe('M');
+    expect(get(next, 'M').parentId).toBeNull();
+  });
+
+  it('a copy keeps the anchors that point inside the copied subtree, remapped, and drops the others', () => {
+    let p = add(scene(), 'R', 'rounded-bar', { rect: rc(100, 400, 200, 80) });
+    p = set(p, 'P1', { parentId: 'R' }, { rect: rc(120, 420, 24, 24) });
+    p = {
+      ...p,
+      markings: p.markings.map((m) =>
+        m.id === 'P1' ? { ...m, anchor: { to: 'R' } } : m,
+      ),
+    };
+    const next = duplicateMarking(
+      p,
+      'R',
+      {
+        newId: (() => {
+          let n = 0;
+          return () => `copy${++n}`;
+        })(),
+      },
+      { dx: 300, dy: 0 },
+    );
+    const copies = next.markings.filter((m) => m.id.startsWith('copy'));
+    const root = copies.find((m) => m.parentId === 'O');
+    const kid = copies.find((m) => m.parentId === root?.id);
+    expect(kid?.anchor).toEqual({ to: root?.id });
+    // An anchor to something that was not copied is dropped.
+    const outside = {
+      ...p,
+      markings: p.markings.map((m) =>
+        m.id === 'P1' ? { ...m, anchor: { to: 'O' } } : m,
+      ),
+    };
+    const dup = duplicateMarking(
+      outside,
+      'R',
+      {
+        newId: (() => {
+          let n = 0;
+          return () => `copy${++n}`;
+        })(),
+      },
+      { dx: 300, dy: 0 },
+    );
+    expect(
+      dup.markings.find((m) => m.id.startsWith('copy') && m.parentId !== 'O')?.anchor,
+    ).toBeUndefined();
+  });
+});
