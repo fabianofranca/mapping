@@ -984,6 +984,10 @@ export const enUS = {
   'notices.accessibility.count': '{count} warning(s)',
   'audit.touchTargetSmall':
     '{width} × {height}; minimum {minWidth} × {minHeight} units ({pxWidth} × {pxHeight} px at {density}x)',
+  'audit.touchTargetSmallSpacing':
+    '{width} × {height}; minimum {minWidth} × {minHeight} units ({pxWidth} × {pxHeight} px at {density}x) — too close to {name}',
+  'audit.touchTargetOverlap':
+    'Touch area overlaps {name} by {width} × {height} units ({pxWidth} × {pxHeight} px at {density}x)',
   'notices.status': 'Notices: {count}',
   'notices.statusTip':
     'Open the Notices window ({count} annotation(s) with an accessibility warning)',

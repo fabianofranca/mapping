@@ -503,8 +503,8 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(r16).toContain('OutlinedButton');
     });
 
-    it('the cloud prompt lists the scripts up to R55', () => {
-      expect(prompt).toContain('R0 to R55');
+    it('the cloud prompt lists the scripts up to R56', () => {
+      expect(prompt).toContain('R0 to R56');
     });
   });
 
@@ -572,8 +572,8 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(r17).toContain('Apply zip…');
     });
 
-    it('the cloud prompt lists the scripts up to R55', () => {
-      expect(prompt).toContain('R0 to R55');
+    it('the cloud prompt lists the scripts up to R56', () => {
+      expect(prompt).toContain('R0 to R56');
     });
   });
 
@@ -648,12 +648,12 @@ describe('docs/TESTING-NUVEM.md (modes, scripts and report flow)', () => {
       expect(JSON.parse(block)).toEqual(JSON.parse(fixture));
     });
 
-    it('the cloud prompt lists the scripts up to R55', () => {
-      expect(prompt).toContain('R0 to R55');
+    it('the cloud prompt lists the scripts up to R56', () => {
+      expect(prompt).toContain('R0 to R56');
     });
 
-    it('the full-round order enumeration ends at R55, like the heading', () => {
-      expect(prompt).toContain('R5, R8 and R9 to R55.');
+    it('the full-round order enumeration ends at R56, like the heading', () => {
+      expect(prompt).toContain('R5, R8 and R9 to R56.');
       expect(prompt).not.toContain('R9 to R27');
     });
   });
@@ -1427,9 +1427,9 @@ describe('lean docs/TESTING-NUVEM.md and TESTING-NUVEM-CONSULTA.md (#1533, TE1)'
   const cloud = read('docs/TESTING-NUVEM.md');
   const consulta = read('docs/TESTING-NUVEM-CONSULTA.md');
 
-  // The ceiling went from 32,000 to 32,500 in stage #1712 (restoring the wording from before PR #1709), to 33,200 in #2261 (the cause rule of "Check and record"), to 33,550 in #2474 (the hook notice of "Context up to 300 thousand") and to 33,850 in #2450 (the `await check` rule, on top of the hook notice), to 34,000 in AF7 of #2035 and to 34,300 in CX3 of #2783 (the tester gate of "How to act").
-  it('TESTING-NUVEM.md has up to 34,300 characters', () => {
-    expect(cloud.length).toBeLessThanOrEqual(34_300);
+  // The ceiling went from 32,000 to 32,500 in stage #1712 (restoring the wording from before PR #1709), to 33,200 in #2261 (the cause rule of "Check and record"), to 33,550 in #2474 (the hook notice of "Context up to 300 thousand") and to 33,850 in #2450 (the `await check` rule, on top of the hook notice), to 34,000 in AF7 of #2035 to 34,300 in CX3 of #2783 (the tester gate of "How to act") and to 34,400 in TA5 of #2144 (R55 in block 1 widens the blocks table).
+  it('TESTING-NUVEM.md has up to 34,400 characters', () => {
+    expect(cloud.length).toBeLessThanOrEqual(34_400);
   });
 
   it('the CONSULTA brings the keys and TESTING-NUVEM.md points to the secao of each one', () => {

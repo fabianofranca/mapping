@@ -109,9 +109,9 @@ const messageAt = (input: Json, path: string): string[] =>
 
 describe('formatVersion 22', () => {
   it('is the current version and the list ends in it', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(26);
-    expect(SPEC_FORMAT_VERSIONS.at(-1)).toBe(26);
-    expect(SPEC_FORMAT_VERSIONS).toHaveLength(26);
+    expect(SPEC_FORMAT_VERSION).toBe(27);
+    expect(SPEC_FORMAT_VERSIONS.at(-1)).toBe(27);
+    expect(SPEC_FORMAT_VERSIONS).toHaveLength(27);
   });
 
   it('accepts the plain-data specialization in zod and in the JSON Schema', () => {

@@ -154,7 +154,13 @@ describe('R9.26b: no free spot in the slot (CL1-F13)', () => {
       })),
     ]);
     expect(reply.valid).toBe(true);
-    expect(reply.warnings?.map((w) => w.code)).toEqual(['ignored-argument']);
+    // The third button sits over the second, so their touch areas meet: one overlap finding per annotation of the
+    // pair (stage #1998).
+    expect(reply.warnings?.map((w) => w.code)).toEqual([
+      'ignored-argument',
+      'touch-target-overlap',
+      'touch-target-overlap',
+    ]);
     expect(reply.warnings?.[0]?.message).toMatch(/did not fit in the slot/);
     const [second, third] = [rectOf(reply.summary[2]), rectOf(reply.summary[3])];
     // Overlap: the slot has no free spot, so the marking is created where the slot put it.

@@ -1,7 +1,14 @@
 import { rmSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  addTypedAnnotation,
+  createArrow,
+  createMarking,
+  type Project,
+} from '../../src/model';
+import {
   A11Y_SCREEN,
+  A11Y_SPEC_ID,
   a11yCall,
   a11yWorkspace,
   type A11yWorkspace,
@@ -13,6 +20,35 @@ import {
 // pending item in `incomplete` and does not count the warning.
 
 let ws: A11yWorkspace;
+
+type Doc = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+/** An arrow between two buttons with a button annotation of its own, and a marking with no annotation. */
+const ARROW_REF = 'mapping://a11y/m/arone';
+const EDIT = {
+  tweak: (spec: Doc) => {
+    const button = spec.layers[0].annotationTypes.find(
+      (t: { id: string }) => t.id === 'button',
+    );
+    button.appliesTo = ['marking', 'arrow'];
+  },
+  edit: (project: Project): Project => {
+    let p = createMarking(project, {
+      id: 'mk-plain',
+      containerId: A11Y_SCREEN,
+      rect: { x: 600, y: 1400, width: 200, height: 200 },
+      name: 'plain',
+    });
+    p = createArrow(p, { id: 'ar-one', from: 'mk-small', to: 'mk-fits' });
+    const layer = p.layers.find((l) => l.spec?.specId === A11Y_SPEC_ID)!;
+    return addTypedAnnotation(p, {
+      id: 'an-arrow',
+      markingId: 'ar-one',
+      layerId: layer.id,
+      type: { specId: A11Y_SPEC_ID, typeId: 'button' },
+    });
+  },
+};
 
 const call = (name: string, args: Record<string, unknown>) => a11yCall(ws, name, args);
 
@@ -74,7 +110,7 @@ beforeAll(async () => {
       rect: { x: 100, y: 1100, width: 800, height: 168 },
       values: { actionIcon1Description: 'Search', actionIcon2Description: 'More' },
     });
-  });
+  }, EDIT);
 });
 
 afterAll(async () => {
@@ -196,11 +232,240 @@ describe('the type resolved: get_component and get_annotation', () => {
     expect(bar.accessibility.touchTarget).toBeUndefined();
   });
 
-  it('the annotation view carries the same accessibility in its type', async () => {
+  it("get_marking carries typeAccessibility['accessibility/button'] equal to get_component's accessibility", async () => {
+    const marking = await call('get_marking', { ref: await refOf('small') });
+    const button = await call('get_component', {
+      project: 'a11y',
+      specId: 'accessibility',
+      type: 'button',
+    });
+    expect(marking.typeAccessibility['accessibility/button']).toEqual(
+      button.accessibility,
+    );
+    expect(Object.keys(marking.typeAccessibility)).toEqual(['accessibility/button']);
+  });
+
+  it("the annotations' type in get_marking has no accessibility", async () => {
     const [annotation] = await annotationsOf('small');
-    expect((annotation!.type as { accessibility: unknown }).accessibility).toMatchObject({
+    expect(annotation!.type).not.toHaveProperty('accessibility');
+  });
+
+  it("get_annotation's type.accessibility is unchanged", async () => {
+    const [small] = await annotationsOf('small');
+    const detail = await call('get_annotation', { ref: small!.ref });
+    expect((detail.type as { accessibility: unknown }).accessibility).toMatchObject({
       role: 'button',
       touchTarget: { width: 44, height: 44, mode: 'visual' },
     });
+  });
+
+  it('the key is absent on a marking with no type that declares accessibility', async () => {
+    const marking = await call('get_marking', { ref: await refOf('plain') });
+    expect(marking).not.toHaveProperty('typeAccessibility');
+  });
+
+  it("an arrow's get_marking carries the map too", async () => {
+    const arrow = await call('get_marking', { ref: ARROW_REF });
+    expect(arrow.kind).toBe('arrow');
+    expect(arrow.typeAccessibility['accessibility/button']).toMatchObject({
+      role: 'button',
+    });
+    const [annotation] = (
+      arrow.layers as { annotations: Record<string, unknown>[] }[]
+    ).flatMap((l) => l.annotations);
+    expect(annotation!.type).not.toHaveProperty('accessibility');
+  });
+});
+
+// Stage #1998 (TA2, decision 8): `touch-target-overlap` in the reads. A project with the root minimum 48 `expanded`
+// (density 1): `IconA` and `IconB` are 40 x 40 and 4 apart, `Far` is alone.
+describe('touch-target-overlap in get_marking, get_annotation and list_markings', () => {
+  let ows: A11yWorkspace;
+  const call = (name: string, args: Record<string, unknown>) => a11yCall(ows, name, args);
+  const list = async () =>
+    (await call('list_markings', { project: 'a11y', container: A11Y_SCREEN }))
+      .markings as { ref: string; name: string; warnings?: number }[];
+  const refOf = async (name: string) => (await list()).find((r) => r.name === name)!.ref;
+  const annotationOf = async (name: string) => {
+    const marking = await call('get_marking', { ref: await refOf(name) });
+    return (marking.layers as { annotations: Record<string, unknown>[] }[]).flatMap(
+      (l) => l.annotations,
+    )[0]!;
+  };
+
+  beforeAll(async () => {
+    ows = await a11yWorkspace(
+      (_add, plain) => {
+        plain(
+          'IconA',
+          'button',
+          { x: 100, y: 100, width: 40, height: 40 },
+          { label: 'A' },
+        );
+        plain(
+          'IconB',
+          'button',
+          { x: 144, y: 100, width: 40, height: 40 },
+          { label: 'B' },
+        );
+        plain('Far', 'button', { x: 600, y: 100, width: 40, height: 40 }, { label: 'F' });
+      },
+      {
+        density: 1,
+        tweak: (spec: Doc) => {
+          spec.accessibility.touchTarget = { width: 48, height: 48, mode: 'expanded' };
+        },
+      },
+    );
+  });
+
+  afterAll(async () => {
+    await ows.client.close();
+    rmSync(ows.base, { recursive: true, force: true });
+  });
+
+  it('get_marking has the audit entry that names the neighbor', async () => {
+    const a = await annotationOf('IconA');
+    const b = await annotationOf('IconB');
+    expect(a.audit).toEqual([
+      {
+        code: 'touch-target-overlap',
+        annotation: a.ref,
+        other: { marking: await refOf('IconB'), annotation: b.ref },
+        overlap: { width: 4, height: 48 },
+        overlapPx: { width: 4, height: 48 },
+        density: 1,
+      },
+    ]);
+    expect(b.audit).toMatchObject([{ other: { marking: await refOf('IconA') } }]);
+    expect((await annotationOf('Far')).audit).toBeUndefined();
+  });
+
+  it('get_annotation carries the same audit', async () => {
+    const a = await annotationOf('IconA');
+    expect((await call('get_annotation', { ref: a.ref })).audit).toEqual(a.audit);
+  });
+
+  it('list_markings counts one warning for each annotation with an overlap, never a pending item', async () => {
+    const rows = await list();
+    expect(
+      rows.filter((r) => r.warnings !== undefined).map((r) => [r.name, r.warnings]),
+    ).toEqual([
+      ['IconA', 1],
+      ['IconB', 1],
+    ]);
+    const incomplete = await call('list_markings', {
+      project: 'a11y',
+      container: A11Y_SCREEN,
+      incomplete: true,
+    });
+    expect(incomplete.markings).toEqual([]);
+  });
+});
+
+// Stage #1998 (TA4): `touch-target-small` with the WCAG 2.5.8 spacing in the reads. The root minimum is 24 x 24
+// `visual` with `spacing: true` (density 1): `IconA` and `IconB` are 20 x 20 with centers 20 apart (their circles
+// overlap); `Lone` is a chip, whose type has the same minimum with no opt-in.
+describe('touch-target-small with the spacing in get_marking, get_annotation and the type', () => {
+  let sws: A11yWorkspace;
+  const call = (name: string, args: Record<string, unknown>) => a11yCall(sws, name, args);
+  const list = async () =>
+    (await call('list_markings', { project: 'a11y', container: A11Y_SCREEN }))
+      .markings as { ref: string; name: string; warnings?: number }[];
+  const refOf = async (name: string) => (await list()).find((r) => r.name === name)!.ref;
+  const annotationOf = async (name: string) => {
+    const marking = await call('get_marking', { ref: await refOf(name) });
+    return (marking.layers as { annotations: Record<string, unknown>[] }[]).flatMap(
+      (l) => l.annotations,
+    )[0]!;
+  };
+
+  beforeAll(async () => {
+    sws = await a11yWorkspace(
+      (_add, plain) => {
+        plain(
+          'IconA',
+          'button',
+          { x: 100, y: 100, width: 20, height: 20 },
+          { label: 'A' },
+        );
+        plain(
+          'IconB',
+          'button',
+          { x: 120, y: 100, width: 20, height: 20 },
+          { label: 'B' },
+        );
+        plain('Lone', 'chip', { x: 600, y: 100, width: 20, height: 20 }, { label: 'L' });
+      },
+      {
+        density: 1,
+        tweak: (spec: Doc) => {
+          spec.formatVersion = 27;
+          spec.accessibility.touchTarget = {
+            width: 24,
+            height: 24,
+            mode: 'visual',
+            spacing: true,
+          };
+          // The type `chip` declares its own area, with no opt-in: the plain size finding, as before.
+          spec.layers[0].annotationTypes.find(
+            (t: { id: string }) => t.id === 'chip',
+          ).accessibility.touchTarget = { width: 24, height: 24, mode: 'visual' };
+        },
+      },
+    );
+  });
+
+  afterAll(async () => {
+    await sws.client.close();
+    rmSync(sws.base, { recursive: true, force: true });
+  });
+
+  it('get_marking has audit with spacing.other naming the neighbor', async () => {
+    const a = await annotationOf('IconA');
+    const b = await annotationOf('IconB');
+    expect(a.audit).toEqual([
+      {
+        code: 'touch-target-small',
+        annotation: a.ref,
+        actual: { width: 20, height: 20 },
+        min: { width: 24, height: 24 },
+        minPx: { width: 24, height: 24 },
+        density: 1,
+        spacing: { other: { marking: await refOf('IconB'), annotation: b.ref } },
+      },
+    ]);
+    expect(b.audit).toMatchObject([
+      { spacing: { other: { marking: await refOf('IconA') } } },
+    ]);
+  });
+
+  it('an undersized marking of a type with no opt-in has the size finding and no spacing key', async () => {
+    const lone = await annotationOf('Lone');
+    expect(lone.audit).toHaveLength(1);
+    expect((lone.audit as Record<string, unknown>[])[0]).not.toHaveProperty('spacing');
+  });
+
+  it('get_annotation carries the same audit', async () => {
+    const a = await annotationOf('IconA');
+    expect((await call('get_annotation', { ref: a.ref })).audit).toEqual(a.audit);
+  });
+
+  it('get_component and typeAccessibility show spacing: true as declared', async () => {
+    const button = await call('get_component', {
+      project: 'a11y',
+      specId: 'accessibility',
+      type: 'button',
+    });
+    expect(button.accessibility.touchTarget).toEqual({
+      width: 24,
+      height: 24,
+      mode: 'visual',
+      spacing: true,
+    });
+    const marking = await call('get_marking', { ref: await refOf('IconA') });
+    expect(marking.typeAccessibility['accessibility/button'].touchTarget).toEqual(
+      button.accessibility.touchTarget,
+    );
   });
 });

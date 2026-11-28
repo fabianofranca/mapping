@@ -1,6 +1,6 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 26,
+  "formatVersion": 27,
   "id": "field-display",
   "name": "Test field display",
   "version": 1,

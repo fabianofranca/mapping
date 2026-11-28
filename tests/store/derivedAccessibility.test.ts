@@ -14,10 +14,11 @@ import {
   createMarking,
   parseSpec,
   setFieldValue,
+  type AuditFinding,
   type Project,
 } from '../../src/model';
 import { createCanvasViewState } from '../../src/canvas/viewState';
-import { createEditorDerived } from '../../src/store/derived';
+import { createEditorDerived, sameFinding } from '../../src/store/derived';
 import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { setMarkingDisplay, setShowComponentsOnPhotos } from '../../src/store/settings';
@@ -252,6 +253,127 @@ describe('derived.auditFindings and the counts', () => {
     expect(derived.auditFindings.value).toBe(before);
     actions.setMarkingRect('M_A', { x: 0, y: 0, width: 132, height: 132 });
     expect(derived.auditFindings.value.size).toBe(0);
+  });
+});
+
+// Stage #1998 (TA2): `touch-target-overlap` reaches the derived state like `touch-target-small`.
+describe('derived.auditFindings: touch-target-overlap', () => {
+  // The library's root minimum (44) turned `expanded`: a 40 x 40 button is grown to 44 around its center.
+  const expandedSpec = {
+    ...a11ySpec,
+    accessibility: { touchTarget: { width: 44, height: 44, mode: 'expanded' as const } },
+  };
+  const box = (x: number, y = 0) => ({ x, y, width: 40, height: 40 });
+  const neighbors = (gap: number): Project => {
+    let p = a11yWorld(1, expandedSpec);
+    p = a11yPut(p, 'button', 'A', box(0), { label: 'A' });
+    return a11yPut(p, 'button', 'B', box(40 + gap), { label: 'B' });
+  };
+
+  it('goes to auditFindings of each marking, not to the issues or the Incomplete count', () => {
+    const { derived } = setup(neighbors(2));
+    expect(derived.auditFindings.value.get('M_A')).toEqual([
+      {
+        code: 'touch-target-overlap',
+        annotationId: 'A',
+        markingId: 'M_A',
+        other: { annotationId: 'B', markingId: 'M_B' },
+        overlap: { width: 2, height: 44 },
+        overlapPx: { width: 2, height: 44 },
+        density: 1,
+      },
+    ]);
+    expect(derived.auditFindings.value.get('M_B')?.[0]).toMatchObject({
+      other: { annotationId: 'A', markingId: 'M_A' },
+    });
+    expect(derived.issues.value.size).toBe(0);
+    expect(derived.incompleteCount.value).toBe(0);
+  });
+
+  it('the status bar counts each annotation once, and moving a neighbor away clears it', () => {
+    const { derived, actions } = setup(neighbors(2));
+    expect(derived.auditedCount.value).toBe(2);
+    actions.setMarkingRect('M_B', box(200));
+    expect(derived.auditedCount.value).toBe(0);
+    expect(derived.auditFindings.value.size).toBe(0);
+  });
+
+  it('a larger overlap is a new map; the same overlap keeps the same map', () => {
+    const { derived, actions } = setup(neighbors(2));
+    const before = derived.auditFindings.value;
+    actions.setFieldValue('A', 'label', 'Other');
+    expect(derived.auditFindings.value).toBe(before);
+    actions.setMarkingRect('M_B', box(38));
+    expect(derived.auditFindings.value).not.toBe(before);
+    expect(derived.auditFindings.value.get('M_A')?.[0]).toMatchObject({
+      overlap: { width: 6, height: 44 },
+    });
+  });
+});
+
+describe('sameFinding tells two overlaps apart', () => {
+  const overlap: AuditFinding = {
+    code: 'touch-target-overlap',
+    annotationId: 'A',
+    markingId: 'M_A',
+    other: { annotationId: 'B', markingId: 'M_B' },
+    overlap: { width: 2, height: 44 },
+    overlapPx: { width: 2, height: 44 },
+    density: 1,
+  };
+  const small: AuditFinding = {
+    code: 'touch-target-small',
+    annotationId: 'A',
+    markingId: 'M_A',
+    actual: { width: 40, height: 40 },
+    min: { width: 44, height: 44 },
+    minPx: { width: 44, height: 44 },
+    density: 1,
+  };
+
+  it('is the same only when every member is the same', () => {
+    expect(sameFinding(overlap, { ...overlap })).toBe(true);
+    expect(sameFinding(small, { ...small })).toBe(true);
+  });
+
+  it('a different overlap, pixels or other is another finding', () => {
+    const o = overlap as Extract<AuditFinding, { code: 'touch-target-overlap' }>;
+    expect(sameFinding(o, { ...o, overlap: { width: 3, height: 44 } })).toBe(false);
+    expect(sameFinding(o, { ...o, overlapPx: { width: 2, height: 45 } })).toBe(false);
+    expect(sameFinding(o, { ...o, other: { annotationId: 'C', markingId: 'M_B' } })).toBe(
+      false,
+    );
+    expect(sameFinding(o, { ...o, other: { annotationId: 'B', markingId: 'M_C' } })).toBe(
+      false,
+    );
+  });
+
+  it('a different spacing.other is another finding; present vs absent too', () => {
+    const s = small as Extract<AuditFinding, { code: 'touch-target-small' }>;
+    const withOther = {
+      ...s,
+      spacing: { other: { annotationId: 'B', markingId: 'M_B' } },
+    };
+    expect(sameFinding(withOther, { ...withOther })).toBe(true);
+    expect(
+      sameFinding(withOther, {
+        ...withOther,
+        spacing: { other: { annotationId: 'C', markingId: 'M_B' } },
+      }),
+    ).toBe(false);
+    expect(
+      sameFinding(withOther, {
+        ...withOther,
+        spacing: { other: { annotationId: 'B', markingId: 'M_C' } },
+      }),
+    ).toBe(false);
+    expect(sameFinding(withOther, s)).toBe(false);
+    expect(sameFinding(s, withOther)).toBe(false);
+  });
+
+  it('the two codes are never the same finding', () => {
+    expect(sameFinding(overlap, small)).toBe(false);
+    expect(sameFinding(small, overlap)).toBe(false);
   });
 });
 

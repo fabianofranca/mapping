@@ -42,6 +42,8 @@ import {
   type Annotation,
   type AnnotationIssue,
   type AuditFinding,
+  type TouchTargetOverlapFinding,
+  type TouchTargetSmallFinding,
   type AuditRow,
   type Change,
   type ChangeEntity,
@@ -139,12 +141,12 @@ export interface EditorDerived {
   /** How many annotations are incomplete in the project (all layers). */
   readonly incompleteCount: ReadonlySignal<number>;
   /**
-   * How many annotations have a `touch-target-small` warning (Notices window tab and status bar;
+   * How many annotations have an accessibility warning (`touch-target-small` or `touch-target-overlap`; Notices window tab and status bar;
    * without filters).
    */
   readonly auditedCount: ReadonlySignal<number>;
   /**
-   * The accessibility audit's warnings (`touch-target-small`) by marking (stage #1127); only the
+   * The accessibility audit's warnings (`touch-target-small`, `touch-target-overlap`) by marking (stage #1127); only the
    * markings with a warning appear. The same map while the warnings do not change. The pending
    * `accessible-label-missing` is not here: it is in `issues`.
    */
@@ -435,16 +437,44 @@ function sameSize(
   return a.width === b.width && a.height === b.height;
 }
 
-function sameFinding(a: AuditFinding, b: AuditFinding): boolean {
+function sameSmall(a: TouchTargetSmallFinding, b: TouchTargetSmallFinding): boolean {
+  const x = a.spacing?.other;
+  const y = b.spacing?.other;
+  const sameSpacing =
+    x === undefined || y === undefined
+      ? x === y
+      : x.annotationId === y.annotationId && x.markingId === y.markingId;
   return (
-    a.code === b.code &&
-    a.annotationId === b.annotationId &&
-    a.markingId === b.markingId &&
-    a.density === b.density &&
     sameSize(a.actual, b.actual) &&
     sameSize(a.min, b.min) &&
-    sameSize(a.minPx, b.minPx)
+    sameSize(a.minPx, b.minPx) &&
+    sameSpacing
   );
+}
+
+function sameOverlap(
+  a: TouchTargetOverlapFinding,
+  b: TouchTargetOverlapFinding,
+): boolean {
+  return (
+    a.other.annotationId === b.other.annotationId &&
+    a.other.markingId === b.other.markingId &&
+    sameSize(a.overlap, b.overlap) &&
+    sameSize(a.overlapPx, b.overlapPx)
+  );
+}
+
+/** The two findings say the same thing: the same code, annotation, marking, numbers and (an overlap) neighbor. */
+export function sameFinding(a: AuditFinding, b: AuditFinding): boolean {
+  const same =
+    a.annotationId === b.annotationId &&
+    a.markingId === b.markingId &&
+    a.density === b.density;
+  if (!same) return false;
+  if (a.code === 'touch-target-overlap') {
+    return b.code === 'touch-target-overlap' && sameOverlap(a, b);
+  }
+  return b.code === 'touch-target-small' && sameSmall(a, b);
 }
 
 function sameFindings(

@@ -36,6 +36,8 @@ export interface A11yOptions {
   readonly tweak?: (spec: Doc) => void;
   /** Pixels per component unit of the container (default 3, the Android phone of the roteiro). */
   readonly density?: number;
+  /** Changes the project after the markings are placed (an arrow, a marking with no annotation, ...). */
+  readonly edit?: (project: Project) => Project;
 }
 
 export type A11yPlacer = (
@@ -151,7 +153,7 @@ export function a11yMcpProject(
     });
   };
   fill(add, plain, rows);
-  return p;
+  return options.edit === undefined ? p : options.edit(p);
 }
 
 /**
