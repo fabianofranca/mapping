@@ -1,4 +1,4 @@
-# Neutral wording for external names — [Não lançado] (épico `epic/scrub-test-comment`, PR #3128, MCP 0.71.1, schema v26)
+# Neutral wording for external names — 2026-11-28 (épico `epic/scrub-test-comment`, PR #3128, MCP 0.71.1, schema v26)
 
 ## Alterado
 
