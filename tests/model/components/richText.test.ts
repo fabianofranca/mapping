@@ -625,21 +625,21 @@ describe('hug width of rich text (#2925)', () => {
   };
   const RUNS_HUG: RichRun[] = [
     run('Hello, ', { weight: 400 }),
-    run('Inter', { weight: 600 }),
+    run('World', { weight: 600 }),
   ];
 
   it('layoutRuns at Math.ceil of the measured width keeps one line', () => {
     const measured = measureRichText(RUNS_HUG, BASE, padded);
     expect(measured.lines).toHaveLength(1);
     const again = layoutRuns(RUNS_HUG, BASE, padded, Math.ceil(measured.width));
-    expect(lineTexts(again)).toEqual(['Hello, Inter']);
+    expect(lineTexts(again)).toEqual(['Hello, World']);
   });
 
   it('a hug text with those runs keeps one line at the measured instance width', () => {
     const file = richFile({
       font: { size: 14 },
       width: 'hug',
-      runs: [{ text: 'Hello, ' }, { text: 'Inter', weight: 600 }],
+      runs: [{ text: 'Hello, ' }, { text: 'World', weight: 600 }],
     });
     const options = { measure: padded };
     const { width, height } = measureComponent(
