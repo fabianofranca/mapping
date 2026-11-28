@@ -65,6 +65,25 @@ type PendingDelete =
       readonly brokenRefs: number;
     };
 
+/** A "go to" link to a field inside a collapsed group opens the group, so the field is in the DOM. */
+function useExpandFocusedGroup(project: Project, annotation: Annotation): void {
+  const { ui } = useEditor();
+  const focusedField =
+    ui.focusAnnotation.value === annotation.id ? ui.focusField.value : null;
+  const resolved = typeOfAnnotation(project, annotation);
+  const group =
+    focusedField === null
+      ? undefined
+      : resolved?.type.fields.find((f) => f.key === focusedField)?.group;
+  const sectionId =
+    group === undefined || !resolved
+      ? null
+      : `${resolved.spec.id}/${resolved.type.id}/${group}`;
+  useEffect(() => {
+    if (sectionId !== null) expandSections(ui, [{ kind: 'fieldGroup', id: sectionId }]);
+  }, [ui, sectionId, focusedField]);
+}
+
 /** Fields of the typed annotation; nonexistent type: read-only values and "Convert". */
 function TypedBody({
   project,
@@ -85,23 +104,7 @@ function TypedBody({
   const [showAllFor, setShowAllFor] = useState<string | null>(null);
   const showAll = showAllFor === annotation.id;
   const resolved = typeOfAnnotation(project, annotation);
-  // A "go to" link to a field inside a collapsed group opens the group, so the field is in the DOM.
-  const focusedField =
-    ui.focusAnnotation.value === annotation.id ? ui.focusField.value : null;
-  const focusedGroup =
-    focusedField === null || !resolved
-      ? undefined
-      : resolved.type.fields.find((f) => f.key === focusedField)?.group;
-  const focusedSection =
-    focusedGroup === undefined || !resolved
-      ? null
-      : ({
-          kind: 'fieldGroup',
-          id: `${resolved.spec.id}/${resolved.type.id}/${focusedGroup}`,
-        } as const);
-  useEffect(() => {
-    if (focusedSection !== null) expandSections(ui, [focusedSection]);
-  }, [ui, focusedSection?.id, focusedField]);
+  useExpandFocusedGroup(project, annotation);
   // The fields resolve references on every page (stage #883, CL1): a target on another page is
   // not broken. Only when `project` is the one in view (a given project stays as it is).
   const across = review.derived.shownAcrossPages.value;
