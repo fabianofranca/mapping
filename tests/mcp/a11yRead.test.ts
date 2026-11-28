@@ -21,11 +21,12 @@ import {
 
 let ws: A11yWorkspace;
 
+type Doc = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
 /** An arrow between two buttons with a button annotation of its own, and a marking with no annotation. */
 const ARROW_REF = 'mapping://a11y/m/arone';
 const EDIT = {
-  tweak: (spec: Record<string, any>) => {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
+  tweak: (spec: Doc) => {
     const button = spec.layers[0].annotationTypes.find(
       (t: { id: string }) => t.id === 'button',
     );
