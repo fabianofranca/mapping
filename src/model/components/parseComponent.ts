@@ -188,6 +188,7 @@ const BASE_KEYS = [
   'rotation',
   'scale',
   'filter',
+  'overlay',
   'width',
   'height',
   'minWidth',
@@ -1488,6 +1489,7 @@ function checkNode(
   if ('rotation' in value)
     checkExpr(value.rotation, join(path, 'rotation'), checkNumber, out);
   checkScaleFilter(value, path, out);
+  checkOverlay(value, path, out);
   checkNodeSizes(value, path, type, out);
   checkSpanWeight(value, path, type, parent, out);
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
@@ -1581,6 +1583,12 @@ function checkComponentNode(
   if ('provide' in value) checkProvide(value.provide, join(path, 'provide'), out);
 }
 
+/** `overlay` (v4): a literal boolean; on the root it is rejected by the root check, in the version before 4 by `V4_NODE_KEYS`. */
+function checkOverlay(value: Rec, path: string, out: Ctx): void {
+  if ('overlay' in value && typeof value.overlay !== 'boolean')
+    add(out, join(path, 'overlay'), 'expected true or false');
+}
+
 /** `scale` (a number ≥ 0) and `filter` (`{ grayscale }`) of any node (v4): drawing only. */
 function checkScaleFilter(value: Rec, path: string, out: Ctx): void {
   if ('scale' in value)
@@ -1609,6 +1617,7 @@ function checkComponentBase(
   if ('rotation' in value)
     checkExpr(value.rotation, join(path, 'rotation'), checkNumber, out);
   checkScaleFilter(value, path, out);
+  checkOverlay(value, path, out);
   checkNodeSizes(value, path, 'component', out);
   checkSpanWeight(value, path, 'component', parent, out);
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
@@ -1842,6 +1851,7 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['rotation'],
   ['scale'],
   ['filter'],
+  ['overlay'],
   ['startAngle'],
   ['sweepAngle'],
   ['provide'],
@@ -2755,6 +2765,13 @@ function collectIssues(
       'rotation' in template
     )
       add(out, 'template.rotation', 'not valid on the root');
+    if (
+      typeof version === 'number' &&
+      version >= COMPONENT_FORMAT_VERSION_FIDELITY &&
+      isRecord(template) &&
+      'overlay' in template
+    )
+      add(out, 'template.overlay', 'not valid on the root');
     checkNode(template, 'template', out);
     checkGapNodes(template, out);
     if (version === 1) {

@@ -1,0 +1,21 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "block",
+  "name": "Block",
+  "description": "A 200 × 48 bar as wide as the box, filled with the color its color field names. Put it in a Scroll to see the scrollbar draw above it.",
+  "size": { "width": 200, "height": 48 },
+  "sizing": { "width": "fill", "height": 48 },
+  "preview": { "color": "blue" },
+  "template": {
+    "type": "frame",
+    "name": "block",
+    "layout": { "type": "none" },
+    "fill": {
+      "$switch": "color",
+      "cases": { "blue": "#93C5FD", "green": "#86EFAC", "amber": "#FCD34D" },
+      "default": "#93C5FD"
+    },
+    "children": []
+  }
+}

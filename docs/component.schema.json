@@ -2816,6 +2816,9 @@
         "rotation": {
           "$ref": "#/$defs/expr_number"
         },
+        "overlay": {
+          "type": "boolean"
+        },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
         },
@@ -2908,6 +2911,9 @@
         "rotation": {
           "$ref": "#/$defs/expr_number"
         },
+        "overlay": {
+          "type": "boolean"
+        },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
         },
@@ -2986,6 +2992,9 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "overlay": {
+          "type": "boolean"
         },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
@@ -3082,6 +3091,9 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "overlay": {
+          "type": "boolean"
         },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
@@ -3202,6 +3214,9 @@
         "rotation": {
           "$ref": "#/$defs/expr_number"
         },
+        "overlay": {
+          "type": "boolean"
+        },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
         },
@@ -3308,6 +3323,9 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "overlay": {
+          "type": "boolean"
         },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
@@ -3437,6 +3455,9 @@
         "rotation": {
           "$ref": "#/$defs/expr_number"
         },
+        "overlay": {
+          "type": "boolean"
+        },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
         },
@@ -3531,6 +3552,9 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "overlay": {
+          "type": "boolean"
         },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
@@ -3671,6 +3695,9 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "overlay": {
+          "type": "boolean"
         },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"
@@ -5394,6 +5421,9 @@
         },
         "rotation": {
           "$ref": "#/$defs/expr_number"
+        },
+        "overlay": {
+          "type": "boolean"
         },
         "scale": {
           "$ref": "#/$defs/expr_nonNegative"

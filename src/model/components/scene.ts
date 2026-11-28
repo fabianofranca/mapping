@@ -259,6 +259,12 @@ interface NodeBase {
    * stroke, the shadow and the frame's clip scale along. 0 draws nothing.
    */
   readonly scale?: number;
+  /**
+   * Draws above the child markings of the same container (`overlay` of the template node): only
+   * the top-level drawing of a marking sets it (not a component with `screen`, nor the inside of a
+   * `component` node). The tree stays whole; `splitOverlay` cuts it for whoever draws.
+   */
+  readonly overlay?: true;
   /** The node's local box (px); in `path` and `line` it is the box of the points, informative. */
   readonly width: number;
   readonly height: number;

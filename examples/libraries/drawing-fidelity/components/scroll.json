@@ -1,0 +1,33 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "scroll",
+  "name": "Scroll",
+  "description": "A 200 × 240 scroll area: a column slot named content that holds the child markings, and a 4 × 80 scrollbar on the right edge. The scrollbar has overlay: true, so it is drawn above the child markings (a content block as wide as the area does not hide it), while it keeps its place in the layout.",
+  "size": { "width": 200, "height": 240 },
+  "template": {
+    "type": "frame",
+    "name": "scroll",
+    "layout": { "type": "none" },
+    "fill": "#F9FAFB",
+    "children": [
+      {
+        "type": "slot",
+        "name": "content",
+        "label": "Content",
+        "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+        "layout": { "type": "column", "gap": 8 }
+      },
+      {
+        "type": "rect",
+        "name": "scrollbar",
+        "width": 4,
+        "height": 80,
+        "cornerRadius": 2,
+        "fill": "#6B7280",
+        "anchors": { "right": 4, "top": 16 },
+        "overlay": true
+      }
+    ]
+  }
+}

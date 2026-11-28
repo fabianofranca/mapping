@@ -3472,6 +3472,15 @@ function createEngine(
     return degrees === 0 ? {} : { rotation: degrees };
   };
 
+  /**
+   * `overlay: true` on the scene node, only at the top level of a component with no `screen`: inside a
+   * `component` node (nesting depth > 0) or in a `screen` component there are no child markings to go above.
+   */
+  const overlayOf = (node: TemplateNode): { overlay?: true } =>
+    node.overlay === true && componentDepth === 0 && original.screen === undefined
+      ? { overlay: true }
+      : {};
+
   /** The evaluated `scale`; with no value or 1 the node does not scale, an invalid one (negative, not a number) is 1 with a warning. */
   const scaleOf = (node: TemplateNode): { scale?: number } => {
     const value = ev<unknown>(node.scale as Expr<unknown> | undefined, undefined);
@@ -3520,6 +3529,7 @@ function createEngine(
     transform: translate(x, y),
     ...rotationOf(node),
     ...scaleOf(node),
+    ...overlayOf(node),
     width: w,
     height: h,
     fills: fillsOf(node.fill, w, h),
@@ -4027,6 +4037,7 @@ function createEngine(
       opacity: root.opacity * Math.min(1, Math.max(0, num(node.opacity, 1))),
       ...(rotation === 0 ? {} : { rotation }),
       ...(scale === 1 ? {} : { scale }),
+      ...overlayOf(node),
     };
   };
 
