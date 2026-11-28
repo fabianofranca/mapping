@@ -1,4 +1,4 @@
-# Intended overflow and absolute children — [Não lançado] (épico `epic/intended-overflow-absolute`, PR #3079, MCP 0.70.0, schema v25, unchanged)
+# Intended overflow and absolute children — 2026-11-28 (épico `epic/intended-overflow-absolute`, PR #3079, MCP 0.70.0, schema v25, unchanged)
 
 ## Adicionado
 

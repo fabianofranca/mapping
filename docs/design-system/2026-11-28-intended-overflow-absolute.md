@@ -1,4 +1,4 @@
-# Intended overflow and absolute children — [Não lançado] (épico `epic/intended-overflow-absolute`)
+# Intended overflow and absolute children — 2026-11-28 (épico `epic/intended-overflow-absolute`)
 
 ## Pendências
 
