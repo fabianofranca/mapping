@@ -163,7 +163,7 @@ function slotMessage(issue: DrawingSlotIssue, where: string, typeName: string): 
   if (issue.code === 'slot-full') return `${where} takes ${issue.max ?? 0}`;
   if (issue.code === 'slot-hidden') return `${where} is hidden`;
   if (issue.code === 'slot-missing')
-    return `${issue.owner} has no slot ${issue.slot.name}`;
+    return `${issue.owner} has no slot ${issue.slot.name}: the marking is drawn where its rectangle lies`;
   return `${where} does not accept ${typeName}`;
 }
 
