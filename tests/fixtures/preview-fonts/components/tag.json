@@ -1,0 +1,20 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "tag",
+  "name": "Tag",
+  "size": { "width": 80, "height": 32 },
+  "sizing": { "width": "hug", "height": 32 },
+  "template": {
+    "type": "frame",
+    "layout": { "type": "row", "padding": 8 },
+    "children": [
+      {
+        "type": "text",
+        "text": { "$field": "label", "default": "Tag" },
+        "font": { "family": "Roboto", "size": 16, "weight": 500, "lineHeight": 20 },
+        "color": "#000000"
+      }
+    ]
+  }
+}

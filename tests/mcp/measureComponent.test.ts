@@ -1,4 +1,11 @@
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -8,11 +15,14 @@ import {
   createMarking,
   applySpecialization,
   createProject,
+  loadSpecComponents,
+  measureComponentSize,
   parseSpec,
   serialize,
   setContainerDensity,
 } from '../../src/model';
 import { runBatch } from '../../mcp/batch';
+import { createFontBook, measurerFor } from '../../mcp/image/textMeasurer';
 import type { Operation } from '../../mcp/operations';
 import { Roots } from '../../mcp/paths';
 import { findProject, loadProject, type LoadedProject } from '../../mcp/projects';
@@ -392,4 +402,165 @@ describe('measure_component equals fit_marking (decision 10)', () => {
       });
     }
   }
+});
+
+// PC2 (#2973, stage #2928, decisions 1, 2 and 5): `measure_component` of a package folder (`path` + `project`)
+// measures a working copy with its own components and fonts over the project, applying nothing.
+
+const PF = 'tests/fixtures/preview-fonts';
+const ROBOTO = 'tests/fixtures/fonts/roboto-latin-500-normal.woff';
+const PF_LABEL = 'Mapping preview';
+
+function pfPackage(name: string, withFont: boolean, edit?: (s: Json) => void): string {
+  const pkg = join(base, name);
+  mkdirSync(join(pkg, 'fonts'), { recursive: true });
+  cpSync(join(PF, 'components'), join(pkg, 'components'), { recursive: true });
+  const spec = JSON.parse(
+    readFileSync(join(PF, 'preview-fonts.spec.json'), 'utf8'),
+  ) as Json;
+  edit?.(spec);
+  writeFileSync(join(pkg, 'preview-fonts.spec.json'), JSON.stringify(spec));
+  if (withFont) cpSync(ROBOTO, join(pkg, 'fonts', 'Roboto-Medium.woff'));
+  return pkg;
+}
+
+type Json = Record<string, unknown>;
+
+/** A project that applies `pkg` (an older copy when `edit` strips the fonts), copied into its `specs/`. */
+function pfProject(name: string, pkg: string | null, edit?: (s: Json) => void): void {
+  const dir = join(base, name);
+  mkdirSync(dir, { recursive: true });
+  let p = createProject({
+    name,
+    now: NOW,
+    firstLayer: { id: LAYER, name: 'Layer 1', color: '#D32F2F' },
+  });
+  if (pkg !== null) {
+    const copy = join(dir, 'specs', 'preview-fonts');
+    mkdirSync(copy, { recursive: true });
+    cpSync(join(pkg, 'components'), join(copy, 'components'), { recursive: true });
+    const spec = JSON.parse(
+      readFileSync(join(pkg, 'preview-fonts.spec.json'), 'utf8'),
+    ) as Json;
+    edit?.(spec);
+    writeFileSync(join(copy, 'preview-fonts.spec.json'), JSON.stringify(spec));
+    const parsed = parseSpec(spec);
+    if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+    p = applySpecialization(p, parsed.spec, {
+      packageSpecName: 'preview-fonts.spec.json',
+    });
+  }
+  p = addContainer(p, { id: IMAGE, file: 'images/foto.png', width: 600, height: 400 });
+  p = addContainer(p, { id: DENSE, file: 'images/dense.png', width: 1800, height: 1200 });
+  p = setContainerDensity(p, DENSE, 3);
+  writeFileSync(join(dir, 'mapping.json'), serialize(p));
+}
+
+describe('measure_component: a package folder (path + project)', () => {
+  const run = (args: Record<string, unknown>) =>
+    mcp.call<Measure>('measure_component', {
+      type: 'tag',
+      values: { label: PF_LABEL },
+      ...args,
+    });
+
+  beforeAll(() => {
+    pfPackage('pf-pkg', true);
+    pfPackage('pf-pkg-nofont', false);
+    pfProject('pf-plain', null);
+    // The applied copy is an older one, with no `fonts`.
+    pfProject('pf-old', join(base, 'pf-pkg'), (s) => {
+      delete s.fonts;
+    });
+  });
+
+  it('(a) measures with the folder fonts, exactly, as the same project with the library applied in memory', async () => {
+    const r = ok(await run({ project: 'pf-plain', path: join(base, 'pf-pkg') }));
+    expect(r.approximate).toBe(false);
+    const parsed = parseSpec(
+      JSON.parse(readFileSync(join(PF, 'preview-fonts.spec.json'), 'utf8')),
+    );
+    if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+    const spec = parsed.spec;
+    const file = 'specs/preview-fonts/preview-fonts.spec.json';
+    const project = applySpecialization(
+      (await loadProject(roots, await findProject(roots, 'pf-plain'))).project,
+      spec,
+      { packageSpecName: 'preview-fonts.spec.json' },
+    );
+    const texts = new Map([
+      [
+        'specs/preview-fonts/components/tag.json',
+        readFileSync(join(PF, 'components', 'tag.json'), 'utf8'),
+      ],
+    ]);
+    const catalog = new Map([
+      [spec.id, loadSpecComponents(spec, file, spec.version, (path) => texts.get(path))],
+    ]);
+    const book = createFontBook([
+      {
+        family: 'Roboto',
+        weight: '500',
+        style: 'normal',
+        path: 'x',
+        bytes: new Uint8Array(readFileSync(ROBOTO)).buffer as ArrayBuffer,
+      },
+    ]);
+    const expected = measureComponentSize(
+      project,
+      catalog,
+      {
+        specId: spec.id,
+        typeId: 'tag',
+        containerId: null,
+        values: { label: PF_LABEL },
+        size: {},
+      },
+      measurerFor(book),
+    );
+    expect(r.units).toEqual(expected.units);
+  });
+
+  it('(b) without the font file in the folder it is approximate, with another width', async () => {
+    const withFont = ok(await run({ project: 'pf-plain', path: join(base, 'pf-pkg') }));
+    const without = ok(
+      await run({ project: 'pf-plain', path: join(base, 'pf-pkg-nofont') }),
+    );
+    expect(without.approximate).toBe(true);
+    expect(without.units.width).not.toBe(withFont.units.width);
+  });
+
+  it('(c) path measures the folder copy, project + specId still the applied one', async () => {
+    const byPath = ok(await run({ project: 'pf-old', path: join(base, 'pf-pkg') }));
+    expect(byPath.approximate).toBe(false);
+    const applied = ok(
+      await run({
+        project: 'pf-old',
+        specId: 'preview-fonts',
+        values: { label: PF_LABEL },
+      }),
+    );
+    expect(applied.approximate).toBe(true);
+    expect(applied.units.width).not.toBe(byPath.units.width);
+  });
+
+  it('(d) path with specId, and path without project, are invalid-arguments', async () => {
+    const both = await run({
+      project: 'pf-plain',
+      path: join(base, 'pf-pkg'),
+      specId: 'preview-fonts',
+    });
+    expect(errorOf(both).code).toBe('invalid-arguments');
+    const noProject = await run({ path: join(base, 'pf-pkg') });
+    expect(errorOf(noProject).code).toBe('invalid-arguments');
+  });
+
+  it('(e) container gives that container density, and nothing is written', async () => {
+    const r = ok(
+      await run({ project: 'pf-plain', path: join(base, 'pf-pkg'), container: DENSE }),
+    );
+    expect(r.density).toBe(3);
+    const again = await loadProject(roots, await findProject(roots, 'pf-plain'));
+    expect(again.project.specializations).toHaveLength(0);
+  });
 });

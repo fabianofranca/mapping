@@ -75,6 +75,7 @@ export const MCP_ERROR_CODES = [
   'proposal-not-applicable',
   'proposal-not-found',
   'read-only',
+  'region-outside-container',
   'revise-unsupported',
   'revision-conflict',
   'root-required',
