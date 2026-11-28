@@ -63,7 +63,10 @@ describe('an observation marking', () => {
 
 describe('a materialized marking', () => {
   const boxed = (rect = r(20, 20, 200, 100), parentId: string | null = 'A') =>
-    structureProject([raw('A', r(0, 0, 500, 400)), raw('card', rect, { parentId })], ['card']);
+    structureProject(
+      [raw('A', r(0, 0, 500, 400)), raw('card', rect, { parentId })],
+      ['card'],
+    );
 
   it('keeps its stored parent while its rect is inside the parent', () => {
     expect(find(settleHierarchy(boxed()), 'card').parentId).toBe('A');
@@ -216,7 +219,10 @@ describe('the space of a materialized child', () => {
 
   it('a child stays in its parent space whatever its rect', () => {
     const p = structureProject(
-      [raw('A', r(0, 0, 500, 400)), raw('card', r(900, 700, 200, 100), { parentId: 'A' })],
+      [
+        raw('A', r(0, 0, 500, 400)),
+        raw('card', r(900, 700, 200, 100), { parentId: 'A' }),
+      ],
       ['card'],
     );
     const settled = settleHierarchy(p);
@@ -233,7 +239,10 @@ describe('the space of a materialized child', () => {
 describe('nature changes', () => {
   it('a marking that loses the annotation takes its parent by geometry again', () => {
     const p = structureProject(
-      [raw('A', r(0, 0, 500, 400)), raw('card', r(700, 500, 100, 100), { parentId: 'A' })],
+      [
+        raw('A', r(0, 0, 500, 400)),
+        raw('card', r(700, 500, 100, 100), { parentId: 'A' }),
+      ],
       ['card'],
     );
     const settled = settleHierarchy(p);

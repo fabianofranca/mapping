@@ -622,7 +622,10 @@ describe('invariant validator: stored structure (v27)', () => {
   ): Project => structureProject(markings, materialized);
 
   it('a `slot` on an observation marking is `slot-without-parent`', () => {
-    const p = project([raw('A', r(0, 0, 500, 400)), raw('B', at(), { slot: 'left' })], []);
+    const p = project(
+      [raw('A', r(0, 0, 500, 400)), raw('B', at(), { slot: 'left' })],
+      [],
+    );
     expect(codes(p)).toEqual(['slot-without-parent:B']);
   });
 

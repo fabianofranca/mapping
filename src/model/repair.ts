@@ -13,6 +13,7 @@ import {
 } from './geometry';
 import { IMAGE_GAP } from './containers';
 import { DEFAULT_PAGE_NAME } from './migrations';
+import { withoutSlot } from './settleStructure';
 import {
   pageNameKey,
   perspectiveNameKey,
@@ -490,9 +491,8 @@ function repairSlot(
   if (next.slot === undefined) return next;
   const reported = has('marking', was.id, 'slot-without-parent');
   if (!reported && next.parentId !== null) return next;
-  const { slot: _slot, ...rest } = next;
   if (reported) record(out, 'slot-cleared', 'slot-without-parent', 'marking', was);
-  return rest;
+  return withoutSlot(next);
 }
 
 /** Canvas marking without a page or on a missing one → first page; container marking with a page → `null`. */

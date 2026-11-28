@@ -33,7 +33,12 @@ import {
   unitsFactor,
   type SpaceUnits,
 } from './settleUnits';
-import { anchorOf, storedStructure, type Structure } from './settleStructure';
+import {
+  anchorOf,
+  storedStructure,
+  withoutSlot,
+  type Structure,
+} from './settleStructure';
 import { buildRectIndex, type RectIndex } from './spaceIndex';
 import type { Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
@@ -487,8 +492,7 @@ function settleGeometry(
  */
 function dropInvalidParents(w: Work): void {
   for (const i of w.structure.invalid) {
-    const { slot: _slot, ...rest } = w.list.at(i);
-    w.list.set(i, { ...rest, parentId: null });
+    w.list.set(i, { ...withoutSlot(w.list.at(i)), parentId: null });
   }
 }
 

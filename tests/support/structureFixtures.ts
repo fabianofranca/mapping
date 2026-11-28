@@ -1,4 +1,9 @@
-import { addTypedAnnotation, type Marking, type Project, type Rect } from '../../src/model';
+import {
+  addTypedAnnotation,
+  type Marking,
+  type Project,
+  type Rect,
+} from '../../src/model';
 import { SPEC_ID, componentProject } from '../model/componentFixtures';
 
 // Raw projects for the stored-structure tests (stage #3087, MS1): the markings are written as the file

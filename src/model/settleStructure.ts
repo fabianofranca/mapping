@@ -15,6 +15,13 @@ export interface Structure {
   readonly invalid: readonly number[];
 }
 
+/** The marking without its `slot` (a stored slot only means something with a stored parent). */
+export function withoutSlot(m: Marking): Marking {
+  const { slot, ...rest } = m;
+  void slot;
+  return rest;
+}
+
 export const NO_STRUCTURE: Structure = { followers: new Map(), invalid: [] };
 
 /** Can `parent` be the stored parent of `m`: another marking of the same space and page, a solid one. */
@@ -91,7 +98,7 @@ export function storedStructure(
 /** The marking that decides the space of `id`: up the stored parents, the first one that is not a follower. */
 export function anchorOf(structure: Structure, id: string): string {
   let at = id;
-  for (let parent = structure.followers.get(at); parent !== undefined; ) {
+  for (let parent = structure.followers.get(at); parent !== undefined;) {
     at = parent;
     parent = structure.followers.get(at);
   }

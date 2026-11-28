@@ -109,7 +109,11 @@ describe('plan_changes: slot items of the drawing proof', () => {
       'the slot Navigation icon of Bar does not accept Rounded bar',
     );
     expect(items[0]!.max).toBeUndefined();
-    expect(items[1]).toMatchObject({ slot: { id: 'navigationIcon' }, owner: 'Bar', max: 1 });
+    expect(items[1]).toMatchObject({
+      slot: { id: 'navigationIcon' },
+      owner: 'Bar',
+      max: 1,
+    });
   });
 });
 

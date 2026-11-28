@@ -614,15 +614,20 @@ describe('repairProject: stored structure (v27)', () => {
     expect(result.unrepaired).toEqual([]);
     expect(marking(result.project, 'B').slot).toBeUndefined();
     expect(result.repaired).toEqual([
-      expect.objectContaining({ action: 'slot-cleared', code: 'slot-without-parent', id: 'B' }),
+      expect.objectContaining({
+        action: 'slot-cleared',
+        code: 'slot-without-parent',
+        id: 'B',
+      }),
     ]);
     expect(validateProject(result.project)).toEqual([]);
   });
 
   it('a stored parent that is missing makes the marking loose and drops its `slot`', () => {
-    const p = structureProject([raw('card', rect, { parentId: 'ghost', slot: 'left' })], [
-      'card',
-    ]);
+    const p = structureProject(
+      [raw('card', rect, { parentId: 'ghost', slot: 'left' })],
+      ['card'],
+    );
     const result = repair(p);
     const card = marking(result.project, 'card');
     expect(card.parentId).toBeNull();

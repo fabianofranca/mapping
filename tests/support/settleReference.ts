@@ -11,6 +11,7 @@ import {
 import { clearArrowRoutes } from '../../src/model/hierarchySettle';
 import { reconcilePerspectives } from '../../src/model/perspectiveReconcile';
 import { materializedIds } from '../../src/model/nature';
+import { withoutSlot } from '../../src/model/settleStructure';
 import { projectIndex } from '../../src/model/projectIndex';
 import type {
   Marking,
@@ -215,7 +216,6 @@ export function referenceEnclosingAmong(
   return pickParent(inside, current, (id) => ranks.get(id) ?? -1);
 }
 
-
 /**
  * The stored parent of a materialized marking, read naively on the markings as the operation left
  * them: valid when the parent exists, is another marking of the same container and page, is not
@@ -245,7 +245,8 @@ function referenceStoredParent(p: Project, m: Marking): string | null {
   let at: Marking | null = edge(m);
   for (let step = 0; at !== null && step <= p.markings.length; step++) {
     if (at.id === m.id) return null;
-    at = materialized.has(at.id) && at.parentId !== null && !at.floating ? edge(at) : null;
+    at =
+      materialized.has(at.id) && at.parentId !== null && !at.floating ? edge(at) : null;
   }
   return m.parentId;
 }
@@ -257,7 +258,8 @@ function referenceAnchor(p: Project, m: Marking): Marking {
   for (let step = 0; step <= p.markings.length; step++) {
     if (!materialized.has(at.id)) return at;
     const parentId = referenceStoredParent(p, at);
-    const parent = parentId === null ? undefined : p.markings.find((o) => o.id === parentId);
+    const parent =
+      parentId === null ? undefined : p.markings.find((o) => o.id === parentId);
     if (!parent) return at;
     at = parent;
   }
@@ -406,8 +408,7 @@ function referenceSettleGeometry(p: Project, options?: SettleOptions): Project {
   const kept = p.markings.map((m) => {
     if (!materialized.has(m.id) || m.parentId === null || m.floating) return m;
     if (referenceStoredParent(p, m) !== null) return m;
-    const { slot: _slot, ...rest } = m;
-    return { ...rest, parentId: null };
+    return { ...withoutSlot(m), parentId: null };
   });
   const base: Project = { ...p, markings: kept };
   // Markings that changed space: the arrow attached to them loses its waypoints.

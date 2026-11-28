@@ -85,11 +85,7 @@ function markingDelta(
  * change (the changed ones are already there). `false` when there are too many (the whole project is
  * settled), like the half rule of `markingDelta`.
  */
-function addNatureChanges(
-  before: Project,
-  next: Project,
-  delta: MarkingDelta,
-): boolean {
+function addNatureChanges(before: Project, next: Project, delta: MarkingDelta): boolean {
   const flipped = natureChanges(before, next);
   if (flipped.size === 0) return true;
   const known = new Set(delta.changed);
