@@ -62,7 +62,6 @@ export const specMessages = {
   // Fields and columns
   'spec.columnTypeNotAllowed':
     '"{type}" is not allowed inside a table; use "string", "number", "date", "enum" or "ref"',
-  'spec.codeOnlyColumn': 'only valid on a field, not on a table column',
   'spec.optionsRequired': 'required and not empty in an enum',
   'spec.optionsBlank': 'options cannot be empty',
   'spec.optionsRepeated': 'repeated options',
@@ -119,6 +118,24 @@ export const specMessages = {
   'spec.groupsEmpty': 'cannot be empty; remove the key or list at least one group',
   'spec.groupsList': 'must be a list of group ids',
   'spec.allowedChildShape': 'must be a type id (text) or a clause { layer, groups }',
+  'spec.slotAcceptShape':
+    'must be a type id (text) or a clause { layer, groups, except }',
+  'spec.exceptEmpty': 'cannot be empty; remove the key or list at least one type',
+  'spec.exceptList': 'must be a list of type ids',
+  'spec.exceptNotInClause': 'the type "{typeId}" is not covered by this clause',
+  // Field groups and conditional display (`formatVersion` 26)
+  'spec.fieldGroupUnknown': 'the field group "{group}" is not declared in fieldGroups',
+  'spec.fieldGroupEmpty': 'the field group "{group}" has no field',
+  'spec.fieldGroupIdInvalid': 'invalid field group id; use [a-z0-9-]+',
+  'spec.topLevelOnly': 'only valid on a field, not on a table column',
+  'spec.visibleWhenUnknownField': 'the field "{key}" does not exist in the type',
+  'spec.visibleWhenSelf': "a field's visibleWhen cannot cite the field itself",
+  'spec.visibleWhenOwnGroup':
+    "a group's visibleWhen cannot cite a field of the group: {key}",
+  'spec.visibleWhenFieldType':
+    'visibleWhen only cites enum, string or number fields: "{key}" is {type}',
+  'spec.visibleWhenRequired':
+    'a required field cannot be hidden: remove required or visibleWhen',
   'spec.docShape': 'must be text (a package file) or an object { repo, path }',
   'spec.docPathInvalid':
     'invalid path: use a path relative to the repository root, with "/", without "." or ".." and without a drive (e.g. components/button.md)',

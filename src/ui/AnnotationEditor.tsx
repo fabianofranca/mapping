@@ -1,4 +1,4 @@
-import { useId, useState } from 'preact/hooks';
+import { useEffect, useId, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   annotationDeletionImpact,
@@ -13,7 +13,13 @@ import {
   type Layer,
   type Project,
 } from '../model';
-import { isSectionCollapsed, toggleSection, type AnnotationLocation } from '../store/ui';
+import { fieldDisplay } from '../model/specFieldDisplay';
+import {
+  expandSections,
+  isSectionCollapsed,
+  toggleSection,
+  type AnnotationLocation,
+} from '../store/ui';
 import { IssueBadge } from './AnnotationSummary';
 import { CodeDefinitions } from './CodeDefinitions';
 import { CommitInput } from './CommitInput';
@@ -26,6 +32,7 @@ import { ReferencedByRow } from './ReferencedBy';
 import { OwnerRoleField } from './OwnerRoleField';
 import { useEditor } from './EditorContext';
 import { Button, HelpTip, IconButton, Select } from './controls';
+import { FieldDisplayItems, HiddenFieldsLine } from './FieldGroups';
 import { KeyValueGrid } from './KeyValueGrid';
 import { annotationLabel } from './labels';
 import { Property, PropertyGrid } from './PropertyGrid';
@@ -58,6 +65,25 @@ type PendingDelete =
       readonly brokenRefs: number;
     };
 
+/** A "go to" link to a field inside a collapsed group opens the group, so the field is in the DOM. */
+function useExpandFocusedGroup(project: Project, annotation: Annotation): void {
+  const { ui } = useEditor();
+  const focusedField =
+    ui.focusAnnotation.value === annotation.id ? ui.focusField.value : null;
+  const resolved = typeOfAnnotation(project, annotation);
+  const group =
+    focusedField === null
+      ? undefined
+      : resolved?.type.fields.find((f) => f.key === focusedField)?.group;
+  const sectionId =
+    group === undefined || !resolved
+      ? null
+      : `${resolved.spec.id}/${resolved.type.id}/${group}`;
+  useEffect(() => {
+    if (sectionId !== null) expandSections(ui, [{ kind: 'fieldGroup', id: sectionId }]);
+  }, [ui, sectionId, focusedField]);
+}
+
 /** Fields of the typed annotation; nonexistent type: read-only values and "Convert". */
 function TypedBody({
   project,
@@ -70,8 +96,15 @@ function TypedBody({
   readonly readOnly: boolean;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }) {
-  const { actions, review } = useEditor();
+  const { actions, review, ui } = useEditor();
+  const ext = useDetailsExtension();
+  const issues = useIssuesOf(annotation.id);
+  // "Show" lists every hidden field until the selection changes (local state, per annotation).
+  // The id it applies to is kept, so a new selection never renders one frame with it on.
+  const [showAllFor, setShowAllFor] = useState<string | null>(null);
+  const showAll = showAllFor === annotation.id;
   const resolved = typeOfAnnotation(project, annotation);
+  useExpandFocusedGroup(project, annotation);
   // The fields resolve references on every page (stage #883, CL1): a target on another page is
   // not broken. Only when `project` is the one in view (a given project stays as it is).
   const across = review.derived.shownAcrossPages.value;
@@ -102,12 +135,43 @@ function TypedBody({
     );
   }
   const ctx = { project: fieldProject, annotation, readOnly, onGoToAnnotation };
+  const { type } = resolved;
+  const hasContent = (c: unknown) => c !== undefined && c !== null && c !== false;
+  // A hidden field still shows with a pending item of its own, a review mark or text below it.
+  const keep = new Set(
+    type.fields
+      .filter(
+        (f) =>
+          issues.some((i) => i.key === f.key && i.rowId === undefined) ||
+          hasContent(ext?.mark(annotation.id, `values.${f.key}`)) ||
+          hasContent(ext?.below(annotation.id, `values.${f.key}`)),
+      )
+      .map((f) => f.key),
+  );
+  const base = fieldDisplay(type, annotation.values ?? {}, keep);
+  const display = showAll
+    ? fieldDisplay(type, annotation.values ?? {}, new Set(type.fields.map((f) => f.key)))
+    : base;
+  const groupSection = (groupId: string) =>
+    ({ kind: 'fieldGroup', id: `${resolved.spec.id}/${type.id}/${groupId}` }) as const;
   return (
     <>
       <PropertyGrid>
-        {resolved.type.fields.map((field) => (
-          <TypedField key={field.key} field={field} {...ctx} />
-        ))}
+        <FieldDisplayItems
+          items={display.items}
+          isCollapsed={(id) => isSectionCollapsed(ui, groupSection(id))}
+          onToggle={(id) => toggleSection(ui, groupSection(id))}
+          renderField={(field) => <TypedField key={field.key} field={field} {...ctx} />}
+        />
+        {base.hidden.length > 0 && (
+          <HiddenFieldsLine
+            count={base.hidden.length}
+            shown={showAll}
+            onToggle={() =>
+              setShowAllFor((id) => (id === annotation.id ? null : annotation.id))
+            }
+          />
+        )}
         <CodeDefinitions
           project={project}
           specId={resolved.spec.id}

@@ -143,3 +143,42 @@ describe('get_component and the annotation type with slots', () => {
     expect(annotation.type.slots).toEqual(expected);
   });
 });
+
+describe('get_component with an except clause (formatVersion 26)', () => {
+  let exceptWs: Workspace;
+
+  beforeAll(async () => {
+    exceptWs = await slotsWorkspace(
+      (add) => {
+        add('bar', 'bar', {
+          name: 'bar',
+          rect: { x: 100, y: 100, width: 360, height: 56 },
+        });
+      },
+      {
+        tweak: (spec) => {
+          spec.formatVersion = 26;
+          const bar = spec.layers[0].annotationTypes.find((t: Doc) => t.id === 'bar');
+          bar.slots[1].accepts = [{ layer: 'ui', except: ['pin'] }];
+        },
+      },
+    );
+  });
+
+  afterAll(async () => {
+    await exceptWs.client.close();
+    rmSync(exceptWs.base, { recursive: true, force: true });
+  });
+
+  it("slots[].accepts leaves the excluded type out of the clause's layer", async () => {
+    const result = await exceptWs.client.callTool({
+      name: 'get_component',
+      arguments: { project: 'slots', specId: 'slots', type: 'bar' },
+    });
+    const view = JSON.parse((result.content as { text: string }[])[0]!.text) as Doc;
+    expect(view.slots.map((s: Doc) => [s.id, s.accepts])).toEqual([
+      ['navigationIcon', ['pin']],
+      ['actions', ['bar', 'rounded-bar']],
+    ]);
+  });
+});

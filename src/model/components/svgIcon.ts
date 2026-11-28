@@ -61,6 +61,18 @@ export interface SvgIconOptions {
   readonly mirror?: boolean;
   /** The icons file's `viewBox`: the icon omits its own when it is the same. */
   readonly defaultViewBox?: readonly [number, number];
+  /**
+   * Drops every `filter` (the attribute, the `style` property and the `<filter>` element) instead of
+   * refusing the file (stage #2931); what it dropped comes back in `dropped`. Default `false`.
+   */
+  readonly ignoreFilters?: boolean;
+}
+
+/** A `filter` that `ignoreFilters` dropped: the element it was on and its value as written. */
+export interface DroppedFilter {
+  readonly element: string;
+  readonly attribute: 'filter';
+  readonly value: string;
 }
 
 export type SvgIconResult =
@@ -71,6 +83,8 @@ export type SvgIconResult =
       readonly icon: IconDef;
       /** The box of the SVG (the icon's `viewBox`, written or omitted by `defaultViewBox`). */
       readonly viewBox: readonly [number, number];
+      /** The `filter`s dropped by `ignoreFilters`, one per element name and value, in document order; absent when none. */
+      readonly dropped?: readonly DroppedFilter[];
     }
   | { readonly ok: false; readonly problems: readonly ModelMessage[] };
 
@@ -548,6 +562,67 @@ function visitChildren(
 }
 
 // ---------------------------------------------------------------------------------------------
+// Filters (`ignoreFilters`)
+
+/** A `filter` value that changes nothing: dropped without a report. */
+const isNoFilter = (value: string): boolean => value.trim().toLowerCase() === 'none';
+
+/** The element without its `filter` attribute and `style` property; the dropped values go to `report`. */
+function withoutFilterAttributes(
+  element: XmlElement,
+  report: (value: string) => void,
+): ReadonlyMap<string, string> {
+  const attributes = new Map<string, string>();
+  for (const [name, value] of element.attributes) {
+    if (name === 'filter') report(value);
+    else if (name === 'style') attributes.set(name, withoutFilterProperty(value, report));
+    else attributes.set(name, value);
+  }
+  return attributes;
+}
+
+/** A `style` text without its `filter` declaration (the other declarations are kept as written). */
+function withoutFilterProperty(style: string, report: (value: string) => void): string {
+  return style
+    .split(';')
+    .filter((part) => {
+      const colon = part.indexOf(':');
+      if (colon <= 0 || part.slice(0, colon).trim().toLowerCase() !== 'filter')
+        return true;
+      report(part.slice(colon + 1));
+      return false;
+    })
+    .join(';');
+}
+
+/**
+ * The tree without any `filter` (decision 4 of stage #2931): the `<filter>` elements go with their
+ * content (silently: they draw nothing by themselves) and the attribute or property that applied
+ * one is dropped and listed, once per element name and value. `none` is dropped without a report.
+ */
+function dropFilters(root: XmlElement): {
+  readonly root: XmlElement;
+  readonly dropped: readonly DroppedFilter[];
+} {
+  const dropped = new Map<string, DroppedFilter>();
+  const strip = (element: XmlElement): XmlElement => {
+    const report = (raw: string): void => {
+      const value = raw.trim();
+      if (isNoFilter(value)) return;
+      const key = `${element.name}\u0000${value}`;
+      if (!dropped.has(key))
+        dropped.set(key, { element: element.name, attribute: 'filter', value });
+    };
+    return {
+      ...element,
+      attributes: withoutFilterAttributes(element, report),
+      children: element.children.filter((child) => child.name !== 'filter').map(strip),
+    };
+  };
+  return { root: strip(root), dropped: [...dropped.values()] };
+}
+
+// ---------------------------------------------------------------------------------------------
 // The entry
 
 /**
@@ -655,7 +730,10 @@ function walkRoot(
 export function svgToIcon(text: string, options: SvgIconOptions = {}): SvgIconResult {
   const parsed = parseXml(text);
   if (!parsed.ok) return { ok: false, problems: [parsed.error] };
-  const { root } = parsed;
+  const { root, dropped } =
+    options.ignoreFilters === true
+      ? dropFilters(parsed.root)
+      : { root: parsed.root, dropped: [] };
   const problems = new Problems();
   const name = nameOf(options, problems);
   if (root.name !== 'svg')
@@ -664,5 +742,11 @@ export function svgToIcon(text: string, options: SvgIconOptions = {}): SvgIconRe
   if (walked === undefined || problems.size > 0) return failed(problems);
   const { walk, clip } = walked;
   const icon = buildIcon(walk, clip, options);
-  return { ok: true, ...(name === undefined ? {} : { name }), icon, viewBox: walk.box };
+  return {
+    ok: true,
+    ...(name === undefined ? {} : { name }),
+    icon,
+    viewBox: walk.box,
+    ...(dropped.length === 0 ? {} : { dropped }),
+  };
 }

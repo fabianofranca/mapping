@@ -47,6 +47,15 @@ function base(): Raw {
 const layer = (s: Raw): Raw => s.layers[0];
 const type = (s: Raw, i = 0): Raw => layer(s).annotationTypes[i];
 
+/** Puts `fields` and `fieldGroups` (formatVersion 26) on the first type. */
+const fieldDisplay =
+  (parts: { fields?: unknown[]; fieldGroups?: unknown[] }) =>
+  (s: Raw): void => {
+    s.formatVersion = 26;
+    if (parts.fields !== undefined) type(s).fields = parts.fields;
+    if (parts.fieldGroups !== undefined) type(s).fieldGroups = parts.fieldGroups;
+  };
+
 /** A declared file format (formatVersion 20) and the helper that puts a `fileFormats` value in the spec. */
 const fmt = {
   id: 'csv',
@@ -265,7 +274,7 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
       ]),
   ],
   [
-    'spec.codeOnlyColumn',
+    'spec.topLevelOnly',
     (s) => (
       (s.formatVersion = 24),
       (type(s).fields = [
@@ -498,6 +507,77 @@ const CASES: readonly (readonly [string, (s: Raw) => void])[] = [
   ['spec.appliesToInvalid', (s) => (type(s).appliesTo = ['x'])],
   ['spec.appliesToShape', (s) => (type(s).appliesTo = [3])],
   ['spec.allowedChildShape', (s) => (type(s).allowedChildren = [3])],
+  [
+    'spec.slotAcceptShape',
+    (s) => ((s.formatVersion = 26), (type(s).slots = [{ id: 'a', accepts: [3] }])),
+  ],
+  [
+    'spec.exceptEmpty',
+    (s) => (
+      (s.formatVersion = 26),
+      (type(s).slots = [{ id: 'a', accepts: [{ layer: 'l', except: [] }] }])
+    ),
+  ],
+  [
+    'spec.exceptList',
+    (s) => (
+      (s.formatVersion = 26),
+      (type(s).slots = [{ id: 'a', accepts: [{ layer: 'l', except: 3 }] }])
+    ),
+  ],
+  [
+    'spec.exceptNotInClause',
+    (s) => (
+      (s.formatVersion = 26),
+      (type(s).slots = [{ id: 'a', accepts: [{ layer: 'l', except: ['nope'] }] }])
+    ),
+  ],
+  // Field groups and conditional display (formatVersion 26)
+  [
+    'spec.fieldGroupUnknown',
+    fieldDisplay({ fields: [{ key: 'k', type: 'string', group: 'g' }] }),
+  ],
+  ['spec.fieldGroupEmpty', fieldDisplay({ fieldGroups: [{ id: 'g', name: 'G' }] })],
+  [
+    'spec.fieldGroupIdInvalid',
+    fieldDisplay({
+      fields: [{ key: 'k', type: 'string', group: 'G x' }],
+      fieldGroups: [{ id: 'G x', name: 'G' }],
+    }),
+  ],
+  [
+    'spec.visibleWhenUnknownField',
+    fieldDisplay({ fields: [{ key: 'k', type: 'string', visibleWhen: { zz: 'a' } }] }),
+  ],
+  [
+    'spec.visibleWhenSelf',
+    fieldDisplay({ fields: [{ key: 'k', type: 'string', visibleWhen: { k: 'a' } }] }),
+  ],
+  [
+    'spec.visibleWhenOwnGroup',
+    fieldDisplay({
+      fields: [{ key: 'k', type: 'string', group: 'g' }],
+      fieldGroups: [{ id: 'g', name: 'G', visibleWhen: { k: 'a' } }],
+    }),
+  ],
+  [
+    'spec.visibleWhenFieldType',
+    fieldDisplay({
+      fields: [
+        { key: 'd', type: 'date' },
+        { key: 'k', type: 'string', visibleWhen: { d: '2026-01-01' } },
+      ],
+    }),
+  ],
+  [
+    'spec.visibleWhenRequired',
+    fieldDisplay({
+      fields: [
+        { key: 'a', type: 'string' },
+        { key: 'k', type: 'string', required: true, visibleWhen: { a: 'x' } },
+      ],
+    }),
+  ],
   ['spec.groupsEmpty', (s) => (type(s).allowedChildren = [{ layer: 'l', groups: [] }])],
   ['spec.unknownKeys', (s) => (type(s).allowedChildren = [{ layer: 'l', zz: 1 }])],
   ['spec.groupsList', (s) => (type(s).allowedChildren = [{ layer: 'l', groups: 3 }])],

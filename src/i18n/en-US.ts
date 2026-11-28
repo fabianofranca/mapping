@@ -1026,6 +1026,11 @@ export const enUS = {
   'typed.unknownType':
     'The type "{type}" no longer exists in the specialization. The annotation is read-only.',
   'typed.convertToFree': 'Convert to free annotation',
+  'typed.fieldGroup.toggle': 'Show or hide {name}',
+  'typed.hiddenFields': '{count} hidden fields',
+  'typed.hiddenFieldsOne': '1 hidden field',
+  'typed.showHiddenFields': 'Show',
+  'typed.hideHiddenFields': 'Hide',
   'typed.addRow': '+ Row',
   'typed.removeRow': 'Remove row',
   'typed.moveRowUp': 'Move row up',

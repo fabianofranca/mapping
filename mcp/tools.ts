@@ -15,6 +15,7 @@ import { ToolError } from './errors';
 import { DEFAULT_MAX_SIZE, MAX_MAX_SIZE, MIN_MAX_SIZE } from './image/compose';
 import type { ImageServer } from './imageServer';
 import { imageFile, markingImage, type ImageResult } from './imageTools';
+import { renderCompare } from './renderCompare';
 import { MAX_ZOOM, MIN_ZOOM, renderContainer, renderMarking } from './renderImage';
 import { findByCodeResult } from './findByCode';
 import { Refs, resolveItem } from './items';
@@ -789,7 +790,7 @@ export function registerTools(
     ...batchOperationsArgs,
   };
   const PREVIEW_NOTE =
-    'With `operations` or `operationsFile` (the plan_changes batch) it draws the result of the batch; with `proposal` an open proposal as it would be; with both, the batch applied over the proposal (see your fix before revise_proposal). Nothing is written. The items the batch creates are cited by their `$alias` (`as`; with `project`, which a `$alias` does not carry) and come back with `alias` and `provisional: true`; the response carries `preview`. An invalid batch is `invalid-batch` (nothing drawn: fix it with plan_changes). The fonts of a package that the batch or proposal applies count only after it is applied (`warning`). ';
+    'With `operations` or `operationsFile` (the plan_changes batch) it draws the result of the batch; with `proposal` an open proposal as it would be; with both, the batch applied over the proposal (see your fix before revise_proposal). Nothing is written. The items the batch creates are cited by their `$alias` (`as`; with `project`, which a `$alias` does not carry) and come back with `alias` and `provisional: true`; the response carries `preview`. An invalid batch is `invalid-batch` (nothing drawn: fix it with plan_changes). The fonts of a package that the batch or proposal applies or updates measure and draw the text (a declared font the package does not carry is a `warning`); the package images are still the placeholder. ';
   const RENDER_NOTE =
     "The drawing is the server's, with real text (bundled free font, or the library's `fonts` when declared), stroke with `align`/`cap`/`join`/`sides`/dashes, blurred shadow, gradients (linear, radial and angular), icons and the images of the library package; the remote image becomes a placeholder. It is not a capture of the app. The response carries `url` (local HTTP, only on this computer, valid while this server runs) and `markdown`: paste the `markdown` in the reply when the client does not show the `image` content in the chat.";
 
@@ -845,13 +846,46 @@ export function registerTools(
         drawingMode: drawingModeArg,
         direction: directionArg,
         background: backgroundArg,
+        region: z
+          .object({
+            x: z.number(),
+            y: z.number(),
+            width: z.number().positive(),
+            height: z.number().positive(),
+          })
+          .optional()
+          .describe(
+            'Draws only this window of the container, in container pixels, at the asked `zoom` (with or without `proposal`/`operations`/`operationsFile`): a tall page is readable at `zoom` 2 or more. A region partly outside is clipped to the container (a `warning`, and the response `region` is the drawn one); one that does not touch the container is `region-outside-container` (the details carry the container size); output above the pixel limit is `image-too-large`.',
+          ),
+        compare: z
+          .object({
+            ref: z
+              .string()
+              .optional()
+              .describe(
+                'The container on the before side (default: the call\'s `ref`): give it when the call\'s side recreates the container (`ref: "$new"`, `compare: { ref: "<old reference>" }`).',
+              ),
+            proposal: previewArgs.proposal,
+            ...batchOperationsArgs,
+          })
+          .optional()
+          .describe(
+            "Compares two drawings: this object describes the BEFORE side and the call's own `ref` and `proposal`/`operations`/`operationsFile` are the AFTER side. `compare: {}` is the project as it is (today); `compare.operations` or `compare.operationsFile` (one of them) a batch and `compare.proposal` an open proposal, with the rules of the preview arguments; both sides are in the same project (another one is `project-mismatch`) and use the call's `zoom`, `region`, `drawingMode`, `direction`, `background` and `format`. The response carries `compare` with `pixels` (the different output pixels, exact: any channel of RGBA, or a pixel that exists on one side only), `ratio`, `regions` (the boxes of the changed regions in container pixels, largest first, at most 20, `regionsOmitted` counts the rest), `sizeChanged` and `before`/`after` (each with `ref`, `alias`/`provisional`/`preview` as the preview returns them, `width`, `height` and, with `url`/`markdown`, that side's whole drawing). The `image` is the side-by-side crop of the regions (before on the left, after on the right, each region outlined in magenta); with no difference it is the after drawing. A crop above the pixel limit is `image-too-large`, with a `fittingZoom` and the box that covers all the changes in `region` (call again with that `zoom` or lower, or with part of that `region`). An invalid batch is `invalid-batch` naming the side. Nothing is written.",
+          ),
         format: z.enum(['png', 'webp', 'jpeg']).optional().describe('Default png.'),
       },
       annotations: READ_ONLY,
     },
-    ({ ref, project, proposal, operations, operationsFile, ...options }) =>
+    ({ ref, project, proposal, operations, operationsFile, compare, ...options }) =>
       respondWithImage(async () => {
         const preview = { ref, project, proposal, operations, operationsFile };
+        if (compare !== undefined) {
+          const today = async (itemRef: string, name: string | undefined) => {
+            const { item, container } = await containerOf(itemRef, name);
+            return { refs: item.refs, container };
+          };
+          return renderCompare(roots, Date.now, today, preview, compare, options, images);
+        }
         if (hasPreview(preview)) {
           return previewContainer(roots, Date.now, preview, options, images);
         }
@@ -1178,7 +1212,7 @@ export function registerTools(
     'import_icons',
     {
       description:
-        'Imports SVG files into the ICONS FILE of a library package (the `icons` file the specialization cites, `format: "mapping-icons"`): each file becomes an icon (path data kept as written; `rect`, `circle`, `ellipse`, `line`, `polyline` and `polygon` become path data; `fill-rule="evenodd"` becomes `fillRule`; colors per `colors`). `path` is the package folder or the specialization file inside it; `svg` is one `.svg` file or a folder (only its `.svg` files, not recursive, up to 500, in name order), inside the roots; any other extension is refused before it is read. The name comes from the file name (lowercase, other characters become `-`); `name` sets it for a single file. `colors`: `auto` (default: with ONE color in the file, every path with it follows the color of the `icon` node; with two or more, each path keeps its literal color) or `keep` (literal colors stay; `currentColor` still follows the node). `mirror: true` marks the imported icons to flip in `rtl`. A name that already exists is skipped (`skipped`, reason `icon-exists`) unless `replace: true`, which replaces it in place. A file with a conversion problem goes into `errors` (file and message) and does not stop the others; unsupported SVG (transform, a gradient on a stroke, a gradient the format cannot say (href, spreadMethod other than pad, a focal point, an elliptical radial one, gradientUnits other than userSpaceOnUse or objectBoundingBox, a path with no width or height under an objectBoundingBox gradient), masks, filters, use, text, image, opacity below 1, dash arrays, a viewBox origin other than 0 0, units other than px) is named, never dropped silently. A `fill="url(#id)"` that points at a linear or radial gradient in `userSpaceOnUse` or `objectBoundingBox` (the default when `gradientUnits` is absent, measured on the exact box of each path; with `gradientTransform`) becomes the gradient `fill` of the icon: `from`/`to` for a linear one, `center`/`radius` for a circle. A `clip-path="url(#id)"` on a `g` or a shape whose `clipPath` holds ONE shape (path, rect, circle, ellipse, polygon or polyline) becomes the `clip` of the icon (`clip-rule="evenodd"` becomes `fillRule`; the full-viewBox wrapper that Figma writes is dropped); several shapes in one clipPath, a line, objectBoundingBox clip units, a transform on a clipPath or its shape, a clip inside another clip, and a clip over only part of the icon are named in `errors`. The merged file is validated before writing; the tool never writes an invalid file, and writes atomically with 2-space indentation and a final newline. The file goes up to `formatVersion` 4 when an imported icon has a gradient `fill` or a `clip`, to 3 when an imported path has `evenodd`, and to 2 when `mirror` meets a version 1 file; a declared file that does not exist is created (version 1, with the `viewBox` of the first imported icon). `dryRun: true` computes and returns everything and writes nothing. Returns `file` (relative to the package), `formatVersion`, `added`, `replaced`, `skipped`, `errors`, `written` (false in `dryRun` or with nothing to change) and a `hint`. Errors: `icons-not-declared` (the specialization has no `icons`: declare it, formatVersion 15; the tool never edits the specialization), `library-in-project` (the package is inside a project: only the app writes `specs/`), `outside-roots`, `invalid-library` (the existing icons file is invalid) and `invalid-arguments`. It writes ONLY the icons file: never the specialization, a project, `specs/` or code. Afterwards run validate_library.',
+        'Imports SVG files into the ICONS FILE of a library package (the `icons` file the specialization cites, `format: "mapping-icons"`): each file becomes an icon (path data kept as written; `rect`, `circle`, `ellipse`, `line`, `polyline` and `polygon` become path data; `fill-rule="evenodd"` becomes `fillRule`; colors per `colors`). `path` is the package folder or the specialization file inside it; `svg` is one `.svg` file or a folder (only its `.svg` files, not recursive, up to 500, in name order), inside the roots or a scratch folder (`--scratch`, read-only: a relative path is tried in the roots first and then in the scratch folders, an absolute one must be inside one of them; the server never writes there, and `path`, the package, stays inside the roots); any other extension is refused before it is read. The name comes from the file name (lowercase, other characters become `-`); `name` sets it for a single file. `colors`: `auto` (default: with ONE color in the file, every path with it follows the color of the `icon` node; with two or more, each path keeps its literal color) or `keep` (literal colors stay; `currentColor` still follows the node). `mirror: true` marks the imported icons to flip in `rtl`. A name that already exists is skipped (`skipped`, reason `icon-exists`) unless `replace: true`, which replaces it in place. A file with a conversion problem goes into `errors` (file and message) and does not stop the others; unsupported SVG (transform, a gradient on a stroke, a gradient the format cannot say (href, spreadMethod other than pad, a focal point, an elliptical radial one, gradientUnits other than userSpaceOnUse or objectBoundingBox, a path with no width or height under an objectBoundingBox gradient), masks, filters, use, text, image, opacity below 1, dash arrays, a viewBox origin other than 0 0, units other than px) is named, never dropped silently. The one exception you can ask for is `ignoreFilters: true`: every `filter` (the attribute, the `style` property and the `<filter>` elements, as Figma writes an inner shadow) is dropped and the drawing imports without it, with one entry per distinct element and `filter` value in `warnings` (the shadow itself is NOT converted; masks and the rest stay errors). A `fill="url(#id)"` that points at a linear or radial gradient in `userSpaceOnUse` or `objectBoundingBox` (the default when `gradientUnits` is absent, measured on the exact box of each path; with `gradientTransform`) becomes the gradient `fill` of the icon: `from`/`to` for a linear one, `center`/`radius` for a circle. A `clip-path="url(#id)"` on a `g` or a shape whose `clipPath` holds ONE shape (path, rect, circle, ellipse, polygon or polyline) becomes the `clip` of the icon (`clip-rule="evenodd"` becomes `fillRule`; the full-viewBox wrapper that Figma writes is dropped); several shapes in one clipPath, a line, objectBoundingBox clip units, a transform on a clipPath or its shape, a clip inside another clip, and a clip over only part of the icon are named in `errors`. The merged file is validated before writing; the tool never writes an invalid file, and writes atomically with 2-space indentation and a final newline. The file goes up to `formatVersion` 4 when an imported icon has a gradient `fill` or a `clip`, to 3 when an imported path has `evenodd`, and to 2 when `mirror` meets a version 1 file; a declared file that does not exist is created (version 1, with the `viewBox` of the first imported icon). `dryRun: true` computes and returns everything and writes nothing. Returns `file` (relative to the package), `formatVersion`, `added`, `replaced`, `skipped`, `errors`, `warnings` (`{ file, message }` per `filter` that `ignoreFilters` dropped, `[]` when none; a file with a warning and no error is imported, or skipped by `icon-exists`, with its warning kept), `written` (false in `dryRun` or with nothing to change) and a `hint`. Errors: `icons-not-declared` (the specialization has no `icons`: declare it, formatVersion 15; the tool never edits the specialization), `library-in-project` (the package is inside a project: only the app writes `specs/`), `outside-roots`, `invalid-library` (the existing icons file is invalid) and `invalid-arguments`. It writes ONLY the icons file: never the specialization, a project, `specs/` or code. Afterwards run validate_library.',
       inputSchema: {
         path: z
           .string()
@@ -1187,7 +1221,9 @@ export function registerTools(
           ),
         svg: z
           .string()
-          .describe('A `.svg` file or a folder of `.svg` files, inside the roots.'),
+          .describe(
+            'A `.svg` file or a folder of `.svg` files, inside the roots or a scratch folder.',
+          ),
         name: z
           .string()
           .optional()
@@ -1210,6 +1246,12 @@ export function registerTools(
           .boolean()
           .optional()
           .describe('Mark the imported icons to flip horizontally in `rtl`.'),
+        ignoreFilters: z
+          .boolean()
+          .optional()
+          .describe(
+            'Drop every `filter` of the SVG and import the drawing, with a `warnings` entry per dropped `filter` (default: a `filter` is an error of that file).',
+          ),
         dryRun: z
           .boolean()
           .optional()
@@ -1359,10 +1401,21 @@ export function registerTools(
     'measure_component',
     {
       description:
-        "The size a component has for given field values, in component units (`units`) and in image pixels (`pixels`, `units` × the container's `density`, rounded up), to place a component by hand (a `rect` for `create_marking`) with no dry-run batch. It creates no marking and plans nothing: it is read-only. The values are the type's defaults plus `values` (the form of `create_marking`'s `annotation.values`), with no `preview`; an unknown field fails with `unknown-field` and a refused value with `invalid-value`. `container` (a reference or an id) gives the density and the drawing mode and direction of a marking in it; without it, density 1 and the canvas's. `size` (`width`/`height`, in units) is the base of the axes that do not follow the content (default: the component's `size`). `follows` says which axes follow the content; with none, `units` is the base and `hint` says `fit_marking` would give `not-fittable`. `pixels` is what `fit_marking` gives with room (no image-edge limit). `approximate` is true when some text it measured fell to the built-in font in place of its family (the family is neither a library font of the project nor the default Mapping Sans or Mapping Mono, which the app draws with the same files, so a text in the default font gives false; a component with no text gives false). A component with a slot and an axis that follows the content also gets a `hint`: `units` and `pixels` are the size with the slots empty, and a new instance is born at the component's `size`. Provide `project` + `specId` (the applied copy); `type` is the id (or the name). Read-only.",
+        "The size a component has for given field values, in component units (`units`) and in image pixels (`pixels`, `units` × the container's `density`, rounded up), to place a component by hand (a `rect` for `create_marking`) with no dry-run batch. It creates no marking and plans nothing: it is read-only. The values are the type's defaults plus `values` (the form of `create_marking`'s `annotation.values`), with no `preview`; an unknown field fails with `unknown-field` and a refused value with `invalid-value`. `container` (a reference or an id) gives the density and the drawing mode and direction of a marking in it; without it, density 1 and the canvas's. `size` (`width`/`height`, in units) is the base of the axes that do not follow the content (default: the component's `size`). `follows` says which axes follow the content; with none, `units` is the base and `hint` says `fit_marking` would give `not-fittable`. `pixels` is what `fit_marking` gives with room (no image-edge limit). `approximate` is true when some text it measured fell to the built-in font in place of its family (the family is neither a library font of the project nor the default Mapping Sans or Mapping Mono, which the app draws with the same files, so a text in the default font gives false; a component with no text gives false). A component with a slot and an axis that follows the content also gets a `hint`: `units` and `pixels` are the size with the slots empty, and a new instance is born at the component's `size`. Provide `project` + `specId` (the applied copy); `type` is the id (or the name). To measure a working copy before `update_specialization`, pass `path` (the package folder or its specialization file) + `project` instead of `specId`: it measures with the folder's own components and fonts (the font files it carries, so `approximate` is false when it carries the font its text uses) in place of the project's copy of that library, over the project's containers and other libraries; nothing is applied or written. Read-only.",
       inputSchema: {
-        project: z.string().describe('Project (name or folder).'),
-        specId: z.string().describe('Id of an applied specialization, see get_project.'),
+        project: z.string().optional().describe('Project (name or folder). Required.'),
+        specId: z
+          .string()
+          .optional()
+          .describe(
+            'Id of an applied specialization, see get_project. Required without `path`.',
+          ),
+        path: z
+          .string()
+          .optional()
+          .describe(
+            'A package folder (or its specialization file) to measure instead of the applied copy, with `project` and no `specId`.',
+          ),
         type: z
           .string()
           .describe('Id of the annotation type (or the name), see list_components.'),
