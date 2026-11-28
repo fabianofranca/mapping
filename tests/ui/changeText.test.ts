@@ -574,6 +574,36 @@ describe('changeTitle and changeSummary: the variants (decision 9 of #2034)', ()
     ]);
   });
 
+  describe('a container leaves the group and another one joins it in the same proposal', () => {
+    // c1 and c2 share the group; the proposal takes c2 out and puts c3 in (the group id is kept).
+    const linked = linkVariant(named, 'c1', 'c2');
+    const group = linked.containers[0]?.variantGroup ?? '';
+    const swapped: Project = {
+      ...linked,
+      containers: linked.containers.map((c) => {
+        if (c.id === 'c2') return { ...c, variantGroup: undefined };
+        return c.id === 'c3' ? { ...c, variantGroup: group } : c;
+      }),
+    };
+    const lines = (preview: Project | null) => {
+      const proposal = propose(linked, swapped);
+      const names = { current: linked, preview, proposal };
+      return proposal.changes
+        .filter((c) => c.field === 'variantGroup')
+        .map((c) => `${c.entityId}|${changeSummary(names, c)}`);
+    };
+
+    it.each([
+      ['without the preview', null],
+      ['with the preview', swapped],
+    ])('lists who is in the group before and after, %s', (_label, preview) => {
+      expect(lines(preview)).toEqual([
+        'c2|Variant of: Compact → No variants',
+        'c3|No variants → Variant of: Compact',
+      ]);
+    });
+  });
+
   it('the pt-BR text uses the pt-BR labels', () => {
     locale.value = 'pt-BR';
     const [line] = changesOf(named, linkVariant(named, 'c1', 'c2'));

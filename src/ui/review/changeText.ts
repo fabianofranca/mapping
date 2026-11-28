@@ -674,22 +674,40 @@ function proposedMemberOf(other: Change, group: string, exceptId: string): strin
   return value === group ? other.entityId : null;
 }
 
+/** Does this change of the proposal take the container out of `group` (another group, none, or removed)? */
+function leavesGroup(other: Change, group: string): boolean {
+  if (other.entity !== 'image') return false;
+  if (other.kind === 'remove') return true;
+  return other.field === 'variantGroup' && other.to !== group;
+}
+
+/**
+ * Who is in `group` after the proposal, besides `exceptId`: the "as it would be" project (the current one
+ * when there is no preview) plus the containers the proposal's own changes put in it, minus the ones its
+ * changes take out.
+ */
+function groupMembersAfter(names: ReviewNames, group: string, exceptId: string): Set<string> {
+  const ids = new Set(groupMembersIn(names.preview ?? names.current, group, exceptId));
+  for (const other of names.proposal.changes) {
+    const joined = proposedMemberOf(other, group, exceptId);
+    if (joined !== null) ids.add(joined);
+    else if (leavesGroup(other, group)) ids.delete(other.entityId);
+  }
+  return ids;
+}
+
 /**
  * The variant group of a container as "Variant of: Compact, Expanded": the names of the OTHER containers
- * that have the group in the current project, in the "as it would be" and in the proposal's own changes
- * (a container created or linked in the same proposal); never the id. No group (`null`), or nobody else
- * in it, is "No variants".
+ * in it, never the id. The old value lists the group as the current project has it; the new one, as it
+ * would be after the proposal (a container linked or created in the same proposal joins; one it unlinks
+ * or removes is gone). No group (`null`), or nobody else in it, is "No variants".
  */
 function variantGroupText(names: ReviewNames, c: Change, value: JsonValue): string {
   if (typeof value !== 'string') return t('review.value.variantNone');
-  const ids = new Set<string>([
-    ...groupMembersIn(names.current, value, c.entityId),
-    ...groupMembersIn(names.preview, value, c.entityId),
-  ]);
-  for (const other of names.proposal.changes) {
-    const id = proposedMemberOf(other, value, c.entityId);
-    if (id !== null) ids.add(id);
-  }
+  const ids =
+    value === c.to
+      ? groupMembersAfter(names, value, c.entityId)
+      : new Set(groupMembersIn(names.current, value, c.entityId));
   if (ids.size === 0) return t('review.value.variantNone');
   return t('review.value.variantOf', {
     names: [...ids].map((id) => imageName(names, id)).join(', '),

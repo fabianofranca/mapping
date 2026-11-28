@@ -1,4 +1,4 @@
-# Variants of a screen — [Não lançado] (épico `epic/container-variants`, PR #0, MCP 0.69.0, schema v26)
+# Variants of a screen — [Não lançado] (épico `epic/container-variants`, PR #0, MCP 0.70.0, schema v26)
 
 ## Adicionado
 
