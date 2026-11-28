@@ -92,6 +92,8 @@ const ALLOWLIST = [
   'src/ui/MovePageControl.tsx',
   'src/ui/MovePageMenuItems.tsx',
   'src/ui/MovePageRefusedDialog.tsx',
+  // Variants (stage #2034, VR3): the variants of a container can be on any page, so the section reads the real project.
+  'src/ui/ContainerVariantsSection.tsx',
   // "Go to the marking" of the refusal (stage #2177, PF2): which end of an anchor stays comes from the real project.
   'src/ui/movePage.ts',
   'src/ui/pageNavigation.ts',

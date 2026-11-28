@@ -196,6 +196,8 @@ describe('dictionaries', () => {
       // "token {name}": the word and a parameter, the same in both languages (background token, NV4).
       'container.backgroundToken',
       'review.value.backgroundToken',
+      // "{set}: {class}": two parameters and a colon, the same in both languages (variants section, #2034).
+      'variants.classEntry',
       // The product name is "Mapping" in both languages.
       'app.title',
       'editor.appName',
