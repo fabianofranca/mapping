@@ -2,4 +2,4 @@
 
 ## Pendências
 
-None. DS impact: none (TA1 changes the MCP read and the model's part enumeration; TA2 only adds a text line to the existing warning rows of the marking panel and the Notices window, with the same row component, tokens and icons; no new screen, token or icon).
+None. DS impact: none (TA1 changes the MCP read and the model's part enumeration; TA2 and TA4 only add a text line (the overlap, and the "too close to" suffix of the size warning) to the existing warning rows of the marking panel and the Notices window, with the same row component, tokens and icons; TA3 is the specialization format; no new screen, token or icon).
