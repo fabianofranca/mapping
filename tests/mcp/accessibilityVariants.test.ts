@@ -102,3 +102,22 @@ describe('get_marking: accessibility.variants', () => {
     expect((await annotationOf('filter')).type.accessibility).toBeUndefined();
   });
 });
+
+describe('get_component: accessibility.variants', () => {
+  it('carries the variants with the effective role and the label defaults filled in', async () => {
+    const chip = await call('get_component', {
+      project: 'a11y',
+      specId: 'accessibility',
+      type: 'chip',
+    });
+    expect(chip.accessibility.role).toBe('button');
+    expect(chip.accessibility.variants.field).toBe('kind');
+    expect(chip.accessibility.variants.cases.filter).toMatchObject({
+      role: 'checkbox',
+    });
+    expect(Object.keys(chip.accessibility.variants.cases).sort()).toEqual([
+      'filter',
+      'input',
+    ]);
+  });
+});
