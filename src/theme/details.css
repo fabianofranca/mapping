@@ -1562,3 +1562,33 @@ button.layer-group-label:hover {
 .arrival-notice {
   min-width: 0;
 }
+
+/* "Variants" section of a container (stage #2034, VR3): one row per other variant, then the actions. */
+.variants-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.variants-list,
+.variants-missing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.variants-row {
+  justify-content: flex-start;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.variants-missing-title {
+  font: var(--t-small);
+}

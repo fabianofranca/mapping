@@ -26,6 +26,7 @@ import { Icon } from './icons';
 import { ContainerClassField } from './ContainerClassField';
 import { ContainerDensityField } from './ContainerDensityField';
 import { ContainerDirectionField } from './ContainerDirectionField';
+import { ContainerVariantsSection } from './ContainerVariantsSection';
 import { ContainerDrawingModeField } from './ContainerDrawingModeField';
 import { ContainerBackgroundToken } from './ContainerBackgroundToken';
 import { MarkingColorField } from './MarkingColorField';
@@ -208,6 +209,7 @@ export function SelectionPanel({
         anchor={{ kind: 'container', id: image.id }}
         onOpenSettings={onOpenSettings}
       />
+      <ContainerVariantsSection image={image} readOnly={readOnly} />
       <PerspectivesSection itemId={image.id} readOnly={readOnly} />
       <MovePageControl itemId={image.id} readOnly={readOnly} />
       {ext?.others(image.id)}
