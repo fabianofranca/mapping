@@ -14,7 +14,8 @@ import { describe, expect, it } from 'vitest';
  */
 // DM5 of #2826 raised the ceiling by 1,000 (220,000 -> 221,000): the notes package at version 7 rewrote steps in block 3 (220,045).
 // SM1 of #2913 raised the ceiling by 1,000 (221,000 -> 222,000): R54 (14,622) and R52 (12,121) did not fit the 7 blocks of 221,000 (block 2 with R52 measures 221,569).
-const MAX_BLOCK_GUIDE_CHARS = 222_000;
+// VR3 of #2034 raised it by 10,000 (222,000 -> 232,000): R53 (11.4 thousand) did not fit any of the 7 blocks of 222,000 (block 5 with R53 measures 231,050).
+const MAX_BLOCK_GUIDE_CHARS = 232_000;
 
 /**
  * Stage #1533 (TE1, decisions 3 and 5): the limit above measures what the tester reads, the block's guide without the

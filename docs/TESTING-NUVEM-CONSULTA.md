@@ -117,7 +117,7 @@ Why: the limit is the **size of each block's generated guide**: up to 200 thousa
 
 **Second closing pass of #2918 with `main` (2026-11-28):** after `main` took #2931, block 6 measured 222,712 characters, so R18 (about 15.6 thousand) went from block 7 to block 6 and R41 (about 17.5 thousand) from block 6 to block 7 (independent of each other and of the chains of section 8). The guides become 212,605, 209,447, 220,437, 219,050, 219,606, 220,777 and 220,329 (the Steps column 162, 141, 158, 175, 144, 165 and 170).
 
-**VR3 of #2034 (2026-11-28), after the sync SM1 with `main`:** the new script R53 (Variants of a screen, 11 steps, 11.4 thousand characters; `main` already has R52, so the next free number after it is R53) went into block 2, the only one with room after the second closing pass of #2918 (209,447 characters before, against the ceiling of 221,000, `mandatoryOnly`; block 1 would have measured 224 thousand and the others more); the script's introduction was trimmed by 276 characters to fit (block 2: 220,758). Block 2 went from 141 to 152 steps.
+**VR3 of #2034 (2026-11-28):** R53 went into block 5; no block had room under 222,000, so the ceiling is 232,000 (block 5: 231,050).
 
 **Sync SM2 of #2193 with `main` (2026-11-22):** after `main` took the guide changes of #2617 and the other epics, block 3 measured 214,021 characters, over the ceiling of 213,000 (the others: 204,668, 209,732, 207,011, 208,125 and 209,945). R28 went from block 3 to 1 and R15 from block 1 to 3 (neither is in a chain of section 8). The guides become 210,611, 209,732, 208,078, 207,011, 208,125 and 209,945 (the smallest margin is 3,055, block 6; the ceiling is unchanged), the Steps column 169, 148, 153, 172, 146 and 155.
 
