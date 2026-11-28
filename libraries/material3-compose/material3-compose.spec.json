@@ -3,7 +3,7 @@
   "formatVersion": 18,
   "id": "material3-compose",
   "name": "Material 3 (Compose)",
-  "version": 18,
+  "version": 19,
   "description": "Material Design 3 (baseline, light and dark theme) for Jetpack Compose, with each type's composable in `code`. The symbols and parameters come from the androidx code at compose.material3 version 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Conventions: the slots (lambdas) of each composable are described in `notes`; size comes from width, height and weight; icons are Icons.Filled suggestions (the ones androidx puts in Icons.AutoMirrored flip in rtl); the reading direction and the anchor draw the tooltip (with its arrow), the badge and the menu anchored; the remote image uses the app's image loader; the Scaffold places each child in the right slot by its type.",
   "platforms": [
     {
@@ -32286,7 +32286,7 @@
   "migrations": [
     {
       "from": 1,
-      "to": 18,
+      "to": 19,
       "steps": [
         {
           "op": "fill-field",
@@ -32310,7 +32310,7 @@
     },
     {
       "from": 2,
-      "to": 18,
+      "to": 19,
       "steps": [
         {
           "op": "fill-field",
@@ -32334,7 +32334,7 @@
     },
     {
       "from": 3,
-      "to": 18,
+      "to": 19,
       "steps": [
         {
           "op": "fill-field",
@@ -32358,7 +32358,7 @@
     },
     {
       "from": 4,
-      "to": 18,
+      "to": 19,
       "steps": [
         {
           "op": "fill-field",
@@ -32382,7 +32382,7 @@
     },
     {
       "from": 5,
-      "to": 18,
+      "to": 19,
       "steps": [
         {
           "op": "fill-field",
