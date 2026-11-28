@@ -113,22 +113,11 @@ const touchTargetShape = z
     mode: z
       .enum(['visual', 'expanded'], { error: 'must be "visual" or "expanded"' })
       .optional(),
-    spacing: z.boolean({ error: 'must be true or false' }).optional(),
+    // Accepted as `unknown` so the errors (not a boolean, version, mode, square) sit at the exact path
+    // `touchTarget.spacing`, which a union on the type's `touchTarget` would otherwise hide.
+    spacing: z.unknown().optional(),
   })
   .strict();
-
-/** The type's `touchTarget` (`false` turns the audit off): the issues of the object keep their exact path. */
-const typeTouchTargetShape = z
-  .unknown()
-  .transform((value, ctx): SpecTouchTarget | false | undefined => {
-    if (value === undefined || value === false) return value;
-    const parsed = touchTargetShape.safeParse(value);
-    if (parsed.success) return parsed.data;
-    for (const { message, path } of parsed.error.issues) {
-      ctx.addIssue({ code: 'custom', message, path });
-    }
-    return z.NEVER;
-  });
 
 const labelShape = z
   .object({
@@ -181,7 +170,7 @@ export const typeAccessibilityShape = z
   .object({
     role: roleShape.optional(),
     label: labelShape.optional(),
-    touchTarget: typeTouchTargetShape.optional(),
+    touchTarget: z.union([touchTargetShape, z.literal(false)]).optional(),
     parts: z.array(partShape).optional(),
     variants: variantsShape.optional(),
   })
@@ -479,7 +468,7 @@ function checkTypeAccessibility(
 
 /**
  * `touchTarget.spacing` (v27): before it, the key (even `false`) is an error at its path; from it,
- * `true` needs the `visual` mode (the default) and a square minimum. The boolean shape is in the zod.
+ * the value is a boolean and `true` needs the `visual` mode (the default) and a square minimum.
  */
 function checkTouchSpacing(
   touch: unknown,
@@ -498,6 +487,7 @@ function checkTouchSpacing(
     add(at, only);
     return;
   }
+  if (typeof spacing !== 'boolean') add(at, specMsg('spec.mustBeBoolean'));
   if (spacing !== true) return;
   if (mode === 'expanded') add(at, specMsg('spec.touchSpacingNeedsVisual'));
   if (width !== height) add(at, specMsg('spec.touchSpacingNeedsSquare'));

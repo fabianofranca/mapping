@@ -42,7 +42,7 @@ describe('formatVersion 11: versions', () => {
     expect(SPEC_FORMAT_VERSION).toBe(27);
     expect(SPEC_FORMAT_VERSIONS).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-      24, 25, 26,
+      24, 25, 26, 27,
     ]);
     for (const v of SPEC_FORMAT_VERSIONS) {
       expect(issuesOf(v11Json(undefined, v)), `v${v}`).toEqual([]);
@@ -53,7 +53,7 @@ describe('formatVersion 11: versions', () => {
     expect(issuesOf(v11Json(undefined, 27))).toContainEqual({
       path: 'formatVersion',
       message:
-        'must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 or 26',
+        'must be 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 or 27',
     });
   });
 

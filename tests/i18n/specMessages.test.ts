@@ -165,6 +165,22 @@ function accessibilityCases(): readonly (readonly [string, (s: Raw) => void])[] 
     ['spec.accessibilityPartColumnMissing', (s) => a(s, part({ when: 'tb.zz' }))],
     ['spec.accessibilityLabelFieldsEmpty', (s) => a(s, part({ label: { fields: [] } }))],
     [
+      'spec.touchSpacingNeedsVisual',
+      (s) => {
+        s.formatVersion = 27;
+        s.accessibility = {
+          touchTarget: { width: 24, height: 24, mode: 'expanded', spacing: true },
+        };
+      },
+    ],
+    [
+      'spec.touchSpacingNeedsSquare',
+      (s) => {
+        s.formatVersion = 27;
+        s.accessibility = { touchTarget: { width: 24, height: 32, spacing: true } };
+      },
+    ],
+    [
       'spec.accessibilityPartNoTouch',
       (s) => a(s, part({ touchTarget: { width: 1, height: 1 } })),
     ],

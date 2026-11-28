@@ -174,6 +174,9 @@ const MISSING_TODAY: string[] = [
   'spec:accessibility.touchTarget.mode=visual',
   'spec:layers[].annotationTypes[].accessibility.touchTarget.mode=expanded',
   'spec:layers[].annotationTypes[].accessibility.touchTarget=false',
+  // `touchTarget.spacing` (formatVersion 27, stage #1998, TA3): no library switches it on (Material 3 is `expanded`,
+  // the notes and Kotlin libraries declare no `accessibility`). Covered by tests/model/specTouchSpacing.test.ts.
+  'spec:accessibility.touchTarget.spacing',
   'component:node.weight',
   'component:node.repeat.lineGap',
   'component:node.repeat.maxPerLine',

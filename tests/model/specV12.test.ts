@@ -303,7 +303,7 @@ describe('formatVersion 12: JSON schema', () => {
     const schema = jsonSchema as Json;
     expect(schema.properties.formatVersion.enum).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-      24, 25, 26,
+      24, 25, 26, 27,
     ]);
     const ops = (schema.$defs.migrationStep.oneOf as Json[]).map(
       (s) => s.properties.op.const as string,
