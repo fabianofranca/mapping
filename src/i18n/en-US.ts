@@ -148,6 +148,9 @@ export const enUS = {
   'marking.error.rect-out-of-image': 'The marking must stay inside the image.',
   'marking.error.rect-outside-parent': 'The marking must stay inside its parent marking.',
   'marking.error.invalid-parent': 'That marking cannot be the parent.',
+  'marking.error.parent-by-geometry':
+    'The parent of an observation marking comes from the geometry.',
+  'marking.error.slot-missing': 'The parent has no such slot.',
   'marking.error.invalid-space': 'Only a canvas marking can be floating.',
   'marking.error.decorative-floating':
     'A marking cannot be both floating and decorative.',

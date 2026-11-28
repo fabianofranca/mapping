@@ -5,6 +5,7 @@ import { annotationWithLinked } from './links';
 import { findById, moveItem, normalizeOptionalName, updateById } from './project';
 import { projectIndex } from './projectIndex';
 import { countBrokenRefs } from './refs';
+import { applyNatureChanges, type NatureOptions } from './structure';
 import type { Annotation, Entry, Project } from './types';
 
 /** Entry to save; without `id`, it gets a new one (`crypto.randomUUID()`). */
@@ -88,10 +89,18 @@ export function renameAnnotation(
 }
 
 /** Deletes the annotation and, in cascade, those linked to it (recursively). */
-export function removeAnnotation(p: Project, annotationId: string): Project {
+export function removeAnnotation(
+  p: Project,
+  annotationId: string,
+  options?: NatureOptions,
+): Project {
   findById(p.annotations, annotationId);
   const doomed = annotationWithLinked(p, annotationId);
-  return { ...p, annotations: p.annotations.filter((a) => !doomed.has(a.id)) };
+  return applyNatureChanges(
+    p,
+    { ...p, annotations: p.annotations.filter((a) => !doomed.has(a.id)) },
+    options,
+  );
 }
 
 /**

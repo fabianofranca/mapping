@@ -1,3 +1,4 @@
+import { materializedIds } from './nature';
 import { projectIndex } from './projectIndex';
 import type { Marking, Project } from './types';
 
@@ -27,6 +28,26 @@ export function descendantsOf(p: Project, markingId: string): Marking[] {
     const m = stack.pop() as Marking;
     result.push(m);
     stack.push(...(index.get(m.id) ?? []));
+  }
+  return result;
+}
+
+/**
+ * The descendants that move along with the marking on the canvas (stage #3087, decision 8): its stored
+ * children (materialized markings) and theirs. An observation marking's geometric children are not among
+ * them: the settle redoes them after the move, as it always did on the canvas.
+ */
+export function storedDescendantsOf(p: Project, markingId: string): Marking[] {
+  const index = projectIndex(p).children;
+  const materialized = materializedIds(p);
+  const stored = (id: string): Marking[] =>
+    (index.get(id) ?? []).filter((m) => materialized.has(m.id));
+  const result: Marking[] = [];
+  const stack = stored(markingId);
+  while (stack.length > 0) {
+    const m = stack.pop() as Marking;
+    result.push(m);
+    stack.push(...stored(m.id));
   }
   return result;
 }

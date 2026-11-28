@@ -335,6 +335,49 @@ function takenBackIn(p: Project, set: readonly Marking[]): boolean {
   );
 }
 
+/** The space a marking lives in, as a landing: its container (or the canvas) with its units. */
+function landingOf(p: Project, m: Pick<Marking, 'containerId' | 'pageId'>): Landing {
+  const container =
+    m.containerId === null ? undefined : projectIndex(p).containers.get(m.containerId);
+  if (container) {
+    return {
+      key: container.id,
+      units: unitsOf(container),
+      space: containerSpace(container),
+    };
+  }
+  return { key: canvasKey(m.pageId), units: CANVAS_UNITS, space: CANVAS_SPACE };
+}
+
+/**
+ * The markings `ids` (all in one space, in array order) taken to the space of `target` (a container, or the
+ * canvas of a page), each rectangle converted from its footprint on the canvas. The set keeps its size in
+ * component units when the spaces differ and some member draws a component (`minSizeOf`, as `landSet`). It is
+ * the conversion the settle does when the geometry changes a space, for a change of space decided by an
+ * operation (stage #3087: `setMarkingParent`); it does not settle.
+ */
+export function relocatedMarkings(
+  p: Project,
+  ids: ReadonlySet<string>,
+  target: Pick<Marking, 'containerId' | 'pageId'>,
+  options?: SettleOptions,
+): Marking[] {
+  const to = landingOf(p, target);
+  const moves: Move[] = [];
+  p.markings.forEach((marking, index) => {
+    if (!ids.has(marking.id)) return;
+    moves.push({
+      index,
+      marking,
+      canvas: markingCanvasRectOf(p, marking),
+      pageId: target.pageId,
+      from: landingOf(p, marking),
+      to,
+    });
+  });
+  return moves.length === 0 ? [] : landSet(p, moves, options);
+}
+
 /** Groups the moves by the pair (S, T), keeping the order of the first of each pair. */
 function setsOf(moves: readonly Move[]): Move[][] {
   const sets = new Map<string, Move[]>();

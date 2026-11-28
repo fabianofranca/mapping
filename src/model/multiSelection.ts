@@ -33,8 +33,10 @@ import {
   canEditMarkingGeometry,
   requireUnlocked,
 } from './locks';
+import { materializedIds } from './nature';
 import { findById } from './project';
 import { projectIndex, idInUse } from './projectIndex';
+import { reparented } from './settleStructure';
 import { countBrokenRefs } from './refs';
 import type { Arrow, Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
@@ -928,7 +930,32 @@ export function wrapItems(
     decorative: false,
     source: null,
   };
-  const list = [...p.markings];
+  const list = wrappedChildren(p, chosen, marking);
   list.splice(position, 0, marking);
   return settleFrom(p, { ...p, markings: list }, options);
+}
+
+/**
+ * The markings with the selected materialized ones under the new `wrapper` (stage #3087, decision 9): a
+ * materialized marking is no child by geometry, so the wrapper becomes the stored parent of the selected ones
+ * that are loose or have an observation parent, in the wrapper's space. One whose stored parent is selected too
+ * keeps it. A child of a materialized slot cannot be wrapped (`invalid-parent`): it leaves the slot first.
+ */
+function wrappedChildren(
+  p: Project,
+  chosen: ReadonlySet<string>,
+  wrapper: Marking,
+): Marking[] {
+  const materialized = materializedIds(p);
+  if (materialized.size === 0) return [...p.markings];
+  const inWrapperSpace = (m: Marking): boolean =>
+    m.containerId === wrapper.containerId &&
+    (wrapper.containerId !== null || m.pageId === wrapper.pageId);
+  return p.markings.map((m) => {
+    if (!chosen.has(m.id) || !materialized.has(m.id)) return m;
+    if (m.parentId !== null && chosen.has(m.parentId)) return m;
+    if (m.parentId !== null && materialized.has(m.parentId)) fail('invalid-parent', m.id);
+    if (!inWrapperSpace(m)) return m;
+    return reparented(m, wrapper.id);
+  });
 }

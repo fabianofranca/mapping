@@ -42,6 +42,10 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
     'a floating marking cannot be decorative, and a decorative one cannot be floating',
   'invalid-parent':
     'invalid parent: it must be in the same container, contain the rectangle and not be a descendant',
+  'parent-by-geometry':
+    'the parent of an observation marking comes from the geometry: only a materialized marking (its type has a component) takes a parent by choice',
+  'slot-missing':
+    'the parent has no such slot: name one of its slots (required when it has several, refused on an observation parent)',
   'invalid-annotation-parent':
     'invalid owner: it must belong to the same marking, with no cycle, and be in another layer or, for a typed annotation, of a type that accepts this link, including in the same layer',
   'arrow-endpoint':

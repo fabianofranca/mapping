@@ -273,7 +273,11 @@ export function setMarkingSpace(
 }
 
 /** A marking (and its descendants) that changes page cannot keep an arrow to a marking left on another one. */
-function checkArrowsStayOnPage(p: Project, markingId: string, pageId: string): void {
+export function checkArrowsStayOnPage(
+  p: Project,
+  markingId: string,
+  pageId: string,
+): void {
   const { pageOf } = projectIndex(p);
   const moving = new Set([markingId, ...descendantIds(p, markingId)]);
   for (const a of p.arrows) {

@@ -23,6 +23,10 @@ export type ModelErrorCode =
   | 'rect-out-of-image'
   | 'rect-outside-parent'
   | 'invalid-parent'
+  // Stored structure (#3087): the parent of an observation marking comes from the geometry; the slot of
+  // a materialized marking's parent is missing or does not exist
+  | 'parent-by-geometry'
+  | 'slot-missing'
   // Marking space (Spatial markings stage): the floating one lives only on the canvas
   | 'invalid-space'
   // Decorative marking (v25): a floating marking cannot be decorative, nor the reverse

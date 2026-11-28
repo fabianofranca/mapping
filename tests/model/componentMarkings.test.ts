@@ -441,7 +441,7 @@ describe('addComponentMarking', () => {
     expect(rectOf(p, 'M1')).toEqual(rect);
   });
 
-  it('explicit rectangle: respects minSize, the image and the parent', () => {
+  it('explicit rectangle: respects minSize and the image; a stored parent needs no rect inside it', () => {
     let p = add(componentProject(), 'C', 'row', {
       rect: { x: 100, y: 100, width: 300, height: 100 },
     });
@@ -451,12 +451,16 @@ describe('addComponentMarking', () => {
     expect(() =>
       add(p, 'M1', 'text', { rect: { x: 950, y: 20, width: 100, height: 40 } }),
     ).toThrow('rect-out-of-image');
-    expect(() =>
-      add(p, 'M1', 'text', {
-        parentId: 'C',
-        rect: { x: 350, y: 120, width: 100, height: 40 },
-      }),
-    ).toThrow('rect-outside-parent');
+    // The stored parent (stage #3087): the rect no longer has to be inside it, so there is no `rect-outside-parent`.
+    expect(
+      marking(
+        add(p, 'M1', 'text', {
+          parentId: 'C',
+          rect: { x: 350, y: 120, width: 100, height: 40 },
+        }),
+        'M1',
+      ).parentId,
+    ).toBe('C');
     p = add(p, 'M2', 'text', {
       parentId: 'C',
       rect: { x: 120, y: 120, width: 100, height: 40 },
