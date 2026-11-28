@@ -6,7 +6,7 @@ import { Choice } from './controls';
 import { useEditor } from './EditorContext';
 import { LayerCell, MarkingCell, markingPathLabel } from './ListView';
 import { arrowText } from './labels';
-import { auditFindingText } from './accessibilityText';
+import { auditFindingKey, auditFindingText } from './accessibilityText';
 
 interface NoticesViewProps {
   /** Goes to the annotation (shows the layer, selects the marking and scrolls the panel to it). */
@@ -39,7 +39,7 @@ function AccessibilitySection({
         const label = markingPathLabel(project, path, arrow);
         return (
           <tr
-            key={`${annotation.id}:${finding.code}`}
+            key={auditFindingKey(finding)}
             class="list-row list-row-first"
             onClick={() => onGoToAnnotation(annotation)}
           >
@@ -63,7 +63,7 @@ function AccessibilitySection({
               />
             </td>
             <td class="list-cell" data-label={t('notices.col.warning')}>
-              {auditFindingText(finding)}
+              {auditFindingText(project, finding)}
             </td>
           </tr>
         );

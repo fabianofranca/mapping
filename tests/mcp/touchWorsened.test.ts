@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AuditFinding } from '../../src/model';
+import type { AuditFinding, TouchTargetOverlapFinding } from '../../src/model';
 import { worsened } from '../../mcp/drawingProof';
 
 // Phase A6 (R2): a touch finding the batch makes worse is reported again; an unchanged or better one is not.
@@ -33,5 +33,41 @@ describe('worsened', () => {
   it('the same or a larger actual, with the same minimum, is not repeated', () => {
     expect(worsened(finding([40, 44]), finding([40, 44]))).toBe(false);
     expect(worsened(finding([40, 44]), finding([42, 44]))).toBe(false);
+  });
+});
+
+// Stage #1998 (TA2): an overlap is keyed by the other annotation; it is news when it is new or a side grew.
+const overlap = (
+  size: [number, number],
+  other = 'A2',
+  annotationId = 'A1',
+): TouchTargetOverlapFinding => ({
+  code: 'touch-target-overlap',
+  annotationId,
+  markingId: 'M1',
+  other: { annotationId: other, markingId: `M_${other}` },
+  overlap: { width: size[0], height: size[1] },
+  overlapPx: { width: size[0], height: size[1] },
+  density: 1,
+});
+
+describe('worsened: touch-target-overlap', () => {
+  it('an overlap with no earlier one is news', () => {
+    expect(worsened(undefined, overlap([4, 48]))).toBe(true);
+  });
+
+  it('an unchanged or smaller overlap is not repeated', () => {
+    expect(worsened(overlap([4, 48]), overlap([4, 48]))).toBe(false);
+    expect(worsened(overlap([4, 48]), overlap([2, 48]))).toBe(false);
+  });
+
+  it('a side that grew is news', () => {
+    expect(worsened(overlap([4, 48]), overlap([6, 48]))).toBe(true);
+    expect(worsened(overlap([4, 48]), overlap([4, 50]))).toBe(true);
+  });
+
+  it('a touch-target-small and an overlap never stand for each other', () => {
+    expect(worsened(finding([40, 44]), overlap([4, 48]))).toBe(true);
+    expect(worsened(overlap([4, 48]), finding([40, 44]))).toBe(true);
   });
 });

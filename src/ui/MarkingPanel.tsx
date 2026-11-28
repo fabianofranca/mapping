@@ -15,7 +15,7 @@ import type { ActionResult } from '../store/history';
 import type { AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
 import { ArrivalNotice } from './ArrivalNotice';
-import { auditFindingText } from './accessibilityText';
+import { auditFindingKey, auditFindingText } from './accessibilityText';
 import { ArrowLinksSection } from './ArrowLinksSection';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
 import { Button, Choice, HelpTip, IconButton, TextField } from './controls';
@@ -194,8 +194,8 @@ export function MarkingPanel({
       <ArrivalNotice itemId={marking.id} />
 
       {(derived.auditFindings.value.get(marking.id) ?? []).map((finding) => (
-        <Notice key={`${finding.annotationId}:${finding.code}`} tone="warning" size="sm">
-          {auditFindingText(finding)}
+        <Notice key={auditFindingKey(finding)} tone="warning" size="sm">
+          {auditFindingText(project, finding)}
         </Notice>
       ))}
 

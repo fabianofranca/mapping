@@ -307,22 +307,34 @@ function auditIssuesOf(
 }
 
 /**
- * A touch finding is news when the annotation had none before, or when the batch made it worse: a smaller
- * `actual` (a side) or a larger `min`. An unchanged or better one is not repeated.
+ * A touch finding is news when the annotation had none before (an overlap: none with that other annotation), or when
+ * the batch made it worse: a smaller `actual` (a side) or a larger `min` for `touch-target-small`, a larger
+ * `overlap` (a side) for `touch-target-overlap`. An unchanged or better one is not repeated.
  */
 export function worsened(before: AuditFinding | undefined, after: AuditFinding): boolean {
-  if (before === undefined) return true;
+  if (before === undefined || before.code !== after.code) return true;
+  if (after.code === 'touch-target-overlap') {
+    const was = (before as typeof after).overlap;
+    return after.overlap.width > was.width || after.overlap.height > was.height;
+  }
+  const was = before as typeof after;
   return (
-    after.actual.width < before.actual.width ||
-    after.actual.height < before.actual.height ||
-    after.min.width > before.min.width ||
-    after.min.height > before.min.height
+    after.actual.width < was.actual.width ||
+    after.actual.height < was.actual.height ||
+    after.min.width > was.min.width ||
+    after.min.height > was.min.height
   );
 }
 
+/** What the audit tells apart: an annotation has one `touch-target-small` and one overlap per neighbor annotation. */
+const findingKey = (finding: AuditFinding): string =>
+  finding.code === 'touch-target-overlap'
+    ? `${finding.annotationId}|${finding.code}|${finding.other.annotationId}`
+    : `${finding.annotationId}|${finding.code}`;
+
 /**
- * The `touch-target-small` warnings of the markings the batch created or changed (stage #1128, decision 9 of
- * #1081): the audit's findings with the annotation, the marking and a message. They go in the plan's `warnings`,
+ * The `touch-target-small` and `touch-target-overlap` warnings of the markings the batch created or changed (stages
+ * #1128 and #1998): the audit's findings with the annotation, the marking and a message. They go in the plan's `warnings`,
  * never in `issues`: a small touch area does not leave the annotation incomplete. A warning the annotation already
  * had before the batch and that the batch did not worsen is not new, so it does not show again.
  */
@@ -336,14 +348,13 @@ export function touchWarnings(
   const had = new Map(
     [...audits.before.values()]
       .flatMap((entry) => entry.findings)
-      .map((finding) => [finding.annotationId, finding] as const),
+      .map((finding) => [findingKey(finding), finding] as const),
   );
   return [...audits.after.values()]
     .flatMap((entry) => entry.findings)
     .filter(
       (finding) =>
-        changed.has(finding.markingId) &&
-        worsened(had.get(finding.annotationId), finding),
+        changed.has(finding.markingId) && worsened(had.get(findingKey(finding)), finding),
     )
     .map((finding) => auditWarning(refs, finding));
 }

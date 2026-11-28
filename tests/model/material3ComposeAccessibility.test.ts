@@ -380,7 +380,7 @@ describe('Material 3 (Compose): the examples are audited', () => {
 
   it('no example gets touch-target-small (the types the Compose expands are skipped; the visual ones are big enough)', () => {
     const small = [...audit.entries()]
-      .filter(([, a]) => a.findings.length > 0)
+      .filter(([, a]) => a.findings.some((f) => f.code === 'touch-target-small'))
       .map(([id]) => ids.get(id));
     expect(small).toEqual([]);
     expect(ids.size).toBeGreaterThan(200);

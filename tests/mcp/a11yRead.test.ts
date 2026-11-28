@@ -276,3 +276,89 @@ describe('the type resolved: get_component and get_annotation', () => {
     expect(annotation!.type).not.toHaveProperty('accessibility');
   });
 });
+
+// Stage #1998 (TA2, decision 8): `touch-target-overlap` in the reads. A project with the root minimum 48 `expanded`
+// (density 1): `IconA` and `IconB` are 40 x 40 and 4 apart, `Far` is alone.
+describe('touch-target-overlap in get_marking, get_annotation and list_markings', () => {
+  let ows: A11yWorkspace;
+  const call = (name: string, args: Record<string, unknown>) => a11yCall(ows, name, args);
+  const list = async () =>
+    (await call('list_markings', { project: 'a11y', container: A11Y_SCREEN }))
+      .markings as { ref: string; name: string; warnings?: number }[];
+  const refOf = async (name: string) => (await list()).find((r) => r.name === name)!.ref;
+  const annotationOf = async (name: string) => {
+    const marking = await call('get_marking', { ref: await refOf(name) });
+    return (marking.layers as { annotations: Record<string, unknown>[] }[]).flatMap(
+      (l) => l.annotations,
+    )[0]!;
+  };
+
+  beforeAll(async () => {
+    ows = await a11yWorkspace(
+      (_add, plain) => {
+        plain(
+          'IconA',
+          'button',
+          { x: 100, y: 100, width: 40, height: 40 },
+          { label: 'A' },
+        );
+        plain(
+          'IconB',
+          'button',
+          { x: 144, y: 100, width: 40, height: 40 },
+          { label: 'B' },
+        );
+        plain('Far', 'button', { x: 600, y: 100, width: 40, height: 40 }, { label: 'F' });
+      },
+      {
+        density: 1,
+        tweak: (spec: Doc) => {
+          spec.accessibility.touchTarget = { width: 48, height: 48, mode: 'expanded' };
+        },
+      },
+    );
+  });
+
+  afterAll(async () => {
+    await ows.client.close();
+    rmSync(ows.base, { recursive: true, force: true });
+  });
+
+  it('get_marking has the audit entry that names the neighbor', async () => {
+    const a = await annotationOf('IconA');
+    const b = await annotationOf('IconB');
+    expect(a.audit).toEqual([
+      {
+        code: 'touch-target-overlap',
+        annotation: a.ref,
+        other: { marking: await refOf('IconB'), annotation: b.ref },
+        overlap: { width: 4, height: 48 },
+        overlapPx: { width: 4, height: 48 },
+        density: 1,
+      },
+    ]);
+    expect(b.audit).toMatchObject([{ other: { marking: await refOf('IconA') } }]);
+    expect((await annotationOf('Far')).audit).toBeUndefined();
+  });
+
+  it('get_annotation carries the same audit', async () => {
+    const a = await annotationOf('IconA');
+    expect((await call('get_annotation', { ref: a.ref })).audit).toEqual(a.audit);
+  });
+
+  it('list_markings counts one warning for each annotation with an overlap, never a pending item', async () => {
+    const rows = await list();
+    expect(
+      rows.filter((r) => r.warnings !== undefined).map((r) => [r.name, r.warnings]),
+    ).toEqual([
+      ['IconA', 1],
+      ['IconB', 1],
+    ]);
+    const incomplete = await call('list_markings', {
+      project: 'a11y',
+      container: A11Y_SCREEN,
+      incomplete: true,
+    });
+    expect(incomplete.markings).toEqual([]);
+  });
+});
