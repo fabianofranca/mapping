@@ -9,4 +9,4 @@
 ## Alterado
 
 - `get_marking` carries `typeAccessibility` (the resolved `accessibility` of each distinct type of its annotations, keyed `<specId>/<typeId>`) once per type, and the `type` of each annotation no longer repeats `accessibility`; `get_annotation`, `get_component` and `get_code_hints` are unchanged (#1998).
-- The `dist/index.html` ceiling rose 16 KiB, from 2818048 to 2834432 bytes, by the budget rule; above the limits, `bug` for the owner to review
+- The `dist/index.html` ceiling rose 16 KiB, from 2818048 to 2834432 bytes, by the budget rule; above the limits, `bug` #3127 for the owner to review
