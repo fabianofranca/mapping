@@ -1,4 +1,4 @@
-import { useId } from 'preact/hooks';
+import { useId, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   defaultColumnValue,
@@ -8,8 +8,10 @@ import {
   type SpecField,
   type TableRow,
 } from '../model';
+import { fieldDisplay, type SpecFieldGroup } from '../model/specFieldDisplay';
 import type { ActionResult } from '../store/history';
 import { SimpleEditor } from './FieldEditors';
+import { FieldDisplayItems, HiddenFieldsLine } from './FieldGroups';
 import { Icon } from './icons';
 import { PropertyGrid, Property } from './PropertyGrid';
 import { TableEditor } from './TableField';
@@ -25,6 +27,8 @@ const OK: ActionResult = { ok: true, value: undefined };
 
 export interface TypedFormProps {
   readonly fields: readonly SpecField[];
+  /** The type's `fieldGroups`: the same subheadings and conditions as Details (state kept here). */
+  readonly fieldGroups?: readonly SpecFieldGroup[] | undefined;
   readonly values: Readonly<Record<string, unknown>>;
   /** An edit: the field key and the new value (`null` clears; table = all the rows). */
   readonly onChange: (key: string, value: JsonValue) => void;
@@ -33,21 +37,48 @@ export interface TypedFormProps {
 
 export function TypedForm({
   fields,
+  fieldGroups,
   values,
   onChange,
   readOnly = false,
 }: TypedFormProps) {
+  // The Playground has no editor: the collapsed groups and "Show" live here.
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+  const [showAll, setShowAll] = useState(false);
+  const none = new Set<string>();
+  const base = fieldDisplay({ fields, fieldGroups }, values, none);
+  const display = showAll
+    ? fieldDisplay({ fields, fieldGroups }, values, new Set(fields.map((f) => f.key)))
+    : base;
+  const toggle = (id: string) =>
+    setCollapsed((current) => {
+      const next = new Set(current);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
   return (
     <PropertyGrid>
-      {fields.map((field) => (
-        <TypedFormField
-          key={field.key}
-          field={field}
-          value={values[field.key] as JsonValue | undefined}
-          readOnly={readOnly}
-          onChange={onChange}
+      <FieldDisplayItems
+        items={display.items}
+        isCollapsed={(id) => collapsed.has(id)}
+        onToggle={toggle}
+        renderField={(field) => (
+          <TypedFormField
+            key={field.key}
+            field={field}
+            value={values[field.key] as JsonValue | undefined}
+            readOnly={readOnly}
+            onChange={onChange}
+          />
+        )}
+      />
+      {base.hidden.length > 0 && (
+        <HiddenFieldsLine
+          count={base.hidden.length}
+          shown={showAll}
+          onToggle={() => setShowAll((on) => !on)}
         />
-      ))}
+      )}
     </PropertyGrid>
   );
 }

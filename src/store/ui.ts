@@ -381,7 +381,9 @@ export type DetailsSection =
         | 'images'
         | 'comments';
     }
-  | { readonly kind: 'layer' | 'annotation'; readonly id: string };
+  | { readonly kind: 'layer' | 'annotation'; readonly id: string }
+  /** A field group of a type: `<specId>/<typeId>/<groupId>` (per type and group, not per annotation). */
+  | { readonly kind: 'fieldGroup'; readonly id: string };
 
 /** Key of the section in the `collapsed` set. */
 export function sectionKey(section: DetailsSection): string {

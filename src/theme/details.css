@@ -1562,3 +1562,33 @@ button.layer-group-label:hover {
 .arrival-notice {
   min-width: 0;
 }
+
+/* Field groups (stage #2918, FG3): the subheading is a full-width row of the PropertyGrid; the
+   group's rows sit in a wrapper that does not make a box, so the label/control columns hold. */
+.field-group-head,
+.hidden-fields-line {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.field-group-head {
+  padding-top: var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.field-group-body {
+  display: contents;
+}
+
+.field-group-toggle {
+  gap: var(--space-1);
+  font: var(--t-body-strong);
+}
+
+.hidden-fields-text {
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+}

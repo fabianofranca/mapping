@@ -1,0 +1,30 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "scroll",
+  "name": "Scroll",
+  "size": {
+    "width": 200,
+    "height": 160
+  },
+  "template": {
+    "type": "frame",
+    "layout": {
+      "type": "column"
+    },
+    "fill": "#FEF7FF",
+    "clip": true,
+    "children": [
+      {
+        "type": "slot",
+        "id": "content",
+        "name": "content",
+        "width": "fill",
+        "height": "fill",
+        "layout": {
+          "type": "none"
+        }
+      }
+    ]
+  }
+}

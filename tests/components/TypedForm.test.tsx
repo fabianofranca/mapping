@@ -155,3 +155,49 @@ describe('TypedForm: ref column of a table (without a project)', () => {
     expect(button.title).toBe('Picking a reference only works inside a project.');
   });
 });
+
+describe('TypedForm — field groups and conditional display (stage #2918, FG3)', () => {
+  const grouped = [
+    { key: 'variant', type: 'enum', options: ['plain', 'html'], default: 'plain' },
+    { key: 'a', type: 'string', group: 'g' },
+    { key: 'b', type: 'string', group: 'g', visibleWhen: { variant: 'html' } },
+    { key: 'c', type: 'string', visibleWhen: { variant: 'html' } },
+  ] as unknown as SpecField[];
+  const groups = [
+    { id: 'g', name: 'Group G', visibleWhen: { variant: 'html' } },
+  ] as const;
+
+  it('hides the groups and conditional fields and counts them in the line', async () => {
+    const onChange = vi.fn();
+    render(
+      <TypedForm fields={grouped} fieldGroups={groups} values={{}} onChange={onChange} />,
+    );
+    expect(screen.queryByRole('button', { name: /Show or hide/ })).toBeNull();
+    expect(screen.queryByLabelText('a')).toBeNull();
+    expect(screen.getByText('3 hidden fields')).toBeTruthy();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Show' }));
+    expect(screen.getByLabelText('a')).toBeTruthy();
+    expect(screen.getByLabelText('c')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Show or hide Group G' })).toBeTruthy();
+  });
+
+  it('shows the group with a collapsible subheading when the condition holds', async () => {
+    render(
+      <TypedForm
+        fields={grouped}
+        fieldGroups={groups}
+        values={{ variant: 'html' }}
+        onChange={vi.fn()}
+      />,
+    );
+    const toggle = screen.getByRole('button', { name: 'Show or hide Group G' });
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByLabelText('a')).toBeTruthy();
+    expect(screen.getByLabelText('b')).toBeTruthy();
+    expect(screen.getByLabelText('c')).toBeTruthy();
+    await userEvent.setup().click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByLabelText('a')).toBeNull();
+    expect(screen.getByLabelText('c')).toBeTruthy();
+  });
+});

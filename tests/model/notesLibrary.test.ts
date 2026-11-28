@@ -17,7 +17,7 @@ import {
 } from '../../src/model/bundledLibrary';
 import { validateLibrary } from '../../src/model/library';
 import { createProject } from '../../src/model/project';
-import { parseSpecText, SPEC_FORMAT_VERSION } from '../../src/model/spec';
+import { parseSpecText } from '../../src/model/spec';
 import { ModelError } from '../../src/model/errors';
 import {
   addTableRow,
@@ -46,6 +46,9 @@ import type { FrameNode, SceneNode, TextNode } from '../../src/model/components/
 import { buildCatalog, drawEntry, findEntry } from '../../src/model/catalog';
 import { projectNamedLookup } from '../../src/model/projectTokens';
 import { notesCatalog, notesProject } from './notesFixtures';
+
+/** The `formatVersion` of the bundled notes library: it declares `decorative` (25) and nothing newer, so it stays at 25 while the current version moves on. */
+const NOTES_FORMAT_VERSION = 25;
 
 const ROOT = join(__dirname, '../../libraries/notas');
 
@@ -208,7 +211,7 @@ describe('applyBundledLibrary', () => {
     );
     expect(JSON.parse(files.get('specs/notas/notas.spec.json') ?? '{}')).toMatchObject({
       id: 'notas',
-      formatVersion: SPEC_FORMAT_VERSION,
+      formatVersion: NOTES_FORMAT_VERSION,
     });
   });
 
@@ -942,10 +945,10 @@ describe('Decorative notes types: the specialization', () => {
     }
   });
 
-  it('is version 7 at the stage formatVersion, with the three types after the text', () => {
+  it('is version 7 at formatVersion 25 (the notes library does not follow the current one), with the three types after the text', () => {
     const spec = notesV2();
     expect(spec.version).toBe(7);
-    expect(spec.formatVersion).toBe(SPEC_FORMAT_VERSION);
+    expect(spec.formatVersion).toBe(NOTES_FORMAT_VERSION);
     expect(layerTypes().map((t) => t.id)).toEqual([
       'nota',
       'texto',
