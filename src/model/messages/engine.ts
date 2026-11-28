@@ -11,6 +11,7 @@ export const engineMessages = {
   'engine.iconUnknown': 'unknown icon: {name}',
   'engine.componentUnavailable': 'component not available: {id}',
   'engine.contentTooBig': 'content larger than the box: {name}',
+  'engine.overflowIntended': 'overflow intended: {name}',
   'engine.textTooBig': 'text larger than the box: {name}',
   'engine.repeatLimited': 'repeat limited to {limit} rows: {name}',
   'engine.typeNoComponent': '{path}: type without a component: {typeId}',
