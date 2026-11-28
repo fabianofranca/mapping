@@ -19,19 +19,21 @@ type Container = FrameNode | GroupNode;
 const isContainer = (node: SceneNode): node is Container =>
   node.type === 'frame' || node.type === 'group';
 
-/** Does the subtree under `node` (not `node` itself, which is a root or an ancestor) hold a flagged node? */
-function holdsOverlay(node: SceneNode): boolean {
-  if (!isContainer(node)) return false;
-  return node.children.some((child) => child.overlay === true || holdsOverlay(child));
-}
-
-/** `node` without any flagged descendant (a flagged node leaves with its whole subtree). */
+/** `node` without any flagged descendant (a flagged node leaves with its whole subtree); the same object when it has none. */
 function withoutOverlay<T extends SceneNode>(node: T): T {
-  if (!isContainer(node) || !holdsOverlay(node)) return node;
-  const children = node.children
-    .filter((child) => child.overlay !== true)
-    .map(withoutOverlay);
-  return { ...node, children };
+  if (!isContainer(node)) return node;
+  let changed = false;
+  const children: SceneNode[] = [];
+  for (const child of node.children) {
+    if (child.overlay === true) {
+      changed = true;
+      continue;
+    }
+    const kept = withoutOverlay(child);
+    if (kept !== child) changed = true;
+    children.push(kept);
+  }
+  return changed ? { ...node, children } : node;
 }
 
 /** An ancestor of an overlay node: the geometry and the clip, without the paint. */

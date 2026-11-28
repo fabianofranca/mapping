@@ -542,7 +542,7 @@ The hands and handles of dials (which previously called for a table of positions
 
 - **A literal boolean, on any node except the root.** An expression is not accepted. Errors: `not valid on the root` on the root, `expected true or false` for a non-boolean and `only allowed with formatVersion 4` in versions 1 to 3.
 - **Drawing order only.** The node keeps its place in the layout, the measurement, the `hug`, the anchors, `stroke.gap`, the slots and the warnings. Conditional display stays with `visible`.
-- **The pass.** The overlay nodes of a drawing are drawn after every drawing of the same space (the container's, or the canvas's); among themselves they follow the drawing order (a parent's before a child's). Floating markings draw their overlay in the floating layer's second pass.
+- **The pass.** The overlay nodes of a drawing are drawn after every drawing of the same space (the container's, or the canvas's); among themselves they follow the drawing order (a parent's before a child's). In the app, floating markings will draw their overlay in the floating layer's second pass (the app draws it in place for now). On a `slot` node it has no effect: the slot's children are other markings, with their own drawings.
 - **What an overlay node keeps** from its ancestors: the transform (rotation and scale included), the clip, the opacity and the grayscale filter. It does **not** keep their own paint (fills, stroke and shadows), which stays in the first pass.
 - **A click still selects by geometry:** clicking the scrollbar over a child selects the child.
 - **Where it is drawn today:** the MCP PNG (`render_marking`, `render_container`, `get_marking_image` of a container without a file). The app and the viewer draw it in place for now (see "Known limits").

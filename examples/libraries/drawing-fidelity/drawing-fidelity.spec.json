@@ -4,7 +4,7 @@
   "id": "drawing-fidelity",
   "name": "Drawing fidelity",
   "version": 1,
-  "description": "Example of the drawing fidelity keys of the component format. The Corner card draws a card whose four corner radii each come from a $switch over the top and bottom fields; the Photo draws a package image whose fit comes from the fit field; the Signal draws a round indicator whose outer shadow y and blur come from the size field, with an icon on top; the Divider draws a pill whose bottom stroke follows the corner arcs; the Link draws a focus ring with its own corner radius (stroke.cornerRadius). the Scroll draws a scrollbar with overlay: true above the Blocks marked inside it, and the Block draws a bar of a color field. A later phase of the stage adds backdropBlur to this package.",
+  "description": "Example of the drawing fidelity keys of the component format. The Corner card draws a card whose four corner radii each come from a $switch over the top and bottom fields; the Photo draws a package image whose fit comes from the fit field; the Signal draws a round indicator whose outer shadow y and blur come from the size field, with an icon on top; the Divider draws a pill whose bottom stroke follows the corner arcs; the Link draws a focus ring with its own corner radius (stroke.cornerRadius). The Scroll draws a scrollbar with overlay: true above the Blocks marked inside it, and the Block draws a bar of a color field. A later phase of the stage adds backdropBlur to this package.",
   "icons": "icons/icons.json",
   "layers": [
     {
