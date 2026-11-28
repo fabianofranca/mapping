@@ -1,4 +1,4 @@
-# `except` in a slot's `accepts`; field groups and `visibleWhen` in Details — [Não lançado] (épico `epic/field-groups-except`)
+# `except` in a slot's `accepts`; field groups and `visibleWhen` in Details — 2026-11-28 (épico `epic/field-groups-except`)
 
 ## Pendências
 
