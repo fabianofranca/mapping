@@ -261,12 +261,37 @@ function typeAccessibilityField(resolved: ResolvedType | null): Json {
   return accessibility === null ? {} : { accessibility };
 }
 
+/**
+ * `typeAccessibility` of `get_marking`: the resolved `accessibility` of each distinct type the annotations carry, keyed
+ * `<specId>/<typeId>` (what `get_component` gives for the type). The key is absent when no type declares it, so a type
+ * that many annotations share is sent once instead of once per annotation.
+ */
+function typeAccessibilityMap(refs: Refs, annotations: readonly Annotation[]): Json {
+  const map: Record<string, Json> = {};
+  for (const annotation of annotations) {
+    const type = annotation.type;
+    if (!type) continue;
+    const key = `${type.specId}/${type.typeId}`;
+    if (key in map) continue;
+    const resolved = typeOfAnnotation(refs.project, annotation);
+    const accessibility =
+      resolved === null ? null : typeAccessibility(resolved.spec, resolved.type);
+    if (accessibility !== null) map[key] = accessibility as unknown as Json;
+  }
+  return Object.keys(map).length === 0 ? {} : { typeAccessibility: map };
+}
+
 /** The annotation with everything that describes it: content, links, outgoing references, backlinks and pending items. */
 export function annotationView(
   refs: Refs,
   annotation: Annotation,
   options: {
     readonly withMarking?: boolean;
+    /**
+     * Carries the type's `accessibility` (default: yes). `get_marking` turns it off and sends it once per type in
+     * `typeAccessibility`; `get_annotation` keeps it.
+     */
+    readonly withTypeAccessibility?: boolean;
     /** `code` of the type (`annotationCode`, with the `path` already resolved); without it, the annotation carries no `code`. */
     readonly code?: Json | null;
   } = {},
@@ -319,7 +344,9 @@ export function annotationView(
             typeId: annotation.type.typeId,
             name: resolvedType?.type.name ?? null,
             ...typeSlotsField(refs, resolvedType),
-            ...typeAccessibilityField(resolvedType),
+            ...(options.withTypeAccessibility === false
+              ? {}
+              : typeAccessibilityField(resolvedType)),
           },
           values: annotation.values,
           ...(code ? { code } : {}),
@@ -418,6 +445,7 @@ export async function markingView(
   const view = (a: Annotation) =>
     annotationView(refs, a, {
       code: codes.get(a.id) ?? null,
+      withTypeAccessibility: false,
     });
   const layers = p.layers.flatMap((layer) => {
     const mine = own.filter((a) => a.layerId === layer.id);
@@ -488,6 +516,7 @@ export async function markingView(
     },
     ...(platform !== undefined ? { platform } : {}),
     layers,
+    ...typeAccessibilityMap(refs, own),
     ...(attachedArrows.outgoing.length + attachedArrows.incoming.length > 0
       ? {
           arrows: {
@@ -549,7 +578,10 @@ export async function arrowView(
       {
         layer: { id: layer.id, name: layer.name },
         annotations: mine.map((a) =>
-          annotationView(refs, a, { code: codes.get(a.id) ?? null }),
+          annotationView(refs, a, {
+            code: codes.get(a.id) ?? null,
+            withTypeAccessibility: false,
+          }),
         ),
       },
     ];
@@ -569,6 +601,7 @@ export async function arrowView(
     perspectives: perspectivesOfArrow(p, arrow.id),
     ...(platform !== undefined ? { platform } : {}),
     layers,
+    ...typeAccessibilityMap(refs, own),
     ...(tree ? { linkTree: tree } : {}),
     incompleteAnnotations: own.filter((a) => issues.has(a.id)).length,
   };
