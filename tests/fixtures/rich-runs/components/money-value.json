@@ -1,0 +1,30 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "money-value",
+  "name": "Money value",
+  "description": "An amount that shrinks from 41 to 32 and then 29 until it fits the width, and never ends in an ellipsis.",
+  "size": { "width": 204, "height": 60 },
+  "preview": { "value": "1,234.56" },
+  "template": {
+    "type": "frame",
+    "name": "box",
+    "layout": { "type": "column", "align": "start", "justify": "center" },
+    "children": [
+      {
+        "type": "text",
+        "name": "fill",
+        "width": "fill",
+        "text": { "$field": "value" },
+        "color": "#1F2937",
+        "font": {
+          "size": 41,
+          "lineHeight": 1.2,
+          "wrap": "none",
+          "fit": "shrink",
+          "fitSizes": [32, 29]
+        }
+      }
+    ]
+  }
+}

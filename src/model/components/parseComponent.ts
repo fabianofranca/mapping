@@ -16,6 +16,9 @@ import {
   ANCHOR_ALIGNS,
   ANCHOR_SIDES,
   STROKE_SIDES,
+  isRowsNode,
+  isRunsKey,
+  isRunsTable,
   type ComponentFile,
 } from './componentFormat';
 import { checkRemoteImageUrl } from '../remoteImages';
@@ -932,8 +935,9 @@ function checkFont(value: unknown, path: string, out: Ctx): void {
     wrap: oneOf(['word', 'none']),
     ellipsis: checkBoolean,
     maxLines: checkPositiveInteger,
+    fit: oneOf(['none', 'shrink']),
   };
-  checkKeys(value, ['$token', ...Object.keys(specs)], path, out);
+  checkKeys(value, ['$token', 'fitSizes', ...Object.keys(specs)], path, out);
   if ('$token' in value) checkWholeToken(value, path, 'font', out);
   for (const [key, check] of Object.entries(specs)) {
     if (!(key in value)) continue;
@@ -941,6 +945,45 @@ function checkFont(value: unknown, path: string, out: Ctx): void {
       checkBoolExpr(value[key], join(path, key), out);
     else checkExpr(value[key], join(path, key), check, out);
   }
+  checkFitSizes(value, path, out);
+}
+
+/** The most sizes `font.fitSizes` may list. */
+const MAX_FIT_SIZES = 8;
+
+/**
+ * `font.fitSizes` (v4): a list of 1 to 8 sizes, each a number greater than 0 or a number
+ * expression; the literal ones go from the largest to the smallest. A literal `fit: "shrink"`
+ * requires the list.
+ */
+function checkFitSizes(font: Rec, path: string, out: Ctx): void {
+  const at = join(path, 'fitSizes');
+  if (!('fitSizes' in font)) {
+    if (font.fit === 'shrink') add(out, at, 'required with fit "shrink"');
+    return;
+  }
+  const list = font.fitSizes;
+  if (!Array.isArray(list) || list.length < 1 || list.length > MAX_FIT_SIZES)
+    return add(out, at, `expected a list of 1 to ${MAX_FIT_SIZES} sizes`);
+  list.forEach((item: unknown, i) =>
+    checkExpr(item, `${at}[${i}]`, checkPositiveNumber, out),
+  );
+  const rises = list.some((size: unknown, i) => {
+    const before: unknown = list[i - 1];
+    return typeof size === 'number' && typeof before === 'number' && size >= before;
+  });
+  if (rises) add(out, at, 'expected sizes from the largest to the smallest');
+  const size = font.size;
+  const first: unknown = list[0];
+  if (typeof size === 'number' && typeof first === 'number' && first >= size)
+    add(out, at, `the first size must be smaller than font.size (${size})`);
+}
+
+/** A literal `font.fit: "shrink"` on a node with `runs`: the rich text keeps its size (v4). */
+function checkFitWithRuns(node: Rec, path: string, out: Ctx): void {
+  const font = node.font;
+  if (isRecord(font) && font.fit === 'shrink')
+    add(out, join(join(path, 'font'), 'fit'), 'does not combine with runs');
 }
 
 /**
@@ -1169,6 +1212,7 @@ const RUN_KEYS = [
   'background',
   'radius',
   'padding',
+  'baselineShift',
 ];
 
 /** `runs[i].padding`: a number (both axes) or `[vertical, horizontal]`, non-negative. */
@@ -1182,9 +1226,35 @@ const checkRunPadding = tokenCheck('number', (v, p, out) => {
   );
 });
 
-/** A `runs` run: `text` required and the style, each key with a literal or expression. */
+/** `runs[i].baselineShift`: px (a number) or a signed percentage of the run's size (`"33%"`, v4). */
+const checkBaselineShift = tokenCheck('number', (v, p, out) => {
+  if (isFiniteNumber(v)) return;
+  if (typeof v === 'string' && SIGNED_PERCENT_PATTERN.test(v)) return;
+  add(out, p, 'expected a number or a percentage ("33%")');
+});
+
+/** Keys of an icon run (`runs[i]` with `icon`). */
+const ICON_RUN_KEYS = ['icon', 'color', 'size', 'baselineShift'];
+
+/** An icon run: `icon` (text or expression), `color`, `size` and `baselineShift`; no other run key. */
+function checkIconRun(value: Rec, path: string, out: Ctx): void {
+  if ('text' in value)
+    return add(out, path, 'text and icon together: use one or the other');
+  checkKeys(value, ICON_RUN_KEYS, path, out);
+  const specs: Record<string, Check> = {
+    icon: checkString,
+    color: checkColor,
+    size: checkNumber,
+    baselineShift: checkBaselineShift,
+  };
+  for (const [key, check] of Object.entries(specs))
+    if (key in value) checkExpr(value[key], join(path, key), check, out);
+}
+
+/** A `runs` run: `text` required and the style, each key with a literal or expression; or an icon run. */
 function checkRun(value: unknown, path: string, out: Ctx): void {
   if (!isRecord(value)) return add(out, path, 'expected an object (run)');
+  if ('icon' in value) return checkIconRun(value, path, out);
   checkKeys(value, RUN_KEYS, path, out);
   if (!('text' in value)) add(out, join(path, 'text'), 'required field');
   const specs: Record<string, Check> = {
@@ -1197,16 +1267,30 @@ function checkRun(value: unknown, path: string, out: Ctx): void {
     background: checkColor,
     radius: checkNonNegative,
     padding: checkRunPadding,
+    baselineShift: checkBaselineShift,
   };
   for (const [key, check] of Object.entries(specs))
     if (key in value) checkExpr(value[key], join(path, key), check, out);
   if ('italic' in value) checkBoolExpr(value.italic, join(path, 'italic'), out);
 }
 
+/** A runs table item (v4): `{ field, template }`, `field` the key of a `table` field and `template` ONE run. */
+function checkRunsTable(value: Rec, path: string, out: Ctx): void {
+  checkKeys(value, ['field', 'template'], path, out);
+  if ('field' in value) checkString(value.field, join(path, 'field'), out);
+  else add(out, join(path, 'field'), 'required field');
+  if ('template' in value) checkRun(value.template, join(path, 'template'), out);
+  else add(out, join(path, 'template'), 'required field');
+}
+
 function checkRuns(value: unknown, path: string, out: Ctx): void {
   if (!Array.isArray(value) || value.length === 0)
     return add(out, path, 'expected a non-empty list of runs');
-  value.forEach((run: unknown, i) => checkRun(run, `${path}[${i}]`, out));
+  value.forEach((item: unknown, i) =>
+    isRunsTable(item)
+      ? checkRunsTable(item as unknown as Rec, `${path}[${i}]`, out)
+      : checkRun(item, `${path}[${i}]`, out),
+  );
 }
 
 /** `text` node: `text` or `runs` (one of the two), plus `font` and `color`. */
@@ -1216,7 +1300,10 @@ function checkTextNode(value: Rec, path: string, out: Ctx): void {
   if (hasText && hasRuns) add(out, path, 'text and runs together: use one or the other');
   else if (!hasText && !hasRuns) add(out, join(path, 'text'), 'required field');
   if (hasText) checkExpr(value.text, join(path, 'text'), checkTextOrNumber, out);
-  if (hasRuns) checkRuns(value.runs, join(path, 'runs'), out);
+  if (hasRuns) {
+    checkRuns(value.runs, join(path, 'runs'), out);
+    checkFitWithRuns(value, path, out);
+  }
   if ('font' in value) checkFont(value.font, join(path, 'font'), out);
   if ('color' in value) checkExpr(value.color, join(path, 'color'), checkColor, out);
   if ('baselinePadding' in value)
@@ -1650,6 +1737,22 @@ function checkRepeat(value: Rec, path: string, out: Ctx): void {
   for (const nested of forbiddenInRepeat(template, at)) {
     add(out, nested.path, `${nested.type} is not allowed inside a repeat`);
   }
+  for (const table of runsTablesInRepeat(template, at))
+    add(out, table, 'a runs table cannot be inside a repeat');
+}
+
+/** The runs tables of the text nodes in a row's template (not entering a nested `repeat`). */
+function runsTablesInRepeat(node: unknown, path: string, found: string[] = []): string[] {
+  if (!isRecord(node) || node.type === 'repeat') return found;
+  if (node.type === 'text' && Array.isArray(node.runs))
+    node.runs.forEach((item: unknown, i) => {
+      if (isRunsTable(item)) found.push(`${join(path, 'runs')}[${i}]`);
+    });
+  if (Array.isArray(node.children))
+    node.children.forEach((child: unknown, i) =>
+      runsTablesInRepeat(child, `${join(path, 'children')}[${i}]`, found),
+    );
+  return found;
 }
 
 /**
@@ -1696,6 +1799,8 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['font', 'wrap'],
   ['font', 'ellipsis'],
   ['font', 'maxLines'],
+  ['font', 'fit'],
+  ['font', 'fitSizes'],
   ['baselinePadding'],
   ...WRAP_KEYS.map((key): readonly string[] => ['layout', key]),
   ...WRAP_KEYS.map((key): readonly string[] => [key]),
@@ -1964,8 +2069,12 @@ function paddingSpacingVersionIssues(
     if (!isRecord(node)) return;
     if (isRecord(node.layout)) items(node.layout.padding, join(at, 'layout.padding'));
     if (Array.isArray(node.runs))
-      node.runs.forEach((run: unknown, i) => {
-        if (isRecord(run)) items(run.padding, `${join(at, 'runs')}[${i}].padding`);
+      node.runs.forEach((item: unknown, i) => {
+        const base = `${join(at, 'runs')}[${i}]`;
+        const table = isRunsTable(item);
+        const run = table ? item.template : item;
+        if (isRecord(run))
+          items(run.padding, `${table ? join(base, 'template') : base}.padding`);
       });
     if (isRecord(node.font) && 'letterSpacing' in node.font)
       percents(node.font.letterSpacing, join(at, 'font.letterSpacing'));
@@ -2116,15 +2225,16 @@ function indexIssues(version: unknown, template: unknown): ComponentIssue[] {
     if (!v4) addIssue(out, at, V4_ONLY_MESSAGE);
     else if (!inRepeat) addIssue(out, at, '$index is only valid inside a repeat');
   };
-  const walk = (node: unknown, at: string, inRepeat: boolean): void => {
+  const walk = (node: unknown, at: string, inRepeat: boolean, runsItem = false): void => {
     if (Array.isArray(node))
-      return node.forEach((n, i) => walk(n, `${at}[${i}]`, inRepeat));
+      return node.forEach((n, i) => walk(n, `${at}[${i}]`, inRepeat, runsItem));
     if (!isRecord(node)) return;
     for (const [key, value] of Object.entries(node)) {
       const here = join(at, key);
       const cited = indexCitation(key, value);
       if (cited !== undefined) flag(`${here}${cited}`, inRepeat);
-      walk(value, here, inRepeat || (node.type === 'repeat' && key === 'template'));
+      const rows = key === 'template' && isRowsNode(node, runsItem);
+      walk(value, here, inRepeat || rows, isRunsKey(node, key));
     }
   };
   walk(template, 'template', false);
@@ -2834,9 +2944,12 @@ function nodeColorWarnings(
   if (isRecord(node.stroke))
     out.push(...colorWarning(node.stroke.color, join(path, 'stroke.color')));
   if (Array.isArray(node.runs))
-    node.runs.forEach((run: unknown, i) => {
+    node.runs.forEach((item: unknown, i) => {
+      const table = isRunsTable(item);
+      const run = table ? (item as { template: unknown }).template : item;
       if (!isRecord(run)) return;
-      const at = `${join(path, 'runs')}[${i}]`;
+      const base = `${join(path, 'runs')}[${i}]`;
+      const at = table ? join(base, 'template') : base;
       out.push(
         ...colorWarning(run.color, join(at, 'color')),
         ...colorWarning(run.background, join(at, 'background')),
@@ -2855,9 +2968,14 @@ function collectWarnings(node: unknown, path: string): ComponentIssue[] {
   const out: ComponentIssue[] = nodeColorWarnings(node, path);
   out.push(...familyWarning(node.font, join(path, 'font')));
   if (Array.isArray(node.runs))
-    node.runs.forEach((run: unknown, i) =>
-      out.push(...familyWarning(run, `${join(path, 'runs')}[${i}]`)),
-    );
+    node.runs.forEach((item: unknown, i) => {
+      const at = `${join(path, 'runs')}[${i}]`;
+      out.push(
+        ...(isRunsTable(item)
+          ? familyWarning(item.template, join(at, 'template'))
+          : familyWarning(item, at)),
+      );
+    });
   const children = Array.isArray(node.children) ? node.children : [];
   children.forEach((child: unknown, i) =>
     out.push(...collectWarnings(child, `${join(path, 'children')}[${i}]`)),

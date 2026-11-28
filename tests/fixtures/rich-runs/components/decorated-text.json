@@ -1,0 +1,73 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "decorated-text",
+  "name": "Decorated text",
+  "description": "A formatted text that comes as a list of pieces (an SDUI `html_tagged`): each row of `pieces` is a run, and an inline icon closes the line.",
+  "size": { "width": 240, "height": 120 },
+  "preview": {
+    "pieces": [
+      { "text": "Read the ", "style": "plain" },
+      { "text": "terms", "style": "bold" },
+      { "text": " and the ", "style": "plain" },
+      { "text": "privacy policy", "style": "link" },
+      { "text": " for H", "style": "plain" },
+      { "text": "2", "style": "sub" },
+      { "text": "O and E=mc", "style": "plain" },
+      { "text": "2", "style": "sup" },
+      { "text": " before you go on.", "style": "plain" }
+    ],
+    "trailingIcon": "arrow-forward"
+  },
+  "template": {
+    "type": "frame",
+    "name": "box",
+    "layout": { "type": "column", "align": "start", "justify": "start" },
+    "children": [
+      {
+        "type": "text",
+        "name": "body",
+        "width": "fill",
+        "height": "hug",
+        "color": "#1F2937",
+        "font": { "size": 14, "lineHeight": 20 },
+        "runs": [
+          { "text": "Terms: " },
+          {
+            "field": "pieces",
+            "template": {
+              "text": { "$field": "text" },
+              "weight": {
+                "$switch": "style",
+                "cases": { "bold": 700, "link": 600 },
+                "default": 400
+              },
+              "color": {
+                "$switch": "style",
+                "cases": { "link": "#0B5FFF" },
+                "default": "#1F2937"
+              },
+              "decoration": {
+                "$switch": "style",
+                "cases": { "link": "underline" },
+                "default": "none"
+              },
+              "size": {
+                "$switch": "style",
+                "cases": { "sub": 10.5, "sup": 10.5 },
+                "default": 14
+              },
+              "baselineShift": {
+                "$switch": "style",
+                "cases": { "sup": "33%", "sub": "-20%" },
+                "default": 0
+              }
+            }
+          },
+          { "text": " " },
+          { "icon": { "$field": "trailingIcon" }, "size": 16, "color": "#0B5FFF" }
+        ]
+      }
+    ]
+  }
+}

@@ -10,6 +10,7 @@ import {
   approximateMeasurer,
   instantiate,
   measureComponent,
+  type TextMeasurer,
   normalizePadding,
   type Box,
 } from '../../../src/model/components/instantiate';
@@ -1400,5 +1401,72 @@ describe('instantiate: clip by expression on the frame and clip on the slot', ()
     expect(slotOf({ $field: 'c' }, { c: '' }).clipChildren).toBeUndefined();
     expect(slotOf(false).clipChildren).toBeUndefined();
     expect('clipChildren' in slotOf()).toBe(false);
+  });
+});
+
+// CL1.2 of #2916: the app's measurer (Konva) cuts a `wrap: "none"` line at the limit it is given
+// (`lines: ["1,234,567."]`), so the shrink decision must not read the width from `lines`.
+describe('font.fit shrink with a measurer that cuts a `wrap: "none"` line at the limit', () => {
+  const MONEY = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'money-value',
+    name: 'Money value',
+    size: { width: 204, height: 60 },
+    template: {
+      type: 'frame',
+      name: 'box',
+      layout: { type: 'column', align: 'start', justify: 'center' },
+      children: [
+        {
+          type: 'text',
+          name: 'fill',
+          width: 'fill',
+          text: { $field: 'value' },
+          font: {
+            size: 41,
+            lineHeight: 1.2,
+            wrap: 'none',
+            fit: 'shrink',
+            fitSizes: [32, 29],
+          },
+        },
+      ],
+    },
+  } as unknown as ComponentFile;
+
+  // 0.58 × the size per character, like a proportional font; with a limit the line is cut.
+  const cuttingMeasurer: TextMeasurer = (text, font, maxWidth) => {
+    const advance = font.size * 0.58;
+    const kept =
+      maxWidth === undefined || font.wrap !== 'none'
+        ? text
+        : text.slice(0, Math.max(1, Math.floor(maxWidth / advance)));
+    const natural = kept.length * advance;
+    return {
+      width: maxWidth === undefined ? natural : Math.min(natural, maxWidth),
+      height: font.lineHeight,
+      lines: [kept],
+    };
+  };
+
+  const sizeOf = (value: string): number => {
+    const { root } = instantiate(
+      MONEY,
+      { value },
+      { x: 0, y: 0, width: 204, height: 60 },
+      { measure: cuttingMeasurer },
+    );
+    const text = [...walk(root)].find((n) => n.type === 'text') as TextNode;
+    return text.style.fontSize;
+  };
+
+  it('takes the first size whose whole text fits the box, not the cut line', () => {
+    // 12 characters: 285.6 px at 41, 223.7 at 32 (over 204) and 202.7 at 29.
+    expect(sizeOf('1,234,567.89')).toBe(29);
+    // 10 characters: 237.8 px at 41 (over 204) and 185.6 at 32.
+    expect(sizeOf('123,456.78')).toBe(32);
+    // 8 characters: 188.6 px at 41.
+    expect(sizeOf('1,234.56')).toBe(41);
   });
 });

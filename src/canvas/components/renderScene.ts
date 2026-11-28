@@ -245,6 +245,8 @@ class Renderer {
       shape.setAttr(SCENE_ID_ATTR, node.id);
       container.add(shape);
     }
+    // The inline icons of a rich text: groups of paths, after the text's own shapes.
+    this.addRunIcons(node, container);
 
     if (hasChildren(node)) {
       let forward = shadows.length > 0 && !shadowOwner ? shadows : [];
@@ -496,8 +498,9 @@ class Renderer {
     for (const line of layout.lines) {
       for (const piece of line.pieces) {
         const run = runs[piece.run];
-        if (!run) continue;
-        const top = line.y + (line.height - piece.height) / 2 + shift;
+        // An inline icon has no text: `addRunIcons` draws its paths.
+        if (!run || piece.inline) continue;
+        const top = pieceTop(line, piece, run, shift);
         if (piece.chip) shapes.push(chipShape(piece, run, top));
         shapes.push(runTextShape(node, run, piece, top));
         if (node.stroke) {
@@ -509,6 +512,30 @@ class Renderer {
       }
     }
     return shapes;
+  }
+
+  /**
+   * The inline icons of a rich text (`runs[i].icon`): the icon group of the scene, drawn with the same
+   * code as any group and moved to its piece's box, with the node's `verticalAlign` shift and the
+   * run's `baselineShift`. Every shape answers for the text node (hit test and selection).
+   */
+  private addRunIcons(node: SceneNode, container: Konva.Group): void {
+    if (node.type !== 'text' || !node.runs || !node.runLayout) return;
+    const { runs } = node;
+    const shift = richShift(node, node.runLayout);
+    for (const line of node.runLayout.lines) {
+      for (const piece of line.pieces) {
+        const run = runs[piece.run];
+        if (!piece.inline || !run?.icon) continue;
+        const holder = new Konva.Group({
+          x: piece.x,
+          y: pieceTop(line, piece, run, shift),
+        });
+        holder.add(this.render(run.icon));
+        holder.find(() => true).forEach((n) => n.setAttr(SCENE_ID_ATTR, node.id));
+        container.add(holder);
+      }
+    }
   }
 
   /** Applies a fill to a shape; an image becomes the shape itself (`KonvaImage`). */
@@ -975,6 +1002,16 @@ function capMiddleRunsShift(node: TextNode, layout: RunLayout): number {
 /** The run's color as a Konva fill (`none` = no fill). */
 function runFill(color: string): string | undefined {
   return /^(none|transparent)$/i.test(color.trim()) ? undefined : color;
+}
+
+/** The top of a piece: centered on its line, with the node's shift and the run's `baselineShift`. */
+function pieceTop(
+  line: { readonly y: number; readonly height: number },
+  piece: RunPiece,
+  run: SceneTextRun,
+  shift: number,
+): number {
+  return line.y + (line.height - piece.height) / 2 + shift - (run.baselineShift ?? 0);
 }
 
 /** The background of an inline box: the whole box of the piece, with the run's radius. */

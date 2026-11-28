@@ -1,0 +1,45 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 24,
+  "id": "rich-runs",
+  "name": "Rich runs",
+  "version": 1,
+  "description": "The test library of the rich-runs stage (script R51). The Decorated text (`decorated-text`) draws a text from a `pieces` table: a `runs` item with one run per row (weight, link color and underline, 75% size and a `baselineShift` of 33% or -20% by `style`), a space and an inline icon run. The Money value (`money-value`) draws its `value` at 41, 32 or 29 (`font.fit: shrink` with `fitSizes`), never with an ellipsis.",
+  "icons": "icons/icons.json",
+  "layers": [
+    {
+      "id": "rich",
+      "name": "Rich text",
+      "color": "#0B5FFF",
+      "annotationTypes": [
+        {
+          "id": "decorated-text",
+          "name": "Decorated text",
+          "component": "components/decorated-text.json",
+          "fields": [
+            {
+              "key": "pieces",
+              "type": "table",
+              "columns": [
+                { "key": "text", "type": "string" },
+                {
+                  "key": "style",
+                  "type": "enum",
+                  "options": ["plain", "bold", "link", "sub", "sup"],
+                  "default": "plain"
+                }
+              ]
+            },
+            { "key": "trailingIcon", "type": "string", "default": "arrow-forward" }
+          ]
+        },
+        {
+          "id": "money-value",
+          "name": "Money value",
+          "component": "components/money-value.json",
+          "fields": [{ "key": "value", "type": "string", "default": "1,234.56" }]
+        }
+      ]
+    }
+  ]
+}

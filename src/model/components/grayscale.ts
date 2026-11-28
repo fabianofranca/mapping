@@ -101,6 +101,7 @@ export function grayscaleNode<T extends SceneNode>(node: T, amount: number): T {
       ...(run.background === undefined
         ? {}
         : { background: grayscaleColor(run.background, k) }),
+      ...(run.icon === undefined ? {} : { icon: grayscaleNode(run.icon, k) }),
     }));
   return out as unknown as T;
 }
