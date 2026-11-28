@@ -686,7 +686,11 @@ function leavesGroup(other: Change, group: string): boolean {
  * when there is no preview) plus the containers the proposal's own changes put in it, minus the ones its
  * changes take out.
  */
-function groupMembersAfter(names: ReviewNames, group: string, exceptId: string): Set<string> {
+function groupMembersAfter(
+  names: ReviewNames,
+  group: string,
+  exceptId: string,
+): Set<string> {
   const ids = new Set(groupMembersIn(names.preview ?? names.current, group, exceptId));
   for (const other of names.proposal.changes) {
     const joined = proposedMemberOf(other, group, exceptId);
