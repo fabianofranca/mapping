@@ -461,9 +461,9 @@ function referenceSettleGeometry(p: Project, options?: SettleOptions): Project {
       (c) => !c.m.decorative && canContain(c.m.rect, rankOf(c.m.id), m.rect, own),
     );
     const parentId = pickParent(candidates, m.parentId, rankOf);
-    if (parentId === m.parentId) return m;
+    if (parentId === m.parentId && m.slot === undefined) return m;
     changed = true;
-    return { ...m, parentId };
+    return { ...withoutSlot(m), parentId };
   });
 
   // Parent of a container: the smallest canvas marking (not floating) that contains its rectangle.

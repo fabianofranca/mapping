@@ -1,5 +1,6 @@
 import { canContain, equalRectRanks, pickParent, type Entry } from './settleParent';
 import type { SpaceEntry } from './settlePositions';
+import { needsReparent, reparented } from './settleStructure';
 import type { Marking, Rect } from './types';
 
 // Settling only what an operation touched inside a space (#882, phase 2). A marking's parent only
@@ -205,7 +206,8 @@ export function localParents(
       (c) => !c.m.decorative && canContain(c.m.rect, rankOf(c.m.id), d.m.rect, own),
     );
     const parentId = pickParent(valid, d.m.parentId, rankOf);
-    if (parentId !== d.m.parentId) patches.push({ m: { ...d.m, parentId }, i: d.i });
+    if (needsReparent(d.m, parentId))
+      patches.push({ m: reparented(d.m, parentId), i: d.i });
   });
   return patches;
 }

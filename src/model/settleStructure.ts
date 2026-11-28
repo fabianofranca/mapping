@@ -22,6 +22,18 @@ export function withoutSlot(m: Marking): Marking {
   return rest;
 }
 
+/**
+ * The marking with the parent the settle computed for it. A computed parent is never a stored one, so a slot
+ * (which names a place in a stored parent) goes with it.
+ */
+export function reparented(m: Marking, parentId: string | null): Marking {
+  return { ...withoutSlot(m), parentId };
+}
+
+/** Does the settle have to write this parent: it differs, or a slot is left over from a stored one. */
+export const needsReparent = (m: Marking, parentId: string | null): boolean =>
+  parentId !== m.parentId || m.slot !== undefined;
+
 export const NO_STRUCTURE: Structure = { followers: new Map(), invalid: [] };
 
 /** Can `parent` be the stored parent of `m`: another marking of the same space and page, a solid one. */

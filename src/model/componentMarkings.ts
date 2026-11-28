@@ -1311,14 +1311,18 @@ function storeParent(
   parentId: string | null,
 ): Project {
   const parent = parentId ?? geometricParent(p, created, markingId);
-  if (parent === null) return created;
-  const next = {
-    ...created,
-    markings: created.markings.map((m) =>
-      m.id === markingId ? { ...m, parentId: parent } : m,
-    ),
-  };
-  return settleFrom(created, next);
+  const next =
+    parent === null
+      ? created
+      : {
+          ...created,
+          markings: created.markings.map((m) =>
+            m.id === markingId ? { ...m, parentId: parent } : m,
+          ),
+        };
+  // The creation settled while the new marking was still an observation (it may have taken the markings
+  // it encloses as children); the reference is that state, so the settle sees the nature change.
+  return settleFrom({ ...created, annotations: p.annotations }, next);
 }
 
 /**
@@ -1397,7 +1401,14 @@ export function addComponentMarking(
     );
   if (args.parentId !== null) {
     const parent = findById(p.markings, args.parentId);
-    if (parent.containerId !== args.containerId) fail('invalid-parent', parent.id);
+    // The same edge the settle accepts (`validEdge`): otherwise it would drop the parent without an error.
+    if (
+      parent.containerId !== args.containerId ||
+      parent.pageId !== (pageId ?? null) ||
+      parent.floating ||
+      parent.decorative
+    )
+      fail('invalid-parent', parent.id);
     if (!containsRect(parent.rect, rect)) fail('rect-outside-parent');
   }
 

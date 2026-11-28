@@ -35,6 +35,8 @@ import {
 } from './settleUnits';
 import {
   anchorOf,
+  needsReparent,
+  reparented,
   storedStructure,
   withoutSlot,
   type Structure,
@@ -653,7 +655,7 @@ function settleFullSpaces(
   list.forEach((m, i) => {
     if (!inSpaces(m.containerId)) return;
     if (m.floating) {
-      if (m.parentId !== null) patches.push({ m: { ...m, parentId: null }, i });
+      if (needsReparent(m, null)) patches.push({ m: reparented(m, null), i });
       return;
     }
     // A materialized marking keeps its stored parent (`dropInvalidParents` took the invalid ones).
@@ -680,7 +682,8 @@ function settleFullSpaces(
   for (const [space, group] of bySpace) {
     for (const e of group) {
       const parentId = markingParent(indexOf(space), e.m, rankOf);
-      if (parentId !== e.m.parentId) patches.push({ m: { ...e.m, parentId }, i: e.i });
+      if (needsReparent(e.m, parentId))
+        patches.push({ m: reparented(e.m, parentId), i: e.i });
     }
   }
   const containers = inSpaces(null)
