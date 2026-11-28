@@ -141,12 +141,12 @@ export interface EditorDerived {
   /** How many annotations are incomplete in the project (all layers). */
   readonly incompleteCount: ReadonlySignal<number>;
   /**
-   * How many annotations have a `touch-target-small` warning (Notices window tab and status bar;
+   * How many annotations have an accessibility warning (`touch-target-small` or `touch-target-overlap`; Notices window tab and status bar;
    * without filters).
    */
   readonly auditedCount: ReadonlySignal<number>;
   /**
-   * The accessibility audit's warnings (`touch-target-small`) by marking (stage #1127); only the
+   * The accessibility audit's warnings (`touch-target-small`, `touch-target-overlap`) by marking (stage #1127); only the
    * markings with a warning appear. The same map while the warnings do not change. The pending
    * `accessible-label-missing` is not here: it is in `issues`.
    */

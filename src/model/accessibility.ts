@@ -426,7 +426,7 @@ const OVERLAP_TOLERANCE = 1;
 
 /** One touch area in the sweep: the space it lives in, its box in image pixels and its kind. */
 export interface TouchBox {
-  /** The container whose pixels the box is in (`null`: the canvas). Boxes of different spaces never meet. */
+  /** The space the box is in (see `spaceOf`): a container or a page of the canvas. Boxes of different spaces never meet. */
   readonly space: string | null;
   readonly kind: 'visual' | 'expanded';
   readonly left: number;
@@ -457,7 +457,8 @@ function sweepSpace(
     for (const j of active) {
       const other = boxes[j]!;
       const height = Math.min(other.bottom, box.bottom) - Math.max(other.top, box.top);
-      if (height > OVERLAP_TOLERANCE) visit(j, i);
+      const width = Math.min(other.right, box.right) - box.left;
+      if (height > OVERLAP_TOLERANCE && width > OVERLAP_TOLERANCE) visit(j, i);
     }
     active.push(i);
   }
@@ -502,9 +503,19 @@ function grownSide(start: number, size: number, minPx: number): [number, number]
   return [center - side / 2, center + side / 2];
 }
 
+/** The space of a marking: its container, or its page on the canvas (every page has its own canvas). */
+const spaceOf = (m: {
+  readonly containerId: string | null;
+  readonly pageId: string | null;
+}): string => m.containerId ?? `page:${m.pageId}`;
+
 /** The box of a touch area: the rectangle for `visual`, the rectangle grown to the minimum for `expanded`. */
 function touchBox(
-  marking: { readonly containerId: string | null; readonly rect: Rect },
+  marking: {
+    readonly containerId: string | null;
+    readonly pageId: string | null;
+    readonly rect: Rect;
+  },
   area: SpecTouchTarget,
   density: number,
 ): TouchBox {
@@ -518,7 +529,7 @@ function touchBox(
     kind === 'expanded'
       ? grownSide(r.y, r.height, toPixels(area.height, density))
       : [r.y, r.y + r.height];
-  return { space: marking.containerId, kind, left, top, right, bottom };
+  return { space: spaceOf(marking), kind, left, top, right, bottom };
 }
 
 function touchParticipants(p: Project, audited: readonly Audited[]): TouchParticipant[] {

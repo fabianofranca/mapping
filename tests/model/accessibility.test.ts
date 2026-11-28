@@ -12,6 +12,7 @@ import {
   applySpecialization,
   createArrow,
   createMarking,
+  createPage,
   densityText,
   moveContainer,
   parseSpec,
@@ -19,10 +20,12 @@ import {
   setContainerDensity,
   setFieldValue,
   setTableCell,
+  sweepTouchBoxes,
   type ComponentDrawings,
   type Project,
   type Rect,
   type Spec,
+  type TouchBox,
   type TouchTargetSmallFinding,
   typeAccessibility,
 } from '../../src/model';
@@ -450,6 +453,53 @@ describe('touch-target-overlap', () => {
     }
     expect(p.markings.every((m) => m.containerId === null)).toBe(true);
     expect(overlapsOf(p, 'A')).toHaveLength(1);
+  });
+
+  it('canvas markings on different pages are in different spaces (code review)', () => {
+    let p = createPage(moveContainer(world(), 'I1', 5000, 5000), {
+      id: 'PG2',
+      name: 'Two',
+    });
+    for (const [id, x, pageId] of [
+      ['A', 0, undefined],
+      ['B', 44, 'PG2'],
+    ] as const) {
+      p = createMarking(p, {
+        id: `M_${id}`,
+        containerId: null,
+        rect: at(x, 0),
+        name: id,
+        pageId,
+      });
+      p = addTypedAnnotation(p, {
+        id,
+        markingId: `M_${id}`,
+        layerId: layerOf(p, 'a11y', 'ui'),
+        type: { specId: 'a11y', typeId: 'wide' },
+      });
+    }
+    expect(p.markings.find((m) => m.id === 'M_A')?.pageId).not.toBe('PG2');
+    expect(accessibilityAudit(p).size).toBe(0);
+  });
+
+  it('sweepTouchBoxes: a pair that meets by 1 px or less on the x axis is not visited, whichever box is narrow (code review)', () => {
+    const box = (left: number, right: number): TouchBox => ({
+      space: 'I1',
+      kind: 'expanded',
+      left,
+      top: 0,
+      right,
+      bottom: 100,
+    });
+    const visited = (boxes: TouchBox[]): [number, number][] => {
+      const out: [number, number][] = [];
+      sweepTouchBoxes(boxes, (i, j) => out.push([i, j]));
+      return out;
+    };
+    // A narrow box (0.5 px) inside a wide one: the real intersection is 0.5 px.
+    expect(visited([box(0, 100), box(50, 50.5)])).toEqual([]);
+    // 2 px wide: the intersection is 2 px, more than the tolerance.
+    expect(visited([box(0, 100), box(50, 52)])).toEqual([[0, 1]]);
   });
 
   it('an arrow annotation, touchTarget false, a non-interactive role and a free annotation give nothing', () => {
