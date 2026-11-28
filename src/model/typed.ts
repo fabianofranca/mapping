@@ -3,6 +3,7 @@ import { fail } from './errors';
 import { annotationWithLinked, checkRole } from './links';
 import { findById, moveItem, normalizeOptionalName, updateById } from './project';
 import { projectIndex } from './projectIndex';
+import { applyNatureChanges, type NatureOptions } from './structure';
 import {
   DEFAULT_LABEL_TEXTS,
   isRecord,
@@ -152,8 +153,23 @@ export interface NewTypedAnnotationArgs {
   readonly parentRole?: string | null;
 }
 
-/** Creates the typed annotation with the fields' `default`s. */
-export function addTypedAnnotation(p: Project, args: NewTypedAnnotationArgs): Project {
+/**
+ * Creates the typed annotation with the fields' `default`s. A type that declares a component makes the marking
+ * materialized: it takes once the parent the geometry gives (the creation rule, `applyNatureChanges`).
+ */
+export function addTypedAnnotation(
+  p: Project,
+  args: NewTypedAnnotationArgs,
+  options?: NatureOptions,
+): Project {
+  return applyNatureChanges(p, withTypedAnnotation(p, args), options);
+}
+
+/**
+ * The project with the typed annotation added and nothing else: no nature pass, no settle. For a throwaway
+ * project that only reads values (the placement's defaults), never for one that is kept.
+ */
+export function withTypedAnnotation(p: Project, args: NewTypedAnnotationArgs): Project {
   if (p.annotations.some((a) => a.id === args.id)) fail('duplicate-id', args.id);
   requireAnnotationOwner(p, args.markingId);
   const layer = findById(p.layers, args.layerId);
@@ -398,7 +414,7 @@ export function moveTableRow(
 // ---------------------------------------------------------------------------
 // Conversion to a free annotation
 
-export interface ConvertOptions {
+export interface ConvertOptions extends NatureOptions {
   readonly newId?: () => string;
   readonly texts?: LabelTexts;
 }
@@ -498,10 +514,14 @@ export function convertAnnotationToFree(
   const a = findById(p.annotations, annotationId);
   if (!a.type) fail('not-typed', annotationId);
   const converted = freeVersionOf(p, a, options);
-  return {
-    ...p,
-    annotations: p.annotations.map((x) => (x.id === annotationId ? converted : x)),
-  };
+  return applyNatureChanges(
+    p,
+    {
+      ...p,
+      annotations: p.annotations.map((x) => (x.id === annotationId ? converted : x)),
+    },
+    options,
+  );
 }
 
 /** Ids of the specialization's typed annotations plus those linked to them. */

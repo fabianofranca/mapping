@@ -54,14 +54,17 @@ export function structureProject(
   return p;
 }
 
-/** Adds the `text` annotation (a type that declares a component) to the marking. */
+/** Adds the `text` annotation (a type that declares a component) to the marking, leaving the markings as they are. */
 export function materialize(p: Project, markingId: string): Project {
-  return addTypedAnnotation(p, {
+  const typed = addTypedAnnotation(p, {
     id: `A_${markingId}_text`,
     markingId,
     layerId: COMPONENT_LAYER,
     type: { specId: SPEC_ID, typeId: 'text' },
   });
+  // The markings stay as the test wrote them: the creation rule (decision 7) would store a parent, and
+  // these fixtures state the structure the file has.
+  return { ...typed, markings: p.markings };
 }
 
 /** Adds the `plain` annotation (a type with no component). */

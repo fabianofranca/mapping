@@ -149,6 +149,9 @@ export const ptBR: Dictionary = {
   'marking.error.rect-out-of-image': 'A marcação precisa ficar dentro da imagem.',
   'marking.error.rect-outside-parent': 'A marcação precisa ficar dentro da marcação pai.',
   'marking.error.invalid-parent': 'Essa marcação não pode ser a pai.',
+  'marking.error.parent-by-geometry':
+    'O pai de uma marcação de observação vem da geometria.',
+  'marking.error.slot-missing': 'O pai não tem esse slot.',
   'marking.error.invalid-space': 'Só uma marcação do canvas pode ser flutuante.',
   'marking.error.decorative-floating':
     'Uma marcação não pode ser flutuante e decorativa ao mesmo tempo.',

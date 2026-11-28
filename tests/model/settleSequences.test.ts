@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  EMPTY_CATALOG,
   addContainer,
   addPerspective,
+  addTypedAnnotation,
+  approximateMeasurer,
+  duplicateMarking,
+  setMarkingParent,
   adjustMarkingRect,
   applyAccepted,
   arriveInPrincipal,
@@ -32,8 +37,8 @@ import {
 import type { ItemRef, Marking, Project, Rect } from '../../src/model';
 import { settleFrom, settleHierarchy } from '../../src/model/hierarchySettle';
 import type { SettleOptions } from '../../src/model/hierarchySettle';
-import { materialize } from '../support/structureFixtures';
-import { componentProject } from './componentFixtures';
+import { COMPONENT_LAYER, materialize } from '../support/structureFixtures';
+import { SPEC_ID, componentProject } from './componentFixtures';
 import { AT, decided, propose } from './proposalFixtures';
 
 // Equivalence by sequences of public operations (#882, decision 5): for each operation that settles,
@@ -469,6 +474,57 @@ const OPS: Record<string, { weight: number; run: Op }> = {
       return settleFrom(c.p, next);
     },
   },
+  typeMarking: {
+    weight: 3,
+    // The real nature change of the model (`addTypedAnnotation`, `removeAnnotation`): the creation rule stores the
+    // parent the geometry gives, and the settle that ends it is the clipped one.
+    run: (c) => {
+      const m = check.natures ? anyMarking(c) : null;
+      if (!m) return c.p;
+      const own = c.p.annotations.find((a) => a.markingId === m.id && a.type !== null);
+      if (own) return removeAnnotation(c.p, own.id);
+      return addTypedAnnotation(c.p, {
+        id: c.next('A'),
+        markingId: m.id,
+        layerId: COMPONENT_LAYER,
+        type: { specId: SPEC_ID, typeId: 'text' },
+      });
+    },
+  },
+  setParent: {
+    weight: 4,
+    // Setting the stored parent of a materialized marking: another marking (an observation one, as no catalog is at
+    // hand to name a slot), or none. It converts the space when the parent is elsewhere.
+    run: (c) => {
+      if (!check.natures) return c.p;
+      const ids = materializedIds(c.p);
+      const own = c.p.markings.filter((m) => ids.has(m.id));
+      if (own.length === 0) return c.p;
+      const m = c.rng.pick(own);
+      const parent = c.rng.chance(0.25) ? null : c.rng.pick(c.p.markings);
+      return setMarkingParent(
+        c.p,
+        EMPTY_CATALOG,
+        approximateMeasurer,
+        m.id,
+        parent === null ? null : { parentId: parent.id },
+      );
+    },
+  },
+  duplicate: {
+    weight: 2,
+    run: (c) => {
+      const m = check.natures ? anyMarking(c) : null;
+      if (!m || m.floating) return c.p;
+      let n = 0;
+      return duplicateMarking(
+        c.p,
+        m.id,
+        { newId: () => c.next(`D${n++}`) },
+        { dx: c.rng.int(-30, 30), dy: c.rng.int(-30, 30) },
+      );
+    },
+  },
   storeParent: {
     weight: 4,
     // The file may carry any `parentId` on a materialized marking (hand-written, an old version, a
@@ -601,7 +657,13 @@ function runSequence(seed: number): void {
   }
 }
 
-const NATURE_ONLY = new Set(['toggleNature', 'storeParent']);
+const NATURE_ONLY = new Set([
+  'toggleNature',
+  'storeParent',
+  'typeMarking',
+  'setParent',
+  'duplicate',
+]);
 
 describe('clipped settle: equivalence by sequences of public operations (#882)', () => {
   it(`the natures variant (#3087): ${SEQUENCES} sequences with materialized markings and stored parents`, () => {

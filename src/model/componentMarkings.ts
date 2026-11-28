@@ -69,9 +69,9 @@ import { projectIndex } from './projectIndex';
 import { firstPageId } from './spaces';
 import type { SpecAnnotationType } from './spec';
 import { findSpecType, projectLayerFor } from './specLookup';
-import { addTypedAnnotation, setFieldValue } from './typed';
+import type { SlotReader } from './structure';
+import { addTypedAnnotation, setFieldValue, withTypedAnnotation } from './typed';
 import type {
-  Annotation,
   Marking,
   MarkingAnchor,
   Project,
@@ -143,17 +143,16 @@ export interface NewComponentArgs {
    */
   readonly pageId?: string;
   /**
-   * **Target** component with a slot, where the instance is positioned (inside the slot); `null` = outside
-   * any slot. It is only the destination of the positioning: the stored parent is always what the settle
-   * decides by geometry (the smallest marking of the space that contains the instance), never the request.
+   * The parent of the instance (stage #3087): a component with a slot, where the instance is positioned
+   * (inside the slot), or an observation marking; the stored parent is the one named, and the rectangle no
+   * longer has to be inside it. `null` = no parent named: the creation rule gives the parent the geometry gives, once.
    */
   readonly parentId: string | null;
   /**
    * The slot of the target (`parentId`) the instance goes to (`slotKey`; its `id`). The slot asked
    * for wins; absent, the first visible slot that accepts the new child's type (`typeId`) and is not
    * full (the `accepts` and `max` of the type, via `typeSlots`), as `slotToUse` decides. A slot the
-   * target does not have fails with `invalid-parent`. Only the position depends on it: the stored
-   * parent is still what the settle decides.
+   * target does not have fails with `invalid-parent`. It is stored (`slot`) when the target has several.
    */
   readonly slot?: string;
   readonly specId: string;
@@ -665,7 +664,7 @@ function initialValues(
     source: null,
   };
   let next: Project = { ...p, markings: [...p.markings, scratch] };
-  next = addTypedAnnotation(next, {
+  next = withTypedAnnotation(next, {
     id: SCRATCH_ANNOTATION,
     markingId: SCRATCH_MARKING,
     layerId: layer.id,
@@ -1285,44 +1284,77 @@ export function componentAnchoredPlacement(
   return { rect, warnings: [outsideWarning(label, where)] };
 }
 
-const NO_ANNOTATIONS: readonly Annotation[] = [];
-
-/**
- * The parent the geometry gives to the new marking, as if no marking were materialized (the rule up to
- * v26): the clipped settle of the project without annotations. Read once, at creation.
- */
-function geometricParent(before: Project, created: Project, id: string): string | null {
-  const settled = settleFrom(
-    { ...before, annotations: NO_ANNOTATIONS },
-    { ...created, annotations: NO_ANNOTATIONS },
+/** The slot keys of a materialized parent that has several (the others never store a slot), or `[]`. */
+function namedSlotsOf(p: Project, catalog: ComponentCatalog, parent: Marking): string[] {
+  const drawn = drawnWithSlots(
+    p,
+    markingComponent(p, catalog, parent.id),
+    parent.containerId,
   );
-  return settled.markings.find((m) => m.id === id)?.parentId ?? null;
+  const keys = drawn === null ? [] : componentSlots(drawn.component).map(slotKey);
+  return keys.length > 1 ? keys : [];
 }
 
 /**
- * The new component marking is materialized, so the settle no longer picks its parent (stage #3087):
- * the parent the caller named is stored (checked above: same space, around the rect); without one, it takes
- * once the parent the geometry gives, like before (the creation rule, decision 7).
+ * Reads the slot the geometry gives a child of a materialized parent (today's assignment, `assignSlots`): only a
+ * parent with several slots has one to read; `undefined` otherwise. The structure operations write it
+ * along with the parent when the catalog is at hand (stage #3087, decision 2).
  */
-function storeParent(
-  p: Project,
+export function slotReader(catalog: ComponentCatalog, measure: TextMeasurer): SlotReader {
+  return (p, parentId, childId) => {
+    const parent = projectIndex(p).markings.get(parentId);
+    if (parent === undefined) return undefined;
+    const mc = markingComponent(p, catalog, parentId);
+    const drawn = drawnWithSlots(p, mc, parent.containerId);
+    if (mc === null || drawn === null || namedSlotsOf(p, catalog, parent).length === 0) {
+      return undefined;
+    }
+    const scene = sceneOfSlots(p, catalog, parent, mc, drawn, measure, undefined);
+    for (const [key, kids] of scene.kids) {
+      if (kids.some((kid) => kid.id === childId)) return key;
+    }
+    return undefined;
+  };
+}
+
+/**
+ * The new component marking is materialized (stage #3087): it already took the parent the geometry gives, of either
+ * nature (the creation rule, in `addTypedAnnotation`); the parent the caller named replaces it. The slot goes
+ * along when the parent has several: the one asked for, else the one the geometry gives.
+ */
+function storeStructure(
   created: Project,
-  markingId: string,
-  parentId: string | null,
+  catalog: ComponentCatalog,
+  measure: TextMeasurer,
+  args: NewComponentArgs,
 ): Project {
-  const parent = parentId ?? geometricParent(p, created, markingId);
-  const next =
-    parent === null
-      ? created
+  const marking = findById(created.markings, args.markingId);
+  const parentId = args.parentId ?? marking.parentId;
+  if (parentId === null) return created;
+  const parent = findById(created.markings, parentId);
+  const staged: Project = {
+    ...created,
+    markings: created.markings.map((m) => (m.id === marking.id ? { ...m, parentId } : m)),
+  };
+  const keys = namedSlotsOf(staged, catalog, parent);
+  const asked = args.parentId === null ? undefined : args.slot;
+  if (asked !== undefined && keys.length > 0 && !keys.includes(asked)) {
+    fail('invalid-parent', asked);
+  }
+  const slot =
+    asked !== undefined && keys.length > 0
+      ? asked
+      : slotReader(catalog, measure)(staged, parentId, marking.id);
+  const stored: Project =
+    slot === undefined
+      ? staged
       : {
-          ...created,
-          markings: created.markings.map((m) =>
-            m.id === markingId ? { ...m, parentId: parent } : m,
+          ...staged,
+          markings: staged.markings.map((m) =>
+            m.id === marking.id ? { ...m, slot } : m,
           ),
         };
-  // The creation settled while the new marking was still an observation (it may have taken the markings
-  // it encloses as children); the reference is that state, so the settle sees the nature change.
-  return settleFrom({ ...created, annotations: p.annotations }, next);
+  return settleFrom(created, stored);
 }
 
 /**
@@ -1409,7 +1441,6 @@ export function addComponentMarking(
       parent.decorative
     )
       fail('invalid-parent', parent.id);
-    if (!containsRect(parent.rect, rect)) fail('rect-outside-parent');
   }
 
   let next = createMarking(
@@ -1433,7 +1464,7 @@ export function addComponentMarking(
     layerId: layer.id,
     type: { specId: args.specId, typeId: args.typeId },
   });
-  next = storeParent(p, next, args.markingId, args.parentId);
+  next = storeStructure(next, catalog, measure, args);
 
   next = applyPreview(
     next,

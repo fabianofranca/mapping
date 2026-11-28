@@ -52,6 +52,8 @@ export * from './componentMeasure';
 export type { FrameNode, SceneNode } from './components/scene';
 export * from './componentCatalog';
 export * from './nature';
+export * from './creationRule';
+export * from './structure';
 export * from './structural';
 export * from './componentValues';
 export * from './componentDrawings';

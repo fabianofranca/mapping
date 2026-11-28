@@ -13,6 +13,7 @@ import type { Spec, SpecLayer, SpecMigrationStep } from './spec';
 import { isPackageFile } from './libraryPackage';
 import { pruneHiddenLayers } from './perspectiveReconcile';
 import { getSpecialization } from './specLookup';
+import { applyNatureChanges, type NatureOptions } from './structure';
 import {
   diffSpecs,
   migrationChain,
@@ -30,7 +31,7 @@ import type { Annotation, Layer, Project, ProjectSpecialization } from './types'
 /** Folder of the specialization copies, relative to the project root. */
 export const SPECS_DIR = 'specs';
 
-export interface SpecOpOptions {
+export interface SpecOpOptions extends NatureOptions {
   /** Generates the ids of the new layers and tuples. Default: `crypto.randomUUID()`. */
   readonly newId?: () => string;
   /** Texts used when converting references to text. */
@@ -224,7 +225,8 @@ export function updateSpecialization(
   spec: Spec,
   options: SpecOpOptions = {},
 ): Project {
-  return planSpecializationUpdate(p, spec, options, true).project;
+  const { project } = planSpecializationUpdate(p, spec, options, true);
+  return applyNatureChanges(p, project, options);
 }
 
 export type SpecRemovalMode = 'delete' | 'convert';
@@ -246,22 +248,30 @@ export function removeSpecialization(
     const doomed = annotationsOfSpec(p, specId);
     const layers = p.layers.filter((l) => l.spec?.specId !== specId);
     if (layers.length === 0) fail('last-layer');
-    return pruneHiddenLayers({
-      ...p,
-      specializations,
-      layers,
-      annotations: p.annotations.filter((a) => !doomed.has(a.id)),
-    });
+    return applyNatureChanges(
+      p,
+      pruneHiddenLayers({
+        ...p,
+        specializations,
+        layers,
+        annotations: p.annotations.filter((a) => !doomed.has(a.id)),
+      }),
+      options,
+    );
   }
   const typed = new Set(
     p.annotations.filter((a) => a.type?.specId === specId).map((a) => a.id),
   );
-  return {
-    ...p,
-    specializations,
-    layers: p.layers.map((l) => (l.spec?.specId === specId ? { ...l, spec: null } : l)),
-    annotations: convertAnnotations(p, typed, options),
-  };
+  return applyNatureChanges(
+    p,
+    {
+      ...p,
+      specializations,
+      layers: p.layers.map((l) => (l.spec?.specId === specId ? { ...l, spec: null } : l)),
+      annotations: convertAnnotations(p, typed, options),
+    },
+    options,
+  );
 }
 
 export interface SpecRemovalImpact {

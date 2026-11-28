@@ -1,5 +1,5 @@
 import { fail } from './errors';
-import { descendantsOf } from './hierarchy';
+import { descendantsOf, storedDescendantsOf } from './hierarchy';
 import { findById, updateById } from './project';
 import { projectIndex } from './projectIndex';
 import { firstPageId, sameSpace } from './spaces';
@@ -138,7 +138,8 @@ export function setNewMarkingAnchor(
 
 /**
  * What moves along when `ids` move: the markings anchored to any of them, their descendants
- * (inside a container; on the canvas a marking is a lens and moves alone) and those anchored
+ * (inside a container; on the canvas only the stored children of a materialized marking, the rest is a lens
+ * that moves alone) and those anchored
  * to those, transitively. Without duplicates: an id that is already in `ids` or that several
  * chains reach enters once. Returns a new set including `ids`.
  */
@@ -155,8 +156,9 @@ export function withAnchoredFollowers(p: Project, ids: Iterable<string>): Set<st
   for (let i = 0; i < queue.length; i++) {
     const id = queue[i] as string;
     for (const m of anchoredBy.get(id) ?? []) add(m.id);
-    if (markings.get(id)?.containerId == null) continue;
-    for (const d of descendantsOf(p, id)) add(d.id);
+    // In a container, every descendant moves along; on the canvas, only the stored ones (stage #3087, decision 8).
+    const canvas = markings.get(id)?.containerId == null;
+    for (const d of canvas ? storedDescendantsOf(p, id) : descendantsOf(p, id)) add(d.id);
   }
   return result;
 }
