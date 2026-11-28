@@ -8,10 +8,10 @@
  * from the target of a Konva event.
  */
 import {
-  growRadius,
-  sideSegments,
+  sideStrokes,
   spreadRadius,
   strokeAlignInset,
+  strokeRadius,
 } from '../../model/components/strokeSides';
 import { gapOutlines } from '../../model/components/strokeGaps';
 import {
@@ -325,7 +325,8 @@ class Renderer {
         }
         shapes.push(...innerShadowShapes(node, innerShadows));
         if (node.stroke) {
-          if (node.stroke.sides) shapes.push(...this.sideStrokes(node.stroke, box));
+          if (node.stroke.sides)
+            shapes.push(...this.sideStrokes(node.stroke, box, node.cornerRadius));
           else {
             const gapped = this.gapStrokes(node.stroke, box, node.cornerRadius);
             shapes.push(
@@ -798,15 +799,29 @@ class Renderer {
   }
 
   /**
-   * `stroke.sides`: one straight line per requested side (no arc at the corner, even with a
-   * radius).
+   * `stroke.sides`: a straight line per requested side where no rounded corner is involved (and
+   * with `dash`); otherwise the model's band polygons, filled, which follow the corner arcs and
+   * taper next to a side that is not requested.
    */
-  private sideStrokes(stroke: Stroke, box: Box): Konva.Shape[] {
-    return sideSegments(stroke, box.width, box.height).map((seg) => {
+  private sideStrokes(stroke: Stroke, box: Box, radius: CornerRadius): Konva.Shape[] {
+    const { lines, bands } = sideStrokes(stroke, box.width, box.height, radius);
+    const shapes: Konva.Shape[] = lines.map((seg) => {
       const line = new KonvaLine({ points: [seg.x1, seg.y1, seg.x2, seg.y2] });
       this.applyStroke(line, stroke, 'line', true);
       return line;
     });
+    const [paint, ...rest] = stroke.paints;
+    if (bands.length > 0 && rest.length > 0) this.warn('stroke-extra-paints');
+    if (paint)
+      for (const band of bands) {
+        const shape = new KonvaLine({
+          points: band.flatMap((p) => [p.x, p.y]),
+          closed: true,
+          strokeEnabled: false,
+        });
+        shapes.push(...this.fillShape(shape, paint, box));
+      }
+    return shapes;
   }
 
   /** `stroke.gap`: the outline with each corner's radius, in open lines that skip the gaps. */
@@ -829,7 +844,7 @@ class Renderer {
       y: inset,
       width: Math.max(0, box.width - inset * 2),
       height: Math.max(0, box.height - inset * 2),
-      cornerRadius: konvaRadius(shrinkRadius(growRadius(radius, offset), align)),
+      cornerRadius: konvaRadius(shrinkRadius(strokeRadius(stroke, radius), align)),
     });
     // Konva reads gradient points from the shape origin (x = y = inset): move them back by the inset.
     this.applyStroke(shape, stroke, 'box', false, (p) => ({

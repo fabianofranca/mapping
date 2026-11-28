@@ -4,10 +4,10 @@ import { CUT_REACH, cutsText } from '../../src/model/components/textWrap';
 import { gapOutlines } from '../../src/model/components/strokeGaps';
 import { parseFormatColor } from '../../src/model/components/tokens';
 import {
-  growRadius,
-  sideSegments,
+  sideStrokes,
   spreadRadius,
   strokeAlignInset,
+  strokeRadius,
 } from '../../src/model/components/strokeSides';
 import {
   multiply,
@@ -829,7 +829,7 @@ function alignedShapes(node: SceneNode, shapes: Subpath[]): Subpath[] {
       : roundedRect(
           width,
           height,
-          shiftRadius(growRadius(node.cornerRadius, offset), align),
+          shiftRadius(strokeRadius(stroke, node.cornerRadius), align),
         );
   return [{ points: points.map((p) => ({ x: p.x + d, y: p.y + d })), closed: true }];
 }
@@ -1095,11 +1095,26 @@ class Painter {
       cap: node.stroke.cap ?? 'butt',
       join: node.stroke.join ?? 'miter',
     };
-    const base =
-      this.sideLines(node) ?? this.gapLines(node) ?? alignedShapes(node, shapes);
+    const base = this.strokeLines(node, shapes, matrix, { color, alpha, clip });
     const dash = node.stroke.dash;
     const lines = dash && dash.length > 0 ? dashPaths(base, dash) : base;
     this.fill(strokePolygons(lines, width, style), matrix, 'nonzero', color, alpha, clip);
+  }
+
+  /**
+   * The lines the stroke traces (sides, gaps or the aligned outline). The sides that follow a corner
+   * arc are polygons, so they are filled here instead of returned.
+   */
+  private strokeLines(
+    node: SceneNode,
+    shapes: Subpath[],
+    matrix: Matrix,
+    paint: { color: Color; alpha: number; clip: PixelRect },
+  ): Subpath[] {
+    const sides = this.sideStrokes(node);
+    if (!sides) return this.gapLines(node) ?? alignedShapes(node, shapes);
+    this.fill(sides.bands, matrix, 'nonzero', paint.color, paint.alpha, paint.clip);
+    return sides.lines.map((points) => ({ points, closed: false }));
   }
 
   /** Shadow (`effects`, not the inner one): the node's shape blurred and shifted, beneath the node. */
@@ -1306,18 +1321,29 @@ class Painter {
     return lines.length > 0 ? lines.map((points) => ({ points, closed: false })) : null;
   }
 
-  /** `stroke.sides` on a `frame`/`rect`: the requested sides as straight lines (without the corners). */
-  private sideLines(node: SceneNode): Subpath[] | null {
+  /**
+   * `stroke.sides` on a `frame`/`rect`: straight lines (a side with no rounded corner, or with `dash`)
+   * and the band polygons that follow the corner arcs, from the model.
+   */
+  private sideStrokes(
+    node: SceneNode,
+  ): { lines: Point[][]; bands: readonly Polygon[] } | null {
     if ((node.type !== 'frame' && node.type !== 'rect') || !node.stroke) return null;
     // Without `stroke.sides` (or with all four, which the scene does not carry) the stroke is the whole outline.
     if (!node.stroke.sides) return null;
-    return sideSegments(node.stroke, node.width, node.height).map((seg) => ({
-      points: [
+    const { lines, bands } = sideStrokes(
+      node.stroke,
+      node.width,
+      node.height,
+      node.cornerRadius,
+    );
+    return {
+      lines: lines.map((seg) => [
         { x: seg.x1, y: seg.y1 },
         { x: seg.x2, y: seg.y2 },
-      ],
-      closed: false,
-    }));
+      ]),
+      bands,
+    };
   }
 
   private toRaster(points: Polygon, matrix: Matrix): Point[] {

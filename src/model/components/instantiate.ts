@@ -3294,8 +3294,15 @@ function createEngine(
       ...(dash ? { dash } : {}),
       ...(offset > 0 ? { offset: offset / scale } : {}),
       ...strokeStyleOf(spec),
+      ...strokeRadiusOf(spec),
     };
   };
+
+  /** `stroke.cornerRadius` (format 4, only `frame` and `rect`): the outline's radius, resolved like the node's. */
+  const strokeRadiusOf = (spec: StrokeSpec): Pick<Stroke, 'cornerRadius'> =>
+    spec.cornerRadius === undefined
+      ? {}
+      : { cornerRadius: radiusValue(spec.cornerRadius as Expr<unknown>) };
 
   /** `stroke.dash` (list, or an expression returning the list): invalid = no dashing, with a warning. */
   const dashOf = (expr: StrokeSpec['dash']): readonly number[] | undefined => {
@@ -3442,8 +3449,12 @@ function createEngine(
     return Number.isFinite(n) ? Math.max(0, n) : 0;
   };
 
-  const radiusOf = (node: TemplateNode): CornerRadius => {
-    const value = ev<unknown>(node.cornerRadius as Expr<unknown> | undefined, 0);
+  const radiusOf = (node: TemplateNode): CornerRadius =>
+    radiusValue(node.cornerRadius as Expr<unknown> | undefined);
+
+  /** A corner radius expression (a number, or a list of 4 items, each one an expression too). */
+  const radiusValue = (expr: Expr<unknown> | undefined): CornerRadius => {
+    const value = ev<unknown>(expr, 0);
     if (Array.isArray(value) && value.length === 4) {
       const [a, b, c, d] = value.map((item) =>
         radiusItem(ev<unknown>(item as Expr<unknown>, 0)),

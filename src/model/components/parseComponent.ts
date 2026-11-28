@@ -794,11 +794,25 @@ function checkStrokeV4(
     checkExpr(value.join, join(path, 'join'), oneOf(['miter', 'round', 'bevel']), out);
   if ('scale' in value) checkBoolean(value.scale, join(path, 'scale'), out);
   if ('offset' in value) checkOffset(value.offset, join(path, 'offset'), nodeType, out);
+  if ('cornerRadius' in value) checkStrokeRadius(value, path, nodeType, out);
   if (!('sides' in value)) return;
   const at = join(path, 'sides');
   if (nodeType !== undefined && nodeType !== 'frame' && nodeType !== 'rect')
     add(out, at, `only valid in frame and rect (this is ${nodeType})`);
   else checkExpr(value.sides, at, checkSides, out);
+}
+
+/** `stroke.cornerRadius`: like the node's `cornerRadius`, only in `frame` and `rect`. */
+function checkStrokeRadius(
+  stroke: Rec,
+  path: string,
+  nodeType: string | undefined,
+  out: Ctx,
+): void {
+  const at = join(path, 'cornerRadius');
+  if (nodeType !== undefined && nodeType !== 'frame' && nodeType !== 'rect')
+    add(out, at, `only valid in frame and rect (this is ${nodeType})`);
+  else checkExpr(stroke.cornerRadius, at, checkCornerRadius, out);
 }
 
 /** `stroke.offset`: px ≥ 0 (literal or a number `$token`), only in `frame`, `rect` and `ellipse`. */
@@ -817,7 +831,19 @@ function checkStroke(value: unknown, path: string, out: Ctx, nodeType?: string):
   if (!isRecord(value)) return add(out, path, 'expected an object');
   checkKeys(
     value,
-    ['color', 'width', 'align', 'dash', 'cap', 'join', 'sides', 'scale', 'offset', 'gap'],
+    [
+      'color',
+      'width',
+      'align',
+      'dash',
+      'cap',
+      'join',
+      'sides',
+      'scale',
+      'offset',
+      'gap',
+      'cornerRadius',
+    ],
     path,
     out,
   );
@@ -1792,6 +1818,7 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['stroke', 'scale'],
   ['stroke', 'offset'],
   ['stroke', 'gap'],
+  ['stroke', 'cornerRadius'],
   ['shadow', 'spread'],
   ['layout', 'reverse'],
   ...GRID_TRACK_KEYS.map((key): readonly string[] => ['layout', key]),

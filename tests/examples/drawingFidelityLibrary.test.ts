@@ -1,5 +1,6 @@
 // Example library `drawing-fidelity`: an expression in each `cornerRadius` item (the Corner card), in
-// `image.fit` (the Photo) and in the shadow numbers (the Signal). Later phases of the stage add types.
+// `image.fit` (the Photo) and in the shadow numbers (the Signal), partial `sides` that follow the
+// radius (the Divider) and `stroke.cornerRadius` (the Link). Later phases of the stage add types.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -7,6 +8,7 @@ import { approximateMeasurer, instantiate } from '../../src/model/components/ins
 import { parseIconsText } from '../../src/model/components/icons';
 import { parseComponent } from '../../src/model/components/parseComponent';
 import type { FrameNode, SceneNode } from '../../src/model/components/scene';
+import { sideStrokes } from '../../src/model/components/strokeSides';
 import { detectFormat, readSize } from '../../src/model/imageHeader';
 import { validateLibrary, type LibraryFile } from '../../src/model/library';
 
@@ -49,14 +51,18 @@ function draw(id: string, values: Record<string, string>) {
 }
 
 describe('example library drawing-fidelity', () => {
-  it('has the specialization, three components, three documents, the icon set and one image', () => {
+  it('has the specialization, five components, five documents, the icon set and one image', () => {
     expect(files.map((f) => f.path)).toEqual(
       [
         SPEC_FILE,
         'components/corner-card.json',
+        'components/divider.json',
+        'components/link.json',
         'components/photo.json',
         'components/signal.json',
         'docs/corner-card.md',
+        'docs/divider.md',
+        'docs/link.md',
         'docs/photo.md',
         'docs/signal.md',
         'icons/icons.json',
@@ -70,7 +76,7 @@ describe('example library drawing-fidelity', () => {
     expect(report.errors).toEqual([]);
     expect(report.warnings).toEqual([]);
     expect(report.ok).toBe(true);
-    expect(report.summary).toMatchObject({ types: 3, components: 3, docs: 3, images: 1 });
+    expect(report.summary).toMatchObject({ types: 5, components: 5, docs: 5, images: 1 });
   });
 
   it('has a 96 × 48 PNG image', () => {
@@ -129,5 +135,46 @@ describe('example library drawing-fidelity', () => {
     expect(warnings).toEqual([]);
     const icon = root.children[1] as unknown as { effects: { inner?: boolean }[] };
     expect(icon.effects.map((e) => e.inner === true)).toEqual([false, true]);
+  });
+
+  it('draws the Divider bottom stroke as a band that follows the arcs and tapers', () => {
+    const { root, warnings } = draw('divider', { elevated: 'true' });
+    expect(warnings).toEqual([]);
+    const { stroke, cornerRadius } = root as unknown as {
+      stroke: Parameters<typeof sideStrokes>[0];
+      cornerRadius: number;
+    };
+    expect(stroke.sides).toEqual(['bottom']);
+    const { lines, bands } = sideStrokes(stroke, 200, 16, cornerRadius);
+    expect(lines).toEqual([]);
+    expect(bands).toHaveLength(1);
+    // The band reaches the tangent points of the arcs, where it is 0 thick.
+    expect(bands[0]!.some((p) => Math.hypot(p.x, p.y - 8) < 1e-6)).toBe(true);
+    expect(bands[0]!.some((p) => Math.hypot(p.x - 200, p.y - 8) < 1e-6)).toBe(true);
+  });
+
+  it('draws the Divider without the stroke when elevated is false', () => {
+    expect(draw('divider', { elevated: 'false' }).root.stroke).toBeUndefined();
+  });
+
+  it('gives the Link ring its own radius: 4 outside and 2 inside', () => {
+    const { root, warnings } = draw('link', { focused: 'true' });
+    expect(warnings).toEqual([]);
+    const ring = root.children.find((c) => c.name === 'ring') as unknown as {
+      cornerRadius: number;
+      stroke: { cornerRadius: number; offset: number; width: number; align: string };
+    };
+    expect(ring.cornerRadius).toBe(0);
+    expect(ring.stroke).toMatchObject({
+      cornerRadius: 4,
+      offset: 2,
+      width: 2,
+      align: 'inside',
+    });
+  });
+
+  it('draws the Link without the ring when focused is false', () => {
+    const { root } = draw('link', { focused: 'false' });
+    expect(root.children.find((c) => c.name === 'ring')?.stroke).toBeUndefined();
   });
 });
