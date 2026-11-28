@@ -718,6 +718,21 @@ function variantGroupText(names: ReviewNames, c: Change, value: JsonValue): stri
   });
 }
 
+/**
+ * "Variant of: …" for a container created already linked (`add_container` with `variantOf`), so the review
+ * shows the link before it is accepted. Empty for a removal, or for a container with no other in its group.
+ */
+function createdVariantText(
+  names: ReviewNames,
+  c: Change,
+  value: Record<string, JsonValue>,
+): string {
+  const group = value.variantGroup;
+  if (c.kind !== 'create' || typeof group !== 'string') return '';
+  const ids = groupMembersAfter(names, group, c.entityId);
+  return ids.size === 0 ? '' : variantGroupText(names, { ...c, to: group }, group);
+}
+
 /** The `project` entity: the drawing mode and, when pinned, "Direction: …". */
 function projectSummary(value: Record<string, JsonValue>): string {
   const parts = [
@@ -747,7 +762,9 @@ function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string 
         typeof value.width === 'number' && typeof value.height === 'number'
           ? t('image.dimensions', { width: value.width, height: value.height })
           : '';
-      return [name, size].filter(Boolean).join(' · ');
+      return [name, size, createdVariantText(names, c, value)]
+        .filter(Boolean)
+        .join(' · ');
     }
     case 'arrow':
       return arrowName(names, c.entityId) ?? '';

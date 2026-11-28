@@ -604,6 +604,43 @@ describe('changeTitle and changeSummary: the variants (decision 9 of #2034)', ()
     });
   });
 
+  describe('containers created already linked (add_container with variantOf)', () => {
+    const created = (() => {
+      const first = addBackgroundContainer(emptyProject(), {
+        id: 'n1',
+        name: 'Compact',
+        width: 400,
+        height: 300,
+        background: '#FFFFFF',
+      });
+      const second = addBackgroundContainer(first, {
+        id: 'n2',
+        name: 'Expanded',
+        width: 400,
+        height: 300,
+        background: '#FFFFFF',
+      });
+      return linkVariant(second, 'n1', 'n2');
+    })();
+    const lines = (preview: Project | null) => {
+      const proposal = propose(emptyProject(), created);
+      const names = { current: emptyProject(), preview, proposal };
+      return proposal.changes
+        .filter((c) => c.entity === 'image' && c.kind === 'create')
+        .map((c) => `${c.entityId}|${changeSummary(names, c)}`);
+    };
+
+    it.each([
+      ['without the preview', null],
+      ['with the preview', created],
+    ])('the creation row names the other container, %s', (_label, preview) => {
+      expect(lines(preview)).toEqual([
+        'n1|Compact · 400 × 300 px · Variant of: Expanded',
+        'n2|Expanded · 400 × 300 px · Variant of: Compact',
+      ]);
+    });
+  });
+
   it('the pt-BR text uses the pt-BR labels', () => {
     locale.value = 'pt-BR';
     const [line] = changesOf(named, linkVariant(named, 'c1', 'c2'));

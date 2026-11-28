@@ -14,3 +14,9 @@
 
 - The ceiling of `dist/index.html` went up 16 KiB, from 2801664 to 2818048, by the budget rule; above the limits, `bug` #3103 for the owner to review.
 - The project schema is v26: a v25 project opens migrated with nothing else changed, the original goes to `backups/` before the first write, and an earlier app opens the new file read-only (#2034).
+
+## Corrigido
+
+- The review of a proposal shows "Variant of: …" on a container created already linked (`add_container` with `variantOf`), so the link is visible before accepting it (#2034).
+- In the **Variants** section of Details, a long row name ends with `…` and the open **Link to variant…** menu stays inside Details, its names truncated (#2034).
+- Test script text: R53.3 (**Link to variant…** is disabled with no other container), R3.13 (puts Material 3 (Compose) back at its end) and R3.16 (the repeated update ends at v21) (#2034).
