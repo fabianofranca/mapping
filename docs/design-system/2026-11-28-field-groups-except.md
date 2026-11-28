@@ -7,7 +7,7 @@
 
 ## Sincronização
 
-Gravado no artefato **Mapping** em 2026-11-28: versão 117. Both pending items went into the guides: `PropertyGrid` (new paragraphs "Subtítulo de grupo de campos" and "Linha de campos ocultos", plus the classes and `FieldGroups.tsx` in "No código") and `CatalogPage` (new paragraph "Grupos de campos no Experimentar", pointing to the `PropertyGrid` guide). Only existing tokens (`color-text`, `color-text-muted`, `color-border`) and existing controls (ghost `sm` `Button`, `HelpTip`, `chevron-down`/`chevron-right` icons), so the contrast pairs are the ones already in the DS for both themes; no component, token or icon was added. Index `lastChange` filled.
+Gravado no artefato **Mapping** on 2026-11-28: version 117. Both pending items went into the guides: `PropertyGrid` (new paragraphs for the group subheading and the hidden-fields line, plus the classes and `FieldGroups.tsx` in the "in the code" line) and `CatalogPage` (new Playground paragraph, pointing to the `PropertyGrid` guide). Only existing tokens (`color-text`, `color-text-muted`, `color-border`) and existing controls (ghost `sm` `Button`, `HelpTip`, `chevron-down`/`chevron-right` icons), so the contrast pairs are the ones already in the DS for both themes; no component, token or icon was added. Index `lastChange` filled.
 
 ## Ficou sem gravar
 
