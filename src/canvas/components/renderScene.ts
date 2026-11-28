@@ -171,6 +171,14 @@ class Renderer {
     return [...this.warned.values()];
   }
 
+  private contextFilter: boolean | undefined;
+
+  /** Does the 2D context support `filter`? Probed once per render. */
+  private hasContextFilter(): boolean {
+    this.contextFilter ??= probeContextFilter();
+    return this.contextFilter;
+  }
+
   private warn(code: RenderWarningCode, params?: RenderWarning['params']): void {
     const key = params ? `${code}|${JSON.stringify(params)}` : code;
     if (!this.warned.has(key)) this.warned.set(key, params ? { code, params } : { code });
@@ -328,7 +336,7 @@ class Renderer {
   private backdropShapes(node: FrameNode | RectNode): Konva.Shape[] {
     const blur = node.backdropBlur ?? 0;
     if (!(blur > 0)) return [];
-    if (!contextHasFilter()) {
+    if (!this.hasContextFilter()) {
       this.warn('backdrop-blur-unsupported');
       return [];
     }
@@ -1361,16 +1369,41 @@ function castShadow(
 }
 
 /** Does this browser's 2D context have `filter` (blur on a drawing)? */
-function contextHasFilter(): boolean {
+function probeContextFilter(): boolean {
   const context = document.createElement('canvas').getContext('2d');
   return context !== null && 'filter' in context;
+}
+
+/** The device-space box of the node's rect, grown by `margin` and clamped to the canvas; null when empty. */
+function backdropBox(
+  m: DOMMatrix,
+  width: number,
+  height: number,
+  margin: number,
+  canvas: { readonly width: number; readonly height: number },
+): { x: number; y: number; w: number; h: number } | null {
+  const corners = [
+    [0, 0],
+    [width, 0],
+    [0, height],
+    [width, height],
+  ] as const;
+  const xs = corners.map(([x, y]) => m.a * x + m.c * y + m.e);
+  const ys = corners.map(([x, y]) => m.b * x + m.d * y + m.f);
+  const x0 = Math.max(0, Math.floor(Math.min(...xs) - margin));
+  const y0 = Math.max(0, Math.floor(Math.min(...ys) - margin));
+  const x1 = Math.min(canvas.width, Math.ceil(Math.max(...xs) + margin));
+  const y1 = Math.min(canvas.height, Math.ceil(Math.max(...ys) + margin));
+  return x1 > x0 && y1 > y0 ? { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } : null;
 }
 
 /**
  * CSS `backdrop-filter: blur(<blur>px)`: clips to the node's outline and redraws what the layer's canvas
  * already holds, blurred, over itself. The blur is in the node's space; the current matrix (node scale,
  * zoom and device pixel ratio) turns it into device pixels, as for the shadow's. The copy is drawn with
- * the identity matrix because the canvas is in device pixels.
+ * the identity matrix because the canvas is in device pixels, only over the node's box grown by 3 sigma.
+ * At full alpha the copy replaces the backdrop (`copy`, so sharp content under a translucent area does not
+ * show through); below 1 it mixes in at that alpha, like CSS element opacity.
  */
 function blurBackdrop(
   native: CanvasRenderingContext2D,
@@ -1383,12 +1416,16 @@ function blurBackdrop(
   const m = native.getTransform();
   const sx = Math.hypot(m.a, m.b) || 1;
   const sy = Math.hypot(m.c, m.d) || 1;
+  const sigma = blur * Math.min(sx, sy);
+  const box = backdropBox(m, width, height, Math.ceil(3 * sigma), native.canvas);
+  if (box === null) return;
   native.save();
   roundedRectPath(native, width, height, radius);
   native.clip();
   native.setTransform(1, 0, 0, 1, 0, 0);
-  native.filter = `blur(${blur * Math.min(sx, sy)}px)`;
-  native.drawImage(native.canvas, 0, 0);
+  native.filter = `blur(${sigma}px)`;
+  if (native.globalAlpha >= 1) native.globalCompositeOperation = 'copy';
+  native.drawImage(native.canvas, box.x, box.y, box.w, box.h, box.x, box.y, box.w, box.h);
   native.restore();
 }
 

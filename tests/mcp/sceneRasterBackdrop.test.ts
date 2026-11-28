@@ -78,6 +78,21 @@ describe('backdropBlur in the raster (hand-built scene)', () => {
     expect(b).toBeLessThan(195);
   });
 
+  it('mixes the blurred copy in at the node opacity', () => {
+    const sharp = split();
+    const full = split();
+    const half = split();
+    paint(full, glass(8));
+    paint(half, { ...glass(8), opacity: 0.5 });
+    const r = (raster: Raster): number => pixel(raster, 50, 30)[0]!;
+    // Red channel at the border: sharp blue pixel (0) < half-mixed < fully blurred.
+    expect(r(sharp)).toBe(0);
+    expect(r(full)).toBeGreaterThan(60);
+    expect(r(half)).toBeGreaterThan(r(sharp));
+    expect(r(half)).toBeLessThan(r(full));
+    expect(r(half)).toBeCloseTo(r(full) / 2, -1);
+  });
+
   it('leaves the pixels outside the outline exactly sharp', () => {
     const raster = split();
     paint(raster, glass(8));

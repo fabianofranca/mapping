@@ -114,6 +114,15 @@ function boxPass(
 }
 
 /**
+ * The box radius for `sigma` (three boxes of radius r have variance r(r + 1): the r closest to `sigma`),
+ * clamped to `max`: with the edge pixels repeated, a larger radius gives the same result.
+ */
+export function boxRadiusFor(sigma: number, max: number): number {
+  const radius = Math.round((Math.sqrt(1 + 4 * sigma * sigma) - 1) / 2);
+  return Math.min(radius, Math.max(0, Math.floor(max)));
+}
+
+/**
  * Gaussian blur (`sigma` is the standard deviation, in pixels, like CSS `blur()`) of an RGBA region,
  * in place, by three box passes with the edge pixels repeated. The channels are blurred premultiplied
  * by alpha, so a transparent pixel does not bleed its color.
@@ -124,8 +133,7 @@ export function blurRgba(
   height: number,
   sigma: number,
 ): void {
-  // Three boxes of radius r have variance r(r + 1): pick the r closest to `sigma`.
-  const radius = Math.round((Math.sqrt(1 + 4 * sigma * sigma) - 1) / 2);
+  const radius = boxRadiusFor(sigma, Math.max(width, height));
   if (radius <= 0 || width === 0 || height === 0) return;
   const planes = premultipliedPlanes(data, width * height);
   const tmp = new Float32Array(width * height);

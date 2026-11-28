@@ -18,15 +18,21 @@ interface Matrix {
   b: number;
   c: number;
   d: number;
+  e?: number;
+  f?: number;
 }
 
 /** A context that records its calls (and the `filter` value each `drawImage` saw). */
-function recorder(matrix: Matrix, withFilter: boolean) {
+function recorder(matrix: Matrix, withFilter: boolean, globalAlpha = 1) {
   const calls: string[] = [];
   const filters: string[] = [];
+  const operations: string[] = [];
+  const drawArgs: unknown[][] = [];
   const target: Record<string, unknown> = {
     canvas: { width: 400, height: 300 },
-    getTransform: () => ({ ...matrix, e: 0, f: 0 }),
+    getTransform: () => ({ e: 0, f: 0, ...matrix }),
+    globalAlpha,
+    globalCompositeOperation: 'source-over',
   };
   if (withFilter) target.filter = 'none';
   const ctx = new Proxy(target, {
@@ -35,8 +41,12 @@ function recorder(matrix: Matrix, withFilter: boolean) {
       return (...args: unknown[]) => {
         const name = String(key);
         calls.push(name);
-        if (name === 'drawImage') filters.push(String(t.filter));
-        return args.length > 0 ? undefined : undefined;
+        if (name === 'drawImage') {
+          filters.push(String(t.filter));
+          operations.push(String(t.globalCompositeOperation));
+          drawArgs.push(args.slice(1));
+        }
+        return undefined;
       };
     },
     set(t, key, value) {
@@ -45,7 +55,7 @@ function recorder(matrix: Matrix, withFilter: boolean) {
       return true;
     },
   }) as unknown as CanvasRenderingContext2D;
-  return { ctx, calls, filters };
+  return { ctx, calls, filters, operations, drawArgs };
 }
 
 /** The fake 2D context of every canvas gets (or lacks) `filter`, the property the support check reads. */
@@ -93,7 +103,10 @@ describe('renderScene: backdropBlur', () => {
     const shapes = root.find('Shape') as Konva.Shape[];
     const fillIndex = shapes.findIndex((s) => s instanceof Konva.Rect);
     expect(fillIndex).toBeGreaterThan(0);
-    const { ctx, calls, filters } = recorder({ a: 2, b: 0, c: 0, d: 2 }, true);
+    const { ctx, calls, filters, drawArgs } = recorder(
+      { a: 2, b: 0, c: 0, d: 2, e: 100, f: 100 },
+      true,
+    );
     paint(shapes[0]!, ctx);
     expect(warnings).toEqual([]);
     expect(calls[0]).toBe('save');
@@ -104,6 +117,8 @@ describe('renderScene: backdropBlur', () => {
     // The matrix goes back to identity for the copy; 8 px of the node's space at scale 2 = 16 device px.
     expect(calls.indexOf('setTransform')).toBeLessThan(calls.indexOf('drawImage'));
     expect(filters).toEqual(['blur(16px)']);
+    // Only the node's device box (100..300 x 100..180) grown by 3 sigma (48 px) is copied.
+    expect(drawArgs).toEqual([[52, 52, 296, 176, 52, 52, 296, 176]]);
     // The shape that does it sits below the fill in the node's group.
     expect(shapes.indexOf(shapes[0]!)).toBeLessThan(fillIndex);
   });
@@ -139,6 +154,27 @@ describe('renderScene: backdropBlur', () => {
       return filters[0];
     });
     expect(seen).toEqual(['blur(4px)', 'blur(12px)']);
+  });
+
+  it('replaces the backdrop at full alpha and mixes at the alpha below 1', () => {
+    supportFilter(true);
+    const { root } = renderScene(sceneWith(8, 0));
+    const first = (root.find('Shape') as Konva.Shape[])[0]!;
+    const seen = [1, 0.5].map((alpha) => {
+      const { ctx, operations } = recorder({ a: 1, b: 0, c: 0, d: 1 }, true, alpha);
+      paint(first, ctx);
+      return operations[0];
+    });
+    expect(seen).toEqual(['copy', 'source-over']);
+  });
+
+  it('draws nothing when the node box is off the canvas', () => {
+    supportFilter(true);
+    const { root } = renderScene(sceneWith(8, 0));
+    const first = (root.find('Shape') as Konva.Shape[])[0]!;
+    const { ctx, calls } = recorder({ a: 1, b: 0, c: 0, d: 1, e: 2000, f: 2000 }, true);
+    paint(first, ctx);
+    expect(calls).not.toContain('drawImage');
   });
 
   it('registers the warning with text in both languages', () => {

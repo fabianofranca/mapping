@@ -917,7 +917,7 @@ class Painter {
 
     const shapes = this.shapes(node);
     this.shadows(node, shapes, matrix, alpha, clip);
-    this.backdropBlur(node, shapes, matrix, clip);
+    this.backdropBlur(node, shapes, matrix, alpha, clip);
     const rule = node.type === 'path' ? node.fillRule : 'nonzero';
     // An open line has no interior: only the stroke.
     const fillable = node.type !== 'line' || node.closed;
@@ -1279,6 +1279,7 @@ class Painter {
     node: SceneNode,
     shapes: Subpath[],
     matrix: Matrix,
+    alpha: number,
     clip: PixelRect,
   ): void {
     if ((node.type !== 'frame' && node.type !== 'rect') || shapes.length === 0) return;
@@ -1312,14 +1313,18 @@ class Painter {
       { rgb: [0, 0, 0], alpha: 1 },
       local,
     );
-    this.mixBlurred(blurred, cover, box, clip);
+    this.mixBlurred(blurred, cover, box, alpha, clip);
   }
 
-  /** Replaces the raster pixels of `box` (inside `clip`) by `blurred`, weighted by the coverage `cover`. */
+  /**
+   * Mixes `blurred` into the raster pixels of `box` (inside `clip`), weighted by the coverage `cover` times
+   * the node's effective opacity `alpha` (1 replaces the backdrop; below 1 it is a*blur + (1-a)*original).
+   */
   private mixBlurred(
     blurred: Raster,
     cover: Raster,
     box: PixelRect,
+    alpha: number,
     clip: PixelRect,
   ): void {
     const rx0 = Math.max(box.x, Math.floor(clip.x));
@@ -1330,7 +1335,7 @@ class Painter {
     for (let y = ry0; y < ry1; y++) {
       for (let x = rx0; x < rx1; x++) {
         const j = ((y - box.y) * box.width + (x - box.x)) * 4;
-        const k = cover.data[j + 3]! / 255;
+        const k = (cover.data[j + 3]! / 255) * alpha;
         if (k <= 0) continue;
         const i = (y * this.raster.width + x) * 4;
         const dstA = out[i + 3]! / 255;

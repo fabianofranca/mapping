@@ -8,7 +8,7 @@ export interface OverlaySplit {
   readonly base: FrameNode;
   /**
    * The overlay nodes under the root's chain of ancestors, which keep the transform, the size, the clip, the
-   * opacity and the rotation and scale but none of their own paint (fills, stroke and shadows). Absent when
+   * opacity and the rotation and scale but none of their own paint (fills, stroke, shadows and backdrop blur). Absent when
    * nothing is flagged.
    */
   readonly overlay?: FrameNode;
@@ -40,6 +40,7 @@ function withoutOverlay<T extends SceneNode>(node: T): T {
 function unpainted<T extends Container>(node: T, children: readonly SceneNode[]): T {
   const copy: Record<string, unknown> = { ...node, fills: [], effects: [], children };
   delete copy.stroke;
+  delete copy.backdropBlur;
   return copy as unknown as T;
 }
 
