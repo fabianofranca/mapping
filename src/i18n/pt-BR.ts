@@ -985,6 +985,8 @@ export const ptBR: Dictionary = {
   'notices.accessibility.count': '{count} aviso(s)',
   'audit.touchTargetSmall':
     '{width} × {height}; mínimo {minWidth} × {minHeight} unidades ({pxWidth} × {pxHeight} px a {density}x)',
+  'audit.touchTargetSmallSpacing':
+    '{width} × {height}; mínimo {minWidth} × {minHeight} unidades ({pxWidth} × {pxHeight} px a {density}x) — perto demais de {name}',
   'audit.touchTargetOverlap':
     'Área de toque sobrepõe {name} em {width} × {height} unidades ({pxWidth} × {pxHeight} px a {density}x)',
   'notices.status': 'Avisos: {count}',

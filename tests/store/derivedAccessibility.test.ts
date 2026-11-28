@@ -348,6 +348,29 @@ describe('sameFinding tells two overlaps apart', () => {
     );
   });
 
+  it('a different spacing.other is another finding; present vs absent too', () => {
+    const s = small as Extract<AuditFinding, { code: 'touch-target-small' }>;
+    const withOther = {
+      ...s,
+      spacing: { other: { annotationId: 'B', markingId: 'M_B' } },
+    };
+    expect(sameFinding(withOther, { ...withOther })).toBe(true);
+    expect(
+      sameFinding(withOther, {
+        ...withOther,
+        spacing: { other: { annotationId: 'C', markingId: 'M_B' } },
+      }),
+    ).toBe(false);
+    expect(
+      sameFinding(withOther, {
+        ...withOther,
+        spacing: { other: { annotationId: 'B', markingId: 'M_C' } },
+      }),
+    ).toBe(false);
+    expect(sameFinding(withOther, s)).toBe(false);
+    expect(sameFinding(s, withOther)).toBe(false);
+  });
+
   it('the two codes are never the same finding', () => {
     expect(sameFinding(overlap, small)).toBe(false);
     expect(sameFinding(small, overlap)).toBe(false);
