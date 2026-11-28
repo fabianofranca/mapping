@@ -13,6 +13,7 @@ import {
   strokeAlignInset,
   strokeRadius,
 } from '../../model/components/strokeSides';
+import { splitOverlay } from '../../model/components/overlay';
 import { gapOutlines } from '../../model/components/strokeGaps';
 import {
   CUT_REACH,
@@ -100,10 +101,18 @@ export interface RenderOptions {
    * Draws the placeholder outline of a `slot` (default `true`; the product layer uses `false`).
    */
   readonly showSlots?: boolean;
+  /**
+   * `overlay` nodes (format 4): by default a lone root draws its base and then its overlay in one group (the
+   * `root` of the result). `'apart'` returns the overlay in its own group (`RenderResult.overlay`) for the layer
+   * that draws it after the child markings.
+   */
+  readonly overlay?: 'apart';
 }
 
 export interface RenderResult {
   readonly root: Konva.Group;
+  /** With `overlay: 'apart'` and flagged nodes: their group (it keeps the root's transform; `root` is only the base). */
+  readonly overlay?: Konva.Group;
   /** Konva container of each scene node, by id. */
   readonly byId: ReadonlyMap<string, Konva.Group>;
   /** Approximations made while drawing (besides the converter's), with code and parameters. */
@@ -161,6 +170,17 @@ class Renderer {
   private warn(code: RenderWarningCode, params?: RenderWarning['params']): void {
     const key = params ? `${code}|${JSON.stringify(params)}` : code;
     if (!this.warned.has(key)) this.warned.set(key, params ? { code, params } : { code });
+  }
+
+  /**
+   * The overlay's root: a copy of the base root's chain of ancestors, so its ids repeat the base's; the
+   * base keeps them in `byId` (only the flagged nodes, which exist nowhere else, are new).
+   */
+  renderOverlay(node: SceneNode): Konva.Group {
+    const known = new Map(this.byId);
+    const group = this.render(node);
+    for (const [id, base] of known) this.byId.set(id, base);
+    return group;
   }
 
   render(node: SceneNode, pendingShadows: readonly Shadow[] = []): Konva.Group {
@@ -1652,14 +1672,27 @@ function roundedRectPath(
 
 export function renderScene(scene: Scene, options: RenderOptions = {}): RenderResult {
   const renderer = new Renderer(options);
-  const root = renderer.render(scene.root);
+  // Only a `frame` root carries overlay nodes; a `group` root draws as it is.
+  const { base, overlay }: { base: SceneNode; overlay?: SceneNode } =
+    scene.root.type === 'frame' ? splitOverlay(scene.root) : { base: scene.root };
+  const root = renderer.render(base);
+  const over = overlay === undefined ? undefined : renderer.renderOverlay(overlay);
+  const together = over !== undefined && options.overlay !== 'apart';
   return {
-    root,
+    root: together ? stacked(root, over) : root,
+    ...(over !== undefined && !together ? { overlay: over } : {}),
     byId: renderer.byId,
     warnings: renderer.warnings,
     imageUrls: [...renderer.imageUrls],
     packageImages: [...renderer.packageKeys],
   };
+}
+
+/** The base and its overlay in one group (a lone drawing): the overlay is painted last. */
+function stacked(base: Konva.Group, overlay: Konva.Group): Konva.Group {
+  const group = new Konva.Group({ name: base.name() });
+  group.add(base, overlay);
+  return group;
 }
 
 /** The id of the scene node that owns a Konva event target (shape or container), if any. */

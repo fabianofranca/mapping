@@ -1,10 +1,12 @@
 // Viewer (L1): the ScreenRenderer draws a screen in a Konva.Group and diffs per
 // instance (object identity).
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import Konva from 'konva';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { installFakeCanvas } from '../harness';
 import { approximateMeasurer } from '../../../src/model/components/instantiate';
-import { loadLibrary } from '../../../src/model/components/library';
+import { loadLibrary, type TextFile } from '../../../src/model/components/library';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../../viewer/samples/samples';
 import {
   type Instance,
@@ -316,5 +318,134 @@ describe('ScreenRenderer: reading direction (R1, #1096)', () => {
       (t) => t.getAbsolutePosition().x,
     );
     expect(after).not.toEqual(before);
+  });
+});
+
+// `overlay` (format 4, stage #2915, DG5): the viewer draws the instances in order and then the overlays.
+describe('ScreenRenderer: overlay', () => {
+  const ROOT = 'examples/libraries/drawing-fidelity';
+  const filesOf = (dir: string): TextFile[] =>
+    readdirSync(dir).flatMap((name) => {
+      const path = join(dir, name);
+      if (statSync(path).isDirectory()) return filesOf(path);
+      if (!/\.json$/.test(name)) return [];
+      return [{ path: relative(ROOT, path), text: readFileSync(path, 'utf8') }];
+    });
+  const fidelity = loadLibrary(filesOf(ROOT));
+
+  const SCREEN: Screen = {
+    id: 's',
+    name: 'Scroll',
+    width: 300,
+    height: 300,
+    background: '#ffffff',
+    instances: [
+      {
+        id: 'scroll',
+        typeId: 'scroll',
+        box: { x: 10, y: 20, width: 200, height: 240 },
+        values: {},
+      },
+      {
+        id: 'block',
+        typeId: 'block',
+        box: { x: 10, y: 20, width: 200, height: 48 },
+        values: { color: 'blue' },
+        parentId: 'scroll',
+      },
+    ],
+  };
+
+  const order = (group: Konva.Group): unknown[] =>
+    group
+      .getChildren()
+      .map(
+        (n: Konva.Node) =>
+          n.getAttr('instanceId') ?? `${String(n.getAttr('overlayOf'))}+`,
+      );
+
+  it('draws the overlay after the child instance', () => {
+    const { group, renderer } = setup();
+    renderer.update(fidelity, SCREEN);
+    expect(order(group)).toEqual(['scroll', 'block', 'scroll+']);
+    const overlay = group.getChildren()[2] as Konva.Group;
+    expect(overlay.position()).toEqual({ x: 10, y: 20 });
+    expect(overlay.listening()).toBe(false);
+  });
+
+  it('a second update with the same screen changes nothing', () => {
+    const { group, renderer } = setup();
+    renderer.update(fidelity, SCREEN);
+    const overlay = group.getChildren()[2];
+    expect(renderer.update(fidelity, SCREEN)).toBe(false);
+    expect(group.getChildren()[2]).toBe(overlay);
+  });
+
+  it('respects zBase', () => {
+    const { group, renderer } = setup();
+    group.add(new Konva.Rect({ name: 'artboard' }));
+    renderer.update(fidelity, SCREEN, { zBase: 1 });
+    expect(group.getChildren()[0]?.name()).toBe('artboard');
+    expect(order(group).slice(1)).toEqual(['scroll', 'block', 'scroll+']);
+  });
+
+  it('removing the instance destroys its overlay', () => {
+    const { group, renderer } = setup();
+    renderer.update(fidelity, SCREEN);
+    renderer.update(fidelity, { ...SCREEN, instances: SCREEN.instances.slice(1) });
+    expect(order(group)).toEqual(['block']);
+  });
+
+  it('redrawing the instance redoes the overlay without leaving the old one', () => {
+    const { group, renderer } = setup();
+    renderer.update(fidelity, SCREEN);
+    const moved: Screen = {
+      ...SCREEN,
+      instances: SCREEN.instances.map((i) =>
+        i.id === 'scroll' ? { ...i, box: { ...i.box, x: 30 } } : i,
+      ),
+    };
+    renderer.update(fidelity, moved);
+    expect(order(group)).toEqual(['scroll', 'block', 'scroll+']);
+    expect((group.getChildren()[2] as Konva.Group).x()).toBe(30);
+  });
+
+  it('the overlay sits in a positioned wrapper, so its own root keeps its transform and clip', () => {
+    const { group, renderer } = setup();
+    renderer.update(fidelity, SCREEN);
+    const overlay = group.getChildren()[2] as Konva.Group;
+    expect(overlay.getAttr('sceneId')).toBeUndefined();
+    expect(overlay.getChildren()).toHaveLength(1);
+    expect((overlay.getChildren()[0] as Konva.Group).getAttr('sceneId')).toBeDefined();
+  });
+
+  it('a redraw outside update() keeps the order of the overlays', () => {
+    const { group, renderer } = setup();
+    const two: Screen = {
+      ...SCREEN,
+      instances: [
+        SCREEN.instances[0] as Screen['instances'][number],
+        { ...(SCREEN.instances[0] as Screen['instances'][number]), id: 'scroll2' },
+      ],
+    };
+    renderer.update(fidelity, two);
+    expect(order(group)).toEqual(['scroll', 'scroll2', 'scroll+', 'scroll2+']);
+    const first = two.instances[0] as Screen['instances'][number];
+    renderer.render({ ...first, box: { ...first.box, x: 40 } });
+    expect(order(group)).toEqual(['scroll', 'scroll2', 'scroll+', 'scroll2+']);
+    expect((group.getChildren()[2] as Konva.Group).x()).toBe(40);
+  });
+
+  it('a screen without overlay nodes has no extra group', () => {
+    const { group, renderer } = setup();
+    renderer.update(library, SAMPLE_SCREEN);
+    expect(group.getChildren()).toHaveLength(SAMPLE_SCREEN.instances.length);
+  });
+
+  it('dispose destroys the overlays', () => {
+    const { group, renderer } = setup();
+    renderer.update(fidelity, SCREEN);
+    renderer.dispose();
+    expect(group.getChildren()).toHaveLength(0);
   });
 });

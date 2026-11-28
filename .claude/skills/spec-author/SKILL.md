@@ -333,7 +333,7 @@ In `formatVersion` 4 of the **component** the layout gains four features; the sp
 
 #### Above the child markings: `overlay` (component `formatVersion` 4)
 
-An element that must sit above the content a slot receives (a scrollbar over a list, a badge on a corner, a header over the scrolled content) is a node with `"overlay": true` (a literal boolean, any node except the root; not valid on the root). It keeps its place in the layout and anchors; only the drawing order changes (second pass, after the child markings of the same container). It has no effect in a `screen` component or inside a `component` node. The app and the viewer may still draw it in place; the MCP PNG draws it above. Details: `docs/COMPONENT-FORMAT.md`, "Above the child markings: `overlay`".
+An element that must sit above the content a slot receives (a scrollbar over a list, a badge on a corner, a header over the scrolled content) is a node with `"overlay": true` (a literal boolean, any node except the root; not valid on the root). It keeps its place in the layout and anchors; only the drawing order changes (second pass, after the child markings of the same container). It has no effect in a `screen` component or inside a `component` node. The app, the viewer and the MCP PNG all draw it above the child markings. Details: `docs/COMPONENT-FORMAT.md`, "Above the child markings: `overlay`".
 
 #### Rich text: runs and an inline chip in the middle of the line (component `formatVersion` 4)
 
