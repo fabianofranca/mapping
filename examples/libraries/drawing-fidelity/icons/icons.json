@@ -1,0 +1,15 @@
+{
+  "format": "mapping-icons",
+  "formatVersion": 4,
+  "viewBox": [24, 24],
+  "icons": {
+    "signal": {
+      "paths": [
+        {
+          "d": "M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20z M12 7a5 5 0 1 0 0 10a5 5 0 1 0 0-10z",
+          "fillRule": "evenodd"
+        }
+      ]
+    }
+  }
+}

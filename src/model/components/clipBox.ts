@@ -41,12 +41,14 @@ function bandOf(stroke: Stroke): number {
  * How far the stroke leaves the box: the `offset` (the outline moved away from the shape) plus `outside` the whole
  * stroke, `center` half, `inside` nothing.
  */
-function strokeExtent(stroke: Stroke | undefined): Extent {
+function strokeExtent(stroke: Stroke | undefined, rounded: boolean): Extent {
   if (!stroke || stroke.width <= 0) return NONE;
   const out = (stroke.offset ?? 0) + bandOf(stroke);
   if (out <= 0) return NONE;
+  // With a rounded corner the band of a side follows the arcs and tapers out to the edges of the
+  // neighboring sides, so every side can be reached.
   const has = (side: 'top' | 'right' | 'bottom' | 'left'): boolean =>
-    !stroke.sides || stroke.sides.includes(side);
+    !stroke.sides || rounded || stroke.sides.includes(side);
   return {
     left: has('left') ? out : 0,
     top: has('top') ? out : 0,
@@ -75,8 +77,15 @@ function shadowExtent(node: SceneNode): Extent {
   return out;
 }
 
+/** Whether a corner of the outline the stroke is drawn on has a radius. */
+function hasRoundedCorner(node: SceneNode): boolean {
+  const radius =
+    node.stroke?.cornerRadius ?? ('cornerRadius' in node ? node.cornerRadius : 0);
+  return typeof radius === 'number' ? radius > 0 : radius.some((r) => r > 0);
+}
+
 function extentOf(node: SceneNode): Extent {
-  return maxExtent(strokeExtent(node.stroke), shadowExtent(node));
+  return maxExtent(strokeExtent(node.stroke, hasRoundedCorner(node)), shadowExtent(node));
 }
 
 function isNone(e: Extent): boolean {

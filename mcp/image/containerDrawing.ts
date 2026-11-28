@@ -6,6 +6,7 @@ import {
   type Project,
   type ReadingDirection,
 } from '../../src/model';
+import { splitOverlay } from '../../src/model/components/overlay';
 import { imageRefsOf, type ImageResolver } from './packageImages';
 import type { Raster } from './raster';
 import { paintScene, type SceneView } from './sceneRaster';
@@ -58,9 +59,28 @@ export function withDirection(p: Project, direction: ReadingDirection): Project 
 }
 
 interface Selected {
+  /** In painting order: the bases, then the overlays (more entries than `count` when some drawing has an overlay). */
   readonly drawings: ComponentDrawing[];
+  /** How many markings have a drawing (the overlays do not count twice). */
+  readonly count: number;
   readonly measure: TextMeasurer;
   readonly fonts: FontBook;
+}
+
+/**
+ * The drawings in painting order: each one without its `overlay` nodes (the bases, in drawing order), then the
+ * overlay of each one that has some (same `specId`, `clip` and `clipShape` as its drawing), so they land above
+ * every child marking of the container. A drawing with no overlay is returned as it is.
+ */
+function withOverlays(drawings: readonly ComponentDrawing[]): ComponentDrawing[] {
+  const bases: ComponentDrawing[] = [];
+  const overlays: ComponentDrawing[] = [];
+  for (const drawing of drawings) {
+    const { base, overlay } = splitOverlay(drawing.root);
+    bases.push(base === drawing.root ? drawing : { ...drawing, root: base });
+    if (overlay !== undefined) overlays.push({ ...drawing, root: overlay });
+  }
+  return [...bases, ...overlays];
 }
 
 /** The drawings of the container's components that `options` asks for, in drawing order. */
@@ -82,14 +102,14 @@ function selectDrawings(
       : withDrawingMode(source.project, options.drawingMode);
   const project =
     options.direction === undefined ? moded : withDirection(moded, options.direction);
-  const drawings = [...cache(project, source.catalog, measure, 0).values()].filter(
+  const selected = [...cache(project, source.catalog, measure, 0).values()].filter(
     (d) =>
       d.containerId === containerId &&
       // What sits in a slot hidden by `visible`, or under one, is not drawn (as in the app).
       d.hidden !== true &&
       (options.markingIds === undefined || options.markingIds.has(d.markingId)),
   );
-  return { drawings, measure, fonts };
+  return { drawings: withOverlays(selected), count: selected.length, measure, fonts };
 }
 
 /**
@@ -104,9 +124,13 @@ export function paintContainerDrawings(
   view: Omit<SceneView, 'fonts' | 'images'>,
   options: PaintOptions = {},
 ): number {
-  const { drawings, measure, fonts } = selectDrawings(source, containerId, options);
+  const { drawings, count, measure, fonts } = selectDrawings(
+    source,
+    containerId,
+    options,
+  );
   paintScene(raster, drawings, measure, { ...view, fonts });
-  return drawings.length;
+  return count;
 }
 
 /** What `paintContainerDrawingsWithImages` did: the drawings painted and why an image was not drawn. */
@@ -127,7 +151,11 @@ export async function paintContainerDrawingsWithImages(
   view: Omit<SceneView, 'fonts' | 'images'>,
   options: PaintOptions = {},
 ): Promise<PaintedContainer> {
-  const { drawings, measure, fonts } = selectDrawings(source, containerId, options);
+  const { drawings, count, measure, fonts } = selectDrawings(
+    source,
+    containerId,
+    options,
+  );
   const refs = source.images === undefined ? [] : imageRefsOf(drawings);
   const images =
     source.images !== undefined && refs.length > 0
@@ -138,5 +166,5 @@ export async function paintContainerDrawingsWithImages(
     fonts,
     ...(images === undefined ? {} : { images }),
   });
-  return { count: drawings.length, notes: images?.notes ?? [] };
+  return { count, notes: images?.notes ?? [] };
 }

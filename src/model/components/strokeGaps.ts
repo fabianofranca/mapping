@@ -1,4 +1,4 @@
-import { growRadius, strokeAlignInset } from './strokeSides';
+import { strokeContour } from './strokeSides';
 import {
   absoluteBoxes,
   hasChildren,
@@ -67,22 +67,6 @@ function arc(cx: number, cy: number, r: number, from: number): Point[] {
   });
 }
 
-/** The rectangle the stroke runs along (`align` and `offset` move the line) and the radius of each corner in it. */
-function contourOf(stroke: Stroke, width: number, height: number, radius: CornerRadius) {
-  const offset = stroke.offset ?? 0;
-  const align = strokeAlignInset(stroke);
-  const d = align - offset;
-  const w = Math.max(0.01, width - 2 * d);
-  const h = Math.max(0.01, height - 2 * d);
-  const base = growRadius(radius, offset);
-  const list = typeof base === 'number' ? [base, base, base, base] : [...base];
-  const limit = Math.min(w, h) / 2;
-  const [tl, tr, br, bl] = list.map((r) =>
-    r > 0 ? Math.min(Math.max(0, r - align), limit) : 0,
-  ) as [number, number, number, number];
-  return { x0: d, y0: d, x1: d + w, y1: d + h, tl, tr, br, bl };
-}
-
 /**
  * The outline of `stroke` in a `width` × `height` box interrupted at `stroke.gaps`: the same
  * outline as always (`align` and `offset` move the line, and each corner takes the radius), in
@@ -97,7 +81,7 @@ export function gapOutlines(
 ): Point[][] {
   const gaps = stroke.gaps;
   if (!gaps || gaps.length === 0) return [];
-  const { x0, y0, x1, y1, tl, tr, br, bl } = contourOf(stroke, width, height, radius);
+  const { x0, y0, x1, y1, tl, tr, br, bl } = strokeContour(stroke, width, height, radius);
 
   const out: Point[][] = [];
   let current: Point[] = [];
@@ -159,7 +143,9 @@ export interface GapRequest {
 
 /** The radius of each corner (tl, tr, br, bl) of the box, never beyond half the shorter side. */
 function cornerRadii(node: SceneNode): [number, number, number, number] {
-  const r = 'cornerRadius' in node ? node.cornerRadius : 0;
+  const own = 'cornerRadius' in node ? node.cornerRadius : 0;
+  // A stroke with its own radius runs its straight sides between those arcs.
+  const r = node.stroke?.cornerRadius ?? own;
   const list = typeof r === 'number' ? [r, r, r, r] : [...r];
   const limit = Math.min(node.width, node.height) / 2;
   return list.map((v) => Math.max(0, Math.min(v, limit))) as [

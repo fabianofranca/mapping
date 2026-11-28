@@ -472,6 +472,67 @@ describe('component.schema.json', () => {
       }
     });
 
+    it('accepts an expression in each cornerRadius item, in image.fit and in the shadow numbers, and rejects a bad literal (the parser too)', () => {
+      const pick = (field: string) => ({
+        $switch: field,
+        cases: { a: 16, b: 0 },
+        default: 0,
+      });
+      const ok = [
+        v4({
+          type: 'rect',
+          width: 10,
+          height: 10,
+          cornerRadius: [pick('top'), 0, t('r'), { $mul: [2, 4] }],
+          shadow: [
+            {
+              color: '#000',
+              x: pick('s'),
+              y: pick('s'),
+              blur: pick('s'),
+              spread: pick('s'),
+            },
+            { color: '#111', blur: { $field: 'b', default: 2 } },
+          ],
+        }),
+        v4({
+          type: 'image',
+          src: 'https://cdn.example.com/a.png',
+          width: 10,
+          height: 10,
+          fit: {
+            $switch: 'mode',
+            cases: { a: 'cover', b: 'fill-width' },
+            default: 'none',
+          },
+        }),
+      ];
+      for (const c of ok) {
+        expect(checkSchema(schema, c), JSON.stringify(c)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(c)).toBe(true);
+      }
+      const bad = [
+        v4({ type: 'rect', width: 10, height: 10, cornerRadius: [-1, 0, 0, 0] }),
+        v4({
+          type: 'rect',
+          width: 10,
+          height: 10,
+          shadow: { color: '#000', blur: -1 },
+        }),
+        v4({
+          type: 'image',
+          src: 'https://cdn.example.com/a.png',
+          width: 10,
+          height: 10,
+          fit: 'bogus',
+        }),
+      ];
+      for (const c of bad) {
+        expect(checkSchema(schema, c).length, JSON.stringify(c)).toBeGreaterThan(0);
+        expect(parseComponent(c).ok, JSON.stringify(c)).toBe(false);
+      }
+    });
+
     it('accepts shadow.inner as a boolean, alone and in a list, and rejects anything else (the parser too)', () => {
       const ok = [
         v4({
