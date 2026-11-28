@@ -633,6 +633,8 @@ interface Placement {
   readonly y: number;
   readonly w: number;
   readonly h: number;
+  /** Out of the flow (`position: "absolute"` in a `row`, `column` or `grid` parent). */
+  readonly absolute?: true;
 }
 
 /** Space of one axis when sizing the children: null `content` = the parent is being measured (hug). */
@@ -658,6 +660,11 @@ interface Plan {
   readonly w: number;
   readonly h: number;
   readonly placements: readonly Placement[];
+}
+
+/** The space of an axis whose size is known: the whole box. */
+function whole(size: number): AxisSpace {
+  return { content: size, bound: null };
 }
 
 const EPS = 0.001;
@@ -1381,6 +1388,7 @@ function createEngine(
     if (node.type === 'component') return componentBaseline(node, w, h);
     if (node.type !== 'frame') return undefined;
     for (const placed of planFrame(node, w, h).placements) {
+      if (placed.absolute) continue;
       const inner = kidBaseline(placed.kid.node, placed.w, placed.h);
       if (inner !== undefined) return placed.y + inner;
     }
@@ -1633,6 +1641,48 @@ function createEngine(
     (frame.children ?? [])
       .map((node, index) => ({ node, index }))
       .filter((kid) => isVisible(kid.node));
+
+  /** Is the child out of the flow (`position: "absolute"` in a `row`, `column` or `grid`; in `none` it changes nothing)? */
+  const isAbsolute = (kid: Kid, layout: FrameLayout): boolean =>
+    layout.kind !== 'none' && kid.node.position === 'absolute';
+
+  /** The children that take part in the flow: the absolute ones leave it (decision 6 of #2913). */
+  const flowKids = (kids: readonly Kid[], layout: FrameLayout): Kid[] =>
+    kids.filter((kid) => !isAbsolute(kid, layout));
+
+  /**
+   * The absolute children of a frame, sized and placed like the children of a `none` frame of the
+   * parent's whole box (no padding), once the parent's size is known; the flow's placements and
+   * theirs come back in the template order.
+   */
+  const withAbsolute = (
+    frame: FrameTemplate,
+    layout: FrameLayout,
+    kids: readonly Kid[],
+    flow: Plan,
+  ): Plan => {
+    const absolute = kids.filter((kid) => isAbsolute(kid, layout));
+    if (absolute.length === 0) return flow;
+    const box: FrameLayout = { ...NONE_LAYOUT, dir: layout.dir };
+    const widths = resolveAxis(frame, box, absolute, 'w', whole(flow.w), null);
+    const heights = resolveAxis(frame, box, absolute, 'h', whole(flow.h), widths);
+    const xs = positionAxis(box, absolute, 'w', widths, flow.w);
+    const ys = positionAxis(box, absolute, 'h', heights, flow.h);
+    const placed = absolute.map((kid, i): Placement => ({
+      kid,
+      x: xs[i] ?? 0,
+      y: ys[i] ?? 0,
+      w: widths[i] ?? 0,
+      h: heights[i] ?? 0,
+      absolute: true,
+    }));
+    return {
+      ...flow,
+      placements: [...flow.placements, ...placed].sort(
+        (a, b) => a.kid.index - b.kid.index,
+      ),
+    };
+  };
 
   const planCache = new Map<FrameTemplate, Map<string, Plan>>();
 
@@ -2185,7 +2235,7 @@ function createEngine(
   /** The intrinsic width of a frame, padding included (see "Sizing" in `docs/COMPONENT-FORMAT.md`). */
   const frameIntrinsic = (frame: FrameTemplate, mode: IntrinsicSize): number => {
     const layout = layoutOf(frame);
-    const kids = visibleKids(frame);
+    const kids = flowKids(visibleKids(frame), layout);
     const padding = padAxis(layout, 'w');
     if (kids.length === 0) return padding;
     if (layout.kind === 'grid') return gridIntrinsic(layout, kids, mode) + padding;
@@ -3236,11 +3286,22 @@ function createEngine(
     if (cached) return cached;
 
     const layout = layoutOf(frame);
-    const kids = visibleKids(frame);
-    if (layout.kind === 'grid')
-      return remember(frame, key, planGrid(frame, layout, kids, w, h, bounds));
-    if (layout.wrap !== 'none')
-      return remember(frame, key, planWrapped(frame, layout, kids, w, h, bounds));
+    const all = visibleKids(frame);
+    const flow = planFlow(frame, layout, flowKids(all, layout), w, h, bounds);
+    return remember(frame, key, withAbsolute(frame, layout, all, flow));
+  };
+
+  /** The plan of the children that take part in the flow (all of them in a `none` frame). */
+  const planFlow = (
+    frame: FrameTemplate,
+    layout: FrameLayout,
+    kids: readonly Kid[],
+    w: number | null,
+    h: number | null,
+    bounds: Limits,
+  ): Plan => {
+    if (layout.kind === 'grid') return planGrid(frame, layout, kids, w, h, bounds);
+    if (layout.wrap !== 'none') return planWrapped(frame, layout, kids, w, h, bounds);
     const padW = layout.pad.left + layout.pad.right;
     const padH = layout.pad.top + layout.pad.bottom;
     const baselined = layout.kind === 'row' && layout.align === 'baseline';
@@ -3287,7 +3348,7 @@ function createEngine(
         h: vertical.sizes[i] ?? 0,
       })),
     };
-    return remember(frame, key, plan);
+    return plan;
   };
 
   // --- style ----------------------------------------------------------------------------

@@ -138,6 +138,10 @@ const MISSING_TODAY: string[] = [
   // intendedOverflowParse.test.ts and by script R25.
   'component:node.overflow',
   'component:node.slot.childOverflow',
+  // Absolute children (stage #2913, OV2): `position: "absolute"` (component v4) has no example in the
+  // distributed libraries (the `touch-targets` package of OV3 adopts it); covered by
+  // tests/model/components/absolutePosition.test.ts, absolutePositionParse.test.ts and by script R25.
+  'component:node.position',
   // Row wrap (stage #898, MC4): `repeat` with `wrap` is not adopted by any distributed
   // library (Material 3 uses `layout.wrap` in the flow-row in MC6); covered by
   // tests/model/components/wrapLayout.test.ts and by script R25.
