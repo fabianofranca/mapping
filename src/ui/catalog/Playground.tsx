@@ -137,6 +137,7 @@ export function Playground({
       <div class="catalog-playground-form">
         <TypedForm
           fields={entry.type.fields}
+          fieldGroups={entry.type.fieldGroups}
           values={values}
           onChange={(key: string, value: JsonValue) =>
             setValues((current) => ({ ...current, [key]: value }))

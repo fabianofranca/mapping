@@ -244,11 +244,35 @@ function originFeatures(origins: unknown, out: Set<string>): void {
   }
 }
 
+/**
+ * `except` of a slot's `accepts` clause (`formatVersion` 26): the clause is a `z.custom` the schema
+ * visitor cannot walk, so the key is listed here, like the `origins` ones.
+ */
+const SLOT_EXCEPT_FEATURE = 'layers[].annotationTypes[].slots[].accepts[].except';
+
+function slotFeatures(data: Record<string, unknown>, out: Set<string>): void {
+  const layers = Array.isArray(data.layers) ? data.layers : [];
+  for (const layer of layers) {
+    const types =
+      isRec(layer) && Array.isArray(layer.annotationTypes) ? layer.annotationTypes : [];
+    for (const type of types) {
+      const slots = isRec(type) && Array.isArray(type.slots) ? type.slots : [];
+      for (const slot of slots) {
+        const accepts = isRec(slot) && Array.isArray(slot.accepts) ? slot.accepts : [];
+        if (accepts.some((item) => isRec(item) && 'except' in item)) {
+          out.add(SLOT_EXCEPT_FEATURE);
+        }
+      }
+    }
+  }
+}
+
 /** All the specialization features: the whole schema plus the `origins` ones. */
 export function specFeatureList(): string[] {
   const out = new Set<string>();
   visit(specSchema as unknown as Zod, ALL, '', out);
   for (const feature of ORIGIN_FEATURES) out.add(feature);
+  out.add(SLOT_EXCEPT_FEATURE);
   return [...out].sort();
 }
 
@@ -256,7 +280,10 @@ export function specFeatureList(): string[] {
 export function specFeaturesUsed(data: unknown): Set<string> {
   const out = new Set<string>();
   visit(specSchema as unknown as Zod, data, '', out);
-  if (isRec(data)) originFeatures(data.origins, out);
+  if (isRec(data)) {
+    originFeatures(data.origins, out);
+    slotFeatures(data, out);
+  }
   return out;
 }
 

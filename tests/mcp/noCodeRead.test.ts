@@ -189,7 +189,7 @@ describe('the server does not open code files (static)', () => {
     // (`docFiles.ts`, confined to the working directory by the same checker), the `.svg` files and the icons
     // `.json` of `import_icons` (`iconImport.ts`) or the `.json` of a batch
     // (`operationsFile.ts`, inside the roots or the scratch folders) or the images of an open proposal
-    // that a preview draws (`renderPreview.ts`, through the same confined path) or the `.png`, `.jpg` and `.webp` files of a library package that a drawing cites (`image/packageImages.ts`: the path came confined by `resolveProjectFile`, and the bytes only go to the image decoders), never code. A new module
+    // that a preview draws (`renderPreview.ts`, through the same confined path) or the `.png`, `.jpg` and `.webp` files of a library package that a drawing cites (`image/packageImages.ts`: the path came confined by `resolveProjectFile`, and the bytes only go to the image decoders) or the font files a preview measures with (`previewFonts.ts`: confined to the package folder or by `resolveProjectFile`, and the bytes only go to the font book), never code. A new module
     // that needs the disk joins this list on purpose, after checking that it does not touch code.
     expect(importers).toEqual([
       'changes.ts',
@@ -202,6 +202,7 @@ describe('the server does not open code files (static)', () => {
       'library.ts',
       'operationsFile.ts',
       'paths.ts',
+      'previewFonts.ts',
       'projects.ts',
       'proposalStore.ts',
       'renderPreview.ts',

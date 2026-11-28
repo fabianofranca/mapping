@@ -8,7 +8,7 @@ import type { ComponentFile, SlotTemplate } from './components/componentFormat';
 import type { Project } from './types';
 import { resolveTypeItems } from './specChildren';
 import { findTypeInSpec, getSpec } from './specLookup';
-import type { Spec, SpecSlot } from './spec';
+import type { Spec, SpecSlot, SpecSlotAccept } from './spec';
 
 /** A slot of a type: what `slotForPlacement` reads, plus the shown `name`. */
 export interface TypeSlot extends PlacementSlot {
@@ -41,6 +41,21 @@ export function typeSlots(
   return specTypeSlots(getSpec(p, specId), typeId, component);
 }
 
+/**
+ * The type ids a slot's `accepts` list takes, item by item: a clause covers its types minus its
+ * `except` (`formatVersion` 26); another item of the list that names an excluded type still accepts it.
+ */
+function acceptedTypes(spec: Spec, accepts: readonly SpecSlotAccept[]): Set<string> {
+  const ids = new Set<string>();
+  for (const item of accepts) {
+    const excepted = typeof item === 'string' ? undefined : item.except;
+    for (const id of resolveTypeItems(spec, [item])) {
+      if (excepted === undefined || !excepted.includes(id)) ids.add(id);
+    }
+  }
+  return ids;
+}
+
 /** `typeSlots` over the specialization itself (`null`: not applied, every slot takes everything). */
 export function specTypeSlots(
   spec: Spec | null,
@@ -53,7 +68,7 @@ export function specTypeSlots(
     const own = declared?.find((s) => s.id === id);
     const accepts =
       spec !== null && own?.accepts !== undefined
-        ? new Set(resolveTypeItems(spec, own.accepts))
+        ? acceptedTypes(spec, own.accepts)
         : undefined;
     return {
       id,

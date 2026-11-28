@@ -1,0 +1,125 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 26,
+  "id": "field-display",
+  "name": "Test field display",
+  "version": 1,
+  "layers": [
+    {
+      "id": "ui",
+      "name": "Interface",
+      "color": "#6750A4",
+      "annotationTypes": [
+        {
+          "id": "scroll",
+          "name": "Scroll",
+          "component": "components/scroll.json",
+          "fields": [],
+          "slots": [
+            {
+              "id": "content",
+              "name": "Content",
+              "accepts": [
+                {
+                  "layer": "ui",
+                  "except": ["scroll"]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "column",
+          "name": "Column",
+          "component": "components/column.json",
+          "fields": []
+        },
+        {
+          "id": "text",
+          "name": "Text",
+          "component": "components/text.json",
+          "fields": [
+            {
+              "key": "label",
+              "type": "string",
+              "default": "text"
+            }
+          ]
+        },
+        {
+          "id": "decorated-text",
+          "name": "Decorated text",
+          "fields": [
+            {
+              "key": "label",
+              "type": "string",
+              "default": "Text"
+            },
+            {
+              "key": "variant",
+              "type": "enum",
+              "options": ["plain", "htmlTagged"],
+              "default": "plain"
+            },
+            {
+              "key": "part1Text",
+              "type": "string",
+              "group": "part1"
+            },
+            {
+              "key": "part1Effect",
+              "type": "enum",
+              "options": ["none", "link", "bold"],
+              "default": "none",
+              "group": "part1"
+            },
+            {
+              "key": "part1LinkSize",
+              "type": "number",
+              "group": "part1",
+              "visibleWhen": {
+                "part1Effect": "link"
+              }
+            },
+            {
+              "key": "part2Text",
+              "type": "string",
+              "group": "part2"
+            },
+            {
+              "key": "part2Effect",
+              "type": "enum",
+              "options": ["none", "link", "bold"],
+              "default": "none",
+              "group": "part2"
+            },
+            {
+              "key": "part2LinkSize",
+              "type": "number",
+              "group": "part2",
+              "visibleWhen": {
+                "part2Effect": "link"
+              }
+            }
+          ],
+          "fieldGroups": [
+            {
+              "id": "part1",
+              "name": "Piece 1",
+              "visibleWhen": {
+                "variant": "htmlTagged"
+              }
+            },
+            {
+              "id": "part2",
+              "name": "Piece 2",
+              "visibleWhen": {
+                "variant": "htmlTagged"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
