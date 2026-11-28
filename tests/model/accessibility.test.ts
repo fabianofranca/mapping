@@ -25,6 +25,7 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 import { idGen, layerOf } from './specFixtures';
+import { a11yMcpProject } from '../mcp/a11yProject';
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -572,5 +573,116 @@ describe('typeAccessibility (the resolved type)', () => {
       delete s.layers[0].annotationTypes[0].accessibility;
     });
     expect(typeOf('button', spec)).toBeNull();
+  });
+});
+
+// TA1 (stage #1998, decision 9): one enumeration of the parts. The parts that `annotationAccessibility` marks
+// `missing` (the code view) are exactly the part issues of `accessibilityAudit`: same `id` and, in a table, same row.
+// A guard: it passes before and after the refactor that makes both read the same generator.
+describe('the part enumeration agrees between the audit and the code view', () => {
+  type PartKey = string;
+
+  const project = a11yMcpProject((add, _plain, rows) => {
+    const at = (y: number) => ({ x: 100, y, width: 800, height: 168 });
+    add('bar-bare', 'bar', { name: 'bare', rect: at(100) });
+    add('bar-one', 'bar', {
+      name: 'one',
+      rect: at(400),
+      values: { actionIcon1: 'search' },
+    });
+    add('bar-both', 'bar', {
+      name: 'both',
+      rect: at(700),
+      values: { actionIcon1: 'search', actionIcon2: 'more' },
+    });
+    add('bar-named', 'bar', {
+      name: 'named',
+      rect: at(1000),
+      values: {
+        actionIcon1: 'search',
+        actionIcon1Description: 'Search',
+        actionIcon2: 'more',
+      },
+    });
+    add('bar-full', 'bar', {
+      name: 'full',
+      rect: at(1300),
+      values: { actionIcon1: 'search', actionIcon2: 'more' },
+    });
+    add('tabs-none', 'tabs', { name: 'tabs-none', rect: at(1600) });
+    add('tabs-rows', 'tabs', { name: 'tabs-rows', rect: at(1900) });
+    rows('tabs-rows', [
+      { label: 'Home' },
+      {},
+      { iconDescription: 'Search' },
+      { label: '', iconDescription: '' },
+    ]);
+  });
+
+  /** A drawing where a full slot takes over the default content of `actionIcon1`. */
+  const fullSlot = new Map([
+    [
+      'mk-bar-full',
+      {
+        annotationId: 'an-bar-full',
+        inactiveFields: new Map([['actionIcon1', 'actions']]),
+      },
+    ],
+  ]) as unknown as ComponentDrawings;
+
+  /** The part issues of the audit, as `id` or `id#row` (the row from 0, found by the row id). */
+  function auditKeys(p: Project, annotationId: string, drawings?: ComponentDrawings) {
+    const annotation = p.annotations.find((a) => a.id === annotationId)!;
+    const rowIds = ((annotation.values?.items ?? []) as { _id: string }[]).map(
+      (r) => r._id,
+    );
+    const audit = accessibilityAudit(p, drawings === undefined ? {} : { drawings });
+    return (audit.get(annotationId)?.issues ?? [])
+      .filter((i) => i.part !== undefined)
+      .map((i): PartKey =>
+        i.rowId === undefined ? i.part!.id : `${i.part!.id}#${rowIds.indexOf(i.rowId)}`,
+      )
+      .sort();
+  }
+
+  /** The parts of the code view that carry `missing`, in the same shape. */
+  function codeKeys(p: Project, annotationId: string, inactive?: Set<string>) {
+    const annotation = p.annotations.find((a) => a.id === annotationId)!;
+    const view = annotationAccessibility(p, annotation, inactive);
+    return (view?.parts ?? [])
+      .filter((part) => part.missing === true)
+      .map((part): PartKey =>
+        part.row === undefined ? part.id : `${part.id}#${part.row}`,
+      )
+      .sort();
+  }
+
+  const ids = [
+    'an-bar-bare',
+    'an-bar-one',
+    'an-bar-both',
+    'an-bar-named',
+    'an-tabs-none',
+    'an-tabs-rows',
+  ];
+
+  it.each(ids)('%s: the same missing parts', (id) => {
+    expect(codeKeys(project, id)).toEqual(auditKeys(project, id));
+  });
+
+  it('the fixture exercises both kinds: a field part and a table part with rows', () => {
+    expect(codeKeys(project, 'an-bar-both')).toEqual(['action1', 'action2']);
+    // Row 0 has a label, row 2 has the icon description: only rows 1 and 3 lack a name.
+    expect(codeKeys(project, 'an-tabs-rows')).toEqual(['tab#1', 'tab#3']);
+  });
+
+  it('a full slot: the part whose field a child takes over is in neither', () => {
+    const id = 'an-bar-full';
+    const inactive = new Set(['actionIcon1']);
+    expect(codeKeys(project, id, inactive)).toEqual(['action2']);
+    expect(auditKeys(project, id, fullSlot)).toEqual(['action2']);
+    // Without the drawing both still list the two parts.
+    expect(codeKeys(project, id)).toEqual(['action1', 'action2']);
+    expect(auditKeys(project, id)).toEqual(['action1', 'action2']);
   });
 });

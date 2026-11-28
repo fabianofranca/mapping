@@ -1,7 +1,14 @@
 import { rmSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  addTypedAnnotation,
+  createArrow,
+  createMarking,
+  type Project,
+} from '../../src/model';
+import {
   A11Y_SCREEN,
+  A11Y_SPEC_ID,
   a11yCall,
   a11yWorkspace,
   type A11yWorkspace,
@@ -13,6 +20,35 @@ import {
 // pending item in `incomplete` and does not count the warning.
 
 let ws: A11yWorkspace;
+
+type Doc = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+/** An arrow between two buttons with a button annotation of its own, and a marking with no annotation. */
+const ARROW_REF = 'mapping://a11y/m/arone';
+const EDIT = {
+  tweak: (spec: Doc) => {
+    const button = spec.layers[0].annotationTypes.find(
+      (t: { id: string }) => t.id === 'button',
+    );
+    button.appliesTo = ['marking', 'arrow'];
+  },
+  edit: (project: Project): Project => {
+    let p = createMarking(project, {
+      id: 'mk-plain',
+      containerId: A11Y_SCREEN,
+      rect: { x: 600, y: 1400, width: 200, height: 200 },
+      name: 'plain',
+    });
+    p = createArrow(p, { id: 'ar-one', from: 'mk-small', to: 'mk-fits' });
+    const layer = p.layers.find((l) => l.spec?.specId === A11Y_SPEC_ID)!;
+    return addTypedAnnotation(p, {
+      id: 'an-arrow',
+      markingId: 'ar-one',
+      layerId: layer.id,
+      type: { specId: A11Y_SPEC_ID, typeId: 'button' },
+    });
+  },
+};
 
 const call = (name: string, args: Record<string, unknown>) => a11yCall(ws, name, args);
 
@@ -74,7 +110,7 @@ beforeAll(async () => {
       rect: { x: 100, y: 1100, width: 800, height: 168 },
       values: { actionIcon1Description: 'Search', actionIcon2Description: 'More' },
     });
-  });
+  }, EDIT);
 });
 
 afterAll(async () => {
@@ -196,11 +232,47 @@ describe('the type resolved: get_component and get_annotation', () => {
     expect(bar.accessibility.touchTarget).toBeUndefined();
   });
 
-  it('the annotation view carries the same accessibility in its type', async () => {
+  it("get_marking carries typeAccessibility['accessibility/button'] equal to get_component's accessibility", async () => {
+    const marking = await call('get_marking', { ref: await refOf('small') });
+    const button = await call('get_component', {
+      project: 'a11y',
+      specId: 'accessibility',
+      type: 'button',
+    });
+    expect(marking.typeAccessibility['accessibility/button']).toEqual(
+      button.accessibility,
+    );
+    expect(Object.keys(marking.typeAccessibility)).toEqual(['accessibility/button']);
+  });
+
+  it("the annotations' type in get_marking has no accessibility", async () => {
     const [annotation] = await annotationsOf('small');
-    expect((annotation!.type as { accessibility: unknown }).accessibility).toMatchObject({
+    expect(annotation!.type).not.toHaveProperty('accessibility');
+  });
+
+  it("get_annotation's type.accessibility is unchanged", async () => {
+    const [small] = await annotationsOf('small');
+    const detail = await call('get_annotation', { ref: small!.ref });
+    expect((detail.type as { accessibility: unknown }).accessibility).toMatchObject({
       role: 'button',
       touchTarget: { width: 44, height: 44, mode: 'visual' },
     });
+  });
+
+  it('the key is absent on a marking with no type that declares accessibility', async () => {
+    const marking = await call('get_marking', { ref: await refOf('plain') });
+    expect(marking).not.toHaveProperty('typeAccessibility');
+  });
+
+  it("an arrow's get_marking carries the map too", async () => {
+    const arrow = await call('get_marking', { ref: ARROW_REF });
+    expect(arrow.kind).toBe('arrow');
+    expect(arrow.typeAccessibility['accessibility/button']).toMatchObject({
+      role: 'button',
+    });
+    const [annotation] = (
+      arrow.layers as { annotations: Record<string, unknown>[] }[]
+    ).flatMap((l) => l.annotations);
+    expect(annotation!.type).not.toHaveProperty('accessibility');
   });
 });

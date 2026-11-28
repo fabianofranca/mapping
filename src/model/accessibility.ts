@@ -252,38 +252,57 @@ function partOf(part: ResolvedPart): { id: string; name: string } {
   return { id: part.id, name: part.name };
 }
 
-function fieldPartIssues(part: ResolvedPart, values: Values): AnnotationIssue[] {
-  if (part.label === null || !hasValue(values, part.when)) return [];
-  if (!labelEmpty(part.label, values)) return [];
-  return [
-    {
-      code: 'accessible-label-missing',
-      key: part.label.fields[0] ?? '',
-      part: partOf(part),
-    },
-  ];
+/**
+ * One instance of a part of an annotation: a field part once (`values` are the annotation's), a table part once per
+ * row (`values` are the row's, with its `row` index from 0 and its `rowId`).
+ */
+interface PartInstance {
+  readonly part: ResolvedPart;
+  readonly values: Values;
+  readonly row?: number;
+  readonly rowId?: string;
 }
 
-function tablePartIssues(
-  part: ResolvedPart,
-  table: string,
+/**
+ * The single enumeration of the parts the audit and the code view both read (stage #1998, decision 9). A field part
+ * comes once when its `when` field has a value; a table part, once per row whose `whenColumn` (if any) has a value.
+ * A part that `isInactive` reports (a child fills the slot its field is the default content of) is skipped. Each
+ * reader keeps only its own label filter.
+ */
+function* partInstances(
+  parts: readonly ResolvedPart[],
   values: Values,
-): AnnotationIssue[] {
-  const label = part.label;
-  if (label === null || !label.required) return [];
-  const issues: AnnotationIssue[] = [];
-  for (const row of tableRows(values[table])) {
-    if (part.whenColumn !== null && isEmptyValue(row[part.whenColumn])) continue;
-    if (label.fields.some((column) => hasLabelText(row, column))) continue;
-    issues.push({
-      code: 'accessible-label-missing',
-      key: table,
-      column: label.fields[0] ?? '',
-      rowId: row._id,
-      part: partOf(part),
-    });
+  inactive: FieldSet | undefined,
+): Generator<PartInstance> {
+  for (const part of parts) {
+    if (isInactive(part, inactive)) continue;
+    if (part.table === null) {
+      if (hasValue(values, part.when)) yield { part, values };
+      continue;
+    }
+    const rows = tableRows(values[part.table]);
+    for (let row = 0; row < rows.length; row++) {
+      const cells = rows[row]!;
+      if (part.whenColumn !== null && isEmptyValue(cells[part.whenColumn])) continue;
+      yield { part, values: cells, row, rowId: cells._id };
+    }
   }
-  return issues;
+}
+
+/** The pending item of an instance whose required label is empty; `null` when it has none or it is filled. */
+function partIssue({ part, values, rowId }: PartInstance): AnnotationIssue | null {
+  const label = part.label;
+  if (label === null || !labelEmpty(label, values)) return null;
+  const first = label.fields[0] ?? '';
+  return part.table === null
+    ? { code: 'accessible-label-missing', key: first, part: partOf(part) }
+    : {
+        code: 'accessible-label-missing',
+        key: part.table,
+        column: first,
+        rowId,
+        part: partOf(part),
+      };
 }
 
 /** The fields that a child's slot takes over (`ComponentDrawing.inactiveFields`): only the keys are read. */
@@ -301,13 +320,9 @@ function partsIssues(
   inactive: FieldSet | undefined,
 ): AnnotationIssue[] {
   const issues: AnnotationIssue[] = [];
-  for (const part of parts) {
-    if (isInactive(part, inactive)) continue;
-    issues.push(
-      ...(part.table === null
-        ? fieldPartIssues(part, values)
-        : tablePartIssues(part, part.table, values)),
-    );
+  for (const instance of partInstances(parts, values, inactive)) {
+    const issue = partIssue(instance);
+    if (issue !== null) issues.push(issue);
   }
   return issues;
 }
@@ -470,28 +485,15 @@ function partLabel(
   return { label: label ?? null, ...(missing ? { missing } : {}) };
 }
 
-function fieldPart(part: ResolvedPart, values: Values): PartAccessibility[] {
-  if (!hasValue(values, part.when)) return [];
-  return [{ id: part.id, name: part.name, role: part.role, ...partLabel(part, values) }];
-}
-
-function tableParts(
-  part: ResolvedPart,
-  table: string,
-  values: Values,
-): PartAccessibility[] {
-  const found: PartAccessibility[] = [];
-  tableRows(values[table]).forEach((row, index) => {
-    if (part.whenColumn !== null && isEmptyValue(row[part.whenColumn])) return;
-    found.push({
-      id: part.id,
-      name: part.name,
-      role: part.role,
-      ...partLabel(part, row),
-      row: index,
-    });
-  });
-  return found;
+/** An instance as the code sees it: the part with its label (the value, or `null`), `row` from 0 for a table part. */
+function partOfInstance({ part, values, row }: PartInstance): PartAccessibility {
+  return {
+    id: part.id,
+    name: part.name,
+    role: part.role,
+    ...partLabel(part, values),
+    ...(row === undefined ? {} : { row }),
+  };
 }
 
 /**
@@ -507,13 +509,7 @@ export function annotationAccessibility(
   const resolved = resolvedOf(p, a);
   if (!resolved) return null;
   const values = a.values ?? {};
-  const parts = resolved.parts.flatMap((part) =>
-    isInactive(part, inactive)
-      ? []
-      : part.table === null
-        ? fieldPart(part, values)
-        : tableParts(part, part.table, values),
-  );
+  const parts = [...partInstances(resolved.parts, values, inactive)].map(partOfInstance);
   const out: AnnotationAccessibility = {
     ...(resolved.role === undefined ? {} : { role: resolved.role }),
     ...labelOf(resolved.label, values, isInteractive(resolved.role)),

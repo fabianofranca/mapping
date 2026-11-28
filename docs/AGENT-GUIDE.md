@@ -1119,7 +1119,7 @@ A `formatVersion` 18 specialization can declare, per type, the **role**, the fie
 
 **Role and label per case (`formatVersion` 21).** When the type declares `accessibility.variants`, the `role` and the `label` in `get_code_hints` are already **those of the case** that the annotation's enum value chooses (or the field's `default`, or the base): a `filter` chip comes as `checkbox`, an `assist` chip as `button`, and a `filter` chip with no label is `missing: true` as a checkbox with a required label. Write what came; never resolve the variant yourself. The `audit` and the `issues` of the reads follow the case too. The touch target and the parts stay from the base, and the touch target is only audited when the resolved role is interactive.
 
-`get_component` and the `type` of `get_annotation` carry the type's `accessibility` resolved (the label's `required` by the role, the `touchTarget` that applies with its `mode`, each part's `name` and `role`); with `variants`, each case comes resolved too (effective role, label with `required` filled, `touchTarget` when the role is interactive).
+`get_marking` carries the same resolved `accessibility` once per type, in `typeAccessibility` keyed `<specId>/<typeId>` (the `type` of its annotations no longer repeats it; the key is absent when no type declares it). `get_component` and the `type` of `get_annotation` carry the type's `accessibility` resolved (the label's `required` by the role, the `touchTarget` that applies with its `mode`, each part's `name` and `role`); with `variants`, each case comes resolved too (effective role, label with `required` filled, `touchTarget` when the role is interactive).
 
 ### Link roles and external document
 

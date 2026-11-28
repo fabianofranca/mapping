@@ -93,10 +93,13 @@ describe('get_marking: accessibility.variants', () => {
     expect(codes).toContain('accessible-label-missing');
   });
 
-  it('the type of the annotation carries the variants', async () => {
-    const annotation = await annotationOf('filter');
-    expect(annotation.type.accessibility.variants.field).toBe('kind');
-    expect(annotation.type.accessibility.variants.cases.filter.role).toBe('checkbox');
+  it('the marking carries the variants once, in typeAccessibility, and the annotation type does not', async () => {
+    // Stage #1998: `get_marking` sends the type's accessibility once per type, not in each annotation.
+    const marking = await call('get_marking', { ref: REF('filter') });
+    const { variants } = marking.typeAccessibility['accessibility/chip'];
+    expect(variants.field).toBe('kind');
+    expect(variants.cases.filter.role).toBe('checkbox');
+    expect((await annotationOf('filter')).type.accessibility).toBeUndefined();
   });
 });
 
