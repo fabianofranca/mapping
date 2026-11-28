@@ -484,6 +484,14 @@ interface TemplateNodeBase {
    * `Modifier.weight` and CSS's `flex-grow`.
    */
   readonly weight?: Expr<number>;
+  /**
+   * `formatVersion` 4: `"intended"` says that the node may go past its parent's box on purpose (a
+   * 48 px touch target in a 44 px bar). The "does not fit" checks of the parent are repeated without
+   * the flagged children, so a flagged overflow is no `component-overflow` item while a sibling's
+   * real one still is. Only the warning changes: layout, measurement, `hug`, `clip` and the drawing
+   * stay as they are. Not valid on the root or on a `repeat` (the drawing belongs to its `template`).
+   */
+  readonly overflow?: 'intended';
   /** Only with a `layout: none` parent. */
   readonly anchors?: Anchors;
   readonly fill?: Expr<FillSpec>;
@@ -684,6 +692,12 @@ export interface SlotTemplate extends TemplateNodeBase {
    * the child's drawing only appears inside it.
    */
   readonly clip?: BoolExpr;
+  /**
+   * `"intended"` (v4): the child markings may go past the slot's box on purpose (touch targets), so
+   * they give no `content larger than the box: slot` shortfall. `slot-not-accepted`, `slot-full`,
+   * `slot-hidden` and the `clip` do not change.
+   */
+  readonly childOverflow?: 'intended';
   /**
    * Inherited color (v4): values that the slot offers to the child markings, by name (free, no
    * platform name). Each value is resolved in the parent (its fields, tokens and mode) and the

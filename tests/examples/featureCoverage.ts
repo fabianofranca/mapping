@@ -334,6 +334,7 @@ export const BASE_KEYS = [
   'span',
   'weight',
   'direction',
+  'overflow',
 ] as const;
 /** Keys of each node type, besides the common ones. */
 export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> = {
@@ -342,7 +343,7 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
   ellipse: ['startAngle', 'sweepAngle'],
   text: ['text', 'runs', 'font', 'color', 'baselinePadding'],
   path: ['d', 'viewBox', 'fillRule', 'mirror'],
-  slot: ['label', 'layout', 'provide', 'clip', 'id', 'fallback'],
+  slot: ['label', 'layout', 'provide', 'clip', 'id', 'fallback', 'childOverflow'],
   repeat: [
     'field',
     'count',
