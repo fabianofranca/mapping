@@ -2,4 +2,4 @@
 
 ## Pendências
 
-None. DS impact: none (the first phase changes the MCP read and the model's part enumeration; no screen, token or icon).
+None. DS impact: none (TA1 changes the MCP read and the model's part enumeration; TA2 only adds a text line to the existing warning rows of the marking panel and the Notices window, with the same row component, tokens and icons; no new screen, token or icon).

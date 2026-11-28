@@ -81,9 +81,11 @@ describe('touch-target-overlap text (stage #1998, decision 7)', () => {
 
   it('pt-BR: the same numbers in Portuguese', () => {
     locale.value = 'pt-BR';
+    // portuguese-guard:begin the object of the test is the pt-BR text of the finding
     expect(auditFindingText(named(), overlap())).toBe(
       'Área de toque sobrepõe Icon B em 4 × 48 unidades (4 × 48 px a 1x)',
     );
+    // portuguese-guard:end
   });
 
   it('density 3: the units have one decimal and the pixels none', () => {

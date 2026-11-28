@@ -12,6 +12,8 @@ import {
 // (a warning) goes in `warnings`, next to `library-warning`, `deprecated-op` and `role-cleared`. Neither lists what
 // the batch did not touch.
 
+type Doc = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
 interface Item {
   code: string;
   key?: string;
@@ -307,8 +309,7 @@ describe('plan_changes: touch-target-overlap in warnings', () => {
       },
       {
         density: 1,
-        tweak: (spec: Record<string, any>) => {
-          // eslint-disable-line @typescript-eslint/no-explicit-any
+        tweak: (spec: Doc) => {
           spec.accessibility.touchTarget = { width: 48, height: 48, mode: 'expanded' };
         },
       },
