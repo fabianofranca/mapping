@@ -95,3 +95,49 @@ describe('audit views: touch-target-overlap (stage #1998, decision 8)', () => {
     });
   });
 });
+
+describe('audit views: touch-target-small with the WCAG 2.5.8 spacing (stage #1998, TA4)', () => {
+  const named = {
+    ref: (kind: string, id: string) => `mapping://p/${kind}/${id}`,
+    markingName: (id: string) => (id === 'm2' ? 'Icon B' : id),
+  } as unknown as Refs;
+  const blocked = (): AuditFinding =>
+    ({
+      ...finding(20),
+      min: { width: 24, height: 24 },
+      minPx: { width: 24, height: 24 },
+      density: 1,
+      spacing: { other: { annotationId: 'a2', markingId: 'm2' } },
+    }) as unknown as AuditFinding;
+
+  it('the audit entry names the neighbor like an overlap does', () => {
+    const [view] = auditView(named, [blocked()]);
+    expect(view).toMatchObject({
+      code: 'touch-target-small',
+      spacing: { other: { marking: 'mapping://p/m/m2', annotation: 'mapping://p/a/a2' } },
+    });
+  });
+
+  it('without the spacing the entry has no spacing key', () => {
+    const [view] = auditView(named, [finding(36)]);
+    expect(view).not.toHaveProperty('spacing');
+  });
+
+  it('the warning carries spacing and a message that ends naming the neighbor', () => {
+    const warning = auditWarning(named, blocked());
+    expect(warning.spacing).toEqual({
+      other: { marking: 'mapping://p/m/m2', annotation: 'mapping://p/a/a2' },
+    });
+    expect(warning.message).toBe(
+      '20 × 48; minimum 24 × 24 units (24 × 24 px at 1x) — too close to Icon B',
+    );
+  });
+
+  it('without the spacing the message and the warning are unchanged', () => {
+    const warning = auditWarning(named, finding(36));
+    expect(warning).not.toHaveProperty('spacing');
+    expect(warning.message).toBe(
+      '36 × 48; minimum 48 × 48 units (126 × 126 px at 2.625x)',
+    );
+  });
+});

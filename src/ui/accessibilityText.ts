@@ -1,6 +1,12 @@
 // The text of the accessibility audit's warnings (stage #1127), always via `t()`.
 import { t } from '../i18n';
-import { actualUnitsOf, projectIndex, type AuditFinding, type Project } from '../model';
+import {
+  actualUnitsOf,
+  projectIndex,
+  type AuditFinding,
+  type AuditNeighbor,
+  type Project,
+} from '../model';
 import { formatDensity } from './density';
 import { locale } from '../store/settings';
 import { markingLabel } from './labels';
@@ -14,6 +20,12 @@ function formatMeasure(value: number, digits: number): string {
   } catch {
     return String(value);
   }
+}
+
+/** The neighbor's name as the Tree shows it, or the unnamed fallback. */
+function neighborName(project: Project, neighbor: AuditNeighbor): string {
+  const other = projectIndex(project).markings.get(neighbor.markingId);
+  return other ? markingLabel(project, other) : t('marking.unnamed');
 }
 
 /** A key of a finding in a list: an overlap is one per neighbor, so the neighbor is part of it. */
@@ -33,9 +45,8 @@ export function auditFindingText(project: Project, finding: AuditFinding): strin
   const units = (value: number) => formatMeasure(value, 1);
   const pixels = (value: number) => formatMeasure(value, 0);
   if (finding.code === 'touch-target-overlap') {
-    const other = projectIndex(project).markings.get(finding.other.markingId);
     return t('audit.touchTargetOverlap', {
-      name: other ? markingLabel(project, other) : t('marking.unnamed'),
+      name: neighborName(project, finding.other),
       width: units(finding.overlap.width),
       height: units(finding.overlap.height),
       pxWidth: pixels(finding.overlapPx.width),
@@ -43,7 +54,7 @@ export function auditFindingText(project: Project, finding: AuditFinding): strin
       density: formatDensity(finding.density),
     });
   }
-  return t('audit.touchTargetSmall', {
+  const params = {
     width: units(actualUnitsOf(finding.actual.width)),
     height: units(actualUnitsOf(finding.actual.height)),
     minWidth: units(finding.min.width),
@@ -51,5 +62,10 @@ export function auditFindingText(project: Project, finding: AuditFinding): strin
     pxWidth: pixels(finding.minPx.width),
     pxHeight: pixels(finding.minPx.height),
     density: formatDensity(finding.density),
+  };
+  if (finding.spacing === undefined) return t('audit.touchTargetSmall', params);
+  return t('audit.touchTargetSmallSpacing', {
+    ...params,
+    name: neighborName(project, finding.spacing.other),
   });
 }

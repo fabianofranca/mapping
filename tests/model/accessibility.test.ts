@@ -558,6 +558,218 @@ describe('touch-target-overlap', () => {
   });
 });
 
+// Stage #1998 (TA4, decisions 17 to 20): the WCAG 2.5.8 spacing. With `touchTarget.spacing` an undersized `visual`
+// target passes when a circle with the minimum's diameter, centered on its rectangle, hits nothing.
+describe('touch-target-small with the WCAG 2.5.8 spacing', () => {
+  /** `formatVersion` 27 with the root `{ 24, 24, visual, spacing: true }`; the type `own` (48, no spacing) is untouched. */
+  const spacingSpec = (edit?: (s: Json) => void): Spec =>
+    specOf((s) => {
+      s.formatVersion = 27;
+      s.accessibility.touchTarget = {
+        width: 24,
+        height: 24,
+        mode: 'visual',
+        spacing: true,
+      };
+      edit?.(s);
+    });
+  const sworld = (density = 1): Project => world(spacingSpec(), density);
+  const sq = (x: number, y: number, size = 20): Rect => ({
+    x,
+    y,
+    width: size,
+    height: size,
+  });
+  const button = (p: Project, id: string, r: Rect): Project =>
+    put(p, 'button', id, r, { label: 'Ok' });
+  const smallA = (p: Project, id = 'A') => smallOf(p, id)[0];
+
+  it('centers 24 apart (the circles just touch, depth 0) give no finding', () => {
+    const p = button(button(sworld(), 'A', sq(0, 0)), 'B', sq(24, 0));
+    expect(accessibilityAudit(p).size).toBe(0);
+  });
+
+  it('centers 20 apart (circle depth 4) warn on each, with the usual numbers and the neighbor', () => {
+    const p = button(button(sworld(), 'A', sq(0, 0)), 'B', sq(20, 0));
+    expect(findingsOf(p, 'A')).toEqual([
+      {
+        code: 'touch-target-small',
+        annotationId: 'A',
+        markingId: 'M_A',
+        actual: { width: 20, height: 20 },
+        min: { width: 24, height: 24 },
+        minPx: { width: 24, height: 24 },
+        density: 1,
+        spacing: { other: { annotationId: 'B', markingId: 'M_B' } },
+      },
+    ]);
+    expect(smallA(p, 'B')?.spacing).toEqual({
+      other: { annotationId: 'A', markingId: 'M_A' },
+    });
+  });
+
+  it('a depth of exactly 1 px gives nothing; 2 px warns (the 1 px tolerance)', () => {
+    const one = button(button(sworld(), 'A', sq(0, 0)), 'B', sq(23, 0));
+    expect(accessibilityAudit(one).size).toBe(0);
+    const two = button(button(sworld(), 'A', sq(0, 0)), 'B', sq(22, 0));
+    expect(smallOf(two, 'A')).toHaveLength(1);
+  });
+
+  it('a full-size visual neighbor blocks the circle by its rectangle and has no finding', () => {
+    let p = button(sworld(), 'A', sq(0, 0));
+    p = button(p, 'B', sq(20, 0, 30));
+    expect(smallA(p)?.spacing?.other).toEqual({ annotationId: 'B', markingId: 'M_B' });
+    expect(findingsOf(p, 'B')).toEqual([]);
+    // 25 px away the circle (radius 12, centered 10) clears it.
+    const clear = button(button(sworld(), 'A', sq(0, 0)), 'B', sq(25, 0, 30));
+    expect(accessibilityAudit(clear).size).toBe(0);
+  });
+
+  it('an expanded neighbor blocks the circle by its grown area, not by its rectangle', () => {
+    // `wide` 40 x 40 at x 24 grows to 48: it starts at x 20, 10 from the circle's center (radius 12).
+    const p = put(button(sworld(), 'A', sq(0, 0)), 'wide', 'W', sq(24, 0, 40));
+    expect(smallA(p)?.spacing?.other).toEqual({ annotationId: 'W', markingId: 'M_W' });
+    expect(findingsOf(p, 'W')).toEqual([]);
+    // Its rectangle alone (14 away) would not have blocked it.
+    const far = put(button(sworld(), 'A', sq(0, 0)), 'wide', 'W', sq(31, 0, 40));
+    expect(accessibilityAudit(far).size).toBe(0);
+  });
+
+  it('the circle of an undersized neighbor whose specialization has no spacing still blocks', () => {
+    // `own` (48 x 48, no spacing) is 40 x 40: its circle (radius 24) reaches 4 px past its rectangle.
+    // A's circle is 12 from the rectangle (depth 0) but 32 from the center: 12 + 24 - 32 = 4.
+    let p = put(sworld(), 'own', 'N', sq(100, 100, 40));
+    p = button(p, 'A', sq(110, 78));
+    expect(smallA(p)?.spacing?.other).toEqual({ annotationId: 'N', markingId: 'M_N' });
+    const [own] = smallOf(p, 'N');
+    expect(own).toBeDefined();
+    expect(own).not.toHaveProperty('spacing');
+    expect(own?.min).toEqual({ width: 48, height: 48 });
+  });
+
+  it('two undersized neighbors that do not switch spacing on do not audit it', () => {
+    const p = put(put(sworld(), 'own', 'N', sq(0, 0, 40)), 'own', 'M', sq(40, 0, 40));
+    for (const id of ['N', 'M']) {
+      expect(smallOf(p, id)).toHaveLength(1);
+      expect(smallOf(p, id)[0]).not.toHaveProperty('spacing');
+    }
+  });
+
+  it('a parent, an arrow annotation, touchTarget false, another space and a non-interactive role never block', () => {
+    // The child's circle is inside its parent, which does not count.
+    let p = put(sworld(), 'wide', 'P', { x: 0, y: 0, width: 200, height: 200 });
+    p = button(p, 'A', sq(10, 10));
+    expect(p.markings.find((m) => m.id === 'M_A')?.parentId).toBe('M_P');
+    expect(accessibilityAudit(p).size).toBe(0);
+
+    p = put(sworld(), 'off', 'O', sq(20, 0, 30));
+    p = put(p, 'image', 'G', sq(0, 20, 30), { label: 'x' });
+    p = button(p, 'A', sq(0, 0));
+    expect(smallOf(p, 'A')).toEqual([]);
+
+    let q = button(sworld(), 'A', sq(0, 0));
+    q = createMarking(q, { id: 'F', containerId: 'I1', rect: sq(300, 0), name: 'F' });
+    q = createMarking(q, { id: 'T', containerId: 'I1', rect: sq(0, 300), name: 'T' });
+    q = createArrow(q, { id: 'AR', from: 'F', to: 'T' });
+    q = addTypedAnnotation(q, {
+      id: 'X',
+      markingId: 'AR',
+      layerId: layerOf(q, 'a11y', 'ui'),
+      type: { specId: 'a11y', typeId: 'button' },
+    });
+    expect(smallOf(q, 'A')).toEqual([]);
+
+    let other = addContainer(sworld(), { id: 'I2', file: 'b.png', ...SIZE });
+    other = button(other, 'A', sq(0, 0));
+    other = createMarking(other, {
+      id: 'M_B',
+      containerId: 'I2',
+      rect: sq(20, 0, 30),
+      name: 'B',
+    });
+    other = addTypedAnnotation(other, {
+      id: 'B',
+      markingId: 'M_B',
+      layerId: layerOf(other, 'a11y', 'ui'),
+      type: { specId: 'a11y', typeId: 'button' },
+    });
+    other = setFieldValue(other, 'B', 'label', 'Ok');
+    expect(smallOf(other, 'A')).toEqual([]);
+  });
+
+  it('the neighbor must be a different marking: two annotations of one marking never block each other', () => {
+    let p = button(sworld(), 'A', sq(0, 0));
+    p = addTypedAnnotation(p, {
+      id: 'A2',
+      markingId: 'M_A',
+      layerId: layerOf(p, 'a11y', 'ui'),
+      type: { specId: 'a11y', typeId: 'button' },
+    });
+    p = setFieldValue(p, 'A2', 'label', 'Two');
+    expect(accessibilityAudit(p).size).toBe(0);
+  });
+
+  it('density 3 converts the diameter as ceil(24 x 3) = 72 px', () => {
+    // 60 px = 20 units; circles of radius 36, centers 72 apart touch, 66 apart go 6 deep.
+    const touching = button(button(sworld(3), 'A', sq(0, 0, 60)), 'B', sq(72, 0, 60));
+    expect(accessibilityAudit(touching).size).toBe(0);
+    const near = button(button(sworld(3), 'A', sq(0, 0, 60)), 'B', sq(66, 0, 60));
+    expect(smallA(near)).toMatchObject({
+      actual: { width: 20, height: 20 },
+      minPx: { width: 72, height: 72 },
+      density: 3,
+      spacing: { other: { annotationId: 'B' } },
+    });
+  });
+
+  it('the diameter is rounded up in pixels: ceil(24 x 1.3) = 32, not 31.2', () => {
+    // Radius 16 each: centers 30.5 apart (26 px at 0 and 25 px at 31) go 1.5 deep (31.2 would be 0.7 and pass).
+    const p = button(button(sworld(1.3), 'A', sq(0, 0, 26)), 'B', sq(31, 0, 25));
+    expect(smallA(p)?.minPx).toEqual({ width: 32, height: 32 });
+    expect(smallA(p)?.spacing?.other.annotationId).toBe('B');
+  });
+
+  it('with several neighbors, other is the first in the project order of the other marking', () => {
+    // C is created before B, but B is the leftmost one: the sweep meets B first.
+    let p = button(sworld(), 'C', sq(50, 0));
+    p = button(p, 'A', sq(30, 0));
+    p = button(p, 'B', sq(10, 0));
+    expect(smallA(p)?.spacing?.other).toEqual({ annotationId: 'C', markingId: 'M_C' });
+  });
+
+  it('keeps the spacing finding before the overlap findings of the same annotation', () => {
+    // `wide` grown to 48 overlaps A's rectangle and, within 12 px of its center, blocks the circle.
+    const p = put(button(sworld(), 'A', sq(0, 0)), 'wide', 'W', sq(10, 0, 40));
+    expect(findingsOf(p, 'A').map((f) => f.code)).toEqual([
+      'touch-target-small',
+      'touch-target-overlap',
+    ]);
+    expect(smallA(p)?.spacing?.other.annotationId).toBe('W');
+  });
+
+  it('a type that does not switch spacing on keeps touch-target-small as before', () => {
+    // The default specialization (formatVersion 18, no spacing): the same layout, the usual finding only.
+    const p = put(put(world(), 'own', 'A', sq(0, 0, 40)), 'own', 'B', sq(40, 0, 40));
+    expect(smallA(p)).not.toHaveProperty('spacing');
+    expect(findingsOf(p, 'A').map((f) => f.code)).toEqual(['touch-target-small']);
+    const off = world(
+      specOf((s) => {
+        s.formatVersion = 27;
+      }),
+    );
+    expect(
+      smallOf(put(put(off, 'own', 'A', sq(0, 0, 40)), 'own', 'B', sq(40, 0, 40)), 'A'),
+    ).toEqual(smallOf(p, 'A'));
+  });
+
+  it('a lone undersized target with spacing has no finding; the audit stays the same object', () => {
+    const p = button(sworld(), 'A', sq(0, 0));
+    expect(accessibilityAudit(p).size).toBe(0);
+    const q = button(button(sworld(), 'A', sq(0, 0)), 'B', sq(20, 0));
+    expect(accessibilityAudit(q)).toBe(accessibilityAudit(q));
+  });
+});
+
 describe('accessible-label-missing on the type', () => {
   it('an empty required label is an issue on its first field', () => {
     const p = put(world(), 'button', 'A');

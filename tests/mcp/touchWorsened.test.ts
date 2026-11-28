@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { AuditFinding, TouchTargetOverlapFinding } from '../../src/model';
+import type {
+  AuditFinding,
+  TouchTargetOverlapFinding,
+  TouchTargetSmallFinding,
+} from '../../src/model';
 import { worsened } from '../../mcp/drawingProof';
 
 // Phase A6 (R2): a touch finding the batch makes worse is reported again; an unchanged or better one is not.
@@ -69,5 +73,38 @@ describe('worsened: touch-target-overlap', () => {
   it('a touch-target-small and an overlap never stand for each other', () => {
     expect(worsened(finding([40, 44]), overlap([4, 48]))).toBe(true);
     expect(worsened(overlap([4, 48]), finding([40, 44]))).toBe(true);
+  });
+});
+
+// Stage #1998 (TA4): a spacing failure is a `touch-target-small` with a `spacing` neighbor; the rule is the same.
+const spaced = (
+  actual: [number, number],
+  other = 'A2',
+  min: [number, number] = [24, 24],
+): AuditFinding => ({
+  ...(finding(actual, min) as TouchTargetSmallFinding),
+  spacing: { other: { annotationId: other, markingId: `M_${other}` } },
+});
+
+describe('worsened: touch-target-small with the spacing', () => {
+  it('a spacing failure on an annotation that had no small finding is news', () => {
+    expect(worsened(undefined, spaced([20, 20]))).toBe(true);
+  });
+
+  it('a spacing failure that is unchanged is not repeated', () => {
+    expect(worsened(spaced([20, 20]), spaced([20, 20]))).toBe(false);
+  });
+
+  it('a side that shrank is news', () => {
+    expect(worsened(spaced([22, 22]), spaced([20, 22]))).toBe(true);
+    expect(worsened(spaced([22, 22]), spaced([22, 20]))).toBe(true);
+  });
+
+  it('a change of the named neighbor alone is not news', () => {
+    expect(worsened(spaced([20, 20], 'A2'), spaced([20, 20], 'A3'))).toBe(false);
+  });
+
+  it('an undersized finding without spacing before and a spacing failure after, same size, is not repeated', () => {
+    expect(worsened(finding([20, 20], [24, 24]), spaced([20, 20]))).toBe(false);
   });
 });

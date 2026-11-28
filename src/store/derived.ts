@@ -438,8 +438,17 @@ function sameSize(
 }
 
 function sameSmall(a: TouchTargetSmallFinding, b: TouchTargetSmallFinding): boolean {
+  const x = a.spacing?.other;
+  const y = b.spacing?.other;
+  const sameSpacing =
+    x === undefined || y === undefined
+      ? x === y
+      : x.annotationId === y.annotationId && x.markingId === y.markingId;
   return (
-    sameSize(a.actual, b.actual) && sameSize(a.min, b.min) && sameSize(a.minPx, b.minPx)
+    sameSize(a.actual, b.actual) &&
+    sameSize(a.min, b.min) &&
+    sameSize(a.minPx, b.minPx) &&
+    sameSpacing
   );
 }
 

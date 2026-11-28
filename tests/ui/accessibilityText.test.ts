@@ -5,7 +5,9 @@ import {
   type AuditFinding,
   type Project,
   type TouchTargetOverlapFinding,
+  type TouchTargetSmallFinding,
 } from '../../src/model';
+import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
 import { auditFindingText } from '../../src/ui/accessibilityText';
 import { auditWarning } from '../../mcp/auditViews';
@@ -109,6 +111,47 @@ describe('touch-target-overlap text (stage #1998, decision 7)', () => {
     } as unknown as Refs;
     expect(auditWarning(refs, overlap()).message).toBe(
       'overlaps the touch area of Icon B by 4 × 48 units (4 × 48 px at 1x)',
+    );
+  });
+});
+
+describe('touch-target-small with spacing text (stage #1998, TA4)', () => {
+  afterEach(() => {
+    locale.value = 'en-US';
+  });
+
+  const spaced = (markingId = 'M2'): AuditFinding => ({
+    ...(finding(40) as TouchTargetSmallFinding),
+    spacing: { other: { annotationId: 'A2', markingId } },
+  });
+
+  it('en-US: names the other marking', () => {
+    locale.value = 'en-US';
+    expect(auditFindingText(named(), spaced())).toBe(
+      '40 × 40; minimum 44 × 44 units (44 × 44 px at 1x) — too close to Icon B',
+    );
+  });
+
+  it('pt-BR: the same numbers in Portuguese', () => {
+    locale.value = 'pt-BR';
+    // portuguese-guard:begin the object of the test is the pt-BR text of the finding
+    expect(auditFindingText(named(), spaced())).toBe(
+      '40 × 40; mínimo 44 × 44 unidades (44 × 44 px a 1x) — perto demais de Icon B',
+    );
+    // portuguese-guard:end
+  });
+
+  it('an unknown other marking reads as unnamed', () => {
+    locale.value = 'en-US';
+    expect(auditFindingText(named(), spaced('M_GONE'))).toBe(
+      `40 × 40; minimum 44 × 44 units (44 × 44 px at 1x) — too close to ${t('marking.unnamed')}`,
+    );
+  });
+
+  it('a finding without spacing keeps the old text', () => {
+    locale.value = 'en-US';
+    expect(auditFindingText(named(), finding(40))).toBe(
+      '40 × 40; minimum 44 × 44 units (44 × 44 px at 1x)',
     );
   });
 });

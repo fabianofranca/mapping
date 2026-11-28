@@ -371,3 +371,105 @@ describe('plan_changes: touch-target-overlap in warnings', () => {
     expect(overlaps(reply)).toEqual([]);
   });
 });
+
+// Stage #1998 (TA4): `touch-target-small` with the WCAG 2.5.8 spacing in the plan's `warnings`. The root minimum is
+// 24 x 24 `visual` with `spacing: true` (density 1). `IconA` and `IconB` are 20 x 20 with centers 20 apart (both
+// already fail), `Anchor` is a 30 x 30 button alone.
+describe('plan_changes: touch-target-small with the spacing in warnings', () => {
+  let sws: A11yWorkspace;
+  const planOf = async (operations: unknown[]): Promise<Plan> =>
+    (await a11yCall(sws, 'plan_changes', {
+      project: 'a11y',
+      operations,
+    })) as unknown as Plan;
+  const refIn = async (name: string): Promise<string> => {
+    const list = await a11yCall(sws, 'list_markings', {
+      project: 'a11y',
+      container: A11Y_SCREEN,
+    });
+    return (list.markings as { ref: string; name: string }[]).find(
+      (m) => m.name === name,
+    )!.ref;
+  };
+  const small = (x: number, y: number) => ({
+    op: 'create_marking',
+    container: A11Y_SCREEN,
+    rect: { x, y, width: 20, height: 20 },
+    annotation: { type: 'accessibility/button', values: { label: 'N' } },
+  });
+
+  beforeAll(async () => {
+    sws = await a11yWorkspace(
+      (_add, plain) => {
+        plain(
+          'IconA',
+          'button',
+          { x: 100, y: 100, width: 20, height: 20 },
+          { label: 'A' },
+        );
+        plain(
+          'IconB',
+          'button',
+          { x: 120, y: 100, width: 20, height: 20 },
+          { label: 'B' },
+        );
+        plain(
+          'Anchor',
+          'button',
+          { x: 600, y: 600, width: 30, height: 30 },
+          { label: 'C' },
+        );
+      },
+      {
+        density: 1,
+        tweak: (spec: Doc) => {
+          spec.formatVersion = 27;
+          spec.accessibility.touchTarget = {
+            width: 24,
+            height: 24,
+            mode: 'visual',
+            spacing: true,
+          };
+        },
+      },
+    );
+  });
+
+  afterAll(async () => {
+    await sws.client.close();
+    rmSync(sws.base, { recursive: true, force: true });
+  });
+
+  it('a new undersized marking too close to an existing one warns for the new marking only, naming the neighbor', async () => {
+    const reply = await planOf([small(620, 600)]);
+    expect(reply.errors).toBeUndefined();
+    const warnings = touchWarnings(reply);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatchObject({
+      code: 'touch-target-small',
+      actual: { width: 20, height: 20 },
+      min: { width: 24, height: 24 },
+      density: 1,
+      message: '20 × 20; minimum 24 × 24 units (24 × 24 px at 1x) — too close to Anchor',
+    });
+    expect(warnings[0]!.spacing.other.marking).toBe(await refIn('Anchor'));
+    expect(warnings[0]!.marking).not.toBe(await refIn('Anchor'));
+  });
+
+  it('the same marking far from everything has no warning', async () => {
+    expect(touchWarnings(await planOf([small(300, 300)]))).toEqual([]);
+  });
+
+  it('a batch that changes only the named neighbor of an already-failing marking does not list it again', async () => {
+    const reply = await planOf([
+      { op: 'update_marking', marking: await refIn('IconB'), name: 'IconB2' },
+      {
+        op: 'update_marking',
+        marking: await refIn('IconB'),
+        rect: { x: 119, y: 100, width: 20, height: 20 },
+      },
+    ]);
+    expect(reply.errors).toBeUndefined();
+    expect(touchWarnings(reply)).toEqual([]);
+  });
+});

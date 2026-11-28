@@ -80,20 +80,22 @@ describe('accessibility growth (n = 2,500, 4n = 10,000 markings)', () => {
   // preemption of the scheduler on a shared runner weighs the most (8.5-8.9× under saturation, #2296). Its center does not depend on n (4.1-4.6×
   // at 1,250, 2,500 and 5,000), so the case measures at 2,500 and 10,000, where the run at n takes 2.4-2.9 ms and the ratio is 4.0-5.0× idle (stage #2300).
   it(
-    'audits accessibility (labels, parts, touch targets and their overlaps)',
+    'audits accessibility (labels, parts, touch targets, their overlaps and the spacing circles)',
     GROWTH_OPTIONS,
     () => {
       expectLinearGrowth('accessibilityAudit', {
         build: (markings) => {
           const p = withAccessibility(build(markings));
-          // The fixture reports the three kinds of finding (a copy: the memo of `p` stays empty for the rounds).
-          const codes = new Set(
-            [...accessibilityAudit({ ...p }).values()].flatMap((a) =>
-              a.findings.map((f) => f.code),
-            ),
+          // The fixture reports the three kinds of finding, the circle of the spacing included (a copy: the memo of `p` stays empty for the rounds).
+          const findings = [...accessibilityAudit({ ...p }).values()].flatMap(
+            (a) => a.findings,
           );
+          const codes = new Set(findings.map((f) => f.code));
           if (!codes.has('touch-target-small') || !codes.has('touch-target-overlap')) {
             throw new Error('the audit must find small touch areas and overlaps');
+          }
+          if (!findings.some((f) => f.code === 'touch-target-small' && f.spacing)) {
+            throw new Error('the audit must find a blocked spacing circle');
           }
           return p;
         },
